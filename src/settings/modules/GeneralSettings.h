@@ -10,39 +10,42 @@ namespace storm {
         enum class LpSolverType;
         enum class MinMaxTechnique;
     }
-    
+
     namespace settings {
         namespace modules {
-            
+
             /*!
              * This class represents the general settings.
              */
             class GeneralSettings : public ModuleSettings {
-            public:                
+            public:
                 // An enumeration of all engines.
-                enum class Engine { Sparse, Hybrid, Dd };
-                
+
+                enum class Engine {
+                    Sparse, Hybrid, Dd
+                };
+
                 /*!
                  * Creates a new set of general settings that is managed by the given manager.
                  *
                  * @param settingsManager The responsible manager.
                  */
                 GeneralSettings(storm::settings::SettingsManager& settingsManager);
-                
+
                 /*!
                  * Retrieves whether the help option was set.
                  *
                  * @return True if the help option was set.
                  */
                 bool isHelpSet() const;
-                
-				/*!
+
+                /*!
                  * Retrieves whether the version option was set.
                  *
                  * @return True if the version option was set.
                  */
                 bool isVersionSet() const;
-				
+
                 /*!
                  * Retrieves the name of the module for which to show the help or "all" to indicate that the full help
                  * needs to be shown.
@@ -50,56 +53,56 @@ namespace storm {
                  * @return The name of the module for which to show the help or "all".
                  */
                 std::string getHelpModuleName() const;
-                
+
                 /*!
                  * Retrieves whether the verbose option was set.
                  *
                  * @return True if the verbose option was set.
                  */
                 bool isVerboseSet() const;
-                
+
                 /*!
                  * Retrieves the precision to use for numerical operations.
                  *
                  * @return The precision to use for numerical operations.
                  */
                 double getPrecision() const;
-                
+
                 /*!
                  * Retrieves whether the export-to-dot option was set.
                  *
                  * @return True if the export-to-dot option was set.
                  */
                 bool isExportDotSet() const;
-                
+
                 /*!
                  * Retrieves the name in which to write the model in dot format, if the export-to-dot option was set.
                  *
                  * @return The name of the file in which to write the exported model.
                  */
                 std::string getExportDotFilename() const;
-                
+
                 /*!
                  * Retrieves whether the config option was set.
                  *
                  * @return True if the config option was set.
                  */
                 bool isConfigSet() const;
-                
+
                 /*!
                  * Retrieves the name of the file that is to be scanned for settings.
                  *
                  * @return The name of the file that is to be scanned for settings.
                  */
                 std::string getConfigFilename() const;
-                
+
                 /*!
                  * Retrieves whether the explicit option was set.
                  *
                  * @return True if the explicit option was set.
                  */
                 bool isExplicitSet() const;
-                
+
                 /*!
                  * Retrieves the name of the file that contains the transitions if the model was given using the explicit
                  * option.
@@ -115,14 +118,14 @@ namespace storm {
                  * @return The name of the file that contains the state labeling.
                  */
                 std::string getLabelingFilename() const;
-                
+
                 /*!
                  * Retrieves whether the symbolic option was set.
                  *
                  * @return True if the symbolic option was set.
                  */
                 bool isSymbolicSet() const;
-                
+
                 /*!
                  * Retrieves the name of the file that contains the symbolic model specification if the model was given
                  * using the symbolic option.
@@ -130,14 +133,14 @@ namespace storm {
                  * @return The name of the file that contains the symbolic model specification.
                  */
                 std::string getSymbolicModelFilename() const;
-                
+
                 /*!
                  * Retrieves whether the property option was set.
                  *
                  * @return True if the property option was set.
                  */
                 bool isPropertySet() const;
-                
+
                 /*!
                  * Retrieves the property specified with the property option.
                  *
@@ -159,14 +162,14 @@ namespace storm {
                  * @return The name of the file that contains the transition rewards.
                  */
                 std::string getTransitionRewardsFilename() const;
-                
+
                 /*!
                  * Retrieves whether the state reward option was set.
                  *
                  * @return True if the state reward option was set.
                  */
                 bool isStateRewardsSet() const;
-                
+
                 /*!
                  * Retrieves the name of the file that contains the state rewards if the model was given using the
                  * explicit option.
@@ -174,7 +177,22 @@ namespace storm {
                  * @return The name of the file that contains the state rewards.
                  */
                 std::string getStateRewardsFilename() const;
-                
+
+                /*!
+                 * Retrieves whether the choice labeling option was set.
+                 * 
+                 * @return True iff the choice labeling option was set.
+                 */
+                bool isChoiceLabelingSet() const;
+
+                /*!
+                 * Retrieves the name of the file that contains the choice labeling
+                 * if the model was given using the explicit option.
+                 *
+                 * @return The name of the file that contains the choice labeling.
+                 */
+                std::string getChoiceLabelingFilename() const;
+
                 /*!
                  * Retrieves whether the counterexample option was set.
                  *
@@ -189,7 +207,7 @@ namespace storm {
                  * @return The name of the file to which the counterexample is to be written.
                  */
                 std::string getCounterexampleFilename() const;
-                
+
                 /*!
                  * Retrieves whether the dont-fix-deadlocks option was set.
                  *
@@ -205,7 +223,7 @@ namespace storm {
                  * @return The memento that will eventually restore the original value.
                  */
                 std::unique_ptr<storm::settings::SettingMemento> overrideDontFixDeadlocksSet(bool stateToSet);
-                
+
                 /*!
                  * Overrides the option to enable the PRISM compatibility mode by setting it to the specified value. As
                  * soon as the returned memento goes out of scope, the original value is restored.
@@ -214,14 +232,14 @@ namespace storm {
                  * @return The memento that will eventually restore the original value.
                  */
                 std::unique_ptr<storm::settings::SettingMemento> overridePrismCompatibilityMode(bool stateToSet);
-                
+
                 /*!
                  * Retrieves whether the timeout option was set.
                  *
                  * @return True if the timeout option was set.
                  */
                 bool isTimeoutSet() const;
-                
+
                 /*!
                  * Retrieves the time after which the computation has to be aborted in case the timeout option was set.
                  *
@@ -235,42 +253,42 @@ namespace storm {
                  * @return The selected convergence criterion.
                  */
                 storm::solver::EquationSolverType getEquationSolver() const;
-                
+
                 /*!
                  * Retrieves whether a equation solver has been set.
                  *
                  * @return True iff an equation solver has been set.
                  */
                 bool isEquationSolverSet() const;
-                
+
                 /*!
                  * Retrieves the selected LP solver.
                  *
                  * @return The selected LP solver.
                  */
                 storm::solver::LpSolverType getLpSolver() const;
-                
+
                 /*!
                  * Retrieves whether the export-to-dot option was set.
                  *
                  * @return True if the export-to-dot option was set.
                  */
                 bool isConstantsSet() const;
-                
+
                 /*!
                  * Retrieves the string that defines the constants of a symbolic model (given via the symbolic option).
                  *
                  * @return The string that defines the constants of a symbolic model.
                  */
                 std::string getConstantDefinitionString() const;
-                
+
                 /*!
                  * Retrieves whether statistics are to be shown for counterexample generation.
                  *
                  * @return True iff statistics are to be shown for counterexample generation.
                  */
                 bool isShowStatisticsSet() const;
-                
+
                 /*!
                  * Retrieves whether the option to perform bisimulation minimization is set.
                  *
@@ -284,21 +302,21 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isCudaSet() const;
-                
+
                 /*!
                  * Retrieves the selected engine.
                  *
                  * @return The selected engine.
                  */
                 Engine getEngine() const;
-                
+
                 /*!
                  * Retrieves whether the PRISM compatibility mode was enabled.
                  *
                  * @return True iff the PRISM compatibility mode was enabled.
                  */
                 bool isPrismCompatibilityEnabled() const;
-                
+
 #ifdef STORM_HAVE_CARL
                 /*!
                  * Retrieves whether the option enabling parametric model checking is set.
@@ -307,21 +325,21 @@ namespace storm {
                  */
                 bool isParametricSet() const;
 #endif
-				/*!
-				* Retrieves whether a min/max equation solving technique has been set.
-				*
-				* @return True iff an equation solving technique has been set.
-				*/
-				bool isMinMaxEquationSolvingTechniqueSet() const;
+                /*!
+                 * Retrieves whether a min/max equation solving technique has been set.
+                 *
+                 * @return True iff an equation solving technique has been set.
+                 */
+                bool isMinMaxEquationSolvingTechniqueSet() const;
 
-				/*!
-				* Retrieves the selected min/max equation solving technique.
-				*
-				* @return The selected min/max equation solving technique.
-				*/
-				storm::solver::MinMaxTechnique getMinMaxEquationSolvingTechnique() const;
+                /*!
+                 * Retrieves the selected min/max equation solving technique.
+                 *
+                 * @return The selected min/max equation solving technique.
+                 */
+                storm::solver::MinMaxTechnique getMinMaxEquationSolvingTechnique() const;
 
-                
+
                 bool check() const override;
 
                 // The name of the module.
@@ -331,7 +349,7 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string helpOptionName;
                 static const std::string helpOptionShortName;
-				static const std::string versionOptionName;
+                static const std::string versionOptionName;
                 static const std::string verboseOptionName;
                 static const std::string verboseOptionShortName;
                 static const std::string precisionOptionName;
@@ -347,6 +365,7 @@ namespace storm {
                 static const std::string propertyOptionShortName;
                 static const std::string transitionRewardsOptionName;
                 static const std::string stateRewardsOptionName;
+                static const std::string choiceLabelingOptionName;
                 static const std::string counterexampleOptionName;
                 static const std::string counterexampleOptionShortName;
                 static const std::string dontFixDeadlockOptionName;
@@ -366,13 +385,13 @@ namespace storm {
                 static const std::string cudaOptionName;
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;
-				static const std::string minMaxEquationSolvingTechniqueOptionName;
+                static const std::string minMaxEquationSolvingTechniqueOptionName;
 
 #ifdef STORM_HAVE_CARL
                 static const std::string parametricOptionName;
 #endif
             };
-            
+
         } // namespace modules
     } // namespace settings
 } // namespace storm

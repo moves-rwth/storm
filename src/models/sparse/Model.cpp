@@ -182,7 +182,8 @@ namespace storm {
             void Model<ValueType, RewardModelType>::printModelInformationFooterToStream(std::ostream& out) const {
                 this->printRewardModelsInformationToStream(out);
                 this->getStateLabeling().printLabelingInformationToStream(out);
-                out << "Size in memory: \t" << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
+                out << "choice labels: \t" << (this->hasChoiceLabeling() ? "yes" : "no")  << std::noboolalpha << std::endl;
+                out << "Size in memory: " << (this->getSizeInBytes())/1024 << " kbytes" << std::endl;
                 out << "-------------------------------------------------------------- " << std::endl;
             }
             

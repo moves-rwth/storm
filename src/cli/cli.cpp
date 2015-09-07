@@ -214,27 +214,20 @@ namespace storm {
                 boost::optional<storm::prism::Program> program;
                 if (settings.isSymbolicSet()) {
                     std::string const& programFile = settings.getSymbolicModelFilename();
-                    program = storm::parser::PrismParser::parse(programFile).simplify().simplify();
-                    
-                    program->checkValidity();
+                    program = storm::parseProgram(programFile);
                 }
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
                 std::vector<std::shared_ptr<storm::logic::Formula>> formulas;
                 if (settings.isPropertySet()) {
-                    storm::parser::FormulaParser formulaParser;
-                    if (program) {
-                        formulaParser = storm::parser::FormulaParser(program.get().getManager().getSharedPointer());
+                    std::string properties = settings.getProperty();
+                    
+                    if(program) {
+                        formulas = storm::parseFormulasForProgram(properties, program.get());
+                    } else {
+                        formulas = storm::parseFormulasForExplicit(properties);
                     }
                     
-                    // If the given property looks like a file (containing a dot and there exists a file with that name),
-                    // we try to parse it as a file, otherwise we assume it's a property.
-                    std::string property = settings.getProperty();
-                    if (property.find(".") != std::string::npos && std::ifstream(property).good()) {
-                        formulas = formulaParser.parseFromFile(settings.getProperty());
-                    } else {
-                        formulas = formulaParser.parseFromString(settings.getProperty());
-                    }
                 }
 
                 if (settings.isSymbolicSet()) {

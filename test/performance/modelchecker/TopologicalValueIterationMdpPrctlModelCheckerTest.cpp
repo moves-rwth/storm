@@ -12,7 +12,7 @@
 #include "src/parser/FormulaParser.h"
 
 TEST(DISABLED_TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLeader) {
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew")->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.trans.rew")->as<storm::models::sparse::Mdp<double>>();
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -59,7 +59,7 @@ TEST(DISABLED_TopologicalValueIterationMdpPrctlModelCheckerTest, Consensus) {
     // Increase the maximal number of iterations, because the solver does not converge otherwise.
 	// This is done in the main cpp unit
     
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "")->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.steps.state.rew", "")->as<storm::models::sparse::Mdp<double>>();
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
