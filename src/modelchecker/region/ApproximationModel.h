@@ -59,7 +59,7 @@ namespace storm {
             }; 
            
             void initializeProbabilities(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, storm::storage::SparseMatrix<ConstantType>& probabilityMatrix, std::vector<std::size_t>& rowSubstitutions, std::vector<std::size_t>& matrixEntryToEvalTableMapping, std::size_t const& constantEntryIndex);
-            void initializeRewards(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, storm::storage::SparseMatrix<ConstantType> const& probabilityMatrix, std::vector<std::size_t> const& rowSubstitutions, boost::optional<std::vector<ConstantType>>& stateRewards, boost::optional<storm::storage::SparseMatrix<ConstantType>>& transitionRewards, std::vector<std::size_t>& stateRewardEntryToEvalTableMapping, std::vector<std::size_t>& transitionRewardEntryToEvalTableMapping, std::size_t const& constantEntryIndex);
+            void initializeRewards(storm::models::sparse::Dtmc<ParametricType> const& parametricModel, storm::storage::SparseMatrix<ConstantType> const& probabilityMatrix, std::vector<std::size_t> const& rowSubstitutions, boost::optional<std::vector<ConstantType>>& stateActionRewardVector, std::vector<std::size_t>& stateRewardEntryToEvalTableMapping, std::vector<std::size_t>& transitionRewardEntryToEvalTableMapping, std::size_t const& constantEntryIndex);
             
             //Vector has one entry for every (non-constant) matrix entry.
             //pair.first points to an entry in the evaluation table,
@@ -67,8 +67,7 @@ namespace storm {
             std::vector<std::pair<ConstantType*, typename storm::storage::SparseMatrix<ConstantType>::iterator>> probabilityMapping;
             //similar for the rewards. But now the first entry points to a minimal and the second one to a maximal value.
             //The third entry points to the state reward vector and the transitionRewardMatrix, respectively.
-            std::vector<std::tuple<ConstantType*, ConstantType*, typename std::vector<ConstantType>::iterator>> stateRewardMapping;
-            std::vector<std::tuple<ConstantType*, ConstantType*, typename storm::storage::SparseMatrix<ConstantType>::iterator>> transitionRewardMapping;
+            std::vector<std::tuple<ConstantType*, ConstantType*, typename std::vector<ConstantType>::iterator>> rewardMapping;
             
             //Vector has one (unique) entry for every occurring pair of a non-constant function and 
             // a substitution, i.e., a mapping of variables to a TypeOfBound

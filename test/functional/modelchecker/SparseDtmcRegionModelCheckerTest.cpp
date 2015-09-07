@@ -182,6 +182,53 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     storm::settings::mutableRegionSettings().resetModes();
 }
 
+TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
+    
+    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards/brp_16_2.pm";
+    std::string const& formulaAsString = "R>2.5 [F \"success\" ]";
+    std::string const& constantsAsString = "";
+    
+    //Build model, formula, region model checker
+    boost::optional<storm::prism::Program> program=storm::parser::PrismParser::parse(programFile).simplify().simplify();
+    program->checkValidity();
+    storm::parser::FormulaParser formulaParser(program.get().getManager().getSharedPointer());
+    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = formulaParser.parseFromString(formulaAsString);
+    typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
+    options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
+    options.preserveFormula(*formulas[0]);
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+    ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
+    ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
+    modelchecker.specifyFormula(formulas[0]);
+    
+    //start testing
+    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("");
+
+    EXPECT_EQ(storm::utility::infinity<double>(), modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), false)); //instantiation of sampling model
+    EXPECT_EQ(storm::utility::infinity<double>(), modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), true)); //instantiation of sampling model
+    
+    //test approximative method
+    storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
+    ASSERT_TRUE(storm::settings::regionSettings().doApprox());
+    ASSERT_TRUE(storm::settings::regionSettings().doSample());
+    ASSERT_FALSE(storm::settings::regionSettings().doSmt());
+    modelchecker.checkRegion(allSatRegion);
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
+
+    //test smt method (the regions need to be created again, because the old ones have some information stored in their internal state)
+    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("");
+    storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::OFF, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
+    ASSERT_FALSE(storm::settings::regionSettings().doApprox());
+    ASSERT_TRUE(storm::settings::regionSettings().doSample());
+    ASSERT_TRUE(storm::settings::regionSettings().doSmt());
+    modelchecker.checkRegion(allSatRegionSmt);
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
+    
+    storm::settings::mutableRegionSettings().resetModes();
+}
+
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards/brp_16_2.pm";

@@ -257,6 +257,8 @@ namespace storm {
             bool isApproximationApplicable;
             // a flag that is true iff the resulting reachability function is constant
             bool isResultConstant;
+            // workaround to represent that the result is infinity (utility::infinity<storm::RationalFunction>() does not work at this moment)
+            bool isResultInfinity;
             // the smt solver that is used to prove properties with the help of the reachabilityFunction
             std::shared_ptr<storm::solver::Smt2SmtSolver> smtSolver;
             

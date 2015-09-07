@@ -76,15 +76,17 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point timeSpecifyFormulaStart = std::chrono::high_resolution_clock::now();
             STORM_LOG_THROW(this->canHandle(*formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");
             
+            //Note: canHandle already ensures that the formula has the right shape.
+            this->specifiedFormula = formula;
             this->isResultConstant=false;
+            this->isResultInfinity=false;
+            this->simpleFormula=nullptr;
             this->isApproximationApplicable=false;
             this->smtSolver=nullptr;
             this->approximationModel=nullptr;
             this->samplingModel=nullptr;
             this->reachabilityFunction=nullptr;
             
-            //Note: canHandle already ensures that the formula has the right shape.
-            this->specifiedFormula = formula;
             // set some information regarding the formula and model. Also computes a more simple version of the model
             preprocess();
             if(!this->isResultConstant){
@@ -154,7 +156,6 @@ namespace storm {
             storm::storage::sparse::state_type initialState = *(this->model.getInitialStates() % maybeStates).begin();
             // We then build the submatrix that only has the transitions of the maybe states.
             storm::storage::SparseMatrix<ParametricType> submatrix = this->model.getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
-            
             // Eliminate all states with only constant outgoing transitions
             // Convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
             auto flexibleTransitions = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix);
@@ -355,11 +356,20 @@ namespace storm {
             //maybeStates: Compute the subset of states that has a reachability reward less than infinity.
             storm::storage::BitVector statesWithProbability1 = storm::utility::graph::performProb1(this->model.getBackwardTransitions(), storm::storage::BitVector(this->model.getNumberOfStates(), true), targetStates);
             maybeStates = ~targetStates & statesWithProbability1;
-            // If the initial state is known to have 0 reward or an infinite reward value, we can directly set the reachRewardFunction.
+            
+            //Compute the new state reward vector
+            stateRewards=rewardModel->getTotalRewardVector(maybeStates.getNumberOfSetBits(), this->model.getTransitionMatrix(), maybeStates);
+            
+            // If the initial state is known to have 0 reward or an infinite reachability reward value, we can directly set the reachRewardFunction.
             storm::storage::sparse::state_type initialState = *this->model.getInitialStates().begin();
             if (!maybeStates.get(initialState)) {
                 STORM_LOG_WARN("The expected reward of the initial state is constant (infinity or zero)");
-                this->reachabilityFunction = std::make_shared<ParametricType>(statesWithProbability1.get(initialState) ? storm::utility::zero<ParametricType>() : storm::utility::infinity<ParametricType>());
+                if(statesWithProbability1.get(initialState)){
+                    this->reachabilityFunction = std::make_shared<ParametricType>(storm::utility::zero<ParametricType>());
+                } else {
+                    this->reachabilityFunction = std::make_shared<ParametricType>(storm::utility::one<ParametricType>());
+                    this->isResultInfinity=true;
+                }
                 this->isResultConstant=true;
                 return; //nothing else to do...
             }
@@ -414,9 +424,6 @@ namespace storm {
                 }
             }
             STORM_LOG_WARN_COND(!this->isResultConstant, "For the given property, the reachability Value is constant, i.e., independent of the region");
-            
-            //Everything is fine, so we can now compute the new state reward vector
-            stateRewards=rewardModel->getTotalRewardVector(maybeStates.getNumberOfSetBits(), this->model.getTransitionMatrix(), maybeStates);
         }
 
 
@@ -508,8 +515,7 @@ namespace storm {
             
             if(!done && this->isResultConstant){
                 STORM_LOG_DEBUG("Checking a region although the result is constant, i.e., independent of the region. This makes sense none.");
-                STORM_LOG_THROW(storm::utility::isConstant(*getReachabilityFunction()), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
-                if(valueIsInBoundOfFormula(this->getReachabilityValue<CoefficientType>(region.getSomePoint(), true))){
+                if(valueIsInBoundOfFormula(this->getReachabilityValue<ConstantType>(region.getSomePoint(), true))){
                     region.setCheckResult(RegionCheckResult::ALLSAT);
                 }
                 else{
@@ -750,7 +756,15 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         template<typename ValueType>
         ValueType SparseDtmcRegionModelChecker<ParametricType, ConstantType>::getReachabilityValue(std::map<VariableType, CoefficientType> const& point, bool evaluateFunction) {
-            if(evaluateFunction || this->isResultConstant){
+            if(this->isResultConstant){
+                //Todo: remove workaround (infinity<storm::RationalFunction() does not work)
+                if(this->isResultInfinity){
+                    return storm::utility::infinity<ValueType>();
+                }
+                STORM_LOG_THROW(storm::utility::isConstant(*getReachabilityFunction()), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
+                return storm::utility::regions::convertNumber<ValueType>(storm::utility::regions::getConstantPart(*getReachabilityFunction()));
+            }
+            if(evaluateFunction){
                 return storm::utility::regions::convertNumber<ValueType>(storm::utility::regions::evaluateFunction(*getReachabilityFunction(), point));
             } else {
                 getSamplingModel()->instantiate(point);
