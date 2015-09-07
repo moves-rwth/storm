@@ -15,7 +15,7 @@ namespace storm {
                                                         std::vector<ValueType> const& exitRates,
                                                         std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                                         boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(false) {
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(false) {
                 this->turnRatesToProbabilities();
             }
             
@@ -26,7 +26,7 @@ namespace storm {
                                                         std::vector<ValueType> const& exitRates,
                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
                 this->turnRatesToProbabilities();
             }
             
@@ -124,7 +124,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
-                NondeterministicModel<ValueType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
+                NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
                 
                 // Write the probability distributions for all the states.
                 for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
@@ -205,7 +205,7 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType>
             std::size_t MarkovAutomaton<ValueType, RewardModelType>::getSizeInBytes() const {
-                return NondeterministicModel<ValueType>::getSizeInBytes() + markovianStates.getSizeInBytes() + exitRates.size() * sizeof(ValueType);
+                return NondeterministicModel<ValueType, RewardModelType>::getSizeInBytes() + markovianStates.getSizeInBytes() + exitRates.size() * sizeof(ValueType);
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -220,9 +220,11 @@ namespace storm {
             template class MarkovAutomaton<double>;
 //            template class MarkovAutomaton<float>;
             
-//#ifdef STORM_HAVE_CARL
-//            template class MarkovAutomaton<storm::RationalFunction>;
-//#endif
+#ifdef STORM_HAVE_CARL
+            template class MarkovAutomaton<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+
+            template class MarkovAutomaton<storm::RationalFunction>;
+#endif
 
         } // namespace sparse
     } // namespace models

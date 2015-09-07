@@ -10,6 +10,8 @@
 #include "src/parser/SparseStateRewardParser.h"
 #include "src/parser/SparseChoiceLabelingParser.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace parser {
 
@@ -31,7 +33,7 @@ namespace storm {
             }
 
             // Only parse transition rewards if a file is given.
-            boost::optional<storm::storage::SparseMatrix<double>> transitionRewards;
+            boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
             if (!transitionRewardFilename.empty()) {
                 transitionRewards = std::move(storm::parser::NondeterministicSparseTransitionParser<RewardValueType>::parseNondeterministicTransitionRewards(transitionRewardFilename, transitions));
             }
@@ -61,6 +63,10 @@ namespace storm {
         }
 
         template class NondeterministicModelParser<double, double>;
-        
+
+#ifdef STORM_HAVE_CARL
+        template class NondeterministicModelParser<double, storm::Interval>;
+#endif
+
     } /* namespace parser */
 } /* namespace storm */

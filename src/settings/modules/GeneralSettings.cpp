@@ -42,6 +42,7 @@ namespace storm {
             const std::string GeneralSettings::timeoutOptionShortName = "t";
             const std::string GeneralSettings::eqSolverOptionName = "eqsolver";
             const std::string GeneralSettings::lpSolverOptionName = "lpsolver";
+            const std::string GeneralSettings::smtSolverOptionName = "smtsolver";
             const std::string GeneralSettings::constantsOptionName = "constants";
             const std::string GeneralSettings::constantsOptionShortName = "const";
             const std::string GeneralSettings::statisticsOptionName = "statistics";
@@ -102,6 +103,9 @@ namespace storm {
                 std::vector<std::string> lpSolvers = {"gurobi", "glpk"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an LP solver. Available are: gurobi and glpk.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(lpSolvers)).setDefaultValueString("glpk").build()).build());
+                std::vector<std::string> smtSolvers = {"z3", "mathsat"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, smtSolverOptionName, false, "Sets which SMT solver is preferred.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of an SMT solver. Available are: z3 and mathsat.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(smtSolvers)).setDefaultValueString("z3").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that Note that this requires the model to be given as an symbolic model (i.e., via --" + symbolicOptionName + ").").setShortName(constantsOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, statisticsOptionName, false, "Sets whether to display statistics if available.").setShortName(statisticsOptionShortName).build());
@@ -254,6 +258,16 @@ namespace storm {
                     return storm::solver::LpSolverType::Glpk;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
+            }
+            
+            storm::solver::SmtSolverType GeneralSettings::getSmtSolver() const {
+                std::string smtSolverName = this->getOption(smtSolverOptionName).getArgumentByName("name").getValueAsString();
+                if (smtSolverName == "z3") {
+                    return storm::solver::SmtSolverType::Z3;
+                } else if (smtSolverName == "mathsat") {
+                    return storm::solver::SmtSolverType::Mathsat;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown SMT solver '" << smtSolverName << "'.");
             }
             
             bool GeneralSettings::isConstantsSet() const {

@@ -10,6 +10,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 #include "src/utility/cstring.h"
 #include "src/utility/OsDetection.h"
 
@@ -19,7 +21,7 @@ namespace storm {
         using namespace storm::utility::cstring;
 
         template<typename ValueType, typename RewardValueType>
-        std::shared_ptr<storm::models::sparse::Model<double>> AutoParser<ValueType, RewardValueType>::parseModel(std::string const& transitionsFilename,
+        std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>> AutoParser<ValueType, RewardValueType>::parseModel(std::string const& transitionsFilename,
                 std::string const& labelingFilename,
                 std::string const& stateRewardFilename,
                 std::string const& transitionRewardFilename,
@@ -33,22 +35,22 @@ namespace storm {
             switch (type) {
                 case storm::models::ModelType::Dtmc:
                 {
-                    model.reset(new storm::models::sparse::Dtmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(DeterministicModelParser<ValueType, RewardValueType>::parseDtmc(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename))));
+                    model = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>>(new storm::models::sparse::Dtmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(DeterministicModelParser<ValueType, RewardValueType>::parseDtmc(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename))));
                     break;
                 }
                 case storm::models::ModelType::Ctmc:
                 {
-                    model.reset(new storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(DeterministicModelParser<ValueType, RewardValueType>::parseCtmc(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename))));
+                    model = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>>(new storm::models::sparse::Ctmc<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(DeterministicModelParser<ValueType, RewardValueType>::parseCtmc(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename))));
                     break;
                 }
                 case storm::models::ModelType::Mdp:
                 {
-                    model.reset(new storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(NondeterministicModelParser<ValueType, RewardValueType>::parseMdp(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename))));
+                    model = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>>(new storm::models::sparse::Mdp<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(NondeterministicModelParser<ValueType, RewardValueType>::parseMdp(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename, choiceLabelingFilename))));
                     break;
                 }
                 case storm::models::ModelType::MarkovAutomaton:
                 {
-                    model.reset(new storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(storm::parser::MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename)));
+                    model = std::shared_ptr<storm::models::sparse::Model<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>>(new storm::models::sparse::MarkovAutomaton<ValueType, storm::models::sparse::StandardRewardModel<RewardValueType>>(std::move(storm::parser::MarkovAutomatonParser<ValueType, RewardValueType>::parseMarkovAutomaton(transitionsFilename, labelingFilename, stateRewardFilename, transitionRewardFilename))));
                     break;
                 }
                 default:
@@ -94,6 +96,10 @@ namespace storm {
 
         // Explicitly instantiate the parser.
         template class AutoParser<double, double>;
+
+#ifdef STORM_HAVE_CARL
+        template class AutoParser<double, storm::Interval>;
+#endif
         
     } // namespace parser
 } // namespace storm

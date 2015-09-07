@@ -14,14 +14,14 @@ namespace storm {
                  storm::models::sparse::StateLabeling const& stateLabeling,
                  std::unordered_map<std::string, RewardModelType> const& rewardModels,
                  boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : DeterministicModel<ValueType>(storm::models::ModelType::Dtmc, probabilityMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
+            : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Dtmc, probabilityMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
                 STORM_LOG_THROW(probabilityMatrix.isProbabilistic(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
             }
             
             template <typename ValueType, typename RewardModelType>
             Dtmc<ValueType, RewardModelType>::Dtmc(storm::storage::SparseMatrix<ValueType>&& probabilityMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
                 std::unordered_map<std::string, RewardModelType>&& rewardModels, boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : DeterministicModel<ValueType>(storm::models::ModelType::Dtmc, std::move(probabilityMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
+            : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Dtmc, std::move(probabilityMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
                 STORM_LOG_THROW(probabilityMatrix.isProbabilistic(), storm::exceptions::InvalidArgumentException, "The probability matrix is invalid.");
             }
             
@@ -225,6 +225,8 @@ namespace storm {
             template class Dtmc<float>;
 
 #ifdef STORM_HAVE_CARL
+            template class Dtmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+
             template class Dtmc<storm::RationalFunction>;
 #endif
 
