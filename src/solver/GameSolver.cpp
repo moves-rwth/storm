@@ -42,7 +42,7 @@ namespace storm {
                     uint_fast64_t startRow = player1Matrix.getRowGroupIndices()[pl1State];
                     uint_fast64_t endRow = player1Matrix.getRowGroupIndices()[pl1State + 1];
 
-                    storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_rows relevantRows = player1Matrix.getRows(startRow, endRow - 1);
+                    storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_rows relevantRows = player1Matrix.getRowGroup(pl1State);
                     storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator it = relevantRows.begin();
                     storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator ite = relevantRows.end();
 
