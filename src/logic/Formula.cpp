@@ -1,4 +1,5 @@
 #include "src/logic/Formulas.h"
+#include <sstream>
 
 namespace storm {
     namespace logic {
@@ -402,6 +403,12 @@ namespace storm {
         
         void Formula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
             return;
+        }
+        
+        std::string Formula::toString() const {
+            std::stringstream str2;
+            writeToStream(str2);
+            return str2.str();
         }
         
         std::ostream& operator<<(std::ostream& out, Formula const& formula) {
