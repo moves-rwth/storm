@@ -8,7 +8,6 @@
 #include "src/utility/cstring.h"
 #include "src/utility/macros.h"
 
-
 namespace storm {
     namespace parser {
 

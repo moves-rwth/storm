@@ -49,7 +49,7 @@ namespace storm {
                 
 #ifndef WINDOWS
                 DeterministicModel(DeterministicModel<ValueType, RewardModelType>&& other) = default;
-                DeterministicModel<ValueType>& operator=(DeterministicModel<ValueType, RewardModelType>&& model) = default;
+                DeterministicModel<ValueType, RewardModelType>& operator=(DeterministicModel<ValueType, RewardModelType>&& model) = default;
 #endif
                 
                 virtual void reduceToStateBasedRewards() override;

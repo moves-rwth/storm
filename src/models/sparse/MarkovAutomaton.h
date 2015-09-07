@@ -12,7 +12,7 @@ namespace storm {
              * This class represents a Markov automaton.
              */
             template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
-            class MarkovAutomaton : public NondeterministicModel<ValueType> {
+            class MarkovAutomaton : public NondeterministicModel<ValueType, RewardModelType> {
             public:
                 /*!
                  * Constructs a model from the given data.

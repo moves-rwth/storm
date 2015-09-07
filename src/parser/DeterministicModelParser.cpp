@@ -9,6 +9,8 @@
 #include "src/parser/AtomicPropositionLabelingParser.h"
 #include "src/parser/SparseStateRewardParser.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace parser {
 
@@ -62,6 +64,10 @@ namespace storm {
         }
 
         template class DeterministicModelParser<double, double>;
+
+#ifdef STORM_HAVE_CARL
+        template class DeterministicModelParser<double, storm::Interval>;
+#endif
         
     } /* namespace parser */
 } /* namespace storm */

@@ -11,7 +11,7 @@ namespace storm {
             Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::models::sparse::StateLabeling const& stateLabeling,
                                   std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                   boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : DeterministicModel<ValueType>(storm::models::ModelType::Ctmc, rateMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
+            : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Ctmc, rateMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
                 exitRates = createExitRateVector(this->getTransitionMatrix());
             }
             
@@ -19,7 +19,7 @@ namespace storm {
             Ctmc<ValueType, RewardModelType>::Ctmc(storm::storage::SparseMatrix<ValueType>&& rateMatrix, storm::models::sparse::StateLabeling&& stateLabeling,
                                   std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                   boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : DeterministicModel<ValueType>(storm::models::ModelType::Ctmc, std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
+            : DeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::Ctmc, std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
                 // It is important to refer to the transition matrix here, because the given rate matrix has been move elsewhere.
                 exitRates = createExitRateVector(this->getTransitionMatrix());
             }
@@ -41,6 +41,8 @@ namespace storm {
             template class Ctmc<double>;
 
 #ifdef STORM_HAVE_CARL
+            template class Ctmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+
             template class Ctmc<storm::RationalFunction>;
 #endif
             

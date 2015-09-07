@@ -13,6 +13,8 @@
 
 #include "src/utility/cstring.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -189,7 +191,7 @@ namespace storm {
             // Finally, build the actual matrix, test and return it.
             storm::storage::SparseMatrix<ValueType> resultMatrix = matrixBuilder.build();
 
-            // Since we cannot do the testing if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to do it afterwards.
+            // Since we cannot check if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to do it afterwards.
             if (isRewardFile && !resultMatrix.isSubmatrixOf(modelInformation)) {
                 LOG4CPLUS_ERROR(logger, "There are rewards for non existent transitions given in the reward file.");
                 throw storm::exceptions::WrongFormatException() << "There are rewards for non existent transitions given in the reward file.";
@@ -336,6 +338,13 @@ namespace storm {
         template class NondeterministicSparseTransitionParser<double>;
         template storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser<double>::parseNondeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<double> const& modelInformation);
         template storm::storage::SparseMatrix<double> NondeterministicSparseTransitionParser<double>::parse(std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation);
-        
+
+#ifdef STORM_HAVE_CARL
+        template class NondeterministicSparseTransitionParser<storm::Interval>;
+
+        template storm::storage::SparseMatrix<storm::Interval> NondeterministicSparseTransitionParser<storm::Interval>::parseNondeterministicTransitionRewards<double>(std::string const& filename, storm::storage::SparseMatrix<double> const& modelInformation);
+        template storm::storage::SparseMatrix<storm::Interval> NondeterministicSparseTransitionParser<storm::Interval>::parse<double>(std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& modelInformation);
+#endif
+
     } // namespace parser
 } // namespace storm

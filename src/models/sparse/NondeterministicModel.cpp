@@ -16,7 +16,7 @@ namespace storm {
                                                                     storm::models::sparse::StateLabeling const& stateLabeling,
                                                                     std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                                                     boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : Model<ValueType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
+            : Model<ValueType, RewardModelType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
                 // Intentionally left empty.
             }
             
@@ -26,7 +26,7 @@ namespace storm {
                                                                     storm::models::sparse::StateLabeling&& stateLabeling,
                                                                     std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                                     boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : Model<ValueType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels),
+            : Model<ValueType, RewardModelType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels),
                                std::move(optionalChoiceLabeling)) {
                 // Intentionally left empty.
             }
@@ -79,7 +79,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
-                Model<ValueType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
+                Model<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
                 
                 // Write the probability distributions for all the states.
                 for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
@@ -151,6 +151,8 @@ namespace storm {
             template class NondeterministicModel<float>;
 
 #ifdef STORM_HAVE_CARL
+            template class NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+
             template class NondeterministicModel<storm::RationalFunction>;
 #endif
 
