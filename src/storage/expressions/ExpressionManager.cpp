@@ -205,7 +205,7 @@ namespace storm {
             std::string newName = prefix + std::to_string(freshVariableCounter++);
             return declareOrGetVariable(newName, variableType, auxiliary, false);
         }
-
+        
         Variable ExpressionManager::declareFreshBooleanVariable(bool auxiliary, const std::string& prefix) {
             return declareFreshVariable(this->getBooleanType(), auxiliary, prefix);
         }

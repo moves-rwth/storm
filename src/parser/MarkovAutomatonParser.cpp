@@ -6,6 +6,8 @@
 
 #include "src/exceptions/WrongFormatException.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -31,7 +33,7 @@ namespace storm {
                 stateRewards.reset(storm::parser::SparseStateRewardParser<RewardValueType>::parseSparseStateReward(transitionMatrix.getColumnCount(), stateRewardFilename));
             }
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<RewardValueType>> rewardModels;
-            rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<RewardValueType>(stateRewards, boost::optional<std::vector<double>>(), boost::optional<storm::storage::SparseMatrix<double>>())));
+            rewardModels.insert(std::make_pair("", storm::models::sparse::StandardRewardModel<RewardValueType>(stateRewards, boost::optional<std::vector<RewardValueType>>(), boost::optional<storm::storage::SparseMatrix<RewardValueType>>())));
 
             // Since Markov Automata do not support transition rewards no path should be given here.
             if (transitionRewardFilename != "") {
@@ -46,6 +48,10 @@ namespace storm {
         }
 
         template class MarkovAutomatonParser<double, double>;
-        
+
+#ifdef STORM_HAVE_CARL
+        template class MarkovAutomatonParser<double, storm::Interval>;
+#endif
+
     } // namespace parser
 } // namespace storm

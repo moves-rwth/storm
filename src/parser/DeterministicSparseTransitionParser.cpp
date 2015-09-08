@@ -16,6 +16,8 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 extern log4cplus::Logger logger;
@@ -297,5 +299,12 @@ namespace storm {
         template class DeterministicSparseTransitionParser<double>;
         template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser<double>::parseDeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<double> const& transitionMatrix);
         template storm::storage::SparseMatrix<double> DeterministicSparseTransitionParser<double>::parse(std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& transitionMatrix);
+
+#ifdef STORM_HAVE_CARL
+        template class DeterministicSparseTransitionParser<storm::Interval>;
+
+        template storm::storage::SparseMatrix<storm::Interval> DeterministicSparseTransitionParser<storm::Interval>::parseDeterministicTransitionRewards(std::string const& filename, storm::storage::SparseMatrix<double> const& transitionMatrix);
+        template storm::storage::SparseMatrix<storm::Interval> DeterministicSparseTransitionParser<storm::Interval>::parse(std::string const& filename, bool isRewardFile, storm::storage::SparseMatrix<double> const& transitionMatrix);
+#endif
     } // namespace parser
 } // namespace storm

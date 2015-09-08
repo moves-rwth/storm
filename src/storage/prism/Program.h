@@ -12,6 +12,7 @@
 #include "src/storage/prism/Module.h"
 #include "src/storage/prism/RewardModel.h"
 #include "src/storage/prism/InitialConstruct.h"
+#include "src/utility/solver.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -419,6 +420,14 @@ namespace storm {
              */
             void checkValidity(Program::ValidityCheckLevel lvl = Program::ValidityCheckLevel::READYFORPROCESSING) const;
             
+            /*!
+             * Creates an equivalent program that contains exactly one module.
+             *
+             * @param smtSolverFactory an SMT solver factory to use. If none is given, the default one is used.
+             * @return The resulting program.
+             */
+            Program flattenModules(std::unique_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::unique_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory())) const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
             /*!
@@ -436,6 +445,18 @@ namespace storm {
             storm::expressions::ExpressionManager& getManager();
             
         private:
+            /*!
+             * This function builds a command that corresponds to the synchronization of the given list of commands.
+             *
+             * @param newCommandIndex The index of the command to construct.
+             * @param actionIndex The index of the action of the resulting command.
+             * @param firstUpdateIndex The index of the first update of the resulting command.
+             * @param actionName The name of the action of the resulting command.
+             * @param commands The commands to synchronize.
+             * @return The resulting command.
+             */
+            Command synchronizeCommands(uint_fast64_t newCommandIndex, uint_fast64_t actionIndex, uint_fast64_t firstUpdateIndex, std::string const& actionName, std::vector<std::reference_wrapper<Command const>> const& commands) const;
+            
             // The manager responsible for the variables/expressions of the program.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
             
@@ -516,6 +537,8 @@ namespace storm {
              */
             Program replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants);
         };
+        
+        std::ostream& operator<<(std::ostream& out, Program::ModelType const& type);
         
     } // namespace prism
 } // namespace storm

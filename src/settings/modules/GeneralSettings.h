@@ -9,6 +9,7 @@ namespace storm {
         enum class EquationSolverType;
         enum class LpSolverType;
         enum class MinMaxTechnique;
+        enum class SmtSolverType;
     }
 
     namespace settings {
@@ -269,6 +270,13 @@ namespace storm {
                 storm::solver::LpSolverType getLpSolver() const;
 
                 /*!
+                 * Retrieves the selected SMT solver.
+                 *
+                 * @return The selected SMT solver.
+                 */
+                storm::solver::SmtSolverType getSmtSolver() const;
+                
+                /*!
                  * Retrieves whether the export-to-dot option was set.
                  *
                  * @return True if the export-to-dot option was set.
@@ -374,6 +382,7 @@ namespace storm {
                 static const std::string timeoutOptionShortName;
                 static const std::string eqSolverOptionName;
                 static const std::string lpSolverOptionName;
+                static const std::string smtSolverOptionName;
                 static const std::string constantsOptionName;
                 static const std::string constantsOptionShortName;
                 static const std::string statisticsOptionName;
