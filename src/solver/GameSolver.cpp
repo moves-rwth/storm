@@ -39,26 +39,27 @@ namespace storm {
                 }
 
                 for (uint_fast64_t pl1State = 0; pl1State < numberOfPlayer1States; ++pl1State) {
-                    uint_fast64_t startRow = player1Matrix.getRowGroupIndices()[pl1State];
-                    uint_fast64_t endRow = player1Matrix.getRowGroupIndices()[pl1State + 1];
-
                     storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_rows relevantRows = player1Matrix.getRowGroup(pl1State);
-                    storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator it = relevantRows.begin();
-                    storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator ite = relevantRows.end();
+                    if (relevantRows.getNumberOfEntries() > 0) {
+                        storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator it = relevantRows.begin();
+                        storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_iterator ite = relevantRows.end();
 
-                    // Set the first value.
-                    tmpResult[pl1State] = player2Result[it->getColumn()];
-                    ++it;
+                        // Set the first value.
+                        tmpResult[pl1State] = player2Result[it->getColumn()];
+                        ++it;
 
-                    // Now iterate through the different values and pick the extremal one.
-                    if (player1Goal == OptimizationDirection::Minimize) {
-                        for (; it != ite; ++it) {
-                            tmpResult[pl1State] = std::min(tmpResult[pl1State], player2Result[it->getColumn()]);
+                        // Now iterate through the different values and pick the extremal one.
+                        if (player1Goal == OptimizationDirection::Minimize) {
+                            for (; it != ite; ++it) {
+                                tmpResult[pl1State] = std::min(tmpResult[pl1State], player2Result[it->getColumn()]);
+                            }
+                        } else {
+                            for (; it != ite; ++it) {
+                                tmpResult[pl1State] = std::max(tmpResult[pl1State], player2Result[it->getColumn()]);
+                            }
                         }
                     } else {
-                        for (; it != ite; ++it) {
-                            tmpResult[pl1State] = std::max(tmpResult[pl1State], player2Result[it->getColumn()]);
-                        }
+                        tmpResult[pl1State] = storm::utility::zero<ValueType>();
                     }
                 }
 
@@ -67,7 +68,7 @@ namespace storm {
                 std::swap(x, tmpResult);
 
                 ++iterations;
-            } while (!converged);
+            } while (!converged && iterations < maximalNumberOfIterations);
         }
 
         template class GameSolver<double>;

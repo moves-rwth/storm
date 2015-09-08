@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <cmath>
+#include <src/storage/sparse/StateType.h>
 
 #include "src/utility/constants.h"
 #include "src/settings/SettingsManager.h"
@@ -94,7 +95,8 @@ namespace storm {
         template class ConstantsComparator<double>;
         template class ConstantsComparator<float>;
         template class ConstantsComparator<int>;
-        
+        template class ConstantsComparator<storm::storage::sparse::state_type>;
+
 #ifdef STORM_HAVE_CARL
         template class ConstantsComparator<RationalFunction>;
         template class ConstantsComparator<Polynomial>;

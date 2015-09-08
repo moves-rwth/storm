@@ -117,13 +117,19 @@ namespace storm {
                     // If we have switched the source state, we possibly need to insert the rows of the last
                     // source state.
                     if (source != lastSource) {
-                        curRow += ((modelInformation.getRowGroupIndices())[lastSource + 1] - (modelInformation.getRowGroupIndices())[lastSource]) -(lastChoice + 1);
+                        curRow += ((modelInformation.getRowGroupIndices())[lastSource + 1] - (modelInformation.getRowGroupIndices())[lastSource]) - (lastChoice + 1);
                     }
 
                     // If we skipped some states, we need to reserve empty rows for all their nondeterministic
-                    // choices.
+                    // choices and create the row groups.
                     for (uint_fast64_t i = lastSource + 1; i < source; ++i) {
+                        matrixBuilder.newRowGroup(modelInformation.getRowGroupIndices()[i]);
                         curRow += ((modelInformation.getRowGroupIndices())[i + 1] - (modelInformation.getRowGroupIndices())[i]);
+                    }
+
+                    // If we moved to the next source, we need to open the next row group.
+                    if (source != lastSource) {
+                        matrixBuilder.newRowGroup(modelInformation.getRowGroupIndices()[source]);
                     }
 
                     // If we advanced to the next state, but skipped some choices, we have to reserve rows
@@ -155,7 +161,7 @@ namespace storm {
                         }
                     }
                     if (source != lastSource) {
-                        // Add create a new rowGroup for the source, if this is the first choice we encounter for this state.
+                        // Create a new rowGroup for the source, if this is the first choice we encounter for this state.
                         matrixBuilder.newRowGroup(curRow);
                     }
                 }
@@ -178,13 +184,8 @@ namespace storm {
 
             // Since we assume the transition rewards are for the transitions of the model, we copy the rowGroupIndices.
             if (isRewardFile) {
-                // We already have rowGroup 0.
-                for (uint_fast64_t index = 1; index < modelInformation.getRowGroupIndices().size() - 1; index++) {
-                    matrixBuilder.newRowGroup(modelInformation.getRowGroupIndices()[index]);
-                }
-            } else {
-                for (uint_fast64_t node = lastSource + 1; node <= firstPass.highestStateIndex; node++) {
-                    matrixBuilder.newRowGroup(curRow + 1);
+                for (uint_fast64_t node = lastSource + 1; node < modelInformation.getRowGroupCount(); node++) {
+                    matrixBuilder.newRowGroup(modelInformation.getRowGroupIndices()[node]);
                 }
             }
 

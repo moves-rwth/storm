@@ -26,7 +26,7 @@ namespace storm {
             uint_fast64_t iterations = 0;
             bool converged = false;
             
-            while (!converged && iterations < maximalNumberOfIterations) {
+            do {
                 // Compute tmp = A * x + b
                 storm::dd::Add<Type> xCopyAsColumn = xCopy.swapVariables(this->rowColumnMetaVariablePairs);
                 storm::dd::Add<Type> tmp = this->gameMatrix.multiplyMatrix(xCopyAsColumn, this->columnMetaVariables);
@@ -34,12 +34,12 @@ namespace storm {
                 
                 // Now abstract from player 2 and player 1 variables.
                 switch (player2Goal) {
-                    case OptimizationDirection::Minimize: tmp.minAbstract(this->player2Variables); break;
+                    case OptimizationDirection::Minimize: tmp = tmp.minAbstract(this->player2Variables); break;
                     case OptimizationDirection::Maximize: tmp = tmp.maxAbstract(this->player2Variables); break;
                 }
 
                 switch (player1Goal) {
-                    case OptimizationDirection::Minimize: tmp.minAbstract(this->player1Variables); break;
+                    case OptimizationDirection::Minimize: tmp = tmp.minAbstract(this->player1Variables); break;
                     case OptimizationDirection::Maximize: tmp = tmp.maxAbstract(this->player1Variables); break;
                 }
                 
@@ -52,7 +52,7 @@ namespace storm {
                 }
                 
                 ++iterations;
-            }
+            } while (!converged && iterations < maximalNumberOfIterations);
             
             return xCopy;
         }
