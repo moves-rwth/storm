@@ -13,14 +13,15 @@
 namespace storm {
     namespace modelchecker{
 
-        template<typename ParametricType, typename ConstantType>
+        template<typename ParametricSparseModelType, typename ConstantType>
         class SparseDtmcRegionModelChecker;
         
-        template<typename ParametricType, typename ConstantType>
-        class SparseDtmcRegionModelChecker<ParametricType, ConstantType>::ParameterRegion{
+        template<typename ParametricSparseModelType, typename ConstantType>
+        class SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::ParameterRegion{
         public:
-            typedef typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::VariableType VariableType;
-            typedef typename SparseDtmcRegionModelChecker<ParametricType, ConstantType>::CoefficientType CoefficientType;
+            typedef typename ParametricSparseModelType::ValueType ParametricType;
+            typedef typename SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::VariableType VariableType;
+            typedef typename SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::CoefficientType CoefficientType;
             
             ParameterRegion(std::map<VariableType, CoefficientType> const& lowerBounds, std::map<VariableType, CoefficientType> const& upperBounds);
             ParameterRegion(std::map<VariableType, CoefficientType>&& lowerBounds, std::map<VariableType, CoefficientType>&& upperBounds);

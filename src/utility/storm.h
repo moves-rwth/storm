@@ -249,8 +249,8 @@ namespace storm {
             if(storm::settings::generalSettings().isParametricRegionSet()){
                 std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given regions." << std::endl;
 
-                auto regions=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction,double>::ParameterRegion::getRegionsFromSettings();                    
-                storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
+                auto regions=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::getRegionsFromSettings();                    
+                storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
                 if (modelchecker.canHandle(*formula.get())) {
                     modelchecker.specifyFormula(formula);
                     modelchecker.checkRegions(regions);

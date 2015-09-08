@@ -37,14 +37,14 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
+    storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
     ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
     modelchecker.specifyFormula(formulas[0]);
     
     //start testing
-    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95");
-    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.4<=pL<=0.65,0.75<=pK<=0.95");
-    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=pL<=0.9,0.2<=pK<=0.5");
+    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95");
+    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.4<=pL<=0.65,0.75<=pK<=0.95");
+    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=pL<=0.9,0.2<=pK<=0.5");
 
     EXPECT_NEAR(0.8369631407, modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
     EXPECT_NEAR(0.8369631407, modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
@@ -65,26 +65,26 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_FALSE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
     modelchecker.checkRegion(exBothRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
     modelchecker.checkRegion(allVioRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
 
     //test smt method (the regions need to be created again, because the old ones have some information stored in their internal state)
-    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95");
-    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.4<=pL<=0.65,0.75<=pK<=0.95");
-    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=pL<=0.9,0.2<=pK<=0.5");
+    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95");
+    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.4<=pL<=0.65,0.75<=pK<=0.95");
+    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=pL<=0.9,0.2<=pK<=0.5");
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::OFF, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     ASSERT_FALSE(storm::settings::regionSettings().doApprox());
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_TRUE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
     modelchecker.checkRegion(exBothRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
     modelchecker.checkRegion(allVioRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
 }
@@ -106,15 +106,15 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
+    storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
     ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
     modelchecker.specifyFormula(formulas[0]);
     
     //start testing
-    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95");
-    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.6<=pK<=0.9,0.5<=TOMsg<=0.95");
-    auto exBothHardRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.5<=pK<=0.75,0.3<=TOMsg<=0.4"); //this region has a local maximum!
-    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3");
+    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95");
+    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.6<=pK<=0.9,0.5<=TOMsg<=0.95");
+    auto exBothHardRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.5<=pK<=0.75,0.3<=TOMsg<=0.4"); //this region has a local maximum!
+    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3");
 
     EXPECT_NEAR(4.367791292, modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
     EXPECT_NEAR(4.367791292, modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
@@ -139,44 +139,44 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_FALSE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
     modelchecker.checkRegion(exBothRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
     modelchecker.checkRegion(exBothHardRegion);
     //At this moment, Approximation should not be able to get a result for this region. (However, it is not wrong if it can)
     EXPECT_TRUE(
-                (exBothHardRegion.getCheckResult()==(storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH)) ||
-                (exBothHardRegion.getCheckResult()==(storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSVIOLATED))
+                (exBothHardRegion.getCheckResult()==(storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH)) ||
+                (exBothHardRegion.getCheckResult()==(storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSVIOLATED))
             );
     modelchecker.checkRegion(allVioRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
 
     //test smt method (the regions need to be created again, because the old ones have some information stored in their internal state)
-    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.7<=pK<=0.9,0.75<=TOMsg<=0.95");
-    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.3<=pK<=0.5,0.5<=TOMsg<=0.75");
-    auto exBothHardRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.5<=pK<=0.75,0.3<=TOMsg<=0.4"); //this region has a local maximum!
-    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3");
+    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.7<=pK<=0.9,0.75<=TOMsg<=0.95");
+    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.3<=pK<=0.5,0.5<=TOMsg<=0.75");
+    auto exBothHardRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.5<=pK<=0.75,0.3<=TOMsg<=0.4"); //this region has a local maximum!
+    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3");
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::OFF, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     ASSERT_FALSE(storm::settings::regionSettings().doApprox());
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_TRUE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
     modelchecker.checkRegion(exBothRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
     modelchecker.checkRegion(exBothHardRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothHardRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothHardRegionSmt.getCheckResult());
     modelchecker.checkRegion(allVioRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
     
     //test smt + approx
-    auto exBothHardRegionSmtApp=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.5<=pK<=0.75,0.3<=TOMsg<=0.4"); //this region has a local maximum!
+    auto exBothHardRegionSmtApp=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.5<=pK<=0.75,0.3<=TOMsg<=0.4"); //this region has a local maximum!
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     ASSERT_TRUE(storm::settings::regionSettings().doApprox());
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_TRUE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(exBothHardRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothHardRegionSmtApp.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothHardRegionSmtApp.getCheckResult());
     
     
     storm::settings::mutableRegionSettings().resetModes();
@@ -199,12 +199,12 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
+    storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
     ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
     modelchecker.specifyFormula(formulas[0]);
     
     //start testing
-    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("");
+    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("");
 
     EXPECT_EQ(storm::utility::infinity<double>(), modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), false)); //instantiation of sampling model
     EXPECT_EQ(storm::utility::infinity<double>(), modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), true)); //instantiation of sampling model
@@ -215,16 +215,16 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_FALSE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
 
     //test smt method (the regions need to be created again, because the old ones have some information stored in their internal state)
-    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("");
+    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("");
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::OFF, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     ASSERT_FALSE(storm::settings::regionSettings().doApprox());
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_TRUE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
 }
@@ -246,14 +246,14 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
+    storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
     ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
     modelchecker.specifyFormula(formulas[0]);
     
     //start testing
-    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9");
-    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=pK<=0.7,0.2<=pL<=0.8,0.15<=TOMsg<=0.65,0.3<=TOAck<=0.9");
-    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=pK<=0.4,0.2<=pL<=0.3,0.15<=TOMsg<=0.3,0.1<=TOAck<=0.2");
+    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9");
+    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=pK<=0.7,0.2<=pL<=0.8,0.15<=TOMsg<=0.65,0.3<=TOAck<=0.9");
+    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=pK<=0.4,0.2<=pL<=0.3,0.15<=TOMsg<=0.3,0.1<=TOAck<=0.2");
 
     EXPECT_NEAR(4.834779705, modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
     EXPECT_NEAR(4.834779705, modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
@@ -268,26 +268,26 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_FALSE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
     modelchecker.checkRegion(exBothRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
     modelchecker.checkRegion(allVioRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
 
     //test smt method (the regions need to be created again, because the old ones have some information stored in their internal state)
-    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9");
-    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=pK<=0.7,0.2<=pL<=0.8,0.15<=TOMsg<=0.65,0.3<=TOAck<=0.9");
-    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=pK<=0.4,0.2<=pL<=0.3,0.15<=TOMsg<=0.3,0.1<=TOAck<=0.2");
+    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9");
+    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=pK<=0.7,0.2<=pL<=0.8,0.15<=TOMsg<=0.65,0.3<=TOAck<=0.9");
+    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=pK<=0.4,0.2<=pL<=0.3,0.15<=TOMsg<=0.3,0.1<=TOAck<=0.2");
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::OFF, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     ASSERT_FALSE(storm::settings::regionSettings().doApprox());
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_TRUE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
     modelchecker.checkRegion(exBothRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
     modelchecker.checkRegion(allVioRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
 }
@@ -309,15 +309,15 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
+    storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
     ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
     modelchecker.specifyFormula(formulas[0]);
     
     //start testing
-    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2");
-    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.75<=PF<=0.8,0.2<=badC<=0.3");
-    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.2");
-    auto allVioHardRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9");
+    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2");
+    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.75<=PF<=0.8,0.2<=badC<=0.3");
+    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.2");
+    auto allVioHardRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9");
 
     EXPECT_NEAR(0.1734086422, modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
     EXPECT_NEAR(0.1734086422, modelchecker.getReachabilityValue<double>(allSatRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
@@ -338,44 +338,44 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_FALSE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
     modelchecker.checkRegion(exBothRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
     modelchecker.checkRegion(allVioRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
     modelchecker.checkRegion(allVioHardRegion);
         //At this moment, Approximation should not be able to get a result for this region. (However, it is not wrong if it can)
     EXPECT_TRUE(
-                (allVioHardRegion.getCheckResult()==(storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED)) ||
-                (allVioHardRegion.getCheckResult()==(storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSVIOLATED))
+                (allVioHardRegion.getCheckResult()==(storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED)) ||
+                (allVioHardRegion.getCheckResult()==(storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSVIOLATED))
             );
 
     //test smt method (the regions need to be created again, because the old ones have some information stored in their internal state)
-    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2");
-    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.75<=PF<=0.8,0.2<=badC<=0.3");
-    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.2");
-    auto allVioHardRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9");
+    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2");
+    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.75<=PF<=0.8,0.2<=badC<=0.3");
+    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.2");
+    auto allVioHardRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9");
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::OFF, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     ASSERT_FALSE(storm::settings::regionSettings().doApprox());
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_TRUE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
     modelchecker.checkRegion(exBothRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
     modelchecker.checkRegion(allVioRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
     modelchecker.checkRegion(allVioHardRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioHardRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioHardRegionSmt.getCheckResult());
     
     //test smt + approx
-    auto allVioHardRegionSmtApp=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9");
+    auto allVioHardRegionSmtApp=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9");
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     ASSERT_TRUE(storm::settings::regionSettings().doApprox());
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_TRUE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allVioHardRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioHardRegionSmtApp.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioHardRegionSmtApp.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
 }
@@ -397,14 +397,14 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
+    storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
     ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
     modelchecker.specifyFormula(formulas[0]);
     
     //start testing
-    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.9<=PF<=0.99");
-    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.8<=PF<=0.9");
-    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.01<=PF<=0.8");
+    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.9<=PF<=0.99");
+    auto exBothRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.8<=PF<=0.9");
+    auto allVioRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.01<=PF<=0.8");
 
     EXPECT_NEAR(0.8430128158, modelchecker.getReachabilityValue<double>(allSatRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
     EXPECT_NEAR(0.8430128158, modelchecker.getReachabilityValue<double>(allSatRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
@@ -421,26 +421,26 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_FALSE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
     modelchecker.checkRegion(exBothRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegion.getCheckResult());
     modelchecker.checkRegion(allVioRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
 
     //test smt method (the regions need to be created again, because the old ones have some information stored in their internal state)
-    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.9<=PF<=0.99");
-    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.8<=PF<=0.9");
-    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("0.01<=PF<=0.8");
+    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.9<=PF<=0.99");
+    auto exBothRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.8<=PF<=0.9");
+    auto allVioRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("0.01<=PF<=0.8");
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::OFF, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     ASSERT_FALSE(storm::settings::regionSettings().doApprox());
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_TRUE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
     modelchecker.checkRegion(exBothRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::EXISTSBOTH), exBothRegionSmt.getCheckResult());
     modelchecker.checkRegion(allVioRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
 }
@@ -462,12 +462,12 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double> modelchecker(*dtmc);
+    storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
     ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
     modelchecker.specifyFormula(formulas[0]);
     
     //start testing
-    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("");
+    auto allSatRegion=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("");
     
     EXPECT_NEAR(0.6119660237, modelchecker.getReachabilityValue<double>(allSatRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
     EXPECT_NEAR(0.6119660237, modelchecker.getReachabilityValue<double>(allSatRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
@@ -480,16 +480,16 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_FALSE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegion);
-    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
+    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegion.getCheckResult());
 
     //test smt method (the regions need to be created again, because the old ones have some information stored in their internal state)
-    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::ParameterRegion::parseRegion("");
+    auto allSatRegionSmt=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::parseRegion("");
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::OFF, storm::settings::modules::RegionSettings::SampleMode::EVALUATE, storm::settings::modules::RegionSettings::SmtMode::FUNCTION);
     ASSERT_FALSE(storm::settings::regionSettings().doApprox());
     ASSERT_TRUE(storm::settings::regionSettings().doSample());
     ASSERT_TRUE(storm::settings::regionSettings().doSmt());
     modelchecker.checkRegion(allSatRegionSmt);
-//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::RationalFunction, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
+//smt    EXPECT_EQ((storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
 
     storm::settings::mutableRegionSettings().resetModes();
 }

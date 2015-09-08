@@ -14,10 +14,11 @@
 namespace storm {
     namespace modelchecker {
         
-        template<typename ParametricType, typename ConstantType>
+        template<typename ParametricSparseModelType, typename ConstantType>
         class SparseDtmcRegionModelChecker {
         public:
             
+            typedef typename ParametricSparseModelType::ValueType ParametricType;
             typedef typename storm::utility::regions::VariableType<ParametricType> VariableType;
             typedef typename storm::utility::regions::CoefficientType<ParametricType> CoefficientType;
             
