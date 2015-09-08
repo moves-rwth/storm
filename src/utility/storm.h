@@ -170,28 +170,26 @@ namespace storm {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
     }
 #endif
-            
-    template<typename ValueType>
-    void verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
-        for (auto const& formula : formulas) {
 
-            std::cout << std::endl << "Model checking property: " << *formula << " ...";
-            std::unique_ptr<storm::modelchecker::CheckResult> result;
-            if (model->getType() == storm::models::ModelType::Dtmc) {
-                std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-                storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
-                if (modelchecker.canHandle(*formula)) {
-                    result = modelchecker.check(*formula);
-                } else {
-                    storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker2(*dtmc);
-                    if (modelchecker2.canHandle(*formula)) {
-                        result = modelchecker2.check(*formula);
-                    }
+    template<typename ValueType>
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        if (model->getType() == storm::models::ModelType::Dtmc) {
+            std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+            storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
+            if (modelchecker.canHandle(*formula)) {
+                result = modelchecker.check(*formula);
+            } else {
+                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker2(*dtmc);
+                if (modelchecker2.canHandle(*formula)) {
+                    result = modelchecker2.check(*formula);
                 }
-            } else if (model->getType() == storm::models::ModelType::Mdp) {
-                std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
+            }
+        } else if (model->getType() == storm::models::ModelType::Mdp) {
+            std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
 #ifdef STORM_HAVE_CUDA
-                if (settings.isCudaSet()) {
+            if (settings.isCudaSet()) {
                     storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
                     result = modelchecker.check(*formula);
                 } else {
@@ -199,16 +197,24 @@ namespace storm {
                     result = modelchecker.check(*formula);
                 }
 #else
-                storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
-                result = modelchecker.check(*formula);
+            storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
+            result = modelchecker.check(*formula);
 #endif
-            } else if (model->getType() == storm::models::ModelType::Ctmc) {
-                std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
+        } else if (model->getType() == storm::models::ModelType::Ctmc) {
+            std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
 
-                storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
-                result = modelchecker.check(*formula);
-            }
+            storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
+            result = modelchecker.check(*formula);
+        }
+        return result;
 
+    }
+            
+    template<typename ValueType>
+    void verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+        for (auto const& formula : formulas) {
+            std::cout << std::endl << "Model checking property: " << *formula << " ...";
+            std::unique_ptr<storm::modelchecker::CheckResult> result(verifySparseModel(model, formula));
             if (result) {
                 std::cout << " done." << std::endl;
                 std::cout << "Result (initial states): ";
@@ -270,33 +276,39 @@ namespace storm {
         }
     }
 #endif
-            
+
+    template<storm::dd::DdType DdType>
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        if (model->getType() == storm::models::ModelType::Dtmc) {
+            std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
+            storm::modelchecker::HybridDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
+            if (modelchecker.canHandle(*formula)) {
+                result = modelchecker.check(*formula);
+            }
+        } else if (model->getType() == storm::models::ModelType::Ctmc) {
+            std::shared_ptr<storm::models::symbolic::Ctmc<DdType>> ctmc = model->template as<storm::models::symbolic::Ctmc<DdType>>();
+            storm::modelchecker::HybridCtmcCslModelChecker<DdType, double> modelchecker(*ctmc);
+            if (modelchecker.canHandle(*formula)) {
+                result = modelchecker.check(*formula);
+            }
+        } else if (model->getType() == storm::models::ModelType::Mdp) {
+            std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
+            storm::modelchecker::HybridMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
+            if (modelchecker.canHandle(*formula)) {
+                result = modelchecker.check(*formula);
+            }
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
+        }
+        return result;
+    }
+
     template<storm::dd::DdType DdType>
     void verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         for (auto const& formula : formulas) {
             std::cout << std::endl << "Model checking property: " << *formula << " ...";
-            std::unique_ptr<storm::modelchecker::CheckResult> result;
-            if (model->getType() == storm::models::ModelType::Dtmc) {
-                std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
-                storm::modelchecker::HybridDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
-                if (modelchecker.canHandle(*formula)) {
-                    result = modelchecker.check(*formula);
-                }
-            } else if (model->getType() == storm::models::ModelType::Ctmc) {
-                std::shared_ptr<storm::models::symbolic::Ctmc<DdType>> ctmc = model->template as<storm::models::symbolic::Ctmc<DdType>>();
-                storm::modelchecker::HybridCtmcCslModelChecker<DdType, double> modelchecker(*ctmc);
-                if (modelchecker.canHandle(*formula)) {
-                    result = modelchecker.check(*formula);
-                }
-            } else if (model->getType() == storm::models::ModelType::Mdp) {
-                std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
-                storm::modelchecker::HybridMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
-                if (modelchecker.canHandle(*formula)) {
-                    result = modelchecker.check(*formula);
-                }
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
-            }
+            std::unique_ptr<storm::modelchecker::CheckResult> result(verifySymbolicModelWithHybridEngine(model, formula));
 
             if (result) {
                 std::cout << " done." << std::endl;
@@ -308,28 +320,33 @@ namespace storm {
             }
         }
     }
-            
+
+    template<storm::dd::DdType DdType>
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        if (model->getType() == storm::models::ModelType::Dtmc) {
+            std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
+            storm::modelchecker::SymbolicDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
+            if (modelchecker.canHandle(*formula)) {
+                result = modelchecker.check(*formula);
+            }
+        } else if (model->getType() == storm::models::ModelType::Mdp) {
+            std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
+            storm::modelchecker::SymbolicMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
+            if (modelchecker.canHandle(*formula)) {
+                result = modelchecker.check(*formula);
+            }
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
+        }
+        return result;
+    }
+
     template<storm::dd::DdType DdType>
     void verifySymbolicModelWithSymbolicEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         for (auto const& formula : formulas) {
             std::cout << std::endl << "Model checking property: " << *formula << " ...";
-            std::unique_ptr<storm::modelchecker::CheckResult> result;
-            if (model->getType() == storm::models::ModelType::Dtmc) {
-                std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
-                storm::modelchecker::SymbolicDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
-                if (modelchecker.canHandle(*formula)) {
-                    result = modelchecker.check(*formula);
-                }
-            } else if (model->getType() == storm::models::ModelType::Mdp) {
-                std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
-                storm::modelchecker::SymbolicMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
-                if (modelchecker.canHandle(*formula)) {
-                    result = modelchecker.check(*formula);
-                }
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
-            }
-
+            std::unique_ptr<storm::modelchecker::CheckResult> result(verifySymbolicModelWithDdEngine(model, formula));
             if (result) {
                 std::cout << " done." << std::endl;
                 std::cout << "Result (initial states): ";
@@ -340,8 +357,8 @@ namespace storm {
             }
         }
     }
-            
-     
+
+
     template<typename ValueType>
     void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         std::shared_ptr<storm::models::ModelBase> model = buildSymbolicModel<ValueType>(program, formulas);
