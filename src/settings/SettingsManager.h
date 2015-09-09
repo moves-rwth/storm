@@ -189,9 +189,10 @@ namespace storm {
             static void addOptionToMap(std::string const& name, std::shared_ptr<Option> const& option, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>>& optionMap);
             
             /*!
+             * Prepares some modules for further changes.
              * Checks all modules for consistency by calling their respective check method.
              */
-            void checkAllModules() const;
+            void finalizeAllModules();
             
             /*!
              * Retrieves the (print) length of the longest option of all modules.
