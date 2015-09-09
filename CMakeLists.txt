@@ -26,7 +26,7 @@ option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
-option(STOMR_COMPILE_WITH_CCACHE "Compile using CCache" ON)
+option(STORM_COMPILE_WITH_CCACHE "Compile using CCache" ON)
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
@@ -44,7 +44,7 @@ endif()
 message(STATUS "StoRM - Building ${CMAKE_BUILD_TYPE} version.")
 message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 
-if(STOMR_COMPILE_WITH_CCACHE)
+if(STORM_COMPILE_WITH_CCACHE)
 	find_program(CCACHE_FOUND ccache)
 	if(CCACHE_FOUND)
 		message(STATUS "SToRM - Using ccache")
@@ -134,6 +134,10 @@ else(CLANG)
 	
 	# Set the no-strict-aliasing target for Clang
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
+endif()
+
+if(CCACHE_FOUND)
+	set(STORM_COMPILED_BY  "${STORM_COMPILED_BY} (ccache)")
 endif()
 
 message(STATUS "StoRM - Using Compiler Configuration: ${STORM_COMPILED_BY}")
