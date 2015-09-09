@@ -17,7 +17,9 @@ namespace storm {
             bool ModuleSettings::check() const {
                 return true;
             }
-            
+
+            void ModuleSettings::finalize() { }
+
             storm::settings::SettingsManager const& ModuleSettings::getSettingsManager() const {
                 return this->settingsManager;
             }
