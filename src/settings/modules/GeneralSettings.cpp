@@ -287,15 +287,11 @@ namespace storm {
             }
             
             GeneralSettings::Engine GeneralSettings::getEngine() const {
-                std::string engine = this->getOption(engineOptionName).getArgumentByName("name").getValueAsString();
-                if (engine == "sparse") {
-                    return GeneralSettings::Engine::Sparse;
-                } else if (engine == "hybrid") {
-                    return GeneralSettings::Engine::Hybrid;
-                } else if (engine == "dd") {
-                    return GeneralSettings::Engine::Dd;
-                }
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown engine '" << engine << "'.");
+                return engine;
+            }
+
+            void GeneralSettings::setEngine(Engine newEngine) {
+                this->engine = newEngine;
             }
             
             bool GeneralSettings::isPrismCompatibilityEnabled() const {
@@ -321,7 +317,22 @@ namespace storm {
                 return this->getOption(parametricOptionName).getHasOptionBeenSet();
             }
 #endif
-            
+
+            void GeneralSettings::finalize() {
+                // Finalize engine.
+                std::string engineStr = this->getOption(engineOptionName).getArgumentByName("name").getValueAsString();
+                if (engineStr == "sparse") {
+                    engine =  GeneralSettings::Engine::Sparse;
+                } else if (engineStr == "hybrid") {
+                    engine = GeneralSettings::Engine::Hybrid;
+                } else if (engineStr == "dd") {
+                    engine = GeneralSettings::Engine::Dd;
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown engine '" << engineStr << "'.");
+                }
+
+            }
+
             bool GeneralSettings::check() const {
                 // Ensure that the model was given either symbolically or explicitly.
                 STORM_LOG_THROW(!isSymbolicSet() || !isExplicitSet(), storm::exceptions::InvalidSettingsException, "The model may be either given in an explicit or a symbolic format, but not both.");

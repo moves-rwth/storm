@@ -171,6 +171,28 @@ namespace storm {
     }
 #endif
 
+    template<typename ValueType, storm::dd::DdType DdType>
+    std::unique_ptr<storm::modelchecker::CheckResult> verifyModel(std::shared_ptr<storm::models::ModelBase> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+        storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+        switch(settings.getEngine()) {
+            case storm::settings::modules::GeneralSettings::Engine::Sparse: {
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
+                STORM_LOG_THROW(sparseModel != nullptr, storm::exceptions::InvalidArgumentException, "Sparse engine requires a sparse input model");
+                return verifySparseModel(sparseModel, formula);
+            }
+            case storm::settings::modules::GeneralSettings::Engine::Hybrid: {
+                std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
+                STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Hybrid engine requires a dd input model");
+                return verifySymbolicModelWithHybridEngine(ddModel, formula);
+            }
+            case storm::settings::modules::GeneralSettings::Engine::Dd: {
+                std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
+                STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Dd engine requires a dd input model");
+                return verifySymbolicModelWithDdEngine(ddModel, formula);
+            }
+        }
+    }
+
     template<typename ValueType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
 
