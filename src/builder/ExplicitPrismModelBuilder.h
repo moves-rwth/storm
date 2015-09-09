@@ -193,9 +193,13 @@ namespace storm {
                 // An optional set of expressions for which labels need to be built.
                 boost::optional<std::vector<storm::expressions::Expression>> expressionLabels;
                 
-                // An optional expression or label that characterizes the terminal states of the model. If this is set,
-                // the outgoing transitions of these states are replaced with a self-loop.
+                // An optional expression or label that characterizes (a subset of) the terminal states of the model. If
+                // this is set, the outgoing transitions of these states are replaced with a self-loop.
                 boost::optional<boost::variant<storm::expressions::Expression, std::string>> terminalStates;
+                
+                // An optional expression or label whose negation characterizes (a subset of) the terminal states of the
+                // model. If this is set, the outgoing transitions of these states are replaced with a self-loop.
+                boost::optional<boost::variant<storm::expressions::Expression, std::string>> negatedTerminalStates;
             };
             
             /*!
