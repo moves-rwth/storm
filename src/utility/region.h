@@ -30,7 +30,7 @@
 
 namespace storm {
     namespace utility{
-        namespace regions {
+        namespace region {
             
 #ifdef STORM_HAVE_CARL
             template<typename FunctionType>

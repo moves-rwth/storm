@@ -9,8 +9,10 @@
 //forward declaration of friend class
 namespace storm {
 	namespace modelchecker {
-            template<typename ParametricType, typename ConstantType>
-            class SparseDtmcRegionModelChecker;
+            namespace region {
+                template<typename ParametricModelType, typename ConstantType>
+                class SparseDtmcRegionModelChecker;
+            }
 	}
 }
             
@@ -19,7 +21,7 @@ namespace storm {
         
         template<typename SparseDtmcModelType>
         class SparseDtmcEliminationModelChecker : public SparsePropositionalModelChecker<SparseDtmcModelType> {
-            template<typename ParametricType, typename ConstantType> friend class storm::modelchecker::SparseDtmcRegionModelChecker;
+            template<typename ParametricModelType, typename ConstantType> friend class storm::modelchecker::region::SparseDtmcRegionModelChecker;
         public:
             typedef typename SparseDtmcModelType::ValueType ValueType;
             typedef typename SparseDtmcModelType::RewardModelType RewardModelType;

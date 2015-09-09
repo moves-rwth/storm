@@ -249,8 +249,8 @@ namespace storm {
             if(storm::settings::generalSettings().isParametricRegionSet()){
                 std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given regions." << std::endl;
 
-                auto regions=storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::ParameterRegion::getRegionsFromSettings();                    
-                storm::modelchecker::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
+                auto regions=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::getRegionsFromSettings();                    
+                storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
                 if (modelchecker.canHandle(*formula.get())) {
                     modelchecker.specifyFormula(formula);
                     modelchecker.checkRegions(regions);
@@ -259,7 +259,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric region check engine currently does not support this property.");
                 }
                // for(auto const& reg : regions){
-               //     std::cout << reg.toString() << "      Result: " << reg.checkResultToString() << std::endl;
+               //     std::cout << reg.toString() << "      Result: " << reg.getCheckResult() << std::endl;
                // }
                 modelchecker.printStatisticsToStream(std::cout);
 

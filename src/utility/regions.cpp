@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "src/utility/regions.h"
+#include "src/utility/region.h"
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/settings/SettingsManager.h"
@@ -21,7 +21,7 @@
 
 namespace storm {
     namespace utility{
-        namespace regions {
+        namespace region {
             
             template<>
             double convertNumber<double, double>(double const& number){

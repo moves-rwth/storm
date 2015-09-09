@@ -1,0 +1,239 @@
+/* 
+ * File:   AbstractSparseRegionModelChecker.h
+ * Author: tim
+ *
+ * Created on September 9, 2015, 12:34 PM
+ */
+
+#ifndef STORM_MODELCHECKER_REGION_ABSTRACTSPARSEREGIONMODELCHECKER_H
+#define	STORM_MODELCHECKER_REGION_ABSTRACTSPARSEREGIONMODELCHECKER_H
+
+#include <ostream>
+
+#include "src/utility/region.h"
+#include "src/modelchecker/region/ParameterRegion.h"
+#include "src/modelchecker/region/ApproximationModel.h"
+#include "src/modelchecker/region/SamplingModel.h"
+
+#include "src/models/sparse/StandardRewardModel.h"
+#include "src/models/sparse/Model.h"
+#include "src/models/sparse/Dtmc.h"
+#include "src/logic/Formulas.h"
+
+namespace storm {
+    namespace modelchecker{
+        namespace region{
+            template<typename ParametricSparseModelType, typename ConstantType>
+            class AbstractSparseRegionModelChecker {
+            public:
+
+                typedef typename ParametricSparseModelType::ValueType ParametricType;
+                typedef typename storm::utility::region::VariableType<ParametricType> VariableType;
+                typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
+
+                explicit AbstractSparseRegionModelChecker(ParametricSparseModelType const& model);
+
+                virtual ~AbstractSparseRegionModelChecker();
+                
+                /*!
+                 * Checks if the given formula can be handled by This region model checker
+                 * @param formula the formula to be checked
+                 */
+                virtual bool canHandle(storm::logic::Formula const& formula) const = 0;
+                
+                /*!
+                 * Specifies the considered formula.
+                 * A few preprocessing steps are performed.
+                 * If another formula has been specified before, all 'context' regarding the old formula is lost.
+                 * 
+                 * @param formula the formula to be considered.
+                 */
+                void specifyFormula(std::shared_ptr<storm::logic::Formula> formula);
+                
+                /*!
+                 * Checks for every given region whether the specified formula holds for all parameters that lie in that region.
+                 * Sets the region checkresult accordingly.
+                 * TODO: set region.satpoint and violated point correctly.
+                 * 
+                 * @note A formula has to be specified first.
+                 * 
+                 * @param region The considered region
+                 */
+                void checkRegions(std::vector<ParameterRegion<ParametricType>>& regions);
+                
+                /*!
+                 * Checks whether the given formula holds for all parameters that lie in the given region.
+                 * Sets the region checkresult accordingly.
+                 * TODO: set region.satpoint and violated point correctly.
+                 * 
+                 * @note A formula has to be specified first.
+                 * 
+                 * @param region The considered region
+                 * 
+                 */
+                void checkRegion(ParameterRegion<ParametricType>& region);
+                
+                /*!
+                 * Returns the reachability Value at the specified point by instantiating the sampling model. 
+                 * 
+                 * @param point The point (i.e. parameter evaluation) at which to compute the reachability value.
+                 * @param evaluateFunction If set, the reachability function is evaluated. Otherwise, the sampling model is instantiated.
+                 */
+                virtual ConstantType getReachabilityValue(std::map<VariableType, CoefficientType>const& point, bool evaluateFunction=false) = 0;
+                
+                /*!
+                 * Returns true iff the given value satisfies the bound given by the specified property
+                 */
+                bool valueIsInBoundOfFormula(ConstantType const& value);
+                
+                /*!
+                 * Returns true iff the given value satisfies the bound given by the specified property
+                 */
+                bool valueIsInBoundOfFormula(CoefficientType const& value);
+                
+                /*!
+                 * Prints statistical information to the given stream.
+                 */
+                void printStatisticsToStream(std::ostream& outstream);
+                
+
+            protected:
+                
+                /*!
+                 * returns the considered model
+                 */
+                ParametricSparseModelType const& getModel() const;
+                bool const& isResultConstant() const;
+                std::shared_ptr<ParametricSparseModelType> const& getSimpleModel() const;
+                bool const& isComputeRewards() const;
+                std::shared_ptr<storm::logic::Formula> const& getSpecifiedFormula() const;
+                ConstantType const& getSpecifiedFormulaBound() const;
+                storm::logic::ComparisonType const& getSpecifiedFormulaCompType() const;
+                bool specifiedFormulaHasUpperBound() const;
+                
+                /*!
+                 * Makes the required preprocessing steps for the specified model and formula
+                 * Computes a simplified version of the model and formula that can be analyzed more efficiently.
+                 * Also checks whether the approximation technique is applicable and whether the result is constant.
+                 * 
+                 * @note this->specifiedFormula and this->computeRewards has to be set accordingly, before calling this function
+                 */
+                virtual void preprocess(std::shared_ptr<ParametricSparseModelType>& simpleModel, std::shared_ptr<storm::logic::Formula>& simpleFormula, bool& isApproximationApplicable, bool& isResultConstant) = 0;
+                
+                /*!
+                 * Instantiates the approximation model to compute bounds on the maximal/minimal reachability probability (or reachability reward).
+                 * If the current region result is EXISTSSAT (or EXISTSVIOLATED), then this function tries to prove ALLSAT (or ALLVIOLATED).
+                 * If this succeeded, then the region check result is changed accordingly.
+                 * If the current region result is UNKNOWN, then this function first tries to prove ALLSAT and if that failed, it tries to prove ALLVIOLATED.
+                 * In any case, the computed bounds are written to the given lowerBounds/upperBounds.
+                 * However, if only the lowerBounds (or upperBounds) have been computed, the other vector is set to a vector of size 0.
+                 * True is returned iff either ALLSAT or ALLVIOLATED could be proved.
+                 */
+                virtual bool checkApproximativeValues(ParameterRegion<ParametricType>& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds)=0; 
+
+                /*!
+                 * Returns the approximation model.
+                 * If it is not yet available, it is computed.
+                 */
+                std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> const& getApproximationModel();
+                
+                /*!
+                 * Checks the value of the function at some sampling points within the given region.
+                 * May set the satPoint and violatedPoint of the regions if they are not yet specified and such points are found
+                 * Also changes the regioncheckresult of the region to EXISTSSAT, EXISTSVIOLATED, or EXISTSBOTH
+                 * 
+                 * @return true if an violated point as well as a sat point has been found during the process
+                 */
+                bool checkSamplePoints(ParameterRegion<ParametricType>& region);
+                
+                /*!
+                 * Checks the value of the function at the given sampling point.
+                 * May set the satPoint and violatedPoint of the regions if thy are not yet specified and such point is given.
+                 * Also changes the regioncheckresult of the region to EXISTSSAT, EXISTSVIOLATED, or EXISTSBOTH
+                 * 
+                 * @param favorViaFunction if not stated otherwise (e.g. in the settings), the sampling will be done via the
+                 *                          reachabilityFunction if this flag is true. If the flag is false, sampling will be 
+                 *                          done via instantiation of the samplingmodel. Note that this argument is ignored,
+                 *                          unless sampling has been turned of in the settings
+                 * 
+                 * @return true if an violated point as well as a sat point has been found, i.e., the check result is changed to EXISTSOTH
+                 */
+                virtual bool checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction=false) = 0;
+                
+                /*!
+                 * Returns the sampling model.
+                 * If it is not yet available, it is computed.
+                 */
+                std::shared_ptr<SamplingModel<ParametricSparseModelType, ConstantType>> const& getSamplingModel();
+                
+                /*!
+                 * Starts the SMTSolver to get the result.
+                 * The current regioncheckresult of the region should be EXISTSSAT or EXISTVIOLATED.
+                 * Otherwise, a sampingPoint will be computed.
+                 * True is returned iff the solver was successful (i.e., it returned sat or unsat)
+                 * A Sat- or Violated point is set, if the solver has found one (not yet implemented!).
+                 * The region checkResult of the given region is changed accordingly.
+                 */
+                virtual bool checkSmt(ParameterRegion<ParametricType>& region)=0; 
+              
+            private:
+                /*!
+                 * initializes the Approximation Model
+                 * 
+                 * @note does not check whether approximation can be applied
+                 */
+                void initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::Formula> formula);
+
+                /*!
+                 * initializes the Sampling Model
+                 */
+                void initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::Formula> formula);
+                
+                // The model this model checker is supposed to analyze.
+                ParametricSparseModelType const& model;
+                //The currently specified formula
+                std::shared_ptr<storm::logic::Formula> specifiedFormula;
+                storm::logic::ComparisonType specifiedFormulaCompType;
+                ConstantType specifiedFormulaBound;
+                //A flag that is true iff we are interested in rewards
+                bool computeRewards;
+                // the original model after states with constant transitions have been eliminated
+                std::shared_ptr<ParametricSparseModelType> simpleModel;
+                // a formula that can be checked on the simplified model
+                std::shared_ptr<storm::logic::Formula> simpleFormula;
+                // a flag that is true if approximation is applicable, i.e., there are only linear functions at transitions of the model
+                bool isApproximationApplicable;
+                // the model that  is used to approximate the reachability values
+                std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> approximationModel;
+                // the model that can be instantiated to check the value at a certain point
+                std::shared_ptr<SamplingModel<ParametricSparseModelType, ConstantType>> samplingModel;
+                // a flag that is true iff the resulting reachability function is constant
+                bool resultConstant;
+                
+                // runtimes and other information for statistics. 
+                uint_fast64_t numOfCheckedRegions;
+                uint_fast64_t numOfRegionsSolvedThroughApproximation;
+                uint_fast64_t numOfRegionsSolvedThroughSampling;
+                uint_fast64_t numOfRegionsSolvedThroughSmt;
+                uint_fast64_t numOfRegionsExistsBoth;
+                uint_fast64_t numOfRegionsAllSat;
+                uint_fast64_t numOfRegionsAllViolated;
+
+                std::chrono::high_resolution_clock::duration timeSpecifyFormula;
+                std::chrono::high_resolution_clock::duration timePreprocessing;
+                std::chrono::high_resolution_clock::duration timeInitApproxModel;
+                std::chrono::high_resolution_clock::duration timeInitSamplingModel;
+                std::chrono::high_resolution_clock::duration timeCheckRegion;
+                std::chrono::high_resolution_clock::duration timeSampling;
+                std::chrono::high_resolution_clock::duration timeApproximation;
+                std::chrono::high_resolution_clock::duration timeSmt;    
+            protected:
+                std::chrono::high_resolution_clock::duration timeComputeReachabilityFunction;
+                std::chrono::high_resolution_clock::duration timeApproxModelInstantiation;
+            };
+        } //namespace region
+    } //namespace modelchecker
+} //namespace storm
+
+#endif	/* STORM_MODELCHECKER_REGION_ABSTRACTSPARSEREGIONMODELCHECKER_H */
+
