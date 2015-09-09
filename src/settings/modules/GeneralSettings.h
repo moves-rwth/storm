@@ -319,6 +319,11 @@ namespace storm {
                 Engine getEngine() const;
 
                 /*!
+                 * Sets the engine for further usage.
+                 */
+                void setEngine(Engine);
+
+                /*!
                  * Retrieves whether the PRISM compatibility mode was enabled.
                  *
                  * @return True iff the PRISM compatibility mode was enabled.
@@ -349,11 +354,14 @@ namespace storm {
 
 
                 bool check() const override;
+                void finalize() override;
 
                 // The name of the module.
                 static const std::string moduleName;
 
             private:
+                Engine engine;
+
                 // Define the string names of the options as constants.
                 static const std::string helpOptionName;
                 static const std::string helpOptionShortName;
