@@ -1,4 +1,5 @@
 #include <boost/functional/hash.hpp>
+#include <src/storage/sparse/StateType.h>
 
 // To detect whether the usage of TBB is possible, this include is neccessary
 #include "storm-config.h"
@@ -143,9 +144,18 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrixBuilder<ValueType>::newRowGroup(index_type startingRow) {
             STORM_LOG_THROW(hasCustomRowGrouping, storm::exceptions::InvalidStateException, "Matrix was not created to have a custom row grouping.");
-            STORM_LOG_THROW(rowGroupIndices.empty() || startingRow >= rowGroupIndices.back(), storm::exceptions::InvalidStateException, "Illegal row group with negative size.");
+            STORM_LOG_THROW(startingRow >= lastRow, storm::exceptions::InvalidStateException, "Illegal row group with negative size.");
             rowGroupIndices.push_back(startingRow);
             ++currentRowGroup;
+
+            // Close all rows from the most recent one to the starting row.
+            for (index_type i = lastRow + 1; i <= startingRow; ++i) {
+                rowIndications.push_back(currentEntryCount);
+            }
+
+            // Reset the most recently seen row/column to allow for proper insertion of the following elements.
+            lastRow = startingRow;
+            lastColumn = 0;
         }
         
         template<typename ValueType>
@@ -156,7 +166,7 @@ namespace storm {
                 rowCount = std::max(rowCount, initialRowCount);
             }
             rowCount = std::max(rowCount, overriddenRowCount);
-            
+
             // If the current row count was overridden, we may need to add empty rows.
             for (index_type i = lastRow + 1; i < rowCount; ++i) {
                 rowIndications.push_back(currentEntryCount);
@@ -196,7 +206,7 @@ namespace storm {
                     rowGroupIndices.push_back(rowCount);
                 }
             }
-            
+
             return SparseMatrix<ValueType>(columnCount, std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices), hasCustomRowGrouping);
         }
         
@@ -1163,16 +1173,16 @@ namespace storm {
         // Explicitly instantiate the entry, builder and the matrix.
         // double
         template class MatrixEntry<typename SparseMatrix<double>::index_type, double>;
-        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, double> const& entry);
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<double>::index_type, double> const& entry);
         template class SparseMatrixBuilder<double>;
         template class SparseMatrix<double>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
         template std::vector<double> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<double> const& otherMatrix) const;
         template bool SparseMatrix<double>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
 
-            // float
+        // float
         template class MatrixEntry<typename SparseMatrix<float>::index_type, float>;
-        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, float> const& entry);
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<float>::index_type, float> const& entry);
         template class SparseMatrixBuilder<float>;
         template class SparseMatrix<float>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<float> const& matrix);
@@ -1181,11 +1191,19 @@ namespace storm {
 
         // int
         template class MatrixEntry<typename SparseMatrix<int>::index_type, int>;
-        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, int> const& entry);
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<int>::index_type, int> const& entry);
         template class SparseMatrixBuilder<int>;
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
         template bool SparseMatrix<int>::isSubmatrixOf(SparseMatrix<int> const& matrix) const;
+
+        // state_type
+        template class MatrixEntry<typename SparseMatrix<storm::storage::sparse::state_type>::index_type, storm::storage::sparse::state_type>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<storm::storage::sparse::state_type>::index_type, storm::storage::sparse::state_type> const& entry);
+        template class SparseMatrixBuilder<storm::storage::sparse::state_type>;
+        template class SparseMatrix<storm::storage::sparse::state_type>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<storm::storage::sparse::state_type> const& matrix);
+        template bool SparseMatrix<int>::isSubmatrixOf(SparseMatrix<storm::storage::sparse::state_type> const& matrix) const;
 
 #ifdef STORM_HAVE_CARL
         // Rat Function

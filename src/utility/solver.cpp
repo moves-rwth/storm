@@ -1,13 +1,13 @@
 #include "src/utility/solver.h"
 
-#include "src/solver/SymbolicGameSolver.h"
-
 #include <vector>
 
 #include "src/solver/SymbolicLinearEquationSolver.h"
 #include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
+#include "src/solver/SymbolicGameSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/solver/GameSolver.h"
 
 #include "src/solver/NativeMinMaxLinearEquationSolver.h"
 #include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
@@ -102,8 +102,7 @@ namespace storm {
             template<typename ValueType>
             void MinMaxLinearEquationSolverFactory<ValueType>::setPreferredTechnique(storm::solver::MinMaxTechniqueSelection preferredTech) {
                 this->prefTech = preferredTech;
-            } 
-
+            }
             
             template<typename ValueType>
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackPolicy) const {
@@ -133,6 +132,10 @@ namespace storm {
                 
             }
 
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::GameSolver<ValueType>> GameSolverFactory<ValueType>::create(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const {
+                return std::unique_ptr<storm::solver::GameSolver<ValueType>>(new storm::solver::GameSolver<ValueType>(player1Matrix, player2Matrix));
+            }
 
             std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
                 storm::solver::LpSolverType t;
@@ -192,7 +195,7 @@ namespace storm {
             template class GmmxxLinearEquationSolverFactory<double>;
             template class NativeLinearEquationSolverFactory<double>;
             template class MinMaxLinearEquationSolverFactory<double>;
-          
+            template class GameSolverFactory<double>;
         }
     }
 }

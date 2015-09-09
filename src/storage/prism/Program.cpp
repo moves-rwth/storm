@@ -1011,7 +1011,6 @@ namespace storm {
                     }
                     
                     // Now we are in a position to start the enumeration over all command variables.
-                    uint_fast64_t modelCount = 0;
                     solver->allSat(allCommandVariables, [&] (storm::solver::SmtSolver::ModelReference& modelReference) -> bool {
                         // Now we need to reconstruct the chosen commands from the valuation of the command variables.
                         std::vector<std::vector<std::reference_wrapper<Command const>>> chosenCommands(possibleCommands.size());
