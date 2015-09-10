@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <set>
 #include <vector>
+#include <ostream>
 
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/Expression.h"
@@ -103,6 +104,24 @@ namespace storm {
                  */
                 std::set<uint_fast64_t> getRelatedExpressions(std::set<storm::expressions::Variable> const& variables) const;
                 
+                /*!
+                 * Retrieves the indices of the expressions in which the given variable appears.
+                 *
+                 * @param variable The variable for which to retrieve the expressions.
+                 * @return The indices of all expressions using the given variable.
+                 */
+                std::set<uint_fast64_t> const& getExpressionsUsingVariable(storm::expressions::Variable const& variable) const;
+                
+                /*!
+                 * Retrieves the expression with the given index.
+                 *
+                 * @param expressionIndex The index of the expression to retrieve.
+                 * @return The corresponding expression.
+                 */
+                storm::expressions::Expression const& getExpression(uint_fast64_t expressionIndex) const;
+                
+                friend std::ostream& operator<<(std::ostream& out, VariablePartition const& partition);
+                
             private:
                 /*!
                  * Merges the blocks with the given indices.
@@ -129,6 +148,8 @@ namespace storm {
                 // The vector of all expressions.
                 std::vector<storm::expressions::Expression> expressions;
             };
+            
+            std::ostream& operator<<(std::ostream& out, VariablePartition const& partition);
             
         }
     }

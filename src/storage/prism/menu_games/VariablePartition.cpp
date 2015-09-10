@@ -1,5 +1,7 @@
 #include "src/storage/prism/menu_games/VariablePartition.h"
 
+#include <boost/algorithm/string/join.hpp>
+
 #include "src/utility/macros.h"
 
 namespace storm {
@@ -65,13 +67,8 @@ namespace storm {
                                 continue;
                             }
                             
-                            for (auto const& variable : variableBlocks[blockToMerge]) {
-                                variableBlocks[blockToKeep].insert(variable);
-                            }
-                            
-                            for (auto const& expression : expressionBlocks[blockToMerge]) {
-                                expressionBlocks[blockToKeep].insert(expression);
-                            }
+                            variableBlocks[blockToKeep].insert(variableBlocks[blockToMerge].begin(), variableBlocks[blockToMerge].end());
+                            expressionBlocks[blockToKeep].insert(expressionBlocks[blockToMerge].begin(), expressionBlocks[blockToMerge].end());
                         }
                     }
                     
@@ -121,6 +118,32 @@ namespace storm {
                 }
                 return result;
             }
+            
+            std::set<uint_fast64_t> const& VariablePartition::getExpressionsUsingVariable(storm::expressions::Variable const& variable) const {
+                STORM_LOG_ASSERT(this->relevantVariables.find(variable) != this->relevantVariables.end(), "Illegal variable '" << variable.getName() << "' for partition.");
+                return this->variableToExpressionsMapping.find(variable)->second;
+            }
+            
+            storm::expressions::Expression const& VariablePartition::getExpression(uint_fast64_t expressionIndex) const {
+                return this->expressions[expressionIndex];
+            }
+
+            std::ostream& operator<<(std::ostream& out, VariablePartition const& partition) {
+                std::vector<std::string> blocks;
+                for (auto const& block : partition.variableBlocks) {
+                    std::vector<std::string> variablesInBlock;
+                    for (auto const& variable : block) {
+                        variablesInBlock.push_back(variable.getName());
+                    }
+                    blocks.push_back("[" + boost::algorithm::join(variablesInBlock, ", ") + "]");
+                }
+                
+                out << "{";
+                out << boost::join(blocks, ", ");
+                out << "}";
+                return out;
+            }
+            
         }
     }
 }
