@@ -106,17 +106,17 @@ namespace storm {
         }
 
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates() {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
         
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates() {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
             this->preserveFormula(formula);
         }
         
         template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates() {
+        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -142,9 +142,15 @@ namespace storm {
                     this->setTerminalStatesFromFormula(sub);
                 }
             } else if (formula.isUntilFormula()) {
-                storm::logic::Formula const& right = formula.asUntilFormula().getLeftSubformula();
+                storm::logic::Formula const& right = formula.asUntilFormula().getRightSubformula();
                 if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
                     this->setTerminalStatesFromFormula(right);
+                }
+                storm::logic::Formula const& left = formula.asUntilFormula().getLeftSubformula();
+                if (left.isAtomicExpressionFormula()) {
+                    negatedTerminalStates = left.asAtomicExpressionFormula().getExpression();
+                } else if (left.isAtomicLabelFormula()) {
+                    negatedTerminalStates = left.asAtomicLabelFormula().getLabel();
                 }
             } else if (formula.isProbabilityOperatorFormula()) {
                 storm::logic::Formula const& sub = formula.asProbabilityOperatorFormula().getSubformula();
@@ -159,6 +165,9 @@ namespace storm {
             // If we already had terminal states, we need to erase them.
             if (terminalStates) {
                 terminalStates.reset();
+            }
+            if (negatedTerminalStates) {
+                negatedTerminalStates.reset();
             }
             
             // If we are not required to build all reward models, we determine the reward models we need to build.
@@ -932,7 +941,8 @@ namespace storm {
                 rewardModelBuilders.emplace_back(deterministicModel, rewardModel.get().hasStateRewards(), rewardModel.get().hasStateActionRewards(), rewardModel.get().hasTransitionRewards());
             }
             
-            // If we were asked to treat some states as terminal states, we cut away their transitions now.
+            // If we were asked to treat some states as terminal states, we determine an expression characterizing the
+            // terminal states of the model that we pass on to the matrix building routine.
             boost::optional<storm::expressions::Expression> terminalExpression;
             if (options.terminalStates) {
                 if (options.terminalStates.get().type() == typeid(storm::expressions::Expression)) {
@@ -942,9 +952,27 @@ namespace storm {
                     terminalExpression = program.getLabelExpression(labelName);
                 }
             }
+            if (options.negatedTerminalStates) {
+                if (options.negatedTerminalStates.get().type() == typeid(storm::expressions::Expression)) {
+                    if (terminalExpression) {
+                        terminalExpression = terminalExpression.get() || !boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
+                    } else {
+                        terminalExpression = !boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
+                    }
+                } else {
+                    std::string const& labelName = boost::get<std::string>(options.negatedTerminalStates.get());
+                    if (terminalExpression) {
+                        terminalExpression = terminalExpression.get() || !program.getLabelExpression(labelName);
+                    } else {
+                        terminalExpression = !program.getLabelExpression(labelName);
+                    }
+                }
+            }
+            if (terminalExpression) {
+                STORM_LOG_TRACE("Making the states satisfying " << terminalExpression.get() << " terminal.");
+            }
             
             modelComponents.choiceLabeling = buildMatrices(program, variableInformation, selectedRewardModels, stateInformation, options.buildCommandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, rewardModelBuilders, terminalExpression);
-            
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();
             
             // Now finalize all reward models.
