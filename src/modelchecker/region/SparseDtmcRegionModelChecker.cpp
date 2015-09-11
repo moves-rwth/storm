@@ -8,6 +8,7 @@
 #include "src/logic/Formulas.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/region/RegionCheckResult.h"
+#include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/RegionSettings.h"
@@ -24,7 +25,7 @@
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/UnexpectedException.h"
-#include "exceptions/NotSupportedException.h"
+#include "src/exceptions/NotSupportedException.h"
 
 
 namespace storm {
@@ -62,21 +63,18 @@ namespace storm {
                     if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
                         return true;
                     }
-                } else if (formula.isConditionalPathFormula()) {
-                    storm::logic::ConditionalPathFormula conditionalPathFormula = formula.asConditionalPathFormula();
-                    if (conditionalPathFormula.getLeftSubformula().isEventuallyFormula() && conditionalPathFormula.getRightSubformula().isEventuallyFormula()) {
-                        return this->canHandle(conditionalPathFormula.getLeftSubformula()) && this->canHandle(conditionalPathFormula.getRightSubformula());
-                    }
                 }
                  STORM_LOG_DEBUG("Region Model Checker could not handle (sub)formula " << formula);
                 return false;
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocess(std::shared_ptr<ParametricSparseModelType>& simpleModel, std::shared_ptr<storm::logic::Formula>& simpleFormula, bool& isApproximationApplicable, bool& isResultConstant){
+            void SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocess(std::shared_ptr<ParametricSparseModelType>& simpleModel,
+                                                                                                   std::shared_ptr<storm::logic::OperatorFormula>& simpleFormula,
+                                                                                                   bool& isApproximationApplicable,
+                                                                                                   boost::optional<ConstantType>& constantResult){
                 STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Input model is required to have exactly one initial state.");
                 //Reset some data
-                this->isResultInfinity=false;
                 this->smtSolver=nullptr;
                 this->reachabilityFunction=nullptr;
 
@@ -85,10 +83,10 @@ namespace storm {
                 boost::optional<std::vector<ParametricType>> stateRewards;
                 if (this->isComputeRewards()) {
                     std::vector<ParametricType> stateRewardsAsVector;
-                    preprocessForRewards(maybeStates, targetStates, stateRewardsAsVector, isApproximationApplicable, isResultConstant);
+                    preprocessForRewards(maybeStates, targetStates, stateRewardsAsVector, isApproximationApplicable, constantResult);
                     stateRewards=std::move(stateRewardsAsVector);
                 } else {
-                    preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, isResultConstant);
+                    preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, constantResult);
                 }
                 // Determine the set of states that is reachable from the initial state without jumping over a target state.
                 storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, targetStates);
@@ -220,22 +218,26 @@ namespace storm {
                 // the final model
                 simpleModel = std::make_shared<ParametricSparseModelType>(matrixBuilder.build(), std::move(labeling), std::move(rewardModels), std::move(noChoiceLabeling));
                 // the corresponding formula
-                std::shared_ptr<storm::logic::Formula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
+                std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
                 if(this->isComputeRewards()){
-                    simpleFormula = std::shared_ptr<storm::logic::Formula>(new storm::logic::ReachabilityRewardFormula(targetFormulaPtr));
+                    std::shared_ptr<storm::logic::ReachabilityRewardFormula> reachRewFormula(new storm::logic::ReachabilityRewardFormula(targetFormulaPtr));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::RewardOperatorFormula(boost::optional<std::string>(), this->getSpecifiedFormula()->getComparisonType(), this->getSpecifiedFormulaBound(), reachRewFormula));
                 } else {
-                    simpleFormula = std::shared_ptr<storm::logic::Formula>(new storm::logic::EventuallyFormula(targetFormulaPtr));
+                    std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(this->getSpecifiedFormula()->getComparisonType(), this->getSpecifiedFormulaBound(), eventuallyFormula));
                 }
                 //Check if the reachability function needs to be computed
-                if((isResultConstant && this->reachabilityFunction==nullptr) || //If the result is constant, we can already compute it now.
-                        (storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || //The smt solver will need it
-                        (storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){ //The sampling will need it 
+                if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 
+                        (storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE)){
                     this->computeReachabilityFunction(*simpleModel);
                 }
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocessForProbabilities(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates, bool& isApproximationApplicable /* = 0 */, bool& isResultConstant /* = 0 */) {
+            void SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocessForProbabilities(storm::storage::BitVector& maybeStates,
+                                                                                                                   storm::storage::BitVector& targetStates,
+                                                                                                                   bool& isApproximationApplicable,
+                                                                                                                   boost::optional<ConstantType>& constantResult) {
                 //Get Target States
                 storm::logic::AtomicLabelFormula const& labelFormula = this->getSpecifiedFormula()->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().asAtomicLabelFormula();
                 storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType> modelChecker(this->getModel());
@@ -249,14 +251,14 @@ namespace storm {
                 if (!maybeStates.get(initialState)) {
                     STORM_LOG_WARN("The probability of the initial state is constant (zero or one)");
                     this->reachabilityFunction = std::make_shared<ParametricType>(statesWithProbability01.first.get(initialState) ? storm::utility::zero<ParametricType>() : storm::utility::one<ParametricType>());
-                    isResultConstant=true;
+                    constantResult = statesWithProbability01.first.get(initialState) ? storm::utility::zero<ConstantType>() : storm::utility::one<ConstantType>();
                     return; //nothing else to do...
                 }
                 //extend target states
                 targetStates=statesWithProbability01.second;
                 //check if approximation is applicable and whether the result is constant
                 isApproximationApplicable=true;
-                isResultConstant=true;
+                bool isResultConstant=true;
                 for (auto state=maybeStates.begin(); (state!=maybeStates.end()) && isApproximationApplicable; ++state) {
                     for(auto const& entry : this->getModel().getTransitionMatrix().getRow(*state)){
                         if(!storm::utility::isConstant(entry.getValue())){
@@ -268,12 +270,19 @@ namespace storm {
                         }
                     }
                 }
-                STORM_LOG_WARN_COND(!isResultConstant, "For the given property, the reachability Value is constant, i.e., independent of the region");
+                if(isResultConstant){
+                    STORM_LOG_WARN("For the given property, the reachability Value is constant, i.e., independent of the region");
+                    constantResult = storm::utility::region::convertNumber<ConstantType>(-1.0);
+                }
             }
 
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocessForRewards(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates, std::vector<ParametricType>& stateRewards, bool& isApproximationApplicable /* = true */, bool& isResultConstant /* = false */) {
+            void SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocessForRewards(storm::storage::BitVector& maybeStates,
+                                                                                                             storm::storage::BitVector& targetStates,
+                                                                                                             std::vector<ParametricType>& stateRewards,
+                                                                                                             bool& isApproximationApplicable,
+                                                                                                             boost::optional<ConstantType>& constantResult) {
                 //get the correct reward model
                 ParametricRewardModelType const* rewardModel;
                 if(this->getSpecifiedFormula()->asRewardOperatorFormula().hasRewardModelName()){
@@ -299,18 +308,15 @@ namespace storm {
                 storm::storage::sparse::state_type initialState = *this->getModel().getInitialStates().begin();
                 if (!maybeStates.get(initialState)) {
                     STORM_LOG_WARN("The expected reward of the initial state is constant (infinity or zero)");
-                    if(statesWithProbability1.get(initialState)){
-                        this->reachabilityFunction = std::make_shared<ParametricType>(storm::utility::zero<ParametricType>());
-                    } else {
-                        this->reachabilityFunction = std::make_shared<ParametricType>(storm::utility::one<ParametricType>());
-                        this->isResultInfinity=true;
-                    }
-                    isResultConstant=true;
+                    // Note: storm::utility::infinity<storm::RationalFunction> does not work at this moment.
+                    // In that case, we are going to throw in exception if the function is accessed (i.e. in getReachabilityFunction);
+                    this->reachabilityFunction = statesWithProbability1.get(initialState) ? std::make_shared<ParametricType>(storm::utility::zero<ParametricType>()) : nullptr;
+                    constantResult = statesWithProbability1.get(initialState) ? storm::utility::zero<ConstantType>() : storm::utility::infinity<ConstantType>();
                     return; //nothing else to do...
                 }
                  //check if approximation is applicable and whether the result is constant
                 isApproximationApplicable=true;
-                isResultConstant=true;
+                bool isResultConstant=true;
                 std::set<VariableType> rewardPars; //the set of parameters that occur on a reward function
                 std::set<VariableType> probPars;   //the set of parameters that occur on a probability function
                 for (auto state=maybeStates.begin(); state!=maybeStates.end() && isApproximationApplicable; ++state) {
@@ -357,7 +363,10 @@ namespace storm {
                         break;
                     }
                 }
-                STORM_LOG_WARN_COND(!isResultConstant, "For the given property, the reachability Value is constant, i.e., independent of the region");
+                if(isResultConstant){
+                    STORM_LOG_WARN("For the given property, the reachability Value is constant, i.e., independent of the region");
+                    constantResult = storm::utility::region::convertNumber<ConstantType>(-1.0);
+                }
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -400,7 +409,7 @@ namespace storm {
                 std::chrono::high_resolution_clock::time_point timeMDPBuildEnd = std::chrono::high_resolution_clock::now();
                 this->timeApproxModelInstantiation += timeMDPBuildEnd-timeMDPBuildStart;
 
-                // Decide whether to prove allsat or allviolated. (Hence, there are 4 cases)
+                // Decide whether to prove allsat or allviolated. 
                 bool proveAllSat;
                 switch (region.getCheckResult()){
                     case RegionCheckResult::UNKNOWN: 
@@ -494,11 +503,11 @@ namespace storm {
                 if((storm::settings::regionSettings().getSampleMode()==storm::settings::modules::RegionSettings::SampleMode::EVALUATE) ||
                         (!storm::settings::regionSettings().doSample() && favorViaFunction)){
                     //evaluate the reachability function
-                    valueInBoundOfFormula = this->valueIsInBoundOfFormula(this->getReachabilityValue(point, true));
+                    valueInBoundOfFormula = this->valueIsInBoundOfFormula(this->evaluateReachabilityFunction(point));
                 }
                 else{
                     //instantiate the sampling model
-                    valueInBoundOfFormula = this->valueIsInBoundOfFormula(this->getReachabilityValue(point, false));
+                    valueInBoundOfFormula = this->valueIsInBoundOfFormula(this->getReachabilityValue(point));
                 }
 
                 if(valueInBoundOfFormula){
@@ -527,38 +536,21 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             std::shared_ptr<typename SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::ParametricType> const& SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::getReachabilityFunction() {
                 if(this->reachabilityFunction==nullptr){
+                    //Todo: remove workaround (infinity<storm::RationalNumber>() does not work)
+                    std::map<VariableType, CoefficientType> emptySubstitution;
+                    if(this->isResultConstant() && this->getReachabilityValue(emptySubstitution)==storm::utility::infinity<ConstantType>()){
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Requested the reachability function but it can not be represented (The value is infinity)");
+                        return this->reachabilityFunction;
+                    }
                     STORM_LOG_WARN("Reachability Function requested but it has not been computed when specifying the formula. Will compute it now.");
                     computeReachabilityFunction(*this->getSimpleModel());
                 }
+                STORM_LOG_THROW((!this->isResultConstant() || storm::utility::isConstant(*this->reachabilityFunction)), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
                 return this->reachabilityFunction;
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            ConstantType SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::getReachabilityValue(std::map<VariableType, CoefficientType> const& point, bool evaluateFunction) {
-                if(this->isResultConstant()){
-                    //Todo: remove workaround (infinity<storm::RationalNumber>() does not work)
-                    if(this->isResultInfinity){
-                        return storm::utility::infinity<ConstantType>();
-                    }
-                    STORM_LOG_THROW(storm::utility::isConstant(*getReachabilityFunction()), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
-                    return storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(*getReachabilityFunction()));
-                }
-                if(evaluateFunction){
-                    return storm::utility::region::convertNumber<ConstantType>(this->evaluateReachabilityFunction(point));
-                } else {
-                    this->getSamplingModel()->instantiate(point);
-                    return storm::utility::region::convertNumber<ConstantType>(this->getSamplingModel()->computeValues()[*this->getSamplingModel()->getModel()->getInitialStates().begin()]);
-                }
-            }
-            
-            template<typename ParametricSparseModelType, typename ConstantType>
             typename SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::CoefficientType SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::evaluateReachabilityFunction(std::map<VariableType, CoefficientType> const& point) {
-                if(this->isResultConstant()){
-                    //Todo: remove workaround (infinity<storm::RationalNumber>() does not work)
-                    STORM_LOG_THROW(!this->isResultInfinity, storm::exceptions::NotSupportedException, "Requested the reachability value but can not represent it as a Coefficient type (The value is infinity)");
-                    STORM_LOG_THROW(storm::utility::isConstant(*getReachabilityFunction()), storm::exceptions::UnexpectedException, "The result was assumed to be constant but it isn't.");
-                    return storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(*getReachabilityFunction()));
-                }
                 return storm::utility::region::evaluateFunction(*getReachabilityFunction(), point);
             }
 
@@ -678,7 +670,7 @@ namespace storm {
                 // Hence: If  f(x) > p is unsat, the property is satisfied for all parameters.
 
                 storm::logic::ComparisonType proveAllSatRel; //the relation from the property needs to be inverted
-                switch (this->getSpecifiedFormulaCompType()) {
+                switch (this->getSpecifiedFormula()->getComparisonType()) {
                     case storm::logic::ComparisonType::Greater:
                         proveAllSatRel=storm::logic::ComparisonType::LessEqual;
                         break;
@@ -705,7 +697,7 @@ namespace storm {
                 //Property:    P<=p [ F 'target' ] holds iff...
                 // f(x)         <= p
                 // Hence: If f(x)  <= p is unsat, the property is violated for all parameters. 
-                storm::logic::ComparisonType proveAllViolatedRel = this->getSpecifiedFormulaCompType();
+                storm::logic::ComparisonType proveAllViolatedRel = this->getSpecifiedFormula()->getComparisonType();
                 storm::utility::region::addGuardedConstraintToSmtSolver(this->smtSolver, proveAllViolatedVar, *getReachabilityFunction(), proveAllViolatedRel, bound);          
             }
 
@@ -714,7 +706,6 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             template class SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
 #endif
-            //note: for other template instantiations, add rules for the typedefs of VariableType and CoefficientType in utility/regions.h
         } // namespace region 
     } // namespace modelchecker
 } // namespace storm

@@ -20,10 +20,10 @@ namespace storm {
         namespace region {
         
             template<typename ParametricSparseModelType, typename ConstantType>
-            ApproximationModel<ParametricSparseModelType, ConstantType>::ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::Formula> formula) : formula(formula){
-                if(this->formula->isEventuallyFormula()){
+            ApproximationModel<ParametricSparseModelType, ConstantType>::ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula) : formula(formula){
+                if(this->formula->isProbabilityOperatorFormula()){
                     this->computeRewards=false;
-                } else if(this->formula->isReachabilityRewardFormula()){
+                } else if(this->formula->isRewardOperatorFormula()){
                     this->computeRewards=true;
                     STORM_LOG_THROW(parametricModel.hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the approximation model should be unique");
                     STORM_LOG_THROW(parametricModel.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the approximation model should have state rewards only");
@@ -328,11 +328,11 @@ namespace storm {
                     }
                     //perform model checking on the mdp
                     boost::optional<std::string> noRewardModelName; //it should be uniquely given
-                    resultPtr = modelChecker.computeReachabilityRewards(this->formula->asReachabilityRewardFormula(), noRewardModelName, false, optDir);
+                    resultPtr = modelChecker.computeReachabilityRewards(this->formula->asRewardOperatorFormula().getSubformula().asReachabilityRewardFormula(), noRewardModelName, false, optDir);
                 }
                 else {
                     //perform model checking on the mdp
-                    resultPtr = modelChecker.computeEventuallyProbabilities(this->formula->asEventuallyFormula(), false, optDir);
+                    resultPtr = modelChecker.computeEventuallyProbabilities(this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula(), false, optDir);
                 }
                 return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
             }
@@ -340,6 +340,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
             template class ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+            template class ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
 #endif
         } //namespace region
     }

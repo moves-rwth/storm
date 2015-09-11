@@ -31,7 +31,7 @@ namespace storm {
                 /*!
                  * @note this will not check whether approximation is applicable
                  */
-                ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::Formula> formula);
+                ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula);
                 virtual ~ApproximationModel();
 
                 /*!
@@ -129,7 +129,7 @@ namespace storm {
                 //The Model with which we work
                 std::shared_ptr<storm::models::sparse::Mdp<ConstantType>> model;
                 //The formula for which we will compute the values
-                std::shared_ptr<storm::logic::Formula> formula;
+                std::shared_ptr<storm::logic::OperatorFormula> formula;
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
 

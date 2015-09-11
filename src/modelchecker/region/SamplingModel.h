@@ -14,7 +14,7 @@
 #include "src/utility/region.h"
 
 #include "src/logic/Formulas.h"
-#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Model.h"
 #include "src/storage/SparseMatrix.h"
 
 namespace storm {
@@ -26,14 +26,17 @@ namespace storm {
                 typedef typename ParametricSparseModelType::ValueType ParametricType;
                 typedef typename storm::utility::region::VariableType<ParametricType> VariableType;
                 typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
-
-                SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::Formula> formula);
+                
+                /*!
+                 * Creates a sampling model.
+                 */
+                SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula);
                 virtual ~SamplingModel();
 
                 /*!
                  * returns the underlying model
                  */
-                std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>> const& getModel() const;
+                std::shared_ptr<storm::models::sparse::Model<ConstantType>> const& getModel() const;
 
                 /*!
                  * Instantiates the underlying model according to the given point
@@ -55,9 +58,9 @@ namespace storm {
                 void initializeRewards(ParametricSparseModelType const& parametricModel, boost::optional<std::vector<ConstantType>>& stateRewards, std::vector<TableEntry*>& rewardEntryToEvalTableMapping, TableEntry* constantEntry);
 
                 //The model with which we work
-                std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>> model;
+                std::shared_ptr<storm::models::sparse::Model<ConstantType>> model;
                 //The formula for which we will compute the values
-                std::shared_ptr<storm::logic::Formula> formula;
+                std::shared_ptr<storm::logic::OperatorFormula> formula;
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
 

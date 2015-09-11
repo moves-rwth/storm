@@ -46,18 +46,18 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=pL<=0.65,0.75<=pK<=0.95");
     auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pL<=0.9,0.2<=pK<=0.5");
 
-    EXPECT_NEAR(0.8369631407, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(0.8369631407, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.0476784174, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.0476784174, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.9987948367, modelchecker.getReachabilityValue(exBothRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(0.9987948367, modelchecker.getReachabilityValue(exBothRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.6020480995, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.6020480995, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(1.0000000000, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(1.0000000000, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.9456084185, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.9456084185, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
+    EXPECT_NEAR(0.8369631407, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.8369631407, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.0476784174, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.0476784174, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.9987948367, modelchecker.getReachabilityValue(exBothRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.9987948367, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(exBothRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.6020480995, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.6020480995, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(exBothRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.0000000000, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.0000000000, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.9456084185, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.9456084185, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
     
     //test approximative method
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
@@ -116,22 +116,22 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     auto exBothHardRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.5<=pK<=0.75,0.3<=TOMsg<=0.4"); //this region has a local maximum!
     auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.3,0.2<=TOMsg<=0.3");
 
-    EXPECT_NEAR(4.367791292, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(4.367791292, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(3.044795147, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(3.044795147, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(3.182535759, modelchecker.getReachabilityValue(exBothRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(3.182535759, modelchecker.getReachabilityValue(exBothRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(2.609602197, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(2.609602197, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(1.842551039, modelchecker.getReachabilityValue(exBothHardRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(1.842551039, modelchecker.getReachabilityValue(exBothHardRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(2.453500364, modelchecker.getReachabilityValue(exBothHardRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(2.453500364, modelchecker.getReachabilityValue(exBothHardRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.6721974438, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(0.6721974438, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(1.308324558, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(1.308324558, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
+    EXPECT_NEAR(4.367791292, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(4.367791292, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(3.044795147, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(3.044795147, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(3.182535759, modelchecker.getReachabilityValue(exBothRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(3.182535759, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(exBothRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(2.609602197, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(2.609602197, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(exBothRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.842551039, modelchecker.getReachabilityValue(exBothHardRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.842551039, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(exBothHardRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(2.453500364, modelchecker.getReachabilityValue(exBothHardRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(2.453500364, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(exBothHardRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.6721974438, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.6721974438, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.308324558, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.308324558, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
     
     //test approximative method
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
@@ -206,8 +206,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("");
 
-    EXPECT_EQ(storm::utility::infinity<double>(), modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), false)); //instantiation of sampling model
-    EXPECT_EQ(storm::utility::infinity<double>(), modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), true)); //instantiation of sampling model
+    EXPECT_EQ(storm::utility::infinity<double>(), modelchecker.getReachabilityValue(allSatRegion.getLowerBounds()));
     
     //test approximative method
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
@@ -255,12 +254,12 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.7,0.2<=pL<=0.8,0.15<=TOMsg<=0.65,0.3<=TOAck<=0.9");
     auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=pK<=0.4,0.2<=pL<=0.3,0.15<=TOMsg<=0.3,0.1<=TOAck<=0.2");
 
-    EXPECT_NEAR(4.834779705, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(4.834779705, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(4.674651623, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(4.674651623, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.4467496536, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(0.4467496536, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
+    EXPECT_NEAR(4.834779705, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(4.834779705, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(4.674651623, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(4.674651623, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(exBothRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.4467496536, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.4467496536, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
     
     //test approximative method
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
@@ -319,18 +318,18 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.2");
     auto allVioHardRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.95,0.2<=badC<=0.9");
 
-    EXPECT_NEAR(0.1734086422, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(0.1734086422, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.47178, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.47178, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.7085157883, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.7085157883, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.5095205203, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(0.5095205203, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.6819701472, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(0.6819701472, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.999895897, modelchecker.getReachabilityValue(allVioHardRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.999895897, modelchecker.getReachabilityValue(allVioHardRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
+    EXPECT_NEAR(0.1734086422, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.1734086422, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.47178, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.47178, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.7085157883, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.7085157883, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(exBothRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.5095205203, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.5095205203, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.6819701472, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.6819701472, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.999895897, modelchecker.getReachabilityValue(allVioHardRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.999895897, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioHardRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
     
     //test approximative method
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
@@ -406,14 +405,14 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.8<=PF<=0.9");
     auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.01<=PF<=0.8");
 
-    EXPECT_NEAR(0.8430128158, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.8430128158, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.7731321947, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.7731321947, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.4732302663, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(0.4732302663, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.7085157883, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds(), false), storm::settings::generalSettings().getPrecision()); //instantiation of sampling model
-    EXPECT_NEAR(0.7085157883, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
+    EXPECT_NEAR(0.8430128158, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.8430128158, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.7731321947, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.7731321947, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(exBothRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.4732302663, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.4732302663, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.7085157883, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.7085157883, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allVioRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
     
     //test approximative method
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
@@ -465,14 +464,13 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
     ASSERT_TRUE(modelchecker.canHandle(*formulas[0]));
     modelchecker.specifyFormula(formulas[0]);
-    
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("");
     
-    EXPECT_NEAR(0.6119660237, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.6119660237, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.6119660237, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), false),  storm::settings::generalSettings().getPrecision()); //evaluation of function
-    EXPECT_NEAR(0.6119660237, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds(), true),  storm::settings::generalSettings().getPrecision()); //evaluation of function
+    EXPECT_NEAR(0.6119660237, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.6119660237, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getUpperBounds())),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.6119660237, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds()),  storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.6119660237, storm::utility::region::convertNumber<double>(modelchecker.evaluateReachabilityFunction(allSatRegion.getLowerBounds())),  storm::settings::generalSettings().getPrecision());
     
     //test approximative method
     storm::settings::mutableRegionSettings().modifyModes(storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST, storm::settings::modules::RegionSettings::SampleMode::INSTANTIATE, storm::settings::modules::RegionSettings::SmtMode::OFF);
@@ -491,6 +489,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     modelchecker.checkRegion(allSatRegionSmt);
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
 
+    std::cout << "End" << std::endl;
     storm::settings::mutableRegionSettings().resetModes();
 }
 

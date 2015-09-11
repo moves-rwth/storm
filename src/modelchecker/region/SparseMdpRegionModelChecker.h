@@ -1,19 +1,17 @@
-#ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
-#define STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEMDPREGIONMODELCHECKER_H_
+#define STORM_MODELCHECKER_REACHABILITY_SPARSEMDPREGIONMODELCHECKER_H_
 
 #include "src/modelchecker/region/AbstractSparseRegionModelChecker.h"
 
 #include "src/models/sparse/StandardRewardModel.h"
-#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Mdp.h"
 #include "src/utility/region.h"
-#include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
-#include "src/solver/Smt2SmtSolver.h"
 
 namespace storm {
     namespace modelchecker {
         namespace region {
             template<typename ParametricSparseModelType, typename ConstantType>
-            class SparseDtmcRegionModelChecker : public AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType> {
+            class SparseMdpRegionModelChecker : public AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType> {
             public:
 
                 typedef typename ParametricSparseModelType::ValueType ParametricType;
@@ -21,28 +19,15 @@ namespace storm {
                 typedef typename storm::utility::region::VariableType<ParametricType> VariableType;
                 typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
 
-                explicit SparseDtmcRegionModelChecker(ParametricSparseModelType const& model);
+                explicit SparseMdpRegionModelChecker(ParametricSparseModelType const& model);
 
-                virtual ~SparseDtmcRegionModelChecker();
+                virtual ~SparseMdpRegionModelChecker();
 
                 /*!
                  * Checks if the given formula can be handled by This region model checker
                  * @param formula the formula to be checked
                  */
                 virtual bool canHandle(storm::logic::Formula const& formula) const;
-
-                /*!
-                 * Returns the reachability  function. 
-                 * If it is not yet available, it is computed.
-                 */
-                std::shared_ptr<ParametricType> const& getReachabilityFunction();
-                
-                /*!
-                 * Evaluates the reachability function with the given substitution.
-                 * Makes some checks for the case that the result should be constant.
-                 * @param point The point (i.e. parameter evaluation) at which to compute the reachability value.
-                 */
-                CoefficientType evaluateReachabilityFunction(std::map<VariableType, CoefficientType>const& point);
 
             protected:
                 
@@ -71,25 +56,6 @@ namespace storm {
                 void preprocessForProbabilities(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates, bool& isApproximationApplicable, boost::optional<ConstantType>& constantResult);
 
                 /*!
-                 * Does some sanity checks and preprocessing steps on the currently specified model and 
-                 * reachability reward formula, i.e.
-                 * * Computes maybeStates, targetStates
-                 * * Computes a new stateReward vector that considers state+transition rewards of the original model. (in a sense that we can abstract away from transition rewards)
-                 * * Sets whether approximation is applicable
-                 * * If the result is constant, it is already computed or set to -1
-                 * 
-                 * @note stateRewards.size will equal to maybeStates.numberOfSetBits
-                 * 
-                 */
-                void preprocessForRewards(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates, std::vector<ParametricType>& stateRewards, bool& isApproximationApplicable, boost::optional<ConstantType>& constantResult);
-
-                /*!
-                 * Computes the reachability function via state elimination
-                 * @note computeFlagsAndSimplifiedModel should be called before calling this
-                 */
-                void computeReachabilityFunction(ParametricSparseModelType const& simpleModel);
-
-                /*!
                  * Instantiates the approximation model to compute bounds on the maximal/minimal reachability probability (or reachability reward).
                  * If the current region result is EXISTSSAT (or EXISTSVIOLATED), then this function tries to prove ALLSAT (or ALLVIOLATED).
                  * If this succeeded, then the region check result is changed accordingly.
@@ -114,31 +80,9 @@ namespace storm {
                  */
                 virtual bool checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction=false);
 
-                /*!
-                 * Starts the SMTSolver to get the result.
-                 * The current regioncheckresult of the region should be EXISTSSAT or EXISTVIOLATED.
-                 * Otherwise, a sampingPoint will be computed.
-                 * True is returned iff the solver was successful (i.e., it returned sat or unsat)
-                 * A Sat- or Violated point is set, if the solver has found one (not yet implemented!).
-                 * The region checkResult of the given region is changed accordingly.
-                 */
-                bool checkSmt(ParameterRegion<ParametricType>& region); 
-
-                //initializes this->smtSolver which can later be used to give an exact result regarding the whole model.
-                void initializeSMTSolver();
-
-                // The  function for the reachability probability (or: reachability reward) in the initial state 
-                std::shared_ptr<ParametricType> reachabilityFunction;
-                
-                // Instance of an elimination model checker to access its functions
-                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ParametricType>> eliminationModelChecker;
-                
-                // the smt solver that is used to prove properties with the help of the reachabilityFunction
-                std::shared_ptr<storm::solver::Smt2SmtSolver> smtSolver;
-
             };
         } //namespace region
     } // namespace modelchecker
 } // namespace storm
 
-#endif /* STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_REACHABILITY_SPARSEMDPREGIONMODELCHECKER_H_ */

@@ -6,7 +6,11 @@
  */
 
 #include "src/modelchecker/region/SamplingModel.h"
+
+#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Mdp.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
+#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/utility/macros.h"
 #include "src/utility/region.h"
@@ -14,16 +18,18 @@
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "models/sparse/StandardRewardModel.h"
+#include "cuddObj.hh"
+#include "exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace modelchecker {
         namespace region {
         
             template<typename ParametricSparseModelType, typename ConstantType>
-            SamplingModel<ParametricSparseModelType, ConstantType>::SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::Formula> formula) : formula(formula){
-                if(this->formula->isEventuallyFormula()){
+            SamplingModel<ParametricSparseModelType, ConstantType>::SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula) : formula(formula){
+                if(this->formula->isProbabilityOperatorFormula()){
                     this->computeRewards=false;
-                } else if(this->formula->isReachabilityRewardFormula()){
+                } else if(this->formula->isRewardOperatorFormula()){
                     this->computeRewards=true;
                     STORM_LOG_THROW(parametricModel.hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should be unique");
                     STORM_LOG_THROW(parametricModel.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should have state rewards only");
@@ -48,9 +54,17 @@ namespace storm {
 
                 //Obtain other model ingredients and the sampling model itself
                 storm::models::sparse::StateLabeling labeling(parametricModel.getStateLabeling());
-                boost::optional<storm::storage::SparseMatrix<ConstantType>> noTransitionRewards;
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;  
-                this->model=std::make_shared<storm::models::sparse::Dtmc<ConstantType>>(std::move(probabilityMatrix), std::move(labeling), std::move(rewardModels), std::move(noChoiceLabeling));
+                switch(parametricModel.getType()){
+                    case storm::models::ModelType::Dtmc:
+                        this->model=std::make_shared<storm::models::sparse::Dtmc<ConstantType>>(std::move(probabilityMatrix), std::move(labeling), std::move(rewardModels), std::move(noChoiceLabeling));
+                        break;
+                    case storm::models::ModelType::Mdp:
+                        this->model=std::make_shared<storm::models::sparse::Mdp<ConstantType>>(std::move(probabilityMatrix), std::move(labeling), std::move(rewardModels), std::move(noChoiceLabeling));
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Tried to build a sampling model for an unsupported model type");
+                }
 
                 //translate the matrixEntryToEvalTableMapping into the actual probability mapping
                 auto sampleModelEntry = this->model->getTransitionMatrix().begin();
@@ -83,10 +97,15 @@ namespace storm {
                                                                                                                     std::vector<TableEntry*>& matrixEntryToEvalTableMapping,
                                                                                                                     TableEntry* constantEntry) {
                 // Run through the rows of the original model and obtain the probability evaluation table, a matrix with dummy entries and the mapping between the two.
-                storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(parametricModel.getNumberOfStates(), parametricModel.getNumberOfStates(), parametricModel.getTransitionMatrix().getEntryCount());
+                bool addRowGroups = parametricModel.getTransitionMatrix().hasNontrivialRowGrouping();
+                auto currRowGroup = parametricModel.getTransitionMatrix().getRowGroupIndices().begin();
+                storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(parametricModel.getTransitionMatrix().getRowCount(), parametricModel.getTransitionMatrix().getColumnCount(), parametricModel.getTransitionMatrix().getEntryCount(), addRowGroups);
                 matrixEntryToEvalTableMapping.reserve(parametricModel.getTransitionMatrix().getEntryCount());
                 std::size_t numOfNonConstEntries=0;
                 for(typename storm::storage::SparseMatrix<ParametricType>::index_type row=0; row < parametricModel.getTransitionMatrix().getRowCount(); ++row ){
+                    if(addRowGroups && row==*currRowGroup){
+                        matrixBuilder.newRowGroup(row);
+                    }
                     ConstantType dummyEntry=storm::utility::one<ConstantType>();
                     for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
                         if(storm::utility::isConstant(entry.getValue())){
@@ -133,7 +152,7 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<storm::models::sparse::Dtmc<ConstantType>> const& SamplingModel<ParametricSparseModelType, ConstantType>::getModel() const {
+            std::shared_ptr<storm::models::sparse::Model<ConstantType>> const& SamplingModel<ParametricSparseModelType, ConstantType>::getModel() const {
                 return this->model;
             }
 
@@ -162,20 +181,31 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             std::vector<ConstantType> const& SamplingModel<ParametricSparseModelType, ConstantType>::computeValues() {
-                storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>> modelChecker(*this->model);
+                std::unique_ptr<storm::modelchecker::AbstractModelChecker> modelChecker;
+                switch(this->getModel()->getType()){
+                    case storm::models::ModelType::Dtmc:
+                        modelChecker = std::make_unique<storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>>(*this->model->template as<storm::models::sparse::Dtmc<ConstantType>>());
+                        break;
+                    case storm::models::ModelType::Mdp:
+                        modelChecker = std::make_unique<storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>>(*this->model->template as<storm::models::sparse::Mdp<ConstantType>>());
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Tried to build a sampling model for an unsupported model type");
+                }
                 std::unique_ptr<storm::modelchecker::CheckResult> resultPtr;
-                //perform model checking on the dtmc
+                //perform model checking
                 if(this->computeRewards){
-                    resultPtr = modelChecker.computeReachabilityRewards(this->formula->asReachabilityRewardFormula());
+                    resultPtr = modelChecker->computeReachabilityRewards(this->formula->asRewardOperatorFormula().getSubformula().asReachabilityRewardFormula());
                 }
                 else {
-                    resultPtr = modelChecker.computeEventuallyProbabilities(this->formula->asEventuallyFormula());
+                    resultPtr = modelChecker->computeEventuallyProbabilities(this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
                 }
                 return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
             }
         
 #ifdef STORM_HAVE_CARL
             template class SamplingModel<storm::models::sparse::Dtmc<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+            template class SamplingModel<storm::models::sparse::Mdp<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
 #endif
         } //namespace region
     }
