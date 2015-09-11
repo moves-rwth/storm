@@ -16,22 +16,24 @@ namespace storm {
         
         namespace menu_games {
             template <storm::dd::DdType DdType, typename ValueType>
+            class AbstractionDdInformation;
+            
+            class AbstractionExpressionInformation;
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             class AbstractModule {
             public:
                 /*!
                  * Constructs an abstract module from the given module and the initial predicates.
                  *
-                 * @param expressionManager The manager responsible for the expressions of the command.
                  * @param module The concrete module for which to build the abstraction.
-                 * @param initialPredicates The initial set of predicates.
+                 * @param expressionInformation The expression-related information including the manager and the predicates.
+                 * @param ddInformation The DD-related information including the manager.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  */
-                AbstractModule(storm::expressions::ExpressionManager& expressionManager, storm::prism::Module const& module, std::vector<storm::expressions::Expression> const& initialPredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+                AbstractModule(storm::prism::Module const& module, AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
             private:
-                // The manager responsible for the expressions of the module and the SMT solvers.
-                storm::expressions::ExpressionManager& expressionManager;
-                
                 // A factory that can be used to create new SMT solvers.
                 storm::utility::solver::SmtSolverFactory const& smtSolverFactory;
                 

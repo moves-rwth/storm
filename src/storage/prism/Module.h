@@ -98,6 +98,13 @@ namespace storm {
             std::vector<storm::prism::IntegerVariable> const& getIntegerVariables() const;
 
             /*!
+             * Retrieves the set of all expression variables declared in this module.
+             *
+             * @return The set of all expression variables.
+             */
+            std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+            
+            /*!
              * Retrieves the number of commands of this module.
              *
              * @return The number of commands of this module.

@@ -3,16 +3,17 @@
 
 #include "src/storage/dd/DdType.h"
 
+#include "src/storage/prism/menu_games/AbstractionDdInformation.h"
+#include "src/storage/prism/menu_games/AbstractionExpressionInformation.h"
 #include "src/storage/prism/menu_games/AbstractModule.h"
 
 #include "src/storage/expressions/Expression.h"
 
-#include "src/utility/solver.h"
-
 namespace storm {
-    namespace dd {
-        template <storm::dd::DdType DdType>
-        class DdManager;
+    namespace utility {
+        namespace solver {
+            class SmtSolverFactory;
+        }
     }
     
     namespace prism {
@@ -20,6 +21,7 @@ namespace storm {
         class Program;
         
         namespace menu_games {
+            
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractProgram {
             public:
@@ -35,26 +37,15 @@ namespace storm {
                 AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory = std::unique_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory()), bool addAllGuards = false);
                 
             private:
-                // The manager responsible for the expressions of the program and the SMT solvers.
-                storm::expressions::ExpressionManager& expressionManager;
                 
                 // A factory that can be used to create new SMT solvers.
                 std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
-                // The current set of predicates used in the abstraction.
-                std::vector<storm::expressions::Expression> predicates;
+                // A struct containing all DD-related information like variables and managers.
+                AbstractionDdInformation<DdType, ValueType> ddInformation;
                 
-                // The manager responsible for the DDs.
-                std::shared_ptr<storm::dd::DdManager<DdType>> ddManager;
-                
-                // The DD variables corresponding to the predicates.
-                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> predicateDdVariables;
-                
-                // The DD variable encoding the command (i.e., the nondeterministic choices of player 1).
-                std::pair<storm::expressions::Variable, storm::expressions::Variable> commandDdVariable;
-                
-                // The DD variables encoding the nondeterministic choices of player 2.
-                std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> optionDdVariables;
+                // A struct containing all expression-related information like variables, managers and the predicates.
+                AbstractionExpressionInformation expressionInformation;
                 
                 // The abstract modules of the abstract program.
                 std::vector<AbstractModule<DdType, ValueType>> modules;

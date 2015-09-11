@@ -111,6 +111,14 @@ namespace storm {
                  * @return The indices of all expressions using the given variable.
                  */
                 std::set<uint_fast64_t> const& getExpressionsUsingVariable(storm::expressions::Variable const& variable) const;
+
+                /*!
+                 * Retrieves the indices of the expressions in which the given variables appear.
+                 *
+                 * @param variables The variables for which to retrieve the expressions.
+                 * @return The indices of all expressions using the given variables.
+                 */
+                std::set<uint_fast64_t> getExpressionsUsingVariables(std::set<storm::expressions::Variable> const& variables) const;
                 
                 /*!
                  * Retrieves the expression with the given index.

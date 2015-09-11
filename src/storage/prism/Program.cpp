@@ -194,6 +194,26 @@ namespace storm {
         std::vector<IntegerVariable> const& Program::getGlobalIntegerVariables() const {
             return this->globalIntegerVariables;
         }
+
+        std::set<storm::expressions::Variable> Program::getAllExpressionVariables() const {
+            std::set<storm::expressions::Variable> result;
+            
+            for (auto const& constant : constants) {
+                result.insert(constant.getExpressionVariable());
+            }
+            for (auto const& variable : globalBooleanVariables) {
+                result.insert(variable.getExpressionVariable());
+            }
+            for (auto const& variable : globalIntegerVariables) {
+                result.insert(variable.getExpressionVariable());
+            }
+            for (auto const& module : modules) {
+                auto const& moduleVariables = module.getAllExpressionVariables();
+                result.insert(moduleVariables.begin(), moduleVariables.end());
+            }
+            
+            return result;
+        }
         
         bool Program::globalBooleanVariableExists(std::string const& variableName) const {
             return this->globalBooleanVariableToIndexMap.count(variableName) > 0;
@@ -202,8 +222,6 @@ namespace storm {
         bool Program::globalIntegerVariableExists(std::string const& variableName) const {
             return this->globalIntegerVariableToIndexMap.count(variableName) > 0;
         }
-        
-        
 
         BooleanVariable const& Program::getGlobalBooleanVariable(std::string const& variableName) const {
             auto const& nameIndexPair = this->globalBooleanVariableToIndexMap.find(variableName);

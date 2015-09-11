@@ -124,6 +124,18 @@ namespace storm {
                 return this->variableToExpressionsMapping.find(variable)->second;
             }
             
+            std::set<uint_fast64_t> VariablePartition::getExpressionsUsingVariables(std::set<storm::expressions::Variable> const& variables) const {
+                std::set<uint_fast64_t> result;
+                
+                for (auto const& variable : variables) {
+                    STORM_LOG_ASSERT(this->relevantVariables.find(variable) != this->relevantVariables.end(), "Illegal variable '" << variable.getName() << "' for partition.");
+                    auto it = this->variableToExpressionsMapping.find(variable);
+                    result.insert(it->second.begin(), it->second.end());
+                }
+                
+                return result;
+            }
+            
             storm::expressions::Expression const& VariablePartition::getExpression(uint_fast64_t expressionIndex) const {
                 return this->expressions[expressionIndex];
             }

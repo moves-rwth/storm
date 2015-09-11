@@ -167,6 +167,13 @@ namespace storm {
             IntegerVariable const& getGlobalIntegerVariable(std::string const& variableName) const;
 
             /*!
+             * Retrieves the set of all expression variables declared in this module.
+             *
+             * @return The set of all expression variables.
+             */
+            std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+            
+            /*!
              * Retrieves the number of global boolean variables of the program.
              *
              * @return The number of global boolean variables of the program.
