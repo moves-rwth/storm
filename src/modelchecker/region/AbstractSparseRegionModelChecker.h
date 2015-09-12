@@ -130,7 +130,7 @@ namespace storm {
                  * However, if only the lowerBounds (or upperBounds) have been computed, the other vector is set to a vector of size 0.
                  * True is returned iff either ALLSAT or ALLVIOLATED could be proved.
                  */
-                virtual bool checkApproximativeValues(ParameterRegion<ParametricType>& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds)=0; 
+                bool checkApproximativeValues(ParameterRegion<ParametricType>& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds); 
 
                 /*!
                  * Returns the approximation model.
@@ -223,10 +223,10 @@ namespace storm {
                 std::chrono::high_resolution_clock::duration timeCheckRegion;
                 std::chrono::high_resolution_clock::duration timeSampling;
                 std::chrono::high_resolution_clock::duration timeApproximation;
+                std::chrono::high_resolution_clock::duration timeApproxModelInstantiation;
                 std::chrono::high_resolution_clock::duration timeSmt;    
             protected:
                 std::chrono::high_resolution_clock::duration timeComputeReachabilityFunction;
-                std::chrono::high_resolution_clock::duration timeApproxModelInstantiation;
             };
         } //namespace region
     } //namespace modelchecker

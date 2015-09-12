@@ -81,9 +81,6 @@ namespace storm {
                 return this->simpleFormula;
             }
 
-            
-
-            
             template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifyFormula(std::shared_ptr<storm::logic::Formula> formula) {
                 std::chrono::high_resolution_clock::time_point timeSpecifyFormulaStart = std::chrono::high_resolution_clock::now();
@@ -153,7 +150,7 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
                 std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
-                STORM_LOG_DEBUG("The Approximation Model is initialized");
+                STORM_LOG_DEBUG("Initializing the Approximation Model...");
                 STORM_LOG_THROW(this->isApproximationApplicable, storm::exceptions::UnexpectedException, "Approximation model requested but approximation is not applicable");
                 this->approximationModel=std::make_shared<ApproximationModel<ParametricSparseModelType, ConstantType>>(model, formula);
                 std::chrono::high_resolution_clock::time_point timeInitApproxModelEnd = std::chrono::high_resolution_clock::now();
@@ -163,7 +160,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
-                STORM_LOG_DEBUG("The Sampling Model is initialized");
+                STORM_LOG_DEBUG("Initializing the Sampling Model....");
                 std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
                 this->samplingModel=std::make_shared<SamplingModel<ParametricSparseModelType, ConstantType>>(model, formula);
                 std::chrono::high_resolution_clock::time_point timeInitSamplingModelEnd = std::chrono::high_resolution_clock::now();
@@ -272,7 +269,102 @@ namespace storm {
                         break;
                 }
             }
+            
+            template<typename ParametricSparseModelType, typename ConstantType>
+            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkApproximativeValues(ParameterRegion<ParametricType>& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds) {
+                std::chrono::high_resolution_clock::time_point timeMDPBuildStart = std::chrono::high_resolution_clock::now();
+                this->getApproximationModel()->instantiate(region);
+                std::chrono::high_resolution_clock::time_point timeMDPBuildEnd = std::chrono::high_resolution_clock::now();
+                this->timeApproxModelInstantiation += timeMDPBuildEnd-timeMDPBuildStart;
 
+                // Decide whether to prove allsat or allviolated. 
+                bool proveAllSat;
+                switch (region.getCheckResult()){
+                    case RegionCheckResult::UNKNOWN: 
+                        switch(storm::settings::regionSettings().getApproxMode()){
+                            case storm::settings::modules::RegionSettings::ApproxMode::TESTFIRST:
+                                //Sample a single point to know whether we should try to prove ALLSAT or ALLVIOLATED
+                                checkPoint(region,region.getSomePoint(), false);
+                                proveAllSat= (region.getCheckResult()==RegionCheckResult::EXISTSSAT);
+                                break;
+                            case storm::settings::modules::RegionSettings::ApproxMode::GUESSALLSAT:
+                                proveAllSat=true;
+                                break;
+                            case storm::settings::modules::RegionSettings::ApproxMode::GUESSALLVIOLATED:
+                                proveAllSat=false;
+                                break;
+                            default:
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The specified approxmode is not supported");
+                        }
+                        break;
+                    case RegionCheckResult::ALLSAT:
+                         STORM_LOG_WARN("The checkresult of the current region should not be conclusive (ALLSAT)");
+                         //Intentionally no break;
+                    case RegionCheckResult::EXISTSSAT:
+                        proveAllSat=true;
+                        break;
+                    case RegionCheckResult::ALLVIOLATED:
+                         STORM_LOG_WARN("The checkresult of the current region should not be conclusive (ALLViolated)");
+                         //Intentionally no break;
+                    case RegionCheckResult::EXISTSVIOLATED:
+                        proveAllSat=false;
+                        break;
+                    default:
+                         STORM_LOG_WARN("The checkresult of the current region should not be conclusive, i.e. it should be either EXISTSSAT or EXISTSVIOLATED or UNKNOWN in order to apply approximative values");
+                         proveAllSat=true;
+                }
+
+                bool formulaSatisfied;
+                if((this->specifiedFormulaHasUpperBound() && proveAllSat) || (!this->specifiedFormulaHasUpperBound() && !proveAllSat)){
+                    //these are the cases in which we need to compute upper bounds
+                    upperBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Maximize);
+                    lowerBounds = std::vector<ConstantType>();
+                    formulaSatisfied = this->valueIsInBoundOfFormula(upperBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
+                }
+                else{
+                    //for the remaining cases we compute lower bounds
+                    lowerBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Minimize);
+                    upperBounds = std::vector<ConstantType>();
+                    formulaSatisfied = this->valueIsInBoundOfFormula(lowerBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
+                }
+
+                //check if approximation was conclusive
+                if(proveAllSat && formulaSatisfied){
+                    region.setCheckResult(RegionCheckResult::ALLSAT);
+                    return true;
+                }
+                if(!proveAllSat && !formulaSatisfied){
+                    region.setCheckResult(RegionCheckResult::ALLVIOLATED);
+                    return true;
+                }
+
+                if(region.getCheckResult()==RegionCheckResult::UNKNOWN){
+                    //In this case, it makes sense to try to prove the contrary statement
+                    proveAllSat=!proveAllSat;
+
+                    if(lowerBounds.empty()){
+                        lowerBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Minimize);
+                        formulaSatisfied=this->valueIsInBoundOfFormula(lowerBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
+                    }
+                    else{
+                        upperBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Maximize);
+                        formulaSatisfied=this->valueIsInBoundOfFormula(upperBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
+                    }
+
+                    //check if approximation was conclusive
+                    if(proveAllSat && formulaSatisfied){
+                        region.setCheckResult(RegionCheckResult::ALLSAT);
+                        return true;
+                    }
+                    if(!proveAllSat && !formulaSatisfied){
+                        region.setCheckResult(RegionCheckResult::ALLVIOLATED);
+                        return true;
+                    }
+                }
+                //if we reach this point than the result is still inconclusive.
+                return false;            
+            }
+            
             template<typename ParametricSparseModelType, typename ConstantType>
             std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getApproximationModel() {
                 if(this->approximationModel==nullptr){

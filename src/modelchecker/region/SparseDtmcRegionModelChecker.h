@@ -90,17 +90,6 @@ namespace storm {
                 void computeReachabilityFunction(ParametricSparseModelType const& simpleModel);
 
                 /*!
-                 * Instantiates the approximation model to compute bounds on the maximal/minimal reachability probability (or reachability reward).
-                 * If the current region result is EXISTSSAT (or EXISTSVIOLATED), then this function tries to prove ALLSAT (or ALLVIOLATED).
-                 * If this succeeded, then the region check result is changed accordingly.
-                 * If the current region result is UNKNOWN, then this function first tries to prove ALLSAT and if that failed, it tries to prove ALLVIOLATED.
-                 * In any case, the computed bounds are written to the given lowerBounds/upperBounds.
-                 * However, if only the lowerBounds (or upperBounds) have been computed, the other vector is set to a vector of size 0.
-                 * True is returned iff either ALLSAT or ALLVIOLATED could be proved.
-                 */
-                virtual bool checkApproximativeValues(ParameterRegion<ParametricType>& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds); 
-
-                /*!
                  * Checks the value of the function at the given sampling point.
                  * May set the satPoint and violatedPoint of the regions if thy are not yet specified and such point is given.
                  * Also changes the regioncheckresult of the region to EXISTSSAT, EXISTSVIOLATED, or EXISTSBOTH

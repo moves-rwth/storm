@@ -9,6 +9,8 @@
 
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/models/ModelType.h"
+#include "models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -17,9 +19,6 @@
 #include "src/utility/vector.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "models/sparse/StandardRewardModel.h"
-#include "cuddObj.hh"
-#include "exceptions/IllegalArgumentException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -63,7 +62,7 @@ namespace storm {
                         this->model=std::make_shared<storm::models::sparse::Mdp<ConstantType>>(std::move(probabilityMatrix), std::move(labeling), std::move(rewardModels), std::move(noChoiceLabeling));
                         break;
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Tried to build a sampling model for an unsupported model type");
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Tried to build a sampling model for an unsupported model type");
                 }
 
                 //translate the matrixEntryToEvalTableMapping into the actual probability mapping
@@ -196,7 +195,7 @@ namespace storm {
                         modelChecker = std::make_unique<storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>>(*this->model->template as<storm::models::sparse::Mdp<ConstantType>>());
                         break;
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Tried to build a sampling model for an unsupported model type");
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Tried to build a sampling model for an unsupported model type");
                 }
                 std::unique_ptr<storm::modelchecker::CheckResult> resultPtr;
                 //perform model checking

@@ -10,12 +10,11 @@
 
 #include <unordered_map>
 #include <memory>
-#include "src/utility/region.h"
 
-#include "src/logic/Formulas.h"
+#include "src/utility/region.h"
 #include "src/modelchecker/region/ParameterRegion.h"
-#include "src/models/sparse/Dtmc.h"
-#include "src/models/sparse/Mdp.h"
+#include "src/logic/Formulas.h"
+#include "src/models/sparse/Model.h"
 #include "src/storage/SparseMatrix.h"
 
 namespace storm {
@@ -29,7 +28,8 @@ namespace storm {
                 typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
 
                 /*!
-                 * @note this will not check whether approximation is applicable
+                 * Creates an Approximation model
+                 * @note This will not check whether approximation is applicable
                  */
                 ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula);
                 virtual ~ApproximationModel();
@@ -37,7 +37,7 @@ namespace storm {
                 /*!
                  * returns the underlying model
                  */
-                std::shared_ptr<storm::models::sparse::Mdp<ConstantType>> const& getModel() const;
+                std::shared_ptr<storm::models::sparse::Model<ConstantType>> const& getModel() const;
 
                 /*!
                  * Instantiates the underlying model according to the given region
@@ -45,11 +45,11 @@ namespace storm {
                 void instantiate(ParameterRegion<ParametricType> const& region);
 
                 /*!
-                 * Returns the approximated reachability probabilities or expected values for every state.
+                 * Returns the approximated reachability probabilities or reward values for every state.
                  * Undefined behavior if model has not been instantiated first!
-                 * @param optimalityType Use MAXIMIZE to get upper bounds or MINIMIZE to get lower bounds
+                 * @param approximationOpDir Use MAXIMIZE to get upper bounds or MINIMIZE to get lower bounds
                  */
-                std::vector<ConstantType> const& computeValues(storm::solver::OptimizationDirection const& optDir);
+                std::vector<ConstantType> const& computeValues(storm::solver::OptimizationDirection const& approximationOpDir);
 
 
             private:
@@ -123,11 +123,11 @@ namespace storm {
                 typedef typename std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash>::value_type ProbTableEntry;
                 typedef typename std::unordered_map<FunctionSubstitution, std::pair<ConstantType, ConstantType>, FuncSubHash>::value_type RewTableEntry;
 
-                void initializeProbabilities(ParametricSparseModelType const& parametricModel, storm::storage::SparseMatrix<ConstantType>& probabilityMatrix, std::vector<std::size_t>& rowSubstitutions, std::vector<ProbTableEntry*>& matrixEntryToEvalTableMapping,  ProbTableEntry* constantEntry);
-                void initializeRewards(ParametricSparseModelType const& parametricModel, storm::storage::SparseMatrix<ConstantType> const& probabilityMatrix, std::vector<std::size_t> const& rowSubstitutions, std::vector<ConstantType>& stateActionRewardVector, std::vector<RewTableEntry*>& rewardEntryToEvalTableMapping, RewTableEntry* constantEntry);
+                void initializeProbabilities(ParametricSparseModelType const& parametricModel, storm::storage::SparseMatrix<ConstantType>& probabilityMatrix, std::vector<typename storm::storage::SparseMatrix<ConstantType>::index_type>& approxRowGroupIndices, std::vector<std::size_t>& rowSubstitutions, std::vector<ProbTableEntry*>& matrixEntryToEvalTableMapping,  ProbTableEntry* constantEntry);
+                void initializeRewards(ParametricSparseModelType const& parametricModel, storm::storage::SparseMatrix<ConstantType> const& probabilityMatrix, std::vector<typename storm::storage::SparseMatrix<ConstantType>::index_type> const& approxRowGroupIndices, std::vector<std::size_t> const& rowSubstitutions, std::vector<ConstantType>& stateActionRewardVector, std::vector<RewTableEntry*>& rewardEntryToEvalTableMapping, RewTableEntry* constantEntry);
 
                 //The Model with which we work
-                std::shared_ptr<storm::models::sparse::Mdp<ConstantType>> model;
+                std::shared_ptr<storm::models::sparse::Model<ConstantType>> model;
                 //The formula for which we will compute the values
                 std::shared_ptr<storm::logic::OperatorFormula> formula;
                 //A flag that denotes whether we compute probabilities or rewards
