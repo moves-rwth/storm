@@ -105,6 +105,13 @@ namespace storm {
             std::set<storm::expressions::Variable> getAllExpressionVariables() const;
             
             /*!
+             * Retrieves a set of expressions characterizing the legal ranges of all variables declared in the module.
+             *
+             * @return The expressions characterizing the legal ranges of all variables declared in the module.
+             */
+            std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
+            /*!
              * Retrieves the number of commands of this module.
              *
              * @return The number of commands of this module.

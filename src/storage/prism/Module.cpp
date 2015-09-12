@@ -54,6 +54,14 @@ namespace storm {
             return result;
         }
         
+        std::vector<storm::expressions::Expression> Module::getAllRangeExpressions() const {
+            std::vector<storm::expressions::Expression> result;
+            for (auto const& integerVariable : this->integerVariables) {
+                result.push_back(integerVariable.getRangeExpression());
+            }
+            return result;
+        }
+
         std::size_t Module::getNumberOfCommands() const {
             return this->commands.size();
         }

@@ -174,6 +174,13 @@ namespace storm {
             std::set<storm::expressions::Variable> getAllExpressionVariables() const;
             
             /*!
+             * Retrieves a set of expressions characterizing the legal ranges of all variables.
+             *
+             * @return The expressions characterizing the legal ranges of all variables.
+             */
+            std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
+            /*!
              * Retrieves the number of global boolean variables of the program.
              *
              * @return The number of global boolean variables of the program.

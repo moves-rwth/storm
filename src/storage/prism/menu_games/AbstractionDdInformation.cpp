@@ -10,6 +10,8 @@ namespace storm {
             AbstractionDdInformation<DdType, ValueType>::AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager) : ddManager(manager) {
                 // Intentionally left empty.
             }
+         
+            template class AbstractionDdInformation<storm::dd::DdType::CUDD, double>;
             
         }
     }

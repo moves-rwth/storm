@@ -215,6 +215,20 @@ namespace storm {
             return result;
         }
         
+        std::vector<storm::expressions::Expression> Program::getAllRangeExpressions() const {
+            std::vector<storm::expressions::Expression> result;
+            for (auto const& globalIntegerVariable : this->globalIntegerVariables) {
+                result.push_back(globalIntegerVariable.getRangeExpression());
+            }
+            
+            for (auto const& module : modules) {
+                std::vector<storm::expressions::Expression> moduleRangeExpressions = module.getAllRangeExpressions();
+                result.insert(result.end(), moduleRangeExpressions.begin(), moduleRangeExpressions.end());
+            }
+            
+            return result;
+        }
+        
         bool Program::globalBooleanVariableExists(std::string const& variableName) const {
             return this->globalBooleanVariableToIndexMap.count(variableName) > 0;
         }

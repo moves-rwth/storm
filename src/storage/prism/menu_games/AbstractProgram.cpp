@@ -5,6 +5,7 @@
 #include "src/storage/prism/Program.h"
 
 #include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/CuddAdd.h"
 
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
@@ -15,14 +16,11 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>(new storm::dd::DdManager<DdType>())), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables()), modules(), program(program) {
+            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>()), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
                 STORM_LOG_THROW(program.getNumberOfModules() == 1, storm::exceptions::WrongFormatException, "Cannot create abstract program from program containing too many modules.");
-                
-                std::set<storm::expressions::Variable> allVariables;
-                
                 
                 uint_fast64_t totalNumberOfCommands = 0;
                 uint_fast64_t maximalUpdateCount = 0;
@@ -63,6 +61,12 @@ namespace storm {
                 for (auto const& module : program.getModules()) {
                     modules.emplace_back(module, expressionInformation, ddInformation, *smtSolverFactory);
                 }
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Add<DdType> AbstractProgram<DdType, ValueType>::computeDd() {
+                // As long as there is only one module, we build its game representation and return it.
+                return modules.front().computeDd();
             }
             
             // Explicitly instantiate the class.
