@@ -72,16 +72,22 @@ namespace storm {
                                                                                                   std::shared_ptr<storm::logic::OperatorFormula>& simpleFormula,
                                                                                                   bool& isApproximationApplicable,
                                                                                                   boost::optional<ConstantType>& constantResult){
+                STORM_LOG_DEBUG("Preprocessing for MDPs started.");
                 STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Input model is required to have exactly one initial state.");
                 storm::storage::BitVector maybeStates, targetStates;
                 preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, constantResult);
                 //TODO: Actually get a more simple model. This makes a deep copy of the model...
-                simpleModel = std::make_shared<ParametricSparseModelType>(this->getModel());
+                STORM_LOG_WARN("No simplification of the original model (like elimination of constant transitions) is happening. Will just use a copy of the original model");
+                simpleModel = std::make_shared<ParametricSparseModelType>(this->getModel()); //Note: an actual copy is technically not necessary.. but we will do it here..
                 simpleFormula = this->getSpecifiedFormula();
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocessForProbabilities(storm::storage::BitVector& maybeStates, storm::storage::BitVector& targetStates, bool& isApproximationApplicable, boost::optional<ConstantType>& constantResult) {
+            void SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::preprocessForProbabilities(storm::storage::BitVector& maybeStates,
+                                                                                                                  storm::storage::BitVector& targetStates,
+                                                                                                                  bool& isApproximationApplicable,
+                                                                                                                  boost::optional<ConstantType>& constantResult) {
+                STORM_LOG_DEBUG("Preprocessing for Mdps and reachability probabilities invoked.");
                 //Get Target States
                 storm::logic::AtomicLabelFormula const& labelFormula = this->getSpecifiedFormula()->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().asAtomicLabelFormula();
                 storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType> modelChecker(this->getModel());
@@ -244,6 +250,11 @@ namespace storm {
                     }
                 }
                 return false;
+            }
+            
+            template<typename ParametricSparseModelType, typename ConstantType>
+            bool SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::checkSmt(ParameterRegion<ParametricType>& region) {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "checkSmt invoked but smt solving has not been implemented for MDPs.");
             }
 
 #ifdef STORM_HAVE_CARL

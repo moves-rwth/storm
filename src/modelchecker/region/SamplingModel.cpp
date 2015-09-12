@@ -98,13 +98,19 @@ namespace storm {
                                                                                                                     TableEntry* constantEntry) {
                 // Run through the rows of the original model and obtain the probability evaluation table, a matrix with dummy entries and the mapping between the two.
                 bool addRowGroups = parametricModel.getTransitionMatrix().hasNontrivialRowGrouping();
-                auto currRowGroup = parametricModel.getTransitionMatrix().getRowGroupIndices().begin();
-                storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(parametricModel.getTransitionMatrix().getRowCount(), parametricModel.getTransitionMatrix().getColumnCount(), parametricModel.getTransitionMatrix().getEntryCount(), addRowGroups);
+                auto curRowGroup = parametricModel.getTransitionMatrix().getRowGroupIndices().begin();
+                storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(parametricModel.getTransitionMatrix().getRowCount(),
+                                                                                parametricModel.getTransitionMatrix().getColumnCount(),
+                                                                                parametricModel.getTransitionMatrix().getEntryCount(),
+                                                                                true, //force dimensions
+                                                                                addRowGroups,
+                                                                                addRowGroups ? parametricModel.getTransitionMatrix().getRowGroupCount() : 0);
                 matrixEntryToEvalTableMapping.reserve(parametricModel.getTransitionMatrix().getEntryCount());
                 std::size_t numOfNonConstEntries=0;
                 for(typename storm::storage::SparseMatrix<ParametricType>::index_type row=0; row < parametricModel.getTransitionMatrix().getRowCount(); ++row ){
-                    if(addRowGroups && row==*currRowGroup){
+                    if(addRowGroups && row==*curRowGroup){
                         matrixBuilder.newRowGroup(row);
+                        ++curRowGroup;
                     }
                     ConstantType dummyEntry=storm::utility::one<ConstantType>();
                     for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
@@ -194,11 +200,12 @@ namespace storm {
                 }
                 std::unique_ptr<storm::modelchecker::CheckResult> resultPtr;
                 //perform model checking
+                boost::optional<storm::solver::OptimizationDirection> opDir = storm::logic::isLowerBound(this->formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
                 if(this->computeRewards){
                     resultPtr = modelChecker->computeReachabilityRewards(this->formula->asRewardOperatorFormula().getSubformula().asReachabilityRewardFormula());
                 }
                 else {
-                    resultPtr = modelChecker->computeEventuallyProbabilities(this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
+                    resultPtr = modelChecker->computeEventuallyProbabilities(this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula(), false, opDir);
                 }
                 return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
             }

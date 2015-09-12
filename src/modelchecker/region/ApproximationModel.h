@@ -45,7 +45,7 @@ namespace storm {
                 void instantiate(ParameterRegion<ParametricType> const& region);
 
                 /*!
-                 * Returns the approximated reachability probabilities for every state.
+                 * Returns the approximated reachability probabilities or expected values for every state.
                  * Undefined behavior if model has not been instantiated first!
                  * @param optimalityType Use MAXIMIZE to get upper bounds or MINIMIZE to get lower bounds
                  */

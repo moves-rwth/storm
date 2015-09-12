@@ -44,7 +44,7 @@ namespace storm {
                 void instantiate(std::map<VariableType, CoefficientType>const& point);
 
                 /*!
-                 * Returns the reachability probabilities for every state according to the current instantiation.
+                 * Returns the reachability probabilities (or the expected rewards) for every state according to the current instantiation.
                  * Undefined behavior if model has not been instantiated first!
                  */
                 std::vector<ConstantType> const& computeValues();

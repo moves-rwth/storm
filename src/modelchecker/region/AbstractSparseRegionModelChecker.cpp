@@ -87,6 +87,7 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifyFormula(std::shared_ptr<storm::logic::Formula> formula) {
                 std::chrono::high_resolution_clock::time_point timeSpecifyFormulaStart = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Specifying the formula " << formula);
                 STORM_LOG_THROW(this->canHandle(*formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");
                 //Initialize the context for this formula
                 if (formula->isProbabilityOperatorFormula()) {
@@ -136,6 +137,7 @@ namespace storm {
                     }
                 } else if (this->isResultConstant() && this->constantResult.get() == storm::utility::region::convertNumber<ConstantType>(-1.0)){
                     //In this case, the result is constant but has not been computed yet. so do it now!
+                    STORM_LOG_DEBUG("The Result is constant and will be computed now.");
                     initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
                     std::map<VariableType, CoefficientType> emptySubstitution;
                     this->getSamplingModel()->instantiate(emptySubstitution);
@@ -151,6 +153,7 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
                 std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("The Approximation Model is initialized");
                 STORM_LOG_THROW(this->isApproximationApplicable, storm::exceptions::UnexpectedException, "Approximation model requested but approximation is not applicable");
                 this->approximationModel=std::make_shared<ApproximationModel<ParametricSparseModelType, ConstantType>>(model, formula);
                 std::chrono::high_resolution_clock::time_point timeInitApproxModelEnd = std::chrono::high_resolution_clock::now();
@@ -160,6 +163,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
+                STORM_LOG_DEBUG("The Sampling Model is initialized");
                 std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
                 this->samplingModel=std::make_shared<SamplingModel<ParametricSparseModelType, ConstantType>>(model, formula);
                 std::chrono::high_resolution_clock::time_point timeInitSamplingModelEnd = std::chrono::high_resolution_clock::now();
@@ -331,6 +335,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::printStatisticsToStream(std::ostream& outstream) {
+                STORM_LOG_DEBUG("Printing statistics");
 
                 if(this->getSpecifiedFormula()==nullptr){
                     outstream << "Region Model Checker Statistics Error: No formula specified." << std::endl; 

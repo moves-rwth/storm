@@ -73,6 +73,7 @@ namespace storm {
                                                                                                    std::shared_ptr<storm::logic::OperatorFormula>& simpleFormula,
                                                                                                    bool& isApproximationApplicable,
                                                                                                    boost::optional<ConstantType>& constantResult){
+                STORM_LOG_DEBUG("Preprocessing for DTMC started.");
                 STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Input model is required to have exactly one initial state.");
                 //Reset some data
                 this->smtSolver=nullptr;
@@ -88,6 +89,7 @@ namespace storm {
                 } else {
                     preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, constantResult);
                 }
+                STORM_LOG_DEBUG("Elimination of states with constant outgoing transitions is happening now.");
                 // Determine the set of states that is reachable from the initial state without jumping over a target state.
                 storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, targetStates);
                 // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
@@ -145,6 +147,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions.");
 
                 //Build the simple model
+                STORM_LOG_DEBUG("Building the resulting simplified model.");
                 //The matrix. The flexibleTransitions matrix might have empty rows where states have been eliminated.
                 //The new matrix should not have such rows. We therefore leave them out, but we have to change the indices of the states accordingly.
                 std::vector<storm::storage::sparse::state_type> newStateIndexMap(flexibleTransitions.getNumberOfRows(), flexibleTransitions.getNumberOfRows()); //initialize with some illegal index to easily check if a transition leads to an unselected state
@@ -218,6 +221,7 @@ namespace storm {
                 // the final model
                 simpleModel = std::make_shared<ParametricSparseModelType>(matrixBuilder.build(), std::move(labeling), std::move(rewardModels), std::move(noChoiceLabeling));
                 // the corresponding formula
+                STORM_LOG_DEBUG("Building the resulting simplified formula.");
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
                 if(this->isComputeRewards()){
                     std::shared_ptr<storm::logic::ReachabilityRewardFormula> reachRewFormula(new storm::logic::ReachabilityRewardFormula(targetFormulaPtr));
@@ -238,6 +242,7 @@ namespace storm {
                                                                                                                    storm::storage::BitVector& targetStates,
                                                                                                                    bool& isApproximationApplicable,
                                                                                                                    boost::optional<ConstantType>& constantResult) {
+                STORM_LOG_DEBUG("Preprocessing for Dtmcs and reachability probabilities invoked.");
                 //Get Target States
                 storm::logic::AtomicLabelFormula const& labelFormula = this->getSpecifiedFormula()->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().asAtomicLabelFormula();
                 storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType> modelChecker(this->getModel());
@@ -283,6 +288,7 @@ namespace storm {
                                                                                                              std::vector<ParametricType>& stateRewards,
                                                                                                              bool& isApproximationApplicable,
                                                                                                              boost::optional<ConstantType>& constantResult) {
+                STORM_LOG_DEBUG("Preprocessing for Dtmcs and reachability rewards invoked.");
                 //get the correct reward model
                 ParametricRewardModelType const* rewardModel;
                 if(this->getSpecifiedFormula()->asRewardOperatorFormula().hasRewardModelName()){
@@ -372,6 +378,7 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             void SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::computeReachabilityFunction(ParametricSparseModelType const& simpleModel){
                 std::chrono::high_resolution_clock::time_point timeComputeReachabilityFunctionStart = std::chrono::high_resolution_clock::now();
+                STORM_LOG_DEBUG("Computing the Reachability function...");
                 //get the one step probabilities and the transition matrix of the simple model without target/sink state
                 storm::storage::SparseMatrix<ParametricType> backwardTransitions(simpleModel.getBackwardTransitions());
                 std::vector<ParametricType> oneStepProbabilities(simpleModel.getNumberOfStates()-2, storm::utility::zero<ParametricType>());
@@ -397,7 +404,7 @@ namespace storm {
                                     this->reachabilityFunction->denominator().toString(false, true) +
                                 " )";
                     std::cout << std::endl <<"the resulting reach prob function is " << std::endl << funcStr << std::endl << std::endl;*/
-                STORM_LOG_DEBUG("Computed reachabilityFunction");
+                STORM_LOG_DEBUG("Done with computing the reachabilityFunction");
                 std::chrono::high_resolution_clock::time_point timeComputeReachabilityFunctionEnd = std::chrono::high_resolution_clock::now();
                 this->timeComputeReachabilityFunction = timeComputeReachabilityFunctionEnd-timeComputeReachabilityFunctionStart;
             }
@@ -653,6 +660,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             void SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeSMTSolver() {
+                STORM_LOG_DEBUG("Initializing the Smt Solver");
 
                 storm::expressions::ExpressionManager manager; //this manager will do nothing as we will use carl expressions..
                 this->smtSolver = std::shared_ptr<storm::solver::Smt2SmtSolver>(new storm::solver::Smt2SmtSolver(manager, true));

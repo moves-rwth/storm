@@ -20,14 +20,6 @@
 #include "src/logic/ComparisonType.h"
 #include <src/adapters/CarlAdapter.h>
 
-// Forward-declare region modelchecker  class.
-    namespace storm {
-        namespace modelchecker{
-        template<typename ParametricType, typename ConstantType>
-        class SparseDtmcRegionModelChecker;
-        }
-    }
-
 namespace storm {
     namespace utility{
         namespace region {
