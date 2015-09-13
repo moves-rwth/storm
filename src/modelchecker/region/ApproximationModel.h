@@ -13,6 +13,7 @@
 
 #include "src/utility/region.h"
 #include "src/modelchecker/region/ParameterRegion.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/logic/Formulas.h"
 #include "src/models/sparse/Model.h"
 #include "src/storage/SparseMatrix.h"
@@ -49,7 +50,7 @@ namespace storm {
                  * Undefined behavior if model has not been instantiated first!
                  * @param approximationOpDir Use MAXIMIZE to get upper bounds or MINIMIZE to get lower bounds
                  */
-                std::vector<ConstantType> const& computeValues(storm::solver::OptimizationDirection const& approximationOpDir);
+                std::unique_ptr<storm::modelchecker::CheckResult> computeValues(storm::solver::OptimizationDirection const& approximationOpDir);
 
 
             private:

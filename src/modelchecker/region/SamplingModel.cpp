@@ -13,7 +13,6 @@
 #include "models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/utility/macros.h"
 #include "src/utility/region.h"
 #include "src/utility/vector.h"
@@ -185,7 +184,7 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::vector<ConstantType> const& SamplingModel<ParametricSparseModelType, ConstantType>::computeValues() {
+            std::unique_ptr<storm::modelchecker::CheckResult> SamplingModel<ParametricSparseModelType, ConstantType>::computeValues() {
                 std::unique_ptr<storm::modelchecker::AbstractModelChecker> modelChecker;
                 switch(this->getModel()->getType()){
                     case storm::models::ModelType::Dtmc:
@@ -204,9 +203,10 @@ namespace storm {
                     resultPtr = modelChecker->computeReachabilityRewards(this->formula->asRewardOperatorFormula().getSubformula().asReachabilityRewardFormula());
                 }
                 else {
-                    resultPtr = modelChecker->computeEventuallyProbabilities(this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula(), false, opDir);
+                    storm::logic::UntilFormula newFormula(storm::logic::Formula::getTrueFormula(), this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().asSharedPointer());
+                    resultPtr = modelChecker->computeUntilProbabilities(newFormula, false, opDir);
                 }
-                return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                return resultPtr;
             }
         
 #ifdef STORM_HAVE_CARL

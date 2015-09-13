@@ -343,7 +343,7 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::vector<ConstantType> const& ApproximationModel<ParametricSparseModelType, ConstantType>::computeValues(storm::solver::OptimizationDirection const& approximationOpDir) {
+            std::unique_ptr<storm::modelchecker::CheckResult> ApproximationModel<ParametricSparseModelType, ConstantType>::computeValues(storm::solver::OptimizationDirection const& approximationOpDir) {
                 std::unique_ptr<storm::modelchecker::AbstractModelChecker> modelChecker;
                 switch(this->getModel()->getType()){
                     case storm::models::ModelType::Mdp:
@@ -384,7 +384,7 @@ namespace storm {
                     //perform model checking
                     resultPtr = modelChecker->computeEventuallyProbabilities(this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula(), false, approximationOpDir);
                 }
-                return resultPtr->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                return resultPtr;
             }
 
 

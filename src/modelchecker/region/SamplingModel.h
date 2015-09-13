@@ -14,6 +14,7 @@
 #include "src/utility/region.h"
 
 #include "src/logic/Formulas.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/models/sparse/Model.h"
 #include "src/storage/SparseMatrix.h"
 
@@ -47,7 +48,7 @@ namespace storm {
                  * Returns the reachability probabilities (or the expected rewards) for every state according to the current instantiation.
                  * Undefined behavior if model has not been instantiated first!
                  */
-                std::vector<ConstantType> const& computeValues();
+                std::unique_ptr<storm::modelchecker::CheckResult> computeValues();
 
 
             private:

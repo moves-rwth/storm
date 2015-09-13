@@ -9,6 +9,7 @@
 
 #include "src/adapters/CarlAdapter.h"
 #include "src/modelchecker/region/RegionCheckResult.h"
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/logic/Formulas.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/settings/SettingsManager.h"
@@ -24,6 +25,8 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "utility/ConversionHelper.h"
+#include "modelchecker/results/CheckResult.h"
+#include "modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 namespace storm {
     namespace modelchecker {
@@ -138,7 +141,7 @@ namespace storm {
                     initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
                     std::map<VariableType, CoefficientType> emptySubstitution;
                     this->getSamplingModel()->instantiate(emptySubstitution);
-                    this->constantResult = this->getSamplingModel()->computeValues()[*this->getSamplingModel()->getModel()->getInitialStates().begin()];
+                    this->constantResult = this->getSamplingModel()->computeValues()->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[*this->getSamplingModel()->getModel()->getInitialStates().begin()];
                 }
 
                 //some more information for statistics...
@@ -317,13 +320,13 @@ namespace storm {
                 bool formulaSatisfied;
                 if((this->specifiedFormulaHasUpperBound() && proveAllSat) || (!this->specifiedFormulaHasUpperBound() && !proveAllSat)){
                     //these are the cases in which we need to compute upper bounds
-                    upperBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Maximize);
+                    upperBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                     lowerBounds = std::vector<ConstantType>();
                     formulaSatisfied = this->valueIsInBoundOfFormula(upperBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
                 }
                 else{
                     //for the remaining cases we compute lower bounds
-                    lowerBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Minimize);
+                    lowerBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                     upperBounds = std::vector<ConstantType>();
                     formulaSatisfied = this->valueIsInBoundOfFormula(lowerBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
                 }
@@ -343,11 +346,11 @@ namespace storm {
                     proveAllSat=!proveAllSat;
 
                     if(lowerBounds.empty()){
-                        lowerBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Minimize);
+                        lowerBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                         formulaSatisfied=this->valueIsInBoundOfFormula(lowerBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
                     }
                     else{
-                        upperBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Maximize);
+                        upperBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                         formulaSatisfied=this->valueIsInBoundOfFormula(upperBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
                     }
 
@@ -391,7 +394,7 @@ namespace storm {
                     return this->constantResult.get();
                 }
                 this->getSamplingModel()->instantiate(point);
-                return this->getSamplingModel()->computeValues()[*this->getSamplingModel()->getModel()->getInitialStates().begin()];
+                return this->getSamplingModel()->computeValues()->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[*this->getSamplingModel()->getModel()->getInitialStates().begin()];
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
