@@ -76,7 +76,29 @@ namespace storm {
                 STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Input model is required to have exactly one initial state.");
                 storm::storage::BitVector maybeStates, targetStates;
                 preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, constantResult);
-                //TODO: Actually get a more simple model. This makes a deep copy of the model...
+                
+                //lets count the number of states without nondet choices and with constant outgoing transitions
+                //TODO: Remove this
+                storm::storage::SparseMatrix<ParametricType>const& matrix=this->getModel().getTransitionMatrix();
+                uint_fast64_t stateCounter=0;
+                for (uint_fast64_t state=0; state<this->getModel().getNumberOfStates();++state){
+                    if(matrix.getRowGroupSize(state)==1){
+                        bool hasConstTransitions=true;
+                        for(auto const& entry : matrix.getRowGroup(state)){
+                            if(!storm::utility::isConstant(entry.getValue())){
+                                hasConstTransitions = false;
+                            }
+                        }
+                        if(hasConstTransitions){
+                            ++stateCounter;
+                        }
+                    }
+                }
+                std::cout << "Found that " << stateCounter << " of " << this->getModel().getNumberOfStates() << " states could be eliminated" << std::endl;
+                
+                
+                
+                //TODO: Actually eliminate the states...
                 STORM_LOG_WARN("No simplification of the original model (like elimination of constant transitions) is happening. Will just use a copy of the original model");
                 simpleModel = std::make_shared<ParametricSparseModelType>(this->getModel()); //Note: an actual copy is technically not necessary.. but we will do it here..
                 simpleFormula = this->getSpecifiedFormula();

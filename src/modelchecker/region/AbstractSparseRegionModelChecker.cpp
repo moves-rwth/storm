@@ -87,7 +87,7 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifyFormula(std::shared_ptr<storm::logic::Formula> formula) {
                 std::chrono::high_resolution_clock::time_point timeSpecifyFormulaStart = std::chrono::high_resolution_clock::now();
-                STORM_LOG_DEBUG("Specifying the formula " << formula);
+                STORM_LOG_DEBUG("Specifying the formula " << *formula.get());
                 STORM_LOG_THROW(this->canHandle(*formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");
                 //Initialize the context for this formula
                 if (formula->isProbabilityOperatorFormula()) {

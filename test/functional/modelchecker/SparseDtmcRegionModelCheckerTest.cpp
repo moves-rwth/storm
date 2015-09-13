@@ -489,7 +489,6 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     modelchecker.checkRegion(allSatRegionSmt);
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
 
-    std::cout << "End" << std::endl;
     storm::settings::mutableRegionSettings().resetModes();
 }
 
