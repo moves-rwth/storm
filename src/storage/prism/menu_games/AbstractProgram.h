@@ -44,6 +44,16 @@ namespace storm {
                 storm::dd::Add<DdType> getAbstractAdd();
                 
             private:
+                /*!
+                 * Computes the reachable states of the transition relation.
+                 *
+                 * @param initialStates The BDD representing the initial states of the model.
+                 * @param transitionRelation The BDD representing the transition relation that does only contain state
+                 * and successor variables.
+                 * @return The BDD representing the reachable states.
+                 */
+                storm::dd::Bdd<DdType> getReachableStates(storm::dd::Bdd<DdType> const& initialStates, storm::dd::Bdd<DdType> const& transitionRelation);
+                
                 // A factory that can be used to create new SMT solvers.
                 std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
                 
@@ -58,6 +68,9 @@ namespace storm {
                 
                 // The concrete program this abstract program refers to.
                 std::reference_wrapper<Program const> program;
+                
+                // An ADD characterizing the probabilities of commands and their updates.
+                storm::dd::Add<DdType> commandUpdateProbabilitiesAdd;
             };
         }
     }

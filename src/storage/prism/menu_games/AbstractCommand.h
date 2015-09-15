@@ -54,6 +54,13 @@ namespace storm {
                  */
                 std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> getAbstractBdd();
                 
+                /*!
+                 * Retrieves an ADD that maps the encoding of the command and its updates to their probabilities.
+                 *
+                 * @return The command-update probability ADD.
+                 */
+                storm::dd::Add<DdType> getCommandUpdateProbabilitiesAdd() const;
+                
             private:
                 /*!
                  * Determines the relevant predicates for source as well as successor states wrt. to the given assignments

@@ -58,15 +58,28 @@ namespace storm {
                 for (auto const& module : program.getModules()) {
                     modules.emplace_back(module, expressionInformation, ddInformation, *this->smtSolverFactory);
                 }
+                
+                // Finally, retrieve the command-update probability ADD, so we can multiply it with the abstraction BDD later.
+                commandUpdateProbabilitiesAdd = modules.front().getCommandUpdateProbabilitiesAdd();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Add<DdType> AbstractProgram<DdType, ValueType>::getAbstractAdd() {
                 // As long as there is only one module, we build its game representation and return it.
+                return modules.front().getAbstractBdd().toAdd() * commandUpdateProbabilitiesAdd;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> AbstractProgram<DdType, ValueType>::getReachableStates(storm::dd::Bdd<DdType> const& initialStates, storm::dd::Bdd<DdType> const& transitionRelation) {
+                storm::dd::Bdd<storm::dd::DdType::CUDD> frontier = initialStates;
+
+                storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStates = initialStates;
+                while (!frontier.isZero()) {
+                    frontier = frontier.andExists(transitionRelation, ddInformation.successorVariables);
+                    reachableStates |= frontier;
+                }
                 
-                
-                // FIXME: multiply with probabilities for updates.
-                return modules.front().getAbstractBdd().toAdd();
+                return reachableStates;
             }
             
             // Explicitly instantiate the class.

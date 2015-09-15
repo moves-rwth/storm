@@ -39,6 +39,8 @@ namespace storm {
                 predicateDdVariables.push_back(newMetaVariable);
                 predicateBdds.emplace_back(manager->getEncoding(newMetaVariable.first, 1), manager->getEncoding(newMetaVariable.second, 1));
                 predicateIdentities.push_back(manager->getIdentity(newMetaVariable.first).equals(manager->getIdentity(newMetaVariable.second)).toBdd());
+                sourceVariables.insert(newMetaVariable.first);
+                successorVariables.insert(newMetaVariable.second);
             }
          
             template <storm::dd::DdType DdType, typename ValueType>

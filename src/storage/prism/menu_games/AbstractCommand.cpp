@@ -274,6 +274,16 @@ namespace storm {
                 return cachedDd;
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Add<DdType> AbstractCommand<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
+                storm::dd::Add<DdType> result = ddInformation.manager->getAddZero();
+                for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
+                    result += ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex).toAdd() * ddInformation.manager->getConstant(command.get().getUpdate(updateIndex).getLikelihoodExpression().evaluateAsDouble());
+                }
+                result *= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex()).toAdd();
+                return result;
+            }
+            
             template class AbstractCommand<storm::dd::DdType::CUDD, double>;
         }
     }

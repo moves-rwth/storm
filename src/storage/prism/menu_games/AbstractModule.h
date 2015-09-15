@@ -47,6 +47,13 @@ namespace storm {
                  */
                 storm::dd::Bdd<DdType> getAbstractBdd();
                 
+                /*!
+                 * Retrieves an ADD that maps the encodings of commands and their updates to their probabilities.
+                 *
+                 * @return The command-update probability ADD.
+                 */
+                storm::dd::Add<DdType> getCommandUpdateProbabilitiesAdd() const;
+                
             private:
                 // A factory that can be used to create new SMT solvers.
                 storm::utility::solver::SmtSolverFactory const& smtSolverFactory;

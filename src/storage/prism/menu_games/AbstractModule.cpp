@@ -47,6 +47,15 @@ namespace storm {
                 return result;
             }
             
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Add<DdType> AbstractModule<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
+                storm::dd::Add<DdType> result = ddInformation.manager->getAddZero();
+                for (auto const& command : commands) {
+                    result += command.getCommandUpdateProbabilitiesAdd();
+                }
+                return result;
+            }
+            
             template class AbstractModule<storm::dd::DdType::CUDD, double>;
         }
     }

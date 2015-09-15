@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include <set>
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/expressions/Variable.h"
@@ -64,6 +65,12 @@ namespace storm {
                 
                 // The DD variables corresponding to the predicates.
                 std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> predicateDdVariables;
+                
+                // The set of all source variables.
+                std::set<storm::expressions::Variable> sourceVariables;
+
+                // The set of all source variables.
+                std::set<storm::expressions::Variable> successorVariables;
 
                 // The BDDs corresponding to the predicates.
                 std::vector<std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>>> predicateBdds;
