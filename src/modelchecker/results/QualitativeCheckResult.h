@@ -7,6 +7,7 @@ namespace storm {
     namespace modelchecker {
         class QualitativeCheckResult : public CheckResult {
         public:
+            virtual ~QualitativeCheckResult() = default;
             virtual QualitativeCheckResult& operator&=(QualitativeCheckResult const& other);
             virtual QualitativeCheckResult& operator|=(QualitativeCheckResult const& other);
             virtual void complement();

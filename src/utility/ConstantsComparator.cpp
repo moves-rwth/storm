@@ -12,12 +12,12 @@ namespace storm {
     namespace utility {
         template<typename ValueType>
         bool ConstantsComparator<ValueType>::isOne(ValueType const& value) const {
-            return isOne(value);
+            return storm::utility::isOne(value);
         }
         
         template<typename ValueType>
         bool ConstantsComparator<ValueType>::isZero(ValueType const& value) const {
-            return isZero(value);
+            return storm::utility::isZero(value);
         }
         
         template<typename ValueType>
@@ -27,7 +27,7 @@ namespace storm {
         
         template<typename ValueType>
         bool ConstantsComparator<ValueType>::isConstant(ValueType const& value) const {
-            return isConstant(value);
+            return storm::utility::isConstant(value);
         }
 
         template<typename ValueType>

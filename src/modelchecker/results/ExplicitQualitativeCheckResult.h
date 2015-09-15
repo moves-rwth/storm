@@ -18,6 +18,7 @@ namespace storm {
             typedef std::map<storm::storage::sparse::state_type, bool> map_type;
             
             ExplicitQualitativeCheckResult();
+            virtual ~ExplicitQualitativeCheckResult() = default;
             ExplicitQualitativeCheckResult(map_type const& map);
             ExplicitQualitativeCheckResult(map_type&& map);
             ExplicitQualitativeCheckResult(storm::storage::sparse::state_type state, bool value);
