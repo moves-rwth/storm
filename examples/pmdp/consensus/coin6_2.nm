@@ -60,7 +60,7 @@ label "finished" = pc1=3 & pc2=3 & pc3=3 & pc4=3 & pc5=3 & pc6=3 ;
 label "all_coins_equal_0" = coin1=0 & coin2=0 & coin3=0 & coin4=0 & coin5=0 & coin6=0 ;
 label "all_coins_equal_1" = coin1=1 & coin2=1 & coin3=1 & coin4=1 & coin5=1 & coin6=1 ;
 label "agree" = coin1=coin2 & coin2=coin3 & coin3=coin4 & coin4=coin5 & coin5=coin6 ;
-label "finish_with_1" = pc1=3 & pc2=3 & pc3=3 & pc4=3 & pc5=3 & pc6=4 & coin1=1 & coin2=1 & coin3=1 & coin4=1 & coin5=1 & coin6=1;
+label "finish_with_1" = pc1=3 & pc2=3 & pc3=3 & pc4=3 & pc5=3 & pc6=3 & coin1=1 & coin2=1 & coin3=1 & coin4=1 & coin5=1 & coin6=1;
 
 // rewards
 rewards "steps"
