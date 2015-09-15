@@ -37,10 +37,21 @@ namespace storm {
                 stream << predicate;
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> newMetaVariable = manager->addMetaVariable(stream.str());
                 predicateDdVariables.push_back(newMetaVariable);
-                predicateBdds.emplace_back(manager->getRange(newMetaVariable.first), manager->getRange(newMetaVariable.second));
+                predicateBdds.emplace_back(manager->getEncoding(newMetaVariable.first, 1), manager->getEncoding(newMetaVariable.second, 1));
                 predicateIdentities.push_back(manager->getIdentity(newMetaVariable.first).equals(manager->getIdentity(newMetaVariable.second)).toBdd());
             }
          
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> AbstractionDdInformation<DdType, ValueType>::getMissingOptionVariableCube(uint_fast64_t lastUsed, uint_fast64_t lastToBe) const {
+                storm::dd::Bdd<DdType> result = manager->getBddOne();
+                
+                for (uint_fast64_t index = lastUsed + 1; index <= lastToBe; ++index) {
+                    result &= optionDdVariables[index].second;
+                }
+                
+                return result;
+            }
+            
             template struct AbstractionDdInformation<storm::dd::DdType::CUDD, double>;
             
         }

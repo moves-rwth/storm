@@ -56,15 +56,17 @@ namespace storm {
                 
                 // For each module of the concrete program, we create an abstract counterpart.
                 for (auto const& module : program.getModules()) {
-                    modules.emplace_back(module, expressionInformation, ddInformation, *smtSolverFactory);
+                    modules.emplace_back(module, expressionInformation, ddInformation, *this->smtSolverFactory);
                 }
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType> AbstractProgram<DdType, ValueType>::computeDd() {
+            storm::dd::Add<DdType> AbstractProgram<DdType, ValueType>::getAbstractAdd() {
                 // As long as there is only one module, we build its game representation and return it.
+                
+                
                 // FIXME: multiply with probabilities for updates.
-                return modules.front().computeDd().toAdd();
+                return modules.front().getAbstractBdd().toAdd();
             }
             
             // Explicitly instantiate the class.

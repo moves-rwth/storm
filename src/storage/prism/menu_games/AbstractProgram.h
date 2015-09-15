@@ -41,7 +41,7 @@ namespace storm {
                  *
                  * @return The ADD representing the game.
                  */
-                storm::dd::Add<DdType> computeDd();
+                storm::dd::Add<DdType> getAbstractAdd();
                 
             private:
                 // A factory that can be used to create new SMT solvers.

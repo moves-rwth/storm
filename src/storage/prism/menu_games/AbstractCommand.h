@@ -40,12 +40,19 @@ namespace storm {
                 AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
                 /*!
+                 * Refines the abstract command with the given predicates.
+                 *
+                 * @param predicates The new predicates.
+                 */
+                void refine(std::vector<uint_fast64_t> const& predicates);
+                
+                /*!
                  * Computes the abstraction of the command wrt. to the current set of predicates.
                  *
                  * @return The abstraction of the command in the form of a BDD together with the number of DD variables
                  * used to encode the choices of player 2.
                  */
-                std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> computeDd();
+                std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> getAbstractBdd();
                 
             private:
                 /*!
@@ -104,6 +111,19 @@ namespace storm {
                  * @return The source state encoded as a DD.
                  */
                 storm::dd::Bdd<DdType> getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model) const;
+                
+                /*!
+                 * Recomputes the cached BDD. This needs to be triggered if any relevant predicates change.
+                 */
+                void recomputeCachedBdd();
+                
+                /*!
+                 * Computes the missing source state identities.
+                 *
+                 * @return A BDD that represents the source state identities for predicates that are irrelevant for the
+                 * source states.
+                 */
+                storm::dd::Bdd<DdType> computeMissingSourceStateIdentities() const;
                 
                 // An SMT responsible for this abstract command.
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;

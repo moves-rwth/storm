@@ -34,11 +34,18 @@ namespace storm {
                 AbstractModule(storm::prism::Module const& module, AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
                 /*!
+                 * Refines the abstract module with the given predicates.
+                 *
+                 * @param predicates The new predicate indices.
+                 */
+                void refine(std::vector<uint_fast64_t> const& predicates);
+                
+                /*!
                  * Computes the abstraction of the module wrt. to the current set of predicates.
                  *
                  * @return The abstraction of the module in the form of a BDD.
                  */
-                storm::dd::Bdd<DdType> computeDd();
+                storm::dd::Bdd<DdType> getAbstractBdd();
                 
             private:
                 // A factory that can be used to create new SMT solvers.

@@ -11,6 +11,8 @@
 #include "src/storage/prism/Command.h"
 #include "src/storage/prism/Update.h"
 
+#include "src/utility/macros.h"
+
 namespace storm {
     namespace prism {
         namespace menu_games {
@@ -24,6 +26,80 @@ namespace storm {
                 for (auto const& rangeExpression : expressionInformation.rangeExpressions) {
                     smtSolver->add(rangeExpression);
                 }
+                
+                // Assert the guard of the command.
+                smtSolver->add(command.getGuardExpression());
+
+                // Refine the command based on all initial predicates.
+                std::vector<uint_fast64_t> allPredicateIndices(expressionInformation.predicates.size());
+                for (auto index = 0; index < expressionInformation.predicates.size(); ++index) {
+                    allPredicateIndices[index] = index;
+                }
+                this->refine(allPredicateIndices);
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
+                // Add all predicates to the variable partition.
+                for (auto predicateIndex : predicates) {
+                    variablePartition.addExpression(expressionInformation.predicates[predicateIndex]);
+                }
+                
+                STORM_LOG_TRACE("Current variable partition is: " << variablePartition);
+                
+                // Next, we check whether there is work to be done by recomputing the relevant predicates and checking
+                // whether they changed.
+                std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> newRelevantPredicates = this->computeRelevantPredicates();
+                
+                // If the DD does not need recomputation, we can return the cached result.
+                bool recomputeDd = this->relevantPredicatesChanged(newRelevantPredicates);
+                if (!recomputeDd) {
+                    // If the new predicates are unrelated to the BDD of this command, we need to multiply their identities.
+                    for (auto predicateIndex : predicates) {
+                        cachedDd.first &= ddInformation.predicateIdentities[predicateIndex];
+                    }
+                } else {
+                    // If the DD needs recomputation, it is because of new relevant predicates, so we need to assert the appropriate clauses in the solver.
+                    addMissingPredicates(newRelevantPredicates);
+                    
+                    // Finally recompute the cached BDD.
+                    this->recomputeCachedBdd();
+                }
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void AbstractCommand<DdType, ValueType>::recomputeCachedBdd() {
+                STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
+                
+                // Create a mapping from source state DDs to their distributions.
+                std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
+                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this] (storm::solver::SmtSolver::ModelReference const& model) { sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model)); return true; } );
+                
+                // Now we search for the maximal number of choices of player 2 to determine how many DD variables we
+                // need to encode the nondeterminism.
+                uint_fast64_t maximalNumberOfChoices = 0;
+                for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
+                    maximalNumberOfChoices = std::max(maximalNumberOfChoices, static_cast<uint_fast64_t>(sourceDistributionsPair.second.size()));
+                }
+                
+                uint_fast64_t numberOfVariablesNeeded = static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices)));
+                
+                // Finally, build overall result.
+                storm::dd::Bdd<DdType> resultBdd = ddInformation.manager->getBddZero();
+                for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
+                    uint_fast64_t distributionIndex = 0;
+                    storm::dd::Bdd<DdType> allDistributions = ddInformation.manager->getBddZero();
+                    for (auto const& distribution : sourceDistributionsPair.second) {
+                        allDistributions |= distribution && ddInformation.encodeDistributionIndex(numberOfVariablesNeeded, distributionIndex);
+                    }
+                    resultBdd |= sourceDistributionsPair.first && allDistributions;
+                }
+                
+                resultBdd &= computeMissingSourceStateIdentities();
+                resultBdd &= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex());
+                
+                // Cache the result before returning it.
+                cachedDd = std::make_pair(resultBdd, numberOfVariablesNeeded);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -126,6 +202,7 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::getSourceStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
+                STORM_LOG_TRACE("Building source state BDD.");
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables.first) {
                     if (model.getBooleanValue(variableIndexPair.first)) {
@@ -139,11 +216,13 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::getDistributionBdd(storm::solver::SmtSolver::ModelReference const& model) const {
+                STORM_LOG_TRACE("Building distribution BDD.");
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
                 
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
                     storm::dd::Bdd<DdType> updateBdd = ddInformation.manager->getBddOne();
 
+                    // Translate block variables for this update into a successor block.
                     for (auto const& variableIndexPair : relevantPredicatesAndVariables.second[updateIndex]) {
                         if (model.getBooleanValue(variableIndexPair.first)) {
                             updateBdd &= ddInformation.predicateBdds[variableIndexPair.second].second;
@@ -159,9 +238,12 @@ namespace storm {
                     auto secondIt = relevantPredicatesAndVariables.second[updateIndex].begin();
                     auto secondIte = relevantPredicatesAndVariables.second[updateIndex].end();
                     
+                    // Go through all relevant source predicates. This is guaranteed to be a superset of the set of
+                    // relevant successor predicates for any update.
                     for (; firstIt != firstIte; ++firstIt) {
+                        // If the predicates do not match, there is a predicate missing, so we need to add its identity.
                         if (secondIt == secondIte || firstIt->second != secondIt->second) {
-                            result &= ddInformation.predicateIdentities[firstIt->second];
+                            updateBdd &= ddInformation.predicateIdentities[firstIt->second];
                         } else if (secondIt != secondIte) {
                             ++secondIt;
                         }
@@ -172,49 +254,23 @@ namespace storm {
                 
                 return result;
             }
-                        
+            
             template <storm::dd::DdType DdType, typename ValueType>
-            std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> AbstractCommand<DdType, ValueType>::computeDd() {
-                // First, we check whether there is work to be done by recomputing the relevant predicates and checking
-                // whether they changed.
-                std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> newRelevantPredicates = this->computeRelevantPredicates();
-
-                // If the DD does not need recomputation, we can return the cached result.
-                bool recomputeDd = this->relevantPredicatesChanged(newRelevantPredicates);
-                if (!recomputeDd) {
-                    // FIXME: multiply identity of new predicates
-                    return cachedDd;
-                }
+            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingSourceStateIdentities() const {
+                auto relevantIt = relevantPredicatesAndVariables.first.begin();
+                auto relevantIte = relevantPredicatesAndVariables.first.end();
                 
-                // If the DD needs recomputation, it is because of new relevant predicates, so we need to assert the appropriate clauses in the solver.
-                addMissingPredicates(newRelevantPredicates);
-
-                // Create a mapping from source state DDs to their distributions.
-                std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
-                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this] (storm::solver::SmtSolver::ModelReference const& model) { sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model)); return true; } );
-                
-                // Now we search for the maximal number of choices of player 2 to determine how many DD variables we
-                // need to encode the nondeterminism.
-                uint_fast64_t maximalNumberOfChoices = 0;
-                for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
-                    maximalNumberOfChoices = std::max(maximalNumberOfChoices, static_cast<uint_fast64_t>(sourceDistributionsPair.second.size()));
-                }
-                
-                uint_fast64_t numberOfVariablesNeeded = static_cast<uint_fast64_t>(std::ceil(std::log2(maximalNumberOfChoices)));
-                
-                // Finally, build overall result.
-                storm::dd::Bdd<DdType> resultBdd = ddInformation.manager->getBddZero();
-                for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
-                    uint_fast64_t distributionIndex = 0;
-                    storm::dd::Bdd<DdType> allDistributions = ddInformation.manager->getBddZero();
-                    for (auto const& distribution : sourceDistributionsPair.second) {
-                        allDistributions |= distribution && ddInformation.encodeDistributionIndex(numberOfVariablesNeeded, distributionIndex);
+                storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
+                for (uint_fast64_t predicateIndex = 0; predicateIndex < expressionInformation.predicates.size(); ++predicateIndex) {
+                    if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
+                        result &= ddInformation.predicateIdentities[predicateIndex];
                     }
-                    resultBdd |= sourceDistributionsPair.first && allDistributions;
                 }
-                
-                // Cache the result before returning it.
-                cachedDd = std::make_pair(resultBdd, numberOfVariablesNeeded);
+                return result;
+            }
+
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> AbstractCommand<DdType, ValueType>::getAbstractBdd() {
                 return cachedDd;
             }
             

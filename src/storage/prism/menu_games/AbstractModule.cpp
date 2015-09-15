@@ -22,19 +22,28 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractModule<DdType, ValueType>::computeDd() {
+            void AbstractModule<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
+                for (auto& command : commands) {
+                    command.refine(predicates);
+                }
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> AbstractModule<DdType, ValueType>::getAbstractBdd() {
                 // First, we retrieve the abstractions of all commands.
                 std::vector<std::pair<storm::dd::Bdd<DdType>, uint_fast64_t>> commandDdsAndUsedOptionVariableCounts;
+                uint_fast64_t maximalNumberOfUsedOptionVariables = 0;
                 for (auto& command : commands) {
-                    commandDdsAndUsedOptionVariableCounts.push_back(command.computeDd());
+                    commandDdsAndUsedOptionVariableCounts.push_back(command.getAbstractBdd());
+                    maximalNumberOfUsedOptionVariables = std::max(maximalNumberOfUsedOptionVariables, commandDdsAndUsedOptionVariableCounts.back().second);
                 }
                 
-                // Then, we build the module ADD by adding the single command DDs. We need to make sure that all command
+                // Then, we build the module BDD by adding the single command DDs. We need to make sure that all command
                 // DDs use the same amount DD variable encoding the choices of player 2.
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
-                
-                // TODO
-                
+                for (auto const& commandDd : commandDdsAndUsedOptionVariableCounts) {
+                    result |= commandDd.first && ddInformation.getMissingOptionVariableCube(commandDd.second, maximalNumberOfUsedOptionVariables);
+                }
                 return result;
             }
             

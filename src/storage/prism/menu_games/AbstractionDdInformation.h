@@ -50,6 +50,15 @@ namespace storm {
                  */
                 void addPredicate(storm::expressions::Expression const& predicate);
                 
+                /*!
+                 * Retrieves the cube of option variables in the range (lastUsed, lastToBe] the given indices.
+                 *
+                 * @param lastUsed The last variable before the range to return.
+                 * @param lastToBe The last variable of the range to return.
+                 * @return The cube of variables in the given range.
+                 */
+                storm::dd::Bdd<DdType> getMissingOptionVariableCube(uint_fast64_t lastUsed, uint_fast64_t lastToBe) const;
+                
                 // The manager responsible for the DDs.
                 std::shared_ptr<storm::dd::DdManager<DdType>> manager;
                 

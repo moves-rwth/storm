@@ -7,7 +7,15 @@
 namespace storm {
     namespace prism {
         namespace menu_games {
-            VariablePartition::VariablePartition(std::set<storm::expressions::Variable> const& relevantVariables, std::vector<storm::expressions::Expression> const& expressions) : relevantVariables(relevantVariables), expressionBlocks(expressions.size()) {
+            VariablePartition::VariablePartition(std::set<storm::expressions::Variable> const& relevantVariables, std::vector<storm::expressions::Expression> const& expressions) : relevantVariables(relevantVariables), expressionBlocks(relevantVariables.size()) {
+                // Assign each variable to a new block.
+                uint_fast64_t currentBlock = 0;
+                for (auto const& variable : relevantVariables) {
+                    this->variableToBlockMapping[variable] = currentBlock;
+                    this->variableToExpressionsMapping[variable] = std::set<uint_fast64_t>();
+                }
+                
+                // Add all expressions, which might relate some variables.
                 for (auto const& expression : expressions) {
                     this->addExpression(expression);
                 }

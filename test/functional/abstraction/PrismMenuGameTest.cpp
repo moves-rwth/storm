@@ -24,6 +24,9 @@ TEST(PrismMenuGame, CommandAbstractionTest) {
     initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    
+    storm::dd::Add<storm::dd::DdType::CUDD> abstraction = abstractProgram.getAbstractAdd();
+    abstraction.exportToDot("abstr.dot");
 }
 
 #endif
