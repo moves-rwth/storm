@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_DD_CUDDBDD_H_
 #define STORM_STORAGE_DD_CUDDBDD_H_
 
+#include <boost/functional/hash.hpp>
+
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/CuddDd.h"
 #include "src/utility/OsDetection.h"
@@ -20,8 +22,6 @@ namespace storm {
     namespace storage {
         class BitVector;
     }
-    
-    
     
     namespace dd {
         // Forward-declare some classes.
@@ -50,6 +50,9 @@ namespace storm {
             friend class DdForwardIterator<DdType::CUDD>;
             friend class Add<DdType::CUDD>;
             friend class Odd<DdType::CUDD>;
+            
+            // Declare the hashing struct for DDs as a friend so it can access the internal DD pointer.
+            friend struct std::hash<storm::dd::Bdd<storm::dd::DdType::CUDD>>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Bdd() = default;
@@ -355,6 +358,17 @@ namespace storm {
             BDD cuddBdd;
         };
     }
+}
+
+namespace std {
+    template <> struct hash<storm::dd::Bdd<storm::dd::DdType::CUDD>>
+    {
+        size_t operator()(storm::dd::Bdd<storm::dd::DdType::CUDD> const& dd) const {
+            std::size_t seed = 0;
+            boost::hash_combine(seed, dd.getCuddBdd().getNode());
+            return seed;
+        }
+    };
 }
 
 #endif /* STORM_STORAGE_DD_CUDDBDD_H_ */

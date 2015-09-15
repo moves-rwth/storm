@@ -1,7 +1,5 @@
 #include "src/storage/prism/menu_games/AbstractProgram.h"
 
-#include <sstream>
-
 #include "src/storage/prism/Program.h"
 
 #include "src/storage/dd/CuddDdManager.h"
@@ -38,23 +36,22 @@ namespace storm {
                 
                 // Create DD variables for all predicates.
                 for (auto const& predicate : expressionInformation.predicates) {
-                    std::stringstream stream;
-                    stream << predicate;
-                    ddInformation.predicateDdVariables.push_back(ddInformation.ddManager->addMetaVariable(stream.str()));
+                    ddInformation.addPredicate(predicate);
                 }
                 
                 // Create DD variable for the command encoding.
-                ddInformation.commandDdVariable = ddInformation.ddManager->addMetaVariable("command", 0, totalNumberOfCommands - 1).first;
+                ddInformation.commandDdVariable = ddInformation.manager->addMetaVariable("command", 0, totalNumberOfCommands - 1).first;
                 
                 // Create DD variable for update encoding.
-                ddInformation.updateDdVariable = ddInformation.ddManager->addMetaVariable("update", 0, maximalUpdateCount - 1).first;
+                ddInformation.updateDdVariable = ddInformation.manager->addMetaVariable("update", 0, maximalUpdateCount - 1).first;
                 
                 // Create DD variables encoding the nondeterministic choices of player 2.
                 // NOTE: currently we assume that 100 variables suffice, which corresponds to 2^100 possible choices.
                 // If for some reason this should not be enough, we could grow this vector dynamically, but odds are
                 // that it's impossible to treat such models in any event.
                 for (uint_fast64_t index = 0; index < 100; ++index) {
-                    ddInformation.optionDdVariables.push_back(ddInformation.ddManager->addMetaVariable("opt" + std::to_string(index)).first);
+                    storm::expressions::Variable newOptionVar = ddInformation.manager->addMetaVariable("opt" + std::to_string(index)).first;
+                    ddInformation.optionDdVariables.push_back(std::make_pair(newOptionVar, ddInformation.manager->getRange(newOptionVar)));
                 }
                 
                 // For each module of the concrete program, we create an abstract counterpart.
@@ -66,7 +63,8 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Add<DdType> AbstractProgram<DdType, ValueType>::computeDd() {
                 // As long as there is only one module, we build its game representation and return it.
-                return modules.front().computeDd();
+                // FIXME: multiply with probabilities for updates.
+                return modules.front().computeDd().toAdd();
             }
             
             // Explicitly instantiate the class.

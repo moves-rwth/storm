@@ -2,6 +2,7 @@
 #define STORM_STORAGE_DD_CUDDADD_H_
 
 #include <boost/optional.hpp>
+#include <boost/functional/hash.hpp>
 #include <map>
 
 #include "src/storage/dd/Add.h"
@@ -35,6 +36,8 @@ namespace storm {
             friend class Bdd<DdType::CUDD>;
             friend class Odd<DdType::CUDD>;
             
+            // Declare the hashing struct for DDs as a friend so it can access the internal DD pointer.
+            friend struct std::hash<storm::dd::Add<storm::dd::DdType::CUDD>>;
             /*!
              * Creates an ADD from the given explicit vector.
              *
@@ -823,6 +826,17 @@ namespace storm {
             ADD cuddAdd;
         };
     }
+}
+
+namespace std {
+    template <> struct hash<storm::dd::Add<storm::dd::DdType::CUDD>>
+    {
+        size_t operator()(storm::dd::Add<storm::dd::DdType::CUDD> const& dd) const {
+            std::size_t seed = 0;
+            boost::hash_combine(seed, dd.getCuddAdd().getNode());
+            return seed;
+        }
+    };
 }
 
 #endif /* STORM_STORAGE_DD_CUDDADD_H_ */

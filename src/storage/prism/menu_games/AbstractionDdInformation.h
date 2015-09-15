@@ -11,6 +11,13 @@ namespace storm {
     namespace dd {
         template <storm::dd::DdType DdType>
         class DdManager;
+
+        template <storm::dd::DdType DdType>
+        class Bdd;
+    }
+    
+    namespace expressions {
+        class Expression;
     }
 
     namespace prism {
@@ -26,11 +33,34 @@ namespace storm {
                  */
                 AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager);
                 
+                /*!
+                 * Encodes the given distribution index by using the given number of variables from the optionDdVariables
+                 * vector.
+                 *
+                 * @param numberOfVariables The number of variables to use.
+                 * @param distributionIndex The distribution index to encode.
+                 * @return The encoded distribution index.
+                 */
+                storm::dd::Bdd<DdType> encodeDistributionIndex(uint_fast64_t numberOfVariables, uint_fast64_t distributionIndex) const;
+                
+                /*!
+                 * Adds the given predicate and creates all associated ressources.
+                 *
+                 * @param predicate The predicate to add.
+                 */
+                void addPredicate(storm::expressions::Expression const& predicate);
+                
                 // The manager responsible for the DDs.
-                std::shared_ptr<storm::dd::DdManager<DdType>> ddManager;
+                std::shared_ptr<storm::dd::DdManager<DdType>> manager;
                 
                 // The DD variables corresponding to the predicates.
                 std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> predicateDdVariables;
+
+                // The BDDs corresponding to the predicates.
+                std::vector<std::pair<storm::dd::Bdd<DdType>, storm::dd::Bdd<DdType>>> predicateBdds;
+                
+                // The BDDs representing the predicate identities (i.e. source and successor variable have the same truth value).
+                std::vector<storm::dd::Bdd<DdType>> predicateIdentities;
                 
                 // The DD variable encoding the command (i.e., the nondeterministic choices of player 1).
                 storm::expressions::Variable commandDdVariable;
@@ -39,7 +69,7 @@ namespace storm {
                 storm::expressions::Variable updateDdVariable;
                 
                 // The DD variables encoding the nondeterministic choices of player 2.
-                std::vector<storm::expressions::Variable> optionDdVariables;
+                std::vector<std::pair<storm::expressions::Variable, storm::dd::Bdd<DdType>>> optionDdVariables;
             };
             
         }

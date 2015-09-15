@@ -36,9 +36,9 @@ namespace storm {
                 /*!
                  * Computes the abstraction of the module wrt. to the current set of predicates.
                  *
-                 * @return The abstraction of the module in the form of an ADD.
+                 * @return The abstraction of the module in the form of a BDD.
                  */
-                storm::dd::Add<DdType> computeDd();
+                storm::dd::Bdd<DdType> computeDd();
                 
             private:
                 // A factory that can be used to create new SMT solvers.

@@ -22,16 +22,16 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType> AbstractModule<DdType, ValueType>::computeDd() {
+            storm::dd::Bdd<DdType> AbstractModule<DdType, ValueType>::computeDd() {
                 // First, we retrieve the abstractions of all commands.
-                std::vector<std::pair<storm::dd::Add<DdType>, uint_fast64_t>> commandDdsAndUsedOptionVariableCounts;
-                for (auto const& command : commands) {
+                std::vector<std::pair<storm::dd::Bdd<DdType>, uint_fast64_t>> commandDdsAndUsedOptionVariableCounts;
+                for (auto& command : commands) {
                     commandDdsAndUsedOptionVariableCounts.push_back(command.computeDd());
                 }
                 
                 // Then, we build the module ADD by adding the single command DDs. We need to make sure that all command
                 // DDs use the same amount DD variable encoding the choices of player 2.
-                storm::dd::Add<DdType> result = ddInformation.ddManager->getAddZero();
+                storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
                 
                 // TODO
                 
