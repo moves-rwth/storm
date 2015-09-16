@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/Expression.h"
 
 #include "src/storage/dd/CuddDdManager.h"
@@ -49,6 +50,22 @@ namespace storm {
                 
                 for (uint_fast64_t index = lastUsed + 1; index <= lastToBe; ++index) {
                     result &= optionDdVariables[index].second;
+                }
+                
+                return result;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> AbstractionDdInformation<DdType, ValueType>::declareNewVariables(storm::expressions::ExpressionManager& manager, std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& oldRelevantPredicates, std::set<uint_fast64_t> const& newRelevantPredicates) {
+                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> result;
+                
+                auto oldIt = oldRelevantPredicates.begin();
+                auto oldIte = oldRelevantPredicates.end();
+                for (auto newIt = newRelevantPredicates.begin(), newIte = newRelevantPredicates.end(); newIt != newIte; ++newIt) {
+                    // If the new variable does not yet exist as a source variable, we create it now.
+                    if (oldIt == oldIte || oldIt->second != *newIt) {
+                        result.push_back(std::make_pair(manager.declareFreshBooleanVariable(), *newIt));
+                    }
                 }
                 
                 return result;

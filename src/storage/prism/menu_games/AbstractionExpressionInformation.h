@@ -19,12 +19,15 @@ namespace storm {
                 /*!
                  * Creates an expression information object with the given expression manager.
                  *
-                 * @param expressionManager The expression manager to use.
+                 * @param manager The expression manager to use.
+                 * @param predicates The initial set of predicates.
+                 * @param variables The variables.
+                 * @param rangeExpressions A set of expressions that enforce the variable bounds.
                  */
-                AbstractionExpressionInformation(storm::expressions::ExpressionManager& expressionManager, std::vector<storm::expressions::Expression> const& predicates = std::vector<storm::expressions::Expression>(), std::set<storm::expressions::Variable> const& variables = std::set<storm::expressions::Variable>(), std::vector<storm::expressions::Expression> const& rangeExpressions = std::vector<storm::expressions::Expression>());
+                AbstractionExpressionInformation(storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression> const& predicates = std::vector<storm::expressions::Expression>(), std::set<storm::expressions::Variable> const& variables = std::set<storm::expressions::Variable>(), std::vector<storm::expressions::Expression> const& rangeExpressions = std::vector<storm::expressions::Expression>());
                 
                 // The manager responsible for the expressions of the program and the SMT solvers.
-                storm::expressions::ExpressionManager& expressionManager;
+                storm::expressions::ExpressionManager& manager;
                 
                 // The current set of predicates used in the abstraction.
                 std::vector<storm::expressions::Expression> predicates;

@@ -5,6 +5,7 @@
 
 #include "src/storage/prism/menu_games/AbstractionDdInformation.h"
 #include "src/storage/prism/menu_games/AbstractionExpressionInformation.h"
+#include "src/storage/prism/menu_games/StateSetAbstractor.h"
 #include "src/storage/prism/menu_games/AbstractModule.h"
 
 #include "src/storage/expressions/Expression.h"
@@ -43,6 +44,13 @@ namespace storm {
                  */
                 storm::dd::Add<DdType> getAbstractAdd();
                 
+                /*!
+                 * Refines the abstract module with the given predicates.
+                 *
+                 * @param predicates The new predicates.
+                 */
+                void refine(std::vector<storm::expressions::Expression> const& predicates);
+                
             private:
                 /*!
                  * Computes the reachable states of the transition relation.
@@ -68,6 +76,9 @@ namespace storm {
                 
                 // The concrete program this abstract program refers to.
                 std::reference_wrapper<Program const> program;
+                
+                // A state-set abstractor used to determine the initial states of the abstraction.
+                StateSetAbstractor<DdType, ValueType> initialStateAbstractor;
                 
                 // An ADD characterizing the probabilities of commands and their updates.
                 storm::dd::Add<DdType> commandUpdateProbabilitiesAdd;

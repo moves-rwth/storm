@@ -16,9 +16,9 @@ namespace storm {
         
         namespace menu_games {
             template <storm::dd::DdType DdType, typename ValueType>
-            class AbstractionDdInformation;
+            struct AbstractionDdInformation;
             
-            class AbstractionExpressionInformation;
+            struct AbstractionExpressionInformation;
             
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractModule {
@@ -43,9 +43,9 @@ namespace storm {
                 /*!
                  * Computes the abstraction of the module wrt. to the current set of predicates.
                  *
-                 * @return The abstraction of the module in the form of a BDD.
+                 * @return The abstraction of the module in the form of a BDD together with how many option variables were used.
                  */
-                storm::dd::Bdd<DdType> getAbstractBdd();
+                std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> getAbstractBdd();
                 
                 /*!
                  * Retrieves an ADD that maps the encodings of commands and their updates to their probabilities.

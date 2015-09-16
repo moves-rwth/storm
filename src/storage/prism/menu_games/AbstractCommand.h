@@ -12,9 +12,22 @@
 #include "src/storage/expressions/Expression.h"
 
 #include "src/solver/SmtSolver.h"
-#include "src/utility/solver.h"
 
 namespace storm {
+    namespace utility {
+        namespace solver {
+            class SmtSolverFactory;
+        }
+    }
+    
+    namespace dd {
+        template <storm::dd::DdType DdType>
+        class Bdd;
+
+        template <storm::dd::DdType DdType>
+        class Add;
+    }
+    
     namespace prism {
         // Forward-declare concrete command and assignment classes.
         class Command;
@@ -22,9 +35,9 @@ namespace storm {
         
         namespace menu_games {
             template <storm::dd::DdType DdType, typename ValueType>
-            class AbstractionDdInformation;
+            struct AbstractionDdInformation;
             
-            class AbstractionExpressionInformation;
+            struct AbstractionExpressionInformation;
             
             template <storm::dd::DdType DdType, typename ValueType>
             class AbstractCommand {
@@ -86,15 +99,7 @@ namespace storm {
                  * @param newRelevantPredicates The new relevant predicates.
                  */
                 bool relevantPredicatesChanged(std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> const& newRelevantPredicates) const;
-                
-                /*!
-                 * Declares variables for the predicates that were added.
-                 *
-                 * @param oldRelevantPredicates The old relevant predicates (and the corresponding variables).
-                 * @return Pairs of variable and predicate (indices) for the new relevant predicates.
-                 */
-                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> declareNewVariables(std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& oldRelevantPredicates, std::set<uint_fast64_t> const& newRelevantPredicates);
-                
+                                
                 /*!
                  * Takes the new relevant predicates and creates the appropriate variables and assertions for the ones
                  * that are currently missing.

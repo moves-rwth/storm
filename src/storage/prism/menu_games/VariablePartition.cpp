@@ -27,8 +27,13 @@ namespace storm {
                 for (auto const& variable : expressionVariables) {
                     variableToExpressionsMapping[variable].insert(this->expressions.size());
                 }
+                
+                // Add the expression to the block of the first variable. When relating the variables, the blocks will
+                // get merged (if necessary).
+                STORM_LOG_ASSERT(!expressionVariables.empty(), "Found no variables in expression.");
+                expressionBlocks[getBlockIndexOfVariable(*expressionVariables.begin())].insert(this->expressions.size());
 
-                // Add aexpression and relate all the appearing variables.
+                // Add expression and relate all the appearing variables.
                 this->expressions.push_back(expression);
                 return this->relate(expressionVariables);
             }

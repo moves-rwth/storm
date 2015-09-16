@@ -11,13 +11,14 @@
 #include "src/storage/prism/Command.h"
 #include "src/storage/prism/Update.h"
 
+#include "src/utility/solver.h"
 #include "src/utility/macros.h"
 
 namespace storm {
     namespace prism {
         namespace menu_games {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.expressionManager)), expressionInformation(expressionInformation), ddInformation(ddInformation), command(command), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), cachedDd(std::make_pair(ddInformation.manager->getBddZero(), 0)), decisionVariables() {
+            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.manager)), expressionInformation(expressionInformation), ddInformation(ddInformation), command(command), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), cachedDd(std::make_pair(ddInformation.manager->getBddZero(), 0)), decisionVariables() {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
@@ -98,7 +99,7 @@ namespace storm {
                 resultBdd &= computeMissingSourceStateIdentities();
                 resultBdd &= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex());
                 
-                // Cache the result before returning it.
+                // Cache the result.
                 cachedDd = std::make_pair(resultBdd, numberOfVariablesNeeded);
             }
             
@@ -159,25 +160,9 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> AbstractCommand<DdType, ValueType>::declareNewVariables(std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& oldRelevantPredicates, std::set<uint_fast64_t> const& newRelevantPredicates) {
-                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> result;
-                
-                auto oldIt = oldRelevantPredicates.begin();
-                auto oldIte = oldRelevantPredicates.end();
-                for (auto newIt = newRelevantPredicates.begin(), newIte = newRelevantPredicates.end(); newIt != newIte; ++newIt) {
-                    // If the new variable does not yet exist as a source variable, we create it now.
-                    if (oldIt == oldIte || oldIt->second != *newIt) {
-                        result.push_back(std::make_pair(expressionInformation.expressionManager.declareFreshBooleanVariable(), *newIt));
-                    }
-                }
-                
-                return result;
-            }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::addMissingPredicates(std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> const& newRelevantPredicates) {
                 // Determine and add new relevant source predicates.
-                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = declareNewVariables(relevantPredicatesAndVariables.first, newRelevantPredicates.first);
+                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.manager, relevantPredicatesAndVariables.first, newRelevantPredicates.first);
                 for (auto const& element : newSourceVariables) {
                     smtSolver->add(storm::expressions::iff(element.first, expressionInformation.predicates[element.second]));
                     decisionVariables.push_back(element.first);
@@ -189,7 +174,7 @@ namespace storm {
                 
                 // Do the same for every update.
                 for (uint_fast64_t index = 0; index < command.get().getNumberOfUpdates(); ++index) {
-                    std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSuccessorVariables = declareNewVariables(relevantPredicatesAndVariables.second[index], newRelevantPredicates.second[index]);
+                    std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSuccessorVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.manager, relevantPredicatesAndVariables.second[index], newRelevantPredicates.second[index]);
                     for (auto const& element : newSuccessorVariables) {
                         smtSolver->add(storm::expressions::iff(element.first, expressionInformation.predicates[element.second].substitute(command.get().getUpdate(index).getAsVariableToExpressionMap())));
                         decisionVariables.push_back(element.first);

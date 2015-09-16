@@ -29,7 +29,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractModule<DdType, ValueType>::getAbstractBdd() {
+            std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> AbstractModule<DdType, ValueType>::getAbstractBdd() {
                 // First, we retrieve the abstractions of all commands.
                 std::vector<std::pair<storm::dd::Bdd<DdType>, uint_fast64_t>> commandDdsAndUsedOptionVariableCounts;
                 uint_fast64_t maximalNumberOfUsedOptionVariables = 0;
@@ -44,7 +44,7 @@ namespace storm {
                 for (auto const& commandDd : commandDdsAndUsedOptionVariableCounts) {
                     result |= commandDd.first && ddInformation.getMissingOptionVariableCube(commandDd.second, maximalNumberOfUsedOptionVariables);
                 }
-                return result;
+                return std::make_pair(result, maximalNumberOfUsedOptionVariables);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

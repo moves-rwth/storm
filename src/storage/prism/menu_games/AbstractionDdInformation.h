@@ -60,6 +60,17 @@ namespace storm {
                  */
                 storm::dd::Bdd<DdType> getMissingOptionVariableCube(uint_fast64_t lastUsed, uint_fast64_t lastToBe) const;
                 
+                /*!
+                 * Examines the old and new relevant predicates and declares decision variables for the missing relevant
+                 * predicates.
+                 *
+                 * @param manager The manager in which to declare the decision variable.
+                 * @param oldRelevantPredicates The previously relevant predicates.
+                 * @param newRelevantPredicates The new relevant predicates.
+                 * @return Pairs of decision variables and their index for the missing predicates.
+                 */
+                static std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> declareNewVariables(storm::expressions::ExpressionManager& manager, std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> const& oldRelevantPredicates, std::set<uint_fast64_t> const& newRelevantPredicates);
+                
                 // The manager responsible for the DDs.
                 std::shared_ptr<storm::dd::DdManager<DdType>> manager;
                 
