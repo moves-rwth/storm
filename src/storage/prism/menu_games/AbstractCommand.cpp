@@ -71,6 +71,7 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::recomputeCachedBdd() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
+                std::cout << "recomputing " << command.get() << std::endl;
                 
                 // Create a mapping from source state DDs to their distributions.
                 std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
@@ -171,6 +172,10 @@ namespace storm {
                 // Insert the new variables into the record of relevant source variables.
                 relevantPredicatesAndVariables.first.insert(relevantPredicatesAndVariables.first.end(), newSourceVariables.begin(), newSourceVariables.end());
                 std::sort(relevantPredicatesAndVariables.first.begin(), relevantPredicatesAndVariables.first.end(), [] (std::pair<storm::expressions::Variable, uint_fast64_t> const& first, std::pair<storm::expressions::Variable, uint_fast64_t> const& second) { return first.second < second.second; } );
+                std::cout << "sorted!" << std::endl;
+                for (auto const& el : relevantPredicatesAndVariables.first) {
+                    std::cout << el.first.getName() << " // " << el.second << std::endl;
+                }
                 
                 // Do the same for every update.
                 for (uint_fast64_t index = 0; index < command.get().getNumberOfUpdates(); ++index) {
@@ -190,6 +195,7 @@ namespace storm {
                 STORM_LOG_TRACE("Building source state BDD.");
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables.first) {
+                    std::cout << "size: " << ddInformation.predicateBdds.size() << " and index " << variableIndexPair.second << std::endl;
                     if (model.getBooleanValue(variableIndexPair.first)) {
                         result &= ddInformation.predicateBdds[variableIndexPair.second].first;
                     } else {
@@ -244,11 +250,17 @@ namespace storm {
             storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingSourceStateIdentities() const {
                 auto relevantIt = relevantPredicatesAndVariables.first.begin();
                 auto relevantIte = relevantPredicatesAndVariables.first.end();
+                std::cout << "the size is " << relevantPredicatesAndVariables.first.size() << std::endl;
                 
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
                 for (uint_fast64_t predicateIndex = 0; predicateIndex < expressionInformation.predicates.size(); ++predicateIndex) {
                     if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
+                        std::cout << (relevantIt == relevantIte) << std::endl;
+                        std::cout << relevantIt->second << " vs " << predicateIndex << std::endl;
+                        std::cout << "multiplying identity " << predicateIndex << std::endl;
                         result &= ddInformation.predicateIdentities[predicateIndex];
+                    } else {
+                        ++relevantIt;
                     }
                 }
                 return result;

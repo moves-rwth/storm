@@ -68,23 +68,34 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractProgram<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
+                std::cout << "refining!" << std::endl;
+
                 // Add the predicates to the global list of predicates.
                 uint_fast64_t firstNewPredicateIndex = expressionInformation.predicates.size();
                 expressionInformation.predicates.insert(expressionInformation.predicates.end(), predicates.begin(), predicates.end());
+                
+                // Create DD variables and some auxiliary data structures for the new predicates.
+                for (auto const& predicate : predicates) {
+                    ddInformation.addPredicate(predicate);
+                }
 
                 // Create a list of indices of the predicates, so we can refine the abstract modules and the state set abstractors.
                 std::vector<uint_fast64_t> newPredicateIndices;
-                for (uint_fast64_t index = firstNewPredicateIndex; expressionInformation.predicates.size(); ++index) {
+                for (uint_fast64_t index = firstNewPredicateIndex; index < expressionInformation.predicates.size(); ++index) {
                     newPredicateIndices.push_back(index);
                 }
                 
+                std::cout << "refining modules" << std::endl;
                 // Refine all abstract modules.
                 for (auto& module : modules) {
                     module.refine(newPredicateIndices);
                 }
                 
+                std::cout << "refining initial" << std::endl;
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(newPredicateIndices);
+                
+                std::cout << "done " << std::endl;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -97,6 +108,8 @@ namespace storm {
                     return lastAbstractAdd;
                 }
                 
+                std::cout << "abstr DD new " << std::endl;
+                
                 // Otherwise, we remember that the abstract BDD changed and perform a reachability analysis.
                 lastAbstractBdd = gameBdd.first;
 
@@ -106,9 +119,13 @@ namespace storm {
                     variablesToAbstract.insert(ddInformation.optionDdVariables[index].first);
                 }
 
+                std::cout << "reachability... " << std::endl;
+                
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = lastAbstractBdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> reachableStates = this->getReachableStates(initialStateAbstractor.getAbstractStates(), transitionRelation);
+
+                std::cout << "done " << std::endl;
                 
                 // Find the deadlock states in the model.
                 storm::dd::Bdd<DdType> deadlockStates = transitionRelation.existsAbstract(ddInformation.successorVariables);
