@@ -89,6 +89,9 @@ namespace storm {
                 // The BDDs representing the predicate identities (i.e. source and successor variable have the same truth value).
                 std::vector<storm::dd::Bdd<DdType>> predicateIdentities;
                 
+                // A BDD that represents the identity of all predicate variables.
+                storm::dd::Bdd<DdType> allPredicateIdentities;
+                
                 // The DD variable encoding the command (i.e., the nondeterministic choices of player 1).
                 storm::expressions::Variable commandDdVariable;
                 

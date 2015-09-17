@@ -82,6 +82,12 @@ namespace storm {
                 
                 // An ADD characterizing the probabilities of commands and their updates.
                 storm::dd::Add<DdType> commandUpdateProbabilitiesAdd;
+                
+                // A BDD that is the result of the last abstraction of the system.
+                storm::dd::Bdd<DdType> lastAbstractBdd;
+
+                // An ADD that is the result of the last abstraction of the system.
+                storm::dd::Add<DdType> lastAbstractAdd;
             };
         }
     }

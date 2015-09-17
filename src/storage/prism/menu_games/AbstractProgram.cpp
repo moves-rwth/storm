@@ -14,7 +14,7 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>()), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program), initialStateAbstractor(expressionInformation, ddInformation, *this->smtSolverFactory) {
+            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>()), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program), initialStateAbstractor(expressionInformation, ddInformation, *this->smtSolverFactory), lastAbstractBdd(ddInformation.manager->getBddZero()), lastAbstractAdd(ddInformation.manager->getAddZero()) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -91,6 +91,14 @@ namespace storm {
             storm::dd::Add<DdType> AbstractProgram<DdType, ValueType>::getAbstractAdd() {
                 // As long as there is only one module, we only build its game representation.
                 std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> gameBdd = modules.front().getAbstractBdd();
+                
+                // If the abstraction did not change, we can return the most recenty obtained ADD.
+                if (gameBdd.first == lastAbstractBdd) {
+                    return lastAbstractAdd;
+                }
+                
+                // Otherwise, we remember that the abstract BDD changed and perform a reachability analysis.
+                lastAbstractBdd = gameBdd.first;
 
                 // Construct a set of all unnecessary variables, so we can abstract from it.
                 std::set<storm::expressions::Variable> variablesToAbstract = {ddInformation.commandDdVariable, ddInformation.updateDdVariable};
@@ -99,11 +107,22 @@ namespace storm {
                 }
 
                 // Do a reachability analysis on the raw transition relation.
-                storm::dd::Bdd<DdType> transitionRelation = gameBdd.first.existsAbstract(variablesToAbstract);
+                storm::dd::Bdd<DdType> transitionRelation = lastAbstractBdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> reachableStates = this->getReachableStates(initialStateAbstractor.getAbstractStates(), transitionRelation);
                 
+                // Find the deadlock states in the model.
+                storm::dd::Bdd<DdType> deadlockStates = transitionRelation.existsAbstract(ddInformation.successorVariables);
+                deadlockStates = reachableStates && !deadlockStates;
+                
+                // If there are deadlock states, we fix them now.
+                storm::dd::Add<DdType> deadlockTransitions = ddInformation.manager->getAddZero();
+                if (!deadlockStates.isZero()) {
+                    deadlockTransitions = (deadlockStates && ddInformation.allPredicateIdentities && ddInformation.manager->getEncoding(ddInformation.commandDdVariable, 0)  && ddInformation.manager->getEncoding(ddInformation.updateDdVariable, 0) && ddInformation.getMissingOptionVariableCube(0, gameBdd.second)).toAdd();
+                }
+                
                 // Construct the final game by cutting away the transitions of unreachable states.
-                return (gameBdd.first && reachableStates).toAdd() * commandUpdateProbabilitiesAdd;
+                lastAbstractAdd = (lastAbstractBdd && reachableStates).toAdd() * commandUpdateProbabilitiesAdd + deadlockTransitions;
+                return lastAbstractAdd;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

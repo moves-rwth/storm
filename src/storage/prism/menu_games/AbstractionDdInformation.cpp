@@ -14,7 +14,7 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractionDdInformation<DdType, ValueType>::AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager) : manager(manager) {
+            AbstractionDdInformation<DdType, ValueType>::AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager) : manager(manager), allPredicateIdentities(manager->getBddOne()) {
                 // Intentionally left empty.
             }
             
@@ -40,6 +40,7 @@ namespace storm {
                 predicateDdVariables.push_back(newMetaVariable);
                 predicateBdds.emplace_back(manager->getEncoding(newMetaVariable.first, 1), manager->getEncoding(newMetaVariable.second, 1));
                 predicateIdentities.push_back(manager->getIdentity(newMetaVariable.first).equals(manager->getIdentity(newMetaVariable.second)).toBdd());
+                allPredicateIdentities &= predicateIdentities.back();
                 sourceVariables.insert(newMetaVariable.first);
                 successorVariables.insert(newMetaVariable.second);
             }
