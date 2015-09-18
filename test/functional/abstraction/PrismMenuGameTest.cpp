@@ -193,12 +193,10 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(46, abstraction.getNodeCount());
-    
     storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
     ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
     
-    EXPECT_EQ(13, reachableStatesInAbstraction.getNonZeroCount());
+    EXPECT_EQ(8607, reachableStatesInAbstraction.getNonZeroCount());
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionTest) {
@@ -240,8 +238,66 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
+    
+    EXPECT_EQ(95, abstraction.getNodeCount());
+    
+    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
+    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
+}
 
-    EXPECT_EQ(107, abstraction.getNodeCount());
+TEST(PrismMenuGame, TwoDiceFullAbstractionTest) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    program = program.substituteConstants();
+    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    
+    std::vector<storm::expressions::Expression> initialPredicates;
+    storm::expressions::ExpressionManager& manager = program.getManager();
+    
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(7));
+
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(6));
+    
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(7));
+
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(6));
+    
+    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    
+    storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
+    ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
+    
+    EXPECT_EQ(1635, abstraction.getNodeCount());
+    
+    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
+    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
+    
+    EXPECT_EQ(169, reachableStatesInAbstraction.getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanAbstractionTest) {
@@ -261,7 +317,7 @@ TEST(PrismMenuGame, WlanAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(219, abstraction.getNodeCount());
+    EXPECT_EQ(221, abstraction.getNodeCount());
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
@@ -281,12 +337,135 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(219, abstraction.getNodeCount());
+    EXPECT_EQ(221, abstraction.getNodeCount());
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(292, abstraction.getNodeCount());
+    EXPECT_EQ(287, abstraction.getNodeCount());
+}
+
+TEST(PrismMenuGame, WlanFullAbstractionTest) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
+    program = program.substituteConstants();
+    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    
+    std::vector<storm::expressions::Expression> initialPredicates;
+    storm::expressions::ExpressionManager& manager = program.getManager();
+    
+    initialPredicates.push_back(manager.getVariableExpression("col") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("col") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("col") == manager.integer(2));
+
+    initialPredicates.push_back(manager.getVariableExpression("c1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("c1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("c1") == manager.integer(2));
+
+    initialPredicates.push_back(manager.getVariableExpression("c2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("c2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("c2") == manager.integer(2));
+    
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(7));
+
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(7));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(8));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(9));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(10));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(11));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(12));
+    
+    initialPredicates.push_back(manager.getVariableExpression("slot1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("slot1") == manager.integer(1));
+
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(7));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(8));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(9));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(10));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(11));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(12));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(13));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(14));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(15));
+
+    initialPredicates.push_back(manager.getVariableExpression("bc1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("bc1") == manager.integer(1));
+    
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(7));
+    
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(7));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(8));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(9));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(10));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(11));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(12));
+    
+    initialPredicates.push_back(manager.getVariableExpression("slot2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("slot2") == manager.integer(1));
+    
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(7));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(8));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(9));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(10));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(11));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(12));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(13));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(14));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(15));
+    
+    initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(1));
+    
+    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    
+    storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
+    ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
+    
+    EXPECT_EQ(2861, abstraction.getNodeCount());
+    
+    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
+    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
+    
+    EXPECT_EQ(37, reachableStatesInAbstraction.getNonZeroCount());
 }
 
 #endif

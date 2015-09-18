@@ -15,6 +15,7 @@ namespace storm {
                     this->variableToBlockMapping[variable] = currentBlock;
                     this->variableToExpressionsMapping[variable] = std::set<uint_fast64_t>();
                     variableBlocks[currentBlock].insert(variable);
+                    ++currentBlock;
                 }
                 
                 // Add all expressions, which might relate some variables.
@@ -67,35 +68,42 @@ namespace storm {
             }
             
             void VariablePartition::mergeBlocks(std::set<uint_fast64_t> const& blocksToMerge) {
-                // Determine which block to keep (to merge the other blocks into).
-                uint_fast64_t blockToKeep = *blocksToMerge.begin();
-                
                 // Merge all blocks into the block to keep.
                 std::vector<std::set<storm::expressions::Variable>> newVariableBlocks;
                 std::vector<std::set<uint_fast64_t>> newExpressionBlocks;
+                
+                std::set<uint_fast64_t>::const_iterator blocksToMergeIt = blocksToMerge.begin();
+                std::set<uint_fast64_t>::const_iterator blocksToMergeIte = blocksToMerge.end();
+
+                // Determine which block to keep (to merge the other blocks into).
+                uint_fast64_t blockToKeep = *blocksToMergeIt;
+                ++blocksToMergeIt;
+                
                 for (uint_fast64_t blockIndex = 0; blockIndex < variableBlocks.size(); ++blockIndex) {
-                    
-                    // If the block is the one into which the others are to be merged, we do so.
-                    if (blockIndex == blockToKeep) {
-                        for (auto const& blockToMerge : blocksToMerge) {
-                            if (blockToMerge == blockToKeep) {
-                                continue;
-                            }
-                            
-                            variableBlocks[blockToKeep].insert(variableBlocks[blockToMerge].begin(), variableBlocks[blockToMerge].end());
-                            expressionBlocks[blockToKeep].insert(expressionBlocks[blockToMerge].begin(), expressionBlocks[blockToMerge].end());
+                    // If the block is the next one to merge into the block to keep, do so now.
+                    if (blocksToMergeIt != blocksToMergeIte && *blocksToMergeIt == blockIndex && blockIndex != blockToKeep) {
+                        // Adjust the mapping for all variables of the old block.
+                        for (auto const& variable : variableBlocks[blockIndex]) {
+                            variableToBlockMapping[variable] = blockToKeep;
+                        }
+                        
+                        newVariableBlocks[blockToKeep].insert(variableBlocks[blockIndex].begin(), variableBlocks[blockIndex].end());
+                        newExpressionBlocks[blockToKeep].insert(expressionBlocks[blockIndex].begin(), expressionBlocks[blockIndex].end());
+                        ++blocksToMergeIt;
+                    } else {
+                        // Otherwise just move the current block to the new partition.
+                        newVariableBlocks.emplace_back(std::move(variableBlocks[blockIndex]));
+                        newExpressionBlocks.emplace_back(std::move(expressionBlocks[blockIndex]));
+                        
+                        // Adjust the mapping for all variables of the old block.
+                        for (auto const& variable : variableBlocks[blockIndex]) {
+                            variableToBlockMapping[variable] = newVariableBlocks.size() - 1;
                         }
                     }
-                    
-                    // Adjust the mapping for all variables we are moving to the new block.
-                    for (auto const& variable : variableBlocks[blockIndex]) {
-                        variableToBlockMapping[variable] = newVariableBlocks.size();
-                    }
-                    
-                    // Move the current block to the new partition.
-                    newVariableBlocks.emplace_back(std::move(variableBlocks[blockIndex]));
-                    newExpressionBlocks.emplace_back(std::move(expressionBlocks[blockIndex]));
                 }
+                
+                variableBlocks = std::move(newVariableBlocks);
+                expressionBlocks = std::move(newExpressionBlocks);
             }
             
             std::set<storm::expressions::Variable> const& VariablePartition::getBlockOfVariable(storm::expressions::Variable const& variable) const {
@@ -157,12 +165,23 @@ namespace storm {
 
             std::ostream& operator<<(std::ostream& out, VariablePartition const& partition) {
                 std::vector<std::string> blocks;
-                for (auto const& block : partition.variableBlocks) {
+                for (uint_fast64_t index = 0; index < partition.variableBlocks.size(); ++index) {
+                    auto const& variableBlock = partition.variableBlocks[index];
+                    auto const& expressionBlock = partition.expressionBlocks[index];
+
                     std::vector<std::string> variablesInBlock;
-                    for (auto const& variable : block) {
+                    for (auto const& variable : variableBlock) {
                         variablesInBlock.push_back(variable.getName());
                     }
-                    blocks.push_back("[" + boost::algorithm::join(variablesInBlock, ", ") + "]");
+                    
+                    std::vector<std::string> expressionsInBlock;
+                    for (auto const& expression : expressionBlock) {
+                        std::stringstream stream;
+                        stream << partition.expressions[expression];
+                        expressionsInBlock.push_back(stream.str());
+                    }
+
+                    blocks.push_back("<[" + boost::algorithm::join(variablesInBlock, ", ") + "], [" + boost::algorithm::join(expressionsInBlock, ", ") + "]>");
                 }
                 
                 out << "{";

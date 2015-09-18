@@ -56,9 +56,8 @@ namespace storm {
                 bool recomputeDd = this->relevantPredicatesChanged(newRelevantPredicates);
                 if (!recomputeDd) {
                     // If the new predicates are unrelated to the BDD of this command, we need to multiply their identities.
-                    for (auto predicateIndex : predicates) {
-                        cachedDd.first &= ddInformation.predicateIdentities[predicateIndex];
-                    }
+                    cachedDd.first &= computeMissingGlobalIdentities();
+                    cachedDd.first.toAdd().exportToDot("cmd" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                 } else {
                     // If the DD needs recomputation, it is because of new relevant predicates, so we need to assert the appropriate clauses in the solver.
                     addMissingPredicates(newRelevantPredicates);
@@ -71,12 +70,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::recomputeCachedBdd() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
-                std::cout << "recomputing " << command.get() << std::endl;
-                
+
                 // Create a mapping from source state DDs to their distributions.
                 std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
                 uint_fast64_t modelCounter = 0;
-                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model)); ++modelCounter; std::cout << "model cnt: " << modelCounter << std::endl;  return true; } );
+                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model)); return true; } );
                 
                 // Now we search for the maximal number of choices of player 2 to determine how many DD variables we
                 // need to encode the nondeterminism.
@@ -112,6 +110,7 @@ namespace storm {
                 STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 
                 // Cache the result.
+                resultBdd.toAdd().exportToDot("cmd" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                 cachedDd = std::make_pair(resultBdd, numberOfVariablesNeeded);
             }
             
@@ -121,11 +120,6 @@ namespace storm {
                 
                 // To start with, all predicates related to the guard are relevant source predicates.
                 result.first = variablePartition.getExpressionsUsingVariables(command.get().getGuardExpression().getVariables());
-                
-                std::cout << "using" << std::endl;
-                for (auto const& el : result.first) {
-                    std::cout << expressionInformation.predicates[el] << std::endl;
-                }
                 
                 std::set<storm::expressions::Variable> assignedVariables;
                 for (auto const& assignment : assignments) {
@@ -144,12 +138,6 @@ namespace storm {
                 
                 auto const& predicatesRelatedToAssignedVariable = variablePartition.getRelatedExpressions(assignedVariables);
                 
-                std::cout << variablePartition << std::endl;
-                std::cout << "related" << std::endl;
-                for (auto const& el : predicatesRelatedToAssignedVariable) {
-                    std::cout << expressionInformation.predicates[el] << std::endl;
-                }
-
                 result.first.insert(predicatesRelatedToAssignedVariable.begin(), predicatesRelatedToAssignedVariable.end());
                 
                 return result;
