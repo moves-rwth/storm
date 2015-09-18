@@ -8,13 +8,14 @@
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace prism {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>()), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program), initialStateAbstractor(expressionInformation, ddInformation, *this->smtSolverFactory), lastAbstractBdd(ddInformation.manager->getBddZero()), lastAbstractAdd(ddInformation.manager->getAddZero()) {
+            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>()), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program), initialStateAbstractor(expressionInformation, ddInformation, *this->smtSolverFactory), lastAbstractBdd(ddInformation.manager->getBddZero()), lastAbstractAdd(ddInformation.manager->getAddZero()), lastReachableStates(ddInformation.manager->getBddZero()) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -74,6 +75,7 @@ namespace storm {
                 
                 // Create DD variables and some auxiliary data structures for the new predicates.
                 for (auto const& predicate : predicates) {
+                    STORM_LOG_THROW(predicate.hasBooleanType(), storm::exceptions::InvalidArgumentException, "Expecting a predicate of type bool.");
                     ddInformation.addPredicate(predicate);
                 }
 
@@ -113,11 +115,11 @@ namespace storm {
                 
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = lastAbstractBdd.existsAbstract(variablesToAbstract);
-                storm::dd::Bdd<DdType> reachableStates = this->getReachableStates(initialStateAbstractor.getAbstractStates(), transitionRelation);
+                lastReachableStates = this->getReachableStates(initialStateAbstractor.getAbstractStates(), transitionRelation);
 
                 // Find the deadlock states in the model.
                 storm::dd::Bdd<DdType> deadlockStates = transitionRelation.existsAbstract(ddInformation.successorVariables);
-                deadlockStates = reachableStates && !deadlockStates;
+                deadlockStates = lastReachableStates && !deadlockStates;
                 
                 // If there are deadlock states, we fix them now.
                 storm::dd::Add<DdType> deadlockTransitions = ddInformation.manager->getAddZero();
@@ -126,8 +128,14 @@ namespace storm {
                 }
                 
                 // Construct the final game by cutting away the transitions of unreachable states.
-                lastAbstractAdd = (lastAbstractBdd && reachableStates).toAdd() * commandUpdateProbabilitiesAdd + deadlockTransitions;
+                lastAbstractAdd = (lastAbstractBdd && lastReachableStates).toAdd() * commandUpdateProbabilitiesAdd + deadlockTransitions;
                 return lastAbstractAdd;
+            }
+            
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> AbstractProgram<DdType, ValueType>::getReachableStates() {
+                return lastReachableStates;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

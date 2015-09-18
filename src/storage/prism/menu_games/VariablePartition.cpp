@@ -10,9 +10,11 @@ namespace storm {
             VariablePartition::VariablePartition(std::set<storm::expressions::Variable> const& relevantVariables, std::vector<storm::expressions::Expression> const& expressions) : relevantVariables(relevantVariables), expressionBlocks(relevantVariables.size()) {
                 // Assign each variable to a new block.
                 uint_fast64_t currentBlock = 0;
+                variableBlocks.resize(relevantVariables.size());
                 for (auto const& variable : relevantVariables) {
                     this->variableToBlockMapping[variable] = currentBlock;
                     this->variableToExpressionsMapping[variable] = std::set<uint_fast64_t>();
+                    variableBlocks[currentBlock].insert(variable);
                 }
                 
                 // Add all expressions, which might relate some variables.

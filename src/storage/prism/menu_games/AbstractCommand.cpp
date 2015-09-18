@@ -71,11 +71,12 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::recomputeCachedBdd() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
+                std::cout << "recomputing " << command.get() << std::endl;
                 
                 // Create a mapping from source state DDs to their distributions.
                 std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
                 uint_fast64_t modelCounter = 0;
-                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model)); ++modelCounter; return true; } );
+                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model)); ++modelCounter; std::cout << "model cnt: " << modelCounter << std::endl;  return true; } );
                 
                 // Now we search for the maximal number of choices of player 2 to determine how many DD variables we
                 // need to encode the nondeterminism.
@@ -121,6 +122,11 @@ namespace storm {
                 // To start with, all predicates related to the guard are relevant source predicates.
                 result.first = variablePartition.getExpressionsUsingVariables(command.get().getGuardExpression().getVariables());
                 
+                std::cout << "using" << std::endl;
+                for (auto const& el : result.first) {
+                    std::cout << expressionInformation.predicates[el] << std::endl;
+                }
+                
                 std::set<storm::expressions::Variable> assignedVariables;
                 for (auto const& assignment : assignments) {
                     // Also, variables appearing on the right-hand side of an assignment are relevant for source state.
@@ -137,6 +143,13 @@ namespace storm {
                 }
                 
                 auto const& predicatesRelatedToAssignedVariable = variablePartition.getRelatedExpressions(assignedVariables);
+                
+                std::cout << variablePartition << std::endl;
+                std::cout << "related" << std::endl;
+                for (auto const& el : predicatesRelatedToAssignedVariable) {
+                    std::cout << expressionInformation.predicates[el] << std::endl;
+                }
+
                 result.first.insert(predicatesRelatedToAssignedVariable.begin(), predicatesRelatedToAssignedVariable.end());
                 
                 return result;

@@ -15,7 +15,7 @@
 
 #include "src/utility/solver.h"
 
-TEST(PrismMenuGame, DieProgramAbstractionTest) {
+TEST(PrismMenuGame, DieAbstractionTest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
 
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -31,7 +31,7 @@ TEST(PrismMenuGame, DieProgramAbstractionTest) {
     EXPECT_EQ(19, abstraction.getNodeCount());
 }
 
-TEST(PrismMenuGame, DieProgramAbstractionAndRefinementTest) {
+TEST(PrismMenuGame, DieAbstractionAndRefinementTest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -50,7 +50,43 @@ TEST(PrismMenuGame, DieProgramAbstractionAndRefinementTest) {
     EXPECT_EQ(26, abstraction.getNodeCount());
 }
 
-TEST(PrismMenuGame, CrowdsProgramAbstractionTest) {
+TEST(PrismMenuGame, DieFullAbstractionTest) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
+    
+    std::vector<storm::expressions::Expression> initialPredicates;
+    storm::expressions::ExpressionManager& manager = program.getManager();
+    
+    initialPredicates.push_back(manager.getVariableExpression("s") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("s") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("s") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("s") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("s") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("s") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("s") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("s") == manager.integer(7));
+
+    initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("d") == manager.integer(6));
+
+    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    
+    storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
+    ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
+    
+    EXPECT_EQ(313, abstraction.getNodeCount());
+    
+    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
+    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
+    
+    EXPECT_EQ(13, reachableStatesInAbstraction.getNonZeroCount());
+}
+
+TEST(PrismMenuGame, CrowdsAbstractionTest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     program = program.substituteConstants();
     
@@ -67,7 +103,7 @@ TEST(PrismMenuGame, CrowdsProgramAbstractionTest) {
     EXPECT_EQ(46, abstraction.getNodeCount());
 }
 
-TEST(PrismMenuGame, CrowdsProgramAbstractionAndRefinementTest) {
+TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     program = program.substituteConstants();
     
@@ -89,7 +125,83 @@ TEST(PrismMenuGame, CrowdsProgramAbstractionAndRefinementTest) {
     EXPECT_EQ(75, abstraction.getNodeCount());
 }
 
-TEST(PrismMenuGame, TwoDiceProgramAbstractionTest) {
+TEST(PrismMenuGame, CrowdsFullAbstractionTest) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    program = program.substituteConstants();
+    
+    std::vector<storm::expressions::Expression> initialPredicates;
+    storm::expressions::ExpressionManager& manager = program.getManager();
+    
+    initialPredicates.push_back(manager.getVariableExpression("phase") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("phase") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("phase") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("phase") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("phase") == manager.integer(4));
+
+    initialPredicates.push_back(manager.getVariableExpression("good"));
+
+    initialPredicates.push_back(manager.getVariableExpression("runCount") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("runCount") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("runCount") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("runCount") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("runCount") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("runCount") == manager.integer(5));
+
+    initialPredicates.push_back(manager.getVariableExpression("observe0") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("observe0") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("observe0") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("observe0") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("observe0") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("observe0") == manager.integer(5));
+
+    initialPredicates.push_back(manager.getVariableExpression("observe1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("observe1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("observe1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("observe1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("observe1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("observe1") == manager.integer(5));
+
+    initialPredicates.push_back(manager.getVariableExpression("observe2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("observe2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("observe2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("observe2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("observe2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("observe2") == manager.integer(5));
+
+    initialPredicates.push_back(manager.getVariableExpression("observe3") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("observe3") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("observe3") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("observe3") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("observe3") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("observe3") == manager.integer(5));
+
+    initialPredicates.push_back(manager.getVariableExpression("observe4") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("observe4") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("observe4") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("observe4") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("observe4") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("observe4") == manager.integer(5));
+
+    initialPredicates.push_back(manager.getVariableExpression("lastSeen") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("lastSeen") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("lastSeen") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("lastSeen") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("lastSeen") == manager.integer(4));
+    
+    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    
+    storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
+    ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
+    
+    EXPECT_EQ(46, abstraction.getNodeCount());
+    
+    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
+    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
+    
+    EXPECT_EQ(13, reachableStatesInAbstraction.getNonZeroCount());
+}
+
+TEST(PrismMenuGame, TwoDiceAbstractionTest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -108,7 +220,7 @@ TEST(PrismMenuGame, TwoDiceProgramAbstractionTest) {
     EXPECT_EQ(38, abstraction.getNodeCount());
 }
 
-TEST(PrismMenuGame, TwoDiceProgramAbstractionAndRefinementTest) {
+TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -132,7 +244,7 @@ TEST(PrismMenuGame, TwoDiceProgramAbstractionAndRefinementTest) {
     EXPECT_EQ(107, abstraction.getNodeCount());
 }
 
-TEST(PrismMenuGame, WlanProgramAbstractionTest) {
+TEST(PrismMenuGame, WlanAbstractionTest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
@@ -152,7 +264,7 @@ TEST(PrismMenuGame, WlanProgramAbstractionTest) {
     EXPECT_EQ(219, abstraction.getNodeCount());
 }
 
-TEST(PrismMenuGame, WlanProgramAbstractionAndRefinementTest) {
+TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());

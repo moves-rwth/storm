@@ -45,6 +45,14 @@ namespace storm {
                 storm::dd::Add<DdType> getAbstractAdd();
                 
                 /*!
+                 * Retrieves the reachable state space of the abstract game (that was previously retrieved via the
+                 * appropriate method.
+                 *
+                 * @return The reachable state space in the form of a BDD.
+                 */
+                storm::dd::Bdd<DdType> getReachableStates();
+                
+                /*!
                  * Refines the abstract module with the given predicates.
                  *
                  * @param predicates The new predicates.
@@ -85,9 +93,12 @@ namespace storm {
                 
                 // A BDD that is the result of the last abstraction of the system.
                 storm::dd::Bdd<DdType> lastAbstractBdd;
-
+                
                 // An ADD that is the result of the last abstraction of the system.
                 storm::dd::Add<DdType> lastAbstractAdd;
+                
+                // A BDD that is the result of the reachability analysis on the abstraction of the system.
+                storm::dd::Bdd<DdType> lastReachableStates;
             };
         }
     }
