@@ -128,14 +128,29 @@ namespace storm {
                  * Recomputes the cached BDD. This needs to be triggered if any relevant predicates change.
                  */
                 void recomputeCachedBdd();
+
+                /*!
+                 * Computes the missing state identities.
+                 *
+                 * @return A BDD that represents the all missing state identities.
+                 */
+                storm::dd::Bdd<DdType> computeMissingIdentities() const;
                 
                 /*!
-                 * Computes the missing source state identities.
+                 * Computes the missing state identities for the updates.
                  *
-                 * @return A BDD that represents the source state identities for predicates that are irrelevant for the
-                 * source states.
+                 * @return A BDD that represents the state identities for predicates that are irrelevant for the
+                 * successor states.
                  */
-                storm::dd::Bdd<DdType> computeMissingSourceStateIdentities() const;
+                storm::dd::Bdd<DdType> computeMissingUpdateIdentities() const;
+                
+                /*!
+                 * Computes the globally missing state identities.
+                 *
+                 * @return A BDD that represents the global state identities for predicates that are irrelevant for the
+                 * source and successor states.
+                 */
+                storm::dd::Bdd<DdType> computeMissingGlobalIdentities() const;
                 
                 // An SMT responsible for this abstract command.
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;

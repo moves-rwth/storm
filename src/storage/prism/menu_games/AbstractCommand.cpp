@@ -71,11 +71,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::recomputeCachedBdd() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
-                std::cout << "recomputing " << command.get() << std::endl;
                 
                 // Create a mapping from source state DDs to their distributions.
                 std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
-                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this] (storm::solver::SmtSolver::ModelReference const& model) { sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model)); return true; } );
+                uint_fast64_t modelCounter = 0;
+                smtSolver->allSat(decisionVariables, [&sourceToDistributionsMap,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { sourceToDistributionsMap[getSourceStateBdd(model)].push_back(getDistributionBdd(model)); ++modelCounter; return true; } );
                 
                 // Now we search for the maximal number of choices of player 2 to determine how many DD variables we
                 // need to encode the nondeterminism.
@@ -88,17 +88,27 @@ namespace storm {
                 
                 // Finally, build overall result.
                 storm::dd::Bdd<DdType> resultBdd = ddInformation.manager->getBddZero();
+                uint_fast64_t sourceStateIndex = 0;
                 for (auto const& sourceDistributionsPair : sourceToDistributionsMap) {
-                    uint_fast64_t distributionIndex = 0;
+                    STORM_LOG_ASSERT(!sourceDistributionsPair.first.isZero(), "The source BDD must not be empty.");
+                    STORM_LOG_ASSERT(!sourceDistributionsPair.second.empty(), "The distributions must not be empty.");
                     storm::dd::Bdd<DdType> allDistributions = ddInformation.manager->getBddZero();
+                    uint_fast64_t distributionIndex = 0;
                     for (auto const& distribution : sourceDistributionsPair.second) {
                         allDistributions |= distribution && ddInformation.encodeDistributionIndex(numberOfVariablesNeeded, distributionIndex);
+                        ++distributionIndex;
+                        STORM_LOG_ASSERT(!allDistributions.isZero(), "The BDD must not be empty.");
                     }
                     resultBdd |= sourceDistributionsPair.first && allDistributions;
+                    ++sourceStateIndex;
+                    STORM_LOG_ASSERT(!resultBdd.isZero(), "The BDD must not be empty.");
                 }
                 
-                resultBdd &= computeMissingSourceStateIdentities();
+                STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
+                resultBdd &= computeMissingIdentities();
+                STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 resultBdd &= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex());
+                STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 
                 // Cache the result.
                 cachedDd = std::make_pair(resultBdd, numberOfVariablesNeeded);
@@ -172,10 +182,6 @@ namespace storm {
                 // Insert the new variables into the record of relevant source variables.
                 relevantPredicatesAndVariables.first.insert(relevantPredicatesAndVariables.first.end(), newSourceVariables.begin(), newSourceVariables.end());
                 std::sort(relevantPredicatesAndVariables.first.begin(), relevantPredicatesAndVariables.first.end(), [] (std::pair<storm::expressions::Variable, uint_fast64_t> const& first, std::pair<storm::expressions::Variable, uint_fast64_t> const& second) { return first.second < second.second; } );
-                std::cout << "sorted!" << std::endl;
-                for (auto const& el : relevantPredicatesAndVariables.first) {
-                    std::cout << el.first.getName() << " // " << el.second << std::endl;
-                }
                 
                 // Do the same for every update.
                 for (uint_fast64_t index = 0; index < command.get().getNumberOfUpdates(); ++index) {
@@ -195,13 +201,14 @@ namespace storm {
                 STORM_LOG_TRACE("Building source state BDD.");
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables.first) {
-                    std::cout << "size: " << ddInformation.predicateBdds.size() << " and index " << variableIndexPair.second << std::endl;
                     if (model.getBooleanValue(variableIndexPair.first)) {
                         result &= ddInformation.predicateBdds[variableIndexPair.second].first;
                     } else {
                         result &= !ddInformation.predicateBdds[variableIndexPair.second].first;
                     }
                 }
+                
+                STORM_LOG_ASSERT(!result.isZero(), "Source must not be empty.");
                 return result;
             }
             
@@ -223,6 +230,24 @@ namespace storm {
                         updateBdd &= ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex);
                     }
                     
+                    result |= updateBdd;
+                }
+                
+                STORM_LOG_ASSERT(!result.isZero(), "Distribution must not be empty.");
+                return result;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingIdentities() const {
+                storm::dd::Bdd<DdType> identities = computeMissingGlobalIdentities();
+                identities &= computeMissingUpdateIdentities();
+                return identities;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingUpdateIdentities() const {
+                storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
+                for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
                     // Compute the identities that are missing for this update.
                     auto firstIt = relevantPredicatesAndVariables.first.begin();
                     auto firstIte = relevantPredicatesAndVariables.first.end();
@@ -231,33 +256,29 @@ namespace storm {
                     
                     // Go through all relevant source predicates. This is guaranteed to be a superset of the set of
                     // relevant successor predicates for any update.
+                    storm::dd::Bdd<DdType> updateIdentity = ddInformation.manager->getBddOne();
                     for (; firstIt != firstIte; ++firstIt) {
                         // If the predicates do not match, there is a predicate missing, so we need to add its identity.
                         if (secondIt == secondIte || firstIt->second != secondIt->second) {
-                            updateBdd &= ddInformation.predicateIdentities[firstIt->second];
+                            updateIdentity &= ddInformation.predicateIdentities[firstIt->second];
                         } else if (secondIt != secondIte) {
                             ++secondIt;
                         }
                     }
                     
-                    result |= updateBdd;
+                    result |= updateIdentity && ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex);
                 }
-                
                 return result;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingSourceStateIdentities() const {
+            storm::dd::Bdd<DdType> AbstractCommand<DdType, ValueType>::computeMissingGlobalIdentities() const {
                 auto relevantIt = relevantPredicatesAndVariables.first.begin();
                 auto relevantIte = relevantPredicatesAndVariables.first.end();
-                std::cout << "the size is " << relevantPredicatesAndVariables.first.size() << std::endl;
                 
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
                 for (uint_fast64_t predicateIndex = 0; predicateIndex < expressionInformation.predicates.size(); ++predicateIndex) {
                     if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
-                        std::cout << (relevantIt == relevantIte) << std::endl;
-                        std::cout << relevantIt->second << " vs " << predicateIndex << std::endl;
-                        std::cout << "multiplying identity " << predicateIndex << std::endl;
                         result &= ddInformation.predicateIdentities[predicateIndex];
                     } else {
                         ++relevantIt;

@@ -52,13 +52,13 @@ namespace storm {
                 void addPredicate(storm::expressions::Expression const& predicate);
                 
                 /*!
-                 * Retrieves the cube of option variables in the range (lastUsed, lastToBe] the given indices.
+                 * Retrieves the cube of option variables in the range [begin, end) the given indices.
                  *
-                 * @param lastUsed The last variable before the range to return.
-                 * @param lastToBe The last variable of the range to return.
+                 * @param begin The first variable of the range to return.
+                 * @param end One past the last variable of the range to return.
                  * @return The cube of variables in the given range.
                  */
-                storm::dd::Bdd<DdType> getMissingOptionVariableCube(uint_fast64_t lastUsed, uint_fast64_t lastToBe) const;
+                storm::dd::Bdd<DdType> getMissingOptionVariableCube(uint_fast64_t begin, uint_fast64_t end) const;
                 
                 /*!
                  * Examines the old and new relevant predicates and declares decision variables for the missing relevant

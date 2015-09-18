@@ -420,6 +420,10 @@ namespace storm {
             return static_cast<uint_fast64_t>(this->getCuddAdd().NodeReadIndex());
         }
         
+        uint_fast64_t Add<DdType::CUDD>::getLevel() const {
+            return static_cast<uint_fast64_t>(this->getDdManager()->getCuddManager().ReadPerm(this->getIndex()));
+        }
+        
         template<typename ValueType>
         std::vector<ValueType> Add<DdType::CUDD>::toVector() const {
             return this->toVector<ValueType>(Odd<DdType::CUDD>(*this));

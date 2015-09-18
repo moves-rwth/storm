@@ -34,11 +34,6 @@ namespace storm {
                     totalNumberOfCommands += module.getNumberOfCommands();
                 }
                 
-                // Create DD variables for all predicates.
-                for (auto const& predicate : expressionInformation.predicates) {
-                    ddInformation.addPredicate(predicate);
-                }
-                
                 // Create DD variable for the command encoding.
                 ddInformation.commandDdVariable = ddInformation.manager->addMetaVariable("command", 0, totalNumberOfCommands - 1).first;
                 
@@ -51,7 +46,12 @@ namespace storm {
                 // that it's impossible to treat such models in any event.
                 for (uint_fast64_t index = 0; index < 100; ++index) {
                     storm::expressions::Variable newOptionVar = ddInformation.manager->addMetaVariable("opt" + std::to_string(index)).first;
-                    ddInformation.optionDdVariables.push_back(std::make_pair(newOptionVar, ddInformation.manager->getRange(newOptionVar)));
+                    ddInformation.optionDdVariables.push_back(std::make_pair(newOptionVar, ddInformation.manager->getIdentity(newOptionVar).toBdd()));
+                }
+                
+                // Create DD variables for all predicates.
+                for (auto const& predicate : expressionInformation.predicates) {
+                    ddInformation.addPredicate(predicate);
                 }
                 
                 // For each module of the concrete program, we create an abstract counterpart.
@@ -68,8 +68,6 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractProgram<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
-                std::cout << "refining!" << std::endl;
-
                 // Add the predicates to the global list of predicates.
                 uint_fast64_t firstNewPredicateIndex = expressionInformation.predicates.size();
                 expressionInformation.predicates.insert(expressionInformation.predicates.end(), predicates.begin(), predicates.end());
@@ -85,17 +83,13 @@ namespace storm {
                     newPredicateIndices.push_back(index);
                 }
                 
-                std::cout << "refining modules" << std::endl;
                 // Refine all abstract modules.
                 for (auto& module : modules) {
                     module.refine(newPredicateIndices);
                 }
                 
-                std::cout << "refining initial" << std::endl;
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(newPredicateIndices);
-                
-                std::cout << "done " << std::endl;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -108,8 +102,6 @@ namespace storm {
                     return lastAbstractAdd;
                 }
                 
-                std::cout << "abstr DD new " << std::endl;
-                
                 // Otherwise, we remember that the abstract BDD changed and perform a reachability analysis.
                 lastAbstractBdd = gameBdd.first;
 
@@ -118,15 +110,11 @@ namespace storm {
                 for (uint_fast64_t index = 0; index < gameBdd.second; ++index) {
                     variablesToAbstract.insert(ddInformation.optionDdVariables[index].first);
                 }
-
-                std::cout << "reachability... " << std::endl;
                 
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = lastAbstractBdd.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> reachableStates = this->getReachableStates(initialStateAbstractor.getAbstractStates(), transitionRelation);
 
-                std::cout << "done " << std::endl;
-                
                 // Find the deadlock states in the model.
                 storm::dd::Bdd<DdType> deadlockStates = transitionRelation.existsAbstract(ddInformation.successorVariables);
                 deadlockStates = reachableStates && !deadlockStates;

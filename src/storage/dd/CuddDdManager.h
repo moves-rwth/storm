@@ -3,7 +3,9 @@
 
 #include <unordered_map>
 #include <memory>
+#include <boost/optional.hpp>
 
+#include "src/storage/dd/MetaVariablePosition.h"
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/CuddDdMetaVariable.h"
 #include "src/utility/OsDetection.h"
@@ -26,7 +28,7 @@ namespace storm {
             friend class Add<DdType::CUDD>;
             friend class Odd<DdType::CUDD>;
             friend class DdForwardIterator<DdType::CUDD>;
-            
+                        
             /*!
              * Creates an empty manager without any meta variables.
              */
@@ -110,15 +112,19 @@ namespace storm {
              * @param variableName The name of the new variable.
              * @param low The lowest value of the range of the variable.
              * @param high The highest value of the range of the variable.
+             * @param position A pair indicating the position of the new meta variable. If not given, the meta variable
+             * will be created below all existing ones.
              */
-            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName, int_fast64_t low, int_fast64_t high);
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName, int_fast64_t low, int_fast64_t high, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
             
             /*!
              * Adds a boolean meta variable.
              *
              * @param variableName The name of the new variable.
+             * @param position A pair indicating the position of the new meta variable. If not given, the meta variable
+             * will be created below all existing ones.
              */
-            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName);
+            std::pair<storm::expressions::Variable, storm::expressions::Variable> addMetaVariable(std::string const& variableName, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position = boost::none);
             
             /*!
              * Retrieves the names of all meta variables that have been added to the manager.

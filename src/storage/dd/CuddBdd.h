@@ -263,6 +263,13 @@ namespace storm {
             virtual uint_fast64_t getIndex() const override;
             
             /*!
+             * Retrieves the level of the topmost variable in the DD.
+             *
+             * @return The level of the topmost variable in DD.
+             */
+            virtual uint_fast64_t getLevel() const override;
+            
+            /*!
              * Exports the BDD to the given file in the dot format.
              *
              * @param filename The name of the file to which the BDD is to be exported.

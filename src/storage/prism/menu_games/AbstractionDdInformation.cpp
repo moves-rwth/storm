@@ -9,6 +9,8 @@
 #include "src/storage/dd/CuddBdd.h"
 #include "src/storage/dd/CuddAdd.h"
 
+#include "src/utility/macros.h"
+
 namespace storm {
     namespace prism {
         namespace menu_games {
@@ -22,6 +24,7 @@ namespace storm {
             storm::dd::Bdd<DdType> AbstractionDdInformation<DdType, ValueType>::encodeDistributionIndex(uint_fast64_t numberOfVariables, uint_fast64_t distributionIndex) const {
                 storm::dd::Bdd<DdType> result = manager->getBddOne();
                 for (uint_fast64_t bitIndex = 0; bitIndex < numberOfVariables; ++bitIndex) {
+                    STORM_LOG_ASSERT(!(optionDdVariables[bitIndex].second.isZero() || optionDdVariables[bitIndex].second.isOne()), "Option variable is corrupted.");
                     if ((distributionIndex & 1) != 0) {
                         result &= optionDdVariables[bitIndex].second;
                     } else {
@@ -29,6 +32,7 @@ namespace storm {
                     }
                     distributionIndex >>= 1;
                 }
+                STORM_LOG_ASSERT(!result.isZero(), "Update BDD encoding must not be zero.");
                 return result;
             }
             
@@ -36,7 +40,15 @@ namespace storm {
             void AbstractionDdInformation<DdType, ValueType>::addPredicate(storm::expressions::Expression const& predicate) {
                 std::stringstream stream;
                 stream << predicate;
-                std::pair<storm::expressions::Variable, storm::expressions::Variable> newMetaVariable = manager->addMetaVariable(stream.str());
+                std::pair<storm::expressions::Variable, storm::expressions::Variable> newMetaVariable;
+                
+                // Create the new predicate variable below all other predicate variables.
+                if (predicateDdVariables.empty()) {
+                    newMetaVariable = manager->addMetaVariable(stream.str());
+                } else {
+                    newMetaVariable = manager->addMetaVariable(stream.str(), std::make_pair(storm::dd::MetaVariablePosition::Below, predicateDdVariables.back().second));
+                }
+                
                 predicateDdVariables.push_back(newMetaVariable);
                 predicateBdds.emplace_back(manager->getEncoding(newMetaVariable.first, 1), manager->getEncoding(newMetaVariable.second, 1));
                 predicateIdentities.push_back(manager->getIdentity(newMetaVariable.first).equals(manager->getIdentity(newMetaVariable.second)).toBdd());
@@ -46,12 +58,14 @@ namespace storm {
             }
          
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> AbstractionDdInformation<DdType, ValueType>::getMissingOptionVariableCube(uint_fast64_t lastUsed, uint_fast64_t lastToBe) const {
+            storm::dd::Bdd<DdType> AbstractionDdInformation<DdType, ValueType>::getMissingOptionVariableCube(uint_fast64_t begin, uint_fast64_t end) const {
                 storm::dd::Bdd<DdType> result = manager->getBddOne();
                 
-                for (uint_fast64_t index = lastUsed + 1; index <= lastToBe; ++index) {
+                for (uint_fast64_t index = begin; index < end; ++index) {
                     result &= optionDdVariables[index].second;
                 }
+                
+                STORM_LOG_ASSERT(!result.isZero(), "Update variable cube must not be zero.");
                 
                 return result;
             }
@@ -66,6 +80,8 @@ namespace storm {
                     // If the new variable does not yet exist as a source variable, we create it now.
                     if (oldIt == oldIte || oldIt->second != *newIt) {
                         result.push_back(std::make_pair(manager.declareFreshBooleanVariable(), *newIt));
+                    } else {
+                        ++oldIt;
                     }
                 }
                 

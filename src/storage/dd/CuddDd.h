@@ -69,6 +69,13 @@ namespace storm {
             virtual uint_fast64_t getIndex() const = 0;
             
             /*!
+             * Retrieves the level of the topmost variable in the DD.
+             *
+             * @return The level of the topmost variable in DD.
+             */
+            virtual uint_fast64_t getLevel() const = 0;
+            
+            /*!
              * Retrieves whether the given meta variable is contained in the DD.
              *
              * @param metaVariable The meta variable for which to query membership.

@@ -114,7 +114,7 @@ namespace storm {
             return result;
         }
 
-        std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<DdType::CUDD>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
+        std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<DdType::CUDD>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
             // Check whether the variable name is legal.
             STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
@@ -126,14 +126,32 @@ namespace storm {
             
             std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
             
+            // If a specific position was requested, we compute it now.
+            boost::optional<uint_fast64_t> level;
+            if (position) {
+                storm::dd::DdMetaVariable<DdType::CUDD> beforeVariable = this->getMetaVariable(position.get().second);
+                level = position.get().first == MetaVariablePosition::Above ? std::numeric_limits<uint_fast64_t>::max() : std::numeric_limits<uint_fast64_t>::min();
+                for (auto const& ddVariable : beforeVariable.getDdVariables()) {
+                    level = position.get().first == MetaVariablePosition::Above ? std::min(level.get(), ddVariable.getLevel()) : std::max(level.get(), ddVariable.getLevel());
+                }
+                if (position.get().first == MetaVariablePosition::Below) {
+                    ++level.get();
+                }
+            }
+            
             storm::expressions::Variable unprimed = manager->declareBitVectorVariable(name, numberOfBits);
             storm::expressions::Variable primed = manager->declareBitVectorVariable(name + "'", numberOfBits);
             
             std::vector<Bdd<DdType::CUDD>> variables;
             std::vector<Bdd<DdType::CUDD>> variablesPrime;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
-                variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
-                variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
+                if (level) {
+                    variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddNewVarAtLevel(level.get() + 2 * i), {unprimed}));
+                    variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddNewVarAtLevel(level.get() + 2 * i + 1), {primed}));
+                } else {
+                    variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
+                    variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
+                }
             }
             
             // Now group the non-primed and primed variable.
@@ -147,20 +165,38 @@ namespace storm {
             return std::make_pair(unprimed, primed);
         }
         
-        std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<DdType::CUDD>::addMetaVariable(std::string const& name) {
+        std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<DdType::CUDD>::addMetaVariable(std::string const& name, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
             // Check whether the variable name is legal.
             STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
             
             // Check whether a meta variable already exists.
             STORM_LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
             
+            // If a specific position was requested, we compute it now.
+            boost::optional<uint_fast64_t> level;
+            if (position) {
+                storm::dd::DdMetaVariable<DdType::CUDD> beforeVariable = this->getMetaVariable(position.get().second);
+                level = position.get().first == MetaVariablePosition::Above ? std::numeric_limits<uint_fast64_t>::max() : std::numeric_limits<uint_fast64_t>::min();
+                for (auto const& ddVariable : beforeVariable.getDdVariables()) {
+                    level = position.get().first == MetaVariablePosition::Above ? std::min(level.get(), ddVariable.getLevel()) : std::max(level.get(), ddVariable.getLevel());
+                }
+                if (position.get().first == MetaVariablePosition::Below) {
+                    ++level.get();
+                }
+            }
+            
             storm::expressions::Variable unprimed = manager->declareBooleanVariable(name);
             storm::expressions::Variable primed = manager->declareBooleanVariable(name + "'");
 
             std::vector<Bdd<DdType::CUDD>> variables;
             std::vector<Bdd<DdType::CUDD>> variablesPrime;
-            variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
-            variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
+            if (position) {
+                variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddNewVarAtLevel(level.get()), {unprimed}));
+                variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddNewVarAtLevel(level.get() + 1), {primed}));
+            } else {
+                variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {unprimed}));
+                variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
+            }
 
             // Now group the non-primed and primed variable.
             this->getCuddManager().MakeTreeNode(variables.front().getIndex(), 2, MTR_FIXED);

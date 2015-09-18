@@ -35,7 +35,6 @@ namespace storm {
                     this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
                     break;
             }
-
         }
         
         Add<DdType::CUDD> Bdd<DdType::CUDD>::toAdd() const {
@@ -240,6 +239,10 @@ namespace storm {
         
         uint_fast64_t Bdd<DdType::CUDD>::getIndex() const {
             return static_cast<uint_fast64_t>(this->getCuddBdd().NodeReadIndex());
+        }
+        
+        uint_fast64_t Bdd<DdType::CUDD>::getLevel() const {
+            return static_cast<uint_fast64_t>(this->getDdManager()->getCuddManager().ReadPerm(this->getIndex()));
         }
         
         void Bdd<DdType::CUDD>::exportToDot(std::string const& filename) const {

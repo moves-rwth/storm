@@ -521,6 +521,13 @@ namespace storm {
             virtual uint_fast64_t getIndex() const override;
             
             /*!
+             * Retrieves the level of the topmost variable in the DD.
+             *
+             * @return The level of the topmost variable in DD.
+             */
+            virtual uint_fast64_t getLevel() const override;
+            
+            /*!
              * Converts the ADD to a vector.
              *
              * @return The vector that is represented by this ADD.
