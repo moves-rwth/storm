@@ -10,10 +10,19 @@
 
 #include "src/storage/expressions/Expression.h"
 
+#include "src/models/symbolic/StochasticTwoPlayerGame.h"
+
 namespace storm {
     namespace utility {
         namespace solver {
             class SmtSolverFactory;
+        }
+    }
+    
+    namespace models {
+        namespace symbolic {
+            template<storm::dd::DdType Type>
+            class StochasticTwoPlayerGame;
         }
     }
     
@@ -40,17 +49,18 @@ namespace storm {
                 /*!
                  * Uses the current set of predicates to derive the abstract menu game in the form of an ADD.
                  *
-                 * @return The ADD representing the game.
+                 * @return The abstract stochastic two player game.
                  */
-                storm::dd::Add<DdType> getAbstractAdd();
+                storm::models::symbolic::StochasticTwoPlayerGame<DdType> getAbstractGame();
                 
                 /*!
-                 * Retrieves the reachable state space of the abstract game (that was previously retrieved via the
-                 * appropriate method.
+                 * Retrieves the set of states (represented by a BDD) satisfying the given predicate, assuming that it
+                 * was either given as an initial predicate or used as a refining predicate later.
                  *
-                 * @return The reachable state space in the form of a BDD.
+                 * @param predicate The predicate for which to retrieve the states.
+                 * @return The BDD representing the set of states.
                  */
-                storm::dd::Bdd<DdType> getReachableStates();
+                storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& predicate);
                 
                 /*!
                  * Refines the abstract module with the given predicates.
@@ -69,6 +79,13 @@ namespace storm {
                  * @return The BDD representing the reachable states.
                  */
                 storm::dd::Bdd<DdType> getReachableStates(storm::dd::Bdd<DdType> const& initialStates, storm::dd::Bdd<DdType> const& transitionRelation);
+                
+                /*!
+                 * Builds the stochastic game representing the abstraction of the program.
+                 *
+                 * @return The stochastic game.
+                 */
+                std::unique_ptr<storm::models::symbolic::StochasticTwoPlayerGame<DdType>> buildGame();
                 
                 // A factory that can be used to create new SMT solvers.
                 std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
@@ -91,14 +108,8 @@ namespace storm {
                 // An ADD characterizing the probabilities of commands and their updates.
                 storm::dd::Add<DdType> commandUpdateProbabilitiesAdd;
                 
-                // A BDD that is the result of the last abstraction of the system.
-                storm::dd::Bdd<DdType> lastAbstractBdd;
-                
-                // An ADD that is the result of the last abstraction of the system.
-                storm::dd::Add<DdType> lastAbstractAdd;
-                
-                // A BDD that is the result of the reachability analysis on the abstraction of the system.
-                storm::dd::Bdd<DdType> lastReachableStates;
+                // The current game-based abstraction.
+                std::unique_ptr<storm::models::symbolic::StochasticTwoPlayerGame<DdType>> currentGame;
             };
         }
     }

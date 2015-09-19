@@ -66,11 +66,12 @@ namespace storm {
             template<storm::dd::DdType Type>
             storm::dd::Bdd<Type> Model<Type>::getStates(std::string const& label) const {
                 STORM_LOG_THROW(labelToExpressionMap.find(label) != labelToExpressionMap.end(), storm::exceptions::IllegalArgumentException, "The label " << label << " is invalid for the labeling of the model.");
-                return rowExpressionAdapter->translateExpression(labelToExpressionMap.at(label)).toBdd() && this->reachableStates;
+                return this->getStates(labelToExpressionMap.at(label));
             }
             
             template<storm::dd::DdType Type>
             storm::dd::Bdd<Type> Model<Type>::getStates(storm::expressions::Expression const& expression) const {
+                STORM_LOG_THROW(rowExpressionAdapter != nullptr, storm::exceptions::InvalidOperationException, "Cannot create BDD for expression without expression adapter.");
                 return rowExpressionAdapter->translateExpression(expression).toBdd() && this->reachableStates;
             }
             

@@ -94,6 +94,10 @@ namespace storm {
         bool Expression::isFalse() const {
             return this->getBaseExpression().isFalse();
         }
+        
+        bool Expression::isSame(storm::expressions::Expression const& other) const {
+            return this->expressionPtr == other.expressionPtr;
+        }
 
 		std::set<storm::expressions::Variable> Expression::getVariables() const {
             std::set<storm::expressions::Variable> result;
