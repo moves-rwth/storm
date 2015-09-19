@@ -7,10 +7,9 @@
 #include "src/storage/prism/menu_games/AbstractionExpressionInformation.h"
 #include "src/storage/prism/menu_games/StateSetAbstractor.h"
 #include "src/storage/prism/menu_games/AbstractModule.h"
+#include "src/storage/prism/menu_games/MenuGame.h"
 
 #include "src/storage/expressions/Expression.h"
-
-#include "src/models/symbolic/StochasticTwoPlayerGame.h"
 
 namespace storm {
     namespace utility {
@@ -51,7 +50,7 @@ namespace storm {
                  *
                  * @return The abstract stochastic two player game.
                  */
-                storm::models::symbolic::StochasticTwoPlayerGame<DdType> getAbstractGame();
+                MenuGame<DdType> getAbstractGame();
                 
                 /*!
                  * Retrieves the set of states (represented by a BDD) satisfying the given predicate, assuming that it
@@ -85,7 +84,7 @@ namespace storm {
                  *
                  * @return The stochastic game.
                  */
-                std::unique_ptr<storm::models::symbolic::StochasticTwoPlayerGame<DdType>> buildGame();
+                std::unique_ptr<MenuGame<DdType>> buildGame();
                 
                 // A factory that can be used to create new SMT solvers.
                 std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
@@ -109,7 +108,7 @@ namespace storm {
                 storm::dd::Add<DdType> commandUpdateProbabilitiesAdd;
                 
                 // The current game-based abstraction.
-                std::unique_ptr<storm::models::symbolic::StochasticTwoPlayerGame<DdType>> currentGame;
+                std::unique_ptr<MenuGame<DdType>> currentGame;
             };
         }
     }

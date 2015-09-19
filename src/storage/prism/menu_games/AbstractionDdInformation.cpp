@@ -55,6 +55,7 @@ namespace storm {
                 allPredicateIdentities &= predicateIdentities.back();
                 sourceVariables.insert(newMetaVariable.first);
                 successorVariables.insert(newMetaVariable.second);
+                expressionToBddMap[predicate] = predicateBdds.back().first;
             }
          
             template <storm::dd::DdType DdType, typename ValueType>

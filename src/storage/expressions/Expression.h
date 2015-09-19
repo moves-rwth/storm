@@ -196,7 +196,7 @@ namespace storm {
              *
              * @return True iff the two expressions are the same.
              */
-            bool isSame(storm::expressions::Expression const& other) const;
+            bool areSame(storm::expressions::Expression const& other) const;
             
             /*!
              * Retrieves whether this expression is a relation expression, i.e., an expression that has a relation
@@ -340,14 +340,22 @@ namespace storm {
     }
 }
 
-//specialize 
 namespace std {
-	template<>
-	struct less < storm::expressions::Expression > {
+	template <>
+	struct less <storm::expressions::Expression> {
 		bool operator()(const storm::expressions::Expression& lhs, const storm::expressions::Expression& rhs) const {
 			return lhs.getBaseExpressionPointer() < rhs.getBaseExpressionPointer();
 		}
 	};
+}
+
+namespace std {
+    template <>
+    struct hash <storm::expressions::Expression> {
+        size_t operator()(const storm::expressions::Expression& expr) const {
+            return reinterpret_cast<size_t>(expr.getBaseExpressionPointer().get());
+        }
+    };
 }
 
 #endif /* STORM_STORAGE_EXPRESSIONS_EXPRESSION_H_ */

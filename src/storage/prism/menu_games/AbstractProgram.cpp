@@ -105,7 +105,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::models::symbolic::StochasticTwoPlayerGame<DdType> AbstractProgram<DdType, ValueType>::getAbstractGame() {
+            MenuGame<DdType> AbstractProgram<DdType, ValueType>::getAbstractGame() {
                 STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
                 return *currentGame;
             }
@@ -115,7 +115,7 @@ namespace storm {
                 STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
                 uint_fast64_t index = 0;
                 for (auto const& knownPredicate : expressionInformation.predicates) {
-                    if (knownPredicate.isSame(predicate)) {
+                    if (knownPredicate.areSame(predicate)) {
                         return currentGame->getReachableStates() && ddInformation.predicateBdds[index].first;
                     }
                     ++index;
@@ -124,7 +124,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<storm::models::symbolic::StochasticTwoPlayerGame<DdType>> AbstractProgram<DdType, ValueType>::buildGame() {
+            std::unique_ptr<MenuGame<DdType>> AbstractProgram<DdType, ValueType>::buildGame() {
                 // As long as there is only one module, we only build its game representation.
                 std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> gameBdd = modules.front().getAbstractBdd();
 
@@ -160,7 +160,7 @@ namespace storm {
                 std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
                 allNondeterminismVariables.insert(ddInformation.commandDdVariable);
                 
-                return std::unique_ptr<storm::models::symbolic::StochasticTwoPlayerGame<DdType>>(new storm::models::symbolic::StochasticTwoPlayerGame<DdType>(ddInformation.manager, reachableStates, initialStates, transitionMatrix, ddInformation.sourceVariables, nullptr, ddInformation.successorVariables, nullptr, ddInformation.predicateDdVariables, {ddInformation.commandDdVariable}, usedPlayer2Variables, allNondeterminismVariables));
+                return std::unique_ptr<MenuGame<DdType>>(new MenuGame<DdType>(ddInformation.manager, reachableStates, initialStates, transitionMatrix, ddInformation.sourceVariables, ddInformation.successorVariables, ddInformation.predicateDdVariables, {ddInformation.commandDdVariable}, usedPlayer2Variables, allNondeterminismVariables, ddInformation.updateDdVariable, ddInformation.expressionToBddMap));
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

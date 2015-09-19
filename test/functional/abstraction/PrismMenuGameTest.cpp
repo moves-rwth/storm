@@ -27,7 +27,7 @@ TEST(PrismMenuGame, DieAbstractionTest) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(15, game.getNumberOfTransitions());
     EXPECT_EQ(2, game.getNumberOfStates());
@@ -45,7 +45,7 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest) {
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("s") == manager.integer(7)}));
 
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(15, game.getNumberOfTransitions());
     EXPECT_EQ(3, game.getNumberOfStates());
@@ -76,7 +76,7 @@ TEST(PrismMenuGame, DieFullAbstractionTest) {
 
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(20, game.getNumberOfTransitions());
     EXPECT_EQ(13, game.getNumberOfStates());
@@ -93,7 +93,7 @@ TEST(PrismMenuGame, CrowdsAbstractionTest) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(16, game.getNumberOfTransitions());
     EXPECT_EQ(2, game.getNumberOfStates());
@@ -112,7 +112,7 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("observe0") + manager.getVariableExpression("observe1") + manager.getVariableExpression("observe2") + manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <= manager.getVariableExpression("runCount")}));
     
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(38, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
@@ -183,7 +183,7 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(15113, game.getNumberOfTransitions());
     EXPECT_EQ(8607, game.getNumberOfStates());
@@ -202,7 +202,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(58, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
@@ -223,7 +223,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
 
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
 
     EXPECT_EQ(212, game.getNumberOfTransitions());
     EXPECT_EQ(8, game.getNumberOfStates());
@@ -273,7 +273,7 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(436, game.getNumberOfTransitions());
     EXPECT_EQ(169, game.getNumberOfStates());
@@ -293,7 +293,7 @@ TEST(PrismMenuGame, WlanAbstractionTest) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(307, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
@@ -315,7 +315,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
     
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
 
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
 
     EXPECT_EQ(612, game.getNumberOfTransitions());
     EXPECT_EQ(8, game.getNumberOfStates());
@@ -433,7 +433,7 @@ TEST(PrismMenuGame, WlanFullAbstractionTest) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
     EXPECT_EQ(59, game.getNumberOfTransitions());
     EXPECT_EQ(37, game.getNumberOfStates());

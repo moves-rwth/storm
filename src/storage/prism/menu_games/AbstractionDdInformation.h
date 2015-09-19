@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <set>
+#include <map>
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/expressions/Variable.h"
@@ -100,6 +101,9 @@ namespace storm {
                 
                 // The DD variables encoding the nondeterministic choices of player 2.
                 std::vector<std::pair<storm::expressions::Variable, storm::dd::Bdd<DdType>>> optionDdVariables;
+                
+                // A mapping from the predicates to the BDDs.
+                std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> expressionToBddMap;
             };
             
         }

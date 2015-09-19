@@ -95,7 +95,7 @@ namespace storm {
             return this->getBaseExpression().isFalse();
         }
         
-        bool Expression::isSame(storm::expressions::Expression const& other) const {
+        bool Expression::areSame(storm::expressions::Expression const& other) const {
             return this->expressionPtr == other.expressionPtr;
         }
 
