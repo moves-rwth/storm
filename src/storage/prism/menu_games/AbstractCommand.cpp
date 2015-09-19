@@ -57,7 +57,6 @@ namespace storm {
                 if (!recomputeDd) {
                     // If the new predicates are unrelated to the BDD of this command, we need to multiply their identities.
                     cachedDd.first &= computeMissingGlobalIdentities();
-                    cachedDd.first.toAdd().exportToDot("cmd" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                 } else {
                     // If the DD needs recomputation, it is because of new relevant predicates, so we need to assert the appropriate clauses in the solver.
                     addMissingPredicates(newRelevantPredicates);
@@ -70,7 +69,7 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::recomputeCachedBdd() {
                 STORM_LOG_TRACE("Recomputing BDD for command " << command.get());
-
+                
                 // Create a mapping from source state DDs to their distributions.
                 std::unordered_map<storm::dd::Bdd<DdType>, std::vector<storm::dd::Bdd<DdType>>> sourceToDistributionsMap;
                 uint_fast64_t modelCounter = 0;
@@ -110,16 +109,12 @@ namespace storm {
                 STORM_LOG_ASSERT(sourceToDistributionsMap.empty() || !resultBdd.isZero(), "The BDD must not be empty, if there were distributions.");
                 
                 // Cache the result.
-                resultBdd.toAdd().exportToDot("cmd" + std::to_string(command.get().getGlobalIndex()) + ".dot");
                 cachedDd = std::make_pair(resultBdd, numberOfVariablesNeeded);
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
             std::pair<std::set<uint_fast64_t>, std::set<uint_fast64_t>> AbstractCommand<DdType, ValueType>::computeRelevantPredicates(std::vector<storm::prism::Assignment> const& assignments) const {
                 std::pair<std::set<uint_fast64_t>, std::set<uint_fast64_t>> result;
-                
-                // To start with, all predicates related to the guard are relevant source predicates.
-                result.first = variablePartition.getExpressionsUsingVariables(command.get().getGuardExpression().getVariables());
                 
                 std::set<storm::expressions::Variable> assignedVariables;
                 for (auto const& assignment : assignments) {
@@ -147,6 +142,10 @@ namespace storm {
             std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> AbstractCommand<DdType, ValueType>::computeRelevantPredicates() const {
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> result;
 
+                // To start with, all predicates related to the guard are relevant source predicates.
+                result.first = variablePartition.getExpressionsUsingVariables(command.get().getGuardExpression().getVariables());
+                
+                // Then, we add the predicates that become relevant, because of some update.
                 for (auto const& update : command.get().getUpdates()) {
                     std::pair<std::set<uint_fast64_t>, std::set<uint_fast64_t>> relevantUpdatePredicates = computeRelevantPredicates(update.getAssignments());
                     result.first.insert(relevantUpdatePredicates.first.begin(), relevantUpdatePredicates.first.end());

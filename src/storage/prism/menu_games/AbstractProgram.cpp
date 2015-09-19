@@ -69,8 +69,6 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractProgram<DdType, ValueType>::refine(std::vector<storm::expressions::Expression> const& predicates) {
-                std::cout << " >>>> refine <<<<<<" << std::endl;
-                
                 // Add the predicates to the global list of predicates.
                 uint_fast64_t firstNewPredicateIndex = expressionInformation.predicates.size();
                 expressionInformation.predicates.insert(expressionInformation.predicates.end(), predicates.begin(), predicates.end());

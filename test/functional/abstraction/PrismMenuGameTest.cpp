@@ -28,7 +28,8 @@ TEST(PrismMenuGame, DieAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(19, abstraction.getNodeCount());
+    EXPECT_EQ(15, abstraction.getNonZeroCount());
+    EXPECT_EQ(2, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, DieAbstractionAndRefinementTest) {
@@ -47,7 +48,8 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest) {
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("s") == manager.integer(7)}));
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(26, abstraction.getNodeCount());
+    EXPECT_EQ(15, abstraction.getNonZeroCount());
+    EXPECT_EQ(3, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, DieFullAbstractionTest) {
@@ -78,12 +80,8 @@ TEST(PrismMenuGame, DieFullAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(313, abstraction.getNodeCount());
-    
-    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
-    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
-    
-    EXPECT_EQ(13, reachableStatesInAbstraction.getNonZeroCount());
+    EXPECT_EQ(20, abstraction.getNonZeroCount());
+    EXPECT_EQ(13, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionTest) {
@@ -100,7 +98,8 @@ TEST(PrismMenuGame, CrowdsAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(46, abstraction.getNodeCount());
+    EXPECT_EQ(16, abstraction.getNonZeroCount());
+    EXPECT_EQ(2, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
@@ -117,12 +116,11 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(46, abstraction.getNodeCount());
-    
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("observe0") + manager.getVariableExpression("observe1") + manager.getVariableExpression("observe2") + manager.getVariableExpression("observe3") + manager.getVariableExpression("observe4") <= manager.getVariableExpression("runCount")}));
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(75, abstraction.getNodeCount());
+    EXPECT_EQ(38, abstraction.getNonZeroCount());
+    EXPECT_EQ(4, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, CrowdsFullAbstractionTest) {
@@ -193,10 +191,8 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
-    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
-    
-    EXPECT_EQ(8607, reachableStatesInAbstraction.getNonZeroCount());
+    EXPECT_EQ(15113, abstraction.getNonZeroCount());
+    EXPECT_EQ(8607, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionTest) {
@@ -215,7 +211,8 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(38, abstraction.getNodeCount());
+    EXPECT_EQ(58, abstraction.getNonZeroCount());
+    EXPECT_EQ(4, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
@@ -234,15 +231,11 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(38, abstraction.getNodeCount());
-    
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("d1") + manager.getVariableExpression("d2") == manager.integer(7)}));
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(95, abstraction.getNodeCount());
-    
-    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
-    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
+    EXPECT_EQ(212, abstraction.getNonZeroCount());
+    EXPECT_EQ(8, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest) {
@@ -292,12 +285,8 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(1635, abstraction.getNodeCount());
-    
-    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
-    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
-    
-    EXPECT_EQ(169, reachableStatesInAbstraction.getNonZeroCount());
+    EXPECT_EQ(436, abstraction.getNonZeroCount());
+    EXPECT_EQ(169, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanAbstractionTest) {
@@ -317,7 +306,8 @@ TEST(PrismMenuGame, WlanAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(221, abstraction.getNodeCount());
+    EXPECT_EQ(307, abstraction.getNonZeroCount());
+    EXPECT_EQ(4, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
@@ -337,12 +327,11 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(221, abstraction.getNodeCount());
-    
     ASSERT_NO_THROW(abstractProgram.refine({manager.getVariableExpression("backoff1") < manager.integer(7)}));
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(287, abstraction.getNodeCount());
+    EXPECT_EQ(612, abstraction.getNonZeroCount());
+    EXPECT_EQ(8, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanFullAbstractionTest) {
@@ -460,12 +449,8 @@ TEST(PrismMenuGame, WlanFullAbstractionTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> abstraction;
     ASSERT_NO_THROW(abstraction = abstractProgram.getAbstractAdd());
     
-    EXPECT_EQ(2861, abstraction.getNodeCount());
-    
-    storm::dd::Bdd<storm::dd::DdType::CUDD> reachableStatesInAbstraction;
-    ASSERT_NO_THROW(reachableStatesInAbstraction = abstractProgram.getReachableStates());
-    
-    EXPECT_EQ(37, reachableStatesInAbstraction.getNonZeroCount());
+    EXPECT_EQ(59, abstraction.getNonZeroCount());
+    EXPECT_EQ(37, abstractProgram.getReachableStates().getNonZeroCount());
 }
 
 #endif
