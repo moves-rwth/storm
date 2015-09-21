@@ -310,6 +310,28 @@ namespace storm {
             Add<DdType::CUDD> maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
+             * Computes a DD in which each concrete valuation of the meta variables not in the given set is associated
+             * with exactly one valuation of the meta variables in the given set that realizes the minimal function
+             * value (for the valuation of meta variables not in the given set).
+             *
+             * @param metaVariables The set of meta variables for which to pick unique representatives (that achieve the
+             * minimal function value).
+             * @return The resulting DD.
+             */
+            Add<DdType::CUDD> minAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const;
+            
+            /*!
+             * Computes a DD in which each concrete valuation of the meta variables not in the given set is associated
+             * with exactly one valuation of the meta variables in the given set that realizes the maximal function
+             * value (for the valuation of meta variables not in the given set).
+             *
+             * @param metaVariables The set of meta variables for which to pick unique representatives (that achieve the
+             * maximal function value).
+             * @return The resulting DD.
+             */
+            Add<DdType::CUDD> maxAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const;
+            
+            /*!
              * Checks whether the current and the given ADD represent the same function modulo some given precision.
              *
              * @param other The ADD with which to compare.

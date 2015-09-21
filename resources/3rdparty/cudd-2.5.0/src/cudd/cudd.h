@@ -769,6 +769,8 @@ extern DdNode * Cudd_addUnivAbstract (DdManager *manager, DdNode *f, DdNode *cub
 extern DdNode * Cudd_addOrAbstract (DdManager *manager, DdNode *f, DdNode *cube);
 extern DdNode * Cudd_addMinAbstract(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * Cudd_addMaxAbstract(DdManager * manager, DdNode * f, DdNode * cube);
+extern DdNode * Cudd_addMinAbstractRepresentative(DdManager * manager, DdNode * f, DdNode * cube);
+extern DdNode * Cudd_addMaxAbstractRepresentative(DdManager * manager, DdNode * f, DdNode * cube);
 extern DdNode * Cudd_addApply (DdManager *dd, DdNode * (*)(DdManager *, DdNode **, DdNode **), DdNode *f, DdNode *g);
 extern DdNode * Cudd_addPlus (DdManager *dd, DdNode **f, DdNode **g);
 extern DdNode * Cudd_addTimes (DdManager *dd, DdNode **f, DdNode **g);

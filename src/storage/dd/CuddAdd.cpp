@@ -242,6 +242,38 @@ namespace storm {
             return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().MaxAbstract(cubeDd.toAdd().getCuddAdd()), newMetaVariables);
         }
         
+        Add<DdType::CUDD> Add<DdType::CUDD>::minAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<DdType::CUDD> cubeDd = this->getDdManager()->getBddOne();
+            
+            std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
+            for (auto const& metaVariable : metaVariables) {
+                // First check whether the DD contains the meta variable and erase it, if this is the case.
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
+                newMetaVariables.erase(metaVariable);
+                
+                DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
+                cubeDd &= ddMetaVariable.getCube();
+            }
+
+            return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().MinAbstractRepresentative(cubeDd.toAdd().getCuddAdd()), newMetaVariables);
+        }
+        
+        Add<DdType::CUDD> Add<DdType::CUDD>::maxAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<DdType::CUDD> cubeDd = this->getDdManager()->getBddOne();
+            
+            std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
+            for (auto const& metaVariable : metaVariables) {
+                // First check whether the DD contains the meta variable and erase it, if this is the case.
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
+                newMetaVariables.erase(metaVariable);
+                
+                DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
+                cubeDd &= ddMetaVariable.getCube();
+            }
+            
+            return Add<DdType::CUDD>(this->getDdManager(), this->getCuddAdd().MaxAbstractRepresentative(cubeDd.toAdd().getCuddAdd()), newMetaVariables);
+        }
+        
         bool Add<DdType::CUDD>::equalModuloPrecision(Add<DdType::CUDD> const& other, double precision, bool relative) const {
             if (relative) {
                 return this->getCuddAdd().EqualSupNormRel(other.getCuddAdd(), precision);

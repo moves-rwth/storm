@@ -376,6 +376,8 @@ public:
     ADD OrAbstract(const ADD& cube) const;
     ADD MinAbstract(const ADD& cube) const;
     ADD MaxAbstract(const ADD& cube) const;
+    ADD MinAbstractRepresentative(const ADD& cube) const;
+    ADD MaxAbstractRepresentative(const ADD& cube) const;
     ADD Plus(const ADD& g) const;
     ADD Times(const ADD& g) const;
     ADD Threshold(const ADD& g) const;
