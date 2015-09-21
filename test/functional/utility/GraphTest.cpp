@@ -88,6 +88,41 @@ TEST(GraphTest, SymbolicProb01MinMax) {
     EXPECT_EQ(16ul, statesWithProbability01.second.getNonZeroCount());
 }
 
+#ifdef STORM_HAVE_MSAT
+
+#include "src/storage/prism/menu_games/AbstractProgram.h"
+
+#include "src/storage/expressions/Expression.h"
+
+#include "src/utility/solver.h"
+
+TEST(GraphTest, SymbolicProb0StochasticGame) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
+    
+    std::vector<storm::expressions::Expression> initialPredicates;
+    storm::expressions::ExpressionManager& manager = program.getManager();
+    
+    initialPredicates.push_back(manager.getVariableExpression("s") < manager.integer(3));
+    
+    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    
+    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result1 = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), game.getStates(initialPredicates.front(), true), storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize);
+    EXPECT_EQ(1, result1.states.getNonZeroCount());
+    
+    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result2 = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), game.getStates(initialPredicates.front(), true), storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize);
+    EXPECT_EQ(1, result2.states.getNonZeroCount());
+
+    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result3 = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), game.getStates(initialPredicates.front(), true), storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize);
+    EXPECT_EQ(0, result3.states.getNonZeroCount());
+
+    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result4 = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), game.getStates(initialPredicates.front(), true), storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize);
+    EXPECT_EQ(0, result4.states.getNonZeroCount());
+}
+
+#endif
+
 TEST(GraphTest, ExplicitProb01) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);

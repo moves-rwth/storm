@@ -153,7 +153,7 @@ namespace storm {
                 storm::dd::Add<DdType> transitionMatrix = (gameBdd.first && reachableStates).toAdd() * commandUpdateProbabilitiesAdd + deadlockTransitions;
             
                 std::set<storm::expressions::Variable> usedPlayer2Variables;
-                for (uint_fast64_t index = 0; index < ddInformation.optionDdVariables.size(); ++index) {
+                for (uint_fast64_t index = 0; index < gameBdd.second; ++index) {
                     usedPlayer2Variables.insert(usedPlayer2Variables.end(), ddInformation.optionDdVariables[index].first);
                 }
                 

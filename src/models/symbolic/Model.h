@@ -123,7 +123,7 @@ namespace storm {
                  * Returns the set of states labeled satisfying the given expression (that must be of boolean type).
                  *
                  * @param expression The expression that needs to hold in the states.
-                 * @return The set of states labeled satisfying the given expression.
+                 * @return The set of states satisfying the given expression.
                  */
                 virtual storm::dd::Bdd<Type> getStates(storm::expressions::Expression const& expression) const;
                 
@@ -148,6 +148,14 @@ namespace storm {
                  * @return A matrix representing the transitions of the model.
                  */
                 storm::dd::Add<Type>& getTransitionMatrix();
+
+                /*!
+                 * Retrieves the matrix qualitatively (i.e. without probabilities) representing the transitions of the
+                 * model.
+                 *
+                 * @return A matrix representing the qualitative transitions of the model.
+                 */
+                storm::dd::Bdd<Type> getQualitativeTransitionMatrix() const;
                 
                 /*!
                  * Retrieves the meta variables used to encode the rows of the transition matrix and the vector indices.

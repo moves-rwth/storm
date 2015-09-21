@@ -59,7 +59,24 @@ namespace storm {
                 
                 virtual storm::dd::Bdd<Type> getStates(std::string const& label) const override;
                 
+                /*!
+                 * Returns the set of states satisfying the given expression (that must be of boolean type). Note that
+                 * for menu games, the given expression must be a predicate that was used to build the abstract game.
+                 *
+                 * @param expression The expression that needs to hold in the states.
+                 * @return The set of states satisfying the given expression.
+                 */
                 virtual storm::dd::Bdd<Type> getStates(storm::expressions::Expression const& expression) const override;
+
+                /*!
+                 * Returns the set of states satisfying the given expression (that must be of boolean type). Note that
+                 * for menu games, the given expression must be a predicate that was used to build the abstract game.
+                 *
+                 * @param expression The expression that needs to hold in the states.
+                 * @param negated If set to true, the result is the set of states not satisfying the expression.
+                 * @return The set of states labeled satisfying the given expression.
+                 */
+                storm::dd::Bdd<Type> getStates(storm::expressions::Expression const& expression, bool negated) const;
                 
                 virtual bool hasLabel(std::string const& label) const override;
                 

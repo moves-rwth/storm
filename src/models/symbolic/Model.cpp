@@ -91,6 +91,11 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type>
+            storm::dd::Bdd<Type> Model<Type>::getQualitativeTransitionMatrix() const {
+                return this->getTransitionMatrix().notZero();
+            }
+            
+            template<storm::dd::DdType Type>
             std::size_t Model<Type>::getSizeInBytes() const {
                 return sizeof(*this) + sizeof(DdNode) * (reachableStates.getNodeCount() + initialStates.getNodeCount() + transitionMatrix.getNodeCount());
             }

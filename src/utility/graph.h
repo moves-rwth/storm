@@ -433,6 +433,17 @@ namespace storm {
             template <storm::dd::DdType Type>
             std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
+            template <storm::dd::DdType Type>
+            struct GameProb01Result {
+                GameProb01Result(storm::dd::Bdd<Type> const& states, boost::optional<storm::dd::Bdd<Type>> const& player1Strategy = boost::none, boost::optional<storm::dd::Bdd<Type>> const& player2Strategy = boost::none) : states(states), player1Strategy(player1Strategy), player2Strategy(player2Strategy) {
+                    // Intentionally left empty.
+                }
+                
+                storm::dd::Bdd<Type> states;
+                boost::optional<storm::dd::Bdd<Type>> player1Strategy;
+                boost::optional<storm::dd::Bdd<Type>> player2Strategy;
+            };
+            
             /*!
              * Computes the set of states that have probability 0 given the strategies of the two players.
              *
@@ -442,7 +453,7 @@ namespace storm {
              * @param psiStates The BDD containing all psi states of the model.
              */
             template <storm::dd::DdType Type>
-            void performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy);
+            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.

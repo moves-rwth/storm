@@ -24,7 +24,7 @@ namespace storm {
                                      std::set<storm::expressions::Variable> const& player2Variables,
                                      std::set<storm::expressions::Variable> const& allNondeterminismVariables,
                                      storm::expressions::Variable const& updateVariable,
-                                     std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type>(manager, reachableStates, initialStates, transitionMatrix, rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), updateVariable(updateVariable), expressionToBddMap(expressionToBddMap) {
+                                     std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type>(manager, reachableStates, initialStates, transitionMatrix.sumAbstract({updateVariable}), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), updateVariable(updateVariable), expressionToBddMap(expressionToBddMap) {
                 // Intentionally left empty.
             }
             
@@ -35,9 +35,18 @@ namespace storm {
             
             template<storm::dd::DdType Type>
             storm::dd::Bdd<Type> MenuGame<Type>::getStates(storm::expressions::Expression const& expression) const {
+                return this->getStates(expression, false);
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Bdd<Type> MenuGame<Type>::getStates(storm::expressions::Expression const& expression, bool negated) const {
                 auto it = expressionToBddMap.find(expression);
                 STORM_LOG_THROW(it != expressionToBddMap.end(), storm::exceptions::InvalidArgumentException, "The given expression was not used in the abstraction process and can therefore not be retrieved.");
-                return it->second && this->getReachableStates();
+                if (negated) {
+                    return !it->second && this->getReachableStates();
+                } else {
+                    return it->second && this->getReachableStates();
+                }
             }
             
             template<storm::dd::DdType Type>
