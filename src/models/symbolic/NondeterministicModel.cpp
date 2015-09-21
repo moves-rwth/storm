@@ -27,8 +27,7 @@ namespace storm {
             : Model<Type>(modelType, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels), nondeterminismVariables(nondeterminismVariables) {
                 
                 // Prepare the mask of illegal nondeterministic choices.
-                illegalMask = transitionMatrix.notZero().existsAbstract(this->getColumnVariables());
-                illegalMask = !illegalMask && reachableStates;
+                illegalMask = !(transitionMatrix.notZero().existsAbstract(this->getColumnVariables())) && reachableStates;
             }
             
             template<storm::dd::DdType Type>
@@ -48,6 +47,12 @@ namespace storm {
             template<storm::dd::DdType Type>
             storm::dd::Bdd<Type> const& NondeterministicModel<Type>::getIllegalMask() const {
                 return illegalMask;
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Bdd<Type> NondeterministicModel<Type>::getIllegalSuccessorMask() const {
+                storm::dd::Bdd<Type> transitionMatrixBdd = this->getTransitionMatrix().notZero();
+                return !transitionMatrixBdd && transitionMatrixBdd.existsAbstract(this->getColumnVariables());
             }
             
             template<storm::dd::DdType Type>

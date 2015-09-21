@@ -11,6 +11,8 @@
 #include "src/models/sparse/DeterministicModel.h"
 #include "src/storage/dd/DdType.h"
 
+#include "src/solver/OptimizationDirection.h"
+
 namespace storm {
     namespace storage {
         class BitVector;
@@ -23,6 +25,7 @@ namespace storm {
             template<storm::dd::DdType T> class Model;
             template<storm::dd::DdType T> class DeterministicModel;
             template<storm::dd::DdType T> class NondeterministicModel;
+            template<storm::dd::DdType T> class StochasticTwoPlayerGame;
         }
         
     }
@@ -393,7 +396,7 @@ namespace storm {
              * @return A BDD representing all such states.
              */
             template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProb0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
+            storm::dd::Bdd<Type> performProb0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
              * Computes the set of states for which all schedulers achieve probability one of satisfying phi until psi.
@@ -425,10 +428,21 @@ namespace storm {
             storm::dd::Bdd<Type> performProb1E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0E) ;
             
             template <storm::dd::DdType Type>
-            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
+            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             template <storm::dd::DdType Type>
-            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
+            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+            
+            /*!
+             * Computes the set of states that have probability 0 given the strategies of the two players.
+             *
+             * @param model The (symbolic) model for which to compute the set of states.
+             * @param transitionMatrix The transition matrix of the model as a BDD.
+             * @param phiStates The BDD containing all phi states of the model.
+             * @param psiStates The BDD containing all psi states of the model.
+             */
+            template <storm::dd::DdType Type>
+            void performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.
@@ -437,7 +451,7 @@ namespace storm {
              * @return A vector of indices that is a topological sort of the states.
              */
             template <typename T>
-            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) ;
+            std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix);
             
             /*!
              * A class needed to compare the distances for two states in the Dijkstra search.

@@ -166,6 +166,15 @@ namespace storm {
              * @param metaVariables The meta variables from which to abstract.
              */
             Bdd<DdType::CUDD> existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
+
+            /*!
+             * Similar to <code>existsAbstract</code>, but does not abstract from the variables but rather picks a
+             * valuation of each of the meta variables "to abstract from" such that for this valuation, there exists a 
+             * valuation (of the other variables) that that make the function evaluate to true.
+             *
+             * @param metaVariables The meta variables from which to abstract.
+             */
+            Bdd<DdType::CUDD> existsAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Universally abstracts from the given meta variables.

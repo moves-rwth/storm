@@ -255,6 +255,7 @@ public:
     BDD BiasedOverApprox(const BDD& bias, int numVars, int threshold = 0, 
                          double quality1 = 1.0, double quality0 = 1.0) const;
     BDD ExistAbstract(const BDD& cube, unsigned int limit = 0) const;
+    BDD ExistAbstractRepresentative(const BDD& cube) const;
     BDD XorExistAbstract(const BDD& g, const BDD& cube) const;
     BDD UnivAbstract(const BDD& cube) const;
     BDD BooleanDiff(int x) const;

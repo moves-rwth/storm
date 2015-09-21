@@ -134,6 +134,22 @@ namespace storm {
             return Bdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().ExistAbstract(cubeBdd.getCuddBdd()), newMetaVariables);
         }
         
+        Bdd<DdType::CUDD> Bdd<DdType::CUDD>::existsAbstractRepresentative(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<DdType::CUDD> cubeBdd = this->getDdManager()->getBddOne();
+            
+            std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
+            for (auto const& metaVariable : metaVariables) {
+                // First check whether the BDD contains the meta variable and erase it, if this is the case.
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
+                newMetaVariables.erase(metaVariable);
+                
+                DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
+                cubeBdd &= ddMetaVariable.getCube();
+            }
+            
+            return Bdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().ExistAbstractRepresentative(cubeBdd.getCuddBdd()), newMetaVariables);
+        }
+        
         Bdd<DdType::CUDD> Bdd<DdType::CUDD>::universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
             Bdd<DdType::CUDD> cubeBdd = this->getDdManager()->getBddOne();
             

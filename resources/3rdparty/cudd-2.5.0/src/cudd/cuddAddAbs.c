@@ -922,8 +922,7 @@ cuddAddMinAbstractRepresentativeRecur(
             return(NULL);
         }
         
-        // Fill in the missing variables to make representative unique. Set the "non-used-branch" to infinity, otherwise
-        // this may interfere with the minimum calculation.
+        // Fill in the missing variables to make representative unique.
         cuddRef(res);
         cuddRef(zero);
         res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
@@ -1026,8 +1025,13 @@ cuddAddMinAbstractRepresentativeRecur(
         Cudd_RecursiveDeref(manager,res2);
         Cudd_RecursiveDeref(manager,tmp2);
         cuddDeref(zero);
+
+//        Originally:
+//        res = (res1Inf == res2Inf) ? res1Inf : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        cuddRef(zero);
+        res = (res1Inf == res2Inf) ? cuddUniqueInter(manager, (int) f->index, zero, res1Inf) : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        cuddDeref(zero);
         
-        res = (res1Inf == res2Inf) ? res1Inf : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
         if (res == NULL) {
             Cudd_RecursiveDeref(manager,res1Inf);
             Cudd_RecursiveDeref(manager,res2Inf);
@@ -1050,7 +1054,10 @@ cuddAddMinAbstractRepresentativeRecur(
             return(NULL);
         }
         cuddRef(res2);
-        res = (res1 == res2) ? res1 : cuddUniqueInter(manager, (int) f->index, res2, res1);
+        
+        cuddRef(zero);
+        res = (res1 == res2) ? cuddUniqueInter(manager, (int) f->index, zero, res1) : cuddUniqueInter(manager, (int) f->index, res2, res1);
+        cuddDeref(zero);
         if (res == NULL) {
             Cudd_RecursiveDeref(manager,res1);
             Cudd_RecursiveDeref(manager,res2);
@@ -1209,8 +1216,14 @@ cuddAddMaxAbstractRepresentativeRecur(
         Cudd_RecursiveDeref(manager,res2);
         Cudd_RecursiveDeref(manager,tmp2);
         cuddDeref(zero);
+
+//        Orignally
+//        res = (res1Inf == res2Inf) ? res1Inf : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
         
-        res = (res1Inf == res2Inf) ? res1Inf : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        cuddRef(zero);
+        res = (res1Inf == res2Inf) ? cuddUniqueInter(manager, (int) f->index, zero, res1Inf) : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        cuddDeref(zero);
+
         if (res == NULL) {
             Cudd_RecursiveDeref(manager,res1Inf);
             Cudd_RecursiveDeref(manager,res2Inf);
@@ -1233,7 +1246,9 @@ cuddAddMaxAbstractRepresentativeRecur(
             return(NULL);
         }
         cuddRef(res2);
-        res = (res1 == res2) ? res1 : cuddUniqueInter(manager, (int) f->index, res2, res1);
+        cuddRef(zero);
+        res = (res1 == res2) ? cuddUniqueInter(manager, (int) f->index, zero, res1) : cuddUniqueInter(manager, (int) f->index, res2, res1);
+        cuddDeref(zero);
         if (res == NULL) {
             Cudd_RecursiveDeref(manager,res1);
             Cudd_RecursiveDeref(manager,res2);
