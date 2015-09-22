@@ -2,6 +2,8 @@
 #include <string>
 #include <algorithm>
 
+#include "storm-config.h"
+
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/utility/macros.h"
 #include "src/storage/expressions/Variable.h"
@@ -10,12 +12,11 @@
 #include "src/settings/modules/CuddSettings.h"
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/dd/CuddAdd.h"
-#include "CuddBdd.h"
-
+#include "src/storage/dd/CuddBdd.h"
 
 namespace storm {
     namespace dd {
-        DdManager<DdType::CUDD>::DdManager() : metaVariableMap(), cuddManager(), reorderingTechnique(CUDD_REORDER_NONE), manager(new storm::expressions::ExpressionManager()) {
+        DdManager<DdType::CUDD>::DdManager() : cuddManager(), metaVariableMap(), reorderingTechnique(CUDD_REORDER_NONE), manager(new storm::expressions::ExpressionManager()) {
             this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::cuddSettings().getMaximalMemory() * 1024ul * 1024ul));
             this->cuddManager.SetEpsilon(storm::settings::cuddSettings().getConstantPrecision());
             
@@ -41,6 +42,12 @@ namespace storm {
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::Genetic: this->reorderingTechnique = CUDD_REORDER_GENETIC; break;
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::Exact: this->reorderingTechnique = CUDD_REORDER_EXACT; break;
             }
+        }
+        
+        DdManager<DdType::CUDD>::~DdManager() {
+#ifndef NDEBUG
+            cuddManager.DebugCheck();
+#endif
         }
         
         Bdd<DdType::CUDD> DdManager<DdType::CUDD>::getBddOne() const {

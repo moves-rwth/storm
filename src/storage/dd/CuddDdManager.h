@@ -34,6 +34,11 @@ namespace storm {
              */
             DdManager();
             
+            /*!
+             * Destroys the manager. In debug mode, this will check for errors with CUDD.
+             */
+            ~DdManager();
+            
             // Explictly forbid copying a DdManager, but allow moving it.
             DdManager(DdManager<DdType::CUDD> const& other) = delete;
 			DdManager<DdType::CUDD>& operator=(DdManager<DdType::CUDD> const& other) = delete;
@@ -225,11 +230,13 @@ namespace storm {
              */
             storm::expressions::ExpressionManager& getExpressionManager();
             
+            // The manager responsible for the DDs created/modified with this DdManager. This member strictly needs to
+            // the first member of the class: upon destruction, the meta variables still destruct DDs that are managed
+            // by this manager, so we have to make sure it still exists at this point and is destructed later.
+            Cudd cuddManager;
+
             // A mapping from variables to the meta variable information.
             std::unordered_map<storm::expressions::Variable, DdMetaVariable<DdType::CUDD>> metaVariableMap;
-            
-            // The manager responsible for the DDs created/modified with this DdManager.
-            Cudd cuddManager;
             
             // The technique that is used for dynamic reordering.
             Cudd_ReorderingType reorderingTechnique;

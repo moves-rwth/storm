@@ -690,7 +690,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type>
-            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy) {
+            GameProb01Result<Type> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies) {
 
                 // The solution set.
                 storm::dd::Bdd<Type> solution = psiStates;
@@ -724,29 +724,136 @@ namespace storm {
                 
                 // Since we have determined the inverse of the desired set, we need to complement it now.
                 solution = !solution && model.getReachableStates();
+
+                // Determine all transitions between prob0 states.
+                storm::dd::Bdd<Type> transitionsBetweenProb0States = solution && (transitionMatrix && solution.swapVariables(model.getRowColumnMetaVariablePairs()));
                 
-                return GameProb01Result<Type>(solution);
+                // Determine the distributions that have only successors that are prob0 states.
+                storm::dd::Bdd<Type> onlyProb0Successors = (transitionsBetweenProb0States || model.getIllegalSuccessorMask()).universalAbstract(model.getColumnVariables());
                 
-//                // Determine all transitions between prob0 states.
-//                storm::dd::Bdd<Type> transitionsBetweenProb0States = solution && (transitionMatrix && solution.swapVariables(model.getRowColumnMetaVariablePairs()));
-//                
-//                // Determine the distributions that have only successors that are prob0 states.
-//                storm::dd::Bdd<Type> onlyProb0Successors = (transitionsBetweenProb0States || model.getIllegalSuccessorMask()).universalAbstract(model.getColumnVariables());
-//                
-//                boost::optional<storm::dd::Bdd<Type>> player2StrategyBdd;
-//                if (player2Strategy == OptimizationDirection::Minimize) {
-//                    // Pick a distribution that has only prob0 successors.
-//                    player2StrategyBdd = onlyProb0Successors.existsAbstractRepresentative(model.getPlayer2Variables());
-//                }
-//                
-//                boost::optional<storm::dd::Bdd<Type>> player1StrategyBdd;
-//                if (player1Strategy == OptimizationDirection::Minimize) {
-//                    // Move from player 2 choices with only prob0 successors to player 1 choices with only prob 0 successors.
-//                    onlyProb0Successors = onlyProb0Successors.existsAbstract(model.getPlayer2Variables());
-//                    
-//                    // Pick a prob0 player 2 state.
-//                    onlyProb0Successors.existsAbstractRepresentative(model.getPlayer1Variables());
-//                }
+                boost::optional<storm::dd::Bdd<Type>> player2StrategyBdd;
+                if (produceStrategies && player2Strategy == OptimizationDirection::Minimize) {
+                    // Pick a distribution that has only prob0 successors.
+                    player2StrategyBdd = onlyProb0Successors.existsAbstractRepresentative(model.getPlayer2Variables());
+                }
+                
+                boost::optional<storm::dd::Bdd<Type>> player1StrategyBdd;
+                if (produceStrategies && player1Strategy == OptimizationDirection::Minimize) {
+                    // Move from player 2 choices with only prob0 successors to player 1 choices with only prob 0 successors.
+                    onlyProb0Successors = onlyProb0Successors.existsAbstract(model.getPlayer2Variables());
+                    
+                    // Pick a prob0 player 2 state.
+                    player1StrategyBdd = onlyProb0Successors.existsAbstractRepresentative(model.getPlayer1Variables());
+                }
+                
+                return GameProb01Result<Type>(solution, player1StrategyBdd, player2StrategyBdd);
+            }
+            
+            template <storm::dd::DdType Type>
+            GameProb01Result<Type> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies) {
+                
+                // Create two sets of states. Those states for which we definitely know that their probability is 1 and
+                // those states that potentially have a probability of 1.
+                storm::dd::Bdd<Type> maybeStates = model.getReachableStates();
+                storm::dd::Bdd<Type> solution = psiStates;
+
+                // A flag that governs whether strategies are produced in the current iteration.
+                bool produceStrategiesInIteration = false;
+                boost::optional<storm::dd::Bdd<Type>> player1StrategyBdd;
+                boost::optional<storm::dd::Bdd<Type>> consideredPlayer1States;
+                boost::optional<storm::dd::Bdd<Type>> player2StrategyBdd;
+                boost::optional<storm::dd::Bdd<Type>> consideredPlayer2States;
+
+                bool maybeStatesDone = false;
+                uint_fast64_t maybeStateIterations = 0;
+                while (!maybeStatesDone || produceStrategiesInIteration) {
+                    bool solutionStatesDone = false;
+                    uint_fast64_t solutionStateIterations = 0;
+                    
+                    // If we are to produce strategies in this iteration, we prepare some storage.
+                    if (produceStrategiesInIteration) {
+                        player1StrategyBdd = model.getManager().getBddZero();
+                        consideredPlayer1States = model.getManager().getBddZero();
+                        player2StrategyBdd = model.getManager().getBddZero();
+                        consideredPlayer2States = model.getManager().getBddZero();
+                    }
+                    
+                    while (!solutionStatesDone) {
+                        // Start by computing the transitions that have only maybe states as successors. Note that at
+                        // this point, there may be illegal transitions.
+                        storm::dd::Bdd<Type> distributionsStayingInMaybe = (!transitionMatrix || maybeStates.swapVariables(model.getRowColumnMetaVariablePairs())).universalAbstract(model.getColumnVariables());
+                        
+                        // Then, determine all distributions that have at least one successor in the states that have
+                        // probability 1.
+                        storm::dd::Bdd<Type> distributionsWithProb1Successor = (transitionMatrix && solution.swapVariables(model.getRowColumnMetaVariablePairs())).existsAbstract(model.getColumnVariables());
+                        
+                        // The valid distributions are then those that emanate from phi states, stay completely in the
+                        // maybe states and have at least one successor with probability 1.
+                        storm::dd::Bdd<Type> valid = phiStates && distributionsStayingInMaybe && distributionsWithProb1Successor;
+                        
+                        // Depending on the strategy of player 2, we need to check whether all choices are valid or
+                        // there exists a valid choice.
+                        if (player2Strategy == OptimizationDirection::Minimize) {
+                            valid = (valid || model.getIllegalPlayer2Mask()).universalAbstract(model.getPlayer2Variables());
+                        } else {
+                            if (produceStrategiesInIteration) {
+                                storm::dd::Bdd<Type> newValidDistributions = valid && !consideredPlayer2States.get();
+                                player2StrategyBdd.get() = player2StrategyBdd.get() || newValidDistributions.existsAbstractRepresentative(model.getPlayer2Variables());
+                            }
+
+                            valid = valid.existsAbstract(model.getPlayer2Variables());
+                            
+                            if (produceStrategiesInIteration) {
+                                consideredPlayer2States.get() |= valid;
+                            }
+                        }
+                        
+                        // And do the same for player 1.
+                        if (player1Strategy == OptimizationDirection::Minimize) {
+                            valid = (valid || model.getIllegalPlayer1Mask()).universalAbstract(model.getPlayer1Variables());
+                        } else {
+                            if (produceStrategiesInIteration) {
+                                storm::dd::Bdd<Type> newValidDistributions = valid && !consideredPlayer1States.get();
+                                player1StrategyBdd.get() = player1StrategyBdd.get() || newValidDistributions.existsAbstractRepresentative(model.getPlayer1Variables());
+                            }
+
+                            valid = valid.existsAbstract(model.getPlayer1Variables());
+                            
+                            if (produceStrategiesInIteration) {
+                                consideredPlayer1States.get() |= valid;
+                            }
+                        }
+                        
+                        // Add psi states to result.
+                        valid |= psiStates;
+                        
+                        // If no new states were added, we have found the current hypothesis for the states with
+                        // probability 1.
+                        if (valid == solution) {
+                            solutionStatesDone = true;
+                        } else {
+                            solution = valid;
+                        }
+                        ++solutionStateIterations;
+                    }
+                    
+                    // If the states with probability 1 and the potential probability 1 states coincide, we have found
+                    // the solution.
+                    if (solution == maybeStates) {
+                        maybeStatesDone = true;
+                        
+                        // If we were asked to produce strategies, we propagate that by triggering another iteration.
+                        // We only do this if at least one strategy will be produced.
+                        produceStrategiesInIteration = produceStrategies && (player1Strategy == OptimizationDirection::Maximize || player2Strategy == OptimizationDirection::Maximize);
+                    } else {
+                        // Otherwise, we use the current hypothesis for the states with probability 1 as the new maybe
+                        // state set.
+                        maybeStates = solution;
+                    }
+                    ++maybeStateIterations;
+                }
+                
+                return GameProb01Result<Type>(solution, player1StrategyBdd, player2StrategyBdd);
             }
             
             template <typename T>
@@ -1081,8 +1188,10 @@ namespace storm {
             template std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> performProb01Min(storm::models::symbolic::NondeterministicModel<storm::dd::DdType::CUDD> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates) ;
             
             
-            template GameProb01Result<storm::dd::DdType::CUDD> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy);
-            
+            template GameProb01Result<storm::dd::DdType::CUDD> performProb0(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies);
+
+            template GameProb01Result<storm::dd::DdType::CUDD> performProb1(storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD> const& model, storm::dd::Bdd<storm::dd::DdType::CUDD> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, storm::OptimizationDirection const& player1Strategy, storm::OptimizationDirection const& player2Strategy, bool produceStrategies);
+
         } // namespace graph
     } // namespace utility
 } // namespace storm

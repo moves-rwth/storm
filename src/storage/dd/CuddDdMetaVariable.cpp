@@ -3,14 +3,14 @@
 
 namespace storm {
     namespace dd {
-        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Int), low(low), high(high), ddVariables(ddVariables), cube(manager->getBddOne()), manager(manager) {
+        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::weak_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Int), low(low), high(high), ddVariables(ddVariables), cube(manager.lock()->getBddOne()), manager(manager) {
             // Create the cube of all variables of this meta variable.
             for (auto const& ddVariable : this->ddVariables) {
                 this->cube &= ddVariable;
             }
         }
         
-        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Bool), low(0), high(1), ddVariables(ddVariables), cube(manager->getBddOne()), manager(manager) {
+        DdMetaVariable<DdType::CUDD>::DdMetaVariable(std::string const& name, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::weak_ptr<DdManager<DdType::CUDD>> manager) : name(name), type(MetaVariableType::Bool), low(0), high(1), ddVariables(ddVariables), cube(manager.lock()->getBddOne()), manager(manager) {
             // Create the cube of all variables of this meta variable.
             for (auto const& ddVariable : this->ddVariables) {
                 this->cube &= ddVariable;
@@ -38,7 +38,7 @@ namespace storm {
         }
         
         std::shared_ptr<DdManager<DdType::CUDD>> DdMetaVariable<DdType::CUDD>::getDdManager() const {
-            return this->manager;
+            return this->manager.lock();
         }
 
         std::vector<Bdd<DdType::CUDD>> const& DdMetaVariable<DdType::CUDD>::getDdVariables() const {

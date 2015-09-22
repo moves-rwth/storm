@@ -173,12 +173,12 @@ namespace storm {
              * @param ddManager The manager responsible for this DD.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            Dd(std::weak_ptr<DdManager<DdType::CUDD> const> ddManager, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
         private:
             
             // A pointer to the manager responsible for this DD.
-            std::shared_ptr<DdManager<DdType::CUDD> const> ddManager;
+            std::weak_ptr<DdManager<DdType::CUDD> const> ddManager;
             
             // The meta variables that appear in this DD.
             std::set<storm::expressions::Variable> containedMetaVariables;

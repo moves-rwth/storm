@@ -46,7 +46,7 @@ namespace storm {
              * @param odd An ODD that is used to do the translation.
              * @param metaVariables The meta variables to use to encode the vector.
              */
-            Add(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables);
+            Add(std::weak_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Add() = default;
@@ -695,7 +695,7 @@ namespace storm {
              * @param cuddAdd The CUDD ADD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Add(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            Add(std::weak_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             /*!
              * Converts the ADD to a row-grouped (sparse) double matrix. If the optional vector is given, it is also

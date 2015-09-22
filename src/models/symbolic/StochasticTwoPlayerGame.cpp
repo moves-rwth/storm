@@ -28,7 +28,6 @@ namespace storm {
             : NondeterministicModel<Type>(storm::models::ModelType::S2pg, manager, reachableStates, initialStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, nondeterminismVariables, labelToExpressionMap, rewardModels), player1Variables(player1Variables), player2Variables(player2Variables) {
                 
                 // Compute legal player 1 mask.
-                transitionMatrix.exportToDot("trans.dot");
                 illegalPlayer1Mask = transitionMatrix.notZero().existsAbstract(this->getColumnVariables()).existsAbstract(this->getPlayer2Variables());
 
                 // Correct the mask for player 2. This is necessary, because it is not yet restricted to the legal choices of player 1.

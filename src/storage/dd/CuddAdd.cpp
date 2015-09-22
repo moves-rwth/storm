@@ -19,12 +19,12 @@
 
 namespace storm {
     namespace dd {
-        Add<DdType::CUDD>::Add(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<DdType::CUDD>(ddManager, containedMetaVariables), cuddAdd(cuddAdd) {
+        Add<DdType::CUDD>::Add(std::weak_ptr<DdManager<DdType::CUDD> const> ddManager, ADD cuddAdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<DdType::CUDD>(ddManager, containedMetaVariables), cuddAdd(cuddAdd) {
             // Intentionally left empty.
         }
         
-        Add<DdType::CUDD>::Add(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables) : Dd<DdType::CUDD>(ddManager, metaVariables) {
-            cuddAdd = fromVector(ddManager, values, odd, metaVariables);
+        Add<DdType::CUDD>::Add(std::weak_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables) : Dd<DdType::CUDD>(ddManager, metaVariables) {
+            cuddAdd = fromVector(ddManager.lock(), values, odd, metaVariables);
         }
         
         Bdd<DdType::CUDD> Add<DdType::CUDD>::toBdd() const {

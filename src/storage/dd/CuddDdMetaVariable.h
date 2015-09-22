@@ -42,7 +42,7 @@ namespace storm {
              * @param ddVariables The vector of variables used to encode this variable.
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
-            DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager);
+            DdMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::weak_ptr<DdManager<DdType::CUDD>> manager);
             
             /*!
              * Creates a boolean meta variable with the given name.
@@ -50,7 +50,7 @@ namespace storm {
              * @param ddVariables The vector of variables used to encode this variable.
              * @param manager A pointer to the manager that is responsible for this meta variable.
              */
-            DdMetaVariable(std::string const& name, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::shared_ptr<DdManager<DdType::CUDD>> manager);
+            DdMetaVariable(std::string const& name, std::vector<Bdd<DdType::CUDD>> const& ddVariables, std::weak_ptr<DdManager<DdType::CUDD>> manager);
             
             // Explictly generate all default versions of copy/move constructors/assignments.
             DdMetaVariable(DdMetaVariable const& other) = default;
@@ -136,7 +136,7 @@ namespace storm {
             Bdd<DdType::CUDD> cube;
             
             // A pointer to the manager responsible for this meta variable.
-            std::shared_ptr<DdManager<DdType::CUDD>> manager;
+            std::weak_ptr<DdManager<DdType::CUDD>> manager;
         };
     }
 }

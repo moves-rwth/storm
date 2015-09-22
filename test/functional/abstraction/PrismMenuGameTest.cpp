@@ -29,7 +29,7 @@ TEST(PrismMenuGame, DieAbstractionTest) {
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
-    EXPECT_EQ(15, game.getNumberOfTransitions());
+    EXPECT_EQ(10, game.getNumberOfTransitions());
     EXPECT_EQ(2, game.getNumberOfStates());
 }
 
@@ -47,7 +47,7 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest) {
 
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
-    EXPECT_EQ(15, game.getNumberOfTransitions());
+    EXPECT_EQ(10, game.getNumberOfTransitions());
     EXPECT_EQ(3, game.getNumberOfStates());
 }
 
@@ -95,7 +95,7 @@ TEST(PrismMenuGame, CrowdsAbstractionTest) {
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
-    EXPECT_EQ(16, game.getNumberOfTransitions());
+    EXPECT_EQ(11, game.getNumberOfTransitions());
     EXPECT_EQ(2, game.getNumberOfStates());
 }
 
@@ -114,7 +114,7 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
-    EXPECT_EQ(38, game.getNumberOfTransitions());
+    EXPECT_EQ(28, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
 }
 
@@ -204,7 +204,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest) {
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
-    EXPECT_EQ(58, game.getNumberOfTransitions());
+    EXPECT_EQ(34, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
 }
 
@@ -225,7 +225,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
 
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
 
-    EXPECT_EQ(212, game.getNumberOfTransitions());
+    EXPECT_EQ(164, game.getNumberOfTransitions());
     EXPECT_EQ(8, game.getNumberOfStates());
 }
 
@@ -295,7 +295,7 @@ TEST(PrismMenuGame, WlanAbstractionTest) {
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
-    EXPECT_EQ(307, game.getNumberOfTransitions());
+    EXPECT_EQ(277, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
 }
 
@@ -317,7 +317,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
 
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
 
-    EXPECT_EQ(612, game.getNumberOfTransitions());
+    EXPECT_EQ(556, game.getNumberOfTransitions());
     EXPECT_EQ(8, game.getNumberOfStates());
 }
 

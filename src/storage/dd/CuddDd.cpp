@@ -5,7 +5,7 @@
 
 namespace storm {
     namespace dd {
-        Dd<DdType::CUDD>::Dd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(ddManager), containedMetaVariables(containedMetaVariables) {
+        Dd<DdType::CUDD>::Dd(std::weak_ptr<DdManager<DdType::CUDD> const> ddManager, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(ddManager), containedMetaVariables(containedMetaVariables) {
             // Intentionally left empty.
         }
                 
@@ -26,7 +26,7 @@ namespace storm {
         }
         
         std::shared_ptr<DdManager<DdType::CUDD> const> Dd<DdType::CUDD>::getDdManager() const {
-            return this->ddManager;
+            return this->ddManager.lock();
         }
 
         void Dd<DdType::CUDD>::addMetaVariables(std::set<storm::expressions::Variable> const& metaVariables) {

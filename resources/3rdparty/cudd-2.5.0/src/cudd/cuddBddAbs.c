@@ -540,11 +540,12 @@ cuddBddExistAbstractRepresentativeRecur(
   DdNode * f,
   DdNode * cube)
 {
+//    printf("entering exists abstract...\n");
     DdNode	*F, *T, *E, *res, *res1, *res2, *one, *zero, *left, *right, *tmp, *res1Inf, *res2Inf;
     
     statLine(manager);
     one = DD_ONE(manager);
-    zero = DD_ZERO(manager);
+    zero = Cudd_Not(one);
     F = Cudd_Regular(f);
     
     // Store whether f is negated.
@@ -553,16 +554,24 @@ cuddBddExistAbstractRepresentativeRecur(
     /* Cube is guaranteed to be a cube at this point. */
     if (F == one) {
         if (fIsNegated) {
+//            printf("return in preprocessing...\n");
             return f;
         }
         
         if (cube == one) {
+//            printf("return in preprocessing...\n");
             return one;
         } else {
+//            printf("return in preprocessing...\n");
             return cube;
         }
+    } else if (cube == one) {
+//        printf("return in preprocessing...\n");
+        return f;
     }
     /* From now on, f and cube are non-constant. */
+    
+//    printf("F perm %i and cube perm %i\n", manager->perm[F->index], manager->perm[cube->index]);
     
     /* Abstract a variable that does not appear in f. */
     if (manager->perm[F->index] > manager->perm[cube->index]) {
@@ -570,28 +579,32 @@ cuddBddExistAbstractRepresentativeRecur(
         if (res == NULL) {
             return(NULL);
         }
-        
         cuddRef(res);
-        cuddRef(zero);
-        res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
+        
+//        res1 = cuddUniqueInter(manager, (int) cube->index, zero, res);
+        res1 = cuddBddIteRecur(manager, manager->vars[cube->index], zero, res);
+
         if (res1 == NULL) {
-            Cudd_RecursiveDeref(manager,res);
-            Cudd_RecursiveDeref(manager,zero);
+            Cudd_IterDerefBdd(manager,res);
+            Cudd_IterDerefBdd(manager,zero);
             return(NULL);
         }
-        Cudd_IterDerefBdd(manager, res);
-        cuddDeref(zero);
+        cuddDeref(res);
+
+//        printf("return after abstr. var that does not appear in f...\n");
        	return(res1);
     }
     
     /* Check the cache. */
     if (F->ref != 1 && (res = cuddCacheLookup2(manager, Cudd_bddExistAbstractRepresentative, f, cube)) != NULL) {
+//        printf("return because of cache hit...\n");
         return(res);
     }
     
     /* Compute the cofactors of f. */
     T = cuddT(F); E = cuddE(F);
     if (f != F) {
+//        printf("negating T and E\n");
         T = Cudd_Not(T); E = Cudd_Not(E);
     }
     
@@ -618,8 +631,9 @@ cuddBddExistAbstractRepresentativeRecur(
             return(NULL);
         }
         if (res1 == one) {
-            if (F->ref != 1)
+            if (F->ref != 1) {
                 cuddCacheInsert2(manager, Cudd_bddExistAbstractRepresentative, f, cube, one);
+            }
             return(one);
         }
         cuddRef(res1);
@@ -639,7 +653,6 @@ cuddBddExistAbstractRepresentativeRecur(
         }
         cuddRef(left);
 
-        cuddRef(zero);
         res1Inf = cuddBddIteRecur(manager, left, res1, zero);
         if (res1Inf == NULL) {
             Cudd_IterDerefBdd(manager,res1);
@@ -648,11 +661,9 @@ cuddBddExistAbstractRepresentativeRecur(
             return(NULL);
         }
         cuddRef(res1Inf);
-        cuddDeref(zero);
         
         Cudd_IterDerefBdd(manager,res1);
 
-        cuddRef(zero);
         res2Inf = cuddBddIteRecur(manager, left, zero, res2);
         if (res2Inf == NULL) {
             Cudd_IterDerefBdd(manager,res1);
@@ -662,36 +673,42 @@ cuddBddExistAbstractRepresentativeRecur(
             return(NULL);
         }
         cuddRef(res2Inf);
-        cuddDeref(zero);
         
         Cudd_IterDerefBdd(manager,res2);
         Cudd_IterDerefBdd(manager,left);
         
-        cuddRef(zero);
-        res = (res1Inf == res2Inf) ? cuddUniqueInter(manager, (int) f->index, zero, res1Inf) : cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        assert(res1Inf != res2Inf);
+//        res = cuddUniqueInter(manager, (int) f->index, res2Inf, res1Inf);
+        res = cuddBddIteRecur(manager, manager->vars[F->index], res2Inf, res1Inf);
+
+        if (res == NULL) {
+            Cudd_IterDerefBdd(manager,res1Inf);
+            Cudd_IterDerefBdd(manager,res2Inf);
+            return(NULL);
+        }
         cuddRef(res);
-        cuddDeref(zero);
 
         Cudd_IterDerefBdd(manager,res1Inf);
         Cudd_IterDerefBdd(manager,res2Inf);
 
-        if (res == NULL) {
-            Cudd_IterDerefBdd(manager,res);
-            return(NULL);
-        }
         cuddCacheInsert2(manager, Cudd_bddExistAbstractRepresentative, f, cube, res);
         cuddDeref(res);
+//        printf("return properly computed result...\n");
         return(res);
     } else { /* if (cuddI(manager,F->index) < cuddI(manager,cube->index)) */
         res1 = cuddBddExistAbstractRepresentativeRecur(manager, E, cube);
-        if (res1 == NULL) return(NULL);
+        if (res1 == NULL){
+            return(NULL);
+        }
         cuddRef(res1);
+        
         res2 = cuddBddExistAbstractRepresentativeRecur(manager, T, cube);
         if (res2 == NULL) {
             Cudd_IterDerefBdd(manager, res1);
             return(NULL);
         }
         cuddRef(res2);
+        
         /* ITE takes care of possible complementation of res1 and of the
          ** case in which res1 == res2. */
         res = cuddBddIteRecur(manager, manager->vars[F->index], res2, res1);
@@ -702,8 +719,10 @@ cuddBddExistAbstractRepresentativeRecur(
         }
         cuddDeref(res1);
         cuddDeref(res2);
-        if (F->ref != 1)
+        if (F->ref != 1) {
             cuddCacheInsert2(manager, Cudd_bddExistAbstractRepresentative, f, cube, res);
+        }
+//        printf("return of last case...\n");
         return(res);
     }	    
     

@@ -96,7 +96,7 @@ TEST(GraphTest, SymbolicProb01MinMax) {
 
 #include "src/utility/solver.h"
 
-TEST(GraphTest, SymbolicProb0StochasticGame) {
+TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
     std::vector<storm::expressions::Expression> initialPredicates;
@@ -107,18 +107,148 @@ TEST(GraphTest, SymbolicProb0StochasticGame) {
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
-    
-    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result1 = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), game.getStates(initialPredicates.front(), true), storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize);
-    EXPECT_EQ(1, result1.states.getNonZeroCount());
-    
-    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result2 = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), game.getStates(initialPredicates.front(), true), storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize);
-    EXPECT_EQ(1, result2.states.getNonZeroCount());
 
-    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result3 = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), game.getStates(initialPredicates.front(), true), storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize);
-    EXPECT_EQ(0, result3.states.getNonZeroCount());
+    game.getQualitativeTransitionMatrix().toAdd().exportToDot("trans.dot");
+    
+    // The target states are those states where !(s < 3).
+    storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[0], true);
+    
+    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(1, result.states.getNonZeroCount());
+    EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
+    EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(1, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(1, result.states.getNonZeroCount());
 
-    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result4 = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), game.getStates(initialPredicates.front(), true), storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize);
-    EXPECT_EQ(0, result4.states.getNonZeroCount());
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(1, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(0, result.states.getNonZeroCount());
+
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(2, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(0, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(2, result.states.getNonZeroCount());
+    
+    EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
+    EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
+    
+    result.player1Strategy.get().toAdd().exportToDot("player1.dot");
+    result.player2Strategy.get().toAdd().exportToDot("player2.dot");
+    exit(-1);
+    
+    abstractProgram.refine({manager.getVariableExpression("s") < manager.integer(2)});
+    game = abstractProgram.getAbstractGame();
+
+    // We need to create a new BDD for the target states since the reachable states might have changed.
+    targetStates = game.getStates(initialPredicates[0], true);
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(0, result.states.getNonZeroCount());
+
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(3, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(0, result.states.getNonZeroCount());
+
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(3, result.states.getNonZeroCount());
+
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(0, result.states.getNonZeroCount());
+
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(3, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(0, result.states.getNonZeroCount());
+
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(3, result.states.getNonZeroCount());
+}
+
+TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    program = program.substituteConstants();
+    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    
+    std::vector<storm::expressions::Expression> initialPredicates;
+    storm::expressions::ExpressionManager& manager = program.getManager();
+    
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(7));
+    
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("d1") == manager.integer(6));
+    
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(7));
+    
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("d2") == manager.integer(6));
+    
+    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+
+    // The target states are those states where s1 == 7 & s2 == 7 & d1 + d2 == 1.
+    storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[7], false) && game.getStates(initialPredicates[22], false) && game.getStates(initialPredicates[9], false) && game.getStates(initialPredicates[24], false);
+
+    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize);
+    EXPECT_EQ(153, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(1, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(153, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(1, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(153, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(1, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(153, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(1, result.states.getNonZeroCount());
 }
 
 #endif

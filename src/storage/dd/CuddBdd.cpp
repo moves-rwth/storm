@@ -16,23 +16,23 @@
 
 namespace storm {
     namespace dd {
-        Bdd<DdType::CUDD>::Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<DdType::CUDD>(ddManager, containedMetaVariables), cuddBdd(cuddBdd) {
+        Bdd<DdType::CUDD>::Bdd(std::weak_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<DdType::CUDD>(ddManager, containedMetaVariables), cuddBdd(cuddBdd) {
             // Intentionally left empty.
         }
         
-        Bdd<DdType::CUDD>::Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value) : Dd<DdType::CUDD>(ddManager, metaVariables) {
+        Bdd<DdType::CUDD>::Bdd(std::weak_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value) : Dd<DdType::CUDD>(ddManager, metaVariables) {
             switch (comparisonType) {
                 case storm::logic::ComparisonType::Less:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater<double>(), value, std::placeholders::_1));
+                    this->cuddBdd = fromVector<double>(ddManager.lock(), explicitValues, odd, metaVariables, std::bind(std::greater<double>(), value, std::placeholders::_1));
                     break;
                 case storm::logic::ComparisonType::LessEqual:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater_equal<double>(), value, std::placeholders::_1));
+                    this->cuddBdd = fromVector<double>(ddManager.lock(), explicitValues, odd, metaVariables, std::bind(std::greater_equal<double>(), value, std::placeholders::_1));
                     break;
                 case storm::logic::ComparisonType::Greater:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less<double>(), value, std::placeholders::_1));
+                    this->cuddBdd = fromVector<double>(ddManager.lock(), explicitValues, odd, metaVariables, std::bind(std::less<double>(), value, std::placeholders::_1));
                     break;
                 case storm::logic::ComparisonType::GreaterEqual:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
+                    this->cuddBdd = fromVector<double>(ddManager.lock(), explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
                     break;
             }
         }
