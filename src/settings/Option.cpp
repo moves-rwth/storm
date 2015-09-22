@@ -115,10 +115,10 @@ namespace storm {
                 STORM_LOG_THROW(!longName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty name.");
                 STORM_LOG_THROW(!moduleName.empty(), storm::exceptions::IllegalArgumentException, "Unable to construct option with empty module name.");
                 
-                bool longNameContainsNonAlpha = std::find_if(longName.begin(), longName.end(), [](char c) { return !(std::isalpha(c) || std::isdigit(c)); }) != longName.end();
+                bool longNameContainsNonAlpha = std::find_if(longName.begin(), longName.end(), [](char c) { return !(std::isalpha(c) || std::isdigit(c) || c == '-'); }) != longName.end();
                 STORM_LOG_THROW(!longNameContainsNonAlpha, storm::exceptions::IllegalArgumentException, "Unable to construct option with illegal long name '" << longName << "'.");
                 
-                bool shortNameContainsNonAlpha = std::find_if(shortName.begin(), shortName.end(), [](char c) { return !(std::isalpha(c) || std::isdigit(c)); }) != shortName.end();
+                bool shortNameContainsNonAlpha = std::find_if(shortName.begin(), shortName.end(), [](char c) { return !(std::isalpha(c) || std::isdigit(c) || c == '-'); }) != shortName.end();
                 STORM_LOG_THROW(!shortNameContainsNonAlpha, storm::exceptions::IllegalArgumentException, "Unable to construct option with illegal short name '" << shortName << "'.");
 
                 // Then index all arguments.

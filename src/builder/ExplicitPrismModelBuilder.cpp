@@ -113,6 +113,7 @@ namespace storm {
         template <typename ValueType, typename IndexType>
         ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
             this->preserveFormula(formula);
+            this->setTerminalStatesFromFormula(formula);
         }
         
         template <typename ValueType, typename IndexType>
@@ -132,6 +133,11 @@ namespace storm {
         
         template <typename ValueType, typename IndexType>
         void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
+            // If cutting the model was disabled, we do not set anything.
+            if (storm::settings::generalSettings().isNoCutsSet()) {
+                return;
+            }
+            
             if (formula.isAtomicExpressionFormula()) {
                 terminalStates = formula.asAtomicExpressionFormula().getExpression();
             } else if (formula.isAtomicLabelFormula()) {

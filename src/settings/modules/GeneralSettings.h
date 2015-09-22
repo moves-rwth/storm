@@ -215,6 +215,13 @@ namespace storm {
                  * @return True if the dont-fix-deadlocks option was set.
                  */
                 bool isDontFixDeadlocksSet() const;
+                
+                /*!
+                 * Retrieves whether the no-cuts option was set.
+                 *
+                 * @return True if the no-cuts option was set.
+                 */
+                bool isNoCutsSet() const;
 
                 /*!
                  * Overrides the option to not fix deadlocks by setting it to the specified value. As soon as the
@@ -384,6 +391,7 @@ namespace storm {
                 static const std::string choiceLabelingOptionName;
                 static const std::string counterexampleOptionName;
                 static const std::string counterexampleOptionShortName;
+                static const std::string noCutsOptionName;
                 static const std::string dontFixDeadlockOptionName;
                 static const std::string dontFixDeadlockOptionShortName;
                 static const std::string timeoutOptionName;

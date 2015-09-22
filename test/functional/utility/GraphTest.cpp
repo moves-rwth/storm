@@ -252,6 +252,152 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
 }
 
+TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
+    program = program.substituteConstants();
+    program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
+    
+    std::vector<storm::expressions::Expression> initialPredicates;
+    storm::expressions::ExpressionManager& manager = program.getManager();
+    
+    initialPredicates.push_back(manager.getVariableExpression("col") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("col") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("col") == manager.integer(2));
+    
+    initialPredicates.push_back(manager.getVariableExpression("c1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("c1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("c1") == manager.integer(2));
+    
+    initialPredicates.push_back(manager.getVariableExpression("c2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("c2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("c2") == manager.integer(2));
+    
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("x1") == manager.integer(7));
+    
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(7));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(8));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(9));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(10));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(11));
+    initialPredicates.push_back(manager.getVariableExpression("s1") == manager.integer(12));
+    
+    initialPredicates.push_back(manager.getVariableExpression("slot1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("slot1") == manager.integer(1));
+    
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(7));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(8));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(9));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(10));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(11));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(12));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(13));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(14));
+    initialPredicates.push_back(manager.getVariableExpression("backoff1") == manager.integer(15));
+    
+    initialPredicates.push_back(manager.getVariableExpression("bc1") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("bc1") == manager.integer(1));
+    
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("x2") == manager.integer(7));
+    
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(7));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(8));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(9));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(10));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(11));
+    initialPredicates.push_back(manager.getVariableExpression("s2") == manager.integer(12));
+    
+    initialPredicates.push_back(manager.getVariableExpression("slot2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("slot2") == manager.integer(1));
+    
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(1));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(2));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(3));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(4));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(5));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(6));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(7));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(8));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(9));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(10));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(11));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(12));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(13));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(14));
+    initialPredicates.push_back(manager.getVariableExpression("backoff2") == manager.integer(15));
+    
+    initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(0));
+    initialPredicates.push_back(manager.getVariableExpression("bc2") == manager.integer(1));
+    
+    storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
+    
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    
+    // The target states are those states where col == 2.
+    storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[2], false);
+    
+    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(2831, result.states.getNonZeroCount());
+    EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
+    EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(2692, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(2831, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(2692, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(2064, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
+    EXPECT_EQ(2884, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(2064, result.states.getNonZeroCount());
+    
+    result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
+    EXPECT_EQ(2884, result.states.getNonZeroCount());
+    EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
+    EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
+}
+
 #endif
 
 TEST(GraphTest, ExplicitProb01) {

@@ -254,6 +254,11 @@ namespace storm {
         
         template <storm::dd::DdType Type>
         void DdPrismModelBuilder<Type>::Options::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
+            // If cutting the model was disabled, we do not set anything.
+            if (storm::settings::generalSettings().isNoCutsSet()) {
+                return;
+            }
+
             if (formula.isAtomicExpressionFormula()) {
                 terminalStates = formula.asAtomicExpressionFormula().getExpression();
             } else if (formula.isAtomicLabelFormula()) {

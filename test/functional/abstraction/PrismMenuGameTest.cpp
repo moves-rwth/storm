@@ -280,7 +280,7 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest) {
 }
 
 TEST(PrismMenuGame, WlanAbstractionTest) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
     
@@ -295,12 +295,12 @@ TEST(PrismMenuGame, WlanAbstractionTest) {
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
-    EXPECT_EQ(277, game.getNumberOfTransitions());
+    EXPECT_EQ(279, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
     
@@ -317,12 +317,12 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
 
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
 
-    EXPECT_EQ(556, game.getNumberOfTransitions());
+    EXPECT_EQ(560, game.getNumberOfTransitions());
     EXPECT_EQ(8, game.getNumberOfStates());
 }
 
 TEST(PrismMenuGame, WlanFullAbstractionTest) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-4.nm");
     program = program.substituteConstants();
     program = program.flattenModules(std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>());
     
@@ -435,8 +435,8 @@ TEST(PrismMenuGame, WlanFullAbstractionTest) {
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
-    EXPECT_EQ(59, game.getNumberOfTransitions());
-    EXPECT_EQ(37, game.getNumberOfStates());
+    EXPECT_EQ(9503, game.getNumberOfTransitions());
+    EXPECT_EQ(5523, game.getNumberOfStates());
 }
 
 #endif

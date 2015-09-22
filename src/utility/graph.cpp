@@ -824,7 +824,8 @@ namespace storm {
                             }
                         }
                         
-                        // Add psi states to result.
+                        // Explicitly add psi states to result since they may have transitions going to some state that
+                        // does not have a reachability probability of 1.
                         valid |= psiStates;
                         
                         // If no new states were added, we have found the current hypothesis for the states with

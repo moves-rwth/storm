@@ -36,7 +36,8 @@ namespace storm {
             const std::string GeneralSettings::choiceLabelingOptionName = "choicelab";
             const std::string GeneralSettings::counterexampleOptionName = "counterexample";
             const std::string GeneralSettings::counterexampleOptionShortName = "cex";
-            const std::string GeneralSettings::dontFixDeadlockOptionName = "nofixdl";
+            const std::string GeneralSettings::noCutsOptionName = "no-cuts";
+            const std::string GeneralSettings::dontFixDeadlockOptionName = "no-fixdl";
             const std::string GeneralSettings::dontFixDeadlockOptionShortName = "ndl";
             const std::string GeneralSettings::timeoutOptionName = "timeout";
             const std::string GeneralSettings::timeoutOptionShortName = "t";
@@ -88,7 +89,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the state rewards.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, choiceLabelingOptionName, false, "If given, the choice labels are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, noCutsOptionName, false, "Do not perform cuts when buildings the state space.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, this flag disables automatically fixing them.").setShortName(dontFixDeadlockOptionShortName).build());
                 
                 std::vector<std::string> engines = {"sparse", "hybrid", "dd"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
@@ -218,6 +220,10 @@ namespace storm {
             
             bool GeneralSettings::isDontFixDeadlocksSet() const {
                 return this->getOption(dontFixDeadlockOptionName).getHasOptionBeenSet();
+            }
+            
+            bool GeneralSettings::isNoCutsSet() const {
+                return this->getOption(noCutsOptionName).getHasOptionBeenSet();
             }
             
             std::unique_ptr<storm::settings::SettingMemento> GeneralSettings::overrideDontFixDeadlocksSet(bool stateToSet) {
