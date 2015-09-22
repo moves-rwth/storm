@@ -844,7 +844,7 @@ namespace storm {
                         
                         // If we were asked to produce strategies, we propagate that by triggering another iteration.
                         // We only do this if at least one strategy will be produced.
-                        produceStrategiesInIteration = produceStrategies && (player1Strategy == OptimizationDirection::Maximize || player2Strategy == OptimizationDirection::Maximize);
+                        produceStrategiesInIteration = !produceStrategiesInIteration && produceStrategies && (player1Strategy == OptimizationDirection::Maximize || player2Strategy == OptimizationDirection::Maximize);
                     } else {
                         // Otherwise, we use the current hypothesis for the states with probability 1 as the new maybe
                         // state set.

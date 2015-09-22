@@ -107,8 +107,6 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
-
-    game.getQualitativeTransitionMatrix().toAdd().exportToDot("trans.dot");
     
     // The target states are those states where !(s < 3).
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[0], true);
@@ -138,14 +136,9 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
     EXPECT_EQ(2, result.states.getNonZeroCount());
-    
     EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
     EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
-    
-    result.player1Strategy.get().toAdd().exportToDot("player1.dot");
-    result.player2Strategy.get().toAdd().exportToDot("player2.dot");
-    exit(-1);
-    
+        
     abstractProgram.refine({manager.getVariableExpression("s") < manager.integer(2)});
     game = abstractProgram.getAbstractGame();
 
@@ -154,6 +147,8 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     
     result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(0, result.states.getNonZeroCount());
+    EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
+    EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
 
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(3, result.states.getNonZeroCount());
@@ -175,6 +170,8 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
 
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
     EXPECT_EQ(3, result.states.getNonZeroCount());
+    EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
+    EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
 }
 
 TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
@@ -226,8 +223,10 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     // The target states are those states where s1 == 7 & s2 == 7 & d1 + d2 == 1.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[7], false) && game.getStates(initialPredicates[22], false) && game.getStates(initialPredicates[9], false) && game.getStates(initialPredicates[24], false);
 
-    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize);
+    storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(153, result.states.getNonZeroCount());
+    EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
+    EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
     
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(1, result.states.getNonZeroCount());
@@ -249,6 +248,8 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
     EXPECT_EQ(1, result.states.getNonZeroCount());
+    EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
+    EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
 }
 
 #endif
