@@ -149,7 +149,19 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     EXPECT_EQ(0, result.states.getNonZeroCount());
     EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
     EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
-
+    
+    // Check the validity of the strategies. Start by checking whether only prob0 states have a strategy.
+    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb0StatesWithStrategy = !result.states && result.player1Strategy.get();
+    EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
+    
+    // Proceed by checking whether they select exactly one action in each state.
+    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());;
+    EXPECT_EQ(0, stateDistributionsUnderStrategies.getNonZeroCount());
+    
+    // Check that the number of distributions per state is one (or zero in the case where there are no prob0 states).
+    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
+    EXPECT_EQ(0, stateDistributionCount.getMax());
+    
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(3, result.states.getNonZeroCount());
     
@@ -172,6 +184,18 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     EXPECT_EQ(3, result.states.getNonZeroCount());
     EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
     EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
+    
+    // Check the validity of the strategies. Start by checking whether only prob1 states have a strategy.
+    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb1StatesWithStrategy = !result.states && result.player1Strategy.get();
+    EXPECT_TRUE(nonProb1StatesWithStrategy.isZero());
+    
+    // Proceed by checking whether they select exactly one action in each state.
+    stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());
+    EXPECT_EQ(3, stateDistributionsUnderStrategies.getNonZeroCount());
+    
+    // Check that the number of distributions per state is one (or zero in the case where there are no prob1 states).
+    stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
+    EXPECT_EQ(1, stateDistributionCount.getMax());
 }
 
 TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
@@ -228,6 +252,17 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
     EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
     
+    // Check the validity of the strategies. Start by checking whether only prob0 states have a strategy.
+    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb0StatesWithStrategy = !result.states && result.player1Strategy.get();
+    EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
+    
+    // Proceed by checking whether they select exactly one exaction in each state.
+    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());
+    EXPECT_EQ(153, stateDistributionsUnderStrategies.getNonZeroCount());
+    
+    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
+    EXPECT_EQ(1, stateDistributionCount.getMax());
+    
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(1, result.states.getNonZeroCount());
     
@@ -250,6 +285,18 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     EXPECT_EQ(1, result.states.getNonZeroCount());
     EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
     EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
+    
+    // Check the validity of the strategies. Start by checking whether only prob1 states have a strategy.
+    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb1StatesWithStrategy = !result.states && result.player1Strategy.get();
+    EXPECT_TRUE(nonProb1StatesWithStrategy.isZero());
+    
+    // Proceed by checking whether they select exactly one action in each state.
+    stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());
+    EXPECT_EQ(1, stateDistributionsUnderStrategies.getNonZeroCount());
+    
+    // Check that the number of distributions per state is one (or zero in the case where there are no prob1 states).
+    stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
+    EXPECT_EQ(1, stateDistributionCount.getMax());
 }
 
 TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
@@ -371,8 +418,20 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
     
     storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(2831, result.states.getNonZeroCount());
-    EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
-    EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
+    ASSERT_TRUE(static_cast<bool>(result.player1Strategy));
+    ASSERT_TRUE(static_cast<bool>(result.player2Strategy));
+    
+    // Check the validity of the strategies. Start by checking whether only prob0 states have a strategy.
+    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb0StatesWithStrategy = !result.states && result.player1Strategy.get();
+    EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
+    
+    // Proceed by checking whether they select exactly one action in each state.
+    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());;
+    EXPECT_EQ(2831, stateDistributionsUnderStrategies.getNonZeroCount());
+    
+    // Check that the number of distributions per state is one (or zero in the case where there are no prob0 states).
+    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
+    EXPECT_EQ(1, stateDistributionCount.getMax());
     
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(2692, result.states.getNonZeroCount());
@@ -396,6 +455,18 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
     EXPECT_EQ(2884, result.states.getNonZeroCount());
     EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
     EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
+    
+    // Check the validity of the strategies. Start by checking whether only prob1 states have a strategy.
+    storm::dd::Bdd<storm::dd::DdType::CUDD> nonProb1StatesWithStrategy = !result.states && result.player1Strategy.get();
+    EXPECT_TRUE(nonProb1StatesWithStrategy.isZero());
+    
+    // Proceed by checking whether they select exactly one action in each state.
+    stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());
+    EXPECT_EQ(2884, stateDistributionsUnderStrategies.getNonZeroCount());
+    
+    // Check that the number of distributions per state is one (or zero in the case where there are no prob1 states).
+    stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
+    EXPECT_EQ(1, stateDistributionCount.getMax());
 }
 
 #endif

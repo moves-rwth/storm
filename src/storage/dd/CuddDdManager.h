@@ -186,7 +186,14 @@ namespace storm {
              * @return A shared pointer to the manager.
              */
             std::shared_ptr<DdManager<DdType::CUDD> const> asSharedPointer() const;
-            
+
+            /*!
+             * Retrieves the manager as a shared pointer.
+             *
+             * @return A shared pointer to the manager.
+             */
+            std::shared_ptr<DdManager<DdType::CUDD>> asSharedPointer();
+
         private:
             /*!
              * Retrieves a list of names of the DD variables in the order of their index.

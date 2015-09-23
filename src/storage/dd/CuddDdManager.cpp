@@ -331,5 +331,9 @@ namespace storm {
         std::shared_ptr<DdManager<DdType::CUDD> const> DdManager<DdType::CUDD>::asSharedPointer() const {
             return this->shared_from_this();
         }
+        
+        std::shared_ptr<DdManager<DdType::CUDD>> DdManager<DdType::CUDD>::asSharedPointer() {
+            return this->shared_from_this();
+        }
     }
 }
