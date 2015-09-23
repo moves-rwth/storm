@@ -17,6 +17,7 @@ namespace storm {
                                      storm::dd::Bdd<Type> reachableStates,
                                      storm::dd::Bdd<Type> initialStates,
                                      storm::dd::Add<Type> transitionMatrix,
+                                     storm::dd::Bdd<Type> bottomStates,
                                      std::set<storm::expressions::Variable> const& rowVariables,
                                      std::set<storm::expressions::Variable> const& columnVariables,
                                      std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
@@ -24,7 +25,7 @@ namespace storm {
                                      std::set<storm::expressions::Variable> const& player2Variables,
                                      std::set<storm::expressions::Variable> const& allNondeterminismVariables,
                                      storm::expressions::Variable const& updateVariable,
-                                     std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type>(manager, reachableStates, initialStates, transitionMatrix.sumAbstract({updateVariable}), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), updateVariable(updateVariable), expressionToBddMap(expressionToBddMap) {
+                                     std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type>(manager, reachableStates, initialStates, transitionMatrix.sumAbstract({updateVariable}), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), updateVariable(updateVariable), expressionToBddMap(expressionToBddMap), bottomStates(bottomStates) {
                 // Intentionally left empty.
             }
             
@@ -47,6 +48,11 @@ namespace storm {
                 } else {
                     return it->second && this->getReachableStates();
                 }
+            }
+            
+            template<storm::dd::DdType Type>
+            storm::dd::Bdd<Type> MenuGame<Type>::getBottomStates() const {
+                return bottomStates;
             }
             
             template<storm::dd::DdType Type>

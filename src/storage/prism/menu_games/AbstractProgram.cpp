@@ -17,7 +17,7 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>()), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program), initialStateAbstractor(expressionInformation, ddInformation, *this->smtSolverFactory), currentGame(nullptr) {
+            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>()), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program), initialStateAbstractor(expressionInformation, ddInformation, *this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(expressionInformation, ddInformation, *this->smtSolverFactory), currentGame(nullptr) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -30,6 +30,10 @@ namespace storm {
                     for (auto const& command : module.getCommands()) {
                         if (addAllGuards) {
                             expressionInformation.predicates.push_back(command.getGuardExpression());
+                        } else {
+                            // If not all guards were added, we also need to populate the bottom state abstractor.
+                            std::cout << "adding " << !command.getGuardExpression() << std::endl;
+                            bottomStateAbstractor.addPredicate(!command.getGuardExpression());
                         }
                         maximalUpdateCount = std::max(maximalUpdateCount, static_cast<uint_fast64_t>(command.getNumberOfUpdates()));
                     }
@@ -100,7 +104,10 @@ namespace storm {
                 // Refine initial state abstractor.
                 initialStateAbstractor.refine(newPredicateIndices);
                 
-                // Finally, we rebuild the game.
+                // Refine bottom state abstractor.
+                bottomStateAbstractor.refine(newPredicateIndices);
+                
+                // Finally, we rebuild the game..
                 currentGame = buildGame();
             }
             
@@ -122,7 +129,7 @@ namespace storm {
                 }
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given predicate is illegal, since it was neither used as an initial predicate nor used to refine the abstraction.");
             }
-            
+                        
             template <storm::dd::DdType DdType, typename ValueType>
             std::unique_ptr<MenuGame<DdType>> AbstractProgram<DdType, ValueType>::buildGame() {
                 // As long as there is only one module, we only build its game representation.
@@ -138,6 +145,16 @@ namespace storm {
                 storm::dd::Bdd<DdType> transitionRelation = gameBdd.first.existsAbstract(variablesToAbstract);
                 storm::dd::Bdd<DdType> initialStates = initialStateAbstractor.getAbstractStates();
                 storm::dd::Bdd<DdType> reachableStates = this->getReachableStates(initialStates, transitionRelation);
+
+                // Determine the bottom states.
+                storm::dd::Bdd<DdType> bottomStates;
+                if (addedAllGuards) {
+                    bottomStates = ddInformation.manager->getBddZero();
+                } else {
+                    bottomStates = bottomStateAbstractor.getAbstractStates();
+                }
+                
+                std::cout << "found " << (reachableStates && bottomStates).getNonZeroCount() << " reachable bottom states" << std::endl;
                 
                 // Find the deadlock states in the model.
                 storm::dd::Bdd<DdType> deadlockStates = transitionRelation.existsAbstract(ddInformation.successorVariables);
@@ -160,7 +177,7 @@ namespace storm {
                 std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
                 allNondeterminismVariables.insert(ddInformation.commandDdVariable);
                 
-                return std::unique_ptr<MenuGame<DdType>>(new MenuGame<DdType>(ddInformation.manager, reachableStates, initialStates, transitionMatrix, ddInformation.sourceVariables, ddInformation.successorVariables, ddInformation.predicateDdVariables, {ddInformation.commandDdVariable}, usedPlayer2Variables, allNondeterminismVariables, ddInformation.updateDdVariable, ddInformation.expressionToBddMap));
+                return std::unique_ptr<MenuGame<DdType>>(new MenuGame<DdType>(ddInformation.manager, reachableStates, initialStates, transitionMatrix, bottomStates, ddInformation.sourceVariables, ddInformation.successorVariables, ddInformation.predicateDdVariables, {ddInformation.commandDdVariable}, usedPlayer2Variables, allNondeterminismVariables, ddInformation.updateDdVariable, ddInformation.expressionToBddMap));
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

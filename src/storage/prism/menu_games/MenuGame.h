@@ -31,9 +31,10 @@ namespace storm {
                  * Constructs a model from the given data.
                  *
                  * @param manager The manager responsible for the decision diagrams.
-                 * @param reachableStates A DD representing the reachable states.
-                 * @param initialStates A DD representing the initial states of the model.
+                 * @param reachableStates The reachable states of the model.
+                 * @param initialStates The initial states of the model.
                  * @param transitionMatrix The matrix representing the transitions in the model.
+                 * @param bottomStates The bottom states of the model.
                  * @param rowVariables The set of row meta variables used in the DDs.
                  * @param columVariables The set of column meta variables used in the DDs.
                  * @param rowColumnMetaVariablePairs All pairs of row/column meta variables.
@@ -48,6 +49,7 @@ namespace storm {
                          storm::dd::Bdd<Type> reachableStates,
                          storm::dd::Bdd<Type> initialStates,
                          storm::dd::Add<Type> transitionMatrix,
+                         storm::dd::Bdd<Type> bottomStates,
                          std::set<storm::expressions::Variable> const& rowVariables,
                          std::set<storm::expressions::Variable> const& columnVariables,
                          std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
@@ -78,6 +80,13 @@ namespace storm {
                  */
                 storm::dd::Bdd<Type> getStates(storm::expressions::Expression const& expression, bool negated) const;
                 
+                /*!
+                 * Retrieves the bottom states of the model.
+                 *
+                 * @return The bottom states of the model.
+                 */
+                storm::dd::Bdd<Type> getBottomStates() const;
+                
                 virtual bool hasLabel(std::string const& label) const override;
                 
             private:
@@ -86,6 +95,9 @@ namespace storm {
                 
                 // A mapping from expressions that were used in the abstraction process to the the BDDs representing them.
                 std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> expressionToBddMap;
+                
+                // The bottom states of the model.
+                storm::dd::Bdd<Type> bottomStates;
             };
             
         } // namespace menu_games

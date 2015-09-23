@@ -62,7 +62,7 @@ namespace storm {
                  *
                  * @return The set of matching abstract states in the form of a BDD
                  */
-                storm::dd::Bdd<DdType> getAbstractStates() const;
+                storm::dd::Bdd<DdType> getAbstractStates();
                 
             private:
                 /*!
@@ -105,6 +105,9 @@ namespace storm {
                 
                 // The set of all decision variables over which to perform the all-sat enumeration.
                 std::vector<storm::expressions::Variable> decisionVariables;
+                
+                // A flag indicating whether the cached BDD needs recomputation.
+                bool needsRecomputation;
                 
                 // The cached BDD representing the abstraction. This variable is written to in refinement steps (if work
                 // needed to be done).

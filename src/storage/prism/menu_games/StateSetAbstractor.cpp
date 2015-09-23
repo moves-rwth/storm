@@ -13,7 +13,7 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.manager)), expressionInformation(expressionInformation), ddInformation(ddInformation), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), concretePredicateVariables(), cachedBdd(ddInformation.manager->getBddZero()) {
+            StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.manager)), expressionInformation(expressionInformation), ddInformation(ddInformation), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(ddInformation.manager->getBddZero()) {
                 
                 // Assert all range expressions to enforce legal variable values.
                 for (auto const& rangeExpression : expressionInformation.rangeExpressions) {
@@ -36,9 +36,9 @@ namespace storm {
                 std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
                 concretePredicateVariables.insert(usedVariables.begin(), usedVariables.end());
                 variablePartition.relate(usedVariables);
-                
-                // Since the new predicate might have changed the abstractions, we need to recompute it.
-                this->refine();
+
+                // Remember that we have to recompute the BDD.
+                this->needsRecomputation = true;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -82,11 +82,14 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> StateSetAbstractor<DdType, ValueType>::getStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
                 STORM_LOG_TRACE("Building source state BDD.");
+                std::cout << "new model: " << std::endl;
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables) {
                     if (model.getBooleanValue(variableIndexPair.first)) {
+                        std::cout << expressionInformation.predicates[variableIndexPair.second] << " is true" << std::endl;
                         result &= ddInformation.predicateBdds[variableIndexPair.second].first;
                     } else {
+                        std::cout << expressionInformation.predicates[variableIndexPair.second] << " is false" << std::endl;
                         result &= !ddInformation.predicateBdds[variableIndexPair.second].first;
                     }
                 }
@@ -98,13 +101,17 @@ namespace storm {
                 STORM_LOG_TRACE("Recomputing BDD for state set abstraction.");
                 
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
-                smtSolver->allSat(decisionVariables, [&result,this] (storm::solver::SmtSolver::ModelReference const& model) { result |= getStateBdd(model); return true; } );
+                uint_fast64_t modelCounter = 0;
+                smtSolver->allSat(decisionVariables, [&result,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { result |= getStateBdd(model); ++modelCounter; std::cout << "found " << modelCounter << " models" << std::endl; return modelCounter < 10000 ? true : false; } );
                 
                 cachedBdd = result;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Bdd<DdType> StateSetAbstractor<DdType, ValueType>::getAbstractStates() const {
+            storm::dd::Bdd<DdType> StateSetAbstractor<DdType, ValueType>::getAbstractStates() {
+                if (needsRecomputation) {
+                    this->refine();
+                }
                 return cachedBdd;
             }
             
