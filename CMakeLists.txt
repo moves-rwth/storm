@@ -444,6 +444,7 @@ endif()
 
 if(STORM_HAVE_CARL)
     message(STATUS "StoRM - Linking with carl.")
+	message("${carl_INCLUDE_DIR}")
     include_directories("${carl_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
 endif()
@@ -492,6 +493,26 @@ if (ENABLE_MSAT)
     endif(GMP_FOUND)
 endif(ENABLE_MSAT)
 
+#############################################################
+##
+##	Xerces
+##
+#############################################################
+
+find_package(Xerces)
+if(NOT XERCES_FOUND)
+	message("Use shipped version of xerces")
+	set(XERCES_ROOT ${CMAKE_BINARY_DIR}/resources/3rdparty/xercesc-3.1.2)
+	set(XERCESC_INCLUDE ${XERCES_ROOT}/include)
+	set(XERCES_LIBRARY_PATH ${XERCES_ROOT}/lib)
+	set(XERCESC_LIBRARIES ${XERCES_LIBRARY_PATH}/libxerces-c.a)
+endif()
+
+set(STORM_HAVE_XERCES TRUE)
+if(STORM_HAVE_XERCES)
+	include_directories(${XERCESC_INCLUDE})
+	list(APPEND STORM_LINK_LIBRARIES ${XERCESC_LIBRARIES})
+endif()
 #############################################################
 ##
 ##	Google Test gtest
@@ -658,6 +679,7 @@ set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
+add_subdirectory(resources/3rdparty)
 add_subdirectory(src)
 add_subdirectory(test)
 
