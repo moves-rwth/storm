@@ -6,6 +6,7 @@
 
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/CuddDd.h"
+#include "src/storage/PairHash.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
@@ -382,7 +383,7 @@ namespace storm {
              */
             void toVectorRec(DdNode const* dd, Cudd const& manager, storm::storage::BitVector& result, Odd<DdType::CUDD> const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
             
-            void toExpressionRec(DdNode const* dd, Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode*, uint_fast64_t>& nodeToCounterMap) const;
+            storm::expressions::Variable toExpressionRec(DdNode const* dd, Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode const*, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const;
             
             // The BDD created by CUDD.
             BDD cuddBdd;

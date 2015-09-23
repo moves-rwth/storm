@@ -16,7 +16,7 @@
 
 namespace storm {
     namespace dd {
-        DdManager<DdType::CUDD>::DdManager() : cuddManager(), metaVariableMap(), reorderingTechnique(CUDD_REORDER_NONE), manager(new storm::expressions::ExpressionManager()) {
+        DdManager<DdType::CUDD>::DdManager() : cuddManager(), metaVariableMap(), reorderingTechnique(CUDD_REORDER_NONE), manager(new storm::expressions::ExpressionManager()), numberOfDdVariables(0) {
             this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::cuddSettings().getMaximalMemory() * 1024ul * 1024ul));
             this->cuddManager.SetEpsilon(storm::settings::cuddSettings().getConstantPrecision());
             
@@ -160,6 +160,7 @@ namespace storm {
                     variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), cuddManager.bddVar(), {primed}));
                 }
             }
+            numberOfDdVariables += numberOfBits;
             
             // Now group the non-primed and primed variable.
             for (uint_fast64_t i = 0; i < numberOfBits; ++i) {
@@ -191,6 +192,7 @@ namespace storm {
                     ++level.get();
                 }
             }
+            numberOfDdVariables += 2;
             
             storm::expressions::Variable unprimed = manager->declareBooleanVariable(name);
             storm::expressions::Variable primed = manager->declareBooleanVariable(name + "'");
@@ -233,6 +235,10 @@ namespace storm {
         
         std::size_t DdManager<DdType::CUDD>::getNumberOfMetaVariables() const {
             return this->metaVariableMap.size();
+        }
+        
+        std::size_t DdManager<DdType::CUDD>::getNumberOfDdVariables() const {
+            return numberOfDdVariables;
         }
         
         bool DdManager<DdType::CUDD>::hasMetaVariable(std::string const& metaVariableName) const {

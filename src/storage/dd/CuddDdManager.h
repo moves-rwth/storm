@@ -146,6 +146,13 @@ namespace storm {
             std::size_t getNumberOfMetaVariables() const;
             
             /*!
+             * Retrieves the number of DD variables that are contained in this manager.
+             *
+             * @return The number of DD variables contained in this manager.
+             */
+            std::size_t getNumberOfDdVariables() const;
+            
+            /*!
              * Retrieves whether the given meta variable name is already in use.
              *
              * @param variableName The name of the variable.
@@ -250,6 +257,9 @@ namespace storm {
 
             // The manager responsible for the variables.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
+            
+            // Keep track of all DD variables of this manager.
+            uint_fast64_t numberOfDdVariables;
         };
     }
 }
