@@ -1,6 +1,7 @@
 #ifndef STORM_STORAGE_DD_CUDDBDD_H_
 #define STORM_STORAGE_DD_CUDDBDD_H_
 
+#include <unordered_map>
 #include <boost/functional/hash.hpp>
 
 #include "src/storage/dd/Bdd.h"
@@ -303,6 +304,17 @@ namespace storm {
              */
             storm::storage::BitVector toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd) const;
             
+            /*!
+             * Translates the function the BDD is representing to a set of expressions that characterize the function.
+             *
+             * @param manager The manager that is used to build the expression and, in particular, create new variables in.
+             * @param indexToExpressionMap A mapping from indices (of DD variables) to expressions with which they are
+             * to be replaced.
+             * @return A pair consisting of the created expressions and a mapping from pairs (i, j) to variables such
+             * that the i-th variable of level j is represented by the mapped-to variable.
+             */
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> toExpression(storm::expressions::ExpressionManager& manager, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const;
+            
         private:
             /*!
              * Retrieves the CUDD BDD object associated with this DD.
@@ -369,6 +381,8 @@ namespace storm {
              * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
              */
             void toVectorRec(DdNode const* dd, Cudd const& manager, storm::storage::BitVector& result, Odd<DdType::CUDD> const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
+            
+            void toExpressionRec(DdNode const* dd, Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode*, uint_fast64_t>& nodeToCounterMap) const;
             
             // The BDD created by CUDD.
             BDD cuddBdd;

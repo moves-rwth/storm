@@ -367,6 +367,30 @@ namespace storm {
             return result;
         }
         
+        std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> Bdd<DdType::CUDD>::toExpression(storm::expressions::ExpressionManager& manager, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const {
+            std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> result;
+            
+            // Create (and maintain) a mapping from the DD nodes to a counter that says the how-many-th node (within the
+            // nodes of equal index) the node was.
+            std::unordered_map<DdNode*, uint_fast64_t> nodeToCounterMap;
+            this->toExpressionRec(this->getCuddDdNode(), this->getDdManager()->getCuddManager(), manager, result.first, result.second, nodeToCounterMap);
+            
+            return result;
+        }
+        
+        void Bdd<DdType::CUDD>::toExpressionRec(DdNode const* f, Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode*, uint_fast64_t>& nodeToCounterMap) const {
+            DdNode const* F = Cudd_Regular(f);
+            
+            // Terminal cases.
+            if (F == Cudd_ReadOne(ddManager.getManager())) {
+                
+            }
+            
+            // Non-terminal cases.
+            // (1) Check if we have seen the node before.
+            auto nodeIt = nodeToCounterMap.find();
+        }
+        
         void Bdd<DdType::CUDD>::toVectorRec(DdNode const* dd, Cudd const& manager, storm::storage::BitVector& result, Odd<DdType::CUDD> const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const {
             // If there are no more values to select, we can directly return.
             if (dd == Cudd_ReadLogicZero(manager.getManager()) && !complement) {
