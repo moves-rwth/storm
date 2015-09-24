@@ -395,14 +395,18 @@ namespace storm {
         storm::expressions::Variable Bdd<DdType::CUDD>::toExpressionRec(DdNode const* dd, Cudd const& ddManager, storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression>& expressions, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>& countIndexToVariablePair, std::unordered_map<DdNode const*, uint_fast64_t>& nodeToCounterMap, std::vector<uint_fast64_t>& nextCounterForIndex, std::unordered_map<uint_fast64_t, storm::expressions::Expression> const& indexToExpressionMap) const {
             STORM_LOG_ASSERT(dd == Cudd_Regular(dd), "Expected non-negated BDD node.");
             
-            // First, try to look up the current node.
-            auto nodeCounterIt = nodeToCounterMap.find(dd);
-            if (nodeCounterIt != nodeToCounterMap.end()) {
-                // If we have found the node, this means we can look up the counter-index pair and get the corresponding variable.
-                auto variableIt = countIndexToVariablePair.find(std::make_pair(nodeCounterIt->second, dd->index));
-                STORM_LOG_ASSERT(variableIt != countIndexToVariablePair.end(), "Unable to find node.");
-                return variableIt->second;
-            }
+            // First, try to look up the current node if it's not a terminal node. The result of terminal nodes must not
+            // be reused, since we want to be able to incrementally refine the expression later and that requires
+            // different variables for the one-leaf.
+//            if (!Cudd_IsConstant(dd)) {
+                auto nodeCounterIt = nodeToCounterMap.find(dd);
+                if (nodeCounterIt != nodeToCounterMap.end()) {
+                    // If we have found the node, this means we can look up the counter-index pair and get the corresponding variable.
+                    auto variableIt = countIndexToVariablePair.find(std::make_pair(nodeCounterIt->second, dd->index));
+                    STORM_LOG_ASSERT(variableIt != countIndexToVariablePair.end(), "Unable to find node.");
+                    return variableIt->second;
+                }
+//            }
 
             // If the node was not yet encountered, we create a variable and associate it with the appropriate expression.
             storm::expressions::Variable newVariable = manager.declareFreshBooleanVariable();

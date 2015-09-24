@@ -16,8 +16,10 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractionDdInformation<DdType, ValueType>::AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager) : manager(manager), allPredicateIdentities(manager->getBddOne()) {
-                // Intentionally left empty.
+            AbstractionDdInformation<DdType, ValueType>::AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager, std::vector<storm::expressions::Expression> const& initialPredicates) : manager(manager), allPredicateIdentities(manager->getBddOne()) {
+                for (auto const& predicate : initialPredicates) {
+                    this->addPredicate(predicate);
+                }
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

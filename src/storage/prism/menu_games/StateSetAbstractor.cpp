@@ -13,11 +13,21 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.manager)), expressionInformation(expressionInformation), ddInformation(ddInformation), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(ddInformation.manager->getBddZero()) {
+            StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.manager)), expressionInformation(expressionInformation), ddInformation(ddInformation), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(ddInformation.manager->getBddZero()), constraintBdd(ddInformation.manager->getBddOne()) {
                 
                 // Assert all range expressions to enforce legal variable values.
                 for (auto const& rangeExpression : expressionInformation.rangeExpressions) {
                     smtSolver->add(rangeExpression);
+                }
+                
+                // Assert all state predicates.
+                for (auto const& predicate : statePredicates) {
+                    smtSolver->add(predicate);
+                    
+                    // Extract the variables of the predicate, so we know which variables were used when abstracting.
+                    std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
+                    concretePredicateVariables.insert(usedVariables.begin(), usedVariables.end());
+                    variablePartition.relate(usedVariables);
                 }
                 
                 // Refine the command based on all initial predicates.
@@ -26,19 +36,6 @@ namespace storm {
                     allPredicateIndices[index] = index;
                 }
                 this->refine(allPredicateIndices);
-            }
-            
-            template <storm::dd::DdType DdType, typename ValueType>
-            void StateSetAbstractor<DdType, ValueType>::addPredicate(storm::expressions::Expression const& predicate) {
-                smtSolver->add(predicate);
-                
-                // Extract the variables of the predicate, so we know which variables were used when abstracting.
-                std::set<storm::expressions::Variable> usedVariables = predicate.getVariables();
-                concretePredicateVariables.insert(usedVariables.begin(), usedVariables.end());
-                variablePartition.relate(usedVariables);
-
-                // Remember that we have to recompute the BDD.
-                this->needsRecomputation = true;
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -55,28 +52,12 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void StateSetAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& newPredicates) {
+            void StateSetAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& newPredicates, boost::optional<storm::dd::Bdd<DdType>> const& constraintBdd) {
                 // Make the partition aware of the new predicates, which may make more predicates relevant to the abstraction.
                 for (auto const& predicateIndex : newPredicates) {
                     variablePartition.addExpression(expressionInformation.predicates[predicateIndex]);
                 }
-                
-                // Now check whether we need to recompute the cached BDD.
-                std::set<uint_fast64_t> newRelevantPredicateIndices = variablePartition.getRelatedExpressions(concretePredicateVariables);
-                STORM_LOG_TRACE("Found " << newRelevantPredicateIndices.size() << " relevant predicates in abstractor.");
-                
-                // Since the number of relevant predicates is monotonic, we can simply check for the size here.
-                STORM_LOG_ASSERT(newRelevantPredicateIndices.size() >= relevantPredicatesAndVariables.size(), "Illegal size of relevant predicates.");
-                bool recomputeDd = newRelevantPredicateIndices.size() > relevantPredicatesAndVariables.size();
-                
-                if (recomputeDd) {
-                    // If we need to recompute the BDD, we start by introducing decision variables and the corresponding
-                    // constraints in the SMT problem.
-                    addMissingPredicates(newRelevantPredicateIndices);
-                    
-                    // Finally recompute the cached BDD.
-                    this->recomputeCachedBdd();
-                }
+                this->recomputeCachedBdd();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -98,6 +79,22 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void StateSetAbstractor<DdType, ValueType>::recomputeCachedBdd() {
+                // Now check whether we need to recompute the cached BDD.
+                std::set<uint_fast64_t> newRelevantPredicateIndices = variablePartition.getRelatedExpressions(concretePredicateVariables);
+                STORM_LOG_TRACE("Found " << newRelevantPredicateIndices.size() << " relevant predicates in abstractor.");
+                
+                // Since the number of relevant predicates is monotonic, we can simply check for the size here.
+                STORM_LOG_ASSERT(newRelevantPredicateIndices.size() >= relevantPredicatesAndVariables.size(), "Illegal size of relevant predicates.");
+                bool recomputeBdd = newRelevantPredicateIndices.size() > relevantPredicatesAndVariables.size();
+                
+                if (!recomputeBdd) {
+                    return;
+                }
+
+                // If we need to recompute the BDD, we start by introducing decision variables and the corresponding
+                // constraints in the SMT problem.
+                addMissingPredicates(newRelevantPredicateIndices);
+                
                 STORM_LOG_TRACE("Recomputing BDD for state set abstraction.");
                 
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
@@ -109,9 +106,6 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> StateSetAbstractor<DdType, ValueType>::getAbstractStates() {
-                if (needsRecomputation) {
-                    this->refine();
-                }
                 return cachedBdd;
             }
             

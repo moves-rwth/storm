@@ -360,6 +360,16 @@ namespace storm {
             return this->labels;
         }
         
+        std::vector<storm::expressions::Expression> Program::getAllGuards() const {
+            std::vector<storm::expressions::Expression> allGuards;
+            for (auto const& module : modules) {
+                for (auto const& command : module.getCommands()) {
+                    allGuards.push_back(command.getGuardExpression());
+                }
+            }
+            return allGuards;
+        }
+        
         storm::expressions::Expression const& Program::getLabelExpression(std::string const& label) const {
             auto const& labelIndexPair = labelToIndexMap.find(label);
             STORM_LOG_THROW(labelIndexPair != labelToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve expression for unknown label '" << label << "'.");

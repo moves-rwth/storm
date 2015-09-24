@@ -32,8 +32,9 @@ namespace storm {
                  * Creates a new DdInformation that uses the given manager.
                  *
                  * @param manager The manager to use.
+                 * @param initialPredicates The initially considered predicates.
                  */
-                AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager);
+                AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager, std::vector<storm::expressions::Expression> const& initialPredicates = std::vector<storm::expressions::Expression>());
                 
                 /*!
                  * Encodes the given distribution index by using the given number of variables from the optionDdVariables

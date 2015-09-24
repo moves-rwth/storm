@@ -92,13 +92,14 @@ namespace storm {
                         ++blocksToMergeIt;
                     } else {
                         // Otherwise just move the current block to the new partition.
-                        newVariableBlocks.emplace_back(std::move(variableBlocks[blockIndex]));
-                        newExpressionBlocks.emplace_back(std::move(expressionBlocks[blockIndex]));
-                        
+
                         // Adjust the mapping for all variables of the old block.
                         for (auto const& variable : variableBlocks[blockIndex]) {
-                            variableToBlockMapping[variable] = newVariableBlocks.size() - 1;
+                            variableToBlockMapping[variable] = newVariableBlocks.size();
                         }
+                        
+                        newVariableBlocks.emplace_back(std::move(variableBlocks[blockIndex]));
+                        newExpressionBlocks.emplace_back(std::move(expressionBlocks[blockIndex]));
                     }
                 }
                 

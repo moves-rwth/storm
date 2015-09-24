@@ -361,6 +361,13 @@ namespace storm {
             std::vector<Label> const& getLabels() const;
             
             /*!
+             * Retrieves all guards appearing in the program.
+             *
+             * @return All guards appearing in the program.
+             */
+            std::vector<storm::expressions::Expression> getAllGuards() const;
+            
+            /*!
              * Retrieves the expression associated with the given label, if it exists.
              *
              * @param labelName The name of the label to retrieve.

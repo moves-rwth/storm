@@ -3,6 +3,9 @@
 
 #include <memory>
 #include <set>
+#include <boost/optional.hpp>
+
+#include "src/utility/OsDetection.h"
 
 #include "src/storage/dd/DdType.h"
 
@@ -35,27 +38,34 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             class StateSetAbstractor {
             public:
+                // Provide a no-op default constructor.
+                StateSetAbstractor() = default;
+
+                StateSetAbstractor(StateSetAbstractor const& other) = default;
+                StateSetAbstractor& operator=(StateSetAbstractor const& other) = default;
+                
+#ifndef WINDOWS
+                StateSetAbstractor(StateSetAbstractor&& other) = default;
+                StateSetAbstractor& operator=(StateSetAbstractor&& other) = default;
+#endif
+                
                 /*!
                  * Creates a state set abstractor.
                  *
                  * @param expressionInformation The expression-related information including the manager and the predicates.
                  * @param ddInformation The DD-related information including the manager.
+                 * @param statePredicates A set of predicates that have to hold in the concrete states this abstractor is
+                 * supposed to abstract.
                  * @param smtSolverFactory A factory that can create new SMT solvers.
                  */
-                StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
-                
-                /*!
-                 * Adds the given (concrete) predicate to the abstractor and therefore restricts the abstraction to
-                 * abstract states that contain at least some states satisfying the predicate.
-                 */
-                void addPredicate(storm::expressions::Expression const& predicate);
+                StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
                 /*!
                  * Refines the abstractor by making the given predicates new abstract predicates.
                  *
                  * @param newPredicateIndices The indices of the new predicates.
                  */
-                void refine(std::vector<uint_fast64_t> const& newPredicateIndices = std::vector<uint_fast64_t>());
+                void refine(std::vector<uint_fast64_t> const& newPredicateIndices, boost::optional<storm::dd::Bdd<DdType>> const& constraintBdd = boost::none);
                 
                 /*!
                  * Retrieves the set of abstract states matching all predicates added to this abstractor.
@@ -112,6 +122,9 @@ namespace storm {
                 // The cached BDD representing the abstraction. This variable is written to in refinement steps (if work
                 // needed to be done).
                 storm::dd::Bdd<DdType> cachedBdd;
+                
+                // This BDD currently constrains the search for solutions.
+                storm::dd::Bdd<DdType> constraintBdd;
             };
         }
     }
