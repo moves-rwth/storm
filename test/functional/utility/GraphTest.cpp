@@ -22,19 +22,22 @@ TEST(GraphTest, SymbolicProb01) {
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     
-    std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
-
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("observe0Greater1")));
-    EXPECT_EQ(4409ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(1316ul, statesWithProbability01.second.getNonZeroCount());
-    
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("observeIGreater1")));
-    EXPECT_EQ(1091ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(4802ul, statesWithProbability01.second.getNonZeroCount());
-
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("observeOnlyTrueSender")));
-    EXPECT_EQ(5829ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(1032ul, statesWithProbability01.second.getNonZeroCount());
+    {
+        // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
+        std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("observe0Greater1")));
+        EXPECT_EQ(4409ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(1316ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("observeIGreater1")));
+        EXPECT_EQ(1091ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(4802ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("observeOnlyTrueSender")));
+        EXPECT_EQ(5829ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(1032ul, statesWithProbability01.second.getNonZeroCount());
+    }
 }
 
 TEST(GraphTest, SymbolicProb01MinMax) {
@@ -43,49 +46,62 @@ TEST(GraphTest, SymbolicProb01MinMax) {
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
-    std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
-    
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("elected")));
-    EXPECT_EQ(0ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(364ul, statesWithProbability01.second.getNonZeroCount());
-
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("elected")));
-    EXPECT_EQ(0ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(364ul, statesWithProbability01.second.getNonZeroCount());
+    {
+        // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
+        std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("elected")));
+        EXPECT_EQ(0ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(364ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("elected")));
+        EXPECT_EQ(0ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(364ul, statesWithProbability01.second.getNonZeroCount());
+    }
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_0")));
-    EXPECT_EQ(77ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(149ul, statesWithProbability01.second.getNonZeroCount());
-    
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_0")));
-    EXPECT_EQ(74ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(198ul, statesWithProbability01.second.getNonZeroCount());
-
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
-    EXPECT_EQ(94ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(33ul, statesWithProbability01.second.getNonZeroCount());
-    
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
-    EXPECT_EQ(83ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(35ul, statesWithProbability01.second.getNonZeroCount());
+    {
+        // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
+        std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_0")));
+        EXPECT_EQ(77ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(149ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_0")));
+        EXPECT_EQ(74ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(198ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
+        EXPECT_EQ(94ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(33ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
+        EXPECT_EQ(83ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(35ul, statesWithProbability01.second.getNonZeroCount());
+    }
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("collision_max_backoff")));
-    EXPECT_EQ(993ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(16ul, statesWithProbability01.second.getNonZeroCount());
-    
-    ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("collision_max_backoff")));
-    EXPECT_EQ(993ul, statesWithProbability01.first.getNonZeroCount());
-    EXPECT_EQ(16ul, statesWithProbability01.second.getNonZeroCount());
+    {
+        // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
+        std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("collision_max_backoff")));
+        EXPECT_EQ(993ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(16ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("collision_max_backoff")));
+        EXPECT_EQ(993ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(16ul, statesWithProbability01.second.getNonZeroCount());
+    }
 }
 
 #ifdef STORM_HAVE_MSAT
@@ -121,13 +137,13 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     
     result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
     EXPECT_EQ(1, result.states.getNonZeroCount());
-
+    
     result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
     EXPECT_EQ(1, result.states.getNonZeroCount());
     
     result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(0, result.states.getNonZeroCount());
-
+    
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(2, result.states.getNonZeroCount());
     
@@ -138,10 +154,10 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     EXPECT_EQ(2, result.states.getNonZeroCount());
     EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
     EXPECT_TRUE(static_cast<bool>(result.player2Strategy));
-        
+    
     abstractProgram.refine({manager.getVariableExpression("s") < manager.integer(2)});
     game = abstractProgram.getAbstractGame();
-
+    
     // We need to create a new BDD for the target states since the reachable states might have changed.
     targetStates = game.getStates(initialPredicates[0], true);
     
@@ -167,19 +183,19 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     
     result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
     EXPECT_EQ(0, result.states.getNonZeroCount());
-
+    
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, true);
     EXPECT_EQ(3, result.states.getNonZeroCount());
-
+    
     result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(0, result.states.getNonZeroCount());
-
+    
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(3, result.states.getNonZeroCount());
     
     result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
     EXPECT_EQ(0, result.states.getNonZeroCount());
-
+    
     result = storm::utility::graph::performProb1(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, true);
     EXPECT_EQ(3, result.states.getNonZeroCount());
     EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
@@ -243,10 +259,10 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
-
+    
     // The target states are those states where s1 == 7 & s2 == 7 & d1 + d2 == 1.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[7], false) && game.getStates(initialPredicates[22], false) && game.getStates(initialPredicates[9], false) && game.getStates(initialPredicates[24], false);
-
+    
     storm::utility::graph::GameProb01Result<storm::dd::DdType::CUDD> result = storm::utility::graph::performProb0(game, game.getQualitativeTransitionMatrix(), game.getReachableStates(), targetStates, storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, true);
     EXPECT_EQ(153, result.states.getNonZeroCount());
     EXPECT_TRUE(static_cast<bool>(result.player1Strategy));
