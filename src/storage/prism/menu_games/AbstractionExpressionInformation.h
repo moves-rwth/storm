@@ -26,6 +26,20 @@ namespace storm {
                  */
                 AbstractionExpressionInformation(storm::expressions::ExpressionManager& manager, std::vector<storm::expressions::Expression> const& predicates = std::vector<storm::expressions::Expression>(), std::set<storm::expressions::Variable> const& variables = std::set<storm::expressions::Variable>(), std::vector<storm::expressions::Expression> const& rangeExpressions = std::vector<storm::expressions::Expression>());
                 
+                /*!
+                 * Adds the given predicate.
+                 *
+                 * @param predicate The predicate to add.
+                 */
+                void addPredicate(storm::expressions::Expression const& predicate);
+
+                /*!
+                 * Adds the given predicates.
+                 *
+                 * @param predicates The predicates to add.
+                 */
+                void addPredicates(std::vector<storm::expressions::Expression> const& predicates);
+                
                 // The manager responsible for the expressions of the program and the SMT solvers.
                 storm::expressions::ExpressionManager& manager;
                 

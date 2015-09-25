@@ -5,6 +5,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <unordered_map>
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/expressions/Variable.h"
@@ -105,6 +106,9 @@ namespace storm {
                 
                 // A mapping from the predicates to the BDDs.
                 std::map<storm::expressions::Expression, storm::dd::Bdd<DdType>> expressionToBddMap;
+                
+                // A mapping from the indices of the BDD variables to the predicates.
+                std::unordered_map<uint_fast64_t, storm::expressions::Expression> bddVariableIndexToPredicateMap;
             };
             
         }

@@ -16,7 +16,7 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractionDdInformation<DdType, ValueType>::AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager, std::vector<storm::expressions::Expression> const& initialPredicates) : manager(manager), allPredicateIdentities(manager->getBddOne()) {
+            AbstractionDdInformation<DdType, ValueType>::AbstractionDdInformation(std::shared_ptr<storm::dd::DdManager<DdType>> const& manager, std::vector<storm::expressions::Expression> const& initialPredicates) : manager(manager), allPredicateIdentities(manager->getBddOne()), bddVariableIndexToPredicateMap() {
                 for (auto const& predicate : initialPredicates) {
                     this->addPredicate(predicate);
                 }
@@ -58,6 +58,7 @@ namespace storm {
                 sourceVariables.insert(newMetaVariable.first);
                 successorVariables.insert(newMetaVariable.second);
                 expressionToBddMap[predicate] = predicateBdds.back().first;
+                bddVariableIndexToPredicateMap[predicateIdentities.back().getIndex()] = predicate;
             }
          
             template <storm::dd::DdType DdType, typename ValueType>

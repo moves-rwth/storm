@@ -65,7 +65,14 @@ namespace storm {
                  *
                  * @param newPredicateIndices The indices of the new predicates.
                  */
-                void refine(std::vector<uint_fast64_t> const& newPredicateIndices, boost::optional<storm::dd::Bdd<DdType>> const& constraintBdd = boost::none);
+                void refine(std::vector<uint_fast64_t> const& newPredicateIndices);
+                
+                /*!
+                 * Constraints the abstract states with the given BDD.
+                 *
+                 * @param newConstraint The BDD used as the constraint.
+                 */
+                void constrain(storm::dd::Bdd<DdType> const& newConstraint);
                 
                 /*!
                  * Retrieves the set of abstract states matching all predicates added to this abstractor.
@@ -81,6 +88,16 @@ namespace storm {
                  * @param newRelevantPredicateIndices The set of all relevant predicate indices.
                  */
                 void addMissingPredicates(std::set<uint_fast64_t> const& newRelevantPredicateIndices);
+                
+                /*!
+                 * Adds the current constraint BDD to the solver.
+                 */
+                void pushConstraintBdd();
+
+                /*!
+                 * Removes the current constraint BDD (if any) from the solver.
+                 */
+                void popConstraintBdd();
                 
                 /*!
                  * Recomputes the cached BDD. This needs to be triggered if any relevant predicates change.
@@ -124,7 +141,7 @@ namespace storm {
                 storm::dd::Bdd<DdType> cachedBdd;
                 
                 // This BDD currently constrains the search for solutions.
-                storm::dd::Bdd<DdType> constraintBdd;
+                storm::dd::Bdd<DdType> constraint;
             };
         }
     }

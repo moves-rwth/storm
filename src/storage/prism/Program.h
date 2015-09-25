@@ -363,9 +363,10 @@ namespace storm {
             /*!
              * Retrieves all guards appearing in the program.
              *
+             * @param negated A flag indicating whether the guards should be negated.
              * @return All guards appearing in the program.
              */
-            std::vector<storm::expressions::Expression> getAllGuards() const;
+            std::vector<storm::expressions::Expression> getAllGuards(bool negated = false) const;
             
             /*!
              * Retrieves the expression associated with the given label, if it exists.

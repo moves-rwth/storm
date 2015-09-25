@@ -13,7 +13,7 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.manager)), expressionInformation(expressionInformation), ddInformation(ddInformation), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(ddInformation.manager->getBddZero()), constraintBdd(ddInformation.manager->getBddOne()) {
+            StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.manager)), expressionInformation(expressionInformation), ddInformation(ddInformation), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(ddInformation.manager->getBddZero()), constraint(ddInformation.manager->getBddOne()) {
                 
                 // Assert all range expressions to enforce legal variable values.
                 for (auto const& rangeExpression : expressionInformation.rangeExpressions) {
@@ -52,12 +52,21 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            void StateSetAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& newPredicates, boost::optional<storm::dd::Bdd<DdType>> const& constraintBdd) {
+            void StateSetAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& newPredicates) {
                 // Make the partition aware of the new predicates, which may make more predicates relevant to the abstraction.
                 for (auto const& predicateIndex : newPredicates) {
                     variablePartition.addExpression(expressionInformation.predicates[predicateIndex]);
                 }
-                this->recomputeCachedBdd();
+                needsRecomputation = true;
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void StateSetAbstractor<DdType, ValueType>::constrain(storm::dd::Bdd<DdType> const& newConstraint) {
+                // If the constraint is different from the last one, we add it to the solver.
+                if (newConstraint != this->constraint) {
+                    constraint = newConstraint;
+                    this->pushConstraintBdd();
+                }
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
@@ -90,10 +99,16 @@ namespace storm {
                 if (!recomputeBdd) {
                     return;
                 }
-
+                
+                // Before adding the missing predicates, we need to remove the constraint BDD.
+                this->popConstraintBdd();
+                
                 // If we need to recompute the BDD, we start by introducing decision variables and the corresponding
                 // constraints in the SMT problem.
                 addMissingPredicates(newRelevantPredicateIndices);
+                
+                // Then re-add the constraint BDD.
+                this->pushConstraintBdd();
                 
                 STORM_LOG_TRACE("Recomputing BDD for state set abstraction.");
                 
@@ -105,7 +120,33 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
+            void StateSetAbstractor<DdType, ValueType>::popConstraintBdd() {
+                // If the last constraint was not the constant one BDD, we need to pop the constraint from the solver.
+                if (!this->constraint.isOne()) {
+                    smtSolver->pop();
+                }
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
+            void StateSetAbstractor<DdType, ValueType>::pushConstraintBdd() {
+                // Create a new backtracking point before adding the constraint.
+                smtSolver->push();
+                
+                // Then add the constraint.
+                std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> result = constraint.toExpression(expressionInformation.manager, ddInformation.bddVariableIndexToPredicateMap);
+                
+                std::cout << "adding expressions... " << std::endl;
+                for (auto const& expression : result.first) {
+                    std::cout << expression << std::endl;
+                    smtSolver->add(expression);
+                }
+            }
+            
+            template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> StateSetAbstractor<DdType, ValueType>::getAbstractStates() {
+                if (needsRecomputation) {
+                    this->recomputeCachedBdd();
+                }
                 return cachedBdd;
             }
             

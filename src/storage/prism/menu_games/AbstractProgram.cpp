@@ -17,7 +17,7 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>(), initialPredicates), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program), initialStateAbstractor(expressionInformation, ddInformation, {program.getInitialConstruct().getInitialStatesExpression()}, *this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(expressionInformation, ddInformation, program.getAllGuards(), *this->smtSolverFactory), currentGame(nullptr) {
+            AbstractProgram<DdType, ValueType>::AbstractProgram(storm::expressions::ExpressionManager& expressionManager, storm::prism::Program const& program, std::vector<storm::expressions::Expression> const& initialPredicates, std::unique_ptr<storm::utility::solver::SmtSolverFactory>&& smtSolverFactory, bool addAllGuards) : smtSolverFactory(std::move(smtSolverFactory)), ddInformation(std::make_shared<storm::dd::DdManager<DdType>>(), initialPredicates), expressionInformation(expressionManager, initialPredicates, program.getAllExpressionVariables(), program.getAllRangeExpressions()), modules(), program(program), initialStateAbstractor(expressionInformation, ddInformation, {program.getInitialConstruct().getInitialStatesExpression()}, *this->smtSolverFactory), addedAllGuards(addAllGuards), bottomStateAbstractor(expressionInformation, ddInformation, program.getAllGuards(true), *this->smtSolverFactory), currentGame(nullptr) {
                 
                 // For now, we assume that there is a single module. If the program has more than one module, it needs
                 // to be flattened before the procedure.
@@ -71,7 +71,7 @@ namespace storm {
                 
                 // Add the predicates to the global list of predicates.
                 uint_fast64_t firstNewPredicateIndex = expressionInformation.predicates.size();
-                expressionInformation.predicates.insert(expressionInformation.predicates.end(), predicates.begin(), predicates.end());
+                expressionInformation.addPredicates(predicates);
                 
                 // Create DD variables and some auxiliary data structures for the new predicates.
                 for (auto const& predicate : predicates) {
@@ -140,10 +140,11 @@ namespace storm {
                 if (addedAllGuards) {
                     bottomStates = ddInformation.manager->getBddZero();
                 } else {
-                    // bottomStates = bottomStateAbstractor.getAbstractStates();
+                    bottomStateAbstractor.constrain(reachableStates);
+                    bottomStates = bottomStateAbstractor.getAbstractStates();
                 }
                 
-                // std::cout << "found " << (reachableStates && bottomStates).getNonZeroCount() << " reachable bottom states" << std::endl;
+                std::cout << "found " << (reachableStates && bottomStates).getNonZeroCount() << " reachable bottom states" << std::endl;
                 
                 // Find the deadlock states in the model.
                 storm::dd::Bdd<DdType> deadlockStates = transitionRelation.existsAbstract(ddInformation.successorVariables);

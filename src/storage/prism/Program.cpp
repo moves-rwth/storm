@@ -360,11 +360,11 @@ namespace storm {
             return this->labels;
         }
         
-        std::vector<storm::expressions::Expression> Program::getAllGuards() const {
+        std::vector<storm::expressions::Expression> Program::getAllGuards(bool negated) const {
             std::vector<storm::expressions::Expression> allGuards;
             for (auto const& module : modules) {
                 for (auto const& command : module.getCommands()) {
-                    allGuards.push_back(command.getGuardExpression());
+                    allGuards.push_back(negated ? !command.getGuardExpression() : command.getGuardExpression());
                 }
             }
             return allGuards;

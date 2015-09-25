@@ -11,6 +11,16 @@ namespace storm {
                 // Intentionally left empty.
             }
             
+            void AbstractionExpressionInformation::addPredicate(storm::expressions::Expression const& predicate) {
+                predicates.push_back(predicate);
+            }
+            
+            void AbstractionExpressionInformation::addPredicates(std::vector<storm::expressions::Expression> const& predicates) {
+                for (auto const& predicate : predicates) {
+                    this->addPredicate(predicate);
+                }
+            }
+            
         }
     }
 }
