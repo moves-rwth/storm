@@ -11,7 +11,7 @@
 namespace storm {
     namespace ps {
         
-         boost::optional<MemorylessDeterministicPermissiveScheduler> computePermissiveSchedulerViaMILP(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
+         boost::optional<SubMDPPermissiveScheduler> computePermissiveSchedulerViaMILP(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double>> propMC(*mdp);
             assert(safeProp.getSubformula().isEventuallyFormula());
             auto backwardTransitions = mdp->getBackwardTransitions();
@@ -26,17 +26,17 @@ namespace storm {
             comp.dumpLpToFile("milpdump.lp");
             std::cout << "Found Solution: " << (comp.foundSolution() ? "yes" : "no") << std::endl;
             if(comp.foundSolution()) {
-                return boost::optional<MemorylessDeterministicPermissiveScheduler>(comp.getScheduler());
+                return boost::optional<SubMDPPermissiveScheduler>(comp.getScheduler());
             } else {
-                return boost::optional<MemorylessDeterministicPermissiveScheduler>();
+                return boost::optional<SubMDPPermissiveScheduler>();
             }
         }
          
-         boost::optional<MemorylessDeterministicPermissiveScheduler> computePermissiveSchedulerViaMC(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
+         boost::optional<SubMDPPermissiveScheduler> computePermissiveSchedulerViaMC(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
              
          }
          
-         boost::optional<MemorylessDeterministicPermissiveScheduler> computerPermissiveSchedulerViaSMT(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
+         boost::optional<SubMDPPermissiveScheduler> computerPermissiveSchedulerViaSMT(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
              
          }
     }

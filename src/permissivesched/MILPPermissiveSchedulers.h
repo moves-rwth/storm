@@ -51,16 +51,16 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                 return !solver.isInfeasible();
             }
             
-            MemorylessDeterministicPermissiveScheduler getScheduler() const override {
+            SubMDPPermissiveScheduler getScheduler() const override {
                 assert(mCalledOptimizer);
                 assert(foundSolution());
-                storm::storage::BitVector result(mdp->getNumberOfChoices(), true);
+                SubMDPPermissiveScheduler result(*mdp, true);
                 for(auto const& entry : multistrategyVariables) {
                     if(!solver.getBinaryValue(entry.second)) {
-                        result.set(mdp->getNondeterministicChoiceIndices()[entry.first.getState()]+entry.first.getAction(), false);
+                        result.disable(mdp->getChoiceIndex(entry.first));
                     }
                 }
-                return MemorylessDeterministicPermissiveScheduler(result);
+                return result;
             }
             
             void dumpLpToFile(std::string const& filename) {
@@ -71,7 +71,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
         private:
             
             /**
-             * 
+             *  Create variables
              */
             void createVariables(PermissiveSchedulerPenalties const& penalties, storm::storage::BitVector const& relevantStates) {
                 // We need the unique initial state later, so we get that one before looping.
@@ -111,12 +111,14 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                                 mBetaVariables[sat] = var;
                             }
                         }
-                                
                     }
                 }
                 solver.update();
             }
-            
+
+            /**
+             * Create constraints
+             */
             void createConstraints(bool lowerBound, double boundary, storm::storage::BitVector const& relevantStates) {
                 // (5) and (7) are omitted on purpose (-- we currenty do not support controllability of actions -- )
                 

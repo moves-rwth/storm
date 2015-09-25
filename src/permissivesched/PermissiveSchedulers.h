@@ -14,21 +14,34 @@ namespace storm {
             virtual ~PermissiveScheduler() = default;
         };
         
-        class MemorylessDeterministicPermissiveScheduler  : public PermissiveScheduler {
-            storm::storage::BitVector memdetschedulers;
+        class SubMDPPermissiveScheduler  : public PermissiveScheduler {
+            storm::models::sparse::Mdp<double> const& mdp;
+            storm::storage::BitVector enabledChoices;
         public:
-            virtual ~MemorylessDeterministicPermissiveScheduler() = default;
-            MemorylessDeterministicPermissiveScheduler(MemorylessDeterministicPermissiveScheduler&&) = default;
-            MemorylessDeterministicPermissiveScheduler(MemorylessDeterministicPermissiveScheduler const&) = delete;
-            
-            
-            MemorylessDeterministicPermissiveScheduler(storm::storage::BitVector const& allowedPairs) : memdetschedulers(allowedPairs) {}
-            MemorylessDeterministicPermissiveScheduler(storm::storage::BitVector && allowedPairs) : memdetschedulers(std::move(allowedPairs)) {}
-            
+            virtual ~SubMDPPermissiveScheduler() = default;
+            SubMDPPermissiveScheduler(SubMDPPermissiveScheduler&&) = default;
+            SubMDPPermissiveScheduler(SubMDPPermissiveScheduler const&) = delete;
+
+            SubMDPPermissiveScheduler(storm::models::sparse::Mdp<double> const& refmdp, bool allEnabled) :
+                PermissiveScheduler(), mdp(refmdp), enabledChoices(refmdp.getNumberOfChoices(), allEnabled)
+            {
+                // Intentionally left empty.
+            }
+
+            void disable(uint_fast64_t choiceIndex) {
+                assert(choiceIndex < enabledChoices.size());
+                enabledChoices.set(choiceIndex, false);
+            }
+
+
+            storm::models::sparse::Mdp<double> apply() const {
+                return mdp.restrictChoices(enabledChoices);
+            }
+
             
         };
         
-        boost::optional<MemorylessDeterministicPermissiveScheduler> computePermissiveSchedulerViaMILP(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp);
+        boost::optional<SubMDPPermissiveScheduler> computePermissiveSchedulerViaMILP(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp);
     }
 }
 

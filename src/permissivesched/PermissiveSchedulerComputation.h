@@ -42,7 +42,7 @@ namespace storm {
             
             virtual bool foundSolution() const = 0;
             
-            virtual MemorylessDeterministicPermissiveScheduler getScheduler() const = 0;
+            virtual SubMDPPermissiveScheduler getScheduler() const = 0;
             
        
         };
