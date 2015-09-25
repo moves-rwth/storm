@@ -72,14 +72,11 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             storm::dd::Bdd<DdType> StateSetAbstractor<DdType, ValueType>::getStateBdd(storm::solver::SmtSolver::ModelReference const& model) const {
                 STORM_LOG_TRACE("Building source state BDD.");
-                std::cout << "new model: " << std::endl;
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
                 for (auto const& variableIndexPair : relevantPredicatesAndVariables) {
                     if (model.getBooleanValue(variableIndexPair.first)) {
-                        std::cout << expressionInformation.predicates[variableIndexPair.second] << " is true" << std::endl;
                         result &= ddInformation.predicateBdds[variableIndexPair.second].first;
                     } else {
-                        std::cout << expressionInformation.predicates[variableIndexPair.second] << " is false" << std::endl;
                         result &= !ddInformation.predicateBdds[variableIndexPair.second].first;
                     }
                 }
@@ -114,7 +111,7 @@ namespace storm {
                 
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddZero();
                 uint_fast64_t modelCounter = 0;
-                smtSolver->allSat(decisionVariables, [&result,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { result |= getStateBdd(model); ++modelCounter; std::cout << "found " << modelCounter << " models" << std::endl; return modelCounter < 10000 ? true : false; } );
+                smtSolver->allSat(decisionVariables, [&result,this,&modelCounter] (storm::solver::SmtSolver::ModelReference const& model) { result |= getStateBdd(model); return true; } );
                 
                 cachedBdd = result;
             }
@@ -122,22 +119,25 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void StateSetAbstractor<DdType, ValueType>::popConstraintBdd() {
                 // If the last constraint was not the constant one BDD, we need to pop the constraint from the solver.
-                if (!this->constraint.isOne()) {
-                    smtSolver->pop();
+                if (this->constraint.isOne()) {
+                    return;
                 }
+                smtSolver->pop();
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
             void StateSetAbstractor<DdType, ValueType>::pushConstraintBdd() {
+                if (this->constraint.isOne()) {
+                    return;
+                }
+                
                 // Create a new backtracking point before adding the constraint.
                 smtSolver->push();
                 
                 // Then add the constraint.
                 std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> result = constraint.toExpression(expressionInformation.manager, ddInformation.bddVariableIndexToPredicateMap);
                 
-                std::cout << "adding expressions... " << std::endl;
                 for (auto const& expression : result.first) {
-                    std::cout << expression << std::endl;
                     smtSolver->add(expression);
                 }
             }

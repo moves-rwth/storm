@@ -31,6 +31,7 @@ TEST(PrismMenuGame, DieAbstractionTest) {
     
     EXPECT_EQ(10, game.getNumberOfTransitions());
     EXPECT_EQ(2, game.getNumberOfStates());
+    EXPECT_EQ(0, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, DieAbstractionAndRefinementTest) {
@@ -49,6 +50,7 @@ TEST(PrismMenuGame, DieAbstractionAndRefinementTest) {
     
     EXPECT_EQ(10, game.getNumberOfTransitions());
     EXPECT_EQ(3, game.getNumberOfStates());
+    EXPECT_EQ(0, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, DieFullAbstractionTest) {
@@ -80,6 +82,7 @@ TEST(PrismMenuGame, DieFullAbstractionTest) {
     
     EXPECT_EQ(20, game.getNumberOfTransitions());
     EXPECT_EQ(13, game.getNumberOfStates());
+    EXPECT_EQ(0, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionTest) {
@@ -97,6 +100,7 @@ TEST(PrismMenuGame, CrowdsAbstractionTest) {
     
     EXPECT_EQ(11, game.getNumberOfTransitions());
     EXPECT_EQ(2, game.getNumberOfStates());
+    EXPECT_EQ(1, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
@@ -116,6 +120,7 @@ TEST(PrismMenuGame, CrowdsAbstractionAndRefinementTest) {
     
     EXPECT_EQ(28, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
+    EXPECT_EQ(2, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, CrowdsFullAbstractionTest) {
@@ -187,6 +192,7 @@ TEST(PrismMenuGame, CrowdsFullAbstractionTest) {
     
     EXPECT_EQ(15113, game.getNumberOfTransitions());
     EXPECT_EQ(8607, game.getNumberOfStates());
+    EXPECT_EQ(1260, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionTest) {
@@ -206,6 +212,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionTest) {
     
     EXPECT_EQ(34, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
+    EXPECT_EQ(0, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
@@ -227,6 +234,7 @@ TEST(PrismMenuGame, TwoDiceAbstractionAndRefinementTest) {
 
     EXPECT_EQ(164, game.getNumberOfTransitions());
     EXPECT_EQ(8, game.getNumberOfStates());
+    EXPECT_EQ(0, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, TwoDiceFullAbstractionTest) {
@@ -277,6 +285,7 @@ TEST(PrismMenuGame, TwoDiceFullAbstractionTest) {
     
     EXPECT_EQ(436, game.getNumberOfTransitions());
     EXPECT_EQ(169, game.getNumberOfStates());
+    EXPECT_EQ(0, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanAbstractionTest) {
@@ -295,8 +304,11 @@ TEST(PrismMenuGame, WlanAbstractionTest) {
     
     storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
     
+    game.getTransitionMatrix().exportToDot("trans.dot");
+    game.getReachableStates().toAdd().exportToDot("reach.dot");
     EXPECT_EQ(281, game.getNumberOfTransitions());
     EXPECT_EQ(4, game.getNumberOfStates());
+    EXPECT_EQ(4, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
@@ -319,6 +331,7 @@ TEST(PrismMenuGame, WlanAbstractionAndRefinementTest) {
 
     EXPECT_EQ(564, game.getNumberOfTransitions());
     EXPECT_EQ(8, game.getNumberOfStates());
+    EXPECT_EQ(8, game.getBottomStates().getNonZeroCount());
 }
 
 TEST(PrismMenuGame, WlanFullAbstractionTest) {
@@ -437,6 +450,7 @@ TEST(PrismMenuGame, WlanFullAbstractionTest) {
     
     EXPECT_EQ(9503, game.getNumberOfTransitions());
     EXPECT_EQ(5523, game.getNumberOfStates());
+    EXPECT_EQ(0, game.getBottomStates().getNonZeroCount());
 }
 
 #endif

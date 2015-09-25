@@ -144,8 +144,6 @@ namespace storm {
                     bottomStates = bottomStateAbstractor.getAbstractStates();
                 }
                 
-                std::cout << "found " << (reachableStates && bottomStates).getNonZeroCount() << " reachable bottom states" << std::endl;
-                
                 // Find the deadlock states in the model.
                 storm::dd::Bdd<DdType> deadlockStates = transitionRelation.existsAbstract(ddInformation.successorVariables);
                 deadlockStates = reachableStates && !deadlockStates;

@@ -58,12 +58,15 @@ namespace storm {
              */
 			msat_term translateExpression(storm::expressions::Expression const& expression) {
                 msat_term result = boost::any_cast<msat_term>(expression.getBaseExpression().accept(*this));
-                STORM_LOG_THROW(!MSAT_ERROR_TERM(result), storm::exceptions::ExpressionEvaluationException, "Could not translate expression to MathSAT's format.");
+                if (MSAT_ERROR_TERM(result)) {
+                    std::string errorMessage(msat_last_error_message(env));
+                    STORM_LOG_THROW(!MSAT_ERROR_TERM(result), storm::exceptions::ExpressionEvaluationException, "Could not translate expression to MathSAT's format. (Message: " << errorMessage << ")");
+                }
 				return result;
 			}
             
             /*!
-             * Translates the given variable to an equivalent expression for Z3.
+             * Translates the given variable to an equivalent expression for MathSAT.
              *
              * @param variable The variable to translate.
              * @return An equivalent term for MathSAT.
@@ -164,7 +167,13 @@ namespace storm {
                 msat_term conditionResult = boost::any_cast<msat_term>(expression.getCondition()->accept(*this));
 				msat_term thenResult = boost::any_cast<msat_term>(expression.getThenExpression()->accept(*this));
 				msat_term elseResult = boost::any_cast<msat_term>(expression.getElseExpression()->accept(*this));
-				return msat_make_term_ite(env, conditionResult, thenResult, elseResult);
+                
+                // MathSAT does not allow ite with boolean arguments, so we have to encode it ourselves.
+                if (expression.getThenExpression()->hasBooleanType() && expression.getElseExpression()->hasBooleanType()) {
+                    return msat_make_and(env, msat_make_or(env, msat_make_not(env, conditionResult), thenResult), msat_make_or(env, conditionResult, elseResult));
+                } else {
+                    return msat_make_term_ite(env, conditionResult, thenResult, elseResult);
+                }
 			}
 
 			virtual boost::any visit(expressions::BooleanLiteralExpression const& expression) override {
