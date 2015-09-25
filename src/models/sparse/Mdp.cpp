@@ -75,13 +75,18 @@ namespace storm {
             }
 
             template <typename ValueType, typename RewardModelType>
-            Mdp<ValueType, RewardModelType> Mdp<ValueType, RewardModelType>::restrictActions(storm::storage::BitVector const& enabledActions) const {
-                storm::storage::SparseMatrix<ValueType> restrictedTransitions = this->getTransitionMatrix().restrictRows(enabledActions);
+            Mdp<ValueType, RewardModelType> Mdp<ValueType, RewardModelType>::restrictChoices(storm::storage::BitVector const& enabledChoices) const {
+                storm::storage::SparseMatrix<ValueType> restrictedTransitions = this->getTransitionMatrix().restrictRows(enabledChoices);
                 std::unordered_map<std::string, RewardModelType> newRewardModels;
                 for (auto const& rewardModel : this->getRewardModels()) {
-                    newRewardModels.emplace(rewardModel.first, rewardModel.second.restrictActions(enabledActions));
+                    newRewardModels.emplace(rewardModel.first, rewardModel.second.restrictActions(enabledChoices));
                 }
                 return Mdp<ValueType, RewardModelType>(restrictedTransitions, this->getStateLabeling(), newRewardModels, this->getOptionalChoiceLabeling());
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            uint_least64_t Mdp<ValueType, RewardModelType>::getChoiceIndex(storm::storage::StateActionPair const& stateactPair) const {
+                return this->getNondeterministicChoiceIndices()[stateactPair.getState()]+stateactPair.getAction();
             }
 
             template class Mdp<double>;
