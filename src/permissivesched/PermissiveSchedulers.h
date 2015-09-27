@@ -5,6 +5,7 @@
 #include "../logic/ProbabilityOperatorFormula.h"
 #include "../models/sparse/Mdp.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
 
 namespace storm {
     namespace ps {

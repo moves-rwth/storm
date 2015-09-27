@@ -80,7 +80,7 @@ namespace storm {
                  * @param rewardModel The reward model whose state-action rewards to modify.
                  * @param modifications A mapping from state-action pairs to the their new reward values.
                  */
-                //void modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const;
+                void modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const;
                 
                 virtual void reduceToStateBasedRewards() override;
                 

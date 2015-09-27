@@ -47,7 +47,7 @@ namespace storm {
                 return indices[state+1] - indices[state];
             }
             
-            /*template<typename ValueType, typename RewardModelType>
+            template<typename ValueType, typename RewardModelType>
             void NondeterministicModel<ValueType, RewardModelType>::modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const {
                 STORM_LOG_THROW(rewardModel.hasStateActionRewards(), storm::exceptions::InvalidOperationException, "Cannot modify state-action rewards, because the reward model does not have state-action rewards.");
                 STORM_LOG_THROW(this->hasChoiceLabeling(), storm::exceptions::InvalidOperationException, "Cannot modify state-action rewards, because the model does not have an action labeling.");
@@ -61,7 +61,7 @@ namespace storm {
                         }
                     }
                 }
-            }*/
+            }
             
             template<typename ValueType, typename RewardModelType>
             void NondeterministicModel<ValueType, RewardModelType>::reduceToStateBasedRewards() {
