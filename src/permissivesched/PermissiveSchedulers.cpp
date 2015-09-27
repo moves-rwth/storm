@@ -45,13 +45,13 @@ namespace storm {
              goalstates = storm::utility::graph::performProb1A(*mdp, backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
              storm::storage::BitVector sinkstates = storm::utility::graph::performProb0A(*mdp,backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
 
-            SmtPermissiveSchedulerComputation comp(mdp, goalstates, sinkstates)
+            /*SmtPermissiveSchedulerComputation comp(mdp, goalstates, sinkstates)
 
             if(comp.foundSolution()) {
                 return boost::optional<SubMDPPermissiveScheduler>(comp.getScheduler());
             } else {
                 return boost::optional<SubMDPPermissiveScheduler>();
-            }
+            }*/
          }
     }
 }
