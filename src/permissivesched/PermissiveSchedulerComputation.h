@@ -10,16 +10,18 @@
 
 namespace storm {
     namespace ps {
+
+        template<typename RM>
         class PermissiveSchedulerComputation {
         protected:
-            std::shared_ptr<storm::models::sparse::Mdp<double>> mdp;
+            storm::models::sparse::Mdp<double, RM> const& mdp;
             storm::storage::BitVector const& mGoals;
             storm::storage::BitVector const& mSinks;
             PermissiveSchedulerPenalties mPenalties;
             
         public:
             
-            PermissiveSchedulerComputation(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::storage::BitVector const& goalstates, storm::storage::BitVector const& sinkstates)
+            PermissiveSchedulerComputation(storm::models::sparse::Mdp<double, RM> const& mdp, storm::storage::BitVector const& goalstates, storm::storage::BitVector const& sinkstates)
                 : mdp(mdp), mGoals(goalstates), mSinks(sinkstates)
             {
                 
@@ -42,7 +44,7 @@ namespace storm {
             
             virtual bool foundSolution() const = 0;
             
-            virtual SubMDPPermissiveScheduler getScheduler() const = 0;
+            virtual SubMDPPermissiveScheduler<RM> getScheduler() const = 0;
             
        
         };

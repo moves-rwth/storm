@@ -30,14 +30,14 @@ TEST(MilpPermissiveSchedulerTest, DieSelection) {
     
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program, options)->as<storm::models::sparse::Mdp<double>>();
     
-    boost::optional<storm::ps::SubMDPPermissiveScheduler> perms = storm::ps::computePermissiveSchedulerViaMILP(mdp, formula02);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula02);
     EXPECT_NE(perms, boost::none);
-    boost::optional<storm::ps::SubMDPPermissiveScheduler> perms2 = storm::ps::computePermissiveSchedulerViaMILP(mdp, formula001);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms2 = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula001);
     EXPECT_EQ(perms2, boost::none);
 
-    boost::optional<storm::ps::SubMDPPermissiveScheduler> perms3 = storm::ps::computePermissiveSchedulerViaMILP(mdp, formula02b);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms3 = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula02b);
     EXPECT_EQ(perms3, boost::none);
-    boost::optional<storm::ps::SubMDPPermissiveScheduler> perms4 = storm::ps::computePermissiveSchedulerViaMILP(mdp, formula001b);
+    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms4 = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula001b);
     EXPECT_NE(perms4, boost::none);
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker0(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));

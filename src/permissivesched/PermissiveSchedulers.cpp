@@ -1,5 +1,7 @@
+
 #include "PermissiveSchedulers.h"
-#include "../storage/BitVector.h"
+
+#include "src/models/sparse/StandardRewardModel.h"
 #include "../utility/solver.h"
 #include "../utility/graph.h"
 #include "../modelchecker/propositional/SparsePropositionalModelChecker.h"
@@ -8,37 +10,39 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/utility/macros.h"
 
-
 namespace storm {
     namespace ps {
-        
-         boost::optional<SubMDPPermissiveScheduler> computePermissiveSchedulerViaMILP(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
-            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double>> propMC(*mdp);
+
+        template<typename RM>
+        boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP(storm::models::sparse::Mdp<double, RM> const& mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
+            storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, RM>> propMC(mdp);
             assert(safeProp.getSubformula().isEventuallyFormula());
-            auto backwardTransitions = mdp->getBackwardTransitions();
+            auto backwardTransitions = mdp.getBackwardTransitions();
             storm::storage::BitVector goalstates = propMC.check(safeProp.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
-            goalstates = storm::utility::graph::performProb1A(*mdp, backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
-            storm::storage::BitVector sinkstates = storm::utility::graph::performProb0A(*mdp,backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
+            goalstates = storm::utility::graph::performProb1A(mdp, backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
+            storm::storage::BitVector sinkstates = storm::utility::graph::performProb0A(mdp,backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
 
             auto solver = storm::utility::solver::getLpSolver("Gurobi", storm::solver::LpSolverTypeSelection::Gurobi);
-            MilpPermissiveSchedulerComputation comp(*solver, mdp, goalstates, sinkstates);
+            MilpPermissiveSchedulerComputation<storm::models::sparse::StandardRewardModel<double>> comp(*solver, mdp, goalstates, sinkstates);
             STORM_LOG_THROW(!storm::logic::isStrict(safeProp.getComparisonType()), storm::exceptions::NotImplementedException, "Strict bounds are not supported");
             comp.calculatePermissiveScheduler(storm::logic::isLowerBound(safeProp.getComparisonType()), safeProp.getBound());
             //comp.dumpLpToFile("milpdump.lp");
             std::cout << "Found Solution: " << (comp.foundSolution() ? "yes" : "no") << std::endl;
             if(comp.foundSolution()) {
-                return boost::optional<SubMDPPermissiveScheduler>(comp.getScheduler());
+                return boost::optional<SubMDPPermissiveScheduler<RM>>(comp.getScheduler());
             } else {
-                return boost::optional<SubMDPPermissiveScheduler>();
+                return boost::optional<SubMDPPermissiveScheduler<RM>>();
             }
         }
-         
-         boost::optional<SubMDPPermissiveScheduler> computePermissiveSchedulerViaMC(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
+
+        template<typename RM>
+         boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMC(std::shared_ptr<storm::models::sparse::Mdp<double, RM>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
              
          }
-         
-         boost::optional<SubMDPPermissiveScheduler> computerPermissiveSchedulerViaSMT(std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
-             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double>> propMC(*mdp);
+
+        template<typename RM>
+         boost::optional<SubMDPPermissiveScheduler<RM>> computerPermissiveSchedulerViaSMT(std::shared_ptr<storm::models::sparse::Mdp<double, RM>> mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
+             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, RM>> propMC(*mdp);
              assert(safeProp.getSubformula().isEventuallyFormula());
              auto backwardTransitions = mdp->getBackwardTransitions();
              storm::storage::BitVector goalstates = propMC.check(safeProp.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
@@ -53,5 +57,8 @@ namespace storm {
                 return boost::optional<SubMDPPermissiveScheduler>();
             }*/
          }
+
+        template boost::optional<SubMDPPermissiveScheduler<>> computePermissiveSchedulerViaMILP(storm::models::sparse::Mdp<double> const& mdp, storm::logic::ProbabilityOperatorFormula const& safeProp);
+
     }
 }
