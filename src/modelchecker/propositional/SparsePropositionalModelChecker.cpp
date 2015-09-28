@@ -53,6 +53,8 @@ namespace storm {
         template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
         
 #ifdef STORM_HAVE_CARL
+        template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
+
         template class SparsePropositionalModelChecker<storm::models::sparse::Model<storm::RationalFunction>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>>;
