@@ -74,6 +74,8 @@ namespace storm {
                  * @return The state reward vector.
                  */
                 std::vector<ValueType>& getStateRewardVector();
+
+                ValueType const& getStateReward(uint_fast64_t state) const;
                 
                 /*!
                  * Retrieves an optional value that contains the state reward vector if there is one.
@@ -104,7 +106,12 @@ namespace storm {
                  * @return The state-action reward vector.
                  */
                 std::vector<ValueType>& getStateActionRewardVector();
-                
+
+                /*!
+                 * Retrieves the state-action reward for the given choice.
+                 */
+                ValueType const& getStateActionReward(uint_fast64_t choiceIndex) const;
+
                 /*!
                  * Retrieves an optional value that contains the state-action reward vector if there is one.
                  *

@@ -37,17 +37,26 @@ namespace storm {
             
             template<typename ValueType>
             std::vector<ValueType> const& StandardRewardModel<ValueType>::getStateRewardVector() const {
+                assert(this->hasStateRewards());
                 return this->optionalStateRewardVector.get();
             }
 
             template<typename ValueType>
             std::vector<ValueType>& StandardRewardModel<ValueType>::getStateRewardVector() {
+                assert(this->hasStateRewards());
                 return this->optionalStateRewardVector.get();
             }
 
             template<typename ValueType>
             boost::optional<std::vector<ValueType>> const& StandardRewardModel<ValueType>::getOptionalStateRewardVector() const {
                 return this->optionalStateRewardVector;
+            }
+
+            template<typename ValueType>
+            ValueType const& StandardRewardModel<ValueType>::getStateReward(uint_fast64_t state) const {
+                assert(this->hasStateRewards());
+                assert(state < this->optionalStateRewardVector.get().size());
+                return this->optionalStateRewardVector.get()[state];
             }
             
             template<typename ValueType>
@@ -57,12 +66,21 @@ namespace storm {
             
             template<typename ValueType>
             std::vector<ValueType> const& StandardRewardModel<ValueType>::getStateActionRewardVector() const {
+                assert(this->hasStateActionRewards());
                 return this->optionalStateActionRewardVector.get();
             }
             
             template<typename ValueType>
             std::vector<ValueType>& StandardRewardModel<ValueType>::getStateActionRewardVector() {
+                assert(this->hasStateActionRewards());
                 return this->optionalStateActionRewardVector.get();
+            }
+
+            template<typename ValueType>
+            ValueType const& StandardRewardModel<ValueType>::getStateActionReward(uint_fast64_t choiceIndex) const {
+                assert(this->hasStateActionRewards());
+                assert(choiceIndex < this->optionalStateActionRewardVector.get().size());
+                return this->optionalStateActionRewardVector.get()[choiceIndex];
             }
             
             template<typename ValueType>
