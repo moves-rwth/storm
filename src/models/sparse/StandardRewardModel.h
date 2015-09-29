@@ -76,7 +76,9 @@ namespace storm {
                 std::vector<ValueType>& getStateRewardVector();
 
                 ValueType const& getStateReward(uint_fast64_t state) const;
-                
+
+                template<typename T>
+                void setStateReward(uint_fast64_t state, T const& newReward);
                 /*!
                  * Retrieves an optional value that contains the state reward vector if there is one.
                  *
