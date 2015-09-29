@@ -90,7 +90,7 @@ namespace storm {
             }
 
             template<typename ValueType, typename RewardModelType>
-            RewardModelType& Model<ValueType, RewardModelType>::getRewardModel(std::string const& rewardModelName) {
+            RewardModelType& Model<ValueType, RewardModelType>::rewardModel(std::string const& rewardModelName) {
                 assert(this->hasRewardModel(rewardModelName));
                 return this->rewardModels.find(rewardModelName)->second;
             }

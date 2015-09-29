@@ -113,6 +113,12 @@ namespace storm {
                 ValueType const& getStateActionReward(uint_fast64_t choiceIndex) const;
 
                 /*!
+                 * Sets the state-action reward for the given choice
+                 */
+                template<typename T>
+                void setStateActionReward(uint_fast64_t choiceIndex, T const& newValue);
+
+                /*!
                  * Retrieves an optional value that contains the state-action reward vector if there is one.
                  *
                  * @return The state-action reward vector if there is one.

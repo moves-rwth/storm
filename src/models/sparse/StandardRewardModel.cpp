@@ -82,7 +82,15 @@ namespace storm {
                 assert(choiceIndex < this->optionalStateActionRewardVector.get().size());
                 return this->optionalStateActionRewardVector.get()[choiceIndex];
             }
-            
+
+            template<typename ValueType>
+            template<typename T>
+            void StandardRewardModel<ValueType>::setStateActionReward(uint_fast64_t choiceIndex, T const &newValue) {
+                assert(this->hasStateActionRewards());
+                assert(choiceIndex < this->optionalStateActionRewardVector.get().size());
+                this->optionalStateActionRewardVector.get()[choiceIndex] = newValue;
+            }
+
             template<typename ValueType>
             boost::optional<std::vector<ValueType>> const& StandardRewardModel<ValueType>::getOptionalStateActionRewardVector() const {
                 return this->optionalStateActionRewardVector;
@@ -258,6 +266,7 @@ namespace storm {
             template std::vector<double> StandardRewardModel<double>::getTotalRewardVector(uint_fast64_t numberOfRows, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& filter) const;
             template std::vector<double> StandardRewardModel<double>::getTotalRewardVector(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& weights) const;
             template void StandardRewardModel<double>::reduceToStateBasedRewards(storm::storage::SparseMatrix<double> const& transitionMatrix, bool reduceToStateRewards);
+            template void StandardRewardModel<double>::setStateActionReward(uint_fast64_t choiceIndex, double const & newValue);
             template class StandardRewardModel<double>;
             template std::ostream& operator<<<double>(std::ostream& out, StandardRewardModel<double> const& rewardModel);
             
@@ -265,6 +274,7 @@ namespace storm {
             template std::vector<float> StandardRewardModel<float>::getTotalRewardVector(storm::storage::SparseMatrix<float> const& transitionMatrix) const;
             template std::vector<float> StandardRewardModel<float>::getTotalRewardVector(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<float> const& weights) const;
             template void StandardRewardModel<float>::reduceToStateBasedRewards(storm::storage::SparseMatrix<float> const& transitionMatrix, bool reduceToStateRewards);
+            template void StandardRewardModel<float>::setStateActionReward(uint_fast64_t choiceIndex, float const & newValue);
             template class StandardRewardModel<float>;
             template std::ostream& operator<<<float>(std::ostream& out, StandardRewardModel<float> const& rewardModel);
             
@@ -273,12 +283,15 @@ namespace storm {
             template std::vector<storm::RationalFunction> StandardRewardModel<storm::RationalFunction>::getTotalRewardVector(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix) const;
             template std::vector<storm::RationalFunction> StandardRewardModel<storm::RationalFunction>::getTotalRewardVector(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, std::vector<storm::RationalFunction> const& weights) const;
             template void StandardRewardModel<storm::RationalFunction>::reduceToStateBasedRewards(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, bool reduceToStateRewards);
+            template void StandardRewardModel<storm::RationalFunction>::setStateActionReward(uint_fast64_t choiceIndex, storm::RationalFunction const & newValue);
             template class StandardRewardModel<storm::RationalFunction>;
             template std::ostream& operator<<<storm::RationalFunction>(std::ostream& out, StandardRewardModel<storm::RationalFunction> const& rewardModel);
             
             template std::vector<storm::Interval> StandardRewardModel<storm::Interval>::getTotalRewardVector(uint_fast64_t numberOfRows, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& filter) const;
             template std::vector<storm::Interval> StandardRewardModel<storm::Interval>::getTotalRewardVector(storm::storage::SparseMatrix<double> const& transitionMatrix) const;
             template std::vector<storm::Interval> StandardRewardModel<storm::Interval>::getTotalRewardVector(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& weights) const;
+            template void StandardRewardModel<storm::Interval>::setStateActionReward(uint_fast64_t choiceIndex, double const & newValue);
+            template void StandardRewardModel<storm::Interval>::setStateActionReward(uint_fast64_t choiceIndex, storm::Interval const & newValue);
             template void StandardRewardModel<storm::Interval>::reduceToStateBasedRewards(storm::storage::SparseMatrix<double> const& transitionMatrix, bool reduceToStateRewards);
             template class StandardRewardModel<storm::Interval>;
             template std::ostream& operator<<<storm::Interval>(std::ostream& out, StandardRewardModel<storm::Interval> const& rewardModel);

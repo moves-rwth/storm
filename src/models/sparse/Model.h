@@ -268,7 +268,7 @@ namespace storm {
                 
             protected:
 
-                RewardModelType & getRewardModel(std::string const& rewardModelName);
+                RewardModelType & rewardModel(std::string const& rewardModelName);
                 /*!
                  * Sets the transition matrix of the model.
                  *
