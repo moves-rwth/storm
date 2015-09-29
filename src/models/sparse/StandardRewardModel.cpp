@@ -67,6 +67,20 @@ namespace storm {
                 this->optionalStateRewardVector.get()[state] = newReward;
             }
 
+//            template<typename ValueType>
+//            ValueType StandardRewardModel<ValueType>::maximalStateReward(uint_fast64_t state) const {
+//                assert(this->hasStateRewards());
+//                assert(!this->optionalStateRewardVector.get().empty());
+//                ValueType max = *(this->optionalStateRewardVector.get().begin());
+//                for(auto const& entry : this->optionalStateRewardVector.get()) {
+//                    if(entry > max) {
+//                        max = entry;
+//                    }
+//                }
+//                return max;
+//            }
+
+
             template<typename ValueType>
             bool StandardRewardModel<ValueType>::hasStateActionRewards() const {
                 return static_cast<bool>(this->optionalStateActionRewardVector);
@@ -98,6 +112,19 @@ namespace storm {
                 assert(choiceIndex < this->optionalStateActionRewardVector.get().size());
                 this->optionalStateActionRewardVector.get()[choiceIndex] = newValue;
             }
+
+//            template<typename ValueType>
+//            ValueType  StandardRewardModel<ValueType>::maximalStateActionReward() const {
+//                assert(this->hasStateActionRewards());
+//                assert(!this->optionalStateActionRewardVector.get().empty());
+//                ValueType  max = *(this->optionalStateActionRewardVector.get().begin());
+//                for(auto const& entry : this->optionalStateActionRewardVector.get()) {
+//                    if(entry > max) {
+//                        max = entry;
+//                    }
+//                }
+//                return max;
+//            }
 
             template<typename ValueType>
             boost::optional<std::vector<ValueType>> const& StandardRewardModel<ValueType>::getOptionalStateActionRewardVector() const {

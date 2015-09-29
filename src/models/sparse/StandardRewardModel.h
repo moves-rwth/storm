@@ -79,6 +79,10 @@ namespace storm {
 
                 template<typename T>
                 void setStateReward(uint_fast64_t state, T const& newReward);
+
+                //template<typename T=ValueType, EnableIf<hasTotalOrder<T>>>
+                //ValueType maximalStateReward(uint_fast64_t state) const;
+
                 /*!
                  * Retrieves an optional value that contains the state reward vector if there is one.
                  *
@@ -119,6 +123,8 @@ namespace storm {
                  */
                 template<typename T>
                 void setStateActionReward(uint_fast64_t choiceIndex, T const& newValue);
+
+                //ValueType maximalStateActionReward() const;
 
                 /*!
                  * Retrieves an optional value that contains the state-action reward vector if there is one.
