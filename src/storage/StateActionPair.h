@@ -27,7 +27,10 @@ namespace storm {
             friend bool operator!=(StateActionPair const& p1, StateActionPair const& p2) {
                 return p1.stateActionPair != p2.stateActionPair;
             }
-            
+
+            friend bool operator<(StateActionPair const& p1, StateActionPair const& p2) {
+                return p1.getState() < p2.getState() || (p1.getState() == p2.getState() && p1.getAction() < p2.getAction());
+            }
             
         };
     }
