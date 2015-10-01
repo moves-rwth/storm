@@ -192,7 +192,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::models::sparse::StandardRewardModel<storm::Interval> const& intervalRewardModel, bool lowerBoundOfIntervals, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 // Only compute the result if the reward model is not empty.
                 STORM_LOG_THROW(!intervalRewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 return computeReachabilityRewardsHelper(dir, transitionMatrix, backwardTransitions, \
@@ -201,7 +201,7 @@ namespace storm {
                                                             result.reserve(rowCount);
                                                             std::vector<storm::Interval> subIntervalVector = intervalRewardModel.getTotalRewardVector(rowCount, transitionMatrix, maybeStates);
                                                             for (auto const& interval : subIntervalVector) {
-                                                                result.push_back(dir == OptimizationDirection::Minimize ? interval.lower() : interval.upper());
+                                                                result.push_back(lowerBoundOfIntervals ? interval.lower() : interval.upper());
                                                             }
                                                             return result;
                                                         }, \
