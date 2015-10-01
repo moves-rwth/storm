@@ -126,6 +126,7 @@ namespace storm {
 //                return max;
 //            }
 
+
             template<typename ValueType>
             boost::optional<std::vector<ValueType>> const& StandardRewardModel<ValueType>::getOptionalStateActionRewardVector() const {
                 return this->optionalStateActionRewardVector;
@@ -267,7 +268,21 @@ namespace storm {
             bool StandardRewardModel<ValueType>::empty() const {
                 return !(static_cast<bool>(this->optionalStateRewardVector) || static_cast<bool>(this->optionalStateActionRewardVector) || static_cast<bool>(this->optionalTransitionRewardMatrix));
             }
-            
+
+
+
+            template<typename ValueType>
+            bool StandardRewardModel<ValueType>::isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const {
+                if(hasStateRewards()) {
+                    if(optionalStateRewardVector.get().size() != nrStates) return false;
+                }
+                if(hasStateActionRewards()) {
+                    if(optionalStateActionRewardVector.get().size() != nrChoices) return false;
+                }
+                return true;
+            }
+
+
             template<typename ValueType>
             std::size_t StandardRewardModel<ValueType>::getSizeInBytes() const {
                 std::size_t result = 0;

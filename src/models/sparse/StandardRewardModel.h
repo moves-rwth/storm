@@ -59,6 +59,7 @@ namespace storm {
                  */
                 bool hasOnlyStateRewards() const;
 
+
                 /*!
                  * Retrieves the state rewards of the reward model. Note that it is illegal to call this function if the
                  * reward model does not have state rewards.
@@ -252,7 +253,19 @@ namespace storm {
                  * @return True iff the reward model is empty.
                  */
                 bool empty() const;
-                
+
+                /*!
+                 * Checks whether the reward model is compatible with key model characteristics.
+                 *
+                 * In detail, the method checks
+                 * - if the state-rewards exist, whether the given number of states corresponds to the size of the vector.
+                 * - if the state-action-rewards exist, whether the given number of choices corresponds to the size of the vector.
+                 *
+                 * @param nrStates The number of states in the model
+                 * @param nrChoices The number of choices in the model
+                 */
+                bool isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const;
+
                 /*!
                  * Retrieves (an approximation of) the size of the model in bytes.
                  *
