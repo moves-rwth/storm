@@ -93,8 +93,8 @@ namespace storm {
 
         // Customize and perform model-building.
         if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Sparse) {
-            typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
-            options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(formulas);
+            typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options options;
+            options = typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constants);
 
             // Generate command labels if we are going to build a counterexample later.

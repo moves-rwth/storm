@@ -9,6 +9,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/container/flat_set.hpp>
 #include <boost/container/flat_map.hpp>
+#include <src/models/sparse/StandardRewardModel.h>
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/SimpleValuation.h"
@@ -35,7 +36,7 @@ namespace storm {
         // Forward-declare classes.
         template <typename ValueType> struct RewardModelBuilder;
         
-        template<typename ValueType, typename IndexType = uint32_t>
+        template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename IndexType = uint32_t>
         class ExplicitPrismModelBuilder {
         public:
             typedef storm::storage::BitVector CompressedState;
@@ -118,7 +119,7 @@ namespace storm {
                 storm::models::sparse::StateLabeling stateLabeling;
                 
                 // The reward models associated with the model.
-                std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
+                std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<typename RewardModelType::ValueType>> rewardModels;
                 
                 // A vector that stores a labeling for each choice.
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
@@ -212,7 +213,7 @@ namespace storm {
              * @param rewardModel The reward model that is to be built.
              * @return The explicit model that was given by the probabilistic program.
              */
-            static std::shared_ptr<storm::models::sparse::Model<ValueType>> translateProgram(storm::prism::Program program, Options const& options = Options());
+            static std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> translateProgram(storm::prism::Program program, Options const& options = Options());
             
         private:
             static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
@@ -289,7 +290,7 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, StateInformation& stateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression);
+            static boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, StateInformation& stateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression);
             
             /*!
              * Explores the state space of the given program and returns the components of the model as a result.
