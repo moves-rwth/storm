@@ -102,7 +102,7 @@ namespace storm {
                 options.buildCommandLabels = true;
             }
 
-            result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
+            result = storm::builder::ExplicitPrismModelBuilder<ValueType>().translateProgram(program, options);
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(formulas);
