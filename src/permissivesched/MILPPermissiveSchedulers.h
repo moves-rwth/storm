@@ -42,8 +42,9 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                     
             void calculatePermissiveScheduler(bool lowerBound, double boundary) override {
                 createMILP(lowerBound, boundary, this->mPenalties);
+                //STORM_LOG_DEBUG("Calling optimizer");
                 solver.optimize();
-                
+                //STORM_LOG_DEBUG("Done optimizing.")
                 mCalledOptimizer = true;
             }
             
