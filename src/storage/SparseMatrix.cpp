@@ -524,7 +524,9 @@ namespace storm {
                 for (std::vector<index_type>::iterator it = fakeRowGroupIndices.begin(); it != fakeRowGroupIndices.end(); ++it, ++i) {
                     *it = i;
                 }
-                return getSubmatrix(rowConstraint, columnConstraint, fakeRowGroupIndices, insertDiagonalElements);
+                auto res = getSubmatrix(rowConstraint, columnConstraint, fakeRowGroupIndices, insertDiagonalElements);
+                res.rowGroupIndices = this->rowGroupIndices;
+                return res;
             }
         }
         
@@ -634,7 +636,13 @@ namespace storm {
         template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::restrictRows(storm::storage::BitVector const& rowsToKeep) const {
             // For now, we use the expensive call to submatrix.
+            assert(rowsToKeep.size() == getRowCount());
+            assert(rowsToKeep.getNumberOfSetBits() >= getRowGroupCount());
             SparseMatrix<ValueType> res(getSubmatrix(false, rowsToKeep, storm::storage::BitVector(getColumnCount(), true), false));
+            assert(res.getRowCount() == rowsToKeep.getNumberOfSetBits());
+            assert(res.getColumnCount() == getColumnCount());
+            std::cout << getRowGroupCount() << std::endl;
+            std::cout << res.getRowGroupCount() << std::endl;
             assert(getRowGroupCount() == res.getRowGroupCount());
             return res;
         }
