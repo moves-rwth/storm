@@ -263,3 +263,14 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     EXPECT_EQ(993ul, statesWithProbability01.first.getNumberOfSetBits());
     EXPECT_EQ(16ul, statesWithProbability01.second.getNumberOfSetBits());
 }
+
+TEST(GraphTest, kshortest) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+
+    ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+
+    std::cout << model->getNumberOfStates() << std::endl;
+
+    EXPECT_TRUE(false);
+}
