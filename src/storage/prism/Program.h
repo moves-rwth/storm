@@ -443,6 +443,11 @@ namespace storm {
              * @return The manager responsible for the expressions of this program.
              */
             storm::expressions::ExpressionManager& getManager();
+
+            /*!
+             *
+             */
+            std::unordered_map<uint_fast64_t, std::string> buildCommandIndexToActionNameMap() const;
             
         private:
             /*!

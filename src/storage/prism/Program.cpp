@@ -1066,6 +1066,16 @@ namespace storm {
             storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
             return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), false, this->getInitialConstruct(), this->getLabels(), this->getFilename(), 0, true);
         }
+
+        std::unordered_map<uint_fast64_t, std::string> Program::buildCommandIndexToActionNameMap() const {
+            std::unordered_map<uint_fast64_t, std::string> res;
+            for(auto const& m : this->modules) {
+                for(auto const& c : m.getCommands()) {
+                    res.emplace(c.getGlobalIndex(), c.getActionName());
+                }
+            }
+            return res;
+        }
         
         Command Program::synchronizeCommands(uint_fast64_t newCommandIndex, uint_fast64_t actionIndex, uint_fast64_t firstUpdateIndex, std::string const& actionName, std::vector<std::reference_wrapper<Command const>> const& commands) const {
             // To construct the synchronous product of the commands, we need to store a list of its updates.
