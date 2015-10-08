@@ -211,13 +211,16 @@ namespace storm {
             
             template<typename ValueType>
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeReachabilityRewardsHelper(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                
+                std::vector<uint_fast64_t> nondeterminsticChoiceIndices = transitionMatrix.getRowGroupIndices();
+                
                 // Determine which states have a reward of infinity by definition.
                 storm::storage::BitVector infinityStates;
                 storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
                 if (dir == OptimizationDirection::Minimize) {
-                    infinityStates = storm::utility::graph::performProb1E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, targetStates);
+                    infinityStates = storm::utility::graph::performProb1E(transitionMatrix, nondeterminsticChoiceIndices, backwardTransitions, trueStates, targetStates);
                 } else {
-                    infinityStates = storm::utility::graph::performProb1A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, trueStates, targetStates);
+                    infinityStates = storm::utility::graph::performProb1A(transitionMatrix, nondeterminsticChoiceIndices, backwardTransitions, trueStates, targetStates);
                 }
                 infinityStates.complement();
                 storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
@@ -244,6 +247,21 @@ namespace storm {
                         
                         // Prepare the right-hand side of the equation system.
                         std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
+                        
+                        // This also means that -- when minimizing -- we have to set the entries to infinity that have
+                        // any successor that is an "infinity state". This prevents the action from "being taken" and
+                        // forces the choice that leads to a reward less than infinity.
+                        uint_fast64_t currentRow = 0;
+                        for (auto state : maybeStates) {
+                            for (uint_fast64_t row = nondeterminsticChoiceIndices[state]; row < nondeterminsticChoiceIndices[state + 1]; ++row, ++currentRow) {
+                                for (auto const& element : transitionMatrix.getRow(row)) {
+                                    if (infinityStates.get(element.getColumn())) {
+                                        b[currentRow] = storm::utility::infinity<ValueType>();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                         
                         // Create vector for results for maybe states.
                         std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
