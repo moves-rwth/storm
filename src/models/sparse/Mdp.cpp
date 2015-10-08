@@ -2,6 +2,7 @@
 
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/constants.h"
+#include "src/utility/vector.h"
 #include "src/adapters/CarlAdapter.h"
 
 #include "src/models/sparse/StandardRewardModel.h"
@@ -81,7 +82,13 @@ namespace storm {
                 for (auto const& rewardModel : this->getRewardModels()) {
                     newRewardModels.emplace(rewardModel.first, rewardModel.second.restrictActions(enabledChoices));
                 }
-                return Mdp<ValueType, RewardModelType>(restrictedTransitions, this->getStateLabeling(), newRewardModels, this->getOptionalChoiceLabeling());
+                if(this->hasChoiceLabeling()) {
+                    return Mdp<ValueType, RewardModelType>(restrictedTransitions, this->getStateLabeling(), newRewardModels, boost::optional<std::vector<LabelSet>>(storm::utility::vector::filterVector(this->getChoiceLabeling(), enabledChoices)));
+                } else {
+                    return Mdp<ValueType, RewardModelType>(restrictedTransitions, this->getStateLabeling(), newRewardModels, boost::optional<std::vector<LabelSet>>());
+                }
+
+
             }
 
             template<typename ValueType, typename RewardModelType>
