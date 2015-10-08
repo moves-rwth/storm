@@ -654,6 +654,17 @@ namespace storm {
 
 				return resultVector;
 			}
+
+            template<typename Type>
+            std::vector<Type> filterVector(std::vector<Type> const& in, storm::storage::BitVector const& filter) {
+                std::vector<Type> result;
+                result.reserve(filter.getNumberOfSetBits());
+                for(auto index : filter) {
+                    result.push_back(in[index]);
+                }
+                assert(result.size() == filter.getNumberOfSetBits());
+                return result;
+            }
         } // namespace vector
     } // namespace utility
 } // namespace storm
