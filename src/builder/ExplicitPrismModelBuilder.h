@@ -16,6 +16,7 @@
 #include "src/storage/expressions/ExpressionEvaluator.h"
 #include "src/storage/BitVectorHashMap.h"
 #include "src/logic/Formulas.h"
+#include "src/models/sparse/StateAnnotation.h"
 #include "src/models/sparse/Model.h"
 #include "src/models/sparse/StateLabeling.h"
 #include "src/storage/SparseMatrix.h"
@@ -59,7 +60,7 @@ namespace storm {
             };
             
             // A structure holding information about the reachable state space that can be retrieved from the outside.
-            struct StateInformation {
+            struct StateInformation : public storm::models::sparse::StateAnnotation {
                 /*!
                  * Constructs a state information object for the given number of states.
                  */
@@ -67,6 +68,12 @@ namespace storm {
                 
                 // A mapping from state indices to their variable valuations.
                 std::vector<storm::expressions::SimpleValuation> valuations;
+
+                std::string stateInfo(uint_fast64_t state) const override {
+                    return valuations[state].toString();
+                }
+
+
             };
             
             // A structure storing information about the used variables of the program.
@@ -195,7 +202,7 @@ namespace storm {
                 bool buildAllRewardModels;
                 
                 // A flag that indicates whether or not to store the state information after successfully building the
-                // model. If it is to be preserved, it can be retrieved via the appropriate methods after a successfull
+                // model. If it is to be preserved, it can be retrieved via the appropriate methods after a successful
                 // call to <code>translateProgram</code>.
                 bool buildStateInformation;
                 
