@@ -9,6 +9,7 @@ file(GLOB_RECURSE STORM_HEADERS_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
+file(GLOB_RECURSE STORM_GSPN_FILE ${PROJECT_SOURCE_DIR}/src/storm-gspn.cpp)
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
 file(GLOB_RECURSE STORM_CLI_FILES ${PROJECT_SOURCE_DIR}/src/cli/*.h ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
@@ -28,6 +29,7 @@ file(GLOB STORM_MODELS_FILES ${PROJECT_SOURCE_DIR}/src/models/*.h ${PROJECT_SOUR
 file(GLOB_RECURSE STORM_MODELS_SPARSE_FILES ${PROJECT_SOURCE_DIR}/src/models/sparse/*.h ${PROJECT_SOURCE_DIR}/src/models/sparse/*.cpp)
 file(GLOB_RECURSE STORM_MODELS_SYMBOLIC_FILES ${PROJECT_SOURCE_DIR}/src/models/symbolic/*.h ${PROJECT_SOURCE_DIR}/src/models/symbolic/*.cpp)
 file(GLOB STORM_PARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/*.h ${PROJECT_SOURCE_DIR}/src/parser/*.cpp)
+file(GLOB_RECURSE STORM_PARSER_GSPNPARSER_FILIES ${PROJECT_SOURCE_DIR}/src/parser/gsnpparser/*.h ${PROJECT_SOURCE_DIR}/src/parser/gspnparser/*.cpp)
 file(GLOB_RECURSE STORM_PARSER_PRISMPARSER_FILES ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.h ${PROJECT_SOURCE_DIR}/src/parser/prismparser/*.cpp)
 file(GLOB STORM_SETTINGS_FILES ${PROJECT_SOURCE_DIR}/src/settings/*.h ${PROJECT_SOURCE_DIR}/src/settings/*.cpp)
 file(GLOB STORM_SETTINGS_MODULES_FILES ${PROJECT_SOURCE_DIR}/src/settings/modules/*.h ${PROJECT_SOURCE_DIR}/src/settings/modules/*.cpp)
@@ -35,6 +37,7 @@ file(GLOB_RECURSE STORM_SOLVER_FILES ${PROJECT_SOURCE_DIR}/src/solver/*.h ${PROJ
 file(GLOB STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_DD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.h ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_GSPN_FILES ${PROJECT_SOURCE_DIR}/src/storage/gspn/*.h ${PROJECT_SOURCE_DIR}/src/storage/gspn/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_PRISM_FILES ${PROJECT_SOURCE_DIR}/src/storage/prism/*.h ${PROJECT_SOURCE_DIR}/src/storage/prism/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_SPARSE_FILES ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.h ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.cpp)
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
@@ -49,6 +52,7 @@ set(STORM_LIB_HEADERS ${STORM_HEADERS})
 list(REMOVE_ITEM STORM_LIB_HEADERS ${STORM_HEADERS_CLI})
 set(STORM_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_MAIN_FILE})
 set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
+
 
 # Group the headers and sources
 source_group(main FILES ${STORM_MAIN_FILE})
@@ -73,6 +77,7 @@ source_group(models\\sparse FILES ${STORM_MODELS_SPARSE_FILES})
 source_group(models\\symbolic FILES ${STORM_MODELS_SYMBOLIC_FILES})
 source_group(parser FILES ${STORM_PARSER_FILES})
 source_group(parser\\prismparser FILES ${STORM_PARSER_PRISMPARSER_FILES})
+source_group(parser\\gspnparser FILES ${STORM_PARSER_GSPNPARSER_FILES})
 source_group(settings FILES ${STORM_SETTINGS_FILES})
 source_group(settings\\modules FILES ${STORM_SETTINGS_MODULES_FILES})
 source_group(solver FILES ${STORM_SOLVER_FILES})
@@ -81,6 +86,7 @@ source_group(storage\\dd FILES ${STORM_STORAGE_DD_FILES})
 source_group(storage\\expressions FILES ${STORM_STORAGE_EXPRESSIONS_FILES})
 source_group(storage\\prism FILES ${STORM_STORAGE_PRISM_FILES})
 source_group(storage\\sparse FILES ${STORM_STORAGE_SPARSE_FILES})
+source_group(storage\\gspn FILES {STORM_STORAGE_GSPN_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 
 # Add custom additional include or link directories
@@ -105,7 +111,8 @@ add_dependencies(storm xercesc)
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
-
+add_executable(storm-gspn ${STORM_GSPN_FILE})
+target_link_libraries(storm-gspn storm)
 
 target_link_libraries(storm ${STORM_LINK_LIBRARIES})
 

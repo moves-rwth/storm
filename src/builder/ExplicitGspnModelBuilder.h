@@ -1,8 +1,11 @@
-//
-// Created by Sebastian Junges on 08/10/15.
-//
-
 #ifndef STORM_EXPLICITGSPNMODELBUILDER_H
 #define STORM_EXPLICITGSPNMODELBUILDER_H
+
+
+namespace storm {
+    namespace builder {
+        // Takes a GSPN, builds an MA.
+    }
+}
 
 #endif //STORM_EXPLICITGSPNMODELBUILDER_H

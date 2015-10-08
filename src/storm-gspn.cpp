@@ -1,3 +1,7 @@
+#include "src/exceptions/BaseException.h"
+#include "src/utility/macros.h"
+#include "src/utility/initialize.h"
+
 int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
