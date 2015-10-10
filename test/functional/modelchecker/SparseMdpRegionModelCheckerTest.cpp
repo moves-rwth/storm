@@ -34,7 +34,7 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Mdp, model->getType());
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = model->template as<storm::models::sparse::Mdp<storm::RationalFunction>>();
     storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double> modelchecker(*mdp);

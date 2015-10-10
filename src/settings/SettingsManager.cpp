@@ -141,7 +141,7 @@ namespace storm {
             }
             
             // Finally, check whether all modules are okay with the current settings.
-            this->checkAllModules();
+            this->finalizeAllModules();
         }
         
         void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
@@ -166,6 +166,8 @@ namespace storm {
                     }
                 }
             }
+            // Finally, check whether all modules are okay with the current settings.
+            this->finalizeAllModules();
         }
         
         void SettingsManager::printHelp(std::string const& hint) const {
@@ -383,9 +385,11 @@ namespace storm {
             }
         }
         
-        void SettingsManager::checkAllModules() const {
+        void SettingsManager::finalizeAllModules() {
             for (auto const& nameModulePair : this->modules) {
+                nameModulePair.second->finalize();
                 nameModulePair.second->check();
+
             }
         }
         

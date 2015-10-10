@@ -11,7 +11,8 @@ namespace storm {
             }
             
         }
-         std::string toString(LpSolverType t) {
+        
+        std::string toString(LpSolverType t) {
             switch(t) {
                 case LpSolverType::Gurobi:
                     return "Gurobi";
@@ -19,7 +20,7 @@ namespace storm {
                     return "Glpk";
             }
         }
-
+        
         std::string toString(EquationSolverType t) {
             switch(t) {
                 case EquationSolverType::Native:
@@ -28,6 +29,15 @@ namespace storm {
                     return "Gmmxx";
                 case EquationSolverType::Topological:
                     return "Topological";
+            }
+        }
+        
+        std::string toString(SmtSolverType t) {
+            switch(t) {
+                case SmtSolverType::Z3:
+                    return "Z3";
+                case SmtSolverType::Mathsat:
+                    return "Mathsat";
             }
         }
     }

@@ -62,6 +62,24 @@ namespace storm {
                     }
                 }
             }
+
+            template<typename ValueType, typename RewardModelType>
+            template<typename T>
+            void NondeterministicModel<ValueType, RewardModelType>::modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications) {
+                RewardModelType& rewardModel = this->rewardModel(modelName);
+                for(auto const& mod : modifications) {
+                    rewardModel.setStateActionReward(mod.first, mod.second);
+                }
+            };
+
+            template<typename ValueType, typename RewardModelType>
+            template<typename T>
+            void NondeterministicModel<ValueType, RewardModelType>::modifyStateRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications) {
+                RewardModelType& rewardModel = this->rewardModel(modelName);
+                for(auto const& mod : modifications) {
+                    rewardModel.setStateReward(mod.first, mod.second);
+                }
+            };
             
             template<typename ValueType, typename RewardModelType>
             void NondeterministicModel<ValueType, RewardModelType>::reduceToStateBasedRewards() {
@@ -152,6 +170,8 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
             template class NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+            template void NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, double> const& modifications);
+            template void NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::modifyStateRewards(std::string const& modelName, std::map<uint_fast64_t, double> const& modifications);
 
             template class NondeterministicModel<storm::RationalFunction>;
 #endif

@@ -34,7 +34,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
@@ -103,7 +103,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
@@ -196,7 +196,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
@@ -242,7 +242,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
@@ -305,7 +305,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
@@ -393,7 +393,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
@@ -458,7 +458,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options=storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program.get(), constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program.get(), options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
     ASSERT_EQ(storm::models::ModelType::Dtmc, model->getType());
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);

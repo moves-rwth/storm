@@ -174,6 +174,7 @@ namespace storm {
             std::shared_ptr<Formula const> asSharedPointer();
             std::shared_ptr<Formula const> asSharedPointer() const;
             
+            std::string toString() const;
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const;

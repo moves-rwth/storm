@@ -45,25 +45,25 @@ TEST(FullySymbolicGameSolverTest, Solve) {
     storm::dd::Add<storm::dd::DdType::CUDD> b = manager->getEncoding(state.first, 2).toAdd() + manager->getEncoding(state.first, 4).toAdd();
     
     // Now solve the game with different strategies for the players.
-    storm::dd::Add<storm::dd::DdType::CUDD> result = solver->solveGame(true, true, x, b);
+    storm::dd::Add<storm::dd::DdType::CUDD> result = solver->solveGame(storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, x, b);
     result *= manager->getEncoding(state.first, 1).toAdd();
     result = result.sumAbstract({state.first});
     EXPECT_NEAR(0, result.getValue(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
     x = manager->getAddZero();
-    result = solver->solveGame(true, false, x, b);
+    result = solver->solveGame(storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, x, b);
     result *= manager->getEncoding(state.first, 1).toAdd();
     result = result.sumAbstract({state.first});
     EXPECT_NEAR(0.5, result.getValue(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
     x = manager->getAddZero();
-    result = solver->solveGame(false, true, x, b);
+    result = solver->solveGame(storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, x, b);
     result *= manager->getEncoding(state.first, 1).toAdd();
     result = result.sumAbstract({state.first});
     EXPECT_NEAR(0.2, result.getValue(), storm::settings::nativeEquationSolverSettings().getPrecision());
 
     x = manager->getAddZero();
-    result = solver->solveGame(false, false, x, b);
+    result = solver->solveGame(storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, x, b);
     result *= manager->getEncoding(state.first, 1).toAdd();
     result = result.sumAbstract({state.first});
     EXPECT_NEAR(0.99999892625817599, result.getValue(), storm::settings::nativeEquationSolverSettings().getPrecision());

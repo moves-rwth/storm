@@ -1,13 +1,13 @@
 #include "src/utility/solver.h"
 
-#include "src/solver/SymbolicGameSolver.h"
-
 #include <vector>
 
 #include "src/solver/SymbolicLinearEquationSolver.h"
 #include "src/solver/SymbolicMinMaxLinearEquationSolver.h"
+#include "src/solver/SymbolicGameSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/solver/GameSolver.h"
 
 #include "src/solver/NativeMinMaxLinearEquationSolver.h"
 #include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
@@ -16,12 +16,13 @@
 #include "src/solver/GurobiLpSolver.h"
 #include "src/solver/GlpkLpSolver.h"
 
+#include "src/solver/Z3SmtSolver.h"
+#include "src/solver/MathsatSmtSolver.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
-
 
 namespace storm {
     namespace utility {
@@ -101,8 +102,7 @@ namespace storm {
             template<typename ValueType>
             void MinMaxLinearEquationSolverFactory<ValueType>::setPreferredTechnique(storm::solver::MinMaxTechniqueSelection preferredTech) {
                 this->prefTech = preferredTech;
-            } 
-
+            }
             
             template<typename ValueType>
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackPolicy) const {
@@ -132,6 +132,10 @@ namespace storm {
                 
             }
 
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::GameSolver<ValueType>> GameSolverFactory<ValueType>::create(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const {
+                return std::unique_ptr<storm::solver::GameSolver<ValueType>>(new storm::solver::GameSolver<ValueType>(player1Matrix, player2Matrix));
+            }
 
             std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
                 storm::solver::LpSolverType t;
@@ -163,7 +167,27 @@ namespace storm {
                 return factory->create(name, solvType);
             }
             
+            std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+                storm::solver::SmtSolverType smtSolverType = storm::settings::generalSettings().getSmtSolver();
+                switch (smtSolverType) {
+                    case storm::solver::SmtSolverType::Z3: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
+                    case storm::solver::SmtSolverType::Mathsat: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
+                }
+            }
             
+            std::unique_ptr<storm::solver::SmtSolver> Z3SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+                return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
+            }
+            
+            std::unique_ptr<storm::solver::SmtSolver> MathsatSmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
+                return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));
+            }
+            
+            std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager) {
+                std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new MathsatSmtSolverFactory());
+                return factory->create(manager);
+            }
+
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD>;
@@ -171,7 +195,7 @@ namespace storm {
             template class GmmxxLinearEquationSolverFactory<double>;
             template class NativeLinearEquationSolverFactory<double>;
             template class MinMaxLinearEquationSolverFactory<double>;
-          
+            template class GameSolverFactory<double>;
         }
     }
 }

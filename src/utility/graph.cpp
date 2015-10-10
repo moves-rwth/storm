@@ -239,6 +239,110 @@ namespace storm {
             }
             
             template <typename T>
+            storm::storage::PartialScheduler computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix) {
+                storm::storage::PartialScheduler result;
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
+                
+                for (auto const& state : states) {
+                    for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
+                        bool allSuccessorsInStates = true;
+                        for (auto const& element : transitionMatrix.getRow(choice)) {
+                            if (!states.get(element.getColumn())) {
+                                allSuccessorsInStates = false;
+                                break;
+                            }
+                        }
+                        if (allSuccessorsInStates) {
+                            result.setChoice(state, choice);
+                            break;
+                        }
+                    }
+                }
+                
+                return result;
+            }
+            
+            template <typename T>
+            storm::storage::PartialScheduler computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix) {
+                storm::storage::PartialScheduler result;
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
+                
+                for (auto const& state : states) {
+                    for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
+                        bool oneSuccessorInStates = false;
+                        for (auto const& element : transitionMatrix.getRow(choice)) {
+                            if (states.get(element.getColumn())) {
+                                oneSuccessorInStates = true;
+                                break;
+                            }
+                        }
+                        if (oneSuccessorInStates) {
+                            result.setChoice(state, choice);
+                            break;
+                        }
+                    }
+                }
+                
+                return result;
+            }
+            
+            template <typename T>
+            storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::BitVector const& probGreater0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix) {
+                return computeSchedulerWithOneSuccessorInStates(probGreater0EStates, transitionMatrix);
+            }
+            
+            template <typename T>
+            storm::storage::PartialScheduler computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix) {
+                return computeSchedulerStayingInStates(prob0EStates, transitionMatrix);
+            }
+            
+            template <typename T>
+            storm::storage::PartialScheduler computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                
+                storm::storage::PartialScheduler result;
+                std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
+                std::vector<uint_fast64_t> stack;
+                storm::storage::BitVector currentStates(psiStates);
+                stack.insert(stack.end(), currentStates.begin(), currentStates.end());
+                uint_fast64_t currentState = 0;
+                
+                while (!stack.empty()) {
+                    currentState = stack.back();
+                    stack.pop_back();
+                    
+                    for (typename storm::storage::SparseMatrix<T>::const_iterator predecessorEntryIt = backwardTransitions.begin(currentState), predecessorEntryIte = backwardTransitions.end(currentState); predecessorEntryIt != predecessorEntryIte; ++predecessorEntryIt) {
+                        if (phiStates.get(predecessorEntryIt->getColumn()) && !currentStates.get(predecessorEntryIt->getColumn())) {
+                            // Check whether the predecessor has only successors in the prob1E state set for one of the
+                            // nondeterminstic choices.
+                            for (uint_fast64_t row = nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]; row < nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1]; ++row) {
+                                bool allSuccessorsInProb1EStates = true;
+                                bool hasSuccessorInCurrentStates = false;
+                                for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
+                                    if (!prob1EStates.get(successorEntryIt->getColumn())) {
+                                        allSuccessorsInProb1EStates = false;
+                                        break;
+                                    } else if (currentStates.get(successorEntryIt->getColumn())) {
+                                        hasSuccessorInCurrentStates = true;
+                                    }
+                                }
+                                
+                                // If all successors for a given nondeterministic choice are in the prob1E state set, we
+                                // perform a backward search from that state.
+                                if (allSuccessorsInProb1EStates && hasSuccessorInCurrentStates) {
+                                    result.setChoice(predecessorEntryIt->getColumn(), row);
+                                    currentStates.set(predecessorEntryIt->getColumn(), true);
+                                    stack.push_back(predecessorEntryIt->getColumn());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                return result;
+            }
+            
+            template <typename T>
             storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound, uint_fast64_t maximalSteps) {
                 size_t numberOfStates = phiStates.size();
                 
@@ -301,8 +405,8 @@ namespace storm {
                 return statesWithProbability0;
             }
             
-            template <typename T>
-            storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            template <typename T, typename RM>
+            storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<T, RM> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 return performProb0A(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
             }
             
@@ -333,17 +437,20 @@ namespace storm {
                                 // nondeterminstic choices.
                                 for (uint_fast64_t row = nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]; row < nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1]; ++row) {
                                     bool allSuccessorsInCurrentStates = true;
+                                    bool hasNextStateSuccessor = false;
                                     for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
                                         if (!currentStates.get(successorEntryIt->getColumn())) {
                                             allSuccessorsInCurrentStates = false;
                                             break;
+                                        } else if (nextStates.get(successorEntryIt->getColumn())) {
+                                            hasNextStateSuccessor = true;
                                         }
                                     }
                                     
                                     // If all successors for a given nondeterministic choice are in the current state set, we
                                     // add it to the set of states for the next iteration and perform a backward search from
                                     // that state.
-                                    if (allSuccessorsInCurrentStates) {
+                                    if (allSuccessorsInCurrentStates && hasNextStateSuccessor) {
                                         nextStates.set(predecessorEntryIt->getColumn(), true);
                                         stack.push_back(predecessorEntryIt->getColumn());
                                         break;
@@ -364,8 +471,8 @@ namespace storm {
                 return currentStates;
             }
             
-            template <typename T>
-            storm::storage::BitVector performProb1E(storm::models::sparse::NondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            template <typename T, typename RM>
+            storm::storage::BitVector performProb1E(storm::models::sparse::NondeterministicModel<T, RM> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 return performProb1E(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
             }
             
@@ -378,8 +485,8 @@ namespace storm {
                 return result;
             }
             
-            template <typename T>
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::sparse::NondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            template <typename T, typename RM>
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::sparse::NondeterministicModel<T, RM> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 return performProb01Max(model.getTransitionMatrix(), model.getTransitionMatrix().getRowGroupIndices(), model.getBackwardTransitions(), phiStates, psiStates);
             }
             
@@ -460,8 +567,8 @@ namespace storm {
                 return statesWithProbabilityGreater0;
             }
             
-            template <typename T>
-            storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<T> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            template <typename T, typename RM>
+            storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<T, RM> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 storm::storage::BitVector statesWithProbability0 = performProbGreater0A(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
                 statesWithProbability0.complement();
                 return statesWithProbability0;
@@ -472,6 +579,11 @@ namespace storm {
                 storm::storage::BitVector statesWithProbability0 = performProbGreater0A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
                 statesWithProbability0.complement();
                 return statesWithProbability0;
+            }
+            
+            template<typename T, typename RM>
+            storm::storage::BitVector performProb1A(storm::models::sparse::NondeterministicModel<T, RM> const& model, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+                return performProb1A(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
             }
             
             template <typename T>
@@ -549,8 +661,8 @@ namespace storm {
                 return result;
             }
             
-            template <typename T>
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<T> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
+            template <typename T, typename RM>
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<T, RM> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 return performProb01Min(model.getTransitionMatrix(), model.getTransitionMatrix().getRowGroupIndices(), model.getBackwardTransitions(), phiStates, psiStates);
             }
             
@@ -838,35 +950,46 @@ namespace storm {
             
             
             
+            template storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::BitVector const& probGreater0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix);
+            
+            template storm::storage::PartialScheduler computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix);
+            
+            template storm::storage::PartialScheduler computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            
             template storm::storage::BitVector performProbGreater0E(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0) ;
             
             template storm::storage::BitVector performProb0A(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
-            template storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<double> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
+            template storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
+            template storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
+            
             
             template storm::storage::BitVector performProb1E(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             
-            template storm::storage::BitVector performProb1E(storm::models::sparse::NondeterministicModel<double> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            template storm::storage::BitVector performProb1E(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
             
-            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::sparse::NondeterministicModel<double> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
+            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Max(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
             template storm::storage::BitVector performProbGreater0A(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
             
             
-            template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<double> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             template storm::storage::BitVector performProb0E(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,  storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
-            
+            template storm::storage::BitVector performProb1A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            template storm::storage::BitVector performProb1A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             template storm::storage::BitVector performProb1A( storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
             
-            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<double> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             
             template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix) ;
@@ -915,7 +1038,7 @@ namespace storm {
             template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<float> const& model, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             template storm::storage::BitVector performProb0E(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,  storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
-            
+            template storm::storage::BitVector performProb1A(storm::models::sparse::NondeterministicModel<float> const& model, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             template storm::storage::BitVector performProb1A( storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::storage::SparseMatrix<float> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;

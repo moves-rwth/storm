@@ -4,6 +4,7 @@
 #include <set>
 #include <vector>
 #include <memory>
+#include <src/storage/sparse/StateType.h>
 
 #include "src/storage/dd/DdType.h"
 #include "src/solver/SolverSelectionOptions.h"
@@ -13,13 +14,17 @@ namespace storm {
         template<storm::dd::DdType T>  class SymbolicGameSolver;
         template<storm::dd::DdType T, typename V> class SymbolicLinearEquationSolver;
         template<storm::dd::DdType T, typename V> class SymbolicMinMaxLinearEquationSolver;
+        template<typename V> class GameSolver;
         template<typename V> class LinearEquationSolver;
         template<typename V> class MinMaxLinearEquationSolver;
         class LpSolver;
+        class SmtSolver;
         
         template<typename ValueType> class NativeLinearEquationSolver;
-        enum class NativeLinearEquationSolverSolutionMethod;
+        enum class
+                NativeLinearEquationSolverSolutionMethod;
     }
+
     namespace storage {
         template<typename V> class SparseMatrix;
     }
@@ -28,8 +33,10 @@ namespace storm {
         template<storm::dd::DdType T> class Add;
         template<storm::dd::DdType T> class Bdd;
     }
+    
     namespace expressions {
         class Variable;
+        class ExpressionManager;
     }
     
     namespace utility {
@@ -89,7 +96,7 @@ namespace storm {
             public:
                 MinMaxLinearEquationSolverFactory(storm::solver::EquationSolverTypeSelection solverType = storm::solver::EquationSolverTypeSelection::FROMSETTINGS);
                 /*!
-                 * Creates a new nondeterministic linear equation solver instance with the given matrix.
+                 * Creates a new min/max linear equation solver instance with the given matrix.
                  */
                 virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackPolicy = false) const;
                 void setSolverType(storm::solver::EquationSolverTypeSelection solverType);
@@ -101,6 +108,15 @@ namespace storm {
                 /// The preferred technique to be used by the solver.
                 /// Notice that we save the selection enum here, which allows different solvers to use different techniques.
                 storm::solver::MinMaxTechniqueSelection prefTech;
+            };
+
+            template<typename ValueType>
+            class GameSolverFactory {
+            public:
+                /*!
+                 * Creates a new game solver instance with the given matrices.
+                 */
+                virtual std::unique_ptr<storm::solver::GameSolver<ValueType>> create(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const;
             };
            
             class LpSolverFactory {
@@ -126,6 +142,30 @@ namespace storm {
             };
             
             std::unique_ptr<storm::solver::LpSolver> getLpSolver(std::string const& name, storm::solver::LpSolverTypeSelection solvType = storm::solver::LpSolverTypeSelection::FROMSETTINGS) ;
+
+            class SmtSolverFactory {
+            public:
+                /*!
+                 * Creates a new SMT solver instance.
+                 *
+                 * @param manager The expression manager responsible for the expressions that will be given to the SMT
+                 * solver.
+                 * @return A pointer to the newly created solver.
+                 */
+                virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+            };
+            
+            class Z3SmtSolverFactory : public SmtSolverFactory {
+            public:
+                virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+            };
+
+            class MathsatSmtSolverFactory : public SmtSolverFactory {
+            public:
+                virtual std::unique_ptr<storm::solver::SmtSolver> create(storm::expressions::ExpressionManager& manager) const;
+            };
+            
+            std::unique_ptr<storm::solver::SmtSolver> getSmtSolver(storm::expressions::ExpressionManager& manager);
         }
     }
 }

@@ -20,6 +20,7 @@ namespace storm {
          * Initializes the logging framework and sets up logging to console.
          */
         void initializeLogger();
+        void initializeLogger(log4cplus::LogLevel const&);
 
         /*!
          * Performs some necessary initializations.

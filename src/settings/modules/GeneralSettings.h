@@ -9,6 +9,7 @@ namespace storm {
         enum class EquationSolverType;
         enum class LpSolverType;
         enum class MinMaxTechnique;
+        enum class SmtSolverType;
     }
 
     namespace settings {
@@ -269,6 +270,13 @@ namespace storm {
                 storm::solver::LpSolverType getLpSolver() const;
 
                 /*!
+                 * Retrieves the selected SMT solver.
+                 *
+                 * @return The selected SMT solver.
+                 */
+                storm::solver::SmtSolverType getSmtSolver() const;
+                
+                /*!
                  * Retrieves whether the export-to-dot option was set.
                  *
                  * @return True if the export-to-dot option was set.
@@ -311,6 +319,11 @@ namespace storm {
                 Engine getEngine() const;
 
                 /*!
+                 * Sets the engine for further usage.
+                 */
+                void setEngine(Engine);
+
+                /*!
                  * Retrieves whether the PRISM compatibility mode was enabled.
                  *
                  * @return True iff the PRISM compatibility mode was enabled.
@@ -348,11 +361,14 @@ namespace storm {
 
 
                 bool check() const override;
+                void finalize() override;
 
                 // The name of the module.
                 static const std::string moduleName;
 
             private:
+                Engine engine;
+
                 // Define the string names of the options as constants.
                 static const std::string helpOptionName;
                 static const std::string helpOptionShortName;
@@ -381,6 +397,7 @@ namespace storm {
                 static const std::string timeoutOptionShortName;
                 static const std::string eqSolverOptionName;
                 static const std::string lpSolverOptionName;
+                static const std::string smtSolverOptionName;
                 static const std::string constantsOptionName;
                 static const std::string constantsOptionShortName;
                 static const std::string statisticsOptionName;

@@ -59,6 +59,7 @@ namespace storm {
                  */
                 bool hasOnlyStateRewards() const;
 
+
                 /*!
                  * Retrieves the state rewards of the reward model. Note that it is illegal to call this function if the
                  * reward model does not have state rewards.
@@ -74,7 +75,15 @@ namespace storm {
                  * @return The state reward vector.
                  */
                 std::vector<ValueType>& getStateRewardVector();
-                
+
+                ValueType const& getStateReward(uint_fast64_t state) const;
+
+                template<typename T>
+                void setStateReward(uint_fast64_t state, T const& newReward);
+
+                //template<typename T=ValueType, EnableIf<hasTotalOrder<T>>>
+                //ValueType maximalStateReward(uint_fast64_t state) const;
+
                 /*!
                  * Retrieves an optional value that contains the state reward vector if there is one.
                  *
@@ -104,7 +113,20 @@ namespace storm {
                  * @return The state-action reward vector.
                  */
                 std::vector<ValueType>& getStateActionRewardVector();
-                
+
+                /*!
+                 * Retrieves the state-action reward for the given choice.
+                 */
+                ValueType const& getStateActionReward(uint_fast64_t choiceIndex) const;
+
+                /*!
+                 * Sets the state-action reward for the given choice
+                 */
+                template<typename T>
+                void setStateActionReward(uint_fast64_t choiceIndex, T const& newValue);
+
+                //ValueType maximalStateActionReward() const;
+
                 /*!
                  * Retrieves an optional value that contains the state-action reward vector if there is one.
                  *
@@ -231,7 +253,19 @@ namespace storm {
                  * @return True iff the reward model is empty.
                  */
                 bool empty() const;
-                
+
+                /*!
+                 * Checks whether the reward model is compatible with key model characteristics.
+                 *
+                 * In detail, the method checks
+                 * - if the state-rewards exist, whether the given number of states corresponds to the size of the vector.
+                 * - if the state-action-rewards exist, whether the given number of choices corresponds to the size of the vector.
+                 *
+                 * @param nrStates The number of states in the model
+                 * @param nrChoices The number of choices in the model
+                 */
+                bool isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const;
+
                 /*!
                  * Retrieves (an approximation of) the size of the model in bytes.
                  *

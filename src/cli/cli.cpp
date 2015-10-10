@@ -1,4 +1,5 @@
 #include "cli.h"
+#include "entrypoints.h"
 
 #include "../utility/storm.h"
 
@@ -6,6 +7,7 @@
 #include "src/exceptions/OptionParserException.h"
 
 #include "src/utility/storm-version.h"
+
 
 // Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
@@ -110,7 +112,7 @@ namespace storm {
 					std::cout << "Compiled with CUDA support, but an error occured trying to find CUDA devices." << std::endl;
 				}
 #endif
-                
+
                 // "Compute" the command line argument string with which STORM was invoked.
                 std::stringstream commandStream;
                 for (int i = 1; i < argc; ++i) {

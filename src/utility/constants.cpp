@@ -1,7 +1,7 @@
 #include "src/utility/constants.h"
 
-#include "src/storage/SparseMatrix.h"
 #include "src/storage/sparse/StateType.h"
+#include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/utility/macros.h"
@@ -92,27 +92,13 @@ namespace storm {
             return std::pow(value, exponent);
         }
 
-		template<>
-		double simplify(double value) {
-			// In the general case, we don't to anything here, but merely return the value. If something else is
-			// supposed to happen here, the templated function can be specialized for this particular type.
-			return value;
-		}
-
-		template<>
-		float simplify(float value) {
-			// In the general case, we don't to anything here, but merely return the value. If something else is
-			// supposed to happen here, the templated function can be specialized for this particular type.
-			return value;
-		}
-
-        template<>
-        int simplify(int value) {
+		template<typename ValueType>
+		ValueType simplify(ValueType value) {
             // In the general case, we don't to anything here, but merely return the value. If something else is
             // supposed to happen here, the templated function can be specialized for this particular type.
-            return value;
-        }
-        
+			return value;
+		}
+
 #ifdef STORM_HAVE_CARL
         template<>
         RationalFunction& simplify(RationalFunction& value);
@@ -210,7 +196,23 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& matrixEntry);
-        
+
+        template bool isOne(storm::storage::sparse::state_type const& value);
+        template bool isZero(storm::storage::sparse::state_type const& value);
+        template bool isConstant(storm::storage::sparse::state_type const& value);
+
+        template storm::storage::sparse::state_type one();
+        template storm::storage::sparse::state_type zero();
+        template storm::storage::sparse::state_type infinity();
+
+        template storm::storage::sparse::state_type pow(storm::storage::sparse::state_type const& value, uint_fast64_t exponent);
+
+        template storm::storage::sparse::state_type simplify(storm::storage::sparse::state_type value);
+
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type> matrixEntry);
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& matrixEntry);
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& matrixEntry);
+
 #ifdef STORM_HAVE_CARL
         template bool isOne(RationalFunction const& value);
         template bool isZero(RationalFunction const& value);
