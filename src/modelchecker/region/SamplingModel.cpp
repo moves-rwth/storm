@@ -11,143 +11,186 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/models/ModelType.h"
 #include "models/sparse/StandardRewardModel.h"
-#include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
-#include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
+#include "src/utility/solver.h"
+#include "src/solver/LinearEquationSolver.h"
+#include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/utility/macros.h"
 #include "src/utility/region.h"
 #include "src/utility/vector.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "storage/dd/CuddBdd.h"
 
 namespace storm {
     namespace modelchecker {
         namespace region {
         
             template<typename ParametricSparseModelType, typename ConstantType>
-            SamplingModel<ParametricSparseModelType, ConstantType>::SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula) : formula(formula){
-                if(this->formula->isProbabilityOperatorFormula()){
+            SamplingModel<ParametricSparseModelType, ConstantType>::SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula) : solveGoal(storm::logic::isLowerBound(formula->getComparisonType())){
+                //First some simple checks and initializations..
+                if(formula->isProbabilityOperatorFormula()){
                     this->computeRewards=false;
-                } else if(this->formula->isRewardOperatorFormula()){
+                } else if(formula->isRewardOperatorFormula()){
                     this->computeRewards=true;
+                    STORM_LOG_THROW(parametricModel.getType()==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Sampling with rewards is only implemented for Dtmcs");
                     STORM_LOG_THROW(parametricModel.hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should be unique");
                     STORM_LOG_THROW(parametricModel.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should have state rewards only");
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << this->formula << ". Sampling model only supports eventually or reachability reward formulae.");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << formula << ". Sampling model only supports eventually or reachability reward formulae.");
                 }
-                //Start with the probabilities
-                storm::storage::SparseMatrix<ConstantType> probabilityMatrix;
-                std::vector<TableEntry*> matrixEntryToEvalTableMapping;// This vector will get an entry for every probability matrix entry.
-                // For the corresponding matrix entry, it stores the corresponding entry in the probability evaluation table. 
-                TableEntry constantEntry; //this value is stored in the matrixEntrytoEvalTableMapping for every constant matrix entry. (also used for rewards later)
-                initializeProbabilities(parametricModel, probabilityMatrix, matrixEntryToEvalTableMapping, &constantEntry);
-
-                //Now consider rewards
-                std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ConstantType>> rewardModels;
-                std::vector<TableEntry*> rewardEntryToEvalTableMapping; //does a similar thing as matrixEntryToEvalTableMapping
+                STORM_LOG_THROW(parametricModel.hasLabel("target"), storm::exceptions::InvalidArgumentException, "The given Model has no \"target\"-statelabel.");
+                this->targetStates = parametricModel.getStateLabeling().getStates("target");
+                STORM_LOG_THROW(parametricModel.hasLabel("sink"), storm::exceptions::InvalidArgumentException, "The given Model has no \"sink\"-statelabel.");
+                storm::storage::BitVector sinkStates=parametricModel.getStateLabeling().getStates("sink");
+                this->maybeStates = ~(this->targetStates | sinkStates);
+                STORM_LOG_THROW(parametricModel.getInitialStates().getNumberOfSetBits()==1, storm::exceptions::InvalidArgumentException, "The given model has more or less then one initial state");
+                storm::storage::sparse::state_type initialState = *parametricModel.getInitialStates().begin();
+                STORM_LOG_THROW(maybeStates.get(initialState), storm::exceptions::InvalidArgumentException, "The value in the initial state of the given model is independent of parameters");
+                //The (state-)indices in the equation system will be different from the original ones, as the eq-sys only considers maybestates.
+                //Hence, we use this vector to translate from old indices to new ones.
+                std::vector<std::size_t> newIndices(parametricModel.getNumberOfStates(), parametricModel.getNumberOfStates()); //initialize with some illegal index
+                std::size_t newIndex=0;
+                for(auto const& index : maybeStates){
+                    newIndices[index]=newIndex;
+                    ++newIndex;
+                }
+                
+                //Now pre-compute the information for the equation system.
+                initializeProbabilities(parametricModel, newIndices);
                 if(this->computeRewards){
-                    boost::optional<std::vector<ConstantType>> stateRewards;
-                    initializeRewards(parametricModel, stateRewards, rewardEntryToEvalTableMapping, &constantEntry);
-                    rewardModels.insert(std::pair<std::string, storm::models::sparse::StandardRewardModel<ConstantType>>("", storm::models::sparse::StandardRewardModel<ConstantType>(std::move(stateRewards))));
+                    initializeRewards(parametricModel, newIndices);
                 }
-
-                //Obtain other model ingredients and the sampling model itself
-                storm::models::sparse::StateLabeling labeling(parametricModel.getStateLabeling());
-                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;  
-                switch(parametricModel.getType()){
-                    case storm::models::ModelType::Dtmc:
-                        this->model=std::make_shared<storm::models::sparse::Dtmc<ConstantType>>(std::move(probabilityMatrix), std::move(labeling), std::move(rewardModels), std::move(noChoiceLabeling));
-                        break;
-                    case storm::models::ModelType::Mdp:
-                        this->model=std::make_shared<storm::models::sparse::Mdp<ConstantType>>(std::move(probabilityMatrix), std::move(labeling), std::move(rewardModels), std::move(noChoiceLabeling));
-                        break;
-                    default:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Tried to build a sampling model for an unsupported model type");
-                }
-
-                //translate the matrixEntryToEvalTableMapping into the actual probability mapping
-                auto sampleModelEntry = this->model->getTransitionMatrix().begin();
-                auto parModelEntry = parametricModel.getTransitionMatrix().begin();
-                for(auto tableEntry : matrixEntryToEvalTableMapping){
-                    STORM_LOG_THROW(sampleModelEntry->getColumn()==parModelEntry->getColumn(), storm::exceptions::UnexpectedException, "The entries of the given parametric model and the constructed sampling model do not match");
-                    if(tableEntry == &constantEntry){
-                        sampleModelEntry->setValue(storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(parModelEntry->getValue())));
-                    } else {
-                        this->probabilityMapping.emplace_back(std::make_pair(&(tableEntry->second), sampleModelEntry));
-                    }
-                    ++sampleModelEntry;
-                    ++parModelEntry;
-                }
-                //also do this for the rewards
-                if(this->computeRewards){    
-                    auto sampleModelStateRewardEntry = this->model->getUniqueRewardModel()->second.getStateRewardVector().begin();
-                    for(auto tableEntry : rewardEntryToEvalTableMapping){
-                        if(tableEntry != &constantEntry){
-                            this->stateRewardMapping.emplace_back(std::make_pair(&(tableEntry->second), sampleModelStateRewardEntry));
-                        }
-                        ++sampleModelStateRewardEntry;
-                    }
-                }
+                this->matrixData.assignment.shrink_to_fit();
+                this->vectorData.assignment.shrink_to_fit();
+                
+                this->eqSysResult = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), this->computeRewards ? storm::utility::one<ConstantType>() : ConstantType(0.5));
+                this->eqSysInitIndex = newIndices[initialState];
+                this->solveGoal = storm::solver::SolveGoal(storm::logic::isLowerBound(formula->getComparisonType()));
             }
-
+            
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SamplingModel<ParametricSparseModelType, ConstantType>::initializeProbabilities(ParametricSparseModelType const& parametricModel,
-                                                                                                                    storm::storage::SparseMatrix<ConstantType>& probabilityMatrix,
-                                                                                                                    std::vector<TableEntry*>& matrixEntryToEvalTableMapping,
-                                                                                                                    TableEntry* constantEntry) {
-                // Run through the rows of the original model and obtain the probability evaluation table, a matrix with dummy entries and the mapping between the two.
+            void SamplingModel<ParametricSparseModelType, ConstantType>::initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices){
+                //First run: get a matrix with dummy entries at the new positions and fill the vectorData
+                ConstantType dummyValue = storm::utility::one<ConstantType>();
                 bool addRowGroups = parametricModel.getTransitionMatrix().hasNontrivialRowGrouping();
-                auto curRowGroup = parametricModel.getTransitionMatrix().getRowGroupIndices().begin();
-                storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(parametricModel.getTransitionMatrix().getRowCount(),
-                                                                                parametricModel.getTransitionMatrix().getColumnCount(),
+                bool isDtmc = (parametricModel.getType()==storm::models::ModelType::Dtmc); //The equation system for DTMCs need the (I-P)-matrix (i.e., we need diagonal entries)
+                auto numOfMaybeStates=maybeStates.getNumberOfSetBits();
+                storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(addRowGroups ? parametricModel.getTransitionMatrix().getRowCount() : numOfMaybeStates,
+                                                                                numOfMaybeStates,
                                                                                 parametricModel.getTransitionMatrix().getEntryCount(),
-                                                                                true, //force dimensions
+                                                                                false, // no force dimensions
                                                                                 addRowGroups,
-                                                                                addRowGroups ? parametricModel.getTransitionMatrix().getRowGroupCount() : 0);
-                matrixEntryToEvalTableMapping.reserve(parametricModel.getTransitionMatrix().getEntryCount());
-                std::size_t numOfNonConstEntries=0;
-                for(typename storm::storage::SparseMatrix<ParametricType>::index_type row=0; row < parametricModel.getTransitionMatrix().getRowCount(); ++row ){
-                    if(addRowGroups && row==*curRowGroup){
-                        matrixBuilder.newRowGroup(row);
-                        ++curRowGroup;
+                                                                                addRowGroups ? numOfMaybeStates : 0);
+                this->vectorData.vector.reserve(numOfMaybeStates); //Important! iterators have to remain valid
+                this->vectorData.assignment.reserve(numOfMaybeStates);
+                std::size_t curRow = 0;
+                for (auto oldRowGroup : this->maybeStates){
+                    if(addRowGroups){
+                        matrixBuilder.newRowGroup(curRow);
                     }
-                    ConstantType dummyEntry=storm::utility::one<ConstantType>();
-                    for(auto const& entry : parametricModel.getTransitionMatrix().getRow(row)){
-                        if(storm::utility::isConstant(entry.getValue())){
-                            matrixEntryToEvalTableMapping.emplace_back(constantEntry);
-                        } else {
-                            ++numOfNonConstEntries;
-                            auto evalTableIt = this->probabilityEvaluationTable.insert(TableEntry(entry.getValue(), storm::utility::zero<ConstantType>())).first;
-                            matrixEntryToEvalTableMapping.emplace_back(&(*evalTableIt));
+                    for (std::size_t oldRow = parametricModel.getTransitionMatrix().getRowGroupIndices()[oldRowGroup]; oldRow < parametricModel.getTransitionMatrix().getRowGroupIndices()[oldRowGroup+1]; ++oldRow){
+                        bool insertedDiagonalEntry = false;
+                        ParametricType targetProbability = storm::utility::region::getNewFunction<ParametricType, CoefficientType>(storm::utility::zero<CoefficientType>());
+                        for(auto const& oldEntry : parametricModel.getTransitionMatrix().getRow(oldRow)){
+                            if(this->maybeStates.get(oldEntry.getColumn())){
+                                //check if we need to insert a diagonal entry
+                                if(isDtmc && !insertedDiagonalEntry && newIndices[oldEntry.getColumn()]>=newIndices[oldRowGroup]){
+                                    if(newIndices[oldEntry.getColumn()]>newIndices[oldRowGroup]){
+                                        // There is no diagonal entry in the original matrix.
+                                        // Since we later need the matrix (I-P), we already know that the diagonal entry will be one (=1-0)
+                                        matrixBuilder.addNextValue(curRow, newIndices[oldRowGroup], storm::utility::one<ConstantType>());
+                                    }
+                                    insertedDiagonalEntry=true;
+                                }
+                                //Insert dummy entry
+                                matrixBuilder.addNextValue(curRow, newIndices[oldEntry.getColumn()], dummyValue);
+                            }
+                            else if(!this->computeRewards && this->targetStates.get(oldEntry.getColumn())){
+                                targetProbability += oldEntry.getValue();
+                            }
                         }
-                        matrixBuilder.addNextValue(row,entry.getColumn(), dummyEntry);
-                        dummyEntry=storm::utility::zero<ConstantType>();
+                        if(isDtmc && !insertedDiagonalEntry){
+                            // There is no diagonal entry in the original matrix.
+                            // Since we later need the matrix (I-P), we already know that the diagonal entry will be one (=1-0)
+                            matrixBuilder.addNextValue(curRow, newIndices[oldRowGroup], storm::utility::one<ConstantType>());
+                        }
+                        if(!this->computeRewards){
+                            if(storm::utility::isConstant(targetProbability)){
+                                this->vectorData.vector.push_back(storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(targetProbability)));
+                            } else {
+                                typename std::unordered_map<ParametricType, ConstantType>::iterator functionsIt = this->vectorData.functions.insert(FunctionEntry(targetProbability, dummyValue)).first;
+                                this->vectorData.assignment.emplace_back(std::make_pair(this->vectorData.vector.end(), &(functionsIt->second)));
+                                this->vectorData.vector.push_back(dummyValue);
+                            }
+                        }
+                        ++curRow;
                     }
                 }
-                this->probabilityMapping.reserve(numOfNonConstEntries);
-                probabilityMatrix=matrixBuilder.build();
+                this->matrixData.matrix=matrixBuilder.build();
+                
+                //Now run again through both matrices to get the remaining ingredients of the matrixData.
+                //Note that we need the matrix (I-P) in case of a dtmc.
+                this->matrixData.assignment.reserve(this->matrixData.matrix.getEntryCount()); 
+                curRow = 0;
+                for(auto oldRowGroup : this->maybeStates){
+                    for (std::size_t oldRow = parametricModel.getTransitionMatrix().getRowGroupIndices()[oldRowGroup]; oldRow < parametricModel.getTransitionMatrix().getRowGroupIndices()[oldRowGroup+1]; ++oldRow){
+                        auto eqSysMatrixEntry = this->matrixData.matrix.getRow(curRow).begin();
+                        for(auto const& oldEntry : parametricModel.getTransitionMatrix().getRow(oldRow)){
+                            if(this->maybeStates.get(oldEntry.getColumn())){
+                                if(isDtmc && eqSysMatrixEntry->getColumn()==newIndices[oldRowGroup] && eqSysMatrixEntry->getColumn()!=newIndices[oldEntry.getColumn()]){
+                                    //We are at one of the diagonal entries that have been inserted above and for which there is no entry in the original matrix.
+                                    //These have already been set to 1 above, so they do not need to be handled here.
+                                    ++eqSysMatrixEntry;
+                                }
+                                STORM_LOG_THROW(eqSysMatrixEntry->getColumn()==newIndices[oldEntry.getColumn()], storm::exceptions::UnexpectedException, "old and new entries do not match");
+                                if(storm::utility::isConstant(oldEntry.getValue())){
+                                    if(isDtmc){
+                                        if(eqSysMatrixEntry->getColumn()==newIndices[oldRowGroup]){ //Diagonal entries get 1-c
+                                            eqSysMatrixEntry->setValue(storm::utility::one<ConstantType>() - storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(oldEntry.getValue())));
+                                        } else {
+                                            eqSysMatrixEntry->setValue(storm::utility::zero<ConstantType>() - storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(oldEntry.getValue())));
+                                        }
+                                    } else {
+                                        eqSysMatrixEntry->setValue(storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(oldEntry.getValue())));
+                                    }
+                                } else {
+                                    typename std::unordered_map<ParametricType, ConstantType>::iterator functionsIt;
+                                    if(isDtmc){
+                                        if(eqSysMatrixEntry->getColumn()==newIndices[oldRowGroup]){ //Diagonal entries get 1-f(x)
+                                            functionsIt = this->matrixData.functions.insert(FunctionEntry(storm::utility::one<ParametricType>()-oldEntry.getValue(), dummyValue)).first;
+                                        } else {
+                                            functionsIt = this->matrixData.functions.insert(FunctionEntry(storm::utility::zero<ParametricType>()-oldEntry.getValue(), dummyValue)).first;
+                                        }
+                                    } else {
+                                        functionsIt = this->matrixData.functions.insert(FunctionEntry(oldEntry.getValue(), dummyValue)).first;
+                                    }
+                                    this->matrixData.assignment.emplace_back(std::make_pair(eqSysMatrixEntry, &(functionsIt->second)));
+                                    //Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
+                                }
+                                ++eqSysMatrixEntry;
+                            }
+                        }
+                        ++curRow;
+                    }
+                }
+                this->matrixData.matrix.updateNonzeroEntryCount();
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SamplingModel<ParametricSparseModelType, ConstantType>::initializeRewards(ParametricSparseModelType const& parametricModel,
-                                                                                                              boost::optional<std::vector<ConstantType>>& stateRewards,
-                                                                                                              std::vector<TableEntry*>& rewardEntryToEvalTableMapping,
-                                                                                                              TableEntry* constantEntry) {
-                // run through the state reward vector of the parametric model. Constant entries can be set directly. Parametric entries are inserted into the table
-                std::vector<ConstantType> stateRewardsAsVector(parametricModel.getNumberOfStates());
-                rewardEntryToEvalTableMapping.reserve(parametricModel.getNumberOfStates());
-                std::size_t numOfNonConstEntries=0;
-                for(std::size_t state=0; state<parametricModel.getNumberOfStates(); ++state){
+            void SamplingModel<ParametricSparseModelType, ConstantType>::initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices){
+                //Run through the state reward vector...
+                this->vectorData.vector.reserve(this->maybeStates.getNumberOfSetBits()); //Important! iterators have to remain valid
+                this->vectorData.assignment.reserve(this->maybeStates.getNumberOfSetBits());
+                ConstantType dummyValue = storm::utility::one<ConstantType>();
+                for(auto state : this->maybeStates){
                     if(storm::utility::isConstant(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state])){
-                        stateRewardsAsVector[state] = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state]));
-                        rewardEntryToEvalTableMapping.emplace_back(constantEntry);
+                        this->vectorData.vector.push_back(storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state])));
                     } else {
-                        ++numOfNonConstEntries;
-                        auto evalTableIt = this->probabilityEvaluationTable.insert(TableEntry(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state], storm::utility::zero<ConstantType>())).first;
-                        rewardEntryToEvalTableMapping.emplace_back(&(*evalTableIt));
+                        typename std::unordered_map<ParametricType, ConstantType>::iterator functionsIt = this->vectorData.functions.insert(FunctionEntry(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[state], dummyValue)).first;
+                        this->vectorData.assignment.emplace_back(std::make_pair(this->vectorData.vector.end(), &(functionsIt->second)));
+                        this->vectorData.vector.push_back(dummyValue);
                     }
                 }
-                this->stateRewardMapping.reserve(numOfNonConstEntries);
-                stateRewards=std::move(stateRewardsAsVector);
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -156,58 +199,55 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<storm::models::sparse::Model<ConstantType>> const& SamplingModel<ParametricSparseModelType, ConstantType>::getModel() const {
-                return this->model;
-            }
-
-            template<typename ParametricSparseModelType, typename ConstantType>
             void SamplingModel<ParametricSparseModelType, ConstantType>::instantiate(std::map<VariableType, CoefficientType>const& point) {
-                //write entries into evaluation tables
-                for(auto& tableEntry : this->probabilityEvaluationTable){
-                    tableEntry.second=storm::utility::region::convertNumber<ConstantType>(
-                            storm::utility::region::evaluateFunction(tableEntry.first, point));
+                //write results into the placeholders
+                for(auto& functionResult : this->matrixData.functions){
+                    functionResult.second=storm::utility::region::convertNumber<ConstantType>(
+                            storm::utility::region::evaluateFunction(functionResult.first, point));
                 }
-                for(auto& tableEntry : this->rewardEvaluationTable){
-                    tableEntry.second=storm::utility::region::convertNumber<ConstantType>(
-                            storm::utility::region::evaluateFunction(tableEntry.first, point));
+                for(auto& functionResult : this->vectorData.functions){
+                    functionResult.second=storm::utility::region::convertNumber<ConstantType>(
+                            storm::utility::region::evaluateFunction(functionResult.first, point));
                 }
 
-                //write the instantiated values to the matrix according to the mappings
-                for(auto& mappingPair : this->probabilityMapping){
-                    mappingPair.second->setValue(*(mappingPair.first));
+                //write the instantiated values to the matrix and the vector according to the assignment
+                for(auto& assignment : this->matrixData.assignment){
+                    assignment.first->setValue(*(assignment.second));
                 }
-                if(this->computeRewards){
-                    for(auto& mappingPair : this->stateRewardMapping){
-                        *mappingPair.second=*mappingPair.first;
-                    }
+                for(auto& assignment : this->vectorData.assignment){
+                    *assignment.first=*assignment.second;
                 }
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::unique_ptr<storm::modelchecker::CheckResult> SamplingModel<ParametricSparseModelType, ConstantType>::computeValues() {
-                std::unique_ptr<storm::modelchecker::AbstractModelChecker> modelChecker;
-                switch(this->getModel()->getType()){
-                    case storm::models::ModelType::Dtmc:
-                        modelChecker = std::make_unique<storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ConstantType>>>(*this->model->template as<storm::models::sparse::Dtmc<ConstantType>>());
-                        break;
-                    case storm::models::ModelType::Mdp:
-                        modelChecker = std::make_unique<storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ConstantType>>>(*this->model->template as<storm::models::sparse::Mdp<ConstantType>>());
-                        break;
-                    default:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Tried to build a sampling model for an unsupported model type");
-                }
-                std::unique_ptr<storm::modelchecker::CheckResult> resultPtr;
-                //perform model checking
-                boost::optional<storm::solver::OptimizationDirection> opDir = storm::logic::isLowerBound(this->formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
-                if(this->computeRewards){
-                    resultPtr = modelChecker->computeReachabilityRewards(this->formula->asRewardOperatorFormula().getSubformula().asReachabilityRewardFormula());
-                }
-                else {
-                    storm::logic::UntilFormula newFormula(storm::logic::Formula::getTrueFormula(), this->formula->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().asSharedPointer());
-                    resultPtr = modelChecker->computeUntilProbabilities(newFormula, false, opDir);
-                }
-                return resultPtr;
+            std::vector<ConstantType> SamplingModel<ParametricSparseModelType, ConstantType>::computeValues() {
+                invokeSolver();
+                std::vector<ConstantType> result(this->maybeStates.size());
+                storm::utility::vector::setVectorValues(result, this->maybeStates, this->eqSysResult);
+                storm::utility::vector::setVectorValues(result, this->targetStates, this->computeRewards ? storm::utility::zero<ConstantType>() : storm::utility::one<ConstantType>());
+                storm::utility::vector::setVectorValues(result, ~(this->maybeStates | this->targetStates), this->computeRewards ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>());
+                
+                return result;
             }
+            
+            template<typename ParametricSparseModelType, typename ConstantType>
+            ConstantType SamplingModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue() {
+                invokeSolver();
+                return this->eqSysResult[this->eqSysInitIndex];
+            }
+            
+            template<>
+            void SamplingModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(){
+                std::unique_ptr<storm::solver::LinearEquationSolver<double>> solver = storm::utility::solver::LinearEquationSolverFactory<double>().create(this->matrixData.matrix);
+                solver->solveEquationSystem(this->eqSysResult, this->vectorData.vector);
+            }
+            template<>
+            void SamplingModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(){
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(this->solveGoal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
+                solver->solveEquationSystem(this->eqSysResult, this->vectorData.vector);
+            }
+            
+            
         
 #ifdef STORM_HAVE_CARL
             template class SamplingModel<storm::models::sparse::Dtmc<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;

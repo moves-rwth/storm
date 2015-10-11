@@ -141,7 +141,7 @@ namespace storm {
                     initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
                     std::map<VariableType, CoefficientType> emptySubstitution;
                     this->getSamplingModel()->instantiate(emptySubstitution);
-                    this->constantResult = this->getSamplingModel()->computeValues()->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[*this->getSamplingModel()->getModel()->getInitialStates().begin()];
+                    this->constantResult = this->getSamplingModel()->computeInitialStateValue();
                 }
 
                 //some more information for statistics...
@@ -394,7 +394,7 @@ namespace storm {
                     return this->constantResult.get();
                 }
                 this->getSamplingModel()->instantiate(point);
-                return this->getSamplingModel()->computeValues()->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()[*this->getSamplingModel()->getModel()->getInitialStates().begin()];
+                return this->getSamplingModel()->computeInitialStateValue();
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>

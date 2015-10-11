@@ -12,11 +12,10 @@
 #include <memory>
 
 #include "src/utility/region.h"
-
 #include "src/logic/Formulas.h"
-#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/models/sparse/Model.h"
 #include "src/storage/SparseMatrix.h"
+#include "src/solver/SolveGoal.h"
 
 namespace storm {
     namespace modelchecker{
@@ -30,14 +29,13 @@ namespace storm {
                 
                 /*!
                  * Creates a sampling model.
+                 * The given model should have the state-labels
+                 * * "target", labeled on states with reachability probability one (reachability reward zero)
+                 * * "sink", labeled on states from which a target state can not be reached.
+                 * The (single) initial state should be disjoint from these states. (otherwise the result would be independent of the parameters, anyway)
                  */
                 SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula);
                 virtual ~SamplingModel();
-
-                /*!
-                 * returns the underlying model
-                 */
-                std::shared_ptr<storm::models::sparse::Model<ConstantType>> const& getModel() const;
 
                 /*!
                  * Instantiates the underlying model according to the given point
@@ -48,35 +46,55 @@ namespace storm {
                  * Returns the reachability probabilities (or the expected rewards) for every state according to the current instantiation.
                  * Undefined behavior if model has not been instantiated first!
                  */
-                std::unique_ptr<storm::modelchecker::CheckResult> computeValues();
-
+                std::vector<ConstantType> computeValues();
+                
+                /*!
+                 * Returns the reachability probability (or the expected rewards) of the initial state.
+                 * Undefined behavior if model has not been instantiated first!
+                 */
+                ConstantType computeInitialStateValue();
 
             private:
 
-                typedef typename std::unordered_map<ParametricType, ConstantType>::value_type TableEntry;
-
-                void initializeProbabilities(ParametricSparseModelType const& parametricModel, storm::storage::SparseMatrix<ConstantType>& probabilityMatrix, std::vector<TableEntry*>& matrixEntryToEvalTableMapping, TableEntry* constantEntry);
-                void initializeRewards(ParametricSparseModelType const& parametricModel, boost::optional<std::vector<ConstantType>>& stateRewards, std::vector<TableEntry*>& rewardEntryToEvalTableMapping, TableEntry* constantEntry);
-
-                //The model with which we work
-                std::shared_ptr<storm::models::sparse::Model<ConstantType>> model;
-                //The formula for which we will compute the values
-                std::shared_ptr<storm::logic::OperatorFormula> formula;
+                typedef typename std::unordered_map<ParametricType, ConstantType>::value_type FunctionEntry;
+                void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
+                void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
+                void invokeSolver();
+                
+                //Some designated states in the model
+                storm::storage::BitVector targetStates, maybeStates;
+                //The last result of the solving the equation system. Also serves as first guess for the next call.
+                //Note: eqSysResult.size==maybeStates.numberOfSetBits
+                std::vector<ConstantType> eqSysResult;
+                //The index which represents the result for the initial state in the eqSysResult vector
+                std::size_t eqSysInitIndex;
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
+                //The goal we want to accomplish when solving the eq sys.
+                storm::solver::SolveGoal solveGoal;
+                
 
-                // We store one (unique) entry for every occurring function.
-                // Whenever a sampling point is given, we can then evaluate the functions
-                // and store the result to the target value of this map
-                std::unordered_map<ParametricType, ConstantType> probabilityEvaluationTable;
-                std::unordered_map<ParametricType, ConstantType> rewardEvaluationTable;
-
-                //This Vector connects the probability evaluation table with the probability matrix of the model.
-                //Vector has one entry for every (non-constant) matrix entry.
-                //pair.first points to an entry in the evaluation table,
-                //pair.second is an iterator to the corresponding matrix entry
-                std::vector<std::pair<ConstantType*, typename storm::storage::SparseMatrix<ConstantType>::iterator>> probabilityMapping;
-                std::vector<std::pair<ConstantType*, typename std::vector<ConstantType>::iterator>> stateRewardMapping;
+                /* The data required for the equation system, i.e., a matrix and a vector.
+                 * 
+                 * We use a map to store one (unique) entry for every occurring function. 
+                 * The map points to some ConstantType value which serves as placeholder. 
+                 * When instantiating the model, the evaluated result of every function is stored in the corresponding placeholder.
+                 * Finally, there is an assignment that connects every non-constant matrix entry
+                 * with a pointer to the value that, on instantiation, needs to be written in that entry.
+                 * 
+                 * This way, it is avoided that the same function is evaluated multiple times.
+                 */
+                struct MatrixData {
+                    storm::storage::SparseMatrix<ConstantType> matrix; //The matrix itself.
+                    std::unordered_map<ParametricType, ConstantType> functions; // the occurring functions together with the corresponding placeholders for the result
+                    std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>> assignment; // Connection of matrix entries with placeholders
+                } matrixData;
+                struct VectorData {
+                    std::vector<ConstantType> vector; //The vector itself.
+                    std::unordered_map<ParametricType, ConstantType> functions; // the occurring functions together with the corresponding placeholders for the result
+                    std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType*>> assignment; // Connection of vector entries with placeholders
+                } vectorData;
+                
 
             };
         } //namespace region

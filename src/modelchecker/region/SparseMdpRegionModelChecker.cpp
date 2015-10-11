@@ -96,12 +96,26 @@ namespace storm {
                 }
                 std::cout << "Found that " << stateCounter << " of " << this->getModel().getNumberOfStates() << " states could be eliminated" << std::endl;
                 
-                
-                
                 //TODO: Actually eliminate the states...
                 STORM_LOG_WARN("No simplification of the original model (like elimination of constant transitions) is happening. Will just use a copy of the original model");
-                simpleModel = std::make_shared<ParametricSparseModelType>(this->getModel()); //Note: an actual copy is technically not necessary.. but we will do it here..
-                simpleFormula = this->getSpecifiedFormula();
+                
+                //Get a new labeling
+                storm::storage::sparse::state_type numStates = this->getModel().getNumberOfStates();
+                storm::storage::BitVector sinkStates = ~(maybeStates | targetStates);
+                storm::models::sparse::StateLabeling labeling(numStates);
+                storm::storage::BitVector initLabel(this->getModel().getInitialStates());
+                labeling.addLabel("init", std::move(initLabel));
+                labeling.addLabel("target", std::move(targetStates));
+                labeling.addLabel("sink", std::move(sinkStates));
+                //Other ingredients
+                std::unordered_map<std::string, ParametricRewardModelType> noRewardModels;
+                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;  
+                simpleModel = std::make_shared<ParametricSparseModelType>(this->getModel().getTransitionMatrix(), std::move(labeling), std::move(noRewardModels), std::move(noChoiceLabeling));
+                
+                //Get the simplified formula
+                std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
+                std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
+                simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(this->getSpecifiedFormula()->getComparisonType(), this->getSpecifiedFormulaBound(), eventuallyFormula));
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
