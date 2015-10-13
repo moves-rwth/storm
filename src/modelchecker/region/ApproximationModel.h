@@ -127,7 +127,7 @@ namespace storm {
 
                 void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t>& rowSubstitutions);
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t> const& rowSubstitutions);
-                void initializePlayer1Matrix(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
+                void initializePlayer1Matrix(ParametricSparseModelType const& parametricModel);
                 void instantiate(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
                 void invokeSolver(bool computeLowerBounds);
 
@@ -142,7 +142,7 @@ namespace storm {
                 bool computeRewards;
                 //Player 1 represents the nondeterminism of the given mdp (so, this is irrelevant if we approximate values of a DTMC)
                 storm::solver::SolveGoal player1Goal;
-                storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix;
+                storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
                 
                 /* The data required for the equation system, i.e., a matrix and a vector.
                  * 

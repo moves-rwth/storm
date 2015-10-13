@@ -130,7 +130,7 @@ namespace storm {
                  * However, if only the lowerBounds (or upperBounds) have been computed, the other vector is set to a vector of size 0.
                  * True is returned iff either ALLSAT or ALLVIOLATED could be proved.
                  */
-                bool checkApproximativeValues(ParameterRegion<ParametricType>& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds); 
+                bool checkApproximativeValues(ParameterRegion<ParametricType>& region); 
 
                 /*!
                  * Returns the approximation model.

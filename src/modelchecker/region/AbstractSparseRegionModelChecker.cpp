@@ -218,11 +218,9 @@ namespace storm {
                 }
 
                 std::chrono::high_resolution_clock::time_point timeApproximationStart = std::chrono::high_resolution_clock::now();
-                std::vector<ConstantType> lowerBounds;
-                std::vector<ConstantType> upperBounds;
                 if(!done && doApproximation){
                     STORM_LOG_DEBUG("Checking approximative values...");
-                    if(this->checkApproximativeValues(region, lowerBounds, upperBounds)){
+                    if(this->checkApproximativeValues(region)){
                         ++this->numOfRegionsSolvedThroughApproximation;
                         STORM_LOG_DEBUG("Result '" << region.getCheckResult() <<"' obtained through approximation.");
                         done=true;
@@ -274,11 +272,8 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkApproximativeValues(ParameterRegion<ParametricType>& region, std::vector<ConstantType>& lowerBounds, std::vector<ConstantType>& upperBounds) {
+            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkApproximativeValues(ParameterRegion<ParametricType>& region) {
                 std::chrono::high_resolution_clock::time_point timeMDPBuildStart = std::chrono::high_resolution_clock::now();
-                this->getApproximationModel()->instantiate(region);
-                std::chrono::high_resolution_clock::time_point timeMDPBuildEnd = std::chrono::high_resolution_clock::now();
-                this->timeApproxModelInstantiation += timeMDPBuildEnd-timeMDPBuildStart;
 
                 // Decide whether to prove allsat or allviolated. 
                 bool proveAllSat;
@@ -317,19 +312,9 @@ namespace storm {
                          proveAllSat=true;
                 }
 
-                bool formulaSatisfied;
-                if((this->specifiedFormulaHasUpperBound() && proveAllSat) || (!this->specifiedFormulaHasUpperBound() && !proveAllSat)){
-                    //these are the cases in which we need to compute upper bounds
-                    upperBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                    lowerBounds = std::vector<ConstantType>();
-                    formulaSatisfied = this->valueIsInBoundOfFormula(upperBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
-                }
-                else{
-                    //for the remaining cases we compute lower bounds
-                    lowerBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                    upperBounds = std::vector<ConstantType>();
-                    formulaSatisfied = this->valueIsInBoundOfFormula(lowerBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
-                }
+                bool computeLowerBounds = (!this->specifiedFormulaHasUpperBound() && proveAllSat) || (this->specifiedFormulaHasUpperBound() && !proveAllSat);
+                STORM_LOG_DEBUG("Approximation for " << (computeLowerBounds ? "lower" : "upper") << "bounds");
+                bool formulaSatisfied = this->valueIsInBoundOfFormula(this->getApproximationModel()->computeInitialStateValue(region, computeLowerBounds));
 
                 //check if approximation was conclusive
                 if(proveAllSat && formulaSatisfied){
@@ -344,15 +329,8 @@ namespace storm {
                 if(region.getCheckResult()==RegionCheckResult::UNKNOWN){
                     //In this case, it makes sense to try to prove the contrary statement
                     proveAllSat=!proveAllSat;
-
-                    if(lowerBounds.empty()){
-                        lowerBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                        formulaSatisfied=this->valueIsInBoundOfFormula(lowerBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
-                    }
-                    else{
-                        upperBounds = this->getApproximationModel()->computeValues(storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                        formulaSatisfied=this->valueIsInBoundOfFormula(upperBounds[*this->getApproximationModel()->getModel()->getInitialStates().begin()]);
-                    }
+                    computeLowerBounds=!computeLowerBounds;
+                    formulaSatisfied = this->valueIsInBoundOfFormula(this->getApproximationModel()->computeInitialStateValue(region, computeLowerBounds));
 
                     //check if approximation was conclusive
                     if(proveAllSat && formulaSatisfied){

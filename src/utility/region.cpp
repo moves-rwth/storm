@@ -17,6 +17,7 @@
 
 #ifdef STORM_HAVE_CARL
 #include<carl/numbers/numbers.h>
+#include<carl/core/VariablePool.h>
 #endif
 
 namespace storm {
