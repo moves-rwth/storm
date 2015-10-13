@@ -18,8 +18,8 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
 //    ASSERT_TRUE(storm::logic::isLowerBound(formula02.getComparisonType()));
 //    auto formula001 = formulaParser.parseSingleFormulaFromString("P>=0.17 [ F \"one\"]")->asProbabilityOperatorFormula();
     
-    auto formula02b = formulaParser.parseSingleFormulaFromString("P<=0.14 [ F \"one\"]")->asProbabilityOperatorFormula();
-    auto formula001b = formulaParser.parseSingleFormulaFromString("P<=0.10 [ F \"one\"]")->asProbabilityOperatorFormula();
+    auto formula02b = formulaParser.parseSingleFormulaFromString("P<=0.16 [ F \"one\"]")->asProbabilityOperatorFormula();
+    auto formula001b = formulaParser.parseSingleFormulaFromString("P<=0.05 [ F \"one\"]")->asProbabilityOperatorFormula();
     
     // Customize and perform model-building.
     typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;

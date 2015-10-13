@@ -138,6 +138,7 @@ namespace storm {
                         } else {
                             solver.add(storm::expressions::implies(multistrategyVariables[storage::StateActionPair(s,a)], mProbVariables[s] >= storm::expressions::sum(expressions)));
                         }
+                        expressions.clear();
                     }
                     
                     // (6) and (8) are only necessary for lower-bounded properties.
@@ -192,13 +193,11 @@ namespace storm {
                     
                     std::vector<storage::StateActionPair> availableStateActionPairs;
                     for (uint_fast64_t s : relevantStates) {
-                        std::cout << "considering relevant state " << s << std::endl;
                         for(uint_fast64_t a = 0; a < this->mdp.getNumberOfChoices(s); ++a) {
                             auto stateAndAction = storage::StateActionPair(s,a);
                             
                             auto multistrategyVariable = multistrategyVariables.at(stateAndAction);
                             if (model->getBooleanValue(multistrategyVariable)) {
-                                std::cout << "taking " << a << " in " << s << std::endl;
                                 multistrategyVariablesToTakenMap[multistrategyVariable] = true;
                                 solver.add(multistrategyVariable);
                             } else {
@@ -213,19 +212,15 @@ namespace storm {
                     
                     do {
                         auto multistrategyVariable = multistrategyVariables.at(availableStateActionPairs.back());
-                        std::cout << "trying " << multistrategyVariable.getName() << std::endl;
 
                         result = solver.checkWithAssumptions({ multistrategyVariable });
                         
                         if (result == storm::solver::SmtSolver::CheckResult::Sat) {
-                            std::cout << "succeeded." << std::endl;
                             model = solver.getModel();
                             if (model->getBooleanValue(multistrategyVariable)) {
                                 solver.add(multistrategyVariable);
                                 multistrategyVariablesToTakenMap[multistrategyVariable] = true;
                             }
-                        } else {
-                            std::cout << "failed." << std::endl;
                         }
                         availableStateActionPairs.pop_back();
                         
@@ -233,7 +228,6 @@ namespace storm {
                     
                     mFoundSolution = true;
                 } else {
-                    std::cout << "didnt find one" << std::endl;
                     mFoundSolution = false;
                 }
             }
