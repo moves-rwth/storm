@@ -61,7 +61,7 @@ namespace storm {
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void invokeSolver();
                 
-                //Some designated states in the model
+                //Some designated states in the original model
                 storm::storage::BitVector targetStates, maybeStates;
                 //The last result of the solving the equation system. Also serves as first guess for the next call.
                 //Note: eqSysResult.size==maybeStates.numberOfSetBits
@@ -79,19 +79,18 @@ namespace storm {
                  * We use a map to store one (unique) entry for every occurring function. 
                  * The map points to some ConstantType value which serves as placeholder. 
                  * When instantiating the model, the evaluated result of every function is stored in the corresponding placeholder.
-                 * Finally, there is an assignment that connects every non-constant matrix entry
+                 * Finally, there is an assignment that connects every non-constant matrix (or: vector) entry
                  * with a pointer to the value that, on instantiation, needs to be written in that entry.
                  * 
                  * This way, it is avoided that the same function is evaluated multiple times.
                  */
+                std::unordered_map<ParametricType, ConstantType> functions; // the occurring functions together with the corresponding placeholders for the result
                 struct MatrixData {
                     storm::storage::SparseMatrix<ConstantType> matrix; //The matrix itself.
-                    std::unordered_map<ParametricType, ConstantType> functions; // the occurring functions together with the corresponding placeholders for the result
                     std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>> assignment; // Connection of matrix entries with placeholders
                 } matrixData;
                 struct VectorData {
                     std::vector<ConstantType> vector; //The vector itself.
-                    std::unordered_map<ParametricType, ConstantType> functions; // the occurring functions together with the corresponding placeholders for the result
                     std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType*>> assignment; // Connection of vector entries with placeholders
                 } vectorData;
                 

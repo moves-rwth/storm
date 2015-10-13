@@ -17,6 +17,7 @@
 #include "src/logic/Formulas.h"
 #include "src/models/sparse/Model.h"
 #include "src/storage/SparseMatrix.h"
+#include "src/solver/SolveGoal.h"
 
 namespace storm {
     namespace modelchecker {
@@ -30,28 +31,28 @@ namespace storm {
 
                 /*!
                  * Creates an Approximation model
+                 * The given model should have the state-labels
+                 * * "target", labeled on states with reachability probability one (reachability reward zero)
+                 * * "sink", labeled on states from which a target state can not be reached.
+                 * The (single) initial state should be disjoint from these states. (otherwise the result would be independent of the parameters, anyway)
                  * @note This will not check whether approximation is applicable
                  */
                 ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula);
                 virtual ~ApproximationModel();
 
                 /*!
-                 * returns the underlying model
+                 * Instantiates the approximation model w.r.t. the given region.
+                 * Then computes and returns the approximated reachability probabilities or reward values for every state.
+                 * If computeLowerBounds is true, the computed values will be a lower bound for the actual values. Otherwise, we get upper bounds,
                  */
-                std::shared_ptr<storm::models::sparse::Model<ConstantType>> const& getModel() const;
+                std::vector<ConstantType> computeValues(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
 
                 /*!
-                 * Instantiates the underlying model according to the given region
+                 * Instantiates the approximation model w.r.t. the given region.
+                 * Then computes and returns the approximated reachability probabilities or reward value for the initial state.
+                 * If computeLowerBounds is true, the computed value will be a lower bound for the actual value. Otherwise, we get an upper bound.
                  */
-                void instantiate(ParameterRegion<ParametricType> const& region);
-
-                /*!
-                 * Returns the approximated reachability probabilities or reward values for every state.
-                 * Undefined behavior if model has not been instantiated first!
-                 * @param approximationOpDir Use MAXIMIZE to get upper bounds or MINIMIZE to get lower bounds
-                 */
-                std::unique_ptr<storm::modelchecker::CheckResult> computeValues(storm::solver::OptimizationDirection const& approximationOpDir);
-
+                ConstantType computeInitialStateValue(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
 
             private:
                 //This enum helps to store how a parameter will be substituted.
@@ -121,43 +122,60 @@ namespace storm {
                         }
                 };
 
-                typedef typename std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash>::value_type ProbTableEntry;
-                typedef typename std::unordered_map<FunctionSubstitution, std::pair<ConstantType, ConstantType>, FuncSubHash>::value_type RewTableEntry;
+                typedef typename std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash>::value_type FunctionEntry;
+               // typedef typename std::unordered_map<FunctionSubstitution, std::pair<ConstantType, ConstantType>, FuncSubHash>::value_type RewTableEntry;
 
-                void initializeProbabilities(ParametricSparseModelType const& parametricModel, storm::storage::SparseMatrix<ConstantType>& probabilityMatrix, std::vector<typename storm::storage::SparseMatrix<ConstantType>::index_type>& approxRowGroupIndices, std::vector<std::size_t>& rowSubstitutions, std::vector<ProbTableEntry*>& matrixEntryToEvalTableMapping,  ProbTableEntry* constantEntry);
-                void initializeRewards(ParametricSparseModelType const& parametricModel, storm::storage::SparseMatrix<ConstantType> const& probabilityMatrix, std::vector<typename storm::storage::SparseMatrix<ConstantType>::index_type> const& approxRowGroupIndices, std::vector<std::size_t> const& rowSubstitutions, std::vector<ConstantType>& stateActionRewardVector, std::vector<RewTableEntry*>& rewardEntryToEvalTableMapping, RewTableEntry* constantEntry);
+                void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t>& rowSubstitutions);
+                void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t> const& rowSubstitutions);
+                void initializePlayer1Matrix(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
+                void instantiate(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
+                void invokeSolver(bool computeLowerBounds);
 
-                //The Model with which we work
-                std::shared_ptr<storm::models::sparse::Model<ConstantType>> model;
-                //The formula for which we will compute the values
-                std::shared_ptr<storm::logic::OperatorFormula> formula;
+                //Some designated states in the original model
+                storm::storage::BitVector targetStates, maybeStates;
+                //The last result of the solving the equation system. Also serves as first guess for the next call.
+                //Note: eqSysResult.size==maybeStates.numberOfSetBits
+                std::vector<ConstantType> eqSysResult;
+                //The index which represents the result for the initial state in the eqSysResult vector
+                std::size_t eqSysInitIndex;
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
-
-                // We store one (unique) entry for every occurring pair of a non-constant function and substitution.
-                // Whenever a region is given, we can then evaluate the functions (w.r.t. the corresponding substitutions)
-                // and store the result to the target value of this map
-                std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash> probabilityEvaluationTable;
-                //For rewards, we map to the minimal value and the maximal value (depending on the CHOSEOPTIMAL parameters).
-                std::unordered_map<FunctionSubstitution, std::pair<ConstantType, ConstantType>, FuncSubHash> rewardEvaluationTable;
-
-                //Vector has one entry for every required substitution (=replacement of parameters with lower/upper bounds of region)
-                std::vector<std::map<VariableType, TypeOfBound>> probabilitySubstitutions;
-                //Same for the different substitutions for the reward functions.
-                //In addition, we store the parameters for which the correct substitution 
-                //depends on the region and whether to minimize/maximize (i.e. CHOSEOPTIMAL parameters)
-                std::vector<std::map<VariableType, TypeOfBound>> rewardSubstitutions;
-                std::vector<std::set<VariableType>> choseOptimalRewardPars;
-
-                //This Vector connects the probability evaluation table with the probability matrix of the model.
-                //Vector has one entry for every (non-constant) matrix entry.
-                //pair.first points to an entry in the evaluation table,
-                //pair.second is an iterator to the corresponding matrix entry
-                std::vector<std::pair<ConstantType*, typename storm::storage::SparseMatrix<ConstantType>::iterator>> probabilityMapping;
-                //Similar for the rewards. But now the first entry points to a minimal and the second one to a maximal value.
-                //The third entry points to the state reward vector.
-                std::vector<std::tuple<ConstantType*, ConstantType*, typename std::vector<ConstantType>::iterator>> rewardMapping;
-
+                //Player 1 represents the nondeterminism of the given mdp (so, this is irrelevant if we approximate values of a DTMC)
+                storm::solver::SolveGoal player1Goal;
+                storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix;
+                
+                /* The data required for the equation system, i.e., a matrix and a vector.
+                 * 
+                 * We use a map to store one (unique) entry for every occurring pair of a non-constant function and substitution.
+                 * The map points to some ConstantType value which serves as placeholder. 
+                 * When instantiating the model, the evaluated result of every function + substitution is stored in the corresponding placeholder.
+                 * For rewards, however, we might need a minimal and a maximal value which is why there are two paceholders.
+                 * There is an assignment that connects every non-constant matrix (or: vector) entry
+                 * with a pointer to the value that, on instantiation, needs to be written in that entry.
+                 * 
+                 * This way, it is avoided that the same function is evaluated multiple times.
+                 */
+                struct FuncSubData{
+                    // the occurring probability functions together with the corresponding placeholders for the result
+                    std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash> functions; 
+                    // the occurring reward functions together with the corresponding placeholders for the minimal and maximal result
+  //                  //std::unordered_map<FunctionSubstitution, std::pair<ConstantType, ConstantType>, FuncSubHash> rewFunctions; 
+                    //Vector has one entry for every required substitution (=replacement of parameters with lower/upper bounds of region)
+                    std::vector<std::map<VariableType, TypeOfBound>> substitutions;
+                    //For rewards, we also store the parameters for which the correct substitution depends on the region and whether to minimize/maximize (i.e. TypeOfBound==CHOSEOPTIMAL)
+  //                 // std::vector<std::map<VariableType, TypeOfBound>> rewSubs;
+   //                 //std::vector<std::set<VariableType>> choseOptimalRewardPars;
+                } funcSubData;
+                struct MatrixData {
+                    storm::storage::SparseMatrix<ConstantType> matrix; //The matrix itself.
+                    std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>> assignment; // Connection of matrix entries with placeholders
+  //                  std::vector<std::tuple<ConstantType*, ConstantType*, typename std::vector<ConstantType>::iterator>> rewardMapping;
+                } matrixData;
+                struct VectorData {
+                    std::vector<ConstantType> vector; //The vector itself.
+                    std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType*>> assignment; // Connection of vector entries with placeholders
+                } vectorData;
+                
             };
         } //namespace region
     }
