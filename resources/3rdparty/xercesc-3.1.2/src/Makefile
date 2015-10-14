@@ -108,8 +108,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = x86_64-apple-darwin14.5.0
-host_triplet = x86_64-apple-darwin14.5.0
+build_triplet = x86_64-apple-darwin15.0.0
+host_triplet = x86_64-apple-darwin15.0.0
 
 # NetAccessors, conditionally built based on settings from configure
 #
@@ -1483,10 +1483,10 @@ am__quote =
 am__tar = tar --format=ustar -chf - "$$tardir"
 am__untar = tar -xf -
 bindir = ${exec_prefix}/bin
-build = x86_64-apple-darwin14.5.0
+build = x86_64-apple-darwin15.0.0
 build_alias = 
 build_cpu = x86_64
-build_os = darwin14.5.0
+build_os = darwin15.0.0
 build_vendor = apple
 builddir = .
 curl_config = /usr/bin/curl-config
@@ -1495,10 +1495,10 @@ datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = x86_64-apple-darwin14.5.0
+host = x86_64-apple-darwin15.0.0
 host_alias = 
 host_cpu = x86_64
-host_os = darwin14.5.0
+host_os = darwin15.0.0
 host_vendor = apple
 htmldir = ${docdir}
 icu_config = 
@@ -1514,7 +1514,7 @@ mkdir_p = $(MKDIR_P)
 oldincludedir = /usr/include
 pdfdir = ${docdir}
 pkgconfigdir = ${libdir}/pkgconfig
-prefix = /Users/sjunges/i2/storm/build/resources/3rdparty/xercesc-3.1.2
+prefix = /Users/sjunges/Library/Caches/clion11/cmake/generated/5b086923/5b086923/Debug/resources/3rdparty/xercesc-3.1.2
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin

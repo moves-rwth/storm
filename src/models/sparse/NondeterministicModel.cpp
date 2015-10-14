@@ -67,7 +67,9 @@ namespace storm {
             template<typename T>
             void NondeterministicModel<ValueType, RewardModelType>::modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications) {
                 RewardModelType& rewardModel = this->rewardModel(modelName);
+                size_t i = 0;
                 for(auto const& mod : modifications) {
+                    std::cout << i++ << "/" << modifications.size() << std::endl;
                     rewardModel.setStateActionReward(mod.first, mod.second);
                 }
             };

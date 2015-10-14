@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/Users/sjunges/Library/Caches/clion11/cmake/generated/5b086923/5b086923/Debug/resources/3rdparty/xercesc-3.1.2/lib'
+libdir='/Users/sjunges/i2/storm/build/resources/3rdparty/xercesc-3.1.2/lib'

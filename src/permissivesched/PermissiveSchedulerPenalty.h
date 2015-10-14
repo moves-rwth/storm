@@ -22,7 +22,7 @@ namespace storm {
             double get(storage::StateActionPair const& sap) const {
                 auto it = mPenalties.find(sap);
                 if(it == mPenalties.end()) {
-                    return 0.0;
+                    return 1.0;
                 }
                 else {
                     return it->second;

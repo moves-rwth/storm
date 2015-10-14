@@ -2,7 +2,7 @@
 srcdir = .
 top_srcdir = ../../../../..
 top_builddir = ../../../../..
-prefix = /Users/sjunges/i2/storm/build/resources/3rdparty/xercesc-3.1.2
+prefix = /Users/sjunges/Library/Caches/clion11/cmake/generated/5b086923/5b086923/Debug/resources/3rdparty/xercesc-3.1.2
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL}
 mkdir_p = $(MKDIR_P)
