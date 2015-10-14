@@ -77,7 +77,10 @@ namespace storm {
         };
 
         template<typename RM = storm::models::sparse::StandardRewardModel<double>>
-        boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP(storm::models::sparse::Mdp<double, RM> const &mdp, storm::logic::ProbabilityOperatorFormula const &safeProp);
+        boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP(storm::models::sparse::Mdp<double, RM> const& mdp, storm::logic::ProbabilityOperatorFormula const &safeProp);
+        
+        template<typename RM>
+        boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(storm::models::sparse::Mdp<double, RM> const& mdp, storm::logic::ProbabilityOperatorFormula const& safeProp);
     }
 }
 
