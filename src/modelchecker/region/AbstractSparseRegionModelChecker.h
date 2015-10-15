@@ -223,7 +223,6 @@ namespace storm {
                 std::chrono::high_resolution_clock::duration timeCheckRegion;
                 std::chrono::high_resolution_clock::duration timeSampling;
                 std::chrono::high_resolution_clock::duration timeApproximation;
-                std::chrono::high_resolution_clock::duration timeApproxModelInstantiation;
                 std::chrono::high_resolution_clock::duration timeSmt;    
             protected:
                 std::chrono::high_resolution_clock::duration timeComputeReachabilityFunction;

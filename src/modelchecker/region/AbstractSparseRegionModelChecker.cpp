@@ -118,9 +118,7 @@ namespace storm {
                 this->timeSampling=std::chrono::high_resolution_clock::duration::zero();
                 this->timeApproximation=std::chrono::high_resolution_clock::duration::zero();
                 this->timeSmt=std::chrono::high_resolution_clock::duration::zero();
-                this->timeApproxModelInstantiation=std::chrono::high_resolution_clock::duration::zero();
                 this->timeComputeReachabilityFunction=std::chrono::high_resolution_clock::duration::zero();
-                this->timeApproxModelInstantiation=std::chrono::high_resolution_clock::duration::zero();
 
                 
                 std::chrono::high_resolution_clock::time_point timePreprocessingStart = std::chrono::high_resolution_clock::now();
@@ -140,8 +138,7 @@ namespace storm {
                     STORM_LOG_DEBUG("The Result is constant and will be computed now.");
                     initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
                     std::map<VariableType, CoefficientType> emptySubstitution;
-                    this->getSamplingModel()->instantiate(emptySubstitution);
-                    this->constantResult = this->getSamplingModel()->computeInitialStateValue();
+                    this->constantResult = this->getSamplingModel()->computeInitialStateValue(emptySubstitution);
                 }
 
                 //some more information for statistics...
@@ -371,8 +368,7 @@ namespace storm {
                 if(this->isResultConstant()){
                     return this->constantResult.get();
                 }
-                this->getSamplingModel()->instantiate(point);
-                return this->getSamplingModel()->computeInitialStateValue();
+                return this->getSamplingModel()->computeInitialStateValue(point);
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -423,7 +419,6 @@ namespace storm {
                 std::chrono::milliseconds timeCheckRegionInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeCheckRegion);
                 std::chrono::milliseconds timeSammplingInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeSampling);
                 std::chrono::milliseconds timeApproximationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeApproximation);
-                std::chrono::milliseconds timeApproxModelInstantiationInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeApproxModelInstantiation);
                 std::chrono::milliseconds timeSmtInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(this->timeSmt);
 
                 std::chrono::high_resolution_clock::duration timeOverall = timeSpecifyFormula + timeCheckRegion; // + ...
@@ -463,8 +458,7 @@ namespace storm {
                 outstream << "    " << timeInitApproxModelInMilliseconds.count() << "ms to initialize the Approximation Model" << std::endl;
                 outstream << "    " << timeInitSamplingModelInMilliseconds.count() << "ms to initialize the Sampling Model" << std::endl;
                 outstream << "  " << timeCheckRegionInMilliseconds.count() << "ms Region Check including... " << std::endl;
-                outstream << "    " << timeApproximationInMilliseconds.count() << "ms Approximation including... " << std::endl;
-                outstream << "      " << timeApproxModelInstantiationInMilliseconds.count() << "ms for instantiation of the approximation model" << std::endl;
+                outstream << "    " << timeApproximationInMilliseconds.count() << "ms Approximation" << std::endl;
                 outstream << "    " << timeSammplingInMilliseconds.count() << "ms Sampling " << std::endl;
                 outstream << "    " << timeSmtInMilliseconds.count() << "ms Smt solving" << std::endl;
                 outstream << "-----------------------------------------------" << std::endl;

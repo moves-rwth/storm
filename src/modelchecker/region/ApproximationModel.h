@@ -10,6 +10,7 @@
 
 #include <unordered_map>
 #include <memory>
+#include <boost/functional/hash.hpp>
 
 #include "src/utility/region.h"
 #include "src/modelchecker/region/ParameterRegion.h"
@@ -63,7 +64,7 @@ namespace storm {
                 }; 
 
                 //A class that represents a function and how it should be substituted (i.e. which variables should be replaced with lower and which with upper bounds of the region)
-                //The substitution is given as an index in probability or reward substitutions. (This allows to instantiate the substitutions more easily)
+                //The substitution is given as an index in funcSubData.substitutions (allowing to instantiate the substitutions more easily).
                 class FunctionSubstitution {
                 public:
                     FunctionSubstitution(ParametricType const& fun, std::size_t const& sub) : hash(computeHash(fun,sub)), function(fun), substitution(sub) {
@@ -105,9 +106,10 @@ namespace storm {
                 private:
 
                     static std::size_t computeHash(ParametricType const& fun, std::size_t const& sub) {
-                            std::size_t hf = std::hash<ParametricType>()(fun);
-                            std::size_t hs = std::hash<std::size_t>()(sub);
-                            return hf ^(hs << 1);
+                        std::size_t seed = 0;
+                        boost::hash_combine(seed, fun);
+                        boost::hash_combine(seed, sub);
+                        return seed;
                     }
 
                     std::size_t hash;
@@ -123,7 +125,6 @@ namespace storm {
                 };
 
                 typedef typename std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash>::value_type FunctionEntry;
-               // typedef typename std::unordered_map<FunctionSubstitution, std::pair<ConstantType, ConstantType>, FuncSubHash>::value_type RewTableEntry;
 
                 void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t>& rowSubstitutions);
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t> const& rowSubstitutions);
@@ -156,24 +157,18 @@ namespace storm {
                  * This way, it is avoided that the same function is evaluated multiple times.
                  */
                 struct FuncSubData{
-                    // the occurring probability functions together with the corresponding placeholders for the result
+                    // the occurring (function,substitution)-pairs together with the corresponding placeholders for the result
                     std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash> functions; 
-                    // the occurring reward functions together with the corresponding placeholders for the minimal and maximal result
-  //                  //std::unordered_map<FunctionSubstitution, std::pair<ConstantType, ConstantType>, FuncSubHash> rewFunctions; 
                     //Vector has one entry for every required substitution (=replacement of parameters with lower/upper bounds of region)
                     std::vector<std::map<VariableType, TypeOfBound>> substitutions;
-                    //For rewards, we also store the parameters for which the correct substitution depends on the region and whether to minimize/maximize (i.e. TypeOfBound==CHOSEOPTIMAL)
-  //                 // std::vector<std::map<VariableType, TypeOfBound>> rewSubs;
-   //                 //std::vector<std::set<VariableType>> choseOptimalRewardPars;
                 } funcSubData;
                 struct MatrixData {
                     storm::storage::SparseMatrix<ConstantType> matrix; //The matrix itself.
-                    std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>> assignment; // Connection of matrix entries with placeholders
-  //                  std::vector<std::tuple<ConstantType*, ConstantType*, typename std::vector<ConstantType>::iterator>> rewardMapping;
+                    std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> assignment; // Connection of matrix entries with placeholders
                 } matrixData;
                 struct VectorData {
                     std::vector<ConstantType> vector; //The vector itself.
-                    std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType*>> assignment; // Connection of vector entries with placeholders
+                    std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType&>> assignment; // Connection of vector entries with placeholders
                 } vectorData;
                 
             };

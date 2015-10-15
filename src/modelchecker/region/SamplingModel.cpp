@@ -205,7 +205,8 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::vector<ConstantType> SamplingModel<ParametricSparseModelType, ConstantType>::computeValues() {
+            std::vector<ConstantType> SamplingModel<ParametricSparseModelType, ConstantType>::computeValues(std::map<VariableType, CoefficientType>const& point) {
+                instantiate(point);
                 invokeSolver();
                 std::vector<ConstantType> result(this->maybeStates.size());
                 storm::utility::vector::setVectorValues(result, this->maybeStates, this->eqSysResult);
@@ -216,7 +217,8 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            ConstantType SamplingModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue() {
+            ConstantType SamplingModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue(std::map<VariableType, CoefficientType>const& point) {
+                instantiate(point);
                 invokeSolver();
                 return this->eqSysResult[this->eqSysInitIndex];
             }

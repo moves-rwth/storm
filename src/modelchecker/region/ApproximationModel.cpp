@@ -4,6 +4,8 @@
  * 
  * Created on August 7, 2015, 9:29 AM
  */
+#include <stdint.h>
+
 #include "src/modelchecker/region/ApproximationModel.h"
 
 #include "src/models/sparse/Dtmc.h"
@@ -79,14 +81,14 @@ namespace storm {
                  * We also store the substitution that needs to be applied for each row.
                  */
                 ConstantType dummyValue = storm::utility::one<ConstantType>();
-                auto numOfMaybeStates = this->maybeStates.getNumberOfSetBits();               
-                storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(numOfMaybeStates, //exact number of rows is unknown at this point, but at least this many
-                                                                                numOfMaybeStates, //columns
+                storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(0, //Unknown number of rows
+                                                                                this->maybeStates.getNumberOfSetBits(), //columns
                                                                                 0, //Unknown number of entries
-                                                                                false, // no force dimensions
+                                                                                true, // force dimensions
                                                                                 true, //will have custom row grouping
-                                                                                numOfMaybeStates); //exact number of rowgroups is unknown at this point, but at least this many
-                rowSubstitutions.reserve(numOfMaybeStates);
+                                                                                0); //Unknown number of rowgroups
+                rowSubstitutions.reserve(this->maybeStates.getNumberOfSetBits());
+                storm::storage::BitVector relevantColumns = this->computeRewards ? this->maybeStates : (this->maybeStates | this->targetStates);
                 std::size_t curRow = 0;
                 for (auto oldRowGroup : this->maybeStates){
                     for (std::size_t oldRow = parametricModel.getTransitionMatrix().getRowGroupIndices()[oldRowGroup]; oldRow < parametricModel.getTransitionMatrix().getRowGroupIndices()[oldRowGroup+1]; ++oldRow){
@@ -94,12 +96,12 @@ namespace storm {
                         // Find the different substitutions, i.e., mappings from Variables that occur in this row to {lower, upper}
                         std::set<VariableType> occurringVariables;
                         for(auto const& oldEntry : parametricModel.getTransitionMatrix().getRow(oldRow)){
-                            if(this->maybeStates.get(oldEntry.getColumn())){
+                            if(relevantColumns.get(oldEntry.getColumn())){
                                 storm::utility::region::gatherOccurringVariables(oldEntry.getValue(), occurringVariables);
                             }
                         }
-                        std::size_t numOfSubstitutions=1ull<<occurringVariables.size(); //=2^(#variables). Note that there is still 1 substitution when #variables==0 (the empty substitution)
-                        for(uint_fast64_t substitutionId=0; substitutionId<numOfSubstitutions; ++substitutionId){
+                        uint_fast64_t numOfSubstitutions=1ull<<occurringVariables.size(); //=2^(#variables). Note that there is still 1 substitution when #variables==0 (the empty substitution)
+                        for(uint_fast64_t substitutionId=0ull; substitutionId<numOfSubstitutions; ++substitutionId){
                             //compute actual substitution from substitutionId by interpreting the Id as a bit sequence.
                             //the occurringVariables.size() least significant bits of substitutionId will represent the substitution that we have to consider
                             //(00...0 = lower bounds for all parameters, 11...1 = upper bounds for all parameters)
@@ -127,7 +129,8 @@ namespace storm {
                         }
                     }
                 }
-                this->matrixData.matrix=matrixBuilder.build();               
+                //Build the matrix. Override the row count (required e.g. when there are only transitions to target for the last matrixrow)
+                this->matrixData.matrix=matrixBuilder.build(rowSubstitutions.size());               
                 
                 //Now run again through both matrices to get the remaining ingredients of the matrixData and vectorData
                 this->matrixData.assignment.reserve(this->matrixData.matrix.getEntryCount());
@@ -156,7 +159,7 @@ namespace storm {
                                         eqSysMatrixEntry->setValue(storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(oldEntry.getValue())));
                                     } else {
                                         auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(oldEntry.getValue(), rowSubstitutions[curRow]), dummyValue)).first;
-                                        this->matrixData.assignment.emplace_back(std::make_pair(eqSysMatrixEntry, &(functionsIt->second)));
+                                        this->matrixData.assignment.emplace_back(eqSysMatrixEntry, functionsIt->second);
                                         //Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
                                     }
                                     ++eqSysMatrixEntry;
@@ -167,7 +170,7 @@ namespace storm {
                                     *vectorIt = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(targetProbability));
                                 } else {
                                     auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(targetProbability, rowSubstitutions[curRow]), dummyValue)).first;
-                                    this->vectorData.assignment.emplace_back(std::make_pair(vectorIt, &(functionsIt->second)));
+                                    this->vectorData.assignment.emplace_back(vectorIt, functionsIt->second);
                                     *vectorIt = dummyValue;
                                 }
                             }
@@ -230,7 +233,7 @@ namespace storm {
                                 functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[oldState], substitutionIndex), dummyValue)).first;
                             }
                             //insert assignment and dummy data
-                            this->vectorData.assignment.emplace_back(std::make_pair(vectorIt, &(functionsIt->second)));
+                            this->vectorData.assignment.emplace_back(vectorIt, functionsIt->second);
                             *vectorIt = dummyValue;
                             ++vectorIt;
                         }
@@ -281,7 +284,7 @@ namespace storm {
             ConstantType  ApproximationModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
                 instantiate(region, computeLowerBounds);
                 invokeSolver(computeLowerBounds);
-  //              std::cout << "initialStateValue is " << this->eqSysResult[this->eqSysInitIndex] << std::endl;
+//                std::cout << "initialStateValue is " << this->eqSysResult[this->eqSysInitIndex] << std::endl;
                 return this->eqSysResult[this->eqSysInitIndex];
             }
             
@@ -335,10 +338,10 @@ namespace storm {
                 
                 //write the instantiated values to the matrix and the vector according to the assignment
                 for(auto& assignment : this->matrixData.assignment){
-                    assignment.first->setValue(*(assignment.second));
+                    assignment.first->setValue(assignment.second);
                 }
                 for(auto& assignment : this->vectorData.assignment){
-                    *assignment.first=*assignment.second;
+                    *assignment.first = assignment.second;
                 }
             }
             
