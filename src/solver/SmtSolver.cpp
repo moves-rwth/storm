@@ -83,6 +83,14 @@ namespace storm {
         storm::expressions::ExpressionManager& SmtSolver::getManager() {
             return manager;
         }
+        
+        bool SmtSolver::setTimeout(uint_fast64_t milliseconds) {
+            return false;
+        }
+        
+        bool SmtSolver::unsetTimeout() {
+            return false;
+        }
 
     } // namespace solver
 } // namespace storm

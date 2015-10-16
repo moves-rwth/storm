@@ -276,6 +276,22 @@ namespace storm {
              */
             storm::expressions::ExpressionManager& getManager();
             
+            /*!
+             * If supported by the solver, this will limit all subsequent satisfiability queries to the given number of
+             * milliseconds.
+             *
+             * @param milliseconds The amount of milliseconds before timing out.
+             * @return True iff the solver supports setting a timeout.
+             */
+            virtual bool setTimeout(uint_fast64_t milliseconds);
+            
+            /*!
+             * If supported by the solver, this unsets a previous timeout.
+             *
+             * @return True iff the solver supports timeouts.
+             */
+            virtual bool unsetTimeout();
+            
         private:
             // The manager responsible for the expressions that interact with this solver.
             storm::expressions::ExpressionManager& manager;
