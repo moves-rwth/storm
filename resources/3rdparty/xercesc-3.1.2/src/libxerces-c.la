@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/Users/sjunges/i2/storm/build/resources/3rdparty/xercesc-3.1.2/lib'
+libdir='/Users/chris/work/storm/build/resources/3rdparty/xercesc-3.1.2/lib'

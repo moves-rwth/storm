@@ -340,17 +340,25 @@ namespace storm {
 		}
         
         bool Z3SmtSolver::setTimeout(uint_fast64_t milliseconds) {
+#ifdef STORM_HAVE_Z3
             z3::params paramObject(*context);
             paramObject.set(":timeout", static_cast<unsigned>(milliseconds));
             solver->set(paramObject);
             return true;
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
+#endif
         }
         
         bool Z3SmtSolver::unsetTimeout() {
+#ifdef STORM_HAVE_Z3
             z3::params paramObject(*context);
             paramObject.set(":timeout", 0u);
             solver->set(paramObject);
             return true;
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
+#endif
         }
 
 	}
