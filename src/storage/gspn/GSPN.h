@@ -6,7 +6,7 @@ namespace storm {
         // Stores a GSPN
         class GSPN {
             // Later, the rates and probabilities type should become a template, for now, let it be doubles.
-            typedef ValueType double;
+            typedef double ValueType;
 
         };
     }
