@@ -98,7 +98,7 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     EXPECT_NEAR(0.26787251126, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.41879628383, modelchecker.getReachabilityValue(exBothRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.01535089684, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.24952612245, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.24952471590, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.01711494956, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
    
     //test approximative method

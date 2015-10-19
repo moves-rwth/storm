@@ -162,7 +162,7 @@ namespace storm {
                             }
                         }
                         if(!this->computeRewards){
-                            if(storm::utility::isConstant(targetProbability)){
+                            if(storm::utility::isConstant(storm::utility::simplify(targetProbability))){
                                 *vectorIt = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(targetProbability));
                             } else {
                                 typename std::unordered_map<ParametricType, ConstantType>::iterator functionsIt = this->functions.insert(FunctionEntry(targetProbability, dummyValue)).first;

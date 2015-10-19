@@ -166,7 +166,7 @@ namespace storm {
                                 }
                             }
                             if(!this->computeRewards){
-                                if(storm::utility::isConstant(targetProbability)){
+                                if(storm::utility::isConstant(storm::utility::simplify(targetProbability))){
                                     *vectorIt = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(targetProbability));
                                 } else {
                                     auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(targetProbability, rowSubstitutions[curRow]), dummyValue)).first;

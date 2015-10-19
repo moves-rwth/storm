@@ -6,7 +6,6 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/models/sparse/Dtmc.h"
 #include "src/utility/region.h"
-#include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/solver/Smt2SmtSolver.h"
 
 namespace storm {
@@ -118,9 +117,6 @@ namespace storm {
 
                 // The  function for the reachability probability (or: reachability reward) in the initial state 
                 std::shared_ptr<ParametricType> reachabilityFunction;
-                
-                // Instance of an elimination model checker to access its functions
-                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ParametricType>> eliminationModelChecker;
                 
                 // the smt solver that is used to prove properties with the help of the reachabilityFunction
                 std::shared_ptr<storm::solver::Smt2SmtSolver> smtSolver;

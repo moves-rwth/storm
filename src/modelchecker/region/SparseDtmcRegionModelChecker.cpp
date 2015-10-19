@@ -9,11 +9,13 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/region/RegionCheckResult.h"
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
+#include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/RegionSettings.h"
 #include "src/solver/OptimizationDirection.h"
 #include "src/storage/sparse/StateType.h"
+#include "src/storage/FlexibleSparseMatrix.h"
 #include "src/utility/constants.h"
 #include "src/utility/graph.h"
 #include "src/utility/macros.h"
@@ -34,8 +36,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseDtmcRegionModelChecker(ParametricSparseModelType const& model) : 
-                    AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model),
-                    eliminationModelChecker(model){
+                    AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
                 //intentionally left empty
             }
 
@@ -102,8 +103,8 @@ namespace storm {
                 storm::storage::SparseMatrix<ParametricType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
                 // Eliminate all states with only constant outgoing transitions
                 // Convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
-                auto flexibleTransitions = this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix);
-                auto flexibleBackwardTransitions= this->eliminationModelChecker.getFlexibleSparseMatrix(submatrix.transpose(), true);
+                storm::storage::FlexibleSparseMatrix<ParametricType> flexibleTransitions(submatrix);
+                storm::storage::FlexibleSparseMatrix<ParametricType> flexibleBackwardTransitions(submatrix.transpose(), true);
                 // Create a bit vector that represents the current subsystem, i.e., states that we have not eliminated.
                 storm::storage::BitVector subsystem(submatrix.getRowCount(), true);
                 //The states that we consider to eliminate
@@ -140,7 +141,7 @@ namespace storm {
                         }
                     }
                     if(eliminateThisState){
-                        this->eliminationModelChecker.eliminateState(flexibleTransitions, oneStepProbabilities, state, flexibleBackwardTransitions, stateRewards);
+                        storm::storage::FlexibleSparseMatrix<ParametricType>::eliminateState(flexibleTransitions, oneStepProbabilities, state, state, flexibleBackwardTransitions, stateRewards);
                         subsystem.set(state,false);
                     }
                 }
@@ -182,8 +183,8 @@ namespace storm {
                             matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], targetState, storm::utility::simplify(oneStepProbabilities[oldStateIndex]));
                         }
                         //transition to sink state
-                        if(!storm::utility::isZero(missingProbability)){ 
-                            matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], sinkState, storm::utility::simplify(missingProbability));
+                        if(!storm::utility::isZero(storm::utility::simplify(missingProbability))){ 
+                            matrixBuilder.addNextValue(newStateIndexMap[oldStateIndex], sinkState, missingProbability);
                         }
                     }
                 }
@@ -397,8 +398,9 @@ namespace storm {
                 if(this->isComputeRewards()){
                     stateRewards = simpleModel.getUniqueRewardModel()->second.getTotalRewardVector(maybeStates.getNumberOfSetBits(), simpleModel.getTransitionMatrix(), maybeStates);
                 }
-                std::vector<std::size_t> statePriorities = this->eliminationModelChecker.getStatePriorities(forwardTransitions,backwardTransitions,newInitialStates,oneStepProbabilities);
-                this->reachabilityFunction=std::make_shared<ParametricType>(this->eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , phiStates, simpleModel.getStates("target"), stateRewards, statePriorities));
+                storm::modelchecker::SparseDtmcEliminationModelChecker<ParametricSparseModelType> eliminationModelChecker(simpleModel);
+                std::vector<std::size_t> statePriorities = eliminationModelChecker.getStatePriorities(forwardTransitions,backwardTransitions,newInitialStates,oneStepProbabilities);
+                this->reachabilityFunction=std::make_shared<ParametricType>(eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , phiStates, simpleModel.getStates("target"), stateRewards, statePriorities));
                    /* std::string funcStr = " (/ " +
                                     this->reachabilityFunction->nominator().toString(false, true) + " " +
                                     this->reachabilityFunction->denominator().toString(false, true) +

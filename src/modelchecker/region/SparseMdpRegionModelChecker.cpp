@@ -14,6 +14,7 @@
 #include "src/settings/modules/RegionSettings.h"
 #include "src/solver/OptimizationDirection.h"
 #include "src/storage/sparse/StateType.h"
+#include "src/storage/FlexibleSparseMatrix.h"
 #include "src/utility/constants.h"
 #include "src/utility/graph.h"
 #include "src/utility/macros.h"
@@ -77,40 +78,113 @@ namespace storm {
                 storm::storage::BitVector maybeStates, targetStates;
                 preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, constantResult);
                 
-                //lets count the number of states without nondet choices and with constant outgoing transitions
-                //TODO: Remove this
-                storm::storage::SparseMatrix<ParametricType>const& matrix=this->getModel().getTransitionMatrix();
-                uint_fast64_t stateCounter=0;
-                for (uint_fast64_t state=0; state<this->getModel().getNumberOfStates();++state){
-                    if(matrix.getRowGroupSize(state)==1){
-                        bool hasConstTransitions=true;
-                        for(auto const& entry : matrix.getRowGroup(state)){
+                STORM_LOG_DEBUG("Elimination of deterministic states with constant outgoing transitions is happening now.");
+                // Determine the set of states that is reachable from the initial state without jumping over a target state.
+                storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, targetStates);
+                // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
+                maybeStates &= reachableStates;
+                // Create a vector for the probabilities to go to a target state in one step.
+                std::vector<ParametricType> oneStepProbabilities = this->getModel().getTransitionMatrix().getConstrainedRowGroupSumVector(maybeStates, targetStates);
+                // Determine the initial state of the sub-model.
+                storm::storage::sparse::state_type initialState = *(this->getModel().getInitialStates() % maybeStates).begin();
+                // We then build the submatrix that only has the transitions of the maybe states.
+                storm::storage::SparseMatrix<ParametricType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates);
+                boost::optional<std::vector<ParametricType>> noStateRewards;
+                // Eliminate all deterministic states with only constant outgoing transitions
+                // Convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
+                storm::storage::FlexibleSparseMatrix<ParametricType> flexibleTransitions(submatrix);
+                storm::storage::FlexibleSparseMatrix<ParametricType> flexibleBackwardTransitions(submatrix.transpose(), true);
+                // Create a bit vector that represents the current subsystem, i.e., states that we have not eliminated.
+                storm::storage::BitVector subsystem(submatrix.getRowGroupCount(), true);
+                //The states that we consider to eliminate
+                storm::storage::BitVector considerToEliminate(submatrix.getRowGroupCount(), true);
+                considerToEliminate.set(initialState, false);
+                for (auto const& state : considerToEliminate) {
+                    bool eliminateThisState=true;
+                    if(submatrix.getRowGroupSize(state) == 1){
+                         //state is deterministic. Check if outgoing transitions are constant
+                        for(auto const& entry : submatrix.getRowGroup(state)){
                             if(!storm::utility::isConstant(entry.getValue())){
-                                hasConstTransitions = false;
+                                eliminateThisState=false;
+                                break;
                             }
                         }
-                        if(hasConstTransitions){
-                            ++stateCounter;
+                        if(!storm::utility::isConstant(oneStepProbabilities[submatrix.getRowGroupIndices()[state]])){
+                            eliminateThisState=false;
                         }
+                    } else {
+                        eliminateThisState = false;
+                    }
+                    if(eliminateThisState){
+                        storm::storage::FlexibleSparseMatrix<ParametricType>::eliminateState(flexibleTransitions, oneStepProbabilities, state, submatrix.getRowGroupIndices()[state], flexibleBackwardTransitions, noStateRewards);
+                        subsystem.set(state,false);
                     }
                 }
-                std::cout << "Found that " << stateCounter << " of " << this->getModel().getNumberOfStates() << " states could be eliminated" << std::endl;
-                
-                //TODO: Actually eliminate the states...
-                STORM_LOG_WARN("No simplification of the original model (like elimination of constant transitions) is happening. Will just use a copy of the original model");
+                STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions.");
+                std::cout << "Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl;
+
+                //Build the simple model
+                STORM_LOG_DEBUG("Building the resulting simplified model.");
+                //The matrix. The flexibleTransitions matrix might have empty rows where states have been eliminated.
+                //The new matrix should not have such rows. We therefore leave them out, but we have to change the indices of the states accordingly.
+                std::vector<storm::storage::sparse::state_type> newStateIndexMap(flexibleTransitions.getNumberOfRows(), flexibleTransitions.getNumberOfRows()); //initialize with some illegal index 
+                storm::storage::sparse::state_type newStateIndex=0;
+                for(auto const& state : subsystem){
+                    newStateIndexMap[state]=newStateIndex;
+                    ++newStateIndex;
+                }
+                //We need to add a target state to which the oneStepProbabilities will lead as well as a sink state to which the "missing" probability will lead
+                storm::storage::sparse::state_type numStates=newStateIndex+2;
+                storm::storage::sparse::state_type targetState=numStates-2;
+                storm::storage::sparse::state_type sinkState= numStates-1;
+                //We can now fill in the data.
+                storm::storage::SparseMatrixBuilder<ParametricType> matrixBuilder(0, numStates, 0, true, true, numStates);
+                std::size_t curRow = 0;
+                for(auto oldRowGroup : subsystem){
+                    matrixBuilder.newRowGroup(curRow);
+                    for (auto oldRow = submatrix.getRowGroupIndices()[oldRowGroup]; oldRow < submatrix.getRowGroupIndices()[oldRowGroup+1]; ++oldRow){
+                        ParametricType missingProbability=storm::utility::region::getNewFunction<ParametricType, CoefficientType>(storm::utility::one<CoefficientType>());
+                        //go through columns:
+                        for(auto& entry: flexibleTransitions.getRow(oldRow)){ 
+                            STORM_LOG_THROW(newStateIndexMap[entry.getColumn()]!=flexibleTransitions.getNumberOfRows(), storm::exceptions::UnexpectedException, "There is a transition to a state that should have been eliminated.");
+                            missingProbability-=entry.getValue();
+                            matrixBuilder.addNextValue(curRow,newStateIndexMap[entry.getColumn()], storm::utility::simplify(entry.getValue()));
+                        }
+                        //transition to target state
+                        if(!storm::utility::isZero(oneStepProbabilities[oldRow])){
+                            missingProbability-=oneStepProbabilities[oldRow];
+                            matrixBuilder.addNextValue(curRow, targetState, storm::utility::simplify(oneStepProbabilities[oldRow]));
+                        }
+                        //transition to sink state
+                        if(!storm::utility::isZero(storm::utility::simplify(missingProbability))){ 
+                            matrixBuilder.addNextValue(curRow, sinkState, missingProbability);
+                        }
+                        ++curRow;
+                    }
+                }
+                //add self loops on the additional states (i.e., target and sink)
+                matrixBuilder.newRowGroup(curRow);
+                matrixBuilder.addNextValue(curRow, targetState, storm::utility::one<ParametricType>());
+                ++curRow;
+                matrixBuilder.newRowGroup(curRow);
+                matrixBuilder.addNextValue(curRow, sinkState, storm::utility::one<ParametricType>());
                 
                 //Get a new labeling
-                storm::storage::sparse::state_type numStates = this->getModel().getNumberOfStates();
-                storm::storage::BitVector sinkStates = ~(maybeStates | targetStates);
                 storm::models::sparse::StateLabeling labeling(numStates);
-                storm::storage::BitVector initLabel(this->getModel().getInitialStates());
+                storm::storage::BitVector initLabel(numStates, false);
+                initLabel.set(newStateIndexMap[initialState], true);
                 labeling.addLabel("init", std::move(initLabel));
-                labeling.addLabel("target", std::move(targetStates));
-                labeling.addLabel("sink", std::move(sinkStates));
+                storm::storage::BitVector targetLabel(numStates, false);
+                targetLabel.set(targetState, true);
+                labeling.addLabel("target", std::move(targetLabel));
+                storm::storage::BitVector sinkLabel(numStates, false);
+                sinkLabel.set(sinkState, true);
+                labeling.addLabel("sink", std::move(sinkLabel));
+                
                 //Other ingredients
                 std::unordered_map<std::string, ParametricRewardModelType> noRewardModels;
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;  
-                simpleModel = std::make_shared<ParametricSparseModelType>(this->getModel().getTransitionMatrix(), std::move(labeling), std::move(noRewardModels), std::move(noChoiceLabeling));
+                simpleModel = std::make_shared<ParametricSparseModelType>(matrixBuilder.build(), std::move(labeling), std::move(noRewardModels), std::move(noChoiceLabeling));
                 
                 //Get the simplified formula
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
