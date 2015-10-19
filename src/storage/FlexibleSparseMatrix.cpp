@@ -90,6 +90,11 @@ namespace storm {
 
 
         template<typename ValueType>
+        void FlexibleSparseMatrix<ValueType>::eliminateState(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix& backwardTransitions, boost::optional<std::vector<ValueType>>& stateRewards, bool removeForwardTransitions, bool constrained, storm::storage::BitVector const& predecessorConstraint) {
+            eliminateState(matrix, oneStepProbabilities, state, state, backwardTransitions, stateRewards, removeForwardTransitions, constrained, predecessorConstraint);
+        }
+        
+        template<typename ValueType>
         void FlexibleSparseMatrix<ValueType>::eliminateState(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, uint_fast64_t row, FlexibleSparseMatrix& backwardTransitions, boost::optional<std::vector<ValueType>>& stateRewards, bool removeForwardTransitions, bool constrained, storm::storage::BitVector const& predecessorConstraint) {
 
             bool hasSelfLoop = false;

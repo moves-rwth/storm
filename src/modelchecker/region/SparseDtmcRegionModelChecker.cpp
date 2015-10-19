@@ -141,7 +141,7 @@ namespace storm {
                         }
                     }
                     if(eliminateThisState){
-                        storm::storage::FlexibleSparseMatrix<ParametricType>::eliminateState(flexibleTransitions, oneStepProbabilities, state, state, flexibleBackwardTransitions, stateRewards);
+                        storm::storage::FlexibleSparseMatrix<ParametricType>::eliminateState(flexibleTransitions, oneStepProbabilities, state, flexibleBackwardTransitions, stateRewards);
                         subsystem.set(state,false);
                     }
                 }

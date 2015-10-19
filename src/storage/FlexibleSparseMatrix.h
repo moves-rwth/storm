@@ -40,6 +40,7 @@ namespace storm {
              */
             bool hasSelfLoop(storm::storage::sparse::state_type state);
             
+            static void eliminateState(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix& backwardTransitions, boost::optional<std::vector<ValueType>>& stateRewards, bool removeForwardTransitions = true, bool constrained = false, storm::storage::BitVector const& predecessorConstraint = storm::storage::BitVector());
             static void eliminateState(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, uint_fast64_t row, FlexibleSparseMatrix& backwardTransitions, boost::optional<std::vector<ValueType>>& stateRewards, bool removeForwardTransitions = true, bool constrained = false, storm::storage::BitVector const& predecessorConstraint = storm::storage::BitVector());
 
         private:

@@ -121,7 +121,6 @@ namespace storm {
                     }
                 }
                 STORM_LOG_DEBUG("Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions.");
-                std::cout << "Eliminated " << subsystem.size() - subsystem.getNumberOfSetBits() << " of " << subsystem.size() << " states that had constant outgoing transitions." << std::endl;
 
                 //Build the simple model
                 STORM_LOG_DEBUG("Building the resulting simplified model.");
