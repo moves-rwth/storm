@@ -5,19 +5,19 @@
 # It is necessary for linking the library.
 
 # The name that we can dlopen(3).
-dlname='libxerces-c-3.1.so'
+dlname='libxerces-c-3.1.dylib'
 
 # Names of this library.
-library_names='libxerces-c-3.1.so libxerces-c-3.1.so libxerces-c.so'
+library_names='libxerces-c-3.1.dylib libxerces-c.dylib'
 
 # The name of the static archive.
 old_library='libxerces-c.a'
 
 # Linker flags that cannot go in dependency_libs.
-inherited_linker_flags=''
+inherited_linker_flags=' '
 
 # Libraries that this one depends upon.
-dependency_libs=' -lnsl -lpthread'
+dependency_libs=' -lpthread -lcurl'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''
@@ -38,4 +38,4 @@ dlopen=''
 dlpreopen=''
 
 # Directory that this library needs to be installed in:
-libdir='/home/tim/git/storm/build/resources/3rdparty/xercesc-3.1.2/lib'
+libdir='/Users/chris/work/storm/build/resources/3rdparty/xercesc-3.1.2/lib'

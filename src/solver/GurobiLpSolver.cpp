@@ -63,9 +63,7 @@ namespace storm {
 			int error = 0;
 
 			// Enable the following line to only print the output of Gurobi if the debug flag is set.
-            error = GRBsetintparam(env, "OutputFlag", storm::settings::debugSettings().isDebugSet() || storm::settings::gurobiSettings().isOutputSet() ? 1 : 0);
-            STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter OutputFlag (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-            
+            toggleOutput(storm::settings::debugSettings().isDebugSet() || storm::settings::gurobiSettings().isOutputSet());
             // Enable the following line to restrict Gurobi to one thread only.
             error = GRBsetintparam(env, "Threads", storm::settings::gurobiSettings().getNumberOfThreads());
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter Threads (" << GRBgeterrormsg(env) << ", error code " << error << ").");
@@ -352,6 +350,11 @@ namespace storm {
 				throw storm::exceptions::InvalidStateException() << "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ") to file.";
             }
         }
+
+        void GurobiLpSolver::toggleOutput(bool set) const {
+            int error = GRBsetintparam(env, "OutputFlag", set);
+            STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter OutputFlag (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+        }
 #else 
             GurobiLpSolver::GurobiLpSolver(std::string const& name, OptimizationDirection const& ) {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
@@ -452,6 +455,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
             }
 
+            void GurobiLpSolver::toggleOutput(bool set) const { }
 
 #endif        
     }

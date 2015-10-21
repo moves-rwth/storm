@@ -2,6 +2,7 @@
 #define	MILPPERMISSIVESCHEDULERS_H
 
 
+#include <fstream>
 #include <memory>
 #include <unordered_map>
 
@@ -57,6 +58,8 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
             SubMDPPermissiveScheduler<RM> getScheduler() const override {
                 assert(mCalledOptimizer);
                 assert(foundSolution());
+
+
                 SubMDPPermissiveScheduler<RM> result(this->mdp, true);
                 for(auto const& entry : multistrategyVariables) {
                     if(!solver.getBinaryValue(entry.second)) {
@@ -64,6 +67,28 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                     }
                 }
                 return result;
+            }
+
+            void dumpLpSolutionToFile(std::string const& filename) {
+                std::fstream filestream;
+                filestream.open(filename, std::fstream::out);
+                for(auto const& pVar : mProbVariables) {
+                    filestream << pVar.second.getName() << "->" << solver.getContinuousValue(pVar.second) << std::endl;
+                }
+                for(auto const& yVar : multistrategyVariables) {
+                    filestream << yVar.second.getName() << "->" << solver.getBinaryValue(yVar.second) << std::endl;
+                }
+                for(auto const& aVar : mAlphaVariables) {
+                    filestream << aVar.second.getName() << "->" << solver.getBinaryValue(aVar.second) << std::endl;
+                }
+                for(auto const& betaVar : mBetaVariables) {
+                    filestream << betaVar.second.getName() << "->" << solver.getBinaryValue(betaVar.second) << std::endl;
+                }
+                for(auto const& gammaVar : mGammaVariables) {
+                    filestream << gammaVar.second.getName() << "->" << solver.getContinuousValue(gammaVar.second) << std::endl;
+                }
+                filestream.close();
+
             }
             
             void dumpLpToFile(std::string const& filename) {
@@ -184,7 +209,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                                     assert(mGammaVariables.count(entry.getColumn()) > 0);
                                     assert(mGammaVariables.count(s) > 0);
                                     assert(mBetaVariables.count(sat) > 0);
-                                    solver.addConstraint("c8-" + satstring, mGammaVariables[entry.getColumn()] < mGammaVariables[s] + (solver.getConstant(1) - mBetaVariables[sat]) + mProbVariables[s]); // With rewards, we have to change this.
+                                    solver.addConstraint("c8-" + satstring, mGammaVariables[entry.getColumn()] < mGammaVariables[s] + (solver.getConstant(1) - mBetaVariables[sat]));
                                 }
                             }
                         }

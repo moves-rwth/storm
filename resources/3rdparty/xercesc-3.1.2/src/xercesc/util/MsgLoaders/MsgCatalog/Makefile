@@ -2,7 +2,7 @@
 srcdir = .
 top_srcdir = ../../../../..
 top_builddir = ../../../../..
-prefix = /home/tim/git/storm/build/resources/3rdparty/xercesc-3.1.2
+prefix = /Users/chris/work/storm/build/resources/3rdparty/xercesc-3.1.2
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL}
 mkdir_p = $(MKDIR_P)
