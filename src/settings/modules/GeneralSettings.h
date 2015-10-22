@@ -371,6 +371,7 @@ namespace storm {
                 static const std::string precisionOptionName;
                 static const std::string precisionOptionShortName;
                 static const std::string exportDotOptionName;
+                static const std::string exportMatOptionName;
                 static const std::string configOptionName;
                 static const std::string configOptionShortName;
                 static const std::string explicitOptionName;

@@ -1181,6 +1181,31 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void SparseMatrix<ValueType>::printAsMatlabMatrix(std::ostream& out) const {
+            // Iterate over all row groups.
+            for (typename SparseMatrix<ValueType>::index_type group = 0; group < this->getRowGroupCount(); ++group) {
+                assert(this->getRowGroupSize(group) == 1);
+                for (typename SparseMatrix<ValueType>::index_type i = this->getRowGroupIndices()[group]; i < this->getRowGroupIndices()[group + 1]; ++i) {
+                    typename SparseMatrix<ValueType>::index_type nextIndex = this->rowIndications[i];
+
+                    // Print the actual row.
+                    out << i << "\t(";
+                    typename SparseMatrix<ValueType>::index_type currentRealIndex = 0;
+                    while (currentRealIndex < this->columnCount) {
+                        if (nextIndex < this->rowIndications[i + 1] && currentRealIndex == this->columnsAndValues[nextIndex].getColumn()) {
+                            out << this->columnsAndValues[nextIndex].getValue() << " ";
+                            ++nextIndex;
+                        } else {
+                            out << "0 ";
+                        }
+                        ++currentRealIndex;
+                    }
+                    out << ";" << std::endl;
+                }
+            }
+        }
+        
+        template<typename ValueType>
         std::size_t SparseMatrix<ValueType>::hash() const {
             std::size_t result = 0;
             
