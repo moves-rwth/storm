@@ -41,6 +41,13 @@ namespace storm {
             return *this;
         }
 
+        BitVector::const_iterator& BitVector::const_iterator::operator+=(size_t n) {
+            for(size_t i = 0; i < n; ++i) {
+                currentIndex = getNextSetIndex(dataPtr, ++currentIndex, endIndex);
+            }
+            return *this;
+        }
+
         uint_fast64_t BitVector::const_iterator::operator*() const {
             return currentIndex;
         }

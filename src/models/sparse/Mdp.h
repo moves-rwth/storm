@@ -1,6 +1,7 @@
 #ifndef STORM_MODELS_SPARSE_MDP_H_
 #define STORM_MODELS_SPARSE_MDP_H_
 
+#include <src/storage/StateActionPair.h>
 #include "src/models/sparse/NondeterministicModel.h"
 #include "src/utility/OsDetection.h"
 
@@ -65,7 +66,12 @@ namespace storm {
                  * @param enabledActions A BitVector of lenght numberOfChoices(), which is one iff the action should be kept.
                  * @return A subMDP.
                  */
-                Mdp<ValueType, RewardModelType> restrictActions(storm::storage::BitVector const& enabledActions) const;
+                Mdp<ValueType, RewardModelType> restrictChoices(storm::storage::BitVector const& enabledActions) const;
+
+                /*!
+                 *  For a state/action pair, get the choice index referring to the state-action pair.
+                 */
+                uint_fast64_t getChoiceIndex(storm::storage::StateActionPair const& stateactPair) const;
             };
             
         } // namespace sparse

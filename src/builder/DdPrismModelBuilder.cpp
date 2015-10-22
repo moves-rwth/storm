@@ -190,18 +190,18 @@ namespace storm {
             };
             
         template <storm::dd::DdType Type>
-        DdPrismModelBuilder<Type>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates() {
+        DdPrismModelBuilder<Type>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType Type>
-        DdPrismModelBuilder<Type>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates() {
+        DdPrismModelBuilder<Type>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type>
-        DdPrismModelBuilder<Type>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates() {
+        DdPrismModelBuilder<Type>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -220,6 +220,9 @@ namespace storm {
             // If we already had terminal states, we need to erase them.
             if (terminalStates) {
                 terminalStates.reset();
+            }
+            if (negatedTerminalStates) {
+                negatedTerminalStates.reset();
             }
 
             // If we are not required to build all reward models, we determine the reward models we need to build.
@@ -261,9 +264,15 @@ namespace storm {
                     this->setTerminalStatesFromFormula(sub);
                 }
             } else if (formula.isUntilFormula()) {
-                storm::logic::Formula const& right = formula.asUntilFormula().getLeftSubformula();
+                storm::logic::Formula const& right = formula.asUntilFormula().getRightSubformula();
                 if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
                     this->setTerminalStatesFromFormula(right);
+                }
+                storm::logic::Formula const& left = formula.asUntilFormula().getLeftSubformula();
+                if (left.isAtomicExpressionFormula()) {
+                    negatedTerminalStates = left.asAtomicExpressionFormula().getExpression();
+                } else if (left.isAtomicLabelFormula()) {
+                    negatedTerminalStates = left.asAtomicLabelFormula().getLabel();
                 }
             } else if (formula.isProbabilityOperatorFormula()) {
                 storm::logic::Formula const& sub = formula.asProbabilityOperatorFormula().getSubformula();
@@ -1023,16 +1032,33 @@ namespace storm {
             storm::dd::Add<Type> stateActionDd = system.stateActionDd;
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
-            if (options.terminalStates) {
-                storm::expressions::Expression terminalExpression;
-                if (options.terminalStates.get().type() == typeid(storm::expressions::Expression)) {
-                    terminalExpression = boost::get<storm::expressions::Expression>(options.terminalStates.get());
-                } else {
-                    std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
-                    terminalExpression = preparedProgram.getLabelExpression(labelName);
+            if (options.terminalStates || options.negatedTerminalStates) {
+                storm::dd::Add<Type> terminalStatesAdd = generationInfo.manager->getAddZero();
+                if (options.terminalStates) {
+                    storm::expressions::Expression terminalExpression;
+                    if (options.terminalStates.get().type() == typeid(storm::expressions::Expression)) {
+                        terminalExpression = boost::get<storm::expressions::Expression>(options.terminalStates.get());
+                    } else {
+                        std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
+                        terminalExpression = preparedProgram.getLabelExpression(labelName);
+                    }
+                
+                    STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
+                    terminalStatesAdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression);
                 }
-                STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
-                storm::dd::Add<Type> terminalStatesAdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression);
+                if (options.negatedTerminalStates) {
+                    storm::expressions::Expression nonTerminalExpression;
+                    if (options.negatedTerminalStates.get().type() == typeid(storm::expressions::Expression)) {
+                        nonTerminalExpression = boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
+                    } else {
+                        std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
+                        nonTerminalExpression = preparedProgram.getLabelExpression(labelName);
+                    }
+                    
+                    STORM_LOG_TRACE("Making the states *not* satisfying " << nonTerminalExpression << " terminal.");
+                    terminalStatesAdd |= !generationInfo.rowExpressionAdapter->translateExpression(nonTerminalExpression);
+                }
+                
                 transitionMatrix *= !terminalStatesAdd;
             }
             

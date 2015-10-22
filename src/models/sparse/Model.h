@@ -154,6 +154,7 @@ namespace storm {
                  */
                 RewardModelType const& getRewardModel(std::string const& rewardModelName) const;
 
+
                 /*!
                  * Retrieves the unique reward model, if there exists exactly one. Otherwise, an exception is thrown.
                  *
@@ -181,7 +182,20 @@ namespace storm {
                  * @return The number of reward models associated with this model.
                  */
                 uint_fast64_t getNumberOfRewardModels() const;
-                
+
+                /*!
+                 * Adds a reward model to the model. Notice that this operation is only valid if the reward model matches the number of
+                 * states and/or choices of the model.
+                 * Moreover, it is required that no reward model with the same name exists in the model.
+                 */
+                void addRewardModel(std::string const& rewardModelName, RewardModelType const& rewModel);
+
+                /*!
+                 * Removes the reward model with the given name from the model.
+                 * @return true, iff such a reward model existed
+                 */
+                bool removeRewardModel(std::string const& rewardModelName);
+
                 /*!
                  * Retrieves the labels for the choices of the model. Note that calling this method is only valid if the
                  * model has a choice labeling.
@@ -266,6 +280,8 @@ namespace storm {
                 virtual bool isSparseModel() const override;
                 
             protected:
+
+                RewardModelType & rewardModel(std::string const& rewardModelName);
                 /*!
                  * Sets the transition matrix of the model.
                  *

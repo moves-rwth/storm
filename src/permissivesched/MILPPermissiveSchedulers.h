@@ -2,6 +2,7 @@
 #define	MILPPERMISSIVESCHEDULERS_H
 
 
+#include <fstream>
 #include <memory>
 #include <unordered_map>
 
@@ -13,12 +14,14 @@
 #include "../storage/expressions/Variable.h"
 #include "../solver/LpSolver.h"
 #include "../models/sparse/StandardRewardModel.h"
+#include "PermissiveSchedulers.h"
 
 
 namespace storm {
     namespace ps {
-        
-class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation {
+
+        template<typename RM>
+class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation<RM> {
         private:
            
             bool mCalledOptimizer = false;
@@ -31,17 +34,18 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
             
         public:
             
-            MilpPermissiveSchedulerComputation(storm::solver::LpSolver& milpsolver, std::shared_ptr<storm::models::sparse::Mdp<double>> mdp, storm::storage::BitVector const& goalstates, storm::storage::BitVector const& sinkstates)
-                :  PermissiveSchedulerComputation(mdp, goalstates, sinkstates), solver(milpsolver)
+            MilpPermissiveSchedulerComputation(storm::solver::LpSolver& milpsolver, storm::models::sparse::Mdp<double, RM> const& mdp, storm::storage::BitVector const& goalstates, storm::storage::BitVector const& sinkstates)
+                :  PermissiveSchedulerComputation<RM>(mdp, goalstates, sinkstates), solver(milpsolver)
             {
                 
             }
             
                     
             void calculatePermissiveScheduler(bool lowerBound, double boundary) override {
-                createMILP(lowerBound, boundary, mPenalties);
+                createMILP(lowerBound, boundary, this->mPenalties);
+                //STORM_LOG_DEBUG("Calling optimizer");
                 solver.optimize();
-                
+                //STORM_LOG_DEBUG("Done optimizing.")
                 mCalledOptimizer = true;
             }
             
@@ -51,16 +55,40 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                 return !solver.isInfeasible();
             }
             
-            MemorylessDeterministicPermissiveScheduler getScheduler() const override {
+            SubMDPPermissiveScheduler<RM> getScheduler() const override {
                 assert(mCalledOptimizer);
                 assert(foundSolution());
-                storm::storage::BitVector result(mdp->getNumberOfChoices(), true);
+
+
+                SubMDPPermissiveScheduler<RM> result(this->mdp, true);
                 for(auto const& entry : multistrategyVariables) {
                     if(!solver.getBinaryValue(entry.second)) {
-                        result.set(mdp->getNondeterministicChoiceIndices()[entry.first.getState()]+entry.first.getAction(), false);
+                        result.disable(this->mdp.getChoiceIndex(entry.first));
                     }
                 }
-                return MemorylessDeterministicPermissiveScheduler(result);
+                return result;
+            }
+
+            void dumpLpSolutionToFile(std::string const& filename) {
+                std::fstream filestream;
+                filestream.open(filename, std::fstream::out);
+                for(auto const& pVar : mProbVariables) {
+                    filestream << pVar.second.getName() << "->" << solver.getContinuousValue(pVar.second) << std::endl;
+                }
+                for(auto const& yVar : multistrategyVariables) {
+                    filestream << yVar.second.getName() << "->" << solver.getBinaryValue(yVar.second) << std::endl;
+                }
+                for(auto const& aVar : mAlphaVariables) {
+                    filestream << aVar.second.getName() << "->" << solver.getBinaryValue(aVar.second) << std::endl;
+                }
+                for(auto const& betaVar : mBetaVariables) {
+                    filestream << betaVar.second.getName() << "->" << solver.getBinaryValue(betaVar.second) << std::endl;
+                }
+                for(auto const& gammaVar : mGammaVariables) {
+                    filestream << gammaVar.second.getName() << "->" << solver.getContinuousValue(gammaVar.second) << std::endl;
+                }
+                filestream.close();
+
             }
             
             void dumpLpToFile(std::string const& filename) {
@@ -71,12 +99,12 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
         private:
             
             /**
-             * 
+             *  Create variables
              */
             void createVariables(PermissiveSchedulerPenalties const& penalties, storm::storage::BitVector const& relevantStates) {
                 // We need the unique initial state later, so we get that one before looping.
-                assert(mdp->getInitialStates().getNumberOfSetBits() == 1);
-                uint_fast64_t initialStateIndex = mdp->getInitialStates().getNextSetIndex(0);
+                assert(this->mdp.getInitialStates().getNumberOfSetBits() == 1);
+                uint_fast64_t initialStateIndex = this->mdp.getInitialStates().getNextSetIndex(0);
                     
                 storm::expressions::Variable var;
                 for(uint_fast64_t s : relevantStates) {
@@ -94,7 +122,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                     // Create gamma_s variables
                     var = solver.addBoundedContinuousVariable("gam_" + std::to_string(s), 0.0, 1.0);
                     mGammaVariables[s] = var;
-                    for(uint_fast64_t a = 0; a < mdp->getNumberOfChoices(s); ++a) {
+                    for(uint_fast64_t a = 0; a < this->mdp.getNumberOfChoices(s); ++a) {
                         auto stateAndAction = storage::StateActionPair(s,a);
                         
                         // Create y_(s,a) variables
@@ -104,25 +132,27 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                         
                         // Create beta_(s,a,t) variables
                         // Iterate over successors of s via a.
-                        for(auto const& entry : mdp->getTransitionMatrix().getRow(mdp->getNondeterministicChoiceIndices()[s]+a)) {
+                        for(auto const& entry : this->mdp.getTransitionMatrix().getRow(this->mdp.getNondeterministicChoiceIndices()[s]+a)) {
                             if(entry.getValue() != 0) {
                                 storage::StateActionTarget sat = {s,a,entry.getColumn()};
                                 var = solver.addBinaryVariable("beta_" + to_string(sat));
                                 mBetaVariables[sat] = var;
                             }
                         }
-                                
                     }
                 }
                 solver.update();
             }
-            
+
+            /**
+             * Create constraints
+             */
             void createConstraints(bool lowerBound, double boundary, storm::storage::BitVector const& relevantStates) {
                 // (5) and (7) are omitted on purpose (-- we currenty do not support controllability of actions -- )
                 
                 // (1)
-                assert(mdp->getInitialStates().getNumberOfSetBits() == 1);
-                uint_fast64_t initialStateIndex = mdp->getInitialStates().getNextSetIndex(0);
+                assert(this->mdp.getInitialStates().getNumberOfSetBits() == 1);
+                uint_fast64_t initialStateIndex = this->mdp.getInitialStates().getNextSetIndex(0);
                 assert(relevantStates[initialStateIndex]);
                 if(lowerBound) {
                     solver.addConstraint("c1", mProbVariables[initialStateIndex] >= solver.getConstant(boundary));
@@ -133,7 +163,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                     std::string stateString =  std::to_string(s);
                     storm::expressions::Expression expr = solver.getConstant(0.0);
                     // (2)
-                    for(uint_fast64_t a = 0; a < mdp->getNumberOfChoices(s); ++a) {
+                    for(uint_fast64_t a = 0; a < this->mdp.getNumberOfChoices(s); ++a) {
                         expr = expr + multistrategyVariables[storage::StateActionPair(s,a)];
                     }   
                     solver.addConstraint("c2-" + stateString, solver.getConstant(1) <= expr);
@@ -141,13 +171,13 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                     solver.addConstraint("c5-" + std::to_string(s), mProbVariables[s] <= mAlphaVariables[s]);
                
                     // (3) For the relevant states.
-                    for(uint_fast64_t a = 0; a < mdp->getNumberOfChoices(s); ++a) {
+                    for(uint_fast64_t a = 0; a < this->mdp.getNumberOfChoices(s); ++a) {
                         std::string sastring(stateString + "_" + std::to_string(a));
                         expr = solver.getConstant(0.0);       
-                        for(auto const& entry : mdp->getTransitionMatrix().getRow(mdp->getNondeterministicChoiceIndices()[s]+a)) {
+                        for(auto const& entry : this->mdp.getTransitionMatrix().getRow(this->mdp.getNondeterministicChoiceIndices()[s]+a)) {
                             if(entry.getValue() != 0 && relevantStates.get(entry.getColumn())) {
                                 expr = expr + solver.getConstant(entry.getValue()) * mProbVariables[entry.getColumn()];
-                            } else if (entry.getValue() != 0 && mGoals.get(entry.getColumn())) {
+                            } else if (entry.getValue() != 0 && this->mGoals.get(entry.getColumn())) {
                                 expr = expr + solver.getConstant(entry.getValue());
                             }
                         }
@@ -158,11 +188,11 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                         }
                     }
 
-                    for(uint_fast64_t a = 0; a < mdp->getNumberOfChoices(s); ++a) {    
+                    for(uint_fast64_t a = 0; a < this->mdp.getNumberOfChoices(s); ++a) {
                         // (6)
                         std::string sastring(stateString + "_" + std::to_string(a));
                         expr = solver.getConstant(0.0);     
-                        for(auto const& entry : mdp->getTransitionMatrix().getRow(mdp->getNondeterministicChoiceIndices()[s]+a)) {
+                        for(auto const& entry : this->mdp.getTransitionMatrix().getRow(this->mdp.getNondeterministicChoiceIndices()[s]+a)) {
                             if(entry.getValue() != 0) {
                                 storage::StateActionTarget sat = {s,a,entry.getColumn()};
                                 expr = expr + mBetaVariables[sat];
@@ -170,7 +200,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                         }        
                         solver.addConstraint("c6-" + sastring, multistrategyVariables[storage::StateActionPair(s,a)] == (solver.getConstant(1) - mAlphaVariables[s]) + expr);
                         
-                        for(auto const& entry : mdp->getTransitionMatrix().getRow(mdp->getNondeterministicChoiceIndices()[s]+a)) {
+                        for(auto const& entry : this->mdp.getTransitionMatrix().getRow(this->mdp.getNondeterministicChoiceIndices()[s]+a)) {
                             if(entry.getValue() != 0) {
                                 storage::StateActionTarget sat = {s,a,entry.getColumn()};
                                 std::string satstring = to_string(sat);
@@ -179,7 +209,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                                     assert(mGammaVariables.count(entry.getColumn()) > 0);
                                     assert(mGammaVariables.count(s) > 0);
                                     assert(mBetaVariables.count(sat) > 0);
-                                    solver.addConstraint("c8-" + satstring, mGammaVariables[entry.getColumn()] < mGammaVariables[s] + (solver.getConstant(1) - mBetaVariables[sat]) + mProbVariables[s]); // With rewards, we have to change this.
+                                    solver.addConstraint("c8-" + satstring, mGammaVariables[entry.getColumn()] < mGammaVariables[s] + (solver.getConstant(1) - mBetaVariables[sat]));
                                 }
                             }
                         }
@@ -193,7 +223,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
              *
              */
             void createMILP(bool lowerBound, double boundary, PermissiveSchedulerPenalties const& penalties) {
-                storm::storage::BitVector irrelevant = mGoals | mSinks;
+                storm::storage::BitVector irrelevant = this->mGoals | this->mSinks;
                 storm::storage::BitVector relevantStates = ~irrelevant;
                 // Notice that the separated construction of variables and 
                 // constraints slows down the construction of the MILP. 

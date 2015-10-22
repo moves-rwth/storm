@@ -58,6 +58,12 @@ namespace storm {
                  * @return A reference to this iterator.
                  */
                 const_iterator& operator++();
+
+                /*!
+                 * Increases the position of the iterator to the position of the n'th next bit that is set to true in the
+                 * underlying bit vector.
+                 */
+                const_iterator& operator+=(size_t n);
                 
                 /*!
                  * Returns the index of the current bit to which this iterator points.

@@ -603,6 +603,9 @@ namespace storm {
              * set to one in the given bit vector.
              *
              * @param useGroups If set to true, the constraint for the rows is interpreted as selecting whole row groups.
+             * If it is not set, the row constraint is interpreted over the actual rows. Note that empty row groups will
+             * be dropped altogether. That is, if no row of a row group is selected *or* the row group is alread empty,
+             * the submatrix will not have this row group.
              * @param constraint A bit vector indicating which rows to keep.
              * @param columnConstraint A bit vector indicating which columns to keep.
              * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
@@ -758,7 +761,15 @@ namespace storm {
             
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
-            
+
+            /*!
+             * Prints the matrix in a dense format, as also used by e.g. Matlab.
+             * Notice that the format does not support multiple rows in a rowgroup.
+             *
+             * @out The stream to output to.
+             */
+            void printAsMatlabMatrix(std::ostream& out) const;
+
             /*!
              * Returns the size of the matrix in memory measured in bytes.
              *

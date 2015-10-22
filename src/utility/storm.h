@@ -93,8 +93,8 @@ namespace storm {
 
         // Customize and perform model-building.
         if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Sparse) {
-            typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options options;
-            options = typename storm::builder::ExplicitPrismModelBuilder<ValueType>::Options(formulas);
+            typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options options;
+            options = typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constants);
 
             // Generate command labels if we are going to build a counterexample later.
@@ -102,7 +102,7 @@ namespace storm {
                 options.buildCommandLabels = true;
             }
 
-            result = storm::builder::ExplicitPrismModelBuilder<ValueType>::translateProgram(program, options);
+            result = storm::builder::ExplicitPrismModelBuilder<ValueType>().translateProgram(program, options);
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(formulas);
@@ -315,7 +315,15 @@ namespace storm {
         }
         return result;
     }
-            
+
+    template<typename ValueType>
+    void exportMatrixToFile(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::string const& filepath) {
+        STORM_LOG_THROW(model->getType() != storm::models::ModelType::Ctmc, storm::exceptions::NotImplementedException, "This functionality is not yet implemented." );
+        std::ofstream ofs;
+        ofs.open (filepath, std::ofstream::out);
+        model->getTransitionMatrix().printAsMatlabMatrix(ofs);
+        ofs.close();
+    }
         
 }
 

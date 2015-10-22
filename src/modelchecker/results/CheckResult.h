@@ -21,6 +21,8 @@ namespace storm {
         // The base class of all check results.
         class CheckResult {
         public:
+            virtual ~CheckResult() = default;
+            
             /*!
              * Filters the current result wrt. to the filter, i.e. only keeps the entries that are selected by the filter.
              * This means that the filter must be a qualitative result of proper type (symbolic/explicit).

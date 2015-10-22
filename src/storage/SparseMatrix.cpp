@@ -524,7 +524,27 @@ namespace storm {
                 for (std::vector<index_type>::iterator it = fakeRowGroupIndices.begin(); it != fakeRowGroupIndices.end(); ++it, ++i) {
                     *it = i;
                 }
-                return getSubmatrix(rowConstraint, columnConstraint, fakeRowGroupIndices, insertDiagonalElements);
+                auto res = getSubmatrix(rowConstraint, columnConstraint, fakeRowGroupIndices, insertDiagonalElements);
+
+                // Create a new row grouping that reflects the new sizes of the row groups.
+                std::vector<uint_fast64_t> newRowGroupIndices;
+                newRowGroupIndices.push_back(0);
+                auto selectedRowIt = rowConstraint.begin();
+
+                // For this, we need to count how many rows were preserved in every group.
+                for (uint_fast64_t group = 0; group < this->getRowGroupCount(); ++group) {
+                    uint_fast64_t newRowCount = 0;
+                    while (*selectedRowIt < this->getRowGroupIndices()[group + 1]) {
+                        ++selectedRowIt;
+                        ++newRowCount;
+                    }
+                    if (newRowCount > 0) {
+                        newRowGroupIndices.push_back(newRowGroupIndices.back() + newRowCount);
+                    }
+                }
+                
+                res.rowGroupIndices = newRowGroupIndices;
+                return res;
             }
         }
         
@@ -634,7 +654,11 @@ namespace storm {
         template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::restrictRows(storm::storage::BitVector const& rowsToKeep) const {
             // For now, we use the expensive call to submatrix.
+            assert(rowsToKeep.size() == getRowCount());
+            assert(rowsToKeep.getNumberOfSetBits() >= getRowGroupCount());
             SparseMatrix<ValueType> res(getSubmatrix(false, rowsToKeep, storm::storage::BitVector(getColumnCount(), true), false));
+            assert(res.getRowCount() == rowsToKeep.getNumberOfSetBits());
+            assert(res.getColumnCount() == getColumnCount());
             assert(getRowGroupCount() == res.getRowGroupCount());
             return res;
         }
@@ -1154,6 +1178,31 @@ namespace storm {
             out << std::endl;
             
             return out;
+        }
+        
+        template<typename ValueType>
+        void SparseMatrix<ValueType>::printAsMatlabMatrix(std::ostream& out) const {
+            // Iterate over all row groups.
+            for (typename SparseMatrix<ValueType>::index_type group = 0; group < this->getRowGroupCount(); ++group) {
+                assert(this->getRowGroupSize(group) == 1);
+                for (typename SparseMatrix<ValueType>::index_type i = this->getRowGroupIndices()[group]; i < this->getRowGroupIndices()[group + 1]; ++i) {
+                    typename SparseMatrix<ValueType>::index_type nextIndex = this->rowIndications[i];
+
+                    // Print the actual row.
+                    out << i << "\t(";
+                    typename SparseMatrix<ValueType>::index_type currentRealIndex = 0;
+                    while (currentRealIndex < this->columnCount) {
+                        if (nextIndex < this->rowIndications[i + 1] && currentRealIndex == this->columnsAndValues[nextIndex].getColumn()) {
+                            out << this->columnsAndValues[nextIndex].getValue() << " ";
+                            ++nextIndex;
+                        } else {
+                            out << "0 ";
+                        }
+                        ++currentRealIndex;
+                    }
+                    out << ";" << std::endl;
+                }
+            }
         }
         
         template<typename ValueType>
