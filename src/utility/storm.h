@@ -43,7 +43,7 @@
 #include "src/builder/DdPrismModelBuilder.h"
 
 // Headers for model processing.
-#include "src/storage/DeterministicModelBisimulationDecomposition.h"
+#include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 
 // Headers for model checking.
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"

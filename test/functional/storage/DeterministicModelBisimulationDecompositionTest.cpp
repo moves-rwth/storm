@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/AutoParser.h"
-#include "src/storage/DeterministicModelBisimulationDecomposition.h"
+#include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "src/models/sparse/StandardRewardModel.h"
 
 TEST(DeterministicModelBisimulationDecomposition, Die) {

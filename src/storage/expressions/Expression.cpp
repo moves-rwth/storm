@@ -162,6 +162,12 @@ namespace storm {
             return this->getBaseExpression().accept(visitor);
         }
         
+        std::string Expression::toString() {
+            std::stringstream stream;
+            stream << *this;
+            return stream.str();
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Expression const& expression) {
             stream << expression.getBaseExpression();
             return stream;
