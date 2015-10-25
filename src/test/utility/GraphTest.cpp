@@ -12,6 +12,7 @@
 #include "storm/builder/DdPrismModelBuilder.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/shortestPaths.cpp"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/DdManager.h"
@@ -264,13 +265,81 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     EXPECT_EQ(16ul, statesWithProbability01.second.getNumberOfSetBits());
 }
 
+
 TEST(GraphTest, kshortest) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
 
-    ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
 
-    std::cout << model->getNumberOfStates() << std::endl;
+    model->printModelInformationToStream(std::cout);
+
+    storm::utility::shortestPaths::ShortestPathsGenerator<double> shortestPathsGenerator(model);
+
+    // TODO: actually write tests here
+
+    /*
+    std::queue<uint_fast64_t> nodeQueue;
+    for (uint_fast64_t initialNode : model->getInitialStates()) {
+        for (uint_fast64_t succ : shortestPathSuccessors[initialNode]) {
+            nodeQueue.push(succ);
+        }
+        storm::storage::sparse::path<double> path;
+        path.tail_k = 1;
+        path.distance = dijkstraDistance[initialNode];
+        assert(path.distance == 1);
+        kShortestPaths[initialNode].push_back(path);
+    }
+
+    // Dijkstra BFS
+    while (!nodeQueue.empty()) {
+        uint_fast64_t currentNode = nodeQueue.front();
+        nodeQueue.pop();
+
+        for (auto succ : shortestPathSuccessors[currentNode]) {
+            nodeQueue.push(succ);
+        }
+
+        storm::storage::sparse::path<double> path;
+        path.tail = shortestPathPredecessor[currentNode];
+        path.tail_k = 1;
+        path.distance = dijkstraDistance[currentNode];
+        kShortestPaths[currentNode].push_back(path);
+    }
+    */
+
+    // FIXME: ~~treat starting node(s) separately~~ actually, this whole thing should be done differently:
+    // first I need to run over the Dijkstra result and make a tree (as vector of vectors) of successors,
+    // then walk that tree DF/BF
+    /*
+    for (auto node : model->getInitialStates()) {
+        storm::storage::sparse::path<double> p = {};
+        p.distance = dijkstraDistance[node];
+        assert(p.distance == 1);
+        kShortestPaths[node].emplace_back(p);
+    }
+    */
+
+    // shortest paths are stored recursively, so the predecessor must always be dealt with first
+    // by considering the nodes in order of distance, we should have roughly the correct order,
+    // but not quite: in the case s ~~~> u -1-> v, v might be listed before u, in which case it must be deferred
+    /*
+    while (!nodeQueue.empty()) {
+        std::pair<double, uint_fast64_t> distanceStatePair = nodeQueue.front();
+        nodeQueue.pop();
+
+        uint_fast64_t currentNode = distanceStatePair.second;
+
+        uint_fast64_t predecessor = shortestPathPredecessors[currentNode];
+        if (kShortestPaths[predecessor].empty) {
+            // we need to take care of the predecessor first; defer this one
+            nodeQueue.emplace(currentNode);
+            continue;
+        } else {
+            //shortestPaths[currentNode].emplace(predecessor, 1, )
+        }
+    }
+    */
 
     EXPECT_TRUE(false);
 }
