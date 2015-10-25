@@ -2,9 +2,9 @@
 #define STORM_GSPN_H
 
 #include <vector>
-#include "ImmediateTransition.h"
-#include "TimedTransition.h"
-#include "Marking.h"
+#include "src/storage/gspn/ImmediateTransition.h"
+#include "src/storage/gspn/TimedTransition.h"
+#include "src/storage/gspn/Marking.h"
 
 namespace storm {
     namespace gspn {
