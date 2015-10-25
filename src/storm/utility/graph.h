@@ -544,13 +544,14 @@ namespace storm {
              * @param transitions The transitions wrt to which to compute the most probable paths.
              * @param startingStates The starting states of the Dijkstra search.
              * @param filterStates A set of states that must not be left on any path.
+             * @return A pair consisting of a vector of distances and a vector of shortest path predecessors
              */
             template <typename T>
             std::pair<std::vector<T>, std::vector<uint_fast64_t>> performDijkstra(storm::models::sparse::Model<T> const& model,
                                                                                   storm::storage::SparseMatrix<T> const& transitions,
                                                                                   storm::storage::BitVector const& startingStates,
                                                                                   storm::storage::BitVector const* filterStates = nullptr);
-            
+
         } // namespace graph
     } // namespace utility
 } // namespace storm
