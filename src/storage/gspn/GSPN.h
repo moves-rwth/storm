@@ -1,7 +1,7 @@
 #ifndef STORM_GSPN_H
 #define STORM_GSPN_H
 
-#include <set>
+#include <vector>
 #include "ImmediateTransition.h"
 #include "TimedTransition.h"
 #include "Marking.h"
@@ -16,10 +16,10 @@ namespace storm {
             typedef double WeightType;
         private:
             // set containing all immediate transitions
-            std::set<storm::gspn::ImmediateTransition<WeightType>> immediateTransitions;
+            std::vector<storm::gspn::ImmediateTransition<WeightType>> immediateTransitions;
 
             // set containing all timed transitions
-            std::set<storm::gspn::TimedTransition<RateType>> timedTransitions;
+            std::vector<storm::gspn::TimedTransition<RateType>> timedTransitions;
 
             // initial marking
             storm::gspn::Marking initialMarking;
