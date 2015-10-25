@@ -26,13 +26,22 @@ namespace storm {
              * @param model The model to decompose.
              * @param options The options that customize the computed bisimulation.
              */
-            DeterministicModelBisimulationDecomposition(ModelType const& model, typename BisimulationDecomposition<ModelType>::Options const& options = Options());
+            DeterministicModelBisimulationDecomposition(ModelType const& model, typename BisimulationDecomposition<ModelType>::Options const& options = typename BisimulationDecomposition<ModelType>::Options());
             
-        private:
-            virtual std::pair<storm::storage::BitVector, storm::storage::BitVector> getStatesWithProbability01(storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) override;
+        protected:
+            virtual std::pair<storm::storage::BitVector, storm::storage::BitVector> getStatesWithProbability01() override;
+
+            virtual void initializeMeasureDrivenPartition() override;
             
             virtual void initializeLabelBasedPartition() override;
             
+            virtual void buildQuotient() override;
+            
+            virtual void refinePartitionBasedOnSplitter(bisimulation::Block const& splitter, std::deque<bisimulation::Block*>& splitterQueue) override;
+
+        private:
+            virtual void refinePredecessorBlocksOfSplitter(std::list<bisimulation::Block*>& predecessorBlocks, std::deque<bisimulation::Block*>& splitterQueue);
+
             /*!
              * Performs the necessary steps to compute a weak bisimulation on a DTMC.
              */
@@ -49,90 +58,25 @@ namespace storm {
              */
             void initializeSilentProbabilities();
             
-            virtual void initializeMeasureDrivenPartition() override;
+            // Retrieves the probability of going into the splitter for the given state.
+            ValueType const& getProbabilityToSplitter(storm::storage::sparse::state_type const& state) const;
             
-            virtual void initializeLabelBasedPartition() override;
+            // Retrieves the silent probability for the given state.
+            ValueType getSilentProbability(storm::storage::sparse::state_type const& state) const;
             
-            virtual void buildQuotient() override;
+            // Retrieves whether the given state is silent.
+            bool isSilent(storm::storage::sparse::state_type const& state) const;
             
-            /*!
-             * Refines the partition based on the provided splitter. After calling this method all blocks are stable
-             * with respect to the splitter.
-             *
-             * @param forwardTransitions The forward transitions of the model.
-             * @param backwardTransitions A matrix that can be used to retrieve the predecessors (and their
-             * probabilities).
-             * @param splitter The splitter to use.
-             * @param partition The partition to split.
-             * @param bisimulationType The kind of bisimulation that is to be computed.
-             * @param splitterQueue A queue into which all blocks that were split are inserted so they can be treated
-             * as splitters in the future.
-             * @param comparator A comparator used for comparing constants.
-             */
-            void refinePartition(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Block& splitter, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
+            // Retrieves whether the given state is a predecessor of the current splitter.
+            bool isPredecessorOfCurrentSplitter(storm::storage::sparse::state_type const& state) const;
             
-            /*!
-             * Refines the block based on their probability values (leading into the splitter).
-             *
-             * @param block The block to refine.
-             * @param partition The partition that contains the block.
-             * @param bisimulationType The kind of bisimulation that is to be computed.
-             * @param splitterQueue A queue into which all blocks that were split are inserted so they can be treated
-             * as splitters in the future.
-             * @param comparator A comparator used for comparing constants.
-             */
-            void refineBlockProbabilities(Block& block, Partition& partition, BisimulationType bisimulationType, std::deque<Block*>& splitterQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
+            // A vector that holds the probabilities of states going into the splitter. This is used by the method that
+            // refines a block based on probabilities.
+            std::vector<ValueType> probabilitiesToCurrentSplitter;
             
-            void refineBlockWeak(Block& block, Partition& partition, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::deque<Block*>& splitterQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
+            // A bit vector storing the predecessors of the current splitter.
+            storm::storage::BitVector predecessorsOfCurrentSplitter;
             
-            /*!
-             * Determines the split offsets in the given block.
-             *
-             * @param block The block that is to be analyzed for splits.
-             * @param partition The partition that contains the block.
-             * @param comparator A comparator used for comparing constants.
-             */
-            std::vector<uint_fast64_t> getSplitPointsWeak(Block& block, Partition& partition, storm::utility::ConstantsComparator<ValueType> const& comparator);
-            
-
-            
-            
-            
-            
-            
-            
-            
-            /*!
-             * Creates the measure-driven initial partition for reaching psi states from phi states.
-             *
-             * @param model The model whose state space is partitioned based on reachability of psi states from phi
-             * states.
-             * @param backwardTransitions The backward transitions of the model.
-             * @param phiStates The phi states in the model.
-             * @param psiStates The psi states in the model.
-             * @param bisimulationType The kind of bisimulation that is to be computed.
-             * @param bounded If set to true, the initial partition will be chosen in such a way that preserves bounded
-             * reachability queries.
-             * @param comparator A comparator used for comparing constants.
-             * @return The resulting partition.
-             */
-            template<typename ModelType>
-            Partition getMeasureDrivenInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, BisimulationType bisimulationType, bool keepRewards = true, bool bounded = false, storm::utility::ConstantsComparator<ValueType> const& comparator = storm::utility::ConstantsComparator<ValueType>());
-            
-            /*!
-             * Creates the initial partition based on all the labels in the given model.
-             *
-             * @param model The model whose state space is partitioned based on its labels.
-             * @param backwardTransitions The backward transitions of the model.
-             * @param bisimulationType The kind of bisimulation that is to be computed.
-             * @param atomicPropositions The set of atomic propositions to respect. If not given, then all atomic
-             * propositions of the model are respected.
-             * @param comparator A comparator used for comparing constants.
-             * @return The resulting partition.
-             */
-            template<typename ModelType>
-            Partition getLabelBasedInitialPartition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, BisimulationType bisimulationType, std::set<std::string> const& atomicPropositions, bool keepRewards = true, storm::utility::ConstantsComparator<ValueType> const& comparator = storm::utility::ConstantsComparator<ValueType>());
-
             // A vector mapping each state to its silent probability.
             std::vector<ValueType> silentProbabilities;
         };

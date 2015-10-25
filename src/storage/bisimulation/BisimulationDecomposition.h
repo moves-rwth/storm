@@ -137,13 +137,13 @@ namespace storm {
              */
             std::shared_ptr<ModelType> getQuotient() const;
 
-        protected:
             /*!
              * Computes the decomposition of the model into bisimulation equivalence classes. If requested, a quotient
              * model is built.
              */
             void computeBisimulationDecomposition();
             
+        protected:
             /*!
              * Performs the partition refinement on the model and thereby computes the equivalence classes under strong
              * bisimulation equivalence. If required, the quotient model is built and may be retrieved using
@@ -158,7 +158,7 @@ namespace storm {
              * @param splitter The splitter to use.
              * @param splitterQueue The queue into which to insert the newly discovered potential splitters.
              */
-            virtual void refinePartitionBasedOnSplitter(bisimulation::Block const& splitter, std::deque<bisimulation::Block*>& splitterQueue);
+            virtual void refinePartitionBasedOnSplitter(bisimulation::Block const& splitter, std::deque<bisimulation::Block*>& splitterQueue) = 0;
             
             /*!
              * Builds the quotient model based on the previously computed equivalence classes (stored in the blocks
@@ -180,12 +180,9 @@ namespace storm {
              * Computes the set of states with probability 0/1 for satisfying phi until psi. This is used for the measure
              * driven initial partition.
              *
-             * @param backwardTransitions The backward transitions of the model.
-             * @param phiStates The phi states.
-             * @param psiStates The psi states.
              * @return The states with probability 0 and 1.
              */
-            virtual std::pair<storm::storage::BitVector, storm::storage::BitVector> getStatesWithProbability01(storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) = 0;
+            virtual std::pair<storm::storage::BitVector, storm::storage::BitVector> getStatesWithProbability01() = 0;
             
             /*!
              * Splits the initial partition based on the (unique) state reward vector of the model.

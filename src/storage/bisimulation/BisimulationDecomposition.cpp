@@ -4,6 +4,7 @@
 
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Ctmc.h"
+#include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -13,6 +14,7 @@
 
 #include "src/utility/macros.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
+#include "src/exceptions/InvalidOptionException.h"
 
 namespace storm {
     namespace storage {
@@ -137,6 +139,17 @@ namespace storm {
         template<typename ModelType>
         void BisimulationDecomposition<ModelType>::computeBisimulationDecomposition() {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
+
+            std::chrono::high_resolution_clock::time_point initialPartitionStart = std::chrono::high_resolution_clock::now();
+            // initialize the initial partition.
+            if (options.measureDrivenInitialPartition) {
+                STORM_LOG_THROW(options.phiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without phi states.");
+                STORM_LOG_THROW(options.psiStates, storm::exceptions::InvalidOptionException, "Unable to compute measure-driven initial partition without psi states.");
+                this->initializeMeasureDrivenPartition();
+            } else {
+                this->initializeLabelBasedPartition();
+            }
+            std::chrono::high_resolution_clock::duration initialPartitionTime = std::chrono::high_resolution_clock::now() - initialPartitionStart;
             
             std::chrono::high_resolution_clock::time_point refinementStart = std::chrono::high_resolution_clock::now();
             this->performPartitionRefinement();
@@ -155,12 +168,14 @@ namespace storm {
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
             if (storm::settings::generalSettings().isShowStatisticsSet()) {
+                std::chrono::milliseconds initialPartitionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(initialPartitionTime);
                 std::chrono::milliseconds refinementTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime);
                 std::chrono::milliseconds extractionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime);
                 std::chrono::milliseconds quotientBuildTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(quotientBuildTime);
                 std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
                 std::cout << std::endl;
                 std::cout << "Time breakdown:" << std::endl;
+                std::cout << "    * time for initial partition: " << initialPartitionTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "    * time for partitioning: " << refinementTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "    * time for extraction: " << extractionTimeInMilliseconds.count() << "ms" << std::endl;
                 std::cout << "    * time for building quotient: " << quotientBuildTimeInMilliseconds.count() << "ms" << std::endl;
@@ -174,7 +189,7 @@ namespace storm {
         void BisimulationDecomposition<ModelType>::performPartitionRefinement() {
             // Insert all blocks into the splitter queue that are initially marked as being a (potential) splitter.
             std::deque<Block*> splitterQueue;
-            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (Block& a) { if (a.isMarkedAsSplitter()) { splitterQueue.push_back(&a); } } );
+            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block> const& block) { if (block->isMarkedAsSplitter()) { splitterQueue.push_back(block.get()); } } );
             
             // Then perform the actual splitting until there are no more splitters.
             while (!splitterQueue.empty()) {
@@ -187,6 +202,7 @@ namespace storm {
                 splitter->unmarkAsSplitter();
                 
                 // Now refine the partition using the current splitter.
+                std::cout << "refining based on splitter " << splitter->getId() << std::endl;
                 refinePartitionBasedOnSplitter(*splitter, splitterQueue);
             }
         }
@@ -200,14 +216,13 @@ namespace storm {
         template<typename ModelType>
         void BisimulationDecomposition<ModelType>::splitInitialPartitionBasedOnStateRewards() {
             std::vector<ValueType> const& stateRewardVector = model.getUniqueRewardModel()->second.getStateRewardVector();
-            partition.split([&stateRewardVector] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return stateRewardVector[a] < stateRewardVector[b]; },
-                            [&stateRewardVector] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return stateRewardVector[a] != stateRewardVector[b]; });
+            partition.split([&stateRewardVector] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return stateRewardVector[a] < stateRewardVector[b]; });
         }
         
         template<typename ModelType>
         void BisimulationDecomposition<ModelType>::initializeLabelBasedPartition() {
-            
             partition = storm::storage::bisimulation::Partition(model.getNumberOfStates());
+
             for (auto const& label : options.respectedAtomicPropositions.get()) {
                 if (label == "init") {
                     continue;
@@ -220,11 +235,14 @@ namespace storm {
             if (options.keepRewards && model.hasRewardModel()) {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
+            
+            std::cout << "successfully built (label) initial partition" << std::endl;
+            partition.print();
         }
         
         template<typename ModelType>
         void BisimulationDecomposition<ModelType>::initializeMeasureDrivenPartition() {
-            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = this->getStatesWithProbability01(backwardTransitions, options.phiStates.get(), options.psiStates.get());
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = this->getStatesWithProbability01();
             
             boost::optional<storm::storage::sparse::state_type> representativePsiState;
             if (!options.psiStates.get().empty()) {
@@ -238,6 +256,9 @@ namespace storm {
             if (options.keepRewards && model.hasRewardModel()) {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
+            
+            std::cout << "successfully built (measure-driven) initial partition" << std::endl;
+            partition.print();
         }
         
         template<typename ModelType>
@@ -245,15 +266,19 @@ namespace storm {
             // Now move the states from the internal partition into their final place in the decomposition. We do so in
             // a way that maintains the block IDs as indices.
             this->blocks.resize(partition.size());
-            for (auto const& block : partition.getBlocks()) {
+            for (auto const& blockPtr : partition.getBlocks()) {
                 // We need to sort the states to allow for rapid construction of the blocks.
-                partition.sortBlock(block);
+                partition.sortBlock(*blockPtr);
                 
                 // Convert the state-value-pairs to states only.
-                this->blocks[block.getId()] = block_type(partition.begin(block), partition.end(block), true);
+                this->blocks[blockPtr->getId()] = block_type(partition.begin(*blockPtr), partition.end(*blockPtr), true);
             }
         }
         
         template class BisimulationDecomposition<storm::models::sparse::Dtmc<double>>;
+        
+#ifdef STORM_HAVE_CARL
+        template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>>;
+#endif
     }
 }

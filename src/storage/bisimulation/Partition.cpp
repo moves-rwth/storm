@@ -9,13 +9,13 @@ namespace storm {
     namespace storage {
         namespace bisimulation {
             Partition::Partition(std::size_t numberOfStates) : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates) {
-                blocks.emplace_back(0, numberOfStates, nullptr, nullptr, blocks.size());
+                blocks.emplace_back(new Block(0, numberOfStates, nullptr, nullptr, blocks.size()));
                 
                 // Set up the different parts of the internal structure.
                 for (storm::storage::sparse::state_type state = 0; state < numberOfStates; ++state) {
                     states[state] = state;
                     positions[state] = state;
-                    stateToBlockMapping[state] = &blocks.back();
+                    stateToBlockMapping[state] = blocks.back().get();
                 }
             }
             
@@ -25,8 +25,8 @@ namespace storm {
                 Block* secondBlock = nullptr;
                 Block* thirdBlock = nullptr;
                 if (!prob0States.empty()) {
-                    blocks.emplace_back(0, prob0States.getNumberOfSetBits(), nullptr, nullptr, blocks.size());
-                    firstBlock = &blocks[0];
+                    blocks.emplace_back(new Block(0, prob0States.getNumberOfSetBits(), nullptr, nullptr, blocks.size()));
+                    firstBlock = blocks.front().get();
                     
                     for (auto state : prob0States) {
                         states[position] = state;
@@ -35,11 +35,12 @@ namespace storm {
                         ++position;
                     }
                     firstBlock->setAbsorbing(true);
+                    firstBlock->markAsSplitter();
                 }
                 
                 if (!prob1States.empty()) {
-                    blocks.emplace_back(position, position + prob1States.getNumberOfSetBits(), firstBlock, nullptr, blocks.size());
-                    secondBlock = &blocks[1];
+                    blocks.emplace_back(new Block(position, position + prob1States.getNumberOfSetBits(), firstBlock, nullptr, blocks.size()));
+                    secondBlock = blocks[1].get();
                     
                     for (auto state : prob1States) {
                         states[position] = state;
@@ -49,12 +50,13 @@ namespace storm {
                     }
                     secondBlock->setAbsorbing(true);
                     secondBlock->setRepresentativeState(representativeProb1State.get());
+                    secondBlock->markAsSplitter();
                 }
                 
                 storm::storage::BitVector otherStates = ~(prob0States | prob1States);
                 if (!otherStates.empty()) {
-                    blocks.emplace_back(position, numberOfStates, secondBlock, nullptr, blocks.size());
-                    thirdBlock = &blocks[2];
+                    blocks.emplace_back(new Block(position, numberOfStates, secondBlock, nullptr, blocks.size()));
+                    thirdBlock = blocks[2].get();
                     
                     for (auto state : otherStates) {
                         states[position] = state;
@@ -62,6 +64,7 @@ namespace storm {
                         stateToBlockMapping[state] = thirdBlock;
                         ++position;
                     }
+                    thirdBlock->markAsSplitter();
                 }
             }
             
@@ -111,94 +114,122 @@ namespace storm {
             Block const& Partition::getBlock(storm::storage::sparse::state_type state) const {
                 return *this->stateToBlockMapping[state];
             }
+
+            std::vector<storm::storage::sparse::state_type>::iterator Partition::begin(Block const& block) {
+                auto it = this->states.begin();
+                std::advance(it, block.getBeginIndex());
+                return it;
+            }
             
             std::vector<storm::storage::sparse::state_type>::const_iterator Partition::begin(Block const& block) const {
-                return this->states.begin() + block.getBeginIndex();
+                auto it = this->states.begin();
+                std::advance(it, block.getBeginIndex());
+                return it;
             }
-            
+
+            std::vector<storm::storage::sparse::state_type>::iterator Partition::end(Block const& block) {
+                auto it = this->states.begin();
+                std::advance(it, block.getEndIndex());
+                return it;
+            }
+
             std::vector<storm::storage::sparse::state_type>::const_iterator Partition::end(Block const& block) const {
-                return this->states.begin() + block.getEndIndex();
+                auto it = this->states.begin();
+                std::advance(it, block.getEndIndex());
+                return it;
             }
             
-            Block& Partition::splitBlock(Block& block, storm::storage::sparse::state_type position) {
+            std::pair<std::vector<std::unique_ptr<Block>>::iterator, bool> Partition::splitBlock(Block& block, storm::storage::sparse::state_type position) {
                 STORM_LOG_THROW(position >= block.getBeginIndex() && position <= block.getEndIndex(), storm::exceptions::InvalidArgumentException, "Cannot split block at illegal position.");
 
+                std::cout << "splitting " << block.getId() << " at pos " << position << " (was " << block.getBeginIndex() << " to " << block.getEndIndex() << ")" << std::endl;
+                
                 // In case one of the resulting blocks would be empty, we simply return the current block and do not create
                 // a new one.
                 if (position == block.getBeginIndex() || position == block.getEndIndex()) {
-                    return block;
+                    auto it = blocks.begin();
+                    std::advance(it, block.getId());
+                    return std::make_pair(it, false);
                 }
                 
                 // Actually create the new block.
-                blocks.emplace_back(block.getBeginIndex(), position, block.getPreviousBlockPointer(), &block, blocks.size());
-                Block& newBlock = blocks.back();
+                blocks.emplace_back(new Block(block.getBeginIndex(), position, block.getPreviousBlockPointer(), &block, blocks.size()));
+                auto newBlockIt = std::prev(blocks.end());
                 
                 // Resize the current block appropriately.
+                std::cout << "setting begin pos of block " << block.getId() << " to " << position << std::endl;
                 block.setBeginIndex(position);
                 
                 // Mark both blocks as splitters.
                 block.markAsSplitter();
-                newBlock.markAsSplitter();
+                (*newBlockIt)->markAsSplitter();
                 
                 // Update the mapping of the states in the newly created block.
-                this->mapStatesToBlock(newBlock, this->begin(newBlock), this->end(newBlock));
+                this->mapStatesToBlock(**newBlockIt, this->begin(**newBlockIt), this->end(**newBlockIt));
                 
-                return newBlock;
+                return std::make_pair(newBlockIt, true);
             }
             
-            void Partition::splitBlock(Block& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& lessFunction, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& changedFunction) {
+            bool Partition::splitBlock(Block& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block&)> const& newBlockCallback) {
+                std::cout << "sorting the block [" << block.getId() << "]" << std::endl;
                 // Sort the range of the block such that all states that have the label are moved to the front.
-                std::sort(this->begin(block), this->end(block), lessFunction);
+                std::sort(this->begin(block), this->end(block), less);
+                
+//                std::cout << "after" << std::endl;
+//                for (auto it = this->begin(block), ite = this->end(block); it != ite; ++it) {
+//                    std::cout << *it << " ";
+//                }
+//                std::cout << std::endl;
                 
                 // Update the positions vector.
                 mapStatesToPositions(block);
+
+//                for (auto it = this->positions.begin() + block.getBeginIndex(), ite = this->positions.begin() + block.getEndIndex(); it != ite; ++it) {
+//                    std::cout << *it << " ";
+//                }
+//                std::cout << std::endl;
                 
                 // Now we can check whether the block needs to be split, which is the case iff the changed function returns
                 // true for the first and last element of the remaining state range.
                 storm::storage::sparse::state_type begin = block.getBeginIndex();
                 storm::storage::sparse::state_type end = block.getEndIndex() - 1;
-                while (changedFunction(begin, end)) {
+                bool wasSplit = false;
+                while (less(states[begin], states[end])) {
+                    wasSplit = true;
                     // Now we scan for the first state in the block for which the changed function returns true.
                     // Note that we do not have to check currentIndex for staying within bounds, because we know the matching
                     // state is within bounds.
                     storm::storage::sparse::state_type currentIndex = begin + 1;
-                    while (begin != end && !changedFunction(states[begin], states[currentIndex])) {
+                    while (begin != end && !less(states[begin], states[currentIndex])) {
                         ++currentIndex;
                     }
                     begin = currentIndex;
                     
-                    this->splitBlock(block, currentIndex);
+                    auto result = this->splitBlock(block, currentIndex);
+                    if (result.second) {
+                        newBlockCallback(**result.first);
+                    }
                 }
+                return wasSplit;
             }
             
-            void Partition::split(std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& lessFunction, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& changedFunction) {
-                for (auto& block : blocks) {
-                    splitBlock(block, lessFunction, changedFunction);
+            bool Partition::split(std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block&)> const& newBlockCallback) {
+                bool result = false;
+                // Since the underlying storage of the blocks may change during iteration, we remember the current size
+                // and iterate over indices. This assumes that new blocks will be added at the end of the blocks vector.
+                std::size_t currentSize = this->size();
+                for (uint_fast64_t index = 0; index < currentSize; ++index) {
+                    result |= splitBlock(*blocks[index], less, newBlockCallback);
                 }
+                return result;
             }
             
-            Block& Partition::splitStates(Block& block, storm::storage::BitVector const& states) {
-                // Sort the range of the block such that all states that have the label are moved to the front.
-                std::sort(this->begin(block), this->end(block), [&states] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return states.get(a) && !states.get(b); } );
-                
-                // Update the positions vector.
-                mapStatesToPositions(block);
-                
-                // Now we can find the first position in the block that does not have the label and create new blocks.
-                std::vector<storm::storage::sparse::state_type>::const_iterator it = std::find_if(this->begin(block), this->end(block), [&states] (storm::storage::sparse::state_type const& a) { return !states.get(a); });
-                
-                if (it != this->begin(block) && it != this->end(block)) {
-                    auto cutPoint = std::distance(this->states.cbegin(), it);
-                    return this->splitBlock(block, cutPoint);
-                } else {
-                    return block;
-                }
+            void Partition::splitStates(Block& block, storm::storage::BitVector const& states) {
+                this->splitBlock(block, [&states] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return states.get(a) && !states.get(b); });
             }
             
             void Partition::splitStates(storm::storage::BitVector const& states) {
-                for (auto& block : blocks) {
-                    splitStates(block, states);
-                }
+                this->split([&states] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return states.get(a) && !states.get(b); });
             }
             
             void Partition::sortBlock(Block const& block) {
@@ -211,8 +242,8 @@ namespace storm {
                 storm::storage::sparse::state_type begin = block.hasPreviousBlock() ? block.getPreviousBlock().getEndIndex() : 0;
                 
                 // Actually insert the new block.
-                blocks.emplace_back(begin, block.getBeginIndex(), block.getPreviousBlockPointer(), &block, blocks.size());
-                Block& newBlock = blocks.back();
+                blocks.emplace_back(new Block(begin, block.getBeginIndex(), block.getPreviousBlockPointer(), &block, blocks.size()));
+                Block& newBlock = *blocks.back();
                 
                 // Update the mapping of the states in the newly created block.
                 for (auto it = this->begin(newBlock), ite = this->end(newBlock); it != ite; ++it) {
@@ -222,11 +253,11 @@ namespace storm {
                 return newBlock;
             }
             
-            std::vector<Block> const& Partition::getBlocks() const {
+            std::vector<std::unique_ptr<Block>> const& Partition::getBlocks() const {
                 return this->blocks;
             }
             
-            std::vector<Block>& Partition::getBlocks() {
+            std::vector<std::unique_ptr<Block>>& Partition::getBlocks() {
                 return this->blocks;
             }
             
@@ -234,10 +265,10 @@ namespace storm {
                 for (uint_fast64_t state = 0; state < this->positions.size(); ++state) {
                     STORM_LOG_ASSERT(this->states[this->positions[state]] == state, "Position mapping corrupted.");
                 }
-                for (auto const& block : this->blocks) {
-                    STORM_LOG_ASSERT(block.check(), "Block corrupted.");
-                    for (auto stateIt = this->begin(block), stateIte = this->end(block); stateIt != stateIte; ++stateIt) {
-                        STORM_LOG_ASSERT(this->stateToBlockMapping[*stateIt] == &block, "Block mapping corrupted.");
+                for (auto const& blockPtr : this->blocks) {
+                    STORM_LOG_ASSERT(blockPtr->check(), "Block corrupted.");
+                    for (auto stateIt = this->begin(*blockPtr), stateIte = this->end(*blockPtr); stateIt != stateIte; ++stateIt) {
+                        STORM_LOG_ASSERT(this->stateToBlockMapping[*stateIt] == blockPtr.get(), "Block mapping corrupted.");
                     }
                 }
                 return true;
@@ -245,7 +276,7 @@ namespace storm {
             
             void Partition::print() const {
                 for (auto const& block : this->blocks) {
-                    block.print(*this);
+                    block->print(*this);
                 }
                 std::cout << "states in partition" << std::endl;
                 for (auto const& state : states) {

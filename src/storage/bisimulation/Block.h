@@ -25,6 +25,9 @@ namespace storm {
                 Block(Block&& other) = default;
                 Block& operator=(Block&& other) = default;
                 
+                bool operator==(Block const& other) const;
+                bool operator!=(Block const& other) const;
+                
                 // Prints the block to the standard output.
                 void print(Partition const& partition) const;
                 
@@ -36,6 +39,9 @@ namespace storm {
                 
                 // Gets the next block (if there is one).
                 Block const& getNextBlock() const;
+
+                // Gets a pointer to the next block (if there is one).
+                Block* getNextBlockPointer();
                 
                 // Gets a pointer to the next block (if there is one).
                 Block const* getNextBlockPointer() const;
@@ -45,6 +51,9 @@ namespace storm {
                 
                 // Gets the next block (if there is one).
                 Block const& getPreviousBlock() const;
+
+                // Gets a pointer to the previous block (if there is one).
+                Block* getPreviousBlockPointer();
 
                 // Gets a pointer to the previous block (if there is one).
                 Block const* getPreviousBlockPointer() const;
@@ -71,13 +80,10 @@ namespace storm {
                 std::size_t getId() const;
                 
                 // Retrieves whether the block is marked as a predecessor.
-                bool isMarkedAsPredecessor() const;
+                bool needsRefinement() const;
                 
-                // Marks the block as being a predecessor block.
-                void markAsPredecessorBlock();
-                
-                // Removes the marking.
-                void unmarkAsPredecessorBlock();
+                // Marks the block as needing refinement (or not).
+                void setNeedsRefinement(bool value = true);
                 
                 // Sets whether or not the block is to be interpreted as absorbing.
                 void setAbsorbing(bool absorbing);
@@ -112,8 +118,8 @@ namespace storm {
                 // A field that can be used for marking the block.
                 bool markedAsSplitter;
                 
-                // A field that can be used for marking the block as a predecessor block.
-                bool markedAsPredecessorBlock;
+                // A field that can be used for marking the block as needing refinement.
+                bool needsRefinementFlag;
                 
                 // A flag indicating whether the block is to be interpreted as absorbing or not.
                 bool absorbing;
