@@ -20,7 +20,7 @@ namespace storm {
 
         void Marking::setNumberOfTokensAt(uint_fast64_t place, uint_fast64_t numberOfTokens) {
             //check range
-            for (uint_fast64_t i = getNumberOfPlaces() * numberOfBits; i <(getNumberOfPlaces() * numberOfBits) + numberOfBits; ++i) {
+            for (uint_fast64_t i = place * numberOfBits; i <(place * numberOfBits) + numberOfBits; ++i) {
                 if (numberOfTokens % 2 == 0) {
                     marking.set(i, false);
                 } else {
@@ -32,7 +32,7 @@ namespace storm {
 
         uint_fast64_t Marking::getNumberOfTokensAt(uint_fast64_t place) {
             uint_fast64_t tokens = 0;
-            for (uint_fast64_t i = getNumberOfPlaces() * numberOfBits, mult = 0; i <(getNumberOfPlaces() * numberOfBits) + numberOfBits; ++i, ++mult) {
+            for (uint_fast64_t i = place * numberOfBits, mult = 0; i < (place * numberOfBits) + numberOfBits; ++i, ++mult) {
                 if (marking.get(i)) {
                     tokens += std::pow(2, mult);
                 }
