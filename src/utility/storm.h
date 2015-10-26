@@ -131,7 +131,7 @@ namespace storm {
                 options = typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options(*sparseModel, formulas);
             }
             if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
-                options.weak = true;
+                options.type = storm::storage::BisimulationType::Weak;
                 options.bounded = false;
             }
 
@@ -231,7 +231,6 @@ namespace storm {
         return result;
 
     }
-
             
 #ifdef STORM_HAVE_CARL
     inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {

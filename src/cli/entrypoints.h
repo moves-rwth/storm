@@ -7,7 +7,6 @@
 namespace storm {
     namespace cli {
 
-
         template<typename ValueType>
         void verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
             for (auto const& formula : formulas) {
@@ -86,7 +85,6 @@ namespace storm {
             }
         }
 
-
         template<typename ValueType>
         void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
             std::shared_ptr<storm::models::ModelBase> model = buildSymbolicModel<ValueType>(program, formulas);
@@ -127,6 +125,7 @@ namespace storm {
 
             STORM_LOG_THROW(settings.isExplicitSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
             std::shared_ptr<storm::models::ModelBase> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : boost::optional<std::string>(), settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : boost::optional<std::string>(), settings.isChoiceLabelingSet() ? settings.getChoiceLabelingFilename() : boost::optional<std::string>());
+            
             // Preprocess the model if needed.
             model = preprocessModel<ValueType>(model, formulas);
 
