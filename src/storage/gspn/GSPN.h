@@ -14,6 +14,11 @@ namespace storm {
             // Later, the rates and probabilities type should become a template, for now, let it be doubles.
             typedef double RateType;
             typedef double WeightType;
+
+            /*!
+             * The empty constructor creates an GSPN without transition and places
+             */
+            GSPN();
         private:
             // set containing all immediate transitions
             std::vector<storm::gspn::ImmediateTransition<WeightType>> immediateTransitions;
