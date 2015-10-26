@@ -29,12 +29,13 @@ namespace storm {
             private:
                 //storm::models::sparse::Model<T>* model;
                 std::shared_ptr<storm::models::sparse::Model<T>> model;
-                storm::storage::SparseMatrix<T>  transitionMatrix;
+                storm::storage::SparseMatrix<T> transitionMatrix;
+                state_t numStates;
 
-                std::vector<state_list_t> graphPredecessors;
-                std::vector<state_t>      shortestPathPredecessors;
-                std::vector<state_list_t> shortestPathSuccessors;
-                std::vector<T>            shortestPathDistances;
+                std::vector<state_list_t>             graphPredecessors;
+                std::vector<boost::optional<state_t>> shortestPathPredecessors;
+                std::vector<state_list_t>             shortestPathSuccessors;
+                std::vector<T>                        shortestPathDistances;
 
                 std::vector<std::vector<path<T>>> shortestPaths;
                 std::vector<std::set<path<T>>>    shortestPathCandidates;
