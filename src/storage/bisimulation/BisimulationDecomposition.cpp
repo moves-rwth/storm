@@ -28,7 +28,10 @@ namespace storm {
         
         template<typename ModelType>
         BisimulationDecomposition<ModelType>::Options::Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : Options() {
-            if (formulas.size() == 1) {
+            if (formulas.empty()) {
+                this->respectedAtomicPropositions = model.getStateLabeling().getLabels();
+                this->keepRewards = true;
+            } if (formulas.size() == 1) {
                 this->preserveSingleFormula(model, *formulas.front());
             } else {
                 for (auto const& formula : formulas) {
@@ -202,7 +205,7 @@ namespace storm {
                 splitter->unmarkAsSplitter();
                 
                 // Now refine the partition using the current splitter.
-                std::cout << "refining based on splitter " << splitter->getId() << std::endl;
+//                std::cout << "refining based on splitter " << splitter->getId() << std::endl;
                 refinePartitionBasedOnSplitter(*splitter, splitterQueue);
             }
         }
@@ -236,8 +239,8 @@ namespace storm {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
             
-            std::cout << "successfully built (label) initial partition" << std::endl;
-            partition.print();
+//            std::cout << "successfully built (label) initial partition" << std::endl;
+//            partition.print();
         }
         
         template<typename ModelType>
@@ -257,8 +260,8 @@ namespace storm {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
             
-            std::cout << "successfully built (measure-driven) initial partition" << std::endl;
-            partition.print();
+//            std::cout << "successfully built (measure-driven) initial partition" << std::endl;
+//            partition.print();
         }
         
         template<typename ModelType>

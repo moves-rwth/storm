@@ -35,7 +35,7 @@ namespace storm {
             }
             
             void Block::setBeginIndex(storm::storage::sparse::state_type beginIndex) {
-                std::cout << "setting beg index to " << beginIndex << " [" << this << "]" << std::endl;
+//                std::cout << "setting beg index to " << beginIndex << " [" << this << "]" << std::endl;
                 this->beginIndex = beginIndex;
                 STORM_LOG_ASSERT(beginIndex < endIndex, "Unable to resize block to illegal size.");
             }

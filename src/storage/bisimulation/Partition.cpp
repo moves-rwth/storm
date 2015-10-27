@@ -142,7 +142,7 @@ namespace storm {
             std::pair<std::vector<std::unique_ptr<Block>>::iterator, bool> Partition::splitBlock(Block& block, storm::storage::sparse::state_type position) {
                 STORM_LOG_THROW(position >= block.getBeginIndex() && position <= block.getEndIndex(), storm::exceptions::InvalidArgumentException, "Cannot split block at illegal position.");
 
-                std::cout << "splitting " << block.getId() << " at pos " << position << " (was " << block.getBeginIndex() << " to " << block.getEndIndex() << ")" << std::endl;
+//                std::cout << "splitting " << block.getId() << " at pos " << position << " (was " << block.getBeginIndex() << " to " << block.getEndIndex() << ")" << std::endl;
                 
                 // In case one of the resulting blocks would be empty, we simply return the current block and do not create
                 // a new one.
@@ -157,7 +157,7 @@ namespace storm {
                 auto newBlockIt = std::prev(blocks.end());
                 
                 // Resize the current block appropriately.
-                std::cout << "setting begin pos of block " << block.getId() << " to " << position << std::endl;
+//                std::cout << "setting begin pos of block " << block.getId() << " to " << position << std::endl;
                 block.setBeginIndex(position);
                 
                 // Mark both blocks as splitters.
@@ -171,7 +171,7 @@ namespace storm {
             }
             
             bool Partition::splitBlock(Block& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block&)> const& newBlockCallback) {
-                std::cout << "sorting the block [" << block.getId() << "]" << std::endl;
+//                std::cout << "sorting the block [" << block.getId() << "]" << std::endl;
                 // Sort the range of the block such that all states that have the label are moved to the front.
                 std::sort(this->begin(block), this->end(block), less);
                 

@@ -126,6 +126,7 @@ namespace storm {
         }
         
         storm::storage::DeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
+        bisimulationDecomposition.computeBisimulationDecomposition();
         model = bisimulationDecomposition.getQuotient();
         std::cout << "done." << std::endl << std::endl;
         return model;

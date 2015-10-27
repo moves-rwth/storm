@@ -29,8 +29,8 @@ namespace storm {
         
         template<typename ModelType>
         DeterministicModelBisimulationDecomposition<ModelType>::DeterministicModelBisimulationDecomposition(ModelType const& model, typename BisimulationDecomposition<ModelType>::Options const& options) : BisimulationDecomposition<ModelType>(model, options), probabilitiesToCurrentSplitter(model.getNumberOfStates(), storm::utility::zero<ValueType>()), predecessorsOfCurrentSplitter(model.getNumberOfStates()) {
-            STORM_LOG_THROW(!model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
-            STORM_LOG_THROW(!model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
+            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
             STORM_LOG_THROW(options.type != BisimulationType::Weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
         }
         
@@ -160,7 +160,7 @@ namespace storm {
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitter(std::list<Block*>& predecessorBlocks, std::deque<bisimulation::Block*>& splitterQueue) {
             for (auto block : predecessorBlocks) {
-                std::cout << "splitting predecessor block " << block->getId() << " of splitter" << std::endl;
+//                std::cout << "splitting predecessor block " << block->getId() << " of splitter" << std::endl;
                 this->partition.splitBlock(*block, [this] (storm::storage::sparse::state_type const& state1, storm::storage::sparse::state_type const& state2) {
                     bool firstIsPredecessor = isPredecessorOfCurrentSplitter(state1);
                     bool secondIsPredecessor = isPredecessorOfCurrentSplitter(state2);
@@ -175,7 +175,7 @@ namespace storm {
                     splitterQueue.emplace_back(&block);
                 });
 //                this->partition.print();
-                std::cout << "size: " << this->partition.size() << std::endl;
+//                std::cout << "size: " << this->partition.size() << std::endl;
                 
                 // Remember that we have refined the block.
                 block->setNeedsRefinement(false);
@@ -227,10 +227,10 @@ namespace storm {
                 }
             }
             
-            std::cout << "probs of splitter predecessors: " << std::endl;
-            for (auto state : predecessorsOfCurrentSplitter) {
-                std::cout << state << " [" << this->partition.getBlock(state).getId() << "]" << " -> " << probabilitiesToCurrentSplitter[state] << std::endl;
-            }
+//            std::cout << "probs of splitter predecessors: " << std::endl;
+//            for (auto state : predecessorsOfCurrentSplitter) {
+//                std::cout << state << " [" << this->partition.getBlock(state).getId() << "]" << " -> " << probabilitiesToCurrentSplitter[state] << std::endl;
+//            }
             
             if (this->options.type == BisimulationType::Strong || this->model.getType() == storm::models::ModelType::Ctmc) {
                 refinePredecessorBlocksOfSplitter(predecessorBlocks, splitterQueue);
