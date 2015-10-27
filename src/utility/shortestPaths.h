@@ -20,7 +20,7 @@ namespace storm {
              *
              *     s ~~k-shortest path~~> u --> t
              *
-             * This struct stores u (`pathPredecessor`) and k (`predecessorK`).
+             * This struct stores u (`predecessorNode`) and k (`predecessorK`).
              *
              * t is implied by this struct's location: It is stored in the
              * k-shortest paths list associated with t.
@@ -31,7 +31,7 @@ namespace storm {
              */
             template <typename T>
             struct Path {
-                boost::optional<state_t> pathPredecessor;
+                boost::optional<state_t> predecessorNode;
                 unsigned int predecessorK;
                 T distance;
             };
@@ -71,6 +71,10 @@ namespace storm {
                 void computeSPSuccessors();
                 void initializeShortestPaths();
 
+                /*
+                 * Recurses over the path and prints the nodes. Intended for debugging.
+                 */
+                void printKShortestPath(state_t targetNode, int k, bool head=true);
             };
         }
     }

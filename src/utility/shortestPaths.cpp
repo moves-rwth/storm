@@ -21,6 +21,8 @@ namespace storm {
 
                 // constructs the recursive shortest path representations
                 initializeShortestPaths();
+
+                printKShortestPath(400, 1); // DEBUG
             }
 
             template <typename T>
@@ -119,6 +121,24 @@ namespace storm {
                             1,
                             shortestPathDistances[currentNode]
                     });
+                }
+            }
+
+            template <typename T>
+            void ShortestPathsGenerator<T>::printKShortestPath(state_t targetNode, int k, bool head) {
+                // note the index shift! risk of off-by-one
+                Path<T> p = kShortestPaths[targetNode][k - 1];
+
+                if (head) {
+                    std::cout << "Path (reversed), dist (prob)=" << p.distance << ": [";
+                }
+
+                std::cout << " " << targetNode;
+
+                if (p.predecessorNode) {
+                    printKShortestPath(p.predecessorNode.get(), p.predecessorK, false);
+                } else {
+                    std::cout << " ]" << std::endl;
                 }
             }
         }
