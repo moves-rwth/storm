@@ -13,5 +13,9 @@ namespace storm {
         bool ModelBase::isSymbolicModel() const {
             return false;
         }
+        
+        bool ModelBase::isOfType(storm::models::ModelType const& modelType) const {
+            return this->getType() == modelType;
+        }
     }
 }

@@ -30,6 +30,7 @@
 #include "src/models/ModelBase.h"
 #include "src/models/sparse/Model.h"
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/symbolic/Model.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 
@@ -80,8 +81,6 @@ namespace storm {
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
             
- 
- 
     template<typename ValueType>
     std::shared_ptr<storm::models::ModelBase> buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         std::shared_ptr<storm::models::ModelBase> result(nullptr);
@@ -111,7 +110,6 @@ namespace storm {
             result = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
         }
 
-        // Then, build the model from the symbolic description.
         return result;
     }
             
@@ -263,7 +261,6 @@ namespace storm {
         return result;
     }
             
-
 #endif
 
     template<storm::dd::DdType DdType>

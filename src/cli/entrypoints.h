@@ -3,7 +3,6 @@
 
 #include "src/utility/storm.h"
 
-
 namespace storm {
     namespace cli {
 
@@ -84,14 +83,40 @@ namespace storm {
                 }
             }
         }
-
+        
+#define BRANCH_ON_MODELTYPE(result, model, value_type, dd_type, function, ...) \
+    if (model->isSymbolicModel()) { \
+        if (model->isOfType(storm::models::ModelType::Dtmc)) { \
+            result = function<storm::models::symbolic::Dtmc<dd_type>>(model->as<storm::models::symbolic::Dtmc<dd_type>>(), __VA_ARGS__); \
+        } else if (model->isOfType(storm::models::ModelType::Ctmc)) { \
+            result = function<storm::models::symbolic::Ctmc<dd_type>>(model->as<storm::models::symbolic::Ctmc<dd_type>>(), __VA_ARGS__); \
+        } else if (model->isOfType(storm::models::ModelType::Mdp)) { \
+            result = function<storm::models::symbolic::Mdp<dd_type>>(model->as<storm::models::symbolic::Mdp<dd_type>>(), __VA_ARGS__); \
+        } else { \
+            STORM_LOG_ASSERT(false, "Unknown model type."); \
+        } \
+    } else { \
+        STORM_LOG_ASSERT(model->isSparseModel(), "Unknown model type."); \
+        if (model->isOfType(storm::models::ModelType::Dtmc)) { \
+            result = function<storm::models::sparse::Dtmc<value_type>>(model->as<storm::models::sparse::Dtmc<value_type>>(), __VA_ARGS__); \
+        } else if (model->isOfType(storm::models::ModelType::Ctmc)) { \
+            result = function<storm::models::sparse::Ctmc<value_type>>(model->as<storm::models::sparse::Ctmc<value_type>>(), __VA_ARGS__); \
+        } else if (model->isOfType(storm::models::ModelType::Mdp)) { \
+            result = function<storm::models::sparse::Mdp<value_type>>(model->as<storm::models::sparse::Mdp<value_type>>(), __VA_ARGS__); \
+        } else if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) { \
+            result = function<storm::models::sparse::MarkovAutomaton<value_type>>(model->as<storm::models::sparse::MarkovAutomaton<value_type>>(), __VA_ARGS__); \
+        } else { \
+            STORM_LOG_ASSERT(false, "Unknown model type."); \
+        } \
+    }
+    
         template<typename ValueType>
         void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
             std::shared_ptr<storm::models::ModelBase> model = buildSymbolicModel<ValueType>(program, formulas);
             STORM_LOG_THROW(model != nullptr, storm::exceptions::InvalidStateException, "Model could not be constructed for an unknown reason.");
 
             // Preprocess the model if needed.
-            model = preprocessModel<ValueType>(model, formulas);
+            BRANCH_ON_MODELTYPE(model, model, ValueType, storm::dd::DdType::CUDD, preprocessModel, formulas);
 
             // Print some information about the model.
             model->printModelInformationToStream(std::cout);
@@ -127,7 +152,7 @@ namespace storm {
             std::shared_ptr<storm::models::ModelBase> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : boost::optional<std::string>(), settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : boost::optional<std::string>(), settings.isChoiceLabelingSet() ? settings.getChoiceLabelingFilename() : boost::optional<std::string>());
             
             // Preprocess the model if needed.
-            model = preprocessModel<ValueType>(model, formulas);
+            BRANCH_ON_MODELTYPE(model, model, ValueType, storm::dd::DdType::CUDD, preprocessModel, formulas);
 
             // Print some information about the model.
             model->printModelInformationToStream(std::cout);
