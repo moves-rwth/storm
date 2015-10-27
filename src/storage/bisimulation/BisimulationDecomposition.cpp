@@ -276,9 +276,11 @@ namespace storm {
         }
         
         template class BisimulationDecomposition<storm::models::sparse::Dtmc<double>>;
+        template class BisimulationDecomposition<storm::models::sparse::Ctmc<double>>;
         
 #ifdef STORM_HAVE_CARL
         template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>>;
+        template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>>;
 #endif
     }
 }
