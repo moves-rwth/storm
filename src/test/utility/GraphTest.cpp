@@ -276,6 +276,12 @@ TEST(GraphTest, kshortest) {
 
     storm::utility::shortestPaths::ShortestPathsGenerator<double> shortestPathsGenerator(model);
 
+    storm::storage::sparse::state_type exampleState = 50;
+
+    for (int i = 1; i < 20; i++) {
+        auto foo = shortestPathsGenerator.getKShortest(exampleState, i);
+    }
+
     // TODO: actually write tests here
 
     EXPECT_TRUE(false);

@@ -1,7 +1,7 @@
 #include <queue>
+#include <set>
 #include "shortestPaths.h"
 #include "graph.h"
-#include "constants.h"
 
 namespace storm {
     namespace utility {
@@ -21,6 +21,8 @@ namespace storm {
 
                 // constructs the recursive shortest path representations
                 initializeShortestPaths();
+
+                candidatePaths.resize(numStates);
             }
 
             template <typename T>
@@ -53,7 +55,7 @@ namespace storm {
 
                 // set serves as priority queue with unique membership
                 // default comparison on pair actually works fine if distance is the first entry
-                std::set<std::pair<T, state_t>> dijkstraQueue;
+                std::set<std::pair<T, state_t>, std::greater_equal<std::pair<T, state_t>>> dijkstraQueue;
 
                 for (state_t initialState : model->getInitialStates()) {
                     shortestPathDistances[initialState] = zeroDistance;
@@ -124,7 +126,93 @@ namespace storm {
             }
 
             template <typename T>
-            void ShortestPathsGenerator<T>::printKShortestPath(state_t targetNode, int k, bool head) {
+            void ShortestPathsGenerator<T>::computeNextPath(state_t node, unsigned long k) {
+                assert(kShortestPaths[node].size() == k - 1); // if not, the previous SP must not exist
+
+                if (k == 2) {
+                    Path<T> shortestPathToNode = kShortestPaths[node][1 - 1]; // never forget index shift :-|
+
+                    for (state_t predecessor : graphPredecessors[node]) {
+                        // add shortest paths to predecessors plus edge to current node
+                        Path<T> pathToPredecessorPlusEdge = {
+                            boost::optional<state_t>(predecessor),
+                            1,
+                            shortestPathDistances[predecessor] * getEdgeDistance(predecessor, node)
+                        };
+                        candidatePaths[node].insert(pathToPredecessorPlusEdge);
+
+                        // ... but not the actual shortest path
+                        auto it = find(candidatePaths[node].begin(), candidatePaths[node].end(), shortestPathToNode);
+                        if (it != candidatePaths[node].end()) {
+                            candidatePaths[node].erase(it);
+                        }
+                    }
+                }
+
+                if (k > 2 || !isInitialState(node)) {
+                    // the (k-1)th shortest path (i.e., one better than the one we want to compute)
+                    Path<T> previousShortestPath = kShortestPaths[node][k - 1 - 1]; // oh god, I forgot index shift AGAIN
+
+                    // the predecessor node on that path
+                    state_t predecessor = previousShortestPath.predecessorNode.get();
+                    // the path to that predecessor was the `tailK`-shortest
+                    unsigned long tailK = previousShortestPath.predecessorK;
+
+                    // i.e. source ~~tailK-shortest path~~> predecessor --> node
+
+                    // compute one-worse-shortest path to the predecessor (if it hasn't yet been computed)
+                    if (kShortestPaths[predecessor].size() < tailK + 1) {
+                        // TODO: investigate recursion depth and possible iterative alternative
+                        computeNextPath(predecessor, tailK + 1);
+                    }
+
+                    if (kShortestPaths[predecessor].size() >= tailK + 1) {
+                        // take that path, add an edge to the current node; that's a candidate
+                        Path<T> pathToPredecessorPlusEdge = {
+                                boost::optional<state_t>(predecessor),
+                                tailK + 1,
+                                kShortestPaths[predecessor][tailK + 1 - 1].distance * getEdgeDistance(predecessor, node)
+                        };
+                        candidatePaths[node].insert(pathToPredecessorPlusEdge);
+                    }
+                    // else there was no path; TODO: does this need handling?
+                }
+
+                if (!candidatePaths[node].empty()) {
+                    Path<T> minDistanceCandidate = *(candidatePaths[node].begin());
+                    for (auto path : candidatePaths[node]) {
+                        if (path.distance > minDistanceCandidate.distance) {
+                            minDistanceCandidate = path;
+                        }
+                    }
+
+                    candidatePaths[node].erase(find(candidatePaths[node].begin(), candidatePaths[node].end(), minDistanceCandidate));
+                    kShortestPaths[node].push_back(minDistanceCandidate);
+                }
+            }
+
+            template <typename T>
+            Path<T> ShortestPathsGenerator<T>::getKShortest(state_t node, unsigned long k) {
+                unsigned long alreadyComputedK = kShortestPaths[node].size();
+
+                for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
+                    computeNextPath(node, nextK);
+                    if (kShortestPaths[node].size() < nextK) {
+                        break;
+                    }
+                }
+
+                if (kShortestPaths[node].size() >= k) {
+                    printKShortestPath(node, k); // DEBUG
+                } else {
+                    std::cout << "No other path exists!" << std::endl;
+                }
+
+                return kShortestPaths[node][k - 1];
+            }
+
+            template <typename T>
+            void ShortestPathsGenerator<T>::printKShortestPath(state_t targetNode, unsigned long k, bool head) {
                 // note the index shift! risk of off-by-one
                 Path<T> p = kShortestPaths[targetNode][k - 1];
 

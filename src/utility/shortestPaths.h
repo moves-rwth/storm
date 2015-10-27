@@ -5,6 +5,7 @@
 #include <boost/optional/optional.hpp>
 #include "src/models/sparse/Model.h"
 #include "src/storage/sparse/StateType.h"
+#include "constants.h"
 
 namespace storm {
     namespace utility {
@@ -26,22 +27,43 @@ namespace storm {
              * k-shortest paths list associated with t.
              *
              * Thus we can reconstruct the entire path by recursively looking
-             * up the path's tail stored as the k-th entry of the predecessor's
-             * shortest paths list.
+             * up the path's tail stored as the k-th entry [1] of the
+             * predecessor's shortest paths list.
+             *
+             * [1] oh, actually, the `k-1`th entry due to 0-based indexing!
              */
             template <typename T>
             struct Path {
                 boost::optional<state_t> predecessorNode;
-                unsigned int predecessorK;
+                unsigned long predecessorK;
                 T distance;
+
+                // FIXME: uhh.. is this okay for set? just some arbitrary order
+                bool operator<(const Path<T>& rhs) const {
+                    if (predecessorNode != rhs.predecessorNode) {
+                        return predecessorNode < rhs.predecessorNode;
+                    }
+                    return predecessorK < predecessorK;
+                }
+
+                bool operator==(const Path<T>& rhs) const {
+                    return (predecessorNode == rhs.predecessorNode) && (predecessorK == rhs.predecessorK);
+                }
             };
+
+            // -------------------------------------------------------------------------------------------------------
 
             template <typename T>
             class ShortestPathsGenerator {
             public:
                 // FIXME: this shared_ptr-passing business is probably a bad idea
                 ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model);
+
                 ~ShortestPathsGenerator();
+
+                // TODO: think about suitable output format
+                Path<T> getKShortest(state_t node, unsigned long k);
+
 
             private:
                 std::shared_ptr<storm::models::sparse::Model<T>> model;
@@ -86,9 +108,31 @@ namespace storm {
                 void initializeShortestPaths();
 
                 /*!
+                 * Main step of REA algorithm. TODO: Document further.
+                 */
+                void computeNextPath(state_t node, unsigned long k);
+
+                /*!
                  * Recurses over the path and prints the nodes. Intended for debugging.
                  */
-                void printKShortestPath(state_t targetNode, int k, bool head=true);
+                void printKShortestPath(state_t targetNode, unsigned long k, bool head=true);
+
+
+                // --- tiny helper fcts ---
+                bool isInitialState(state_t node) {
+                    auto initialStates = model->getInitialStates();
+                    return find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
+                }
+
+                T getEdgeDistance(state_t tailNode, state_t headNode) {
+                    for (auto const& transition : transitionMatrix.getRowGroup(tailNode)) {
+                        if (transition.getColumn() == headNode) {
+                            return transition.getValue();
+                        }
+                    }
+                    return storm::utility::zero<T>();
+                }
+                // -----------------------
             };
         }
     }
