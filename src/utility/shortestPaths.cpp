@@ -1,3 +1,4 @@
+#include <queue>
 #include "shortestPaths.h"
 #include "graph.h"
 #include "constants.h"
@@ -32,10 +33,6 @@ namespace storm {
 
                 assert(numStates == transitionMatrix.getRowCount());
                 for (state_t i = 0; i < numStates; i++) {
-                    // what's the difference? TODO
-                    //auto foo = transitionMatrix.getRowGroupEntryCount(i);
-                    //auto bar = transitionMatrix.getRowGroupSize(i);
-
                     for (auto transition : transitionMatrix.getRowGroup(i)) {
                         graphPredecessors[transition.getColumn()].push_back(i);
                     }
@@ -92,7 +89,38 @@ namespace storm {
             }
 
             template <typename T>
-            void ShortestPathsGenerator<T>::initializeShortestPaths() {}
+            void ShortestPathsGenerator<T>::initializeShortestPaths() {
+                kShortestPaths.resize(numStates);
+                candidatePaths.resize(numStates);
+
+                // BFS in Dijkstra-SP order
+                std::queue<state_t> bfsQueue;
+                for (state_t initialState : model->getInitialStates()) {
+                    bfsQueue.push(initialState);
+                }
+
+                while (!bfsQueue.empty()) {
+                    state_t currentNode = bfsQueue.front();
+                    bfsQueue.pop();
+
+                    if (!kShortestPaths[currentNode].empty()) {
+                        continue; // already visited
+                    }
+
+                    for (state_t successorNode : shortestPathSuccessors[currentNode]) {
+                        bfsQueue.push(successorNode);
+                    }
+
+                    // note that `shortestPathPredecessor` may not be present
+                    // if current node is an initial state
+                    // in this case, the boost::optional copy of an uninitialized optional is hopefully also uninitialized
+                    kShortestPaths[currentNode].push_back(Path<T> {
+                            shortestPathPredecessors[currentNode],
+                            1,
+                            shortestPathDistances[currentNode]
+                    });
+                }
+            }
         }
     }
 }

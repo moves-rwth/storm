@@ -12,10 +12,27 @@ namespace storm {
             typedef storm::storage::sparse::state_type state_t;
             typedef std::vector<state_t> state_list_t;
 
+            /*
+             * Implicit shortest path representation
+             *
+             * All shortest paths (from s to t) can be described as some
+             * k-shortest path to some node u plus the edge to t:
+             *
+             *     s ~~k-shortest path~~> u --> t
+             *
+             * This struct stores u (`pathPredecessor`) and k (`predecessorK`).
+             *
+             * t is implied by this struct's location: It is stored in the
+             * k-shortest paths list associated with t.
+             *
+             * Thus we can reconstruct the entire path by recursively looking
+             * up the path's tail stored as the k-th entry of the predecessor's
+             * shortest paths list.
+             */
             template <typename T>
-            struct path {
-                boost::optional<state_t> tail;
-                unsigned int tail_k;
+            struct Path {
+                boost::optional<state_t> pathPredecessor;
+                unsigned int predecessorK;
                 T distance;
             };
 
@@ -37,8 +54,8 @@ namespace storm {
                 std::vector<state_list_t>             shortestPathSuccessors;
                 std::vector<T>                        shortestPathDistances;
 
-                std::vector<std::vector<path<T>>> shortestPaths;
-                std::vector<std::set<path<T>>>    shortestPathCandidates;
+                std::vector<std::vector<Path<T>>> kShortestPaths;
+                std::vector<std::set<Path<T>>>    candidatePaths;
 
                 /*!
                  * Computes list of predecessors for all nodes.
