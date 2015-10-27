@@ -21,8 +21,6 @@ namespace storm {
 
                 // constructs the recursive shortest path representations
                 initializeShortestPaths();
-
-                printKShortestPath(400, 1); // DEBUG
             }
 
             template <typename T>
@@ -31,11 +29,13 @@ namespace storm {
 
             template <typename T>
             void ShortestPathsGenerator<T>::computePredecessors() {
-                graphPredecessors.resize(numStates);
+                auto rowCount = transitionMatrix.getRowCount();
+                assert(numStates == rowCount);
 
-                assert(numStates == transitionMatrix.getRowCount());
-                for (state_t i = 0; i < numStates; i++) {
-                    for (auto transition : transitionMatrix.getRowGroup(i)) {
+                graphPredecessors.resize(rowCount);
+
+                for (state_t i = 0; i < rowCount; i++) {
+                    for (auto const& transition : transitionMatrix.getRowGroup(i)) {
                         graphPredecessors[transition.getColumn()].push_back(i);
                     }
                 }
@@ -93,7 +93,6 @@ namespace storm {
             template <typename T>
             void ShortestPathsGenerator<T>::initializeShortestPaths() {
                 kShortestPaths.resize(numStates);
-                candidatePaths.resize(numStates);
 
                 // BFS in Dijkstra-SP order
                 std::queue<state_t> bfsQueue;

@@ -44,7 +44,6 @@ namespace storm {
                 ~ShortestPathsGenerator();
 
             private:
-                //storm::models::sparse::Model<T>* model;
                 std::shared_ptr<storm::models::sparse::Model<T>> model;
                 storm::storage::SparseMatrix<T> transitionMatrix;
                 state_t numStates;
@@ -59,19 +58,34 @@ namespace storm {
 
                 /*!
                  * Computes list of predecessors for all nodes.
-                 * Reachability is not considered; a predecessor is simply any node that has an edge leading to the
-                 * node in question.
-                 *
-                 * @param model The model whose transitions will be examined
-                 * @return A vector of predecessors for each node
+                 * Reachability is not considered; a predecessor is simply any node that has an edge leading to the node in question.
+                 * Requires `transitionMatrix`.
+                 * Modifies `graphPredecessors`.
                  */
                 void computePredecessors();
 
+                /*!
+                 * Computes shortest path distances and predecessors.
+                 * Requires `model`, `numStates`, `transitionMatrix`.
+                 * Modifies `shortestPathPredecessors` and `shortestPathDistances`.
+                 */
                 void performDijkstra();
+
+                /*!
+                 * Computes list of shortest path successor nodes from predecessor list.
+                 * Requires `shortestPathPredecessors`, `numStates`.
+                 * Modifies `shortestPathSuccessors`.
+                 */
                 void computeSPSuccessors();
+
+                /*!
+                 * Constructs and stores the implicit shortest path representations (see `Path`) for the (1-)shortest paths.
+                 * Requires `shortestPathPredecessors`, `shortestPathDistances`, `model`, `numStates`.
+                 * Modifies `kShortestPaths`.
+                 */
                 void initializeShortestPaths();
 
-                /*
+                /*!
                  * Recurses over the path and prints the nodes. Intended for debugging.
                  */
                 void printKShortestPath(state_t targetNode, int k, bool head=true);
