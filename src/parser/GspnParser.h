@@ -2,6 +2,7 @@
 #define STORM_GSPNPARSER_H
 
 #include <string>
+#include <xercesc/parsers/XercesDOMParser.hpp>
 #include "src/storage/gspn/GSPN.h"
 
 namespace storm {

@@ -45,7 +45,23 @@ namespace storm {
              * @param place The place from which the tokens are counted.
              * @return The number of tokens at the place.
              */
-            uint_fast64_t  getNumberOfTokensAt(uint_fast64_t place);
+            uint_fast64_t getNumberOfTokensAt(uint_fast64_t place);
+
+            /*!
+             * Reset the number of places.
+             * If the new number of places is larger than the old one, the new places start with 0 tokens.
+             * If the new number of places is smaller than the old one, the places which are going to be
+             * erased must not contain any tokens.
+             *
+             * @param numberOfPlaces The new number of places.
+             * @return Return True if the change is made.
+             */
+            bool setNumberOfPlaces(uint_fast64_t numberOfPlaces);
+
+            /*!
+             *
+             */
+            bool setMaxNumberOfTokens(uint_fast64_t maxNumberOfTokens);
         private:
             // the maximal number of places in the gspn
             uint_fast64_t numberOfPlaces;
