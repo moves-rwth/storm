@@ -2,14 +2,17 @@
 
 #include <iostream>
 
+#include "src/storage/bisimulation/DeterministicBlockData.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {
         namespace bisimulation {
-            Partition::Partition(std::size_t numberOfStates) : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates) {
-                blocks.emplace_back(new Block(0, numberOfStates, nullptr, nullptr, blocks.size()));
+            template<typename DataType>
+            Partition<DataType>::Partition(std::size_t numberOfStates) : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates) {
+                blocks.emplace_back(new Block<DataType>(0, numberOfStates, nullptr, nullptr, blocks.size()));
                 
                 // Set up the different parts of the internal structure.
                 for (storm::storage::sparse::state_type state = 0; state < numberOfStates; ++state) {
@@ -19,13 +22,14 @@ namespace storm {
                 }
             }
             
-            Partition::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, boost::optional<storm::storage::sparse::state_type> representativeProb1State) : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates) {
+            template<typename DataType>
+            Partition<DataType>::Partition(std::size_t numberOfStates, storm::storage::BitVector const& prob0States, storm::storage::BitVector const& prob1States, boost::optional<storm::storage::sparse::state_type> representativeProb1State) : stateToBlockMapping(numberOfStates), states(numberOfStates), positions(numberOfStates) {
                 storm::storage::sparse::state_type position = 0;
-                Block* firstBlock = nullptr;
-                Block* secondBlock = nullptr;
-                Block* thirdBlock = nullptr;
+                Block<DataType>* firstBlock = nullptr;
+                Block<DataType>* secondBlock = nullptr;
+                Block<DataType>* thirdBlock = nullptr;
                 if (!prob0States.empty()) {
-                    blocks.emplace_back(new Block(0, prob0States.getNumberOfSetBits(), nullptr, nullptr, blocks.size()));
+                    blocks.emplace_back(new Block<DataType>(0, prob0States.getNumberOfSetBits(), nullptr, nullptr, blocks.size()));
                     firstBlock = blocks.front().get();
                     
                     for (auto state : prob0States) {
@@ -39,7 +43,7 @@ namespace storm {
                 }
                 
                 if (!prob1States.empty()) {
-                    blocks.emplace_back(new Block(position, position + prob1States.getNumberOfSetBits(), firstBlock, nullptr, blocks.size()));
+                    blocks.emplace_back(new Block<DataType>(position, position + prob1States.getNumberOfSetBits(), firstBlock, nullptr, blocks.size()));
                     secondBlock = blocks[1].get();
                     
                     for (auto state : prob1States) {
@@ -55,7 +59,7 @@ namespace storm {
                 
                 storm::storage::BitVector otherStates = ~(prob0States | prob1States);
                 if (!otherStates.empty()) {
-                    blocks.emplace_back(new Block(position, numberOfStates, secondBlock, nullptr, blocks.size()));
+                    blocks.emplace_back(new Block<DataType>(position, numberOfStates, secondBlock, nullptr, blocks.size()));
                     thirdBlock = blocks[2].get();
                     
                     for (auto state : otherStates) {
@@ -68,12 +72,14 @@ namespace storm {
                 }
             }
             
-            void Partition::swapStates(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
+            template<typename DataType>
+            void Partition<DataType>::swapStates(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
                 std::swap(this->states[this->positions[state1]], this->states[this->positions[state2]]);
                 std::swap(this->positions[state1], this->positions[state2]);
             }
             
-            void Partition::swapStatesAtPositions(storm::storage::sparse::state_type position1, storm::storage::sparse::state_type position2) {
+            template<typename DataType>
+            void Partition<DataType>::swapStatesAtPositions(storm::storage::sparse::state_type position1, storm::storage::sparse::state_type position2) {
                 storm::storage::sparse::state_type state1 = this->states[position1];
                 storm::storage::sparse::state_type state2 = this->states[position2];
                 
@@ -82,64 +88,96 @@ namespace storm {
                 this->positions[state2] = position1;
             }
             
-            storm::storage::sparse::state_type const& Partition::getPosition(storm::storage::sparse::state_type state) const {
+            template<typename DataType>
+            storm::storage::sparse::state_type const& Partition<DataType>::getPosition(storm::storage::sparse::state_type state) const {
                 return this->positions[state];
             }
             
-            void Partition::setPosition(storm::storage::sparse::state_type state, storm::storage::sparse::state_type position) {
+            template<typename DataType>
+            void Partition<DataType>::setPosition(storm::storage::sparse::state_type state, storm::storage::sparse::state_type position) {
                 this->positions[state] = position;
             }
             
-            storm::storage::sparse::state_type const& Partition::getState(storm::storage::sparse::state_type position) const {
+            template<typename DataType>
+            storm::storage::sparse::state_type const& Partition<DataType>::getState(storm::storage::sparse::state_type position) const {
                 return this->states[position];
             }
             
-            void Partition::mapStatesToBlock(Block& block, std::vector<storm::storage::sparse::state_type>::iterator first, std::vector<storm::storage::sparse::state_type>::iterator last) {
+            template<typename DataType>
+            void Partition<DataType>::mapStatesToBlock(Block<DataType>& block, std::vector<storm::storage::sparse::state_type>::iterator first, std::vector<storm::storage::sparse::state_type>::iterator last) {
                 for (; first != last; ++first) {
                     this->stateToBlockMapping[*first] = &block;
                 }
             }
             
-            void Partition::mapStatesToPositions(Block const& block) {
+            template<typename DataType>
+            void Partition<DataType>::mapStatesToPositions(Block<DataType> const& block) {
                 storm::storage::sparse::state_type position = block.getBeginIndex();
                 for (auto stateIt = this->begin(block), stateIte = this->end(block); stateIt != stateIte; ++stateIt, ++position) {
                     this->positions[*stateIt] = position;
                 }
             }
             
-            Block& Partition::getBlock(storm::storage::sparse::state_type state) {
+            template<typename DataType>
+            Block<DataType>& Partition<DataType>::getBlock(storm::storage::sparse::state_type state) {
                 return *this->stateToBlockMapping[state];
             }
             
-            Block const& Partition::getBlock(storm::storage::sparse::state_type state) const {
+            template<typename DataType>
+            Block<DataType> const& Partition<DataType>::getBlock(storm::storage::sparse::state_type state) const {
                 return *this->stateToBlockMapping[state];
             }
 
-            std::vector<storm::storage::sparse::state_type>::iterator Partition::begin(Block const& block) {
+            template<typename DataType>
+            std::vector<storm::storage::sparse::state_type>::iterator Partition<DataType>::begin(Block<DataType> const& block) {
                 auto it = this->states.begin();
                 std::advance(it, block.getBeginIndex());
                 return it;
             }
             
-            std::vector<storm::storage::sparse::state_type>::const_iterator Partition::begin(Block const& block) const {
+            template<typename DataType>
+            std::vector<storm::storage::sparse::state_type>::const_iterator Partition<DataType>::begin(Block<DataType> const& block) const {
                 auto it = this->states.begin();
                 std::advance(it, block.getBeginIndex());
                 return it;
             }
 
-            std::vector<storm::storage::sparse::state_type>::iterator Partition::end(Block const& block) {
+            template<typename DataType>
+            std::vector<storm::storage::sparse::state_type>::iterator Partition<DataType>::end(Block<DataType> const& block) {
                 auto it = this->states.begin();
                 std::advance(it, block.getEndIndex());
                 return it;
             }
 
-            std::vector<storm::storage::sparse::state_type>::const_iterator Partition::end(Block const& block) const {
+            template<typename DataType>
+            std::vector<storm::storage::sparse::state_type>::const_iterator Partition<DataType>::end(Block<DataType> const& block) const {
                 auto it = this->states.begin();
                 std::advance(it, block.getEndIndex());
                 return it;
             }
             
-            std::pair<std::vector<std::unique_ptr<Block>>::iterator, bool> Partition::splitBlock(Block& block, storm::storage::sparse::state_type position) {
+            template<typename DataType>
+            std::vector<storm::storage::sparse::state_type>::iterator Partition<DataType>::begin() {
+                return this->states.begin();
+            }
+            
+            template<typename DataType>
+            std::vector<storm::storage::sparse::state_type>::const_iterator Partition<DataType>::begin() const {
+                return this->states.begin();
+            }
+            
+            template<typename DataType>
+            std::vector<storm::storage::sparse::state_type>::iterator Partition<DataType>::end() {
+                return this->states.end();
+            }
+            
+            template<typename DataType>
+            std::vector<storm::storage::sparse::state_type>::const_iterator Partition<DataType>::end() const {
+                return this->states.end();
+            }
+            
+            template<typename DataType>
+            std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> Partition<DataType>::splitBlock(Block<DataType>& block, storm::storage::sparse::state_type position) {
                 STORM_LOG_THROW(position >= block.getBeginIndex() && position <= block.getEndIndex(), storm::exceptions::InvalidArgumentException, "Cannot split block at illegal position.");
 
 //                std::cout << "splitting " << block.getId() << " at pos " << position << " (was " << block.getBeginIndex() << " to " << block.getEndIndex() << ")" << std::endl;
@@ -153,7 +191,7 @@ namespace storm {
                 }
                 
                 // Actually create the new block.
-                blocks.emplace_back(new Block(block.getBeginIndex(), position, block.getPreviousBlockPointer(), &block, blocks.size()));
+                blocks.emplace_back(new Block<DataType>(block.getBeginIndex(), position, block.getPreviousBlockPointer(), &block, blocks.size()));
                 auto newBlockIt = std::prev(blocks.end());
                 
                 // Resize the current block appropriately.
@@ -170,7 +208,8 @@ namespace storm {
                 return std::make_pair(newBlockIt, true);
             }
             
-            bool Partition::splitBlock(Block& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block&)> const& newBlockCallback) {
+            template<typename DataType>
+            bool Partition<DataType>::splitBlock(Block<DataType>& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block<DataType>&)> const& newBlockCallback) {
 //                std::cout << "sorting the block [" << block.getId() << "]" << std::endl;
                 // Sort the range of the block such that all states that have the label are moved to the front.
                 std::sort(this->begin(block), this->end(block), less);
@@ -213,7 +252,15 @@ namespace storm {
                 return wasSplit;
             }
             
-            bool Partition::split(std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block&)> const& newBlockCallback) {
+            // Splits the block by sorting the states according to the given function and then identifying the split
+            // points.
+            template<typename DataType>
+            bool Partition<DataType>::splitBlock(Block<DataType>& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less) {
+                return this->splitBlock(block, less, [] (Block<DataType>& block) {});
+            }
+            
+            template<typename DataType>
+            bool Partition<DataType>::split(std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block<DataType>&)> const& newBlockCallback) {
                 bool result = false;
                 // Since the underlying storage of the blocks may change during iteration, we remember the current size
                 // and iterate over indices. This assumes that new blocks will be added at the end of the blocks vector.
@@ -224,26 +271,35 @@ namespace storm {
                 return result;
             }
             
-            void Partition::splitStates(Block& block, storm::storage::BitVector const& states) {
+            template<typename DataType>
+            bool Partition<DataType>::split(std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less) {
+                return this->split(less, [] (Block<DataType>& block) {});
+            }
+            
+            template<typename DataType>
+            void Partition<DataType>::splitStates(Block<DataType>& block, storm::storage::BitVector const& states) {
                 this->splitBlock(block, [&states] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return states.get(a) && !states.get(b); });
             }
             
-            void Partition::splitStates(storm::storage::BitVector const& states) {
+            template<typename DataType>
+            void Partition<DataType>::splitStates(storm::storage::BitVector const& states) {
                 this->split([&states] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return states.get(a) && !states.get(b); });
             }
             
-            void Partition::sortBlock(Block const& block) {
+            template<typename DataType>
+            void Partition<DataType>::sortBlock(Block<DataType> const& block) {
                 std::sort(this->begin(block), this->end(block), [] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return a < b; });
                 mapStatesToPositions(block);
             }
             
-            Block& Partition::insertBlock(Block& block) {
+            template<typename DataType>
+            Block<DataType>& Partition<DataType>::insertBlock(Block<DataType>& block) {
                 // Find the beginning of the new block.
                 storm::storage::sparse::state_type begin = block.hasPreviousBlock() ? block.getPreviousBlock().getEndIndex() : 0;
                 
                 // Actually insert the new block.
-                blocks.emplace_back(new Block(begin, block.getBeginIndex(), block.getPreviousBlockPointer(), &block, blocks.size()));
-                Block& newBlock = *blocks.back();
+                blocks.emplace_back(new Block<DataType>(begin, block.getBeginIndex(), block.getPreviousBlockPointer(), &block, blocks.size()));
+                Block<DataType>& newBlock = *blocks.back();
                 
                 // Update the mapping of the states in the newly created block.
                 for (auto it = this->begin(newBlock), ite = this->end(newBlock); it != ite; ++it) {
@@ -253,15 +309,18 @@ namespace storm {
                 return newBlock;
             }
             
-            std::vector<std::unique_ptr<Block>> const& Partition::getBlocks() const {
+            template<typename DataType>
+            std::vector<std::unique_ptr<Block<DataType>>> const& Partition<DataType>::getBlocks() const {
                 return this->blocks;
             }
             
-            std::vector<std::unique_ptr<Block>>& Partition::getBlocks() {
+            template<typename DataType>
+            std::vector<std::unique_ptr<Block<DataType>>>& Partition<DataType>::getBlocks() {
                 return this->blocks;
             }
             
-            bool Partition::check() const {
+            template<typename DataType>
+            bool Partition<DataType>::check() const {
                 for (uint_fast64_t state = 0; state < this->positions.size(); ++state) {
                     STORM_LOG_ASSERT(this->states[this->positions[state]] == state, "Position mapping corrupted.");
                 }
@@ -274,7 +333,8 @@ namespace storm {
                 return true;
             }
             
-            void Partition::print() const {
+            template<typename DataType>
+            void Partition<DataType>::print() const {
                 for (auto const& block : this->blocks) {
                     block->print(*this);
                 }
@@ -295,10 +355,13 @@ namespace storm {
                 STORM_LOG_ASSERT(this->check(), "Partition corrupted.");
             }
             
-            std::size_t Partition::size() const {
+            template<typename DataType>
+            std::size_t Partition<DataType>::size() const {
                 return blocks.size();
             }
 
+            template class Partition<DeterministicBlockData>;
+            
         }
     }
 }

@@ -29,7 +29,7 @@ namespace storm {
         /*!
          * This class is the superclass of all decompositions of a sparse model into its bisimulation quotient.
          */
-        template <typename ModelType>
+        template <typename ModelType, typename BlockDataType>
         class BisimulationDecomposition : public Decomposition<StateBlock> {
         public:
             typedef typename ModelType::ValueType ValueType;
@@ -158,7 +158,7 @@ namespace storm {
              * @param splitter The splitter to use.
              * @param splitterQueue The queue into which to insert the newly discovered potential splitters.
              */
-            virtual void refinePartitionBasedOnSplitter(bisimulation::Block const& splitter, std::deque<bisimulation::Block*>& splitterQueue) = 0;
+            virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) = 0;
             
             /*!
              * Builds the quotient model based on the previously computed equivalence classes (stored in the blocks
@@ -204,7 +204,7 @@ namespace storm {
             Options options;
             
             // The current partition (used by partition refinement).
-            storm::storage::bisimulation::Partition partition;
+            storm::storage::bisimulation::Partition<BlockDataType> partition;
             
             // A comparator used for comparing the distances of constants.
             storm::utility::ConstantsComparator<ValueType> comparator;

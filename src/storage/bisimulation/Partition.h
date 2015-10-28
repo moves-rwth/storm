@@ -12,6 +12,7 @@ namespace storm {
     namespace storage {
         namespace bisimulation {
             
+            template<typename DataType>
             class Partition {
             public:
                 /*!
@@ -49,20 +50,27 @@ namespace storm {
                 
                 // Splits the block at the given position and inserts a new block after the current one holding the rest
                 // of the states.
-                std::pair<std::vector<std::unique_ptr<Block>>::iterator, bool> splitBlock(Block& block, storm::storage::sparse::state_type position);
+                std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> splitBlock(Block<DataType>& block, storm::storage::sparse::state_type position);
 
                 // Splits the block by sorting the states according to the given function and then identifying the split
                 // points. The callback function is called for every newly created block.
-                bool splitBlock(Block& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block&)> const& newBlockCallback = [] (Block&) {});
+                bool splitBlock(Block<DataType>& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block<DataType>&)> const& newBlockCallback);
 
+                // Splits the block by sorting the states according to the given function and then identifying the split
+                // points.
+                bool splitBlock(Block<DataType>& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less);
+                
                 // Splits all blocks by using the sorting-based splitting. The callback is called for all newly created
                 // blocks.
-                bool split(std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block&)> const& newBlockCallback = [] (Block&) {});
+                bool split(std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block<DataType>&)> const& newBlockCallback);
+
+                // Splits all blocks by using the sorting-based splitting.
+                bool split(std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less);
                 
                 // Splits the block such that the resulting blocks contain only states in the given set or none at all.
                 // If the block is split, the given block will contain the states *not* in the given set and the newly
                 // created block will contain the states *in* the given set.
-                void splitStates(Block& block, storm::storage::BitVector const& states);
+                void splitStates(Block<DataType>& block, storm::storage::BitVector const& states);
                 
                 /*!
                  * Splits all blocks of the partition such that afterwards all blocks contain only states within the given
@@ -71,37 +79,49 @@ namespace storm {
                 void splitStates(storm::storage::BitVector const& states);
                 
                 // Sorts the block based on the state indices.
-                void sortBlock(Block const& block);
+                void sortBlock(Block<DataType> const& block);
                 
                 // Retrieves the blocks of the partition.
-                std::vector<std::unique_ptr<Block>> const& getBlocks() const;
+                std::vector<std::unique_ptr<Block<DataType>>> const& getBlocks() const;
                 
                 // Retrieves the blocks of the partition.
-                std::vector<std::unique_ptr<Block>>& getBlocks();
+                std::vector<std::unique_ptr<Block<DataType>>>& getBlocks();
                 
                 // Checks the partition for internal consistency.
                 bool check() const;
                 
                 // Returns an iterator to the beginning of the states of the given block.
-                std::vector<storm::storage::sparse::state_type>::iterator begin(Block const& block);
+                std::vector<storm::storage::sparse::state_type>::iterator begin(Block<DataType> const& block);
 
                 // Returns an iterator to the beginning of the states of the given block.
-                std::vector<storm::storage::sparse::state_type>::const_iterator begin(Block const& block) const;
+                std::vector<storm::storage::sparse::state_type>::const_iterator begin(Block<DataType> const& block) const;
 
                 // Returns an iterator to the beginning of the states of the given block.
-                std::vector<storm::storage::sparse::state_type>::iterator end(Block const& block);
+                std::vector<storm::storage::sparse::state_type>::iterator end(Block<DataType> const& block);
                 
                 // Returns an iterator to the beginning of the states of the given block.
-                std::vector<storm::storage::sparse::state_type>::const_iterator end(Block const& block) const;
+                std::vector<storm::storage::sparse::state_type>::const_iterator end(Block<DataType> const& block) const;
+                
+                // Returns an iterator to the beginning of the states in the partition.
+                std::vector<storm::storage::sparse::state_type>::iterator begin();
+
+                // Returns an iterator to the beginning of the states in the partition.
+                std::vector<storm::storage::sparse::state_type>::const_iterator begin() const;
+
+                // Returns an iterator to the end of the states in the partition.
+                std::vector<storm::storage::sparse::state_type>::iterator end();
+                
+                // Returns an iterator to the end of the states in the partition.
+                std::vector<storm::storage::sparse::state_type>::const_iterator end() const;
                 
                 // Swaps the positions of the two given states.
                 void swapStates(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2);
                 
                 // Retrieves the block of the given state.
-                Block& getBlock(storm::storage::sparse::state_type state);
+                Block<DataType>& getBlock(storm::storage::sparse::state_type state);
                 
                 // Retrieves the block of the given state.
-                Block const& getBlock(storm::storage::sparse::state_type state) const;
+                Block<DataType> const& getBlock(storm::storage::sparse::state_type state) const;
                 
                 // Retrieves the position of the given state.
                 storm::storage::sparse::state_type const& getPosition(storm::storage::sparse::state_type state) const;
@@ -110,10 +130,10 @@ namespace storm {
                 storm::storage::sparse::state_type const& getState(storm::storage::sparse::state_type position) const;
                 
                 // Updates the block mapping for the given range of states to the specified block.
-                void mapStatesToBlock(Block& block, std::vector<storm::storage::sparse::state_type>::iterator first, std::vector<storm::storage::sparse::state_type>::iterator last);
+                void mapStatesToBlock(Block<DataType>& block, std::vector<storm::storage::sparse::state_type>::iterator first, std::vector<storm::storage::sparse::state_type>::iterator last);
                 
                 // Update the state to position for the states in the given block.
-                void mapStatesToPositions(Block const& block);
+                void mapStatesToPositions(Block<DataType> const& block);
                 
             private:
                 // FIXME: necessary?
@@ -123,17 +143,17 @@ namespace storm {
                 // FIXME: necessary?
                 // Inserts a block before the given block. The new block will cover all states between the beginning
                 // of the given block and the end of the previous block.
-                Block& insertBlock(Block& block);
+                Block<DataType>& insertBlock(Block<DataType>& block);
                 
                 // FIXME: necessary?
                 // Sets the position of the given state.
                 void setPosition(storm::storage::sparse::state_type state, storm::storage::sparse::state_type position);
                 
                 // The of blocks in the partition.
-                std::vector<std::unique_ptr<Block>> blocks;
+                std::vector<std::unique_ptr<Block<DataType>>> blocks;
                 
                 // A mapping of states to their blocks.
-                std::vector<Block*> stateToBlockMapping;
+                std::vector<Block<DataType>*> stateToBlockMapping;
                 
                 // A vector containing all the states. It is ordered in a way such that the blocks only need to define
                 // their start/end indices.

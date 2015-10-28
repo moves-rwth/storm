@@ -6,6 +6,8 @@
 #include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/StandardRewardModel.h"
 
+#include "src/storage/bisimulation/DeterministicBlockData.h"
+
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
@@ -21,13 +23,13 @@ namespace storm {
         
         using namespace bisimulation;
         
-        template<typename ModelType>
-        BisimulationDecomposition<ModelType>::Options::Options(ModelType const& model, storm::logic::Formula const& formula) : Options() {
+        template<typename ModelType, typename BlockDataType>
+        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType const& model, storm::logic::Formula const& formula) : Options() {
             this->preserveSingleFormula(model, formula);
         }
         
-        template<typename ModelType>
-        BisimulationDecomposition<ModelType>::Options::Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : Options() {
+        template<typename ModelType, typename BlockDataType>
+        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : Options() {
             if (formulas.empty()) {
                 this->respectedAtomicPropositions = model.getStateLabeling().getLabels();
                 this->keepRewards = true;
@@ -40,13 +42,13 @@ namespace storm {
             }
         }
         
-        template<typename ModelType>
-        BisimulationDecomposition<ModelType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), keepRewards(false), type(BisimulationType::Strong), bounded(false), buildQuotient(true) {
+        template<typename ModelType, typename BlockDataType>
+        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), keepRewards(false), type(BisimulationType::Strong), bounded(false), buildQuotient(true) {
             // Intentionally left empty.
         }
         
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::Options::preserveFormula(ModelType const& model, storm::logic::Formula const& formula) {
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::Options::preserveFormula(ModelType const& model, storm::logic::Formula const& formula) {
             // Disable the measure driven initial partition.
             measureDrivenInitialPartition = false;
             phiStates = boost::none;
@@ -62,8 +64,8 @@ namespace storm {
             this->addToRespectedAtomicPropositions(formula.getAtomicExpressionFormulas(), formula.getAtomicLabelFormulas());
         }
         
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::Options::preserveSingleFormula(ModelType const& model, storm::logic::Formula const& formula) {
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::Options::preserveSingleFormula(ModelType const& model, storm::logic::Formula const& formula) {
             keepRewards = formula.containsRewardOperator();
             
             // We need to preserve bounded properties iff the formula contains a bounded until or a next subformula.
@@ -76,8 +78,8 @@ namespace storm {
             this->checkAndSetMeasureDrivenInitialPartition(model, formula);
         }
         
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::Options::checkAndSetMeasureDrivenInitialPartition(ModelType const& model, storm::logic::Formula const& formula) {
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::Options::checkAndSetMeasureDrivenInitialPartition(ModelType const& model, storm::logic::Formula const& formula) {
             std::shared_ptr<storm::logic::Formula const> newFormula = formula.asSharedPointer();
             
             if (formula.isProbabilityOperatorFormula()) {
@@ -115,8 +117,8 @@ namespace storm {
             }
         }
         
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::Options::addToRespectedAtomicPropositions(std::vector<std::shared_ptr<storm::logic::AtomicExpressionFormula const>> const& expressions, std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> const& labels) {
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::Options::addToRespectedAtomicPropositions(std::vector<std::shared_ptr<storm::logic::AtomicExpressionFormula const>> const& expressions, std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> const& labels) {
             std::set<std::string> labelsToRespect;
             for (auto const& labelFormula : labels) {
                 labelsToRespect.insert(labelFormula->getLabel());
@@ -131,16 +133,16 @@ namespace storm {
             }
         }
         
-        template<typename ModelType>
-        BisimulationDecomposition<ModelType>::BisimulationDecomposition(ModelType const& model, Options const& options) : model(model), backwardTransitions(model.getBackwardTransitions()), options(options), partition(), comparator(), quotient(nullptr) {
+        template<typename ModelType, typename BlockDataType>
+        BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model, Options const& options) : model(model), backwardTransitions(model.getBackwardTransitions()), options(options), partition(), comparator(), quotient(nullptr) {
             // Fix the respected atomic propositions if they were not explicitly given.
             if (!this->options.respectedAtomicPropositions) {
                 this->options.respectedAtomicPropositions = model.getStateLabeling().getLabels();
             }
         }
         
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::computeBisimulationDecomposition() {
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::computeBisimulationDecomposition() {
             std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
 
             std::chrono::high_resolution_clock::time_point initialPartitionStart = std::chrono::high_resolution_clock::now();
@@ -188,19 +190,21 @@ namespace storm {
             }
         }
         
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::performPartitionRefinement() {
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::performPartitionRefinement() {
             // Insert all blocks into the splitter queue that are initially marked as being a (potential) splitter.
-            std::deque<Block*> splitterQueue;
-            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block> const& block) { if (block->isMarkedAsSplitter()) { splitterQueue.push_back(block.get()); } } );
+            std::deque<Block<BlockDataType>*> splitterQueue;
+            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block<BlockDataType>> const& block) { if (block->isMarkedAsSplitter()) { splitterQueue.push_back(block.get()); } } );
             
             // Then perform the actual splitting until there are no more splitters.
+            uint_fast64_t iterations = 0;
             while (!splitterQueue.empty()) {
+                ++iterations;
                 // Optionally: sort the splitter queue according to some criterion (here: prefer small splitters).
-                std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block const* b1, Block const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates(); } );
+                std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block<BlockDataType> const* b1, Block<BlockDataType> const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates(); } );
                 
                 // Get and prepare the next splitter.
-                Block* splitter = splitterQueue.front();
+                Block<BlockDataType>* splitter = splitterQueue.front();
                 splitterQueue.pop_front();
                 splitter->unmarkAsSplitter();
                 
@@ -208,23 +212,24 @@ namespace storm {
 //                std::cout << "refining based on splitter " << splitter->getId() << std::endl;
                 refinePartitionBasedOnSplitter(*splitter, splitterQueue);
             }
+            std::cout << "done within " << iterations << " iterations." << std::endl;
         }
         
-        template<typename ModelType>
-        std::shared_ptr<ModelType> BisimulationDecomposition<ModelType>::getQuotient() const {
+        template<typename ModelType, typename BlockDataType>
+        std::shared_ptr<ModelType> BisimulationDecomposition<ModelType, BlockDataType>::getQuotient() const {
             STORM_LOG_THROW(this->quotient != nullptr, storm::exceptions::IllegalFunctionCallException, "Unable to retrieve quotient model from bisimulation decomposition, because it was not built.");
             return this->quotient;
         }
 
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::splitInitialPartitionBasedOnStateRewards() {
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::splitInitialPartitionBasedOnStateRewards() {
             std::vector<ValueType> const& stateRewardVector = model.getUniqueRewardModel()->second.getStateRewardVector();
             partition.split([&stateRewardVector] (storm::storage::sparse::state_type const& a, storm::storage::sparse::state_type const& b) { return stateRewardVector[a] < stateRewardVector[b]; });
         }
         
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::initializeLabelBasedPartition() {
-            partition = storm::storage::bisimulation::Partition(model.getNumberOfStates());
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::initializeLabelBasedPartition() {
+            partition = storm::storage::bisimulation::Partition<BlockDataType>(model.getNumberOfStates());
 
             for (auto const& label : options.respectedAtomicPropositions.get()) {
                 if (label == "init") {
@@ -243,8 +248,8 @@ namespace storm {
 //            partition.print();
         }
         
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::initializeMeasureDrivenPartition() {
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::initializeMeasureDrivenPartition() {
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = this->getStatesWithProbability01();
             
             boost::optional<storm::storage::sparse::state_type> representativePsiState;
@@ -252,7 +257,7 @@ namespace storm {
                 representativePsiState = *options.psiStates.get().begin();
             }
             
-            partition = storm::storage::bisimulation::Partition(model.getNumberOfStates(), statesWithProbability01.first, options.bounded || options.keepRewards ? options.psiStates.get() : statesWithProbability01.second, representativePsiState);
+            partition = storm::storage::bisimulation::Partition<BlockDataType>(model.getNumberOfStates(), statesWithProbability01.first, options.bounded || options.keepRewards ? options.psiStates.get() : statesWithProbability01.second, representativePsiState);
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
@@ -264,8 +269,8 @@ namespace storm {
 //            partition.print();
         }
         
-        template<typename ModelType>
-        void BisimulationDecomposition<ModelType>::extractDecompositionBlocks() {
+        template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::extractDecompositionBlocks() {
             // Now move the states from the internal partition into their final place in the decomposition. We do so in
             // a way that maintains the block IDs as indices.
             this->blocks.resize(partition.size());
@@ -278,12 +283,12 @@ namespace storm {
             }
         }
         
-        template class BisimulationDecomposition<storm::models::sparse::Dtmc<double>>;
-        template class BisimulationDecomposition<storm::models::sparse::Ctmc<double>>;
+        template class BisimulationDecomposition<storm::models::sparse::Dtmc<double>, bisimulation::DeterministicBlockData>;
+        template class BisimulationDecomposition<storm::models::sparse::Ctmc<double>, bisimulation::DeterministicBlockData>;
         
 #ifdef STORM_HAVE_CARL
-        template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>>;
-        template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>>;
+        template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
+        template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
 #endif
     }
 }

@@ -10,11 +10,13 @@ namespace storm {
     namespace storage {
         namespace bisimulation {
             // Forward-declare partition class.
+            template<typename DataType>
             class Partition;
             
+            template<typename DataType>
             class Block {
             public:
-                friend class Partition;
+                friend class Partition<DataType>;
                 
                 // Creates a new block with the given begin and end.
                 Block(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, Block* previous, Block* next, std::size_t id);
@@ -29,7 +31,7 @@ namespace storm {
                 bool operator!=(Block const& other) const;
                 
                 // Prints the block to the standard output.
-                void print(Partition const& partition) const;
+                void print(Partition<DataType> const& partition) const;
                 
                 // Returns the beginning index of the block.
                 storm::storage::sparse::state_type getBeginIndex() const;
@@ -100,6 +102,12 @@ namespace storm {
                 // Retrieves the representative state for this block.
                 storm::storage::sparse::state_type getRepresentativeState() const;
                 
+                // Retrieves the additional data associated with this block.
+                DataType& data();
+                
+                // Retrieves the additional data associated with this block.
+                DataType const& data() const;
+                
             private:
                 // Sets the beginning index of the block.
                 void setBeginIndex(storm::storage::sparse::state_type beginIndex);
@@ -130,6 +138,9 @@ namespace storm {
                 // An optional representative state for the block. If this is set, this state is used to derive the
                 // atomic propositions of the meta state in the quotient model.
                 boost::optional<storm::storage::sparse::state_type> representativeState;
+                
+                // A member that stores additional data that depends on the kind of bisimulation.
+                DataType mData;
             };
         }
     }

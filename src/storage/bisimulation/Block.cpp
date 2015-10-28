@@ -4,6 +4,7 @@
 #include <iomanip>
 
 #include "src/storage/bisimulation/Partition.h"
+#include "src/storage/bisimulation/DeterministicBlockData.h"
 
 #include "src/exceptions/InvalidOperationException.h"
 #include "src/utility/macros.h"
@@ -12,136 +13,180 @@ namespace storm {
     namespace storage {
         namespace bisimulation {
 
-            Block::Block(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, Block* previousBlock, Block* nextBlock, std::size_t id) : nextBlock(nextBlock), previousBlock(previousBlock), beginIndex(beginIndex), endIndex(endIndex), markedAsSplitter(false), needsRefinementFlag(false), absorbing(false), id(id) {
+            template<typename DataType>
+            Block<DataType>::Block(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, Block* previousBlock, Block* nextBlock, std::size_t id) : nextBlock(nextBlock), previousBlock(previousBlock), beginIndex(beginIndex), endIndex(endIndex), markedAsSplitter(false), needsRefinementFlag(false), absorbing(false), id(id), mData() {
                 if (nextBlock != nullptr) {
                     nextBlock->previousBlock = this;
                 }
                 if (previousBlock != nullptr) {
                     previousBlock->nextBlock = this;
                 }
+                data().notify(*this);
                 STORM_LOG_ASSERT(this->beginIndex < this->endIndex, "Unable to create block of illegal size.");
             }
             
-            bool Block::operator==(Block const& other) const {
+            template<typename DataType>
+            bool Block<DataType>::operator==(Block const& other) const {
                 return this == &other;
             }
             
-            bool Block::operator!=(Block const& other) const {
+            template<typename DataType>
+            bool Block<DataType>::operator!=(Block const& other) const {
                 return this != &other;
             }
             
-            void Block::print(Partition const& partition) const {
+            template<typename DataType>
+            void Block<DataType>::print(Partition<DataType> const& partition) const {
                 std::cout << "block [" << this << "] " << this->id << " from " << this->beginIndex << " to " << this->endIndex << std::endl;
             }
             
-            void Block::setBeginIndex(storm::storage::sparse::state_type beginIndex) {
-//                std::cout << "setting beg index to " << beginIndex << " [" << this << "]" << std::endl;
+            template<typename DataType>
+            void Block<DataType>::setBeginIndex(storm::storage::sparse::state_type beginIndex) {
                 this->beginIndex = beginIndex;
+                data().notify(*this);
                 STORM_LOG_ASSERT(beginIndex < endIndex, "Unable to resize block to illegal size.");
             }
             
-            void Block::setEndIndex(storm::storage::sparse::state_type endIndex) {
+            template<typename DataType>
+            void Block<DataType>::setEndIndex(storm::storage::sparse::state_type endIndex) {
                 this->endIndex = endIndex;
+                data().notify(*this);
                 STORM_LOG_ASSERT(beginIndex < endIndex, "Unable to resize block to illegal size.");
             }
             
-            storm::storage::sparse::state_type Block::getBeginIndex() const {
+            template<typename DataType>
+            storm::storage::sparse::state_type Block<DataType>::getBeginIndex() const {
                 return this->beginIndex;
             }
             
-            storm::storage::sparse::state_type Block::getEndIndex() const {
+            template<typename DataType>
+            storm::storage::sparse::state_type Block<DataType>::getEndIndex() const {
                 return this->endIndex;
             }
             
-            Block const& Block::getNextBlock() const {
+            template<typename DataType>
+            Block<DataType> const& Block<DataType>::getNextBlock() const {
                 return *this->nextBlock;
             }
             
-            bool Block::hasNextBlock() const {
+            template<typename DataType>
+            bool Block<DataType>::hasNextBlock() const {
                 return this->nextBlock != nullptr;
             }
 
-            Block* Block::getNextBlockPointer() {
+            template<typename DataType>
+            Block<DataType>* Block<DataType>::getNextBlockPointer() {
                 return this->nextBlock;
             }
             
-            Block const* Block::getNextBlockPointer() const {
+            template<typename DataType>
+            Block<DataType> const* Block<DataType>::getNextBlockPointer() const {
                 return this->nextBlock;
             }
 
-            Block const& Block::getPreviousBlock() const {
+            template<typename DataType>
+            Block<DataType> const& Block<DataType>::getPreviousBlock() const {
                 return *this->previousBlock;
             }
 
-            Block* Block::getPreviousBlockPointer() {
+            template<typename DataType>
+            Block<DataType>* Block<DataType>::getPreviousBlockPointer() {
                 return this->previousBlock;
             }
 
-            Block const* Block::getPreviousBlockPointer() const {
+            template<typename DataType>
+            Block<DataType> const* Block<DataType>::getPreviousBlockPointer() const {
                 return this->previousBlock;
             }
             
-            bool Block::hasPreviousBlock() const {
+            template<typename DataType>
+            bool Block<DataType>::hasPreviousBlock() const {
                 return this->previousBlock != nullptr;
             }
             
-            bool Block::check() const {
+            template<typename DataType>
+            bool Block<DataType>::check() const {
                 STORM_LOG_ASSERT(this->beginIndex < this->endIndex, "Block has negative size.");
                 STORM_LOG_ASSERT(!this->hasPreviousBlock() || this->getPreviousBlock().getNextBlockPointer() == this, "Illegal previous block.");
                 STORM_LOG_ASSERT(!this->hasNextBlock() || this->getNextBlock().getPreviousBlockPointer() == this, "Illegal next block.");
                 return true;
             }
             
-            std::size_t Block::getNumberOfStates() const {
+            template<typename DataType>
+            std::size_t Block<DataType>::getNumberOfStates() const {
                 return (this->endIndex - this->beginIndex);
             }
             
-            bool Block::isMarkedAsSplitter() const {
+            template<typename DataType>
+            bool Block<DataType>::isMarkedAsSplitter() const {
                 return this->markedAsSplitter;
             }
             
-            void Block::markAsSplitter() {
+            template<typename DataType>
+            void Block<DataType>::markAsSplitter() {
                 this->markedAsSplitter = true;
             }
             
-            void Block::unmarkAsSplitter() {
+            template<typename DataType>
+            void Block<DataType>::unmarkAsSplitter() {
                 this->markedAsSplitter = false;
             }
             
-            std::size_t Block::getId() const {
+            template<typename DataType>
+            std::size_t Block<DataType>::getId() const {
                 return this->id;
             }
             
-            void Block::setAbsorbing(bool absorbing) {
+            template<typename DataType>
+            void Block<DataType>::setAbsorbing(bool absorbing) {
                 this->absorbing = absorbing;
             }
             
-            bool Block::isAbsorbing() const {
+            template<typename DataType>
+            bool Block<DataType>::isAbsorbing() const {
                 return this->absorbing;
             }
             
-            void Block::setRepresentativeState(storm::storage::sparse::state_type representativeState) {
+            template<typename DataType>
+            void Block<DataType>::setRepresentativeState(storm::storage::sparse::state_type representativeState) {
                 this->representativeState = representativeState;
             }
             
-            bool Block::hasRepresentativeState() const {
+            template<typename DataType>
+            bool Block<DataType>::hasRepresentativeState() const {
                 return static_cast<bool>(representativeState);
             }
             
-            storm::storage::sparse::state_type Block::getRepresentativeState() const {
+            template<typename DataType>
+            storm::storage::sparse::state_type Block<DataType>::getRepresentativeState() const {
                 STORM_LOG_THROW(representativeState, storm::exceptions::InvalidOperationException, "Unable to retrieve representative state for block.");
                 return representativeState.get();
             }
             
             // Retrieves whether the block is marked as a predecessor.
-            bool Block::needsRefinement() const {
+            template<typename DataType>
+            bool Block<DataType>::needsRefinement() const {
                 return needsRefinementFlag;
             }
             
             // Marks the block as needing refinement (or not).
-            void Block::setNeedsRefinement(bool value) {
+            template<typename DataType>
+            void Block<DataType>::setNeedsRefinement(bool value) {
                 needsRefinementFlag = value;
             }
+            
+            template<typename DataType>
+            DataType& Block<DataType>::data() {
+                return mData;
+            }
+            
+            template<typename DataType>
+            DataType const& Block<DataType>::data() const {
+                return mData;
+            }
+
+            template class Block<DeterministicBlockData>;
+            
         }
     }
 }
