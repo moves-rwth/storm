@@ -55,7 +55,7 @@ namespace storm {
 
                 // set serves as priority queue with unique membership
                 // default comparison on pair actually works fine if distance is the first entry
-                std::set<std::pair<T, state_t>, std::greater_equal<std::pair<T, state_t>>> dijkstraQueue;
+                std::set<std::pair<T, state_t>, std::greater<std::pair<T, state_t>>> dijkstraQueue;
 
                 for (state_t initialState : model->getInitialStates()) {
                     shortestPathDistances[initialState] = zeroDistance;
@@ -192,23 +192,26 @@ namespace storm {
             }
 
             template <typename T>
-            Path<T> ShortestPathsGenerator<T>::getKShortest(state_t node, unsigned long k) {
+            void ShortestPathsGenerator<T>::getKShortest(state_t node, unsigned long k) {
                 unsigned long alreadyComputedK = kShortestPaths[node].size();
+
+//                std::cout << std::endl << "--> DEBUG: Dijkstra SP to " << node << ":" << std::endl;
+//                printKShortestPath(node, 1);
+//                std::cout << "---------" << std::endl;
 
                 for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
                     computeNextPath(node, nextK);
                     if (kShortestPaths[node].size() < nextK) {
-                        break;
+                        std::cout << std::endl << "--> DEBUG: Last path: k=" << (nextK - 1) << ":" << std::endl;
+                        printKShortestPath(node, nextK - 1);
+                        std::cout << "---------" << "No other path exists!" << std::endl;
+                        return;
                     }
                 }
 
-                if (kShortestPaths[node].size() >= k) {
-                    printKShortestPath(node, k); // DEBUG
-                } else {
-                    std::cout << "No other path exists!" << std::endl;
-                }
-
-                return kShortestPaths[node][k - 1];
+                std::cout << std::endl << "--> DEBUG: Finished. " << k << "-shortest path:" << std::endl;
+                printKShortestPath(node, k);
+                std::cout << "---------" << std::endl;
             }
 
             template <typename T>

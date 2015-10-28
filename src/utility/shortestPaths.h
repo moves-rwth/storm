@@ -7,6 +7,15 @@
 #include "src/storage/sparse/StateType.h"
 #include "constants.h"
 
+/*
+ * TODO:
+ *  - take care of self-loops of target states
+ *  - implement target group
+ *  - think about how to get paths with new nodes, rather than different
+ *    paths over the same set of states (which happens often)
+ */
+
+
 namespace storm {
     namespace utility {
         namespace shortestPaths {
@@ -62,7 +71,7 @@ namespace storm {
                 ~ShortestPathsGenerator();
 
                 // TODO: think about suitable output format
-                Path<T> getKShortest(state_t node, unsigned long k);
+                void getKShortest(state_t node, unsigned long k);
 
 
             private:
