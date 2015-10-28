@@ -350,7 +350,10 @@ namespace storm {
             void ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds){
                 storm::solver::SolveGoal goal(computeLowerBounds);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
+                solver->setPolicyTracking();
                 solver->solveEquationSystem(this->eqSysResult, this->vectorData.vector);
+                std::vector<std::size_t> policy(solver->getPolicy());
+                std::cout << "Policy: " << policy.size() << " entries. [0]=" << policy[0] << " [20]=" << policy[20] << std::endl;
             }
             
             template<>

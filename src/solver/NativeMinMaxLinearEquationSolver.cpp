@@ -90,6 +90,11 @@ namespace storm {
 				if (!multiplyResultMemoryProvided) {
 					delete multiplyResult;
 				}
+                                
+                                if(this->trackPolicy){
+                                    this->policy = this->computePolicy(x,b);
+                                }
+                                
 			} else {
 				// We will use Policy Iteration to solve the given system.
 				// We first guess an initial choice resolution which will be refined after each iteration.

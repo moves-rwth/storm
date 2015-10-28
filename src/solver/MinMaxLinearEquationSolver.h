@@ -8,6 +8,7 @@
 #include "src/storage/sparse/StateType.h"
 #include "AllowEarlyTerminationCondition.h"
 #include "OptimizationDirection.h"
+#include "src/utility/vector.h"
 
 namespace storm {
     namespace storage {
@@ -140,6 +141,17 @@ namespace storm {
             
             
         protected:
+            
+            std::vector<storm::storage::sparse::state_type> computePolicy(std::vector<ValueType>& x, std::vector<ValueType> const& b) const{
+                std::vector<ValueType> xPrime(this->A.getRowCount());
+                this->A.multiplyVectorWithMatrix(x, xPrime);
+                storm::utility::vector::addVectors(xPrime, b, xPrime);
+                std::vector<storm::storage::sparse::state_type> policy(x.size());
+                std::vector<ValueType> reduced(x.size());
+                storm::utility::vector::reduceVectorMinOrMax(convert(this->direction), xPrime, reduced, this->A.getRowGroupIndices(), &(policy));
+                return policy;
+            }
+            
             storm::storage::SparseMatrix<ValueType> const& A;
             std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> earlyTermination;
             

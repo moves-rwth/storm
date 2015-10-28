@@ -123,6 +123,7 @@ namespace storm {
                     case storm::solver::EquationSolverType::Topological:
                     {
                         STORM_LOG_THROW(prefTech != storm::solver::MinMaxTechniqueSelection::PolicyIteration, storm::exceptions::NotImplementedException, "Policy iteration for topological solver is not supported.");
+                        STORM_LOG_THROW(!trackPolicy , storm::exceptions::NotImplementedException, "Policy extraction for Topological solver not supported.");
                         p1.reset(new storm::solver::TopologicalMinMaxLinearEquationSolver<ValueType>(matrix));
                         break;
                     }
