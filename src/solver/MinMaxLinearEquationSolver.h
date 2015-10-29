@@ -144,7 +144,7 @@ namespace storm {
             
             std::vector<storm::storage::sparse::state_type> computePolicy(std::vector<ValueType>& x, std::vector<ValueType> const& b) const{
                 std::vector<ValueType> xPrime(this->A.getRowCount());
-                this->A.multiplyVectorWithMatrix(x, xPrime);
+                this->A.multiplyWithVector(x, xPrime);
                 storm::utility::vector::addVectors(xPrime, b, xPrime);
                 std::vector<storm::storage::sparse::state_type> policy(x.size());
                 std::vector<ValueType> reduced(x.size());
