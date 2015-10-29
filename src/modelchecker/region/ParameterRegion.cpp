@@ -150,6 +150,16 @@ namespace storm {
             }
 
             template<typename ParametricType>
+            void ParameterRegion<ParametricType>::fixVariables(std::map<VariableType, RegionBoundary> const& fixedVariables) {
+                this->fixedVariables = fixedVariables;
+            }
+
+            template<typename ParametricType>
+            std::map<typename ParameterRegion<ParametricType>::VariableType, RegionBoundary> ParameterRegion<ParametricType>::getFixedVariables() const {
+                return fixedVariables;
+            }
+
+            template<typename ParametricType>
             std::string ParameterRegion<ParametricType>::toString() const {
                 std::stringstream regionstringstream;
                 for (auto var : this->getVariables()) {

@@ -12,6 +12,7 @@
 
 #include "src/modelchecker/region/RegionCheckResult.h"
 #include "src/utility/region.h"
+#include "RegionBoundary.h"
 
 
 namespace storm {
@@ -74,6 +75,15 @@ namespace storm {
                  * Sets a point in the region for which the considered property is satisfied. 
                  */
                 void setSatPoint(VariableSubstitutionType const& satPoint);
+                
+                /*!
+                 * Can be used to store that it is ok to fix one or more variables to the corresponding lower/upper boundary of this region during the approximation step
+                 */
+                void fixVariables(std::map<VariableType, RegionBoundary> const& fixedVariables);
+                /*!
+                 * Returns the variables for which it can be assumed that they always lie on the lower/upper boundary of this region
+                 */
+                std::map<VariableType, RegionBoundary> getFixedVariables() const;
 
                 //returns the region as string in the format 0.3<=p<=0.4,0.2<=q<=0.5;
                 std::string toString() const;
@@ -124,6 +134,7 @@ namespace storm {
                 RegionCheckResult checkResult;
                 VariableSubstitutionType satPoint;
                 VariableSubstitutionType violatedPoint;
+                std::map<VariableType, RegionBoundary> fixedVariables;
             };
         } //namespace region
     }

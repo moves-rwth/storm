@@ -57,10 +57,9 @@ namespace storm {
                 }
                 
                 //Now pre-compute the information for the equation system.
-                std::vector<std::size_t> rowSubstitutions;// the substitution used in every row
-                initializeProbabilities(parametricModel, newIndices, rowSubstitutions);
+                initializeProbabilities(parametricModel, newIndices);
                 if(this->computeRewards){
-                    initializeRewards(parametricModel, newIndices, rowSubstitutions);
+                    initializeRewards(parametricModel, newIndices);
                 }
                 this->matrixData.assignment.shrink_to_fit();
                 this->vectorData.assignment.shrink_to_fit();
@@ -73,7 +72,7 @@ namespace storm {
             }                
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void ApproximationModel<ParametricSparseModelType, ConstantType>::initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t>& rowSubstitutions) {
+            void ApproximationModel<ParametricSparseModelType, ConstantType>::initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices) {
                 STORM_LOG_DEBUG("Approximation model initialization for probabilities");
                 /* First run: get a matrix with dummy entries at the new positions. 
                  * This matrix will have a row group for every row in the original matrix,
@@ -87,7 +86,7 @@ namespace storm {
                                                                                 true, // force dimensions
                                                                                 true, //will have custom row grouping
                                                                                 0); //Unknown number of rowgroups
-                rowSubstitutions.reserve(this->maybeStates.getNumberOfSetBits());
+                this->matrixData.rowSubstitutions.reserve(this->maybeStates.getNumberOfSetBits());
                 storm::storage::BitVector relevantColumns = this->computeRewards ? this->maybeStates : (this->maybeStates | this->targetStates);
                 std::size_t curRow = 0;
                 for (auto oldRowGroup : this->maybeStates){
@@ -105,19 +104,19 @@ namespace storm {
                             //compute actual substitution from substitutionId by interpreting the Id as a bit sequence.
                             //the occurringVariables.size() least significant bits of substitutionId will represent the substitution that we have to consider
                             //(00...0 = lower bounds for all parameters, 11...1 = upper bounds for all parameters)
-                            std::map<VariableType, TypeOfBound> currSubstitution;
+                            std::map<VariableType, RegionBoundary> currSubstitution;
                             std::size_t parameterIndex=0ull;
                             for(auto const& parameter : occurringVariables){
                                 if((substitutionId>>parameterIndex)%2==0){
-                                    currSubstitution.insert(std::make_pair(parameter, TypeOfBound::LOWER));
+                                    currSubstitution.insert(typename std::map<VariableType, RegionBoundary>::value_type(parameter, RegionBoundary::LOWER));
                                 }
                                 else{
-                                    currSubstitution.insert(std::make_pair(parameter, TypeOfBound::UPPER));
+                                    currSubstitution.insert(typename std::map<VariableType, RegionBoundary>::value_type(parameter, RegionBoundary::UPPER));
                                 }
                                 ++parameterIndex;
                             }
                             std::size_t substitutionIndex=storm::utility::vector::findOrInsert(this->funcSubData.substitutions, std::move(currSubstitution));
-                            rowSubstitutions.push_back(substitutionIndex);
+                            this->matrixData.rowSubstitutions.push_back(substitutionIndex);
                             //For every substitution, run again through the row and add a dummy entry
                             //Note that this is still executed once, even if no parameters occur.
                             for(auto const& oldEntry : parametricModel.getTransitionMatrix().getRow(oldRow)){
@@ -130,7 +129,7 @@ namespace storm {
                     }
                 }
                 //Build the matrix. Override the row count (required e.g. when there are only transitions to target for the last matrixrow)
-                this->matrixData.matrix=matrixBuilder.build(rowSubstitutions.size());               
+                this->matrixData.matrix=matrixBuilder.build(this->matrixData.rowSubstitutions.size());               
                 
                 //Now run again through both matrices to get the remaining ingredients of the matrixData and vectorData
                 this->matrixData.assignment.reserve(this->matrixData.matrix.getEntryCount());
@@ -158,7 +157,7 @@ namespace storm {
                                     if(storm::utility::isConstant(oldEntry.getValue())){
                                         eqSysMatrixEntry->setValue(storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(oldEntry.getValue())));
                                     } else {
-                                        auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(oldEntry.getValue(), rowSubstitutions[curRow]), dummyValue)).first;
+                                        auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(oldEntry.getValue(), this->matrixData.rowSubstitutions[curRow]), dummyValue)).first;
                                         this->matrixData.assignment.emplace_back(eqSysMatrixEntry, functionsIt->second);
                                         //Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
                                     }
@@ -169,7 +168,7 @@ namespace storm {
                                 if(storm::utility::isConstant(storm::utility::simplify(targetProbability))){
                                     *vectorIt = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(targetProbability));
                                 } else {
-                                    auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(targetProbability, rowSubstitutions[curRow]), dummyValue)).first;
+                                    auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(targetProbability, this->matrixData.rowSubstitutions[curRow]), dummyValue)).first;
                                     this->vectorData.assignment.emplace_back(vectorIt, functionsIt->second);
                                     *vectorIt = dummyValue;
                                 }
@@ -184,7 +183,7 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void ApproximationModel<ParametricSparseModelType, ConstantType>::initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t> const& rowSubstitutions){
+            void ApproximationModel<ParametricSparseModelType, ConstantType>::initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices){
                 STORM_LOG_DEBUG("Approximation model initialization for Rewards");
                 STORM_LOG_THROW(parametricModel.getType()==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Rewards are only supported for DTMCs (yet)");
                 //Note: Since the original model is assumed to be a DTMC, there is no outgoing transition of a maybeState that leads to an infinity state.
@@ -209,29 +208,15 @@ namespace storm {
                         std::set<VariableType> occurringRewVariables;
                         storm::utility::region::gatherOccurringVariables(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[oldState], occurringRewVariables);
                         // For each row in the row group of oldState, we get the corresponding substitution and insert the FunctionSubstitution
-                        // We might find out that the reward is independent of the probability parameters (and will thus be independent of nondeterministic choices)
-                        // In that case, the reward function and the substitution will not change and thus we can use the same FunctionSubstitution
-                        bool rewardDependsOnProbVars=true;
-                        typename std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash>::iterator functionsIt;
                         for(auto matrixRow=this->matrixData.matrix.getRowGroupIndices()[oldState]; matrixRow<this->matrixData.matrix.getRowGroupIndices()[oldState+1]; ++matrixRow){
-                            auto probabilitySub = this->funcSubData.substitutions[rowSubstitutions[matrixRow]];
-                            if(rewardDependsOnProbVars){ //always executed in first iteration
-                                rewardDependsOnProbVars=false; //Assume that independent...
-                                //Get the correct substitution for this matrixRow
-                                std::map<VariableType, TypeOfBound> substitution;
-                                for(auto const& rewardVar : occurringRewVariables){
-                                    typename std::map<VariableType, TypeOfBound>::iterator const substitutionIt = probabilitySub.find(rewardVar);
-                                    if(substitutionIt==probabilitySub.end()){
-                                        substitution.insert(std::make_pair(rewardVar, TypeOfBound::CHOSEOPTIMAL));
-                                    } else {
-                                        substitution.insert(*substitutionIt);
-                                        rewardDependsOnProbVars=true; //.. assumption wrong
-                                    }
-                                }
-                                // insert the substitution and the FunctionSubstitution
-                                std::size_t substitutionIndex=storm::utility::vector::findOrInsert(this->funcSubData.substitutions, std::move(substitution));
-                                functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[oldState], substitutionIndex), dummyValue)).first;
+                            //Extend the substitution for the probabilities with the reward parameters
+                            auto& substitution = this->funcSubData.substitutions[this->matrixData.rowSubstitutions[matrixRow]];
+                            for(auto const& rewardVar : occurringRewVariables){
+                                //Note that map::insert does nothing if rewardVar is already contained in the substitution (i.e. if rewardVar also occurs in the probability functions)
+                                substitution.insert(typename std::map<VariableType, RegionBoundary>::value_type(rewardVar, RegionBoundary::UNSPECIFIED));
                             }
+                            // insert the FunctionSubstitution
+                            auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[oldState], this->matrixData.rowSubstitutions[matrixRow]), dummyValue)).first;
                             //insert assignment and dummy data
                             this->vectorData.assignment.emplace_back(vectorIt, functionsIt->second);
                             *vectorIt = dummyValue;
@@ -270,7 +255,8 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             std::vector<ConstantType>  ApproximationModel<ParametricSparseModelType, ConstantType>::computeValues(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
                 instantiate(region, computeLowerBounds);
-                invokeSolver(computeLowerBounds);
+                std::vector<std::size_t> policy;
+                invokeSolver(computeLowerBounds, policy);
                 
                 std::vector<ConstantType> result(this->maybeStates.size());
                 storm::utility::vector::setVectorValues(result, this->maybeStates, this->eqSysResult);
@@ -283,8 +269,45 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             ConstantType  ApproximationModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
                 instantiate(region, computeLowerBounds);
-                invokeSolver(computeLowerBounds);
-//                std::cout << "initialStateValue is " << this->eqSysResult[this->eqSysInitIndex] << std::endl;
+                std::vector<std::size_t> policy;
+                invokeSolver(computeLowerBounds, policy);
+                
+                //TODO: policy for games.
+                //TODO: do this only when necessary.
+                //TODO: (maybe) when a few parameters are mapped to another value, build a "nicer" scheduler and check whether it induces values that are more optimal.
+                if(policy.empty()) return this->eqSysResult[this->eqSysInitIndex];
+                //Get the set of parameters which are (according to the policy) always mapped to the same region boundary.
+                //First, collect all (relevant) parameters, i.e., the ones that are set to the lower or upper boundary.
+                std::map<VariableType, RegionBoundary> fixedVariables;
+                for(auto const& substitution : this->funcSubData.substitutions){
+                    for( auto const& sub : substitution){
+                        if(sub.second!= RegionBoundary::UNSPECIFIED){
+                            fixedVariables.insert(typename std::map<VariableType, RegionBoundary>::value_type(sub.first, RegionBoundary::UNSPECIFIED));
+                        }
+                    }
+                }
+                //Now erase the parameters that are mapped to different boundaries.
+                for(std::size_t rowGroup=0; rowGroup<this->matrixData.matrix.getRowGroupCount(); ++rowGroup){
+                    std::size_t row = this->matrixData.matrix.getRowGroupIndices()[rowGroup] + policy[rowGroup];
+                    for(std::pair<VariableType, RegionBoundary> const& sub : this->funcSubData.substitutions[this->matrixData.rowSubstitutions[row]]){
+                        auto fixedVarIt = fixedVariables.find(sub.first);
+                        if(fixedVarIt != fixedVariables.end() && fixedVarIt->second != sub.second){
+                            if(fixedVarIt->second == RegionBoundary::UNSPECIFIED){
+                                fixedVarIt->second = sub.second;
+                            } else {
+                                // the solution maps  the current variable at least once to lower boundary and at least once to the upper boundary.
+                                fixedVariables.erase(fixedVarIt);
+                            }
+                        }
+                    }
+                    if (fixedVariables.empty()){
+                        break;
+                    }
+                }
+                for (auto const& fixVar : fixedVariables){
+                    //std::cout << "APPROXMODEL: variable " << fixVar.first << " is always mapped to " << fixVar.second << std::endl;
+                }
+                    
                 return this->eqSysResult[this->eqSysInitIndex];
             }
             
@@ -292,20 +315,20 @@ namespace storm {
             void ApproximationModel<ParametricSparseModelType, ConstantType>::instantiate(const ParameterRegion<ParametricType>& region, bool computeLowerBounds) {
                 //Instantiate the substitutions
                 std::vector<std::map<VariableType, CoefficientType>> instantiatedSubs(this->funcSubData.substitutions.size());
-                std::vector<std::set<VariableType>> choseOptimalParameters(this->funcSubData.substitutions.size());
+                std::vector<std::set<VariableType>> unspecifiedParameters(this->funcSubData.substitutions.size());
                 for(std::size_t substitutionIndex=0; substitutionIndex<this->funcSubData.substitutions.size(); ++substitutionIndex){
-                    for(std::pair<VariableType, TypeOfBound> const& sub : this->funcSubData.substitutions[substitutionIndex]){
+                    for(std::pair<VariableType, RegionBoundary> const& sub : this->funcSubData.substitutions[substitutionIndex]){
                         switch(sub.second){
-                            case TypeOfBound::LOWER:
+                            case RegionBoundary::LOWER:
                                 instantiatedSubs[substitutionIndex].insert(std::make_pair(sub.first, region.getLowerBound(sub.first)));
                                 break;
-                            case TypeOfBound::UPPER:
+                            case RegionBoundary::UPPER:
                                 instantiatedSubs[substitutionIndex].insert(std::make_pair(sub.first, region.getUpperBound(sub.first)));
                                 break;
-                            case TypeOfBound::CHOSEOPTIMAL:
+                            case RegionBoundary::UNSPECIFIED:
                                 //Insert some dummy value
                                 instantiatedSubs[substitutionIndex].insert(std::make_pair(sub.first, storm::utility::one<CoefficientType>()));
-                                choseOptimalParameters[substitutionIndex].insert(sub.first);
+                                unspecifiedParameters[substitutionIndex].insert(sub.first);
                                 break;
                             default:
                                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Type of Bound");
@@ -319,7 +342,7 @@ namespace storm {
                     auto& result = functionResult.second;
                     result = computeLowerBounds ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>();
                      //Iterate over the different combinations of lower and upper bounds and update the min and max values
-                    auto const& vertices=region.getVerticesOfRegion(choseOptimalParameters[funcSub.getSubstitution()]);
+                    auto const& vertices=region.getVerticesOfRegion(unspecifiedParameters[funcSub.getSubstitution()]);
                     for(auto const& vertex : vertices){
                         //extend the substitution
                         for(auto const& vertexSub : vertex){
@@ -347,17 +370,16 @@ namespace storm {
             
                         
             template<>
-            void ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds){
+            void ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, std::vector<std::size_t>& policy){
                 storm::solver::SolveGoal goal(computeLowerBounds);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
                 solver->setPolicyTracking();
                 solver->solveEquationSystem(this->eqSysResult, this->vectorData.vector);
-                std::vector<std::size_t> policy(solver->getPolicy());
-                std::cout << "Policy: " << policy.size() << " entries. [0]=" << policy[0] << " [20]=" << policy[20] << std::endl;
+                policy = solver->getPolicy();
             }
             
             template<>
-            void ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds){
+            void ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, std::vector<std::size_t>& policy){
                 storm::solver::SolveGoal player2Goal(computeLowerBounds);
                 std::unique_ptr<storm::solver::GameSolver<double>> solver = storm::utility::solver::GameSolverFactory<double>().create(this->player1Matrix, this->matrixData.matrix);
                 solver->solveGame(this->player1Goal.direction(), player2Goal.direction(), this->eqSysResult, this->vectorData.vector);

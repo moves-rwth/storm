@@ -19,6 +19,7 @@
 #include "src/models/sparse/Model.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/solver/SolveGoal.h"
+#include "src/modelchecker/region/RegionBoundary.h"
 
 namespace storm {
     namespace modelchecker {
@@ -56,12 +57,6 @@ namespace storm {
                 ConstantType computeInitialStateValue(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
 
             private:
-                //This enum helps to store how a parameter will be substituted.
-                enum class TypeOfBound { 
-                    LOWER,
-                    UPPER,
-                    CHOSEOPTIMAL
-                }; 
 
                 //A class that represents a function and how it should be substituted (i.e. which variables should be replaced with lower and which with upper bounds of the region)
                 //The substitution is given as an index in funcSubData.substitutions (allowing to instantiate the substitutions more easily).
@@ -126,11 +121,11 @@ namespace storm {
 
                 typedef typename std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash>::value_type FunctionEntry;
 
-                void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t>& rowSubstitutions);
-                void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices, std::vector<std::size_t> const& rowSubstitutions);
+                void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
+                void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void initializePlayer1Matrix(ParametricSparseModelType const& parametricModel);
                 void instantiate(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
-                void invokeSolver(bool computeLowerBounds);
+                void invokeSolver(bool computeLowerBounds, std::vector<std::size_t>& policy);
 
                 //Some designated states in the original model
                 storm::storage::BitVector targetStates, maybeStates;
@@ -160,11 +155,12 @@ namespace storm {
                     // the occurring (function,substitution)-pairs together with the corresponding placeholders for the result
                     std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash> functions; 
                     //Vector has one entry for every required substitution (=replacement of parameters with lower/upper bounds of region)
-                    std::vector<std::map<VariableType, TypeOfBound>> substitutions;
+                    std::vector<std::map<VariableType, RegionBoundary>> substitutions;
                 } funcSubData;
                 struct MatrixData {
                     storm::storage::SparseMatrix<ConstantType> matrix; //The matrix itself.
                     std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> assignment; // Connection of matrix entries with placeholders
+                    std::vector<std::size_t> rowSubstitutions; //used to obtain which row corresponds to which substitution (used to retrieve information from a scheduler)
                 } matrixData;
                 struct VectorData {
                     std::vector<ConstantType> vector; //The vector itself.
