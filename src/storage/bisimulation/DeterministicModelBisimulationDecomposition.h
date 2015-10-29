@@ -72,21 +72,20 @@ namespace storm {
             // Retrieves whether the given predecessor of the splitters possibly needs refinement.
             bool possiblyNeedsRefinement(bisimulation::Block<BlockDataType> const& predecessorBlock) const;
             
-            // Moves the given state to the new begin index of the given block and increases the new begin.
-            void moveStateToNewBeginningOfBlock(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock);
+            // Moves the given state to the position marked by marker1 moves the marker one step further.
+            void moveStateToMarker1(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock);
 
-            // Moves the given state to the new end index of the given block and decreases the new end.
-            void moveStateToNewEndOfBlock(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock);
+            // Moves the given state to the position marked by marker2 the marker one step further.
+            void moveStateToMarker2(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock);
             
-            // Moves the given state to the new begin or new end of the block, depending on where the predecessor is located.
-            void moveStateInSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock, storm::storage::sparse::state_type currentPositionInSplitter);
+            // Moves the given state to a proper place in the splitter, depending on where the predecessor is located.
+            void moveStateInSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock, storm::storage::sparse::state_type currentPositionInSplitter, uint_fast64_t& elementsToSkip);
             
             // Increases the probability of moving to the current splitter for the given state.
             void increaseProbabilityToSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType> const& predecessorBlock, ValueType const& value);
             
-            // Explores the predecessors of the states that were identified as predecessors themselves that have not yet
-            // been explored.
-            void explorePredecessorsOfNewEndOfSplitter(bisimulation::Block<BlockDataType>& splitter);
+            // Explores the remaining predecessors of the splitter.
+            void exploreRemainingStatesOfSplitter(bisimulation::Block<BlockDataType>& splitter);
             
             // A vector that holds the probabilities of states going into the splitter. This is used by the method that
             // refines a block based on probabilities.

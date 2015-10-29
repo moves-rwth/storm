@@ -69,44 +69,17 @@ namespace storm {
                 // Retrieves the number of states in this block.
                 std::size_t getNumberOfStates() const;
                 
-                // Checks whether the block is marked as a splitter.
-                bool isMarkedAsSplitter() const;
-                
-                // Marks the block as being a splitter.
-                void markAsSplitter();
-                
-                // Removes the mark.
-                void unmarkAsSplitter();
-                
-                // Retrieves the ID of the block.
-                std::size_t getId() const;
-                
-                // Retrieves whether the block is marked as a predecessor.
-                bool needsRefinement() const;
-                
-                // Marks the block as needing refinement (or not).
-                void setNeedsRefinement(bool value = true);
-                
-                // Sets whether or not the block is to be interpreted as absorbing.
-                void setAbsorbing(bool absorbing);
-                
-                // Retrieves whether the block is to be interpreted as absorbing.
-                bool isAbsorbing() const;
-                
-                // Sets the representative state of this block
-                void setRepresentativeState(storm::storage::sparse::state_type representativeState);
-                
-                // Retrieves whether this block has a representative state.
-                bool hasRepresentativeState() const;
-                
-                // Retrieves the representative state for this block.
-                storm::storage::sparse::state_type getRepresentativeState() const;
-                
                 // Retrieves the additional data associated with this block.
                 DataType& data();
                 
                 // Retrieves the additional data associated with this block.
                 DataType const& data() const;
+                
+                // Resets all markers.
+                void resetMarkers();
+                
+                // Retrieves the ID of the block.
+                std::size_t getId() const;
                 
             private:
                 // Sets the beginning index of the block.
@@ -123,22 +96,9 @@ namespace storm {
                 storm::storage::sparse::state_type beginIndex;
                 storm::storage::sparse::state_type endIndex;
                 
-                // A field that can be used for marking the block.
-                bool markedAsSplitter;
-                
-                // A field that can be used for marking the block as needing refinement.
-                bool needsRefinementFlag;
-                
-                // A flag indicating whether the block is to be interpreted as absorbing or not.
-                bool absorbing;
-                
                 // The ID of the block. This is only used for debugging purposes.
                 std::size_t id;
-                
-                // An optional representative state for the block. If this is set, this state is used to derive the
-                // atomic propositions of the meta state in the quotient model.
-                boost::optional<storm::storage::sparse::state_type> representativeState;
-                
+                                
                 // A member that stores additional data that depends on the kind of bisimulation.
                 DataType mData;
             };

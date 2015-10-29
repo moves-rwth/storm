@@ -21,9 +21,9 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     EXPECT_EQ(20ul, result->getNumberOfTransitions());
 
 #ifdef WINDOWS
-    storm::storage::BisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
 #else
-    typename storm::storage::BisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
 #endif
     options.respectedAtomicPropositions = std::set<std::string>({"one"});
 

@@ -90,10 +90,10 @@ namespace storm {
                     // Since the remaining states in the block are divergent, we can mark the block as absorbing.
                     // This also guarantees that the self-loop will be added to the state of the quotient
                     // representing this block of states.
-                    blockPtr->setAbsorbing(true);
+                    blockPtr->data().setAbsorbing(true);
                 } else if (nondivergentStates.getNumberOfSetBits() == 0) {
                     // If there are only diverging states in the block, we need to make it absorbing.
-                    blockPtr->setAbsorbing(true);
+                    blockPtr->data().setAbsorbing(true);
                 }
             }
         }
@@ -158,33 +158,50 @@ namespace storm {
                 // Depending on the actions we need to take, the block to refine changes, so we need to keep track of it.
                 Block<BlockDataType>* blockToRefineProbabilistically = block;
                 
-                if (block->data().getNewBeginIndex() != block->getBeginIndex()) {
-                    // If the new begin index has shifted to a non-trivial position, we need to split the block.
-                    if (block->data().getNewBeginIndex() != block->getEndIndex()) {
-                        auto result = this->partition.splitBlock(*block, block->data().getNewBeginIndex());
-                        if (result.second) {
-                            blockToRefineProbabilistically = block->getPreviousBlockPointer();
-                        }
-                    }
+                bool split = false;
+                // If the new begin index has shifted to a non-trivial position, we need to split the block.
+                if (block->getBeginIndex() != block->data().marker1() && block->getEndIndex() != block->data().marker1()) {
+                    auto result = this->partition.splitBlock(*block, block->data().marker1());
+                    STORM_LOG_ASSERT(result.second, "Expected to split block, but that did not happen.");
+                    split = true;
+                    blockToRefineProbabilistically = block->getPreviousBlockPointer();
                 }
                 
+                split |= this->partition.splitBlock(*blockToRefineProbabilistically,
+                                                    [this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
+                                                        return getProbabilityToSplitter(state1) < getProbabilityToSplitter(state2);
+                                                    },
+                                                    [&splitterQueue] (Block<BlockDataType>& block) {
+                                                        splitterQueue.emplace_back(&block); block.data().setSplitter();
+                                                    });
+                
+                
+                // If the predecessor block was split, we need to insert it into the splitter queue if it is not already
+                // marked as a splitter.
+                if (split && !blockToRefineProbabilistically->data().splitter()) {
+                    splitterQueue.emplace_back(blockToRefineProbabilistically);
+                    blockToRefineProbabilistically->data().setSplitter();
+                }
+                
+                // If the block was *not* split, we need to reset the markers by notifying the data.
+                block->resetMarkers();
+                
                 // Remember that we have refined the block.
-                block->setNeedsRefinement(false);
-                this->partition.check();
+                block->data().setNeedsRefinement(false);
             }
         }
         
         template<typename ModelType>
         bool DeterministicModelBisimulationDecomposition<ModelType>::possiblyNeedsRefinement(bisimulation::Block<BlockDataType> const& predecessorBlock) const {
-            return predecessorBlock.getNumberOfStates() <= 1 || predecessorBlock.isAbsorbing();
+            return predecessorBlock.getNumberOfStates() > 1 && !predecessorBlock.data().absorbing();
         }
         
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::increaseProbabilityToSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType> const& predecessorBlock, ValueType const& value) {
             storm::storage::sparse::state_type predecessorPosition = this->partition.getPosition(predecessor);
-
-            // If the position of the state is between the new begin and end index, we have not yet seen this predecessor.
-            if (predecessorPosition >= predecessorBlock.data().getNewBeginIndex() && predecessorPosition < predecessorBlock.data().getNewEndIndex()) {
+            
+            // If the position of the state is to the right of marker1, we have not seen it before.
+            if (predecessorPosition >= predecessorBlock.data().marker1()) {
                 // Then, we just set the value.
                 probabilitiesToCurrentSplitter[predecessor] = value;
             } else {
@@ -194,41 +211,54 @@ namespace storm {
         }
         
         template <typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::moveStateToNewBeginningOfBlock(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock) {
-            this->partition.swapStates(predecessor, this->partition.getState(predecessorBlock.data().getNewBeginIndex()));
-            predecessorBlock.data().increaseNewBeginIndex();
-        }
-
-        template <typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::moveStateToNewEndOfBlock(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock) {
-            this->partition.swapStates(predecessor, this->partition.getState(predecessorBlock.data().getNewEndIndex() - 1));
-            predecessorBlock.data().decreaseNewEndIndex();
+        void DeterministicModelBisimulationDecomposition<ModelType>::moveStateToMarker1(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock) {
+            this->partition.swapStates(predecessor, this->partition.getState(predecessorBlock.data().marker1()));
+            predecessorBlock.data().incrementMarker1();
         }
         
         template <typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::moveStateInSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock, storm::storage::sparse::state_type currentPositionInSplitter) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::moveStateToMarker2(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock) {
+            this->partition.swapStates(predecessor, this->partition.getState(predecessorBlock.data().marker2()));
+            predecessorBlock.data().incrementMarker2();
+        }
+        
+        template <typename ModelType>
+        void DeterministicModelBisimulationDecomposition<ModelType>::moveStateInSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock, storm::storage::sparse::state_type currentPositionInSplitter, uint_fast64_t& elementsToSkip) {
             storm::storage::sparse::state_type predecessorPosition = this->partition.getPosition(predecessor);
-
-            // If the predecessor is one of the states for which we have already explored its predecessors, we can move
-            // it to the new beginning of the block like for any other block.
-            if (predecessorPosition <= currentPositionInSplitter) {
-                moveStateToNewBeginningOfBlock(predecessor, predecessorBlock);
+            
+            // If the predecessors of the given predecessor were already explored, we can move it easily.
+            if (predecessorPosition <= currentPositionInSplitter + elementsToSkip) {
+                this->partition.swapStates(predecessor, this->partition.getState(predecessorBlock.data().marker1()));
+                predecessorBlock.data().incrementMarker1();
             } else {
-                // Otherwise, we move it to the new end of the block in which we assemble all states that are predecessors
-                // of the splitter, but for which the predecessors still need to be explored.
-                moveStateToNewEndOfBlock(predecessor, predecessorBlock);
+                // Otherwise, we need to move the predecessor, but we need to make sure that we explore its
+                // predecessors later. We do this by moving it to a range at the beginning of the block that will hold
+                // all predecessors in the splitter whose predecessors have yet to be explored.
+                if (predecessorBlock.data().marker2() == predecessorBlock.data().marker1()) {
+                    this->partition.swapStatesAtPositions(predecessorBlock.data().marker2(), predecessorPosition);
+                    this->partition.swapStatesAtPositions(predecessorPosition, currentPositionInSplitter + elementsToSkip + 1);
+                } else {
+                    this->partition.swapStatesAtPositions(predecessorBlock.data().marker2(), predecessorPosition);
+                    this->partition.swapStatesAtPositions(predecessorPosition, predecessorBlock.data().marker1());
+                    this->partition.swapStatesAtPositions(predecessorPosition, currentPositionInSplitter + elementsToSkip + 1);
+                }
+                
+                // Since we had to move an already explored state to the right of the current position, 
+                ++elementsToSkip;
+                predecessorBlock.data().incrementMarker1();
+                predecessorBlock.data().incrementMarker2();
             }
         }
         
         template <typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::explorePredecessorsOfNewEndOfSplitter(bisimulation::Block<BlockDataType>& splitter) {
-            for (auto splitterIt = this->partition.begin() + splitter.data().getNewEndIndex(), splitterIte = this->partition.end(splitter); splitterIt != splitterIte; ++splitterIt) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::exploreRemainingStatesOfSplitter(bisimulation::Block<BlockDataType>& splitter) {
+            for (auto splitterIt = this->partition.begin(splitter), splitterIte = this->partition.begin(splitter) + (splitter.data().marker2() - splitter.getBeginIndex()); splitterIt != splitterIte; ++splitterIt) {
                 storm::storage::sparse::state_type currentState = *splitterIt;
                 
                 for (auto const& predecessorEntry : this->backwardTransitions.getRow(currentState)) {
                     storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
                     Block<BlockDataType>& predecessorBlock = this->partition.getBlock(predecessor);
-
+                    
                     // If the block does not need to be refined, we skip it.
                     if (!possiblyNeedsRefinement(predecessorBlock)) {
                         continue;
@@ -236,84 +266,91 @@ namespace storm {
                     
                     // We keep track of the probability of the predecessor moving to the splitter.
                     increaseProbabilityToSplitter(predecessor, predecessorBlock, predecessorEntry.getValue());
-                    
-                    if (predecessorBlock != splitter) {
-                        moveStateToNewBeginningOfBlock(predecessor, predecessorBlock);
-                    } else {
-                        storm::storage::sparse::state_type predecessorPosition = this->partition.getPosition(predecessor);
-                        
-                        // In this case, we must only move the predecessor its predecessors were already explored.
-                        // If we have not yet explored its predecessors, it has to be to the right of the currently
-                        // considered state and will be transferred to the beginning of the block anyway.
-                        if (predecessorPosition < splitter.data().getNewEndIndex()) {
-                            moveStateToNewBeginningOfBlock(predecessor, predecessorBlock);
-                        }
+
+                    // Only move the state if it has not been seen as a predecessor before.
+                    storm::storage::sparse::state_type predecessorPosition = this->partition.getPosition(predecessor);
+                    if (predecessorPosition >= predecessorBlock.data().marker1()) {
+                        moveStateToMarker1(predecessor, predecessorBlock);
                     }
                 }
-                
-                // Now that we have explored its predecessors and know that the current state is itself a predecessor of
-                // the splitter, we can safely move it to the beginning of the block.
-                moveStateToNewBeginningOfBlock(currentState, splitter);
-                splitter.data().increaseNewEndIndex();
             }
+            
+            // Finally, we can reset the second marker.
+            splitter.data().setMarker2(splitter.getBeginIndex());
         }
         
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             // The outline of the refinement is as follows.
             //
-            // (0) we prepare the environment for the splitting process.
+            // We iterate over all states of the splitter and determine for each predecessor the state the probability
+            // entering the splitter. These probabilities are written to a member vector so that after the iteration
+            // process we have the probabilities of all predecessors of the splitter of entering the splitter in one
+            // step. To directly separate the states having a transition into the splitter from the ones who do not,
+            // we move the states to certain locations. That is, on encountering a predecessor of the splitter, it is
+            // moved to the beginning of its block. If the predecessor is in the splitter itself, we have to be a bit
+            // careful about where to move states.
             //
-            // (1) we iterate over all states of the splitter and determine for each predecessor the state the
-            // probability entering the splitter. These probabilities are written to a member vector. Doing so, we marl
-            // all predecessors of the splitter in a member bit vector.
-            
-            // (0)
-            std::list<Block<BlockDataType>*> predecessorBlocks;
+            // After this iteration, there may be states of the splitter whose predecessors have not yet been explored,
+            // so this needs to be done now.
+            //
+            // Finally, we use the information obtained in the first part for the actual splitting process in which all
+            // predecessor blocks of the splitter are split based on the probabilities computed earlier.
             
             // (1)
+            std::list<Block<BlockDataType>*> predecessorBlocks;
+            
+            // (2)
             storm::storage::sparse::state_type currentPosition = splitter.getBeginIndex();
-            bool splitterIsItsOwnPredecessor = false;
-            for (auto splitterIt = this->partition.begin(splitter), splitterIte = this->partition.end(splitter); splitterIt != splitterIte && currentPosition < splitter.data().getNewEndIndex(); ++splitterIt, ++currentPosition) {
+            bool splitterIsPredecessorBlock = false;
+            for (auto splitterIt = this->partition.begin(splitter), splitterIte = this->partition.end(splitter); splitterIt != splitterIte; ++splitterIt, ++currentPosition) {
                 storm::storage::sparse::state_type currentState = *splitterIt;
                 
+                uint_fast64_t elementsToSkip = 0;
                 for (auto const& predecessorEntry : this->backwardTransitions.getRow(currentState)) {
                     storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
+                    storm::storage::sparse::state_type predecessorPosition = this->partition.getPosition(predecessor);
                     Block<BlockDataType>& predecessorBlock = this->partition.getBlock(predecessor);
                     
                     // If the block does not need to be refined, we skip it.
                     if (!possiblyNeedsRefinement(predecessorBlock)) {
                         continue;
                     }
-
+                    
                     // We keep track of the probability of the predecessor moving to the splitter.
                     increaseProbabilityToSplitter(predecessor, predecessorBlock, predecessorEntry.getValue());
                     
-                    if (predecessorBlock != splitter) {
-                        moveStateToNewBeginningOfBlock(predecessor, predecessorBlock);
-                    } else {
-                        splitterIsItsOwnPredecessor = true;
-                        moveStateInSplitter(predecessor, predecessorBlock, currentPosition);
-                    }
-                    
-                    // Insert the block into the list of blocks to refine (if that has not already happened).
-                    if (!predecessorBlock.needsRefinement()) {
-                        predecessorBlocks.emplace_back(&predecessorBlock);
-                        predecessorBlock.setNeedsRefinement();
+                    // We only need to move the predecessor if its not already known as a predecessor already.
+                    if (predecessorPosition >= predecessorBlock.data().marker1()) {
+                        // If the predecessor block is not the splitter, we can move the state easily.
+                        if (predecessorBlock != splitter) {
+                            moveStateToMarker1(predecessor, predecessorBlock);
+                        } else {
+                            // If the predecessor is in the splitter, we need to be a bit more careful.
+                            splitterIsPredecessorBlock = true;
+                            moveStateInSplitter(predecessor, predecessorBlock, currentPosition, elementsToSkip);
+                        }
+
+                        // Insert the block into the list of blocks to refine (if that has not already happened).
+                        if (!predecessorBlock.data().needsRefinement()) {
+                            predecessorBlocks.emplace_back(&predecessorBlock);
+                            predecessorBlock.data().setNeedsRefinement();
+                        }
                     }
                 }
+                
+                // If, as a consequence of shifting states, we need to skip some elements, do so now.
+                splitterIt += elementsToSkip;
+                currentPosition += elementsToSkip;
             }
             
-            // If the splitter is its own predecessor block, we need to treat the states at the end of the block.
-            if (splitterIsItsOwnPredecessor) {
-                explorePredecessorsOfNewEndOfSplitter(splitter);
+            // If the splitter was a predecessor block of itself, we potentially need to explore some states that have
+            // not been explored yet.
+            if (splitterIsPredecessorBlock) {
+                exploreRemainingStatesOfSplitter(splitter);
             }
             
-//            std::cout << "probs of splitter predecessors: " << std::endl;
-//            for (auto state : predecessorsOfCurrentSplitter) {
-//                std::cout << state << " [" << this->partition.getBlock(state).getId() << "]" << " -> " << probabilitiesToCurrentSplitter[state] << std::endl;
-//            }
-            
+            // Finally, we split the block based on the precomputed probabilities and the chosen bisimulation type.
             if (this->options.type == BisimulationType::Strong || this->model.getType() == storm::models::ModelType::Ctmc) {
                 refinePredecessorBlocksOfSplitter(predecessorBlocks, splitterQueue);
             } else {
@@ -368,12 +405,12 @@ namespace storm {
                 Block<BlockDataType> const& oldBlock = this->partition.getBlock(representativeState);
                 
                 // If the block is absorbing, we simply add a self-loop.
-                if (oldBlock.isAbsorbing()) {
+                if (oldBlock.data().absorbing()) {
                     builder.addNextValue(blockIndex, blockIndex, storm::utility::one<ValueType>());
                     
                     // If the block has a special representative state, we retrieve it now.
-                    if (oldBlock.hasRepresentativeState()) {
-                        representativeState = oldBlock.getRepresentativeState();
+                    if (oldBlock.data().hasRepresentativeState()) {
+                        representativeState = oldBlock.data().representativeState();
                     }
                     
                     // Add all of the selected atomic propositions that hold in the representative state to the state

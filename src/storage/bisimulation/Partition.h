@@ -135,11 +135,10 @@ namespace storm {
                 // Update the state to position for the states in the given block.
                 void mapStatesToPositions(Block<DataType> const& block);
                 
-            private:
-                // FIXME: necessary?
                 // Swaps the positions of the two states given by their positions.
                 void swapStatesAtPositions(storm::storage::sparse::state_type position1, storm::storage::sparse::state_type position2);
                 
+            private:
                 // FIXME: necessary?
                 // Inserts a block before the given block. The new block will cover all states between the beginning
                 // of the given block and the end of the previous block.

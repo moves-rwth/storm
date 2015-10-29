@@ -6,7 +6,6 @@
 #include "src/storage/bisimulation/Partition.h"
 #include "src/storage/bisimulation/DeterministicBlockData.h"
 
-#include "src/exceptions/InvalidOperationException.h"
 #include "src/utility/macros.h"
 
 namespace storm {
@@ -14,14 +13,14 @@ namespace storm {
         namespace bisimulation {
 
             template<typename DataType>
-            Block<DataType>::Block(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, Block* previousBlock, Block* nextBlock, std::size_t id) : nextBlock(nextBlock), previousBlock(previousBlock), beginIndex(beginIndex), endIndex(endIndex), markedAsSplitter(false), needsRefinementFlag(false), absorbing(false), id(id), mData() {
+            Block<DataType>::Block(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, Block* previousBlock, Block* nextBlock, std::size_t id) : nextBlock(nextBlock), previousBlock(previousBlock), beginIndex(beginIndex), endIndex(endIndex), id(id), mData() {
                 if (nextBlock != nullptr) {
                     nextBlock->previousBlock = this;
                 }
                 if (previousBlock != nullptr) {
                     previousBlock->nextBlock = this;
                 }
-                data().notify(*this);
+                data().resetMarkers(*this);
                 STORM_LOG_ASSERT(this->beginIndex < this->endIndex, "Unable to create block of illegal size.");
             }
             
@@ -37,21 +36,26 @@ namespace storm {
             
             template<typename DataType>
             void Block<DataType>::print(Partition<DataType> const& partition) const {
-                std::cout << "block [" << this << "] " << this->id << " from " << this->beginIndex << " to " << this->endIndex << std::endl;
+                std::cout << "block [" << this << "] " << this->id << " from " << this->beginIndex << " to " << this->endIndex << " with data [" << this->data() << "]" << std::endl;
             }
             
             template<typename DataType>
             void Block<DataType>::setBeginIndex(storm::storage::sparse::state_type beginIndex) {
                 this->beginIndex = beginIndex;
-                data().notify(*this);
+                data().resetMarkers(*this);
                 STORM_LOG_ASSERT(beginIndex < endIndex, "Unable to resize block to illegal size.");
             }
             
             template<typename DataType>
             void Block<DataType>::setEndIndex(storm::storage::sparse::state_type endIndex) {
                 this->endIndex = endIndex;
-                data().notify(*this);
+                data().resetMarkers(*this);
                 STORM_LOG_ASSERT(beginIndex < endIndex, "Unable to resize block to illegal size.");
+            }
+            
+            template<typename DataType>
+            std::size_t Block<DataType>::getId() const {
+                return this->id;
             }
             
             template<typename DataType>
@@ -116,65 +120,7 @@ namespace storm {
             std::size_t Block<DataType>::getNumberOfStates() const {
                 return (this->endIndex - this->beginIndex);
             }
-            
-            template<typename DataType>
-            bool Block<DataType>::isMarkedAsSplitter() const {
-                return this->markedAsSplitter;
-            }
-            
-            template<typename DataType>
-            void Block<DataType>::markAsSplitter() {
-                this->markedAsSplitter = true;
-            }
-            
-            template<typename DataType>
-            void Block<DataType>::unmarkAsSplitter() {
-                this->markedAsSplitter = false;
-            }
-            
-            template<typename DataType>
-            std::size_t Block<DataType>::getId() const {
-                return this->id;
-            }
-            
-            template<typename DataType>
-            void Block<DataType>::setAbsorbing(bool absorbing) {
-                this->absorbing = absorbing;
-            }
-            
-            template<typename DataType>
-            bool Block<DataType>::isAbsorbing() const {
-                return this->absorbing;
-            }
-            
-            template<typename DataType>
-            void Block<DataType>::setRepresentativeState(storm::storage::sparse::state_type representativeState) {
-                this->representativeState = representativeState;
-            }
-            
-            template<typename DataType>
-            bool Block<DataType>::hasRepresentativeState() const {
-                return static_cast<bool>(representativeState);
-            }
-            
-            template<typename DataType>
-            storm::storage::sparse::state_type Block<DataType>::getRepresentativeState() const {
-                STORM_LOG_THROW(representativeState, storm::exceptions::InvalidOperationException, "Unable to retrieve representative state for block.");
-                return representativeState.get();
-            }
-            
-            // Retrieves whether the block is marked as a predecessor.
-            template<typename DataType>
-            bool Block<DataType>::needsRefinement() const {
-                return needsRefinementFlag;
-            }
-            
-            // Marks the block as needing refinement (or not).
-            template<typename DataType>
-            void Block<DataType>::setNeedsRefinement(bool value) {
-                needsRefinementFlag = value;
-            }
-            
+                        
             template<typename DataType>
             DataType& Block<DataType>::data() {
                 return mData;
@@ -183,6 +129,11 @@ namespace storm {
             template<typename DataType>
             DataType const& Block<DataType>::data() const {
                 return mData;
+            }
+            
+            template<typename DataType>
+            void Block<DataType>::resetMarkers() {
+                mData.resetMarkers(*this);
             }
 
             template class Block<DeterministicBlockData>;

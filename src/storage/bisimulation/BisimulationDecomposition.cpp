@@ -192,9 +192,9 @@ namespace storm {
         
         template<typename ModelType, typename BlockDataType>
         void BisimulationDecomposition<ModelType, BlockDataType>::performPartitionRefinement() {
-            // Insert all blocks into the splitter queue that are initially marked as being a (potential) splitter.
+            // Insert all blocks into the splitter queue as a (potential) splitter.
             std::deque<Block<BlockDataType>*> splitterQueue;
-            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block<BlockDataType>> const& block) { if (block->isMarkedAsSplitter()) { splitterQueue.push_back(block.get()); } } );
+            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block<BlockDataType>> const& block) { splitterQueue.push_back(block.get()); } );
             
             // Then perform the actual splitting until there are no more splitters.
             uint_fast64_t iterations = 0;
@@ -206,13 +206,11 @@ namespace storm {
                 // Get and prepare the next splitter.
                 Block<BlockDataType>* splitter = splitterQueue.front();
                 splitterQueue.pop_front();
-                splitter->unmarkAsSplitter();
+                splitter->data().setSplitter(false);
                 
                 // Now refine the partition using the current splitter.
-//                std::cout << "refining based on splitter " << splitter->getId() << std::endl;
                 refinePartitionBasedOnSplitter(*splitter, splitterQueue);
             }
-            std::cout << "done within " << iterations << " iterations." << std::endl;
         }
         
         template<typename ModelType, typename BlockDataType>
@@ -243,9 +241,6 @@ namespace storm {
             if (options.keepRewards && model.hasRewardModel()) {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
-            
-//            std::cout << "successfully built (label) initial partition" << std::endl;
-//            partition.print();
         }
         
         template<typename ModelType, typename BlockDataType>
@@ -264,9 +259,6 @@ namespace storm {
             if (options.keepRewards && model.hasRewardModel()) {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
-            
-//            std::cout << "successfully built (measure-driven) initial partition" << std::endl;
-//            partition.print();
         }
         
         template<typename ModelType, typename BlockDataType>
