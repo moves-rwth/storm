@@ -212,16 +212,10 @@ namespace storm {
                 bool wasSplit = false;
                 while (less(states[begin], states[end])) {
                     wasSplit = true;
-                    // Now we scan for the first state in the block for which the changed function returns true.
-                    // Note that we do not have to check currentIndex for staying within bounds, because we know the matching
-                    // state is within bounds.
-                    storm::storage::sparse::state_type currentIndex = begin + 1;
-                    while (begin != end && !less(states[begin], states[currentIndex])) {
-                        ++currentIndex;
-                    }
-                    begin = currentIndex;
                     
-                    auto result = this->splitBlock(block, currentIndex);
+                    auto range = std::equal_range(states.begin() + begin, states.begin() + end, states[begin], less);
+                    begin = std::distance(states.begin(), range.second);
+                    auto result = this->splitBlock(block, begin);
                     if (result.second) {
                         newBlockCallback(**result.first);
                     }
