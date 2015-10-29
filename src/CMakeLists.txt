@@ -112,7 +112,9 @@ add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 add_executable(storm-gspn ${STORM_GSPN_FILE})
-target_link_libraries(storm-gspn storm)
+# CoreFoundation and CoreServices are linked for the XercesDOMParser
+# libcurl ist needed for the xercesc library, but the dependency is missing (maybe resolved in the next version)
+target_link_libraries(storm-gspn storm "-framework CoreFoundation -framework CoreServices -lcurl")
 
 target_link_libraries(storm ${STORM_LINK_LIBRARIES})
 

@@ -19,7 +19,7 @@ namespace storm {
         }
 
         void Marking::setNumberOfTokensAt(uint_fast64_t place, uint_fast64_t numberOfTokens) {
-            //check range
+            //TODO check range (place < getNumberOfPlaces(), numberOfTokens < getMaxNumberOfTokens())
             for (uint_fast64_t i = place * numberOfBits; i <(place * numberOfBits) + numberOfBits; ++i) {
                 if (numberOfTokens % 2 == 0) {
                     marking.set(i, false);
@@ -38,6 +38,14 @@ namespace storm {
                 }
             }
             return tokens;
+        }
+
+        bool Marking::setNumberOfPlaces(uint_fast64_t numberOfPlaces) {
+            return false;
+        }
+
+        bool Marking::setMaxNumberOfTokens(uint_fast64_t maxNumberOfTokens) {
+            return false;
         }
     }
 }
