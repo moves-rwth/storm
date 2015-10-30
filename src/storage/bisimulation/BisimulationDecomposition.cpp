@@ -160,6 +160,9 @@ namespace storm {
             this->performPartitionRefinement();
             std::chrono::high_resolution_clock::duration refinementTime = std::chrono::high_resolution_clock::now() - refinementStart;
             
+            std::cout << "final partition: " << std::endl;
+            this->partition.print();
+            
             std::chrono::high_resolution_clock::time_point extractionStart = std::chrono::high_resolution_clock::now();
             this->extractDecompositionBlocks();
             std::chrono::high_resolution_clock::duration extractionTime = std::chrono::high_resolution_clock::now() - extractionStart;

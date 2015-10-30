@@ -107,11 +107,16 @@ namespace storm {
             }
             
             template<typename DataType>
-            void Partition<DataType>::mapStatesToPositions(Block<DataType> const& block) {
-                storm::storage::sparse::state_type position = block.getBeginIndex();
-                for (auto stateIt = this->begin(block), stateIte = this->end(block); stateIt != stateIte; ++stateIt, ++position) {
-                    this->positions[*stateIt] = position;
+            void Partition<DataType>::mapStatesToPositions(std::vector<storm::storage::sparse::state_type>::const_iterator first, std::vector<storm::storage::sparse::state_type>::const_iterator last) {
+                storm::storage::sparse::state_type position = std::distance(this->states.cbegin(), first);
+                for (; first != last; ++first, ++position) {
+                    this->positions[*first] = position;
                 }
+            }
+            
+            template<typename DataType>
+            void Partition<DataType>::mapStatesToPositions(Block<DataType> const& block) {
+                mapStatesToPositions(this->begin(block), this->end(block));
             }
             
             template<typename DataType>
@@ -173,9 +178,41 @@ namespace storm {
             }
             
             template<typename DataType>
+            void Partition<DataType>::sortRange(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, bool updatePositions) {
+                std::sort(this->states.begin() + beginIndex, this->states.begin() + endIndex, less);
+                if (updatePositions) {
+                    mapStatesToPositions(this->states.begin() + beginIndex, this->states.begin() + endIndex);
+                }
+            }
+            
+            template<typename DataType>
+            void Partition<DataType>::sortBlock(Block<DataType>& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, bool updatePositions) {
+                sortRange(block.getBeginIndex(), block.getEndIndex(), less, updatePositions);
+            }
+            
+            template<typename DataType>
+            std::vector<uint_fast64_t> Partition<DataType>::computeRangesOfEqualValue(uint_fast64_t startIndex, uint_fast64_t endIndex, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less) {
+                auto it = this->states.cbegin() + startIndex;
+                auto ite = this->states.cbegin() + endIndex;
+                
+                std::vector<storm::storage::sparse::state_type>::const_iterator upperBound;
+                std::vector<uint_fast64_t> result;
+                result.push_back(startIndex);
+                do {
+                    upperBound = std::upper_bound(it, ite, *it, less);
+                    result.push_back(std::distance(this->states.cbegin(), upperBound));
+                    it = upperBound;
+                } while (upperBound != ite);
+                
+                return result;
+            }
+            
+            template<typename DataType>
             std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> Partition<DataType>::splitBlock(Block<DataType>& block, storm::storage::sparse::state_type position) {
                 STORM_LOG_THROW(position >= block.getBeginIndex() && position <= block.getEndIndex(), storm::exceptions::InvalidArgumentException, "Cannot split block at illegal position.");
 
+                std::cout << "splitting block " << block.getId() << " at pos " << position << std::endl;
+                
                 // In case one of the resulting blocks would be empty, we simply return the current block and do not create
                 // a new one.
                 if (position == block.getBeginIndex() || position == block.getEndIndex()) {
@@ -199,27 +236,38 @@ namespace storm {
             
             template<typename DataType>
             bool Partition<DataType>::splitBlock(Block<DataType>& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block<DataType>&)> const& newBlockCallback) {
-                // Sort the range of the block such that all states that have the label are moved to the front.
-                std::sort(this->begin(block), this->end(block), less);
+                // Sort the block, but leave the positions untouched.
+                this->sortBlock(block, less, false);
                 
-                // Update the positions vector.
-                mapStatesToPositions(block);
+                auto originalBegin = block.getBeginIndex();
+                auto originalEnd = block.getEndIndex();
                 
-                // Now we can check whether the block needs to be split, which is the case iff the changed function returns
-                // true for the first and last element of the remaining state range.
-                storm::storage::sparse::state_type begin = block.getBeginIndex();
-                storm::storage::sparse::state_type end = block.getEndIndex() - 1;
+                std::cout << "sorted block:" << std::endl;
+                for (auto stateIt = this->begin(block), stateIte = this->end(block); stateIt != stateIte; ++stateIt) {
+                    std::cout << *stateIt << std::endl;
+                }
+                
+                auto it = this->states.cbegin() + block.getBeginIndex();
+                auto ite = this->states.cbegin() + block.getEndIndex();
+                std::cout << "splitting between " << block.getBeginIndex() << " and " << block.getEndIndex() << std::endl;
+                
                 bool wasSplit = false;
-                while (less(states[begin], states[end])) {
-                    wasSplit = true;
-                    
-                    auto range = std::equal_range(states.begin() + begin, states.begin() + end, states[begin], less);
-                    begin = std::distance(states.begin(), range.second);
-                    auto result = this->splitBlock(block, begin);
-                    if (result.second) {
+                std::vector<storm::storage::sparse::state_type>::const_iterator upperBound;
+                do {
+                    std::cout << "it (" << *it << ") less than ite-1 (" << *(ite-1) << "? " << less(*it, *(ite - 1)) << std::endl;
+                    upperBound = std::upper_bound(it, ite, *it, less);
+                    std::cout << "upper bound is " << std::distance(this->states.cbegin(), upperBound);
+                    if (upperBound != ite) {
+                        wasSplit = true;
+                        auto result = this->splitBlock(block, std::distance(this->states.cbegin(), upperBound));
                         newBlockCallback(**result.first);
                     }
-                }
+                    it = upperBound;
+                } while (upperBound != ite);
+                
+                // Finally, repair the positions mapping.
+                mapStatesToPositions(this->states.begin() + originalBegin, this->states.begin() + originalEnd);
+
                 return wasSplit;
             }
             

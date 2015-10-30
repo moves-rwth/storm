@@ -42,7 +42,7 @@ namespace storm {
             virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) override;
 
         private:
-            virtual void refinePredecessorBlocksOfSplitter(std::list<bisimulation::Block<BlockDataType>*>& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            virtual void refinePredecessorBlocksOfSplitterStrong(std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
 
             /*!
              * Performs the necessary steps to compute a weak bisimulation on a DTMC.
@@ -69,6 +69,9 @@ namespace storm {
             // Retrieves whether the given state is silent.
             bool isSilent(storm::storage::sparse::state_type const& state) const;
             
+            // Retrieves whether the given state has a non-zero silent probability.
+            bool hasNonZeroSilentProbability(storm::storage::sparse::state_type const& state) const;
+            
             // Retrieves whether the given predecessor of the splitters possibly needs refinement.
             bool possiblyNeedsRefinement(bisimulation::Block<BlockDataType> const& predecessorBlock) const;
             
@@ -86,6 +89,29 @@ namespace storm {
             
             // Explores the remaining predecessors of the splitter.
             void exploreRemainingStatesOfSplitter(bisimulation::Block<BlockDataType>& splitter);
+            
+            // Updates the silent probabilities of the states in the block based on the probabilities of going to the splitter.
+            void updateSilentProbabilitiesBasedOnProbabilitiesToSplitter(bisimulation::Block<BlockDataType>& block);
+
+            // Updates the silent probabilities of the states in the block based on a forward exploration of the transitions
+            // of the states.
+            void updateSilentProbabilitiesBasedOnTransitions(bisimulation::Block<BlockDataType>& block);
+            
+            // Refines the predecessor blocks of the splitter wrt. weak bisimulation in DTMCs.
+            void refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            
+            // Refines the given block wrt to weak bisimulation in DTMCs.
+            void refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            
+            // Converts the one-step probabilities of going into the splitter into the conditional probabilities needed
+            // for weak bisimulation (on DTMCs).
+            void computeConditionalProbabilitiesForNonSilentStates(bisimulation::Block<BlockDataType>& block);
+            
+            // Computes the (indices of the) blocks of non-silent states within the block.
+            std::vector<uint_fast64_t> computeNonSilentBlocks(bisimulation::Block<BlockDataType>& block);
+            
+            // Computes a labeling for all states of the block that identifies in which block they need to end up.
+            std::vector<storm::storage::BitVector> computeWeakStateLabelingBasedOnNonSilentBlocks(bisimulation::Block<BlockDataType> const& block, std::vector<uint_fast64_t> const& nonSilentBlockIndices);
             
             // A vector that holds the probabilities of states going into the splitter. This is used by the method that
             // refines a block based on probabilities.

@@ -52,6 +52,15 @@ namespace storm {
                 // of the states.
                 std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> splitBlock(Block<DataType>& block, storm::storage::sparse::state_type position);
 
+                // Sorts the given range of the partitition according to the given order.
+                void sortRange(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, bool updatePositions = true);
+                
+                // Sorts the block according to the given order.
+                void sortBlock(Block<DataType>& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, bool updatePositions = true);
+
+                // Computes the start indices of equal ranges within the given range wrt. to the given less function.
+                std::vector<uint_fast64_t> computeRangesOfEqualValue(uint_fast64_t startIndex, uint_fast64_t endIndex, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less);
+                
                 // Splits the block by sorting the states according to the given function and then identifying the split
                 // points. The callback function is called for every newly created block.
                 bool splitBlock(Block<DataType>& block, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, std::function<void (Block<DataType>&)> const& newBlockCallback);
@@ -134,6 +143,9 @@ namespace storm {
                 
                 // Update the state to position for the states in the given block.
                 void mapStatesToPositions(Block<DataType> const& block);
+
+                // Update the state to position for the states in the given range.
+                void mapStatesToPositions(std::vector<storm::storage::sparse::state_type>::const_iterator first, std::vector<storm::storage::sparse::state_type>::const_iterator last);
                 
                 // Swaps the positions of the two states given by their positions.
                 void swapStatesAtPositions(storm::storage::sparse::state_type position1, storm::storage::sparse::state_type position2);

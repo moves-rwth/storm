@@ -20,7 +20,7 @@ namespace storm {
                 
                 // Creates a new block with the given begin and end.
                 Block(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, Block* previous, Block* next, std::size_t id);
-                
+                                
                 Block() = default;
                 Block(Block const& other) = default;
                 Block& operator=(Block const& other) = default;
