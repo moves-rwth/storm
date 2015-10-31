@@ -211,8 +211,6 @@ namespace storm {
             std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> Partition<DataType>::splitBlock(Block<DataType>& block, storm::storage::sparse::state_type position) {
                 STORM_LOG_THROW(position >= block.getBeginIndex() && position <= block.getEndIndex(), storm::exceptions::InvalidArgumentException, "Cannot split block at illegal position.");
 
-                std::cout << "splitting block " << block.getId() << " at pos " << position << std::endl;
-                
                 // In case one of the resulting blocks would be empty, we simply return the current block and do not create
                 // a new one.
                 if (position == block.getBeginIndex() || position == block.getEndIndex()) {
@@ -242,21 +240,13 @@ namespace storm {
                 auto originalBegin = block.getBeginIndex();
                 auto originalEnd = block.getEndIndex();
                 
-                std::cout << "sorted block:" << std::endl;
-                for (auto stateIt = this->begin(block), stateIte = this->end(block); stateIt != stateIte; ++stateIt) {
-                    std::cout << *stateIt << std::endl;
-                }
-                
                 auto it = this->states.cbegin() + block.getBeginIndex();
                 auto ite = this->states.cbegin() + block.getEndIndex();
-                std::cout << "splitting between " << block.getBeginIndex() << " and " << block.getEndIndex() << std::endl;
                 
                 bool wasSplit = false;
                 std::vector<storm::storage::sparse::state_type>::const_iterator upperBound;
                 do {
-                    std::cout << "it (" << *it << ") less than ite-1 (" << *(ite-1) << "? " << less(*it, *(ite - 1)) << std::endl;
                     upperBound = std::upper_bound(it, ite, *it, less);
-                    std::cout << "upper bound is " << std::distance(this->states.cbegin(), upperBound);
                     if (upperBound != ite) {
                         wasSplit = true;
                         auto result = this->splitBlock(block, std::distance(this->states.cbegin(), upperBound));

@@ -160,9 +160,6 @@ namespace storm {
             this->performPartitionRefinement();
             std::chrono::high_resolution_clock::duration refinementTime = std::chrono::high_resolution_clock::now() - refinementStart;
             
-            std::cout << "final partition: " << std::endl;
-            this->partition.print();
-            
             std::chrono::high_resolution_clock::time_point extractionStart = std::chrono::high_resolution_clock::now();
             this->extractDecompositionBlocks();
             std::chrono::high_resolution_clock::duration extractionTime = std::chrono::high_resolution_clock::now() - extractionStart;
@@ -197,7 +194,7 @@ namespace storm {
         void BisimulationDecomposition<ModelType, BlockDataType>::performPartitionRefinement() {
             // Insert all blocks into the splitter queue as a (potential) splitter.
             std::deque<Block<BlockDataType>*> splitterQueue;
-            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block<BlockDataType>> const& block) { splitterQueue.push_back(block.get()); } );
+            std::for_each(partition.getBlocks().begin(), partition.getBlocks().end(), [&] (std::unique_ptr<Block<BlockDataType>> const& block) { block->data().setSplitter(); splitterQueue.push_back(block.get()); } );
             
             // Then perform the actual splitting until there are no more splitters.
             uint_fast64_t iterations = 0;

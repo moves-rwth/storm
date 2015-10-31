@@ -256,7 +256,7 @@ namespace storm {
         }
         
         template <typename ModelType>
-        void DeterministicModelBisimulationDecomposition<ModelType>::exploreRemainingStatesOfSplitter(bisimulation::Block<BlockDataType>& splitter) {
+        void DeterministicModelBisimulationDecomposition<ModelType>::exploreRemainingStatesOfSplitter(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*>& predecessorBlocks) {
             for (auto splitterIt = this->partition.begin(splitter), splitterIte = this->partition.begin(splitter) + (splitter.data().marker2() - splitter.getBeginIndex()); splitterIt != splitterIte; ++splitterIt) {
                 storm::storage::sparse::state_type currentState = *splitterIt;
                 
@@ -268,7 +268,7 @@ namespace storm {
                     if (!possiblyNeedsRefinement(predecessorBlock)) {
                         continue;
                     }
-                    
+
                     // We keep track of the probability of the predecessor moving to the splitter.
                     increaseProbabilityToSplitter(predecessor, predecessorBlock, predecessorEntry.getValue());
                     
@@ -277,6 +277,8 @@ namespace storm {
                     if (predecessorPosition >= predecessorBlock.data().marker1()) {
                         moveStateToMarker1(predecessor, predecessorBlock);
                     }
+                    
+                    insertIntoPredecessorList(predecessorBlock, predecessorBlocks);
                 }
             }
             
@@ -286,14 +288,14 @@ namespace storm {
         
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::updateSilentProbabilitiesBasedOnProbabilitiesToSplitter(bisimulation::Block<BlockDataType>& block) {
-            // For all states that do not have a successor in the block itself, we need to set the silent probability to 0.
-            std::for_each(silentProbabilities.begin() + block.data().marker1(), silentProbabilities.begin() + block.getEndIndex(), [] (ValueType& val) { val = storm::utility::zero<ValueType>(); } );
-            
-            // For all states that do have a successor in the block, we set the silent probability to the probability
-            // stored in the vector of probabilities going to the splitter.
-            auto it = boost::make_zip_iterator(boost::make_tuple(silentProbabilities.begin() + block.getBeginIndex(), probabilitiesToCurrentSplitter.begin() + block.getBeginIndex()));
-            auto ite = boost::make_zip_iterator(boost::make_tuple(silentProbabilities.begin() + block.data().marker1(), probabilitiesToCurrentSplitter.begin() + block.data().marker1()));
-            std::for_each(it, ite, [] (boost::tuple<ValueType&, ValueType&> const& tuple) { boost::get<0>(tuple) = boost::get<1>(tuple); } );
+            // For all predecessors, we can set the probability to the current probability of moving to the splitter.
+            for (auto stateIt = this->partition.begin(block), stateIte = this->partition.begin() + block.data().marker1(); stateIt != stateIte; ++stateIt) {
+                silentProbabilities[*stateIt] = probabilitiesToCurrentSplitter[*stateIt];
+            }
+            // All non-predecessors have a silent probability of zero.
+            for (auto stateIt = this->partition.begin() + block.data().marker1(), stateIte = this->partition.end(block); stateIt != stateIte; ++stateIt) {
+                silentProbabilities[*stateIt] = storm::utility::zero<ValueType>();
+            }
         }
         
         template<typename ModelType>
@@ -313,13 +315,11 @@ namespace storm {
         
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::computeConditionalProbabilitiesForNonSilentStates(bisimulation::Block<BlockDataType>& block) {
-            auto it = boost::make_zip_iterator(boost::make_tuple(silentProbabilities.begin() + block.getBeginIndex(), probabilitiesToCurrentSplitter.begin() + block.getBeginIndex()));
-            auto ite = boost::make_zip_iterator(boost::make_tuple(silentProbabilities.begin() + block.data().marker1(), probabilitiesToCurrentSplitter.begin() + block.data().marker1()));
-            std::for_each(it, ite, [this] (boost::tuple<ValueType&, ValueType&> const& tuple) {
-                if (!this->comparator.isZero(boost::get<0>(tuple))) {
-                    boost::get<1>(tuple) /= storm::utility::one<ValueType>() - boost::get<0>(tuple);
+            for (auto stateIt = this->partition.begin() + block.getBeginIndex(), stateIte = this->partition.begin() + block.data().marker1(); stateIt != stateIte; ++stateIt) {
+                if (!this->comparator.isOne(getSilentProbability(*stateIt))) {
+                    probabilitiesToCurrentSplitter[*stateIt] /= storm::utility::one<ValueType>() - getSilentProbability(*stateIt);
                 }
-            } );
+            }
         }
         
         template<typename ModelType>
@@ -334,13 +334,11 @@ namespace storm {
             // Now that we have the split points of the non-silent states, we perform a backward search from
             // each non-silent state and label the predecessors with the class of the non-silent state.
             std::vector<storm::storage::BitVector> stateLabels(block.getNumberOfStates(), storm::storage::BitVector(nonSilentBlockIndices.size() - 1));
-            std::cout << "creating " << block.getNumberOfStates() << " labels " << std::endl;
             
             std::vector<storm::storage::sparse::state_type> stateStack;
             stateStack.reserve(block.getNumberOfStates());
             for (uint_fast64_t stateClassIndex = 0; stateClassIndex < nonSilentBlockIndices.size() - 1; ++stateClassIndex) {
                 for (auto stateIt = this->partition.begin() + nonSilentBlockIndices[stateClassIndex], stateIte = this->partition.begin() + nonSilentBlockIndices[stateClassIndex + 1]; stateIt != stateIte; ++stateIt) {
-                    std::cout << "moving backward from state " << *stateIt << std::endl;
                     
                     stateStack.push_back(*stateIt);
                     stateLabels[this->partition.getPosition(*stateIt) - block.getBeginIndex()].set(stateClassIndex);
@@ -351,20 +349,13 @@ namespace storm {
                         for (auto const& predecessorEntry : this->backwardTransitions.getRow(currentState)) {
                             storm::storage::sparse::state_type predecessor = predecessorEntry.getColumn();
 
-                            std::cout << " found pred " << predecessor << " with value " << predecessorEntry.getValue() << std::endl;
                             if (this->comparator.isZero(predecessorEntry.getValue())) {
                                 continue;
                             }
-                            
+
                             // Only if the state is in the same block, is a silent state and it has not yet been
                             // labeled with the current label.
-                            std::cout << "pred is at " << this->partition.getPosition(predecessor) << std::endl;
-                            std::cout << "begin of block " << block.getBeginIndex() << std::endl;
-                            std::cout << "accessing index " << (this->partition.getPosition(predecessor) - block.getBeginIndex()) << " of " << stateLabels.size() << std::endl;
-                            std::cout << predecessor << " is in the same block as " << block.getId() << " ? " << (this->partition.getBlock(predecessor) == block) << std::endl;
-//                            std::cout << isSilent(predecessor) << ", " << stateLabels[this->partition.getPosition(predecessor) - block.getBeginIndex()].get(stateClassIndex) << std::endl;
                             if (this->partition.getBlock(predecessor) == block && isSilent(predecessor) && !stateLabels[this->partition.getPosition(predecessor) - block.getBeginIndex()].get(stateClassIndex)) {
-                                std::cout << "assigning label " << stateClassIndex << std::endl;
                                 stateStack.push_back(predecessor);
                                 stateLabels[this->partition.getPosition(predecessor) - block.getBeginIndex()].set(stateClassIndex);
                             }
@@ -378,38 +369,20 @@ namespace storm {
         
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlockOfSplitterWeak(bisimulation::Block<BlockDataType>& block, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
+            // First, we need to turn the one-step probabilities to go to the splitter to the conditional probabilities
+            // for all non-silent states.
             computeConditionalProbabilitiesForNonSilentStates(block);
-            // First, we need to compute a labeling of the states that expresses which of the non-silent blocks they can reach.
+            
+            // Then, we need to compute a labeling of the states that expresses which of the non-silent blocks they can reach.
             std::vector<uint_fast64_t> nonSilentBlockIndices = computeNonSilentBlocks(block);
-            std::cout << "indices: " << std::endl;
-            for (auto el : nonSilentBlockIndices) {
-                std::cout << el << std::endl;
-            }
-            
-            for (int ind = 0; ind < nonSilentBlockIndices.size() - 1; ++ind) {
-                for (int inner = nonSilentBlockIndices[ind]; inner < nonSilentBlockIndices[ind + 1]; ++inner) {
-                    std::cout << this->partition.getState(inner) << " is in class " << ind << std::endl;
-                }
-            }
-            
             std::vector<storm::storage::BitVector> weakStateLabels = computeWeakStateLabelingBasedOnNonSilentBlocks(block, nonSilentBlockIndices);
-            
-            std::cout << "labels: " << std::endl;
-            for (auto el : weakStateLabels) {
-                std::cout << el << std::endl;
-            }
             
             // Then split the block according to this labeling.
             // CAUTION: that this assumes that the positions of the states in the partition are not update until after
             // the sorting is over. Otherwise, this interferes with the data used in the sorting process.
             storm::storage::sparse::state_type originalBlockIndex = block.getBeginIndex();
-            auto result = this->partition.splitBlock(block,
+            auto split = this->partition.splitBlock(block,
                                                      [&weakStateLabels,&block,originalBlockIndex,this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
-                                                         std::cout << "comparing states " << state1 << " and " << state2 << std::endl;
-                                                         std::cout << (this->partition.getPosition(state1) - originalBlockIndex) << " and " << (this->partition.getPosition(state2) - originalBlockIndex) << std::endl;
-                                                         std::cout << "size: " << weakStateLabels.size() << std::endl;
-                                                         std::cout << "begin is " << block.getBeginIndex() << std::endl;
-                                                         std::cout << "orig begin " << originalBlockIndex << std::endl;
                                                          return weakStateLabels[this->partition.getPosition(state1) - originalBlockIndex] < weakStateLabels[this->partition.getPosition(state2) - originalBlockIndex];
                                                      },
                                                      [this, &splitterQueue] (bisimulation::Block<BlockDataType>& block) {
@@ -420,30 +393,38 @@ namespace storm {
                                                          splitterQueue.emplace_back(&block);
                                                      });
             
-            // If the block was split, we also update the silent probabilities of the
-            if (result) {
+            // If the block was split, we also update the silent probabilities.
+            if (split) {
                 updateSilentProbabilitiesBasedOnTransitions(block);
                 
-                // Insert the new block as a splitter.
-                block.data().setSplitter();
-                splitterQueue.emplace_back(&block);
-            } else {
-                block.resetMarkers();
+                if (!block.data().splitter()) {
+                    // Insert the new block as a splitter.
+                    block.data().setSplitter();
+                    splitterQueue.emplace_back(&block);
+                }
             }
         }
         
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterWeak(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             for (auto block : predecessorBlocks) {
-                std::cout << "found predecessor block " << block->getId() << std::endl;
                 if (*block != splitter) {
                     refinePredecessorBlockOfSplitterWeak(*block, splitterQueue);
                 } else {
                     // If the block to split is the splitter itself, we must not do any splitting here.
-                    block->resetMarkers();
                 }
                 
+                block->resetMarkers();
                 block->data().setNeedsRefinement(false);
+            }
+        }
+        
+        template<typename ModelType>
+        void DeterministicModelBisimulationDecomposition<ModelType>::insertIntoPredecessorList(bisimulation::Block<BlockDataType>& predecessorBlock, std::list<bisimulation::Block<BlockDataType>*>& predecessorBlocks) {
+            // Insert the block into the list of blocks to refine (if that has not already happened).
+            if (!predecessorBlock.data().needsRefinement()) {
+                predecessorBlocks.emplace_back(&predecessorBlock);
+                predecessorBlock.data().setNeedsRefinement();
             }
         }
         
@@ -464,11 +445,6 @@ namespace storm {
             //
             // Finally, we use the information obtained in the first part for the actual splitting process in which all
             // predecessor blocks of the splitter are split based on the probabilities computed earlier.
-            
-            std::cout << "current partition is" << std::endl;
-            this->partition.print();
-            std::cout << "refining using splitter " << splitter.getId() << std::endl;
-            
             std::list<Block<BlockDataType>*> predecessorBlocks;
             storm::storage::sparse::state_type currentPosition = splitter.getBeginIndex();
             bool splitterIsPredecessorBlock = false;
@@ -500,11 +476,7 @@ namespace storm {
                             moveStateInSplitter(predecessor, predecessorBlock, currentPosition, elementsToSkip);
                         }
                         
-                        // Insert the block into the list of blocks to refine (if that has not already happened).
-                        if (!predecessorBlock.data().needsRefinement()) {
-                            predecessorBlocks.emplace_back(&predecessorBlock);
-                            predecessorBlock.data().setNeedsRefinement();
-                        }
+                        insertIntoPredecessorList(predecessorBlock, predecessorBlocks);
                     }
                 }
                 
@@ -516,7 +488,7 @@ namespace storm {
             // If the splitter was a predecessor block of itself, we potentially need to explore some states that have
             // not been explored yet.
             if (splitterIsPredecessorBlock) {
-                exploreRemainingStatesOfSplitter(splitter);
+                exploreRemainingStatesOfSplitter(splitter, predecessorBlocks);
             }
             
             // Finally, we split the block based on the precomputed probabilities and the chosen bisimulation type.

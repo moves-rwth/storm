@@ -88,7 +88,7 @@ namespace storm {
             void increaseProbabilityToSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType> const& predecessorBlock, ValueType const& value);
             
             // Explores the remaining predecessors of the splitter.
-            void exploreRemainingStatesOfSplitter(bisimulation::Block<BlockDataType>& splitter);
+            void exploreRemainingStatesOfSplitter(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*>& predecessorBlocks);
             
             // Updates the silent probabilities of the states in the block based on the probabilities of going to the splitter.
             void updateSilentProbabilitiesBasedOnProbabilitiesToSplitter(bisimulation::Block<BlockDataType>& block);
@@ -112,6 +112,9 @@ namespace storm {
             
             // Computes a labeling for all states of the block that identifies in which block they need to end up.
             std::vector<storm::storage::BitVector> computeWeakStateLabelingBasedOnNonSilentBlocks(bisimulation::Block<BlockDataType> const& block, std::vector<uint_fast64_t> const& nonSilentBlockIndices);
+            
+            // Inserts the block into the list of predecessors if it is not already contained.
+            void insertIntoPredecessorList(bisimulation::Block<BlockDataType>& predecessorBlock, std::list<bisimulation::Block<BlockDataType>*>& predecessorBlocks);
             
             // A vector that holds the probabilities of states going into the splitter. This is used by the method that
             // refines a block based on probabilities.
