@@ -147,7 +147,7 @@ namespace storm {
                 if (this->hasTransitionRewards()) {
                     if (this->hasStateActionRewards()) {
                         storm::utility::vector::addVectors<ValueType>(this->getStateActionRewardVector(), transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix()), this->getStateActionRewardVector());
-                        optionalStateActionRewardVector = boost::none;
+                        this->optionalStateActionRewardVector = boost::none;
                     } else {
                         this->optionalStateActionRewardVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
                     }
@@ -160,7 +160,7 @@ namespace storm {
                     } else {
                         this->optionalStateRewardVector = std::move(this->optionalStateActionRewardVector);
                     }
-                    optionalStateActionRewardVector = boost::none;
+                    this->optionalStateActionRewardVector = boost::none;
                 }
             }
             
