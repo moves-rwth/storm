@@ -111,6 +111,7 @@ namespace storm {
                 if (this->hasTransitionRewards()) {
                     if (this->hasStateActionRewards()) {
                         storm::utility::vector::addVectors<ValueType>(this->getStateActionRewardVector(), transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix()), this->getStateActionRewardVector());
+                        this->optionalStateActionRewardVector = boost::none;
                     } else {
                         this->optionalStateActionRewardVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
                     }
@@ -121,8 +122,9 @@ namespace storm {
                         STORM_LOG_THROW(this->getStateRewardVector().size() == this->getStateActionRewardVector().size(), storm::exceptions::InvalidOperationException, "The reduction to state rewards is only possible of both the state and the state-action rewards have the same dimension.");
                         storm::utility::vector::addVectors<ValueType>(this->getStateActionRewardVector(), this->getStateRewardVector(), this->getStateRewardVector());
                     } else {
-                        this->optionalStateRewardVector = std::move(this->optionalStateRewardVector);
+                        this->optionalStateRewardVector = std::move(this->optionalStateActionRewardVector);
                     }
+                    this->optionalStateActionRewardVector = boost::none;
                 }
             }
             
