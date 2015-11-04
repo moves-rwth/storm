@@ -46,7 +46,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX, std::vector<storm::storage::sparse::state_type>* initialPolicy) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true

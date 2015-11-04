@@ -8,7 +8,6 @@
 #include "src/storage/sparse/StateType.h"
 #include "AllowEarlyTerminationCondition.h"
 #include "OptimizationDirection.h"
-#include "src/utility/vector.h"
 
 namespace storm {
     namespace storage {
@@ -98,7 +97,7 @@ namespace storm {
              * vector must be equal to the length of the vector x (and thus to the number of columns of A).
              * @return The solution vector x of the system of linear equations as the content of the parameter x.
              */
-            virtual void solveEquationSystem(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
+            virtual void solveEquationSystem(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr, std::vector<storm::storage::sparse::state_type>* initialPolicy = nullptr) const = 0;
             
             /*!
              * As solveEquationSystem with an optimization-direction, but this uses the internally set direction.
@@ -141,17 +140,6 @@ namespace storm {
             
             
         protected:
-            
-            std::vector<storm::storage::sparse::state_type> computePolicy(std::vector<ValueType>& x, std::vector<ValueType> const& b) const{
-                std::vector<ValueType> xPrime(this->A.getRowCount());
-                this->A.multiplyWithVector(x, xPrime);
-                storm::utility::vector::addVectors(xPrime, b, xPrime);
-                std::vector<storm::storage::sparse::state_type> policy(x.size());
-                std::vector<ValueType> reduced(x.size());
-                storm::utility::vector::reduceVectorMinOrMax(convert(this->direction), xPrime, reduced, this->A.getRowGroupIndices(), &(policy));
-                return policy;
-            }
-            
             storm::storage::SparseMatrix<ValueType> const& A;
             std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> earlyTermination;
             

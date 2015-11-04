@@ -31,7 +31,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void NativeMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX, std::vector<storm::storage::sparse::state_type>* initialPolicy) const {
 			if (this->useValueIteration) {
 				// Set up the environment for the power method. If scratch memory was not provided, we need to create it.
 				bool multiplyResultMemoryProvided = true;
@@ -45,6 +45,19 @@ namespace storm {
 					newX = new std::vector<ValueType>(x.size());
 					xMemoryProvided = false;
 				}
+                                
+                                if(initialPolicy != nullptr){
+                                    //Get initial values for x like it is done for policy iteration.
+                                    storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(*initialPolicy, true);
+                                    submatrix.convertToEquationSystem();
+                                    NativeLinearEquationSolver<ValueType> nativeLinearEquationSolver(submatrix);
+                                    std::vector<ValueType> subB(this->A.getRowGroupIndices().size() - 1);
+                                    storm::utility::vector::selectVectorValues<ValueType>(subB, *initialPolicy, this->A.getRowGroupIndices(), b);
+                                    // Solve the resulting linear equation system
+                                    std::vector<ValueType> deterministicMultiplyResult(this->A.getRowGroupIndices().size() - 1);
+                                    nativeLinearEquationSolver.solveEquationSystem(*currentX, subB, &deterministicMultiplyResult);
+                                }
+                                
 				uint_fast64_t iterations = 0;
 				bool converged = false;
 
@@ -83,6 +96,11 @@ namespace storm {
 					std::swap(x, *currentX);
 				}
 
+                                if(this->trackPolicy){
+                                    this->policy = std::vector<storm::storage::sparse::state_type>(x.size());
+                                    storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices(), &(this->policy));
+                                }
+                                
 				if (!xMemoryProvided) {
 					delete copyX;
 				}
@@ -91,14 +109,14 @@ namespace storm {
 					delete multiplyResult;
 				}
                                 
-                                if(this->trackPolicy){
-                                    this->policy = this->computePolicy(x,b);
-                                }
-                                
 			} else {
 				// We will use Policy Iteration to solve the given system.
 				// We first guess an initial choice resolution which will be refined after each iteration.
-				this->policy = std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupIndices().size() - 1);
+                                if(initialPolicy == nullptr){
+                                    this->policy = std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupIndices().size() - 1);
+                                } else {
+                                    this->policy = *initialPolicy;
+                                }
 
 				// Create our own multiplyResult for solving the deterministic sub-instances.
 				std::vector<ValueType> deterministicMultiplyResult(this->A.getRowGroupIndices().size() - 1);

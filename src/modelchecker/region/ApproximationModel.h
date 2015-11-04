@@ -58,74 +58,26 @@ namespace storm {
 
             private:
 
-                //A class that represents a function and how it should be substituted (i.e. which variables should be replaced with lower and which with upper bounds of the region)
-                //The substitution is given as an index in funcSubData.substitutions (allowing to instantiate the substitutions more easily).
-                class FunctionSubstitution {
-                public:
-                    FunctionSubstitution(ParametricType const& fun, std::size_t const& sub) : hash(computeHash(fun,sub)), function(fun), substitution(sub) {
-                        //intentionally left empty
-                    }
-
-                    FunctionSubstitution(ParametricType&& fun, std::size_t&& sub) : hash(computeHash(fun,sub)), function(std::move(fun)), substitution(std::move(sub)) {
-                        //intentionally left empty
-                    }
-
-                    FunctionSubstitution(FunctionSubstitution const& other) : hash(other.hash), function(other.function), substitution(other.substitution){
-                        //intentionally left empty
-                    }
-
-                    FunctionSubstitution(FunctionSubstitution&& other) : hash(std::move(other.hash)), function(std::move(other.function)), substitution(std::move(other.substitution)){
-                        //intentionally left empty
-                    }
-
-                    FunctionSubstitution() = default;
-
-                    ~FunctionSubstitution() = default;
-
-                    bool operator==(FunctionSubstitution const& other) const {
-                        return this->hash==other.hash && this->substitution==other.substitution && this->function==other.function;
-                    }
-
-                    ParametricType const& getFunction() const{
-                        return this->function;
-                    }
-
-                    std::size_t const& getSubstitution() const{
-                        return this->substitution;
-                    }
-
-                    std::size_t const& getHash() const{
-                        return this->hash;
-                    }
-
-                private:
-
-                    static std::size_t computeHash(ParametricType const& fun, std::size_t const& sub) {
-                        std::size_t seed = 0;
-                        boost::hash_combine(seed, fun);
-                        boost::hash_combine(seed, sub);
-                        return seed;
-                    }
-
-                    std::size_t hash;
-                    ParametricType function;
-                    std::size_t substitution;
-                };
-
+                typedef std::pair<ParametricType, std::size_t> FunctionSubstitution;
+                typedef std::vector<storm::storage::sparse::state_type> Policy;
                 class FuncSubHash{
                     public:
                         std::size_t operator()(FunctionSubstitution const& fs) const {
-                            return fs.getHash();
+                       //     return fs.getHash();
+                            std::size_t seed = 0;
+                            boost::hash_combine(seed, fs.first);
+                            boost::hash_combine(seed, fs.second);
+                            return seed;
+                            
                         }
                 };
-
                 typedef typename std::unordered_map<FunctionSubstitution, ConstantType, FuncSubHash>::value_type FunctionEntry;
 
                 void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void initializePlayer1Matrix(ParametricSparseModelType const& parametricModel);
                 void instantiate(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
-                void invokeSolver(bool computeLowerBounds, std::vector<std::size_t>& policy);
+                void invokeSolver(bool computeLowerBounds, Policy& policy);
 
                 //Some designated states in the original model
                 storm::storage::BitVector targetStates, maybeStates;
@@ -134,6 +86,10 @@ namespace storm {
                 std::vector<ConstantType> eqSysResult;
                 //The index which represents the result for the initial state in the eqSysResult vector
                 std::size_t eqSysInitIndex;
+                
+                std::unordered_set<std::shared_ptr<Policy>> minimizingPolicies;
+                std::unordered_set<std::shared_ptr<Policy>> maximizingPolicies;
+                
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
                 //Player 1 represents the nondeterminism of the given mdp (so, this is irrelevant if we approximate values of a DTMC)

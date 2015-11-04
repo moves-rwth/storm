@@ -269,26 +269,42 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             ConstantType  ApproximationModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
                 instantiate(region, computeLowerBounds);
-                std::vector<std::size_t> policy;
-                invokeSolver(computeLowerBounds, policy);
+                std::shared_ptr<Policy> policy;
+                if(computeLowerBounds && !this->minimizingPolicies.empty()){
+                    policy = std::make_shared<Policy>(**(this->minimizingPolicies.begin())); //we need a fresh policy, initialized with the values of the old one
+                } else if(!computeLowerBounds && !this->maximizingPolicies.empty()){
+                    policy = std::make_shared<Policy>(**(this->maximizingPolicies.begin())); //we need a fresh policy, initialized with the values of the old one
+                } else {
+                    policy = std::make_shared<Policy>(this->matrixData.matrix.getRowGroupCount());
+                }
+                invokeSolver(computeLowerBounds, *policy);
+                if(computeLowerBounds){
+                    this->minimizingPolicies.insert(policy);
+                    std::cout << minimizingPolicies.size() << std::endl;
+                } else {
+                    this->maximizingPolicies.insert(policy);
+                    std::cout << maximizingPolicies.size() << std::endl;
+                }
                 
                 //TODO: policy for games.
-                //TODO: do this only when necessary.
                 //TODO: (maybe) when a few parameters are mapped to another value, build a "nicer" scheduler and check whether it induces values that are more optimal.
-                if(policy.empty()) return this->eqSysResult[this->eqSysInitIndex];
+                if(policy->empty()) return this->eqSysResult[this->eqSysInitIndex];
                 //Get the set of parameters which are (according to the policy) always mapped to the same region boundary.
                 //First, collect all (relevant) parameters, i.e., the ones that are set to the lower or upper boundary.
                 std::map<VariableType, RegionBoundary> fixedVariables;
+                std::map<VariableType, std::pair<std::size_t, std::size_t>> VarCount;
+                std::size_t substitutionCount =0;
                 for(auto const& substitution : this->funcSubData.substitutions){
                     for( auto const& sub : substitution){
                         if(sub.second!= RegionBoundary::UNSPECIFIED){
                             fixedVariables.insert(typename std::map<VariableType, RegionBoundary>::value_type(sub.first, RegionBoundary::UNSPECIFIED));
+                            VarCount.insert(typename std::map<VariableType, std::pair<std::size_t, std::size_t>>::value_type(sub.first, std::pair<std::size_t, std::size_t>(0,0)));
                         }
                     }
                 }
                 //Now erase the parameters that are mapped to different boundaries.
                 for(std::size_t rowGroup=0; rowGroup<this->matrixData.matrix.getRowGroupCount(); ++rowGroup){
-                    std::size_t row = this->matrixData.matrix.getRowGroupIndices()[rowGroup] + policy[rowGroup];
+                    std::size_t row = this->matrixData.matrix.getRowGroupIndices()[rowGroup] + (*policy)[rowGroup];
                     for(std::pair<VariableType, RegionBoundary> const& sub : this->funcSubData.substitutions[this->matrixData.rowSubstitutions[row]]){
                         auto fixedVarIt = fixedVariables.find(sub.first);
                         if(fixedVarIt != fixedVariables.end() && fixedVarIt->second != sub.second){
@@ -299,15 +315,29 @@ namespace storm {
                                 fixedVariables.erase(fixedVarIt);
                             }
                         }
+                        auto varcountIt = VarCount.find(sub.first);
+                        if(sub.second==RegionBoundary::LOWER){
+                            ++(varcountIt->second.first);
+                        } else if (sub.second==RegionBoundary::UPPER){
+                            ++(varcountIt->second.second);
+                        }
+                        ++substitutionCount;
                     }
                     if (fixedVariables.empty()){
-                        break;
+                       // break;
+                    }
+                }
+       //         std::cout << "Used Approximation" << std::endl;
+                for (auto const& varcount : VarCount){
+                    if(varcount.second.first > 0 && varcount.second.second > 0){
+              //          std::cout << "  Variable " << varcount.first << " has been set to lower " << varcount.second.first << " times and to upper " << varcount.second.second << " times. (total: " << substitutionCount << ")" << std::endl;
                     }
                 }
                 for (auto const& fixVar : fixedVariables){
-                    //std::cout << "APPROXMODEL: variable " << fixVar.first << " is always mapped to " << fixVar.second << std::endl;
+                    //std::cout << "  APPROXMODEL: variable " << fixVar.first << " is always mapped to " << fixVar.second << std::endl;
                 }
                     
+        //        std::cout << "    Result is " << this->eqSysResult[this->eqSysInitIndex] << std::endl;
                 return this->eqSysResult[this->eqSysInitIndex];
             }
             
@@ -342,17 +372,17 @@ namespace storm {
                     auto& result = functionResult.second;
                     result = computeLowerBounds ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>();
                      //Iterate over the different combinations of lower and upper bounds and update the min and max values
-                    auto const& vertices=region.getVerticesOfRegion(unspecifiedParameters[funcSub.getSubstitution()]);
+                    auto const& vertices=region.getVerticesOfRegion(unspecifiedParameters[funcSub.second]);
                     for(auto const& vertex : vertices){
                         //extend the substitution
                         for(auto const& vertexSub : vertex){
-                            instantiatedSubs[funcSub.getSubstitution()][vertexSub.first]=vertexSub.second;
+                            instantiatedSubs[funcSub.second][vertexSub.first]=vertexSub.second;
                         }
                         //evaluate the function
                         ConstantType currValue = storm::utility::region::convertNumber<ConstantType>(
                                 storm::utility::region::evaluateFunction(
-                                    funcSub.getFunction(),
-                                    instantiatedSubs[funcSub.getSubstitution()]
+                                    funcSub.first,
+                                    instantiatedSubs[funcSub.second]
                                     )
                                 );
                         result = computeLowerBounds ? std::min(result, currValue) : std::max(result, currValue);
@@ -370,16 +400,16 @@ namespace storm {
             
                         
             template<>
-            void ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, std::vector<std::size_t>& policy){
+            void ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, Policy& policy){
                 storm::solver::SolveGoal goal(computeLowerBounds);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
                 solver->setPolicyTracking();
-                solver->solveEquationSystem(this->eqSysResult, this->vectorData.vector);
+                solver->solveEquationSystem(goal.direction(), this->eqSysResult, this->vectorData.vector, nullptr, nullptr, &policy);
                 policy = solver->getPolicy();
             }
             
             template<>
-            void ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, std::vector<std::size_t>& policy){
+            void ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, Policy& policy){
                 storm::solver::SolveGoal player2Goal(computeLowerBounds);
                 std::unique_ptr<storm::solver::GameSolver<double>> solver = storm::utility::solver::GameSolverFactory<double>().create(this->player1Matrix, this->matrixData.matrix);
                 solver->solveGame(this->player1Goal.direction(), player2Goal.direction(), this->eqSysResult, this->vectorData.vector);
