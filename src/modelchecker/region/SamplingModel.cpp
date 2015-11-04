@@ -252,6 +252,10 @@ namespace storm {
             template<>
             void SamplingModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(){
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(this->solveGoal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
+                if(!this->solveGoal.minimize()){
+                    //The value iteration method is not correct if the value is maximized and the initial x-vector is not <= the actual probability/reward.
+                    this->eqSysResult.assign(this->eqSysResult.size(), storm::utility::zero<double>());
+                }
                 solver->solveEquationSystem(this->eqSysResult, this->vectorData.vector);
             }
             
