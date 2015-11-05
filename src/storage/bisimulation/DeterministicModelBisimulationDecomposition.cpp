@@ -29,9 +29,7 @@ namespace storm {
         
         template<typename ModelType>
         DeterministicModelBisimulationDecomposition<ModelType>::DeterministicModelBisimulationDecomposition(ModelType const& model, typename BisimulationDecomposition<ModelType, DeterministicModelBisimulationDecomposition::BlockDataType>::Options const& options) : BisimulationDecomposition<ModelType, DeterministicModelBisimulationDecomposition::BlockDataType>(model, options), probabilitiesToCurrentSplitter(model.getNumberOfStates(), storm::utility::zero<ValueType>()) {
-            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
-            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
-            STORM_LOG_THROW(options.type != BisimulationType::Weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
+            // Intentionally left empty.
         }
         
         template<typename ModelType>

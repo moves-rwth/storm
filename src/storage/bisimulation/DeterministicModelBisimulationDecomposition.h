@@ -42,7 +42,8 @@ namespace storm {
             virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) override;
 
         private:
-            virtual void refinePredecessorBlocksOfSplitterStrong(std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            // Refines the predecessor blocks wrt. strong bisimulation.
+            void refinePredecessorBlocksOfSplitterStrong(std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
 
             /*!
              * Performs the necessary steps to compute a weak bisimulation on a DTMC.
@@ -87,7 +88,7 @@ namespace storm {
             // Increases the probability of moving to the current splitter for the given state.
             void increaseProbabilityToSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType> const& predecessorBlock, ValueType const& value);
             
-            // Explores the remaining predecessors of the splitter.
+            // Explores the remaining states of the splitter.
             void exploreRemainingStatesOfSplitter(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*>& predecessorBlocks);
             
             // Updates the silent probabilities of the states in the block based on the probabilities of going to the splitter.

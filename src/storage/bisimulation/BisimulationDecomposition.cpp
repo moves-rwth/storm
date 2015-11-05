@@ -83,8 +83,10 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> newFormula = formula.asSharedPointer();
             
             if (formula.isProbabilityOperatorFormula()) {
+                optimalityType = formula.asProbabilityOperatorFormula().getOptimalityType();
                 newFormula = formula.asProbabilityOperatorFormula().getSubformula().asSharedPointer();
             } else if (formula.isRewardOperatorFormula()) {
+                optimalityType = formula.asRewardOperatorFormula().getOptimalityType();
                 newFormula = formula.asRewardOperatorFormula().getSubformula().asSharedPointer();
             }
             
@@ -114,6 +116,8 @@ namespace storm {
                 std::unique_ptr<storm::modelchecker::CheckResult> psiStatesCheckResult = checker.check(*rightSubformula);
                 phiStates = phiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 psiStates = psiStatesCheckResult->asExplicitQualitativeCheckResult().getTruthValuesVector();
+            } else {
+                optimalityType = boost::none;
             }
         }
         
@@ -134,7 +138,16 @@ namespace storm {
         }
         
         template<typename ModelType, typename BlockDataType>
-        BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model, Options const& options) : model(model), backwardTransitions(model.getBackwardTransitions()), options(options), partition(), comparator(), quotient(nullptr) {
+        BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model, Options const& options) : BisimulationDecomposition(model, model.getBackwardTransitions(), options) {
+            // Intentionally left empty.
+        }
+
+        template<typename ModelType, typename BlockDataType>
+        BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options) : model(model), backwardTransitions(backwardTransitions), options(options), partition(), comparator(), quotient(nullptr) {
+            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
+            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(options.type != BisimulationType::Weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
+            
             // Fix the respected atomic propositions if they were not explicitly given.
             if (!this->options.respectedAtomicPropositions) {
                 this->options.respectedAtomicPropositions = model.getStateLabeling().getLabels();

@@ -74,6 +74,7 @@ namespace storm {
                 bool measureDrivenInitialPartition;
                 boost::optional<storm::storage::BitVector> phiStates;
                 boost::optional<storm::storage::BitVector> psiStates;
+                boost::optional<OptimizationDirection> optimalityType;
                 
                 // An optional set of strings that indicate which of the atomic propositions of the model are to be
                 // respected and which may be ignored. If not given, all atomic propositions of the model are respected.
@@ -125,8 +126,7 @@ namespace storm {
              * Decomposes the given model into equivalance classes of a bisimulation.
              *
              * @param model The model to decompose.
-             * @param type The type of the bisimulation to compute.
-             * @param buildQuotient A flag specifying whether the quotient is to be build.
+             * @param options The options to use during for the decomposition.
              */
             BisimulationDecomposition(ModelType const& model, Options const& options);
             
@@ -144,6 +144,15 @@ namespace storm {
             void computeBisimulationDecomposition();
             
         protected:
+            /*!
+             * Decomposes the given model into equivalance classes of a bisimulation.
+             *
+             * @param model The model to decompose.
+             * @param backwardTransition The backward transitions of the model.
+             * @param options The options to use during for the decomposition.
+             */
+            BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options);
+            
             /*!
              * Performs the partition refinement on the model and thereby computes the equivalence classes under strong
              * bisimulation equivalence. If required, the quotient model is built and may be retrieved using
