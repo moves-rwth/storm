@@ -4,6 +4,7 @@
 
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Ctmc.h"
+#include "src/models/sparse/Mdp.h"
 #include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/storage/bisimulation/DeterministicBlockData.h"
@@ -167,7 +168,11 @@ namespace storm {
             } else {
                 this->initializeLabelBasedPartition();
             }
+            std::cout << "initial partition is " << std::endl;
+            this->partition.print();
             std::chrono::high_resolution_clock::duration initialPartitionTime = std::chrono::high_resolution_clock::now() - initialPartitionStart;
+            
+            this->initialize();
             
             std::chrono::high_resolution_clock::time_point refinementStart = std::chrono::high_resolution_clock::now();
             this->performPartitionRefinement();
@@ -275,6 +280,11 @@ namespace storm {
         }
         
         template<typename ModelType, typename BlockDataType>
+        void BisimulationDecomposition<ModelType, BlockDataType>::initialize() {
+            // Intentionally left empty.
+        }
+        
+        template<typename ModelType, typename BlockDataType>
         void BisimulationDecomposition<ModelType, BlockDataType>::extractDecompositionBlocks() {
             // Now move the states from the internal partition into their final place in the decomposition. We do so in
             // a way that maintains the block IDs as indices.
@@ -290,10 +300,12 @@ namespace storm {
         
         template class BisimulationDecomposition<storm::models::sparse::Dtmc<double>, bisimulation::DeterministicBlockData>;
         template class BisimulationDecomposition<storm::models::sparse::Ctmc<double>, bisimulation::DeterministicBlockData>;
+        template class BisimulationDecomposition<storm::models::sparse::Mdp<double>, bisimulation::DeterministicBlockData>;
         
 #ifdef STORM_HAVE_CARL
         template class BisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
         template class BisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
+        template class BisimulationDecomposition<storm::models::sparse::Mdp<storm::RationalFunction>, bisimulation::DeterministicBlockData>;
 #endif
     }
 }

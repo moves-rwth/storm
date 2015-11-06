@@ -4,6 +4,8 @@
 #include "src/storage/bisimulation/BisimulationDecomposition.h"
 #include "src/storage/bisimulation/DeterministicBlockData.h"
 
+#include "src/storage/Distribution.h"
+
 namespace storm {
     namespace utility {
         template <typename ValueType> class ConstantsComparator;
@@ -37,44 +39,41 @@ namespace storm {
             
             virtual void refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) override;
             
+            virtual void initialize() override;
+            
         private:
             // Creates the mapping from the choice indices to the states.
             void createChoiceToStateMapping();
             
-            // Retrieves whether the given predecessor of the splitters possibly needs refinement.
-            bool possiblyNeedsRefinement(bisimulation::Block<BlockDataType> const& predecessorBlock) const;
+            // Initializes the quotient distributions wrt. to the current partition.
+            void initializeQuotientDistributions();
             
-            // Increases the probability of moving to the current splitter for the given choice of the given state.
-            void increaseProbabilityToSplitter(storm::storage::sparse::state_type state, uint_fast64_t choice, bisimulation::Block<BlockDataType> const& predecessorBlock, ValueType const& value);
+            // Retrieves whether the given block possibly needs refinement.
+            bool possiblyNeedsRefinement(bisimulation::Block<BlockDataType> const& block) const;
             
-            // Clears the probabilities of all choices of the given state.
-            void clearProbabilitiesToSplitter(storm::storage::sparse::state_type state);
+            // Splits the given block according to the current quotient distributions.
+            bool splitBlockAccordingToCurrentQuotientDistributions(bisimulation::Block<BlockDataType>& block, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
             
-            // Moves the given state to the position marked by marker1 moves the marker one step further.
-            void moveStateToMarker1(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock);
+            // Retrieves whether the quotient distributions of state 1 are considered to be less than the ones of state 2.
+            bool quotientDistributionsLess(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2);
             
-            // Moves the given state to the position marked by marker2 the marker one step further.
-            void moveStateToMarker2(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock);
+            // Updates the ordered list of quotient distribution for the given state.
+            void updateOrderedQuotientDistributions(storm::storage::sparse::state_type state);
             
-            // Moves the given state to a proper place in the splitter, depending on where the predecessor is located.
-            void moveStateInSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType>& predecessorBlock, storm::storage::sparse::state_type currentPositionInSplitter, uint_fast64_t& elementsToSkip);
+            // Updates the quotient distributions of the predecessors of the new block by taking the probability mass
+            // away from the old block.
+            void updateQuotientDistributionsOfPredecessors(bisimulation::Block<BlockDataType> const& newBlock, bisimulation::Block<BlockDataType> const& oldBlock, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
             
-            // Inserts the block into the list of predecessors if it is not already contained.
-            void insertIntoPredecessorList(bisimulation::Block<BlockDataType>& predecessorBlock, std::list<bisimulation::Block<BlockDataType>*>& predecessorBlocks);
-            
-            // Explores the remaining states of the splitter.
-            void exploreRemainingStatesOfSplitter(bisimulation::Block<BlockDataType>& splitter, std::list<bisimulation::Block<BlockDataType>*>& predecessorBlocks);
-            
-            // Refines the predecessor blocks wrt. strong bisimulation.
-            void refinePredecessorBlocksOfSplitter(std::list<bisimulation::Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
+            bool checkQuotientDistributions() const;
             
             // A mapping from choice indices to the state state that has this choice.
             std::vector<storm::storage::sparse::state_type> choiceToStateMapping;
             
-            // A vector that holds the probabilities for all nondeterministic choices of all states of going into the
-            // splitter. This is used by the method that refines a block based on probabilities.
-            std::vector<ValueType> probabilitiesToCurrentSplitter;
+            // A vector that holds the quotient distributions for all nondeterministic choices of all states.
+            std::vector<storm::storage::Distribution<ValueType>> quotientDistributions;
             
+            // A vector that stores for each state the ordered list of quotient distributions.
+            std::vector<storm::storage::Distribution<ValueType> const*> orderedQuotientDistributions;
         };
     }
 }

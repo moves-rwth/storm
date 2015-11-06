@@ -186,6 +186,11 @@ namespace storm {
             virtual void initializeMeasureDrivenPartition();
             
             /*!
+             * A function that can initialize auxiliary data structures. It is called after initializing the initial partition.
+             */
+            virtual void initialize();
+            
+            /*!
              * Computes the set of states with probability 0/1 for satisfying phi until psi. This is used for the measure
              * driven initial partition.
              *

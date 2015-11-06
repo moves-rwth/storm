@@ -172,7 +172,7 @@ namespace storm {
                 
                 split |= this->partition.splitBlock(*blockToRefineProbabilistically,
                                                     [this] (storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) {
-                                                        return getProbabilityToSplitter(state1) < getProbabilityToSplitter(state2);
+                                                        return this->comparator.isLess(getProbabilityToSplitter(state1), getProbabilityToSplitter(state2));
                                                     },
                                                     [&splitterQueue] (Block<BlockDataType>& block) {
                                                         splitterQueue.emplace_back(&block); block.data().setSplitter();
