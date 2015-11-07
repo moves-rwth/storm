@@ -264,30 +264,3 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     EXPECT_EQ(993ul, statesWithProbability01.first.getNumberOfSetBits());
     EXPECT_EQ(16ul, statesWithProbability01.second.getNumberOfSetBits());
 }
-
-
-TEST(GraphTest, kshortest) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
-
-    ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
-
-    storm::storage::sparse::state_type testState = 300;
-
-    storm::utility::shortestPaths::ShortestPathsGenerator<double> shortestPathsGenerator(model);
-
-    // the 1-shortest path is computed as a preprocessing step via Dijkstra;
-    // since there were some bugs here in the past, let's test it separately
-    double dijkstraSPDistance = shortestPathsGenerator.getKShortest(testState, 1);
-    std::cout << "Res: " << dijkstraSPDistance << std::endl;
-    //EXPECT_NEAR(0.0158593, dijkstraSPDistance, 0.0000001);
-    EXPECT_DOUBLE_EQ(0.015859334652581887, dijkstraSPDistance);
-
-    // main test
-    double kSPDistance1 = shortestPathsGenerator.getKShortest(testState, 100);
-    EXPECT_DOUBLE_EQ(1.5231305000339649e-06, kSPDistance1);
-
-    // let's test again to ensure re-entry is no problem
-    double kSPDistance2 = shortestPathsGenerator.getKShortest(testState, 500);
-    EXPECT_DOUBLE_EQ(3.0462610000679282e-08, kSPDistance2);
-}

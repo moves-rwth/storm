@@ -5,12 +5,16 @@
 
 namespace storm {
     namespace utility {
-        namespace shortestPaths {
+        namespace ksp {
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model) : model(model) {
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
+                                                              state_list_t const& targets) : model(model), targets(targets) {
                 // FIXME: does this create a copy? I don't need one, so I should avoid that
                 transitionMatrix = model->getTransitionMatrix();
-                numStates = model->getNumberOfStates();
+                numStates = model->getNumberOfStates() + 1; // one more for meta-target
+
+                metaTarget = numStates - 1; // first unused state number
+                targetSet = std::unordered_set<state_t>(targets.begin(), targets.end());
 
                 computePredecessors();
 
@@ -25,22 +29,60 @@ namespace storm {
                 candidatePaths.resize(numStates);
             }
 
+            // several alternative ways to specify the targets are provided,
+            // each converts the targets and delegates to the ctor above
+            // I admit it's kind of ugly, but actually pretty convenient (and I've wanted to try C++11 delegation)
             template <typename T>
-            ShortestPathsGenerator<T>::~ShortestPathsGenerator() {
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
+                    state_t singleTarget) : ShortestPathsGenerator<T>(model, std::vector<state_t>{singleTarget}) {}
+
+            template <typename T>
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
+                    storage::BitVector const& targetBV) : ShortestPathsGenerator<T>(model, bitvectorToList(targetBV)) {}
+
+            template <typename T>
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
+                    std::string const& targetLabel) : ShortestPathsGenerator<T>(model, bitvectorToList(model->getStates(targetLabel))) {}
+
+            template <typename T>
+            T ShortestPathsGenerator<T>::computeKSP(unsigned long k) {
+                unsigned long alreadyComputedK = kShortestPaths[metaTarget].size();
+
+                for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
+                    computeNextPath(metaTarget, nextK);
+                    if (kShortestPaths[metaTarget].size() < nextK) {
+                        std::cout << std::endl << "--> DEBUG: Last path: k=" << (nextK - 1) << ":" << std::endl;
+                        printKShortestPath(metaTarget, nextK - 1);
+                        std::cout << "---------" << "No other path exists!" << std::endl;
+                        return utility::zero<T>(); // TODO: throw exception or something
+                    }
+                }
+
+                //std::cout << std::endl << "--> DEBUG: Finished. " << k << "-shortest path:" << std::endl;
+                //printKShortestPath(metaTarget, k);
+                //std::cout << "---------" << std::endl;
+                return kShortestPaths[metaTarget][k - 1].distance;
             }
 
             template <typename T>
             void ShortestPathsGenerator<T>::computePredecessors() {
-                auto rowCount = transitionMatrix.getRowCount();
-                assert(numStates == rowCount);
+                assert(numStates - 1 == transitionMatrix.getRowCount());
 
-                graphPredecessors.resize(rowCount);
+                // one more for meta-target
+                graphPredecessors.resize(numStates);
 
-                for (state_t i = 0; i < rowCount; i++) {
+                for (state_t i = 0; i < numStates - 1; i++) {
                     for (auto const& transition : transitionMatrix.getRowGroup(i)) {
-                        graphPredecessors[transition.getColumn()].push_back(i);
+                        // to avoid non-minimal paths, the target states are
+                        // *not* predecessors of any state but the meta-target
+                        if (std::find(targets.begin(), targets.end(), i) == targets.end()) {
+                            graphPredecessors[transition.getColumn()].push_back(i);
+                        }
                     }
                 }
+
+                // meta-target has exactly the target states as predecessors
+                graphPredecessors[metaTarget] = targets;
             }
 
             template <typename T>
@@ -48,8 +90,8 @@ namespace storm {
                 // the existing Dijkstra isn't working anyway AND
                 // doesn't fully meet our requirements, so let's roll our own
 
-                T inftyDistance = storm::utility::zero<T>();
-                T zeroDistance = storm::utility::one<T>();
+                T inftyDistance = utility::zero<T>();
+                T zeroDistance = utility::one<T>();
                 shortestPathDistances.resize(numStates, inftyDistance);
                 shortestPathPredecessors.resize(numStates, boost::optional<state_t>());
 
@@ -66,16 +108,28 @@ namespace storm {
                     state_t currentNode = (*dijkstraQueue.begin()).second;
                     dijkstraQueue.erase(dijkstraQueue.begin());
 
-                    for (auto const& transition : transitionMatrix.getRowGroup(currentNode)) {
-                        state_t otherNode = transition.getColumn();
+                    if (targetSet.count(currentNode) == 0) {
+                        // non-target node, treated normally
+                        for (auto const& transition : transitionMatrix.getRowGroup(currentNode)) {
+                            state_t otherNode = transition.getColumn();
 
-                        // note that distances are probabilities, thus they are multiplied and larger is better
-                        T alternateDistance = shortestPathDistances[currentNode] * transition.getValue();
-                        if (alternateDistance > shortestPathDistances[otherNode]) {
-                            shortestPathDistances[otherNode] = alternateDistance;
-                            shortestPathPredecessors[otherNode] = boost::optional<state_t>(currentNode);
-                            dijkstraQueue.emplace(alternateDistance, otherNode);
+                            // note that distances are probabilities, thus they are multiplied and larger is better
+                            T alternateDistance = shortestPathDistances[currentNode] * transition.getValue();
+                            if (alternateDistance > shortestPathDistances[otherNode]) {
+                                shortestPathDistances[otherNode] = alternateDistance;
+                                shortestPathPredecessors[otherNode] = boost::optional<state_t>(currentNode);
+                                dijkstraQueue.emplace(alternateDistance, otherNode);
+                            }
                         }
+                    } else {
+                        // target node has only "virtual edge" (with prob 1) to meta-target
+                        // no multiplication necessary
+                        T alternateDistance = shortestPathDistances[currentNode];
+                        if (alternateDistance > shortestPathDistances[metaTarget]) {
+                            shortestPathDistances[metaTarget] = alternateDistance;
+                            shortestPathPredecessors[metaTarget] = boost::optional<state_t>(currentNode);
+                        }
+                        // no need to enqueue meta-target
                     }
                 }
             }
@@ -126,6 +180,30 @@ namespace storm {
             }
 
             template <typename T>
+            T ShortestPathsGenerator<T>::getEdgeDistance(state_t tailNode, state_t headNode) const {
+                // just to be clear, head is where the arrow points (obviously)
+                if (headNode != metaTarget) {
+                    // edge is "normal", not to meta-target
+
+                    for (auto const& transition : transitionMatrix.getRowGroup(tailNode)) {
+                        if (transition.getColumn() == headNode) {
+                            return transition.getValue();
+                        }
+                    }
+
+                    // there is no such edge
+                    // let's disallow that for now, because I'm not expecting it to happen
+                    assert(false);
+                    return utility::zero<T>();
+                } else {
+                    // edge must be "virtual edge" from target state to meta-target
+                    assert(targetSet.count(tailNode) == 1);
+                    return utility::one<T>();
+                }
+            }
+
+
+            template <typename T>
             void ShortestPathsGenerator<T>::computeNextPath(state_t node, unsigned long k) {
                 assert(kShortestPaths[node].size() == k - 1); // if not, the previous SP must not exist
 
@@ -142,7 +220,7 @@ namespace storm {
                         candidatePaths[node].insert(pathToPredecessorPlusEdge);
 
                         // ... but not the actual shortest path
-                        auto it = find(candidatePaths[node].begin(), candidatePaths[node].end(), shortestPathToNode);
+                        auto it = std::find(candidatePaths[node].begin(), candidatePaths[node].end(), shortestPathToNode);
                         if (it != candidatePaths[node].end()) {
                             candidatePaths[node].erase(it);
                         }
@@ -186,38 +264,22 @@ namespace storm {
                         }
                     }
 
-                    candidatePaths[node].erase(find(candidatePaths[node].begin(), candidatePaths[node].end(), minDistanceCandidate));
+                    candidatePaths[node].erase(std::find(candidatePaths[node].begin(), candidatePaths[node].end(), minDistanceCandidate));
                     kShortestPaths[node].push_back(minDistanceCandidate);
                 }
             }
 
             template <typename T>
-            T ShortestPathsGenerator<T>::getKShortest(state_t node, unsigned long k) {
-                unsigned long alreadyComputedK = kShortestPaths[node].size();
-
-                for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
-                    computeNextPath(node, nextK);
-                    if (kShortestPaths[node].size() < nextK) {
-                        std::cout << std::endl << "--> DEBUG: Last path: k=" << (nextK - 1) << ":" << std::endl;
-                        printKShortestPath(node, nextK - 1);
-                        std::cout << "---------" << "No other path exists!" << std::endl;
-                        return storm::utility::zero<T>(); // TODO: throw exception or something
-                    }
-                }
-
-                std::cout << std::endl << "--> DEBUG: Finished. " << k << "-shortest path:" << std::endl;
-                printKShortestPath(node, k);
-                std::cout << "---------" << std::endl;
-                return kShortestPaths[node][k - 1].distance;
-            }
-
-            template <typename T>
-            void ShortestPathsGenerator<T>::printKShortestPath(state_t targetNode, unsigned long k, bool head) {
+            void ShortestPathsGenerator<T>::printKShortestPath(state_t targetNode, unsigned long k, bool head) const {
                 // note the index shift! risk of off-by-one
                 Path<T> p = kShortestPaths[targetNode][k - 1];
 
                 if (head) {
-                    std::cout << "Path (reversed), dist (prob)=" << p.distance << ": [";
+                    std::cout << "Path (reversed";
+                    if (targetNode == metaTarget) {
+                        std::cout << ", w/ meta-target";
+                    }
+                    std::cout <<"), dist (prob)=" << p.distance << ": [";
                 }
 
                 std::cout << " " << targetNode;

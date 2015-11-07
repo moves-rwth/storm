@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <boost/optional/optional.hpp>
+#include <unordered_set>
 #include "src/models/sparse/Model.h"
 #include "src/storage/sparse/StateType.h"
 #include "constants.h"
@@ -22,36 +23,17 @@
 
 namespace storm {
     namespace utility {
-        namespace shortestPaths {
-            typedef storm::storage::sparse::state_type state_t;
+        namespace ksp {
+            typedef storage::sparse::state_type state_t;
             typedef std::vector<state_t> state_list_t;
 
-            /*
-             * Implicit shortest path representation
-             *
-             * All shortest paths (from s to t) can be described as some
-             * k-shortest path to some node u plus the edge to t:
-             *
-             *     s ~~k-shortest path~~> u --> t
-             *
-             * This struct stores u (`predecessorNode`) and k (`predecessorK`).
-             *
-             * t is implied by this struct's location: It is stored in the
-             * k-shortest paths list associated with t.
-             *
-             * Thus we can reconstruct the entire path by recursively looking
-             * up the path's tail stored as the k-th entry [1] of the
-             * predecessor's shortest paths list.
-             *
-             * [1] oh, actually, the `k-1`th entry due to 0-based indexing!
-             */
             template <typename T>
             struct Path {
                 boost::optional<state_t> predecessorNode;
                 unsigned long predecessorK;
                 T distance;
 
-                // FIXME: uhh.. is this okay for set? just some arbitrary order
+                // arbitrary order for std::set
                 bool operator<(const Path<T>& rhs) const {
                     if (predecessorNode != rhs.predecessorNode) {
                         return predecessorNode < rhs.predecessorNode;
@@ -69,21 +51,36 @@ namespace storm {
             template <typename T>
             class ShortestPathsGenerator {
             public:
-                // FIXME: this shared_ptr-passing business is probably a bad idea
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model);
+                /*!
+                 * Performs precomputations (including meta-target insertion and Dijkstra).
+                 * Modifications are done locally, `model` remains unchanged.
+                 * Target (group) cannot be changed.
+                 */
+                // FIXME: this shared_ptr-passing business might be a bad idea
+                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_list_t const& targets);
 
-                ~ShortestPathsGenerator();
+                // allow alternative ways of specifying the target,
+                // all of which will be converted to list and delegated to constructor above
+                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_t singleTarget);
+                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, storage::BitVector const& targetBV);
+                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel);
 
-                // TODO: think about suitable output format
-                T getKShortest(state_t node, unsigned long k);
+                ~ShortestPathsGenerator(){}
 
-                // TODO: allow three kinds of target arguments: single state, BitVector, Label
+                /*!
+                 * Computes k-SP to target and returns distance (probability).
+                 */
+                T computeKSP(unsigned long k);
 
 
             private:
-                std::shared_ptr<storm::models::sparse::Model<T>> model;
-                storm::storage::SparseMatrix<T> transitionMatrix;
-                state_t numStates;
+                std::shared_ptr<models::sparse::Model<T>> model;
+                storage::SparseMatrix<T> transitionMatrix;
+                state_t numStates; // includes meta-target, i.e. states in model + 1
+
+                state_list_t targets;
+                std::unordered_set<state_t> targetSet;
+                state_t metaTarget;
 
                 std::vector<state_list_t>             graphPredecessors;
                 std::vector<boost::optional<state_t>> shortestPathPredecessors;
@@ -130,22 +127,26 @@ namespace storm {
                 /*!
                  * Recurses over the path and prints the nodes. Intended for debugging.
                  */
-                void printKShortestPath(state_t targetNode, unsigned long k, bool head=true);
+                void printKShortestPath(state_t targetNode, unsigned long k, bool head=true) const;
+
+                /*!
+                 * Returns actual distance for real edges, 1 for edges to meta-target.
+                 */
+                T getEdgeDistance(state_t tailNode, state_t headNode) const;
 
 
                 // --- tiny helper fcts ---
-                bool isInitialState(state_t node) {
+                bool isInitialState(state_t node) const {
                     auto initialStates = model->getInitialStates();
                     return find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
                 }
 
-                T getEdgeDistance(state_t tailNode, state_t headNode) {
-                    for (auto const& transition : transitionMatrix.getRowGroup(tailNode)) {
-                        if (transition.getColumn() == headNode) {
-                            return transition.getValue();
-                        }
+                state_list_t bitvectorToList(storage::BitVector const& bv) const {
+                    state_list_t list;
+                    for (state_t state : bv) {
+                        list.push_back(state);
                     }
-                    return storm::utility::zero<T>();
+                    return list;
                 }
                 // -----------------------
             };
