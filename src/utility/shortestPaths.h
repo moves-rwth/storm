@@ -7,6 +7,10 @@
 #include "src/storage/sparse/StateType.h"
 #include "constants.h"
 
+// NOTE: You'll (eventually) find the usual API documentation below;
+//       for more information about the purpose, design decisions,
+//       etc., you may consult `shortestPath.md`. - Tom
+
 /*
  * TODO:
  *  - take care of self-loops of target states
