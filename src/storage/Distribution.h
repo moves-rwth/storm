@@ -5,6 +5,8 @@
 #include <ostream>
 #include <boost/container/flat_map.hpp>
 
+#include "src/utility/OsDetection.h"
+
 #include "src/storage/sparse/StateType.h"
 
 namespace storm {
@@ -26,6 +28,14 @@ namespace storm {
              * Creates an empty distribution.
              */
             Distribution();
+
+            Distribution(Distribution const& other) = default;
+            Distribution& operator=(Distribution const& other) = default;
+
+#ifndef WINDOWS
+            Distribution(Distribution&& other) = default;
+            Distribution& operator=(Distribution&& other) = default;
+#endif
             
             /*!
              * Checks whether the two distributions specify the same probabilities to go to the same states.
@@ -102,13 +112,6 @@ namespace storm {
             void scale(storm::storage::sparse::state_type const& state);
             
             /*!
-             * Retrieves the hash value of the distribution.
-             *
-             * @return The hash value of the distribution.
-             */
-            std::size_t getHash() const;
-            
-            /*!
              * Retrieves the size of the distribution, i.e. the size of the support set.
              */
             std::size_t size() const;
@@ -118,9 +121,6 @@ namespace storm {
         private:
             // A list of states and the probabilities that are assigned to them.
             container_type distribution;
-            
-            // A hash value that is maintained to allow for quicker equality comparison between distributions.
-            std::size_t hash;
         };
         
         template<typename ValueType>

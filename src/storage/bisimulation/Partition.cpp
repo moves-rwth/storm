@@ -180,6 +180,7 @@ namespace storm {
             template<typename DataType>
             void Partition<DataType>::sortRange(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, bool updatePositions) {
                 std::sort(this->states.begin() + beginIndex, this->states.begin() + endIndex, less);
+                
                 if (updatePositions) {
                     mapStatesToPositions(this->states.begin() + beginIndex, this->states.begin() + endIndex);
                 }
@@ -210,6 +211,7 @@ namespace storm {
             template<typename DataType>
             std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> Partition<DataType>::splitBlock(Block<DataType>& block, storm::storage::sparse::state_type position) {
                 STORM_LOG_THROW(position >= block.getBeginIndex() && position <= block.getEndIndex(), storm::exceptions::InvalidArgumentException, "Cannot split block at illegal position.");
+                STORM_LOG_TRACE("Splitting " << block.getId() << " at position " << position << " (begin was " << block.getBeginIndex() << ".");
 
                 // In case one of the resulting blocks would be empty, we simply return the current block and do not create
                 // a new one.
@@ -247,6 +249,7 @@ namespace storm {
                 std::vector<storm::storage::sparse::state_type>::const_iterator upperBound;
                 do {
                     upperBound = std::upper_bound(it, ite, *it, less);
+                    
                     if (upperBound != ite) {
                         wasSplit = true;
                         auto result = this->splitBlock(block, std::distance(this->states.cbegin(), upperBound));

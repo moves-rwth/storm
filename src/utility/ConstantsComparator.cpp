@@ -101,7 +101,7 @@ namespace storm {
         }
         
         bool ConstantsComparator<double>::isLess(double const& value1, double const& value2) const {
-            return std::abs(value1 - value2) < precision;
+            return value1 < value2 - precision;
         }
         
         // Explicit instantiations.

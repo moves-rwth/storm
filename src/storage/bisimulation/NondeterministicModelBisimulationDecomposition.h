@@ -55,7 +55,7 @@ namespace storm {
             bool splitBlockAccordingToCurrentQuotientDistributions(bisimulation::Block<BlockDataType>& block, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
             
             // Retrieves whether the quotient distributions of state 1 are considered to be less than the ones of state 2.
-            bool quotientDistributionsLess(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2);
+            bool quotientDistributionsLess(storm::storage::sparse::state_type state1, storm::storage::sparse::state_type state2) const;
             
             // Updates the ordered list of quotient distribution for the given state.
             void updateOrderedQuotientDistributions(storm::storage::sparse::state_type state);
@@ -65,6 +65,9 @@ namespace storm {
             void updateQuotientDistributionsOfPredecessors(bisimulation::Block<BlockDataType> const& newBlock, bisimulation::Block<BlockDataType> const& oldBlock, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue);
             
             bool checkQuotientDistributions() const;
+            bool checkBlockStable(bisimulation::Block<BlockDataType> const& newBlock) const;
+            bool printDistributions(storm::storage::sparse::state_type state) const;
+            bool checkDistributionsDifferent(bisimulation::Block<BlockDataType> const& block, storm::storage::sparse::state_type end) const;
             
             // A mapping from choice indices to the state state that has this choice.
             std::vector<storm::storage::sparse::state_type> choiceToStateMapping;

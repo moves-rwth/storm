@@ -15,14 +15,14 @@ namespace storm {
     namespace storage {
         
         template<typename ValueType>
-        Distribution<ValueType>::Distribution() : hash(0) {
+        Distribution<ValueType>::Distribution() {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
         bool Distribution<ValueType>::equals(Distribution<ValueType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
             // We need to check equality by ourselves, because we need to account for epsilon differences.
-            if (this->distribution.size() != other.distribution.size() || this->getHash() != other.getHash()) {
+            if (this->distribution.size() != other.distribution.size()) {
                 return false;
             }
             
@@ -32,9 +32,11 @@ namespace storm {
             
             for (; first1 != last1; ++first1, ++first2) {
                 if (first1->first != first2->first) {
+                    std::cout << "false in first" << std::endl;
                     return false;
                 }
                 if (!comparator.isEqual(first1->second, first2->second)) {
+                    std::cout << "false in second " << std::setprecision(15) << first1->second << " vs " << first2->second << std::endl;
                     return false;
                 }
             }
@@ -46,7 +48,6 @@ namespace storm {
         void Distribution<ValueType>::addProbability(storm::storage::sparse::state_type const& state, ValueType const& probability) {
             auto it = this->distribution.find(state);
             if (it == this->distribution.end()) {
-                this->hash += static_cast<std::size_t>(state);
                 this->distribution.emplace_hint(it, state, probability);
             } else {
                 it->second += probability;
@@ -101,12 +102,7 @@ namespace storm {
                 }
             }
         }
-        
-        template<typename ValueType>
-        std::size_t Distribution<ValueType>::getHash() const {
-            return this->hash ^ (this->distribution.size() << 8);
-        }
-        
+                
         template<typename ValueType>
         std::size_t Distribution<ValueType>::size() const {
             return this->distribution.size();

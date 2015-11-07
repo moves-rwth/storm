@@ -84,7 +84,9 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> newFormula = formula.asSharedPointer();
             
             if (formula.isProbabilityOperatorFormula()) {
-                optimalityType = formula.asProbabilityOperatorFormula().getOptimalityType();
+                if (formula.asProbabilityOperatorFormula().hasOptimalityType()) {
+                    optimalityType = formula.asProbabilityOperatorFormula().getOptimalityType();
+                }
                 newFormula = formula.asProbabilityOperatorFormula().getSubformula().asSharedPointer();
             } else if (formula.isRewardOperatorFormula()) {
                 optimalityType = formula.asRewardOperatorFormula().getOptimalityType();
@@ -168,8 +170,6 @@ namespace storm {
             } else {
                 this->initializeLabelBasedPartition();
             }
-            std::cout << "initial partition is " << std::endl;
-            this->partition.print();
             std::chrono::high_resolution_clock::duration initialPartitionTime = std::chrono::high_resolution_clock::now() - initialPartitionStart;
             
             this->initialize();
@@ -218,9 +218,7 @@ namespace storm {
             uint_fast64_t iterations = 0;
             while (!splitterQueue.empty()) {
                 ++iterations;
-                // Optionally: sort the splitter queue according to some criterion (here: prefer small splitters).
-                std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block<BlockDataType> const* b1, Block<BlockDataType> const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates(); } );
-                
+
                 // Get and prepare the next splitter.
                 Block<BlockDataType>* splitter = splitterQueue.front();
                 splitterQueue.pop_front();

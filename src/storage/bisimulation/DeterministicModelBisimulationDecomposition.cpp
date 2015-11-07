@@ -159,6 +159,8 @@ namespace storm {
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::refinePredecessorBlocksOfSplitterStrong(std::list<Block<BlockDataType>*> const& predecessorBlocks, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             for (auto block : predecessorBlocks) {
+                STORM_LOG_TRACE("Refining predecessor " << block->getId() << " of splitter");
+
                 // Depending on the actions we need to take, the block to refine changes, so we need to keep track of it.
                 Block<BlockDataType>* blockToRefineProbabilistically = block;
                 
@@ -428,6 +430,8 @@ namespace storm {
         
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
+            STORM_LOG_TRACE("Refining partition based on splitter " << splitter.getId());
+            
             // The outline of the refinement is as follows.
             //
             // We iterate over all states of the splitter and determine for each predecessor the state the probability
