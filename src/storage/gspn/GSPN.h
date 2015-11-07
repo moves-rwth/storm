@@ -19,6 +19,14 @@ namespace storm {
              * The empty constructor creates an GSPN without transition and places
              */
             GSPN();
+
+            /*!
+             * Set the number of tokens for a given place.
+             *
+             * @param place
+             * @param token
+             */
+            void setInitialTokens(uint64_t place, uint64_t token);
         private:
             // set containing all immediate transitions
             std::vector<storm::gspn::ImmediateTransition<WeightType>> immediateTransitions;

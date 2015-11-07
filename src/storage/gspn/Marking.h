@@ -59,6 +59,11 @@ namespace storm {
             bool setNumberOfPlaces(uint_fast64_t numberOfPlaces);
 
             /*!
+             * Increases the number of places by one.
+             */
+            void incNumberOfPlaces();
+
+            /*!
              *
              */
             bool setMaxNumberOfTokens(uint_fast64_t maxNumberOfTokens);
@@ -74,6 +79,14 @@ namespace storm {
 
             // number of bits which are needed to store the tokens for one place
             uint_fast64_t numberOfBits;
+
+            /*!
+             * Calculates the number of bits needed to store at least the given number.
+             *
+             * @param maxNumber The maximal value which can be stored
+             * @return The number of bits needed.
+             */
+            uint_fast64_t calculateNumberOfBits(uint_fast64_t maxNumber);
         };
     }
 }

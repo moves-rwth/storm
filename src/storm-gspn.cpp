@@ -16,7 +16,8 @@ int main(const int argc, const char** argv) {
         storm::utility::setUp();
 
         // Parse GSPN from xml
-        storm::gspn::GSPN gspn = storm::parser::GspnParser::parse(argv[1]);
+        auto parser = storm::parser::GspnParser();
+        auto gspn = parser.parse(argv[1]);
 
         // Construct MA
 
