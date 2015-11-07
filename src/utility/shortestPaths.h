@@ -71,7 +71,9 @@ namespace storm {
                 ~ShortestPathsGenerator();
 
                 // TODO: think about suitable output format
-                void getKShortest(state_t node, unsigned long k);
+                T getKShortest(state_t node, unsigned long k);
+
+                // TODO: allow three kinds of target arguments: single state, BitVector, Label
 
 
             private:

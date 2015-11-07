@@ -268,32 +268,26 @@ TEST(GraphTest, ExplicitProb01MinMax) {
 
 TEST(GraphTest, kshortest) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    //storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/../examples/dtmc/die/die.pm");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
 
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
 
-    model->printModelInformationToStream(std::cout);
+    storm::storage::sparse::state_type testState = 300;
 
-    std::cout << "Initializing ShortestPathsGenerator ..." << std::endl;
     storm::utility::shortestPaths::ShortestPathsGenerator<double> shortestPathsGenerator(model);
 
-    unsigned int k;
-    storm::storage::sparse::state_type state;
+    // the 1-shortest path is computed as a preprocessing step via Dijkstra;
+    // since there were some bugs here in the past, let's test it separately
+    double dijkstraSPDistance = shortestPathsGenerator.getKShortest(testState, 1);
+    std::cout << "Res: " << dijkstraSPDistance << std::endl;
+    //EXPECT_NEAR(0.0158593, dijkstraSPDistance, 0.0000001);
+    EXPECT_DOUBLE_EQ(0.015859334652581887, dijkstraSPDistance);
 
-    while (true) {
-        std::cout << std::endl;
-        std::cout << "Enter state (note: 0-based index) ... ";
-        std::cin >> state;
+    // main test
+    double kSPDistance1 = shortestPathsGenerator.getKShortest(testState, 100);
+    EXPECT_DOUBLE_EQ(1.5231305000339649e-06, kSPDistance1);
 
-        std::cout << "Enter k ... ";
-        std::cin >> k;
-
-        std::cout << "Computing " << k << "-shortest path to state " << state << std::endl;
-        shortestPathsGenerator.getKShortest(state, k);
-    }
-
-    // TODO: actually write tests here
-
-    EXPECT_TRUE(false);
+    // let's test again to ensure re-entry is no problem
+    double kSPDistance2 = shortestPathsGenerator.getKShortest(testState, 500);
+    EXPECT_DOUBLE_EQ(3.0462610000679282e-08, kSPDistance2);
 }

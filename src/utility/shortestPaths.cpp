@@ -192,12 +192,8 @@ namespace storm {
             }
 
             template <typename T>
-            void ShortestPathsGenerator<T>::getKShortest(state_t node, unsigned long k) {
+            T ShortestPathsGenerator<T>::getKShortest(state_t node, unsigned long k) {
                 unsigned long alreadyComputedK = kShortestPaths[node].size();
-
-//                std::cout << std::endl << "--> DEBUG: Dijkstra SP to " << node << ":" << std::endl;
-//                printKShortestPath(node, 1);
-//                std::cout << "---------" << std::endl;
 
                 for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
                     computeNextPath(node, nextK);
@@ -205,13 +201,14 @@ namespace storm {
                         std::cout << std::endl << "--> DEBUG: Last path: k=" << (nextK - 1) << ":" << std::endl;
                         printKShortestPath(node, nextK - 1);
                         std::cout << "---------" << "No other path exists!" << std::endl;
-                        return;
+                        return storm::utility::zero<T>(); // TODO: throw exception or something
                     }
                 }
 
                 std::cout << std::endl << "--> DEBUG: Finished. " << k << "-shortest path:" << std::endl;
                 printKShortestPath(node, k);
                 std::cout << "---------" << std::endl;
+                return kShortestPaths[node][k - 1].distance;
             }
 
             template <typename T>
