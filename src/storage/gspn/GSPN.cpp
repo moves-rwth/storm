@@ -18,10 +18,10 @@ uint64_t storm::gspn::GSPN::getNumberOfPlaces() {
     return initialMarking.getNumberOfPlaces();
 }
 
-void storm::gspn::GSPN::addImmediateTransition(storm::gspn::ImmediateTransition<WeightType> &transition) {
+void storm::gspn::GSPN::addImmediateTransition(std::shared_ptr<storm::gspn::ImmediateTransition<WeightType>> transition) {
     this->immediateTransitions.push_back(transition);
 }
 
-void storm::gspn::GSPN::addTimedTransition(storm::gspn::TimedTransition<RateType> &transition) {
+void storm::gspn::GSPN::addTimedTransition(std::shared_ptr<storm::gspn::TimedTransition<RateType>> transition) {
     this->timedTransitions.push_back(transition);
 }

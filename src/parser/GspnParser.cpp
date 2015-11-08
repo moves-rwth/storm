@@ -200,20 +200,21 @@ void storm::parser::GspnParser::parseTransition(xercesc::DOMNode *node) {
     }
 
     if (timed) {
-        auto transition = storm::gspn::TimedTransition<storm::gspn::GSPN::RateType>();
-        transition.setRate(std::stoull(rate));
+        auto transition = std::make_shared<storm::gspn::TimedTransition<storm::gspn::GSPN::RateType>>();
+        transition->setRate(std::stoull(rate));
         gspn.addTimedTransition(transition);
-        this->stringToTransition[id] = &transition;
+        this->stringToTransition[id] = transition;
     } else {
-        auto transition = storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType>();
-        transition.setWeight(std::stoull(rate));
+        auto transition = std::make_shared<storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType>>();
+        transition->setWeight(std::stoull(rate));
         gspn.addImmediateTransition(transition);
-        this->stringToTransition[id] = &transition;
+        this->stringToTransition[id] = transition;
     }
 }
 
 void storm::parser::GspnParser::parseArc(xercesc::DOMNode *node) {
     std::string source, target, type;
+    uint64_t cardinality;
 
     for (uint64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
         auto attr = node->getAttributes()->item(i);
@@ -222,7 +223,7 @@ void storm::parser::GspnParser::parseArc(xercesc::DOMNode *node) {
             source = XMLtoString(attr->getNodeValue());
         } else if (name.compare("target") == 0) {
             target = XMLtoString(attr->getNodeValue());
-        } else if(name.compare("id") == 0) {
+        } else if (name.compare("id") == 0) {
             // ignore these tags
         } else {
             std::cout << "arc" << std::endl;
@@ -235,6 +236,8 @@ void storm::parser::GspnParser::parseArc(xercesc::DOMNode *node) {
         auto name = getName(child);
         if (name.compare("type") == 0) {
             type = parseType(child);
+        } else if(name.compare("inscription") == 0) {
+            cardinality = parseCapacity(child);
         } else if (std::all_of(name.begin(), name.end(), isspace)) {
             // ignore node (contains only whitespace)
         } else if (name.compare("graphics") == 0 ||
@@ -245,6 +248,38 @@ void storm::parser::GspnParser::parseArc(xercesc::DOMNode *node) {
             std::cout << "unkown child: " << name << std::endl;
         }
     }
+    //determine if it is an outgoing or incoming arc
+    {
+        auto it1 = stringToState.find(source);
+        auto it2 = stringToTransition.find(target);
+        if (it1 != stringToState.end() && it2 != stringToTransition.end()) {
+            // incoming arc
+            if (type.compare("normal") == 0) {
+                auto transition = stringToTransition[target];
+                transition->setInputArcCardinality(stringToState[source], cardinality);
+            } else {
+                std::cout << "arc" << std::endl;
+                std::cout << "unkown type: " << type << std::endl;
+            }
+            return;
+        }
+    }
+    {
+        auto it1 = stringToTransition.find(source);
+        auto it2 = stringToState.find(target);
+        if (it1 != stringToTransition.end() && it2 != stringToState.end()) {
+            // outgoing arc
+            if (type.compare("normal") == 0) {
+                auto transition = stringToTransition[source];
+                transition->setOutputArcCardinality(stringToState[target], cardinality);
+            } else {
+                std::cout << "arc" << std::endl;
+                std::cout << "unkown type: " << type << std::endl;
+            }
+            return;
+        }
+    }
+    std::cout << "found an arc with no correpsonding transition" << std::endl;
 }
 
 std::string storm::parser::GspnParser::getName(xercesc::DOMNode *node) {
@@ -342,4 +377,25 @@ std::string storm::parser::GspnParser::parseType(xercesc::DOMNode *node) {
         }
     }
     return "";
+}
+
+uint64_t storm::parser::GspnParser::parseCapacity(xercesc::DOMNode *node) {
+    uint64_t result= 0;
+    for (uint64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+        auto child = node->getChildNodes()->item(i);
+        auto name = getName(child);
+        if (name.compare("value") == 0) {
+            auto value = getName(child->getFirstChild());
+            value = value.substr(std::string("Default,").length());
+            result = std::stoull(value);
+        } else if (std::all_of(name.begin(), name.end(), isspace)) {
+            // ignore node (contains only whitespace)
+        } else if (name.compare("graphics") == 0) {
+            // ignore these tags
+        } else {
+            std::cout << "capacity" << std::endl;
+            std::cout << "unkown child: " << name << std::endl;
+        }
+    }
+    return result;
 }

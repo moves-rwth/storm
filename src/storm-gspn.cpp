@@ -18,6 +18,7 @@ int main(const int argc, const char** argv) {
         // Parse GSPN from xml
         auto parser = storm::parser::GspnParser();
         auto gspn = parser.parse(argv[1]);
+        std::cout << "Parsing complete!" << std::endl;
 
         // Construct MA
 

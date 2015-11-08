@@ -35,7 +35,7 @@ namespace storm {
             std::map<std::string,uint64_t> stringToState;
 
             // maps the transition id to a pointer to the transition
-            std::map<std::string,storm::gspn::Transition*> stringToTransition;
+            std::map<std::string,std::shared_ptr<storm::gspn::Transition>> stringToTransition;
 
             // the constructed gspn
             storm::gspn::GSPN gspn;
@@ -122,6 +122,11 @@ a            */
              * Parse a type node.
              */
             std::string parseType(xercesc::DOMNode* node);
+
+            /*!
+             * Parse a capacity node.
+             */
+            uint64_t parseCapacity(xercesc::DOMNode* node);
         };
     }
 }

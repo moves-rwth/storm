@@ -32,14 +32,14 @@ namespace storm {
 
             uint64_t getNumberOfPlaces();
 
-            void addImmediateTransition(ImmediateTransition<WeightType>& transition);
-            void addTimedTransition(TimedTransition<RateType>& transition);
+            void addImmediateTransition(std::shared_ptr<ImmediateTransition<WeightType>> transition);
+            void addTimedTransition(std::shared_ptr<TimedTransition<RateType>> transition);
         private:
             // set containing all immediate transitions
-            std::vector<storm::gspn::ImmediateTransition<WeightType>> immediateTransitions;
+            std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<WeightType>>> immediateTransitions;
 
             // set containing all timed transitions
-            std::vector<storm::gspn::TimedTransition<RateType>> timedTransitions;
+            std::vector<std::shared_ptr<storm::gspn::TimedTransition<RateType>>> timedTransitions;
 
             // initial marking
             storm::gspn::Marking initialMarking;
