@@ -148,11 +148,8 @@ void storm::parser::GspnParser::parsePlace(xercesc::DOMNode *node) {
         auto name = getName(child);
         if (name.compare("initialMarking") == 0) {
             auto tokens = parseInitialMarking(child);
-
-            std::cout << "place: " << place << "; tokens: " << tokens << std::endl;
-            //TODO search bug
             gspn.setNumberOfPlaces(gspn.getNumberOfPlaces()+1);
-            //gspn.setInitialTokens(place, tokens);
+            gspn.setInitialTokens(place, tokens);
         } else if (std::all_of(name.begin(), name.end(), isspace)) {
             // ignore node (contains only whitespace)
         } else if (name.compare("name") == 0 ||
@@ -279,6 +276,7 @@ void storm::parser::GspnParser::parseArc(xercesc::DOMNode *node) {
             return;
         }
     }
+    // TODO add error message
     std::cout << "found an arc with no correpsonding transition" << std::endl;
 }
 

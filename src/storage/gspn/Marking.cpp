@@ -46,6 +46,7 @@ namespace storm {
             }
             if (numberOfPlaces > this->numberOfPlaces) {
                 marking.resize(numberOfPlaces * numberOfBits);
+                this->numberOfPlaces = numberOfPlaces;
                 return true;
             } else {
                 auto diff = this->numberOfPlaces - numberOfPlaces;
@@ -56,6 +57,7 @@ namespace storm {
                     }
                 }
                 marking.resize(numberOfPlaces * numberOfBits);
+                this->numberOfPlaces = numberOfPlaces;
                 return true;
             }
         }
