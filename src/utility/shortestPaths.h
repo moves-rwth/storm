@@ -65,12 +65,29 @@ namespace storm {
                 ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, storage::BitVector const& targetBV);
                 ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel);
 
-                ~ShortestPathsGenerator(){}
+                inline ~ShortestPathsGenerator(){}
 
                 /*!
-                 * Computes k-SP to target and returns distance (probability).
+                 * Returns distance (i.e., probability) of the KSP.
+                 * Computes KSP if not yet computed.
+                 * @throws std::invalid_argument if no such k-shortest path exists
                  */
-                T computeKSP(unsigned long k);
+                T getDistance(unsigned long k);
+
+                /*!
+                 * Returns the states that occur in the KSP.
+                 * For a path-traversal (in order and with duplicates), see `getKSP`.
+                 * Computes KSP if not yet computed.
+                 * @throws std::invalid_argument if no such k-shortest path exists
+                 */
+                storage::BitVector getStates(unsigned long k);
+
+                /*!
+                 * Returns the states of the KSP as back-to-front traversal.
+                 * Computes KSP if not yet computed.
+                 * @throws std::invalid_argument if no such k-shortest path exists
+                 */
+                state_list_t getPathAsList(unsigned long k);
 
 
             private:
@@ -125,6 +142,12 @@ namespace storm {
                 void computeNextPath(state_t node, unsigned long k);
 
                 /*!
+                 * Computes k-shortest path if not yet computed.
+                 * @throws std::invalid_argument if no such k-shortest path exists
+                 */
+                void computeKSP(unsigned long k);
+
+                /*!
                  * Recurses over the path and prints the nodes. Intended for debugging.
                  */
                 void printKShortestPath(state_t targetNode, unsigned long k, bool head=true) const;
@@ -136,12 +159,12 @@ namespace storm {
 
 
                 // --- tiny helper fcts ---
-                bool isInitialState(state_t node) const {
+                inline bool isInitialState(state_t node) const {
                     auto initialStates = model->getInitialStates();
                     return find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
                 }
 
-                state_list_t bitvectorToList(storage::BitVector const& bv) const {
+                inline state_list_t bitvectorToList(storage::BitVector const& bv) const {
                     state_list_t list;
                     for (state_t state : bv) {
                         list.push_back(state);

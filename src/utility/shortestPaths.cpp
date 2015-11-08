@@ -45,23 +45,50 @@ namespace storm {
                     std::string const& targetLabel) : ShortestPathsGenerator<T>(model, bitvectorToList(model->getStates(targetLabel))) {}
 
             template <typename T>
-            T ShortestPathsGenerator<T>::computeKSP(unsigned long k) {
-                unsigned long alreadyComputedK = kShortestPaths[metaTarget].size();
+            T ShortestPathsGenerator<T>::getDistance(unsigned long k) {
+                computeKSP(k);
+                return kShortestPaths[metaTarget][k - 1].distance;
+            }
 
-                for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
-                    computeNextPath(metaTarget, nextK);
-                    if (kShortestPaths[metaTarget].size() < nextK) {
-                        std::cout << std::endl << "--> DEBUG: Last path: k=" << (nextK - 1) << ":" << std::endl;
-                        printKShortestPath(metaTarget, nextK - 1);
-                        std::cout << "---------" << "No other path exists!" << std::endl;
-                        return utility::zero<T>(); // TODO: throw exception or something
-                    }
+            template <typename T>
+            storage::BitVector ShortestPathsGenerator<T>::getStates(unsigned long k) {
+                computeKSP(k);
+                storage::BitVector stateSet(numStates - 1, false); // no meta-target
+
+                Path<T> currentPath = kShortestPaths[metaTarget][k - 1];
+                boost::optional<state_t> maybePredecessor = currentPath.predecessorNode;
+                // this omits the first node, which is actually convenient since that's the meta-target
+
+                while (maybePredecessor) {
+                    state_t predecessor = maybePredecessor.get();
+                    stateSet.set(predecessor, true);
+
+                    currentPath = kShortestPaths[predecessor][currentPath.predecessorK - 1]; // god damn you, index
+                    maybePredecessor = currentPath.predecessorNode;
                 }
 
-                //std::cout << std::endl << "--> DEBUG: Finished. " << k << "-shortest path:" << std::endl;
-                //printKShortestPath(metaTarget, k);
-                //std::cout << "---------" << std::endl;
-                return kShortestPaths[metaTarget][k - 1].distance;
+                return stateSet;
+            }
+
+            template <typename T>
+            state_list_t ShortestPathsGenerator<T>::getPathAsList(unsigned long k) {
+                computeKSP(k);
+
+                state_list_t backToFrontList;
+
+                Path<T> currentPath = kShortestPaths[metaTarget][k - 1];
+                boost::optional<state_t> maybePredecessor = currentPath.predecessorNode;
+                // this omits the first node, which is actually convenient since that's the meta-target
+
+                while (maybePredecessor) {
+                    state_t predecessor = maybePredecessor.get();
+                    backToFrontList.push_back(predecessor);
+
+                    currentPath = kShortestPaths[predecessor][currentPath.predecessorK - 1];
+                    maybePredecessor = currentPath.predecessorNode;
+                }
+
+                return backToFrontList;
             }
 
             template <typename T>
@@ -266,6 +293,21 @@ namespace storm {
 
                     candidatePaths[node].erase(std::find(candidatePaths[node].begin(), candidatePaths[node].end(), minDistanceCandidate));
                     kShortestPaths[node].push_back(minDistanceCandidate);
+                }
+            }
+
+            template <typename T>
+            void ShortestPathsGenerator<T>::computeKSP(unsigned long k) {
+                unsigned long alreadyComputedK = kShortestPaths[metaTarget].size();
+
+                for (unsigned long nextK = alreadyComputedK + 1; nextK <= k; nextK++) {
+                    computeNextPath(metaTarget, nextK);
+                    if (kShortestPaths[metaTarget].size() < nextK) {
+                        //std::cout << std::endl << "--> DEBUG: Last path: k=" << (nextK - 1) << ":" << std::endl;
+                        //printKShortestPath(metaTarget, nextK - 1);
+                        //std::cout << "---------" << "No other path exists!" << std::endl;
+                        throw std::invalid_argument("k-SP does not exist for k=" + std::to_string(k));
+                    }
                 }
             }
 
