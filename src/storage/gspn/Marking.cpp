@@ -81,8 +81,8 @@ namespace storm {
                 marking.resize(getNumberOfPlaces() * newNumberOfBits);
             } else {
                 marking.resize(getNumberOfPlaces() * newNumberOfBits);
-                for (uint_fast64_t i = getNumberOfPlaces()-1; i >= 0; --i) {
-                    for (uint_fast64_t j = numberOfBits-1; j >= 0; --j) {
+                for (int_fast64_t i = getNumberOfPlaces()-1; i >= 0; --i) {
+                    for (int_fast64_t j = numberOfBits-1; j >= 0; --j) {
                         for (uint_fast64_t diff = 0; diff < newNumberOfBits-numberOfBits; ++diff) {
                             marking.set(i*newNumberOfBits+j+diff+1, 0);
                         }
@@ -99,6 +99,9 @@ namespace storm {
         }
 
         uint_fast64_t Marking::calculateNumberOfBits(uint_fast64_t maxNumber) {
+            if (maxNumber == 0) {
+                return 1;
+            }
             return std::floor(std::log2(maxNumber)) + 1;
         }
     }

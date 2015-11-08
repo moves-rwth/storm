@@ -27,6 +27,13 @@ namespace storm {
              * @param token
              */
             void setInitialTokens(uint64_t place, uint64_t token);
+
+            void setNumberOfPlaces(uint64_t number);
+
+            uint64_t getNumberOfPlaces();
+
+            void addImmediateTransition(ImmediateTransition<WeightType>& transition);
+            void addTimedTransition(TimedTransition<RateType>& transition);
         private:
             // set containing all immediate transitions
             std::vector<storm::gspn::ImmediateTransition<WeightType>> immediateTransitions;

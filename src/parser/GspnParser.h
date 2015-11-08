@@ -34,6 +34,9 @@ namespace storm {
             // maps the original name of the state to its numerical representation
             std::map<std::string,uint64_t> stringToState;
 
+            // maps the transition id to a pointer to the transition
+            std::map<std::string,storm::gspn::Transition*> stringToTransition;
+
             // the constructed gspn
             storm::gspn::GSPN gspn;
 
@@ -41,49 +44,49 @@ namespace storm {
             uint64_t newNode;
 
             /*!
-             * Parses the root element (TagName = pnml).
+             * Parses the root element.
              *
              * @param element The root element.
              */
             void parsePNML(xercesc::DOMElement* element);
 
             /*!
-             * Parses a net node (NodeName = net).
+             * Parses a net node.
              *
              * @param node The net node.
              */
             void parseNet(xercesc::DOMNode* node);
 
             /*!
-             * Parses a page node (NodeName = page).
+             * Parses a page node.
              *
              * @param node The page node.
 a            */
             void parsePage(xercesc::DOMNode* node);
 
             /*!
-             * Parses a place node (NodeName = place).
+             * Parses a place node.
              *
              * @param node The place node.
              */
             void parsePlace(xercesc::DOMNode* node);
 
             /*!
-             * Parses a transition node (NodeName = transition).
+             * Parses a transition node.
              *
              * @param node The transition node.
              */
             void parseTransition(xercesc::DOMNode* node);
 
             /*!
-             * Parses an arc node (NodeName = arc).
+             * Parses an arc node.
              *
              * @param node The arc node.
              */
             void parseArc(xercesc::DOMNode* node);
 
             /*!
-             * Parses an initial marking Node (Nodename = initialMarking)
+             * Parses an initial marking node .
              *
              * @param node the initial marking node.
              * @return The number of tokens.
@@ -104,6 +107,21 @@ a            */
              * @return The name.
              */
             std::string getName(xercesc::DOMNode* node);
+
+            /*!
+             * Parses a rate node.
+             */
+            std::string parseRate(xercesc::DOMNode* node);
+
+            /*!
+             * Parse a timed node.
+             */
+            bool parseTimed(xercesc::DOMNode* node);
+
+            /*!
+             * Parse a type node.
+             */
+            std::string parseType(xercesc::DOMNode* node);
         };
     }
 }

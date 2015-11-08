@@ -1,7 +1,7 @@
 #include <string>
-#include <memory>
-#include <iosfwd>
 #include <bitset>
+#include <iosfwd>
+#include <memory>
 #include "src/parser/GspnParser.h"
 
 storm::gspn::GSPN storm::parser::GspnParser::parse(const std::string &filename) {
@@ -73,22 +73,21 @@ std::string storm::parser::GspnParser::XMLtoString(const XMLCh *xmlString) {
 }
 
 void storm::parser::GspnParser::parsePNML(xercesc::DOMElement *element) {
-    std::cout << "pnml" << std::endl;
     for (uint64_t i = 0; i < element->getChildNodes()->getLength(); ++i) {
         auto child = element->getChildNodes()->item(i);
         auto name = getName(child);
         if (name.compare("net") == 0) {
             parseNet(child);
         } else if (std::all_of(name.begin(), name.end(), isspace)) {
-            // TODO remove after adding DTD
+            // ignore node (contains only whitespace)
         } else {
+            std::cout << "pnml" << std::endl;
             std::cout << "unkown child: " << name << std::endl;
         }
     }
 }
 
 void storm::parser::GspnParser::parseNet(xercesc::DOMNode* node) {
-    std::cout << "net" << std::endl;
     for (uint64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
         auto child = node->getChildNodes()->item(i);
         auto name = getName(child);
@@ -101,17 +100,18 @@ void storm::parser::GspnParser::parseNet(xercesc::DOMNode* node) {
         } else if (name.compare("arc") == 0) {
             parseArc(child);
         } else if (std::all_of(name.begin(), name.end(), isspace)) {
-            // TODO remove after adding DTD
-        } else if (name.compare("name") == 0) {
+            // ignore node (contains only whitespace)
+        } else if (name.compare("name") == 0 ||
+                   name.compare("token") == 0) {
             // ignore these tags
         } else {
+            std::cout << "net" << std::endl;
             std::cout << "unkown child: " << name << std::endl;
         }
     }
 }
 
 void storm::parser::GspnParser::parsePage(xercesc::DOMNode *node) {
-    std::cout << "page" << std::endl;
     for (uint64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
         auto child = node->getChildNodes()->item(i);
         auto name = getName(child);
@@ -122,15 +122,15 @@ void storm::parser::GspnParser::parsePage(xercesc::DOMNode *node) {
         } else if (name.compare("arc") == 0) {
             parseArc(child);
         } else if (std::all_of(name.begin(), name.end(), isspace)) {
-            // TODO remove after adding DTD
+            // ignore node (contains only whitespace)
         } else {
+            std::cout << "page" << std::endl;
             std::cout << "unkown child: " << name << std::endl;
         }
     }
 }
 
 void storm::parser::GspnParser::parsePlace(xercesc::DOMNode *node) {
-    std::cout << "place" << std::endl;
     uint64_t place;
     for (uint64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
         auto attr = node->getAttributes()->item(i);
@@ -138,37 +138,113 @@ void storm::parser::GspnParser::parsePlace(xercesc::DOMNode *node) {
         if (name.compare("id") == 0) {
             place = addNewPlace(XMLtoString(attr->getNodeValue()));
         } else {
+            std::cout << "place" << std::endl;
             std::cout << "unkown attr.: " << name << std::endl;
         }
     }
-
-    //redo
+    
     for (uint64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
         auto child = node->getChildNodes()->item(i);
         auto name = getName(child);
         if (name.compare("initialMarking") == 0) {
             auto tokens = parseInitialMarking(child);
-            gspn.setInitialTokens(place, tokens);
+
+            std::cout << "place: " << place << "; tokens: " << tokens << std::endl;
+            //TODO search bug
+            gspn.setNumberOfPlaces(gspn.getNumberOfPlaces()+1);
+            //gspn.setInitialTokens(place, tokens);
         } else if (std::all_of(name.begin(), name.end(), isspace)) {
-            // TODO remove after adding DTD
+            // ignore node (contains only whitespace)
         } else if (name.compare("name") == 0 ||
-                  name.compare("graphics") == 0) {
+                   name.compare("graphics") == 0) {
             // ignore these tags
         } else {
+            std::cout << "place" << std::endl;
             std::cout << "unkown child: " << name << std::endl;
         }
     }
 }
 
 void storm::parser::GspnParser::parseTransition(xercesc::DOMNode *node) {
-    //std::cout << "transition" << std::endl; // TODO
     bool timed = false;
-    //value for the rate
+    std::string rate, id;
 
+    for (uint64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+        auto attr = node->getAttributes()->item(i);
+        auto name = getName(attr);
+        if (name.compare("id") == 0) {
+            id = XMLtoString(attr->getNodeValue());
+        } else {
+            std::cout << "transition" << std::endl;
+            std::cout << "unkown attr.: " << name << std::endl;
+        }
+    }
+
+    for (uint64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+        auto child = node->getChildNodes()->item(i);
+        auto name = getName(child);
+        if (name.compare("rate") == 0) {
+            rate = parseRate(child);
+        } else if (name.compare("timed") == 0) {
+            timed = parseTimed(child);
+        } else if (std::all_of(name.begin(), name.end(), isspace)) {
+            // ignore node (contains only whitespace)
+        } else if (name.compare("graphics") == 0 ||
+                   name.compare("name") == 0 ||
+                   name.compare("orientation") == 0) {
+            // ignore these tags
+        } else {
+            std::cout << "transition" << std::endl;
+            std::cout << "unkown child: " << name << std::endl;
+        }
+    }
+
+    if (timed) {
+        auto transition = storm::gspn::TimedTransition<storm::gspn::GSPN::RateType>();
+        transition.setRate(std::stoull(rate));
+        gspn.addTimedTransition(transition);
+        this->stringToTransition[id] = &transition;
+    } else {
+        auto transition = storm::gspn::ImmediateTransition<storm::gspn::GSPN::WeightType>();
+        transition.setWeight(std::stoull(rate));
+        gspn.addImmediateTransition(transition);
+        this->stringToTransition[id] = &transition;
+    }
 }
 
 void storm::parser::GspnParser::parseArc(xercesc::DOMNode *node) {
-    //std::cout << "arc" << std::endl; // TODO
+    std::string source, target, type;
+
+    for (uint64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+        auto attr = node->getAttributes()->item(i);
+        auto name = getName(attr);
+        if (name.compare("source") == 0) {
+            source = XMLtoString(attr->getNodeValue());
+        } else if (name.compare("target") == 0) {
+            target = XMLtoString(attr->getNodeValue());
+        } else if(name.compare("id") == 0) {
+            // ignore these tags
+        } else {
+            std::cout << "arc" << std::endl;
+            std::cout << "unkown attr.: " << name << std::endl;
+        }
+    }
+
+    for (uint64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+        auto child = node->getChildNodes()->item(i);
+        auto name = getName(child);
+        if (name.compare("type") == 0) {
+            type = parseType(child);
+        } else if (std::all_of(name.begin(), name.end(), isspace)) {
+            // ignore node (contains only whitespace)
+        } else if (name.compare("graphics") == 0 ||
+                   name.compare("arcpath") == 0) {
+            // ignore these tags
+        } else {
+            std::cout << "arc" << std::endl;
+            std::cout << "unkown child: " << name << std::endl;
+        }
+    }
 }
 
 std::string storm::parser::GspnParser::getName(xercesc::DOMNode *node) {
@@ -198,7 +274,6 @@ uint64_t storm::parser::GspnParser::addNewPlace(std::string id) {
 }
 
 uint64_t storm::parser::GspnParser::parseInitialMarking(xercesc::DOMNode *node) {
-    std::cout << "initialMarking" << std::endl;
     uint64_t result= 0;
     for (uint64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
         auto child = node->getChildNodes()->item(i);
@@ -207,15 +282,64 @@ uint64_t storm::parser::GspnParser::parseInitialMarking(xercesc::DOMNode *node) 
             result = std::stoull(getName(child->getFirstChild()));
         } else if (name.compare("value") == 0) {
             auto value = getName(child->getFirstChild());
-            value.substr(std::string("Default,").length()-1);
+            value = value.substr(std::string("Default,").length());
             result = std::stoull(value);
         } else if (std::all_of(name.begin(), name.end(), isspace)) {
-            // TODO remove after adding DTD
+            // ignore node (contains only whitespace)
         } else if (name.compare("graphics") == 0) {
             // ignore these tags
         } else {
+            std::cout << "initialMarking" << std::endl;
             std::cout << "unkown child: " << name << std::endl;
         }
     }
     return result;
+}
+
+std::string storm::parser::GspnParser::parseRate(xercesc::DOMNode *node) {
+    std::string result = "";
+    for (uint64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+        auto child = node->getChildNodes()->item(i);
+        auto name = getName(child);
+        if (name.compare("value") == 0) {
+            result = getName(child->getFirstChild());
+        } else  if (std::all_of(name.begin(), name.end(), isspace)) {
+            // ignore node (contains only whitespace)
+        } else {
+            std::cout << "rate" << std::endl;
+            std::cout << "unkown child: " << name << std::endl;
+        }
+    }
+    return result;
+}
+
+bool storm::parser::GspnParser::parseTimed(xercesc::DOMNode *node) {
+    bool result;
+    for (uint64_t i = 0; i < node->getChildNodes()->getLength(); ++i) {
+        auto child = node->getChildNodes()->item(i);
+        auto name = getName(child);
+        if (name.compare("value") == 0) {
+            result = getName(child->getFirstChild()).compare("true") ? true : false;
+        } else  if (std::all_of(name.begin(), name.end(), isspace)) {
+            // ignore node (contains only whitespace)
+        } else {
+            std::cout << "timed" << std::endl;
+            std::cout << "unkown child: " << name << std::endl;
+        }
+    }
+    return result;
+}
+
+std::string storm::parser::GspnParser::parseType(xercesc::DOMNode *node) {
+    for (uint64_t i = 0; i < node->getAttributes()->getLength(); ++i) {
+        auto attr = node->getAttributes()->item(i);
+        auto name = getName(attr);
+        if (name.compare("value") == 0) {
+            return XMLtoString(attr->getNodeValue());
+        } else {
+            std::cout << "type" << std::endl;
+            std::cout << "unkown attr.: " << name << std::endl;
+        }
+    }
+    return "";
 }

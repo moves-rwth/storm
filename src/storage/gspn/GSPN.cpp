@@ -9,3 +9,19 @@ void storm::gspn::GSPN::setInitialTokens(uint64_t place, uint64_t token) {
     }
     initialMarking.setNumberOfTokensAt(place, token);
 }
+
+void storm::gspn::GSPN::setNumberOfPlaces(uint64_t number) {
+    initialMarking.setNumberOfPlaces(number);
+}
+
+uint64_t storm::gspn::GSPN::getNumberOfPlaces() {
+    return initialMarking.getNumberOfPlaces();
+}
+
+void storm::gspn::GSPN::addImmediateTransition(storm::gspn::ImmediateTransition<WeightType> &transition) {
+    this->immediateTransitions.push_back(transition);
+}
+
+void storm::gspn::GSPN::addTimedTransition(storm::gspn::TimedTransition<RateType> &transition) {
+    this->timedTransitions.push_back(transition);
+}
