@@ -32,11 +32,9 @@ namespace storm {
             
             for (; first1 != last1; ++first1, ++first2) {
                 if (first1->first != first2->first) {
-                    std::cout << "false in first" << std::endl;
                     return false;
                 }
                 if (!comparator.isEqual(first1->second, first2->second)) {
-                    std::cout << "false in second " << std::setprecision(15) << first1->second << " vs " << first2->second << std::endl;
                     return false;
                 }
             }

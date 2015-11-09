@@ -49,13 +49,29 @@ namespace storm {
         template<typename ModelType>
         void NondeterministicModelBisimulationDecomposition<ModelType>::initializeQuotientDistributions() {
             std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
-            for (auto choice = 0; choice < nondeterministicChoiceIndices.back(); ++choice) {
-                for (auto entry : this->model.getTransitionMatrix().getRow(choice)) {
-                    if (!this->comparator.isZero(entry.getValue())) {
-                        this->quotientDistributions[choice].addProbability(this->partition.getBlock(entry.getColumn()).getId(), entry.getValue());
+            
+            for (auto const& block : this->partition.getBlocks()) {
+                if (block->data().absorbing()) {
+                    // If the block is marked as absorbing, we need to create the corresponding distributions.
+                    for (auto stateIt = this->partition.begin(*block), stateIte = this->partition.end(*block); stateIt != stateIte; ++stateIt) {
+                        for (uint_fast64_t choice = nondeterministicChoiceIndices[*stateIt]; choice < nondeterministicChoiceIndices[*stateIt + 1]; ++choice) {
+                            this->quotientDistributions[choice].addProbability(block->getId(), storm::utility::one<ValueType>());
+                            orderedQuotientDistributions[choice] = &this->quotientDistributions[choice];
+                        }
+                    }
+                } else {
+                    // Otherwise, we compute the probabilities from the transition matrix.
+                    for (auto stateIt = this->partition.begin(*block), stateIte = this->partition.end(*block); stateIt != stateIte; ++stateIt) {
+                        for (uint_fast64_t choice = nondeterministicChoiceIndices[*stateIt]; choice < nondeterministicChoiceIndices[*stateIt + 1]; ++choice) {
+                            for (auto entry : this->model.getTransitionMatrix().getRow(choice)) {
+                                if (!this->comparator.isZero(entry.getValue())) {
+                                    this->quotientDistributions[choice].addProbability(this->partition.getBlock(entry.getColumn()).getId(), entry.getValue());
+                                }
+                            }
+                            orderedQuotientDistributions[choice] = &this->quotientDistributions[choice];
+                        }
                     }
                 }
-                orderedQuotientDistributions[choice] = &this->quotientDistributions[choice];
             }
             
             for (auto state = 0; state < this->model.getNumberOfStates(); ++state) {
@@ -74,8 +90,106 @@ namespace storm {
         
         template<typename ModelType>
         void NondeterministicModelBisimulationDecomposition<ModelType>::buildQuotient() {
-            STORM_LOG_ASSERT(false, "Not yet implemented");
-            // TODO
+            // In order to create the quotient model, we need to construct
+            // (a) the new transition matrix,
+            // (b) the new labeling,
+            // (c) the new reward structures.
+            
+            // Prepare a matrix builder for (a).
+            storm::storage::SparseMatrixBuilder<ValueType> builder(0, this->size(), 0, false, true, this->size());
+            
+            // Prepare the new state labeling for (b).
+            storm::models::sparse::StateLabeling newLabeling(this->size());
+            std::set<std::string> atomicPropositionsSet = this->options.respectedAtomicPropositions.get();
+            atomicPropositionsSet.insert("init");
+            std::vector<std::string> atomicPropositions = std::vector<std::string>(atomicPropositionsSet.begin(), atomicPropositionsSet.end());
+            for (auto const& ap : atomicPropositions) {
+                newLabeling.addLabel(ap);
+            }
+            
+            // If the model had state rewards, we need to build the state rewards for the quotient as well.
+            boost::optional<std::vector<ValueType>> stateRewards;
+            if (this->options.keepRewards && this->model.hasRewardModel()) {
+                stateRewards = std::vector<ValueType>(this->blocks.size());
+            }
+            
+            // Now build (a) and (b) by traversing all blocks.
+            uint_fast64_t currentRow = 0;
+            std::vector<uint_fast64_t> nondeterministicChoiceIndices = this->model.getTransitionMatrix().getRowGroupIndices();
+            for (uint_fast64_t blockIndex = 0; blockIndex < this->blocks.size(); ++blockIndex) {
+                auto const& block = this->blocks[blockIndex];
+                
+                // Open new row group for the new meta state.
+                builder.newRowGroup(currentRow);
+                
+                // Pick one representative state. For strong bisimulation it doesn't matter which state it is, because
+                // they all behave equally.
+                storm::storage::sparse::state_type representativeState = *block.begin();
+                Block<BlockDataType> const& oldBlock = this->partition.getBlock(representativeState);
+                
+                // If the block is absorbing, we simply add a self-loop.
+                if (oldBlock.data().absorbing()) {
+                    builder.addNextValue(currentRow, blockIndex, storm::utility::one<ValueType>());
+                    ++currentRow;
+                    
+                    // If the block has a special representative state, we retrieve it now.
+                    if (oldBlock.data().hasRepresentativeState()) {
+                        representativeState = oldBlock.data().representativeState();
+                    }
+                    
+                    // Add all of the selected atomic propositions that hold in the representative state to the state
+                    // representing the block.
+                    for (auto const& ap : atomicPropositions) {
+                        if (this->model.getStateLabeling().getStateHasLabel(ap, representativeState)) {
+                            newLabeling.addLabelToState(ap, blockIndex);
+                        }
+                    }
+                } else {
+                    // Add the outgoing choices of the block.
+                    for (uint_fast64_t choice = nondeterministicChoiceIndices[representativeState]; choice < nondeterministicChoiceIndices[representativeState + 1]; ++choice) {
+                        // If the choice is the same as the last one, we do not need to add it.
+                        if (choice > nondeterministicChoiceIndices[representativeState] && quotientDistributions[choice - 1].equals(quotientDistributions[choice], this->comparator)) {
+                            continue;
+                        }
+                        
+                        for (auto entry : quotientDistributions[choice]) {
+                            builder.addNextValue(currentRow, entry.first, entry.second);
+                        }
+                        ++currentRow;
+                    }
+                    
+                    // Otherwise add all atomic propositions to the equivalence class that the representative state
+                    // satisfies.
+                    for (auto const& ap : atomicPropositions) {
+                        if (this->model.getStateLabeling().getStateHasLabel(ap, representativeState)) {
+                            newLabeling.addLabelToState(ap, blockIndex);
+                        }
+                    }
+                }
+                
+                // If the model has state rewards, we simply copy the state reward of the representative state, because
+                // all states in a block are guaranteed to have the same state reward.
+                if (this->options.keepRewards && this->model.hasRewardModel()) {
+                    typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getUniqueRewardModel();
+                    stateRewards.get()[blockIndex] = nameRewardModelPair->second.getStateRewardVector()[representativeState];
+                }
+            }
+            
+            // Now check which of the blocks of the partition contain at least one initial state.
+            for (auto initialState : this->model.getInitialStates()) {
+                Block<BlockDataType> const& initialBlock = this->partition.getBlock(initialState);
+                newLabeling.addLabelToState("init", initialBlock.getId());
+            }
+            
+            // Construct the reward model mapping.
+            std::unordered_map<std::string, typename ModelType::RewardModelType> rewardModels;
+            if (this->options.keepRewards && this->model.hasRewardModel()) {
+                typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getUniqueRewardModel();
+                rewardModels.insert(std::make_pair(nameRewardModelPair->first, typename ModelType::RewardModelType(stateRewards)));
+            }
+            
+            // Finally construct the quotient model.
+            this->quotient = std::shared_ptr<ModelType>(new ModelType(builder.build(), std::move(newLabeling), std::move(rewardModels)));
         }
         
         template<typename ModelType>
@@ -97,6 +211,11 @@ namespace storm {
                     storm::storage::sparse::state_type predecessorChoice = predecessorEntry.getColumn();
                     storm::storage::sparse::state_type predecessorState = choiceToStateMapping[predecessorChoice];
                     Block<BlockDataType>& predecessorBlock = this->partition.getBlock(predecessorState);
+                    
+                    // If the predecessor block is marked as absorbing, we do not need to update anything.
+                    if (predecessorBlock.data().absorbing()) {
+                        continue;
+                    }
                     
                     // If the predecessor block is not marked as to-refined, we do so now.
                     if (!predecessorBlock.data().splitter()) {
