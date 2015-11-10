@@ -51,24 +51,28 @@ namespace storm {
                 ConstantType computeInitialStateValue(std::map<VariableType, CoefficientType>const& point);
 
             private:
-
                 typedef typename std::unordered_map<ParametricType, ConstantType>::value_type FunctionEntry;
+                typedef std::vector<storm::storage::sparse::state_type> Policy;
+                
                 void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void instantiate(std::map<VariableType, CoefficientType>const& point);
                 void invokeSolver();
                 
-                //Some designated states in the original model
-                storm::storage::BitVector targetStates, maybeStates;
-                //The last result of the solving the equation system. Also serves as first guess for the next call.
-                //Note: eqSysResult.size==maybeStates.numberOfSetBits
-                std::vector<ConstantType> eqSysResult;
-                //The index which represents the result for the initial state in the eqSysResult vector
-                std::size_t eqSysInitIndex;
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
-                //The goal we want to accomplish when solving the eq sys.
-                storm::solver::SolveGoal solveGoal;
+                
+                //Some designated states in the original model
+                storm::storage::BitVector targetStates, maybeStates;
+                
+                struct SolverData{
+                    //The result from the previous instantiation. Serve as first guess for the next call.
+                    std::vector<ConstantType> result; //Note: result.size==maybeStates.numberOfSetBits
+                    std::size_t initialStateIndex; //The index which represents the result for the initial state in the result vector
+                    //The following is only relevant if we consider mdps:
+                    storm::solver::SolveGoal solveGoal = storm::solver::SolveGoal(true); //No default cunstructor for solve goal...
+                    Policy lastPolicy; //best policy from the previous instantiation. Serves as first guess for the next call.
+                } solverData;
                 
 
                 /* The data required for the equation system, i.e., a matrix and a vector.

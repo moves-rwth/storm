@@ -70,6 +70,9 @@ namespace storm {
                 
                 this->solverData.result = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), this->computeRewards ? storm::utility::one<ConstantType>() : ConstantType(0.5));
                 this->solverData.initialStateIndex = newIndices[initialState];
+                this->solverData.lastMinimizingPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
+                this->solverData.lastMaximizingPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
+                this->solverData.lastPlayer1Policy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
             }                
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -272,10 +275,6 @@ namespace storm {
                 instantiate(region, computeLowerBounds);
                 Policy& policy = computeLowerBounds ? this->solverData.lastMinimizingPolicy : this->solverData.lastMaximizingPolicy;
                 //TODO: at this point, set policy to the one stored in the region.
-                if(policy.empty()){
-                    //No guess available (yet)
-                    policy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
-                }
                 invokeSolver(computeLowerBounds, policy);
                 
                 //TODO: policy for games.

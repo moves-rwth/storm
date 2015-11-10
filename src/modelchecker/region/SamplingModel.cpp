@@ -26,7 +26,7 @@ namespace storm {
         namespace region {
         
             template<typename ParametricSparseModelType, typename ConstantType>
-            SamplingModel<ParametricSparseModelType, ConstantType>::SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula) : solveGoal(storm::logic::isLowerBound(formula->getComparisonType())){
+            SamplingModel<ParametricSparseModelType, ConstantType>::SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula){
                 //First some simple checks and initializations..
                 if(formula->isProbabilityOperatorFormula()){
                     this->computeRewards=false;
@@ -38,6 +38,7 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << formula << ". Sampling model only supports eventually or reachability reward formulae.");
                 }
+                this->solverData.solveGoal = storm::solver::SolveGoal(storm::logic::isLowerBound(formula->getComparisonType()));
                 STORM_LOG_THROW(parametricModel.hasLabel("target"), storm::exceptions::InvalidArgumentException, "The given Model has no \"target\"-statelabel.");
                 this->targetStates = parametricModel.getStateLabeling().getStates("target");
                 STORM_LOG_THROW(parametricModel.hasLabel("sink"), storm::exceptions::InvalidArgumentException, "The given Model has no \"sink\"-statelabel.");
@@ -63,8 +64,9 @@ namespace storm {
                 this->matrixData.assignment.shrink_to_fit();
                 this->vectorData.assignment.shrink_to_fit();
                 
-                this->eqSysResult = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), this->computeRewards ? storm::utility::one<ConstantType>() : ConstantType(0.5));
-                this->eqSysInitIndex = newIndices[initialState];
+                this->solverData.result = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), this->computeRewards ? storm::utility::one<ConstantType>() : ConstantType(0.5));
+                this->solverData.initialStateIndex = newIndices[initialState];
+                this->solverData.lastPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -209,7 +211,7 @@ namespace storm {
                 instantiate(point);
                 invokeSolver();
                 std::vector<ConstantType> result(this->maybeStates.size());
-                storm::utility::vector::setVectorValues(result, this->maybeStates, this->eqSysResult);
+                storm::utility::vector::setVectorValues(result, this->maybeStates, this->solverData.result);
                 storm::utility::vector::setVectorValues(result, this->targetStates, this->computeRewards ? storm::utility::zero<ConstantType>() : storm::utility::one<ConstantType>());
                 storm::utility::vector::setVectorValues(result, ~(this->maybeStates | this->targetStates), this->computeRewards ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>());
                 
@@ -220,7 +222,7 @@ namespace storm {
             ConstantType SamplingModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue(std::map<VariableType, CoefficientType>const& point) {
                 instantiate(point);
                 invokeSolver();
-                return this->eqSysResult[this->eqSysInitIndex];
+                return this->solverData.result[this->solverData.initialStateIndex];
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -247,16 +249,14 @@ namespace storm {
             template<>
             void SamplingModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(){
                 std::unique_ptr<storm::solver::LinearEquationSolver<double>> solver = storm::utility::solver::LinearEquationSolverFactory<double>().create(this->matrixData.matrix);
-                solver->solveEquationSystem(this->eqSysResult, this->vectorData.vector);
+                solver->solveEquationSystem(this->solverData.result, this->vectorData.vector);
             }
             template<>
             void SamplingModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(){
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(this->solveGoal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
-                if(!this->solveGoal.minimize()){
-                    //The value iteration method is not correct if the value is maximized and the initial x-vector is not <= the actual probability/reward.
-                    this->eqSysResult.assign(this->eqSysResult.size(), storm::utility::zero<double>());
-                }
-                solver->solveEquationSystem(this->eqSysResult, this->vectorData.vector);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(this->solverData.solveGoal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
+                solver->setPolicyTracking();
+                solver->solveEquationSystem(this->solverData.solveGoal.direction(), this->solverData.result, this->vectorData.vector, nullptr, nullptr, &this->solverData.lastPolicy);
+                this->solverData.lastPolicy = solver->getPolicy();
             }
             
             

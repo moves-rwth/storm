@@ -66,6 +66,7 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
 
     storm::settings::mutableRegionSettings().resetModes();
+    carl::VariablePool::getInstance().clear();
 }
 
 TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
@@ -94,11 +95,11 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=p<=0.65,0.5<=q<=0.7");
     auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=p<=0.7,0.55<=q<=0.6");
 
-    EXPECT_NEAR(0.9512773402, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.95127874851, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.26787251126, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.41879628383, modelchecker.getReachabilityValue(exBothRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.41880006098, modelchecker.getReachabilityValue(exBothRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.01535089684, modelchecker.getReachabilityValue(exBothRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
-    EXPECT_NEAR(0.24952471590, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.24952791523, modelchecker.getReachabilityValue(allVioRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.01711494956, modelchecker.getReachabilityValue(allVioRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
    
     //test approximative method
@@ -114,6 +115,7 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLVIOLATED), allVioRegion.getCheckResult());
 
     storm::settings::mutableRegionSettings().resetModes();
+    carl::VariablePool::getInstance().clear();
 }
 
 #endif

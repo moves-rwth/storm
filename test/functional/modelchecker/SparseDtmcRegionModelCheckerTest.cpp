@@ -87,10 +87,10 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
+    carl::VariablePool::getInstance().clear();
 }
 
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
-    
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards/brp_16_2.pm";
     std::string const& formulaAsString = "R>2.5 [F \"target\" ]";
     std::string const& constantsAsString = "pL=0.9,TOAck=0.5";
@@ -178,8 +178,8 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     modelchecker.checkRegion(exBothHardRegionSmt);
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::EXISTSBOTH), exBothHardRegionSmtApp.getCheckResult());
     
-    
     storm::settings::mutableRegionSettings().resetModes();
+    carl::VariablePool::getInstance().clear();
 }
 
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
@@ -226,6 +226,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
+    carl::VariablePool::getInstance().clear();
 }
 
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
@@ -289,6 +290,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
+    carl::VariablePool::getInstance().clear();
 }
 
 TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
@@ -377,6 +379,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLVIOLATED), allVioHardRegionSmtApp.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
+    carl::VariablePool::getInstance().clear();
 }
 
 TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
@@ -442,6 +445,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLVIOLATED), allVioRegionSmt.getCheckResult());
     
     storm::settings::mutableRegionSettings().resetModes();
+    carl::VariablePool::getInstance().clear();
 }
 
 TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
@@ -490,6 +494,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
 //smt    EXPECT_EQ((storm::modelchecker::region::RegionCheckResult::ALLSAT), allSatRegionSmt.getCheckResult());
 
     storm::settings::mutableRegionSettings().resetModes();
+    carl::VariablePool::getInstance().clear();
 }
 
 #endif
