@@ -79,22 +79,23 @@ namespace storm {
                 void instantiate(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
                 void invokeSolver(bool computeLowerBounds, Policy& policy);
 
-                //Some designated states in the original model
-                storm::storage::BitVector targetStates, maybeStates;
-                //The last result of the solving the equation system. Also serves as first guess for the next call.
-                //Note: eqSysResult.size==maybeStates.numberOfSetBits
-                std::vector<ConstantType> eqSysResult;
-                //The index which represents the result for the initial state in the eqSysResult vector
-                std::size_t eqSysInitIndex;
-                
-                std::unordered_set<std::shared_ptr<Policy>> minimizingPolicies;
-                std::unordered_set<std::shared_ptr<Policy>> maximizingPolicies;
-                
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
-                //Player 1 represents the nondeterminism of the given mdp (so, this is irrelevant if we approximate values of a DTMC)
-                storm::solver::SolveGoal player1Goal;
-                storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
+                
+                //Some designated states in the original model
+                storm::storage::BitVector targetStates, maybeStates;
+                
+                struct SolverData{
+                    //The results from the previous instantiation. Serve as first guess for the next call.
+                    std::vector<ConstantType> result; //Note: result.size==maybeStates.numberOfSetBits
+                    Policy lastMinimizingPolicy, lastMaximizingPolicy;
+                    std::size_t initialStateIndex; //The index which represents the result for the initial state in the result vector
+                    //Player 1 represents the nondeterminism of the given mdp (so, this is irrelevant if we approximate values of a DTMC)
+                    storm::solver::SolveGoal player1Goal;
+                    storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
+                    Policy lastPlayer1Policy;
+                } solverData;
+                
                 
                 /* The data required for the equation system, i.e., a matrix and a vector.
                  * 

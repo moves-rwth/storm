@@ -101,7 +101,7 @@ namespace storm {
                     return var;
                 }
                 
-                return carl::VariablePool::getInstance().getFreshVariable(variableName, carlVarType);
+                return carl::freshVariable(variableName, carlVarType);
             }
                       
             template<>
