@@ -30,6 +30,7 @@
 #include "src/models/ModelBase.h"
 #include "src/models/sparse/Model.h"
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/symbolic/Model.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 
@@ -43,7 +44,8 @@
 #include "src/builder/DdPrismModelBuilder.h"
 
 // Headers for model processing.
-#include "src/storage/DeterministicModelBisimulationDecomposition.h"
+#include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
+#include "src/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 
 // Headers for model checking.
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -83,8 +85,6 @@ namespace storm {
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
             
- 
- 
     template<typename ValueType>
     std::shared_ptr<storm::models::ModelBase> buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         std::shared_ptr<storm::models::ModelBase> result(nullptr);
@@ -114,37 +114,74 @@ namespace storm {
             result = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
         }
 
-        // Then, build the model from the symbolic description.
         return result;
     }
-            
-    template<typename ValueType>
-    std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+    
+    template<typename ModelType>
+    std::shared_ptr<ModelType> performDeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+        std::cout << "Performing bisimulation minimization... ";
+        typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options options;
+        if (!formulas.empty()) {
+            options = typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
+        }
+        if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
+            options.type = storm::storage::BisimulationType::Weak;
+            options.bounded = false;
+        }
+        
+        storm::storage::DeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
+        bisimulationDecomposition.computeBisimulationDecomposition();
+        model = bisimulationDecomposition.getQuotient();
+        std::cout << "done." << std::endl << std::endl;
+        return model;
+    }
+    
+    template<typename ModelType>
+    std::shared_ptr<ModelType> performNondeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+        std::cout << "Performing bisimulation minimization... ";
+        typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options options;
+        if (!formulas.empty()) {
+            options = typename storm::storage::NondeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
+        }
+        if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
+            options.type = storm::storage::BisimulationType::Weak;
+            options.bounded = false;
+        }
+        
+        storm::storage::NondeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
+        bisimulationDecomposition.computeBisimulationDecomposition();
+        model = bisimulationDecomposition.getQuotient();
+        std::cout << "done." << std::endl << std::endl;
+        return model;
+    }
+    
+    template<typename ModelType, typename ValueType = typename ModelType::ValueType, typename std::enable_if<std::is_base_of<storm::models::sparse::Model<ValueType>, ModelType>::value, bool>::type = 0>
+    std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         if (storm::settings::generalSettings().isBisimulationSet()) {
+            
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
-            STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc || model->getType() == storm::models::ModelType::Ctmc, storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs.");
-            std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>();
+            STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
 
-            dtmc->reduceToStateBasedRewards();
+            model->reduceToStateBasedRewards();
 
-            std::cout << "Performing bisimulation minimization... ";
-            typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options options;
-            if (!formulas.empty()) {
-                options = typename storm::storage::DeterministicModelBisimulationDecomposition<ValueType>::Options(*sparseModel, formulas);
+            if (model->isOfType(storm::models::ModelType::Dtmc)) {
+                return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Dtmc<ValueType>>(model->template as<storm::models::sparse::Dtmc<ValueType>>(), formulas);
+            } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
+                return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas);
+            } else {
+                return performNondeterministicSparseBisimulationMinimization<storm::models::sparse::Mdp<ValueType>>(model->template as<storm::models::sparse::Mdp<ValueType>>(), formulas);
             }
-            if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
-                options.weak = true;
-                options.bounded = false;
-            }
-
-            storm::storage::DeterministicModelBisimulationDecomposition<ValueType> bisimulationDecomposition(*dtmc, options);
-            model = bisimulationDecomposition.getQuotient();
-            std::cout << "done." << std::endl << std::endl;
+            
         }
         return model;
     }
-            
+    
+    template<typename ModelType, storm::dd::DdType DdType = ModelType::DdType, typename std::enable_if< std::is_base_of< storm::models::symbolic::Model<DdType>, ModelType >::value, bool>::type = 0>
+    std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+        // No preprocessing available yet.
+        return model;
+    }
+    
     template<typename ValueType>
     void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
         if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
@@ -234,7 +271,6 @@ namespace storm {
         return result;
 
     }
-
             
 #ifdef STORM_HAVE_CARL
     inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
@@ -267,7 +303,6 @@ namespace storm {
         return result;
     }
             
-
 #endif
 
     template<storm::dd::DdType DdType>

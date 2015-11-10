@@ -39,7 +39,7 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << formula << ". Approximation model only supports eventually or reachability reward formulae.");
                 }
-                this->solverData.solverData.player1Goal = storm::solver::SolveGoal(storm::logic::isLowerBound(formula->getComparisonType()));
+                this->solverData.player1Goal = storm::solver::SolveGoal(storm::logic::isLowerBound(formula->getComparisonType()));
                 STORM_LOG_THROW(parametricModel.hasLabel("target"), storm::exceptions::InvalidArgumentException, "The given Model has no \"target\"-statelabel.");
                 this->targetStates = parametricModel.getStateLabeling().getStates("target");
                 STORM_LOG_THROW(parametricModel.hasLabel("sink"), storm::exceptions::InvalidArgumentException, "The given Model has no \"sink\"-statelabel.");
@@ -279,7 +279,7 @@ namespace storm {
                 invokeSolver(computeLowerBounds, policy);
                 
                 //TODO: policy for games.
-                if(policy->empty()) return this->solverData.result[this->solverData.initialStateIndex]; //This can be deleted as soon as policy for games is supported
+                if(policy.empty()) return this->solverData.result[this->solverData.initialStateIndex]; //This can be deleted as soon as policy for games is supported
                 //TODO: (maybe) when a few parameters are mapped to another value, build a "nicer" scheduler and check whether it induces values that are more optimal.
                 //Get the set of parameters which are (according to the policy) always mapped to the same region boundary.
                 //First, collect all (relevant) parameters, i.e., the ones that are set to the lower or upper boundary.

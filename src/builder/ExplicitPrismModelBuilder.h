@@ -72,8 +72,6 @@ namespace storm {
                 std::string stateInfo(uint_fast64_t state) const override {
                     return valuations[state].toString();
                 }
-
-
             };
             
             // A structure storing information about the used variables of the program.

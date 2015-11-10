@@ -63,7 +63,6 @@ namespace storm {
                 class FuncSubHash{
                     public:
                         std::size_t operator()(FunctionSubstitution const& fs) const {
-                       //     return fs.getHash();
                             std::size_t seed = 0;
                             boost::hash_combine(seed, fs.first);
                             boost::hash_combine(seed, fs.second);
@@ -91,7 +90,7 @@ namespace storm {
                     Policy lastMinimizingPolicy, lastMaximizingPolicy;
                     std::size_t initialStateIndex; //The index which represents the result for the initial state in the result vector
                     //Player 1 represents the nondeterminism of the given mdp (so, this is irrelevant if we approximate values of a DTMC)
-                    storm::solver::SolveGoal player1Goal;
+                    storm::solver::SolveGoal player1Goal = storm::solver::SolveGoal(true); //No default cunstructor for solve goal...
                     storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
                     Policy lastPlayer1Policy;
                 } solverData;

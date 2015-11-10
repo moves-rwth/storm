@@ -148,7 +148,7 @@ namespace storm {
 					storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->policy, true);
 					submatrix.convertToEquationSystem();
 					
-					GmmxxLinearEquationSolver<ValueType> gmmLinearEquationSolver(submatrix, storm::solver::GmmxxLinearEquationSolver<double>::SolutionMethod::Gmres, this->precision, this->maximalNumberOfIterations, storm::solver::GmmxxLinearEquationSolver<double>::Preconditioner::None, this->relative, 50);
+					GmmxxLinearEquationSolver<ValueType> gmmLinearEquationSolver(submatrix, storm::solver::GmmxxLinearEquationSolver<double>::SolutionMethod::Gmres, this->precision, this->maximalNumberOfIterations, storm::solver::GmmxxLinearEquationSolver<double>::Preconditioner::Ilu, this->relative, 50);
 					storm::utility::vector::selectVectorValues<ValueType>(subB, this->policy, rowGroupIndices, b);
 
 					// Copy X since we will overwrite it

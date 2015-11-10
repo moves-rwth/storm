@@ -1020,7 +1020,7 @@ namespace storm {
             
             preparedProgram = preparedProgram.substituteConstants();
             
-            STORM_LOG_DEBUG("Building representation of program :" << std::endl << preparedProgram << std::endl);
+            STORM_LOG_DEBUG("Building representation of program:" << std::endl << preparedProgram << std::endl);
             
             // Start by initializing the structure used for storing all information needed during the model generation.
             // In particular, this creates the meta variables used to encode the model.

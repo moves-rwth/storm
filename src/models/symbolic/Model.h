@@ -38,6 +38,7 @@ namespace storm {
             template<storm::dd::DdType Type>
             class Model : public storm::models::ModelBase {
             public:
+                static const storm::dd::DdType DdType = Type;
                 typedef StandardRewardModel<Type, double> RewardModelType;
                 
                 Model(Model<Type> const& other) = default;
