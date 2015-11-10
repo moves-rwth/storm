@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <list>
+#include <memory>
 
 #include "src/storage/bisimulation/Block.h"
 
