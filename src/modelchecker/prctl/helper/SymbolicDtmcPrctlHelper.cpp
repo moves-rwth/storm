@@ -1,10 +1,10 @@
 #include "src/modelchecker/prctl/helper/SymbolicDtmcPrctlHelper.h"
 
 #include "src/storage/dd/DdType.h"
-#include "src/storage/dd/CuddDdManager.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
-#include "src/storage/dd/CuddOdd.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddOdd.h"
 
 #include "src/solver/SymbolicLinearEquationSolver.h"
 

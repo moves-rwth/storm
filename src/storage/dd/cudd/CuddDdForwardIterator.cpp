@@ -1,5 +1,5 @@
-#include "src/storage/dd/CuddDdForwardIterator.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddDdForwardIterator.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/utility/macros.h"
 #include "src/storage/expressions/ExpressionManager.h"

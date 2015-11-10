@@ -2,14 +2,14 @@
 #include <string>
 #include <algorithm>
 
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
 #include "src/utility/macros.h"
 #include "src/storage/expressions/Variable.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/CuddSettings.h"
 #include "src/storage/expressions/ExpressionManager.h"
-#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
 #include "CuddBdd.h"
 
 

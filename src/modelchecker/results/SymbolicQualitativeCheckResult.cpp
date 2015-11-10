@@ -1,6 +1,6 @@
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
-#include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/cudd/CuddDd.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
 

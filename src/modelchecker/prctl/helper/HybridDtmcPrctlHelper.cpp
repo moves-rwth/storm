@@ -3,10 +3,10 @@
 
 #include "src/solver/LinearEquationSolver.h"
 
-#include "src/storage/dd/CuddDdManager.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
-#include "src/storage/dd/CuddOdd.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddOdd.h"
 
 #include "src/utility/graph.h"
 #include "src/utility/constants.h"

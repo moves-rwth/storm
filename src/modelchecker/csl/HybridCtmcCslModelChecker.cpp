@@ -7,8 +7,8 @@
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
 
 namespace storm {
     namespace modelchecker {

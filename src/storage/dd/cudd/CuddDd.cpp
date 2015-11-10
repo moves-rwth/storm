@@ -1,7 +1,7 @@
 #include <algorithm>
 
-#include "src/storage/dd/CuddDd.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddDd.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
 
 namespace storm {
     namespace dd {

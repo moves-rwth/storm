@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/cudd/CuddDd.h"
 #include "src/parser/PrismParser.h"
 #include "src/models/symbolic/Dtmc.h"
 #include "src/models/symbolic/Mdp.h"
@@ -12,9 +12,9 @@
 #include "src/builder/DdPrismModelBuilder.h"
 #include "src/builder/ExplicitPrismModelBuilder.h"
 #include "src/utility/graph.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
 
 TEST(GraphTest, SymbolicProb01) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");

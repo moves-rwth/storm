@@ -5,8 +5,8 @@
 #include <map>
 
 #include "src/storage/dd/Add.h"
-#include "src/storage/dd/CuddDd.h"
-#include "src/storage/dd/CuddDdForwardIterator.h"
+#include "src/storage/dd/cudd/CuddDd.h"
+#include "src/storage/dd/cudd/CuddDdForwardIterator.h"
 #include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 

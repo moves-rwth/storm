@@ -2,7 +2,7 @@
 
 #include "src/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 
-#include "src/storage/dd/CuddOdd.h"
+#include "src/storage/dd/cudd/CuddOdd.h"
 
 #include "src/models/symbolic/Mdp.h"
 #include "src/models/symbolic/StandardRewardModel.h"

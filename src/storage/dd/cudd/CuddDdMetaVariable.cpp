@@ -1,5 +1,5 @@
-#include "src/storage/dd/CuddDdMetaVariable.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddDdMetaVariable.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
 
 namespace storm {
     namespace dd {

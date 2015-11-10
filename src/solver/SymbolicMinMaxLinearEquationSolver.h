@@ -9,7 +9,7 @@
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/dd/DdType.h"
 
-#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
 
 namespace storm {
     namespace dd {

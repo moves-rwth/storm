@@ -13,9 +13,9 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "src/storage/dd/CuddBdd.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"

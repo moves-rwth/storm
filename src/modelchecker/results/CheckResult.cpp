@@ -3,7 +3,7 @@
 #include "storm-config.h"
 #include "src/adapters/CarlAdapter.h"
 
-#include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/cudd/CuddDd.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"

@@ -2,9 +2,9 @@
 #define STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_
 
 #include "src/storage/dd/DdType.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
-#include "src/storage/dd/CuddOdd.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddOdd.h"
 #include "src/modelchecker/results/QuantitativeCheckResult.h"
 #include "src/utility/OsDetection.h"
 

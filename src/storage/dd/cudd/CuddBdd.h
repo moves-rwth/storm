@@ -2,7 +2,7 @@
 #define STORM_STORAGE_DD_CUDDBDD_H_
 
 #include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/CuddDd.h"
+#include "src/storage/dd/cudd/CuddDd.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.

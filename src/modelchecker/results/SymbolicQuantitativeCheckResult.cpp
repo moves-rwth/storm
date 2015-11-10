@@ -1,8 +1,8 @@
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
-#include "src/storage/dd/CuddDd.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddDd.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
 #include "src/exceptions/InvalidOperationException.h"
 #include "src/utility/macros.h"
 #include "src/utility/constants.h"

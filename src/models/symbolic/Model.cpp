@@ -7,9 +7,9 @@
 
 #include "src/adapters/AddExpressionAdapter.h"
 
-#include "src/storage/dd/CuddDdManager.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
 
 #include "src/models/symbolic/StandardRewardModel.h"
 

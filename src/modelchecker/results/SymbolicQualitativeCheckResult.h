@@ -2,7 +2,7 @@
 #define STORM_MODELCHECKER_SYMBOLICQUALITATIVECHECKRESULT_H_
 
 #include "src/storage/dd/DdType.h"
-#include "src/storage/dd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
 #include "src/modelchecker/results/QualitativeCheckResult.h"
 #include "src/utility/OsDetection.h"
 

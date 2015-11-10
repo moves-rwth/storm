@@ -1,7 +1,7 @@
 #include "src/solver/SymbolicLinearEquationSolver.h"
 
-#include "src/storage/dd/CuddDdManager.h"
-#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
 
 #include "src/storage/dd/Add.h"
 

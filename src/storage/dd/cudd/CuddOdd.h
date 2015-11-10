@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include "src/storage/dd/Odd.h"
-#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.

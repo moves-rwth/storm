@@ -1,7 +1,7 @@
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
 
 #include "src/exceptions/InvalidOperationException.h"
 #include "src/utility/macros.h"

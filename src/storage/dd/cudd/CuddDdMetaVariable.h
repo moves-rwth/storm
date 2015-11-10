@@ -7,9 +7,9 @@
 #include <string>
 
 #include "utility/OsDetection.h"
-#include "src/storage/dd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
 #include "src/storage/dd/DdMetaVariable.h"
-#include "src/storage/dd/CuddDdForwardIterator.h"
+#include "src/storage/dd/cudd/CuddDdForwardIterator.h"
 
 
 namespace storm {

@@ -5,8 +5,8 @@
 #include "src/models/symbolic/Mdp.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 
-#include "src/storage/dd/CuddDd.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/cudd/CuddDd.h"
+#include "src/storage/dd/cudd/CuddDdManager.h"
 #include "src/settings/SettingsManager.h"
 
 #include "src/exceptions/InvalidStateException.h"
@@ -17,8 +17,8 @@
 #include "src/utility/math.h"
 #include "src/storage/prism/Program.h"
 
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
+#include "src/storage/dd/cudd/CuddAdd.h"
+#include "src/storage/dd/cudd/CuddBdd.h"
 
 #include "src/settings/modules/GeneralSettings.h"
 
