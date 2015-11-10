@@ -528,12 +528,14 @@ ExternalProject_Add(
     SOURCE_DIR "${STORM_SYLVAN_ROOT}"
     CMAKE_ARGS -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
     BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
+    INSTALL_COMMAND ""
     INSTALL_DIR "${PROJECT_BINARY_DIR}/sylvan"
 )
+ExternalProject_Get_Property(sylvan binary_dir)
 set(Sylvan_INCLUDE_DIR "${STORM_SYLVAN_ROOT}/src")
 message(STATUS "Linking with shipped version of sylvan (in directory ${STORM_SYLVAN_ROOT}).")
 include_directories("${Sylvan_INCLUDE_DIR}")
-list(APPEND STORM_LINK_LIBRARIES "${PROJECT_BINARY_DIR}/sylvan/src/libsylvan.a")
+list(APPEND STORM_LINK_LIBRARIES "${binary_dir}/src/libsylvan.a")
 
 #############################################################
 ##

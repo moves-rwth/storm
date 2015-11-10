@@ -35,6 +35,13 @@ add_library(sylvan
     tls.h
 )
 
+# We need to make sure that the binary is put into a folder that is independent of the
+# build type. Otherwise -- for example when using Xcode -- the binary might end up in a
+# sub-folder "Debug" or "Release".
+set_target_properties(sylvan PROPERTIES
+                      ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_BINARY_DIR}
+                      ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_BINARY_DIR})
+
 target_link_libraries(sylvan m pthread)
 
 include(CheckIncludeFiles)
