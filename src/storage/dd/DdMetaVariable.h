@@ -1,6 +1,8 @@
 #ifndef STORM_STORAGE_DD_DDMETAVARIBLE_H_
 #define STORM_STORAGE_DD_DDMETAVARIBLE_H_
 
+#include <vector>
+
 #include "src/storage/dd/DdType.h"
 
 namespace storm {
@@ -9,7 +11,8 @@ namespace storm {
         template<DdType LibraryType>
         class DdMetaVariable {
         public:
-            InternalBdd<LibraryType> getCube() const;
+            Bdd<LibraryType> getCube() const;
+            uint_fast64_t getNumberOfDdVariables() const;
         };
     }
 }

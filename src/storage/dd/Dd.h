@@ -115,15 +115,6 @@ namespace storm {
             std::vector<uint_fast64_t> getSortedVariableIndices() const;
             
             /*!
-             * Retrieves the (sorted) list of the variable indices of the DD variables given by the meta variable set.
-             *
-             * @param manager The manager responsible for the DD.
-             * @param metaVariable The set of meta variables for which to retrieve the index list.
-             * @return The sorted list of variable indices.
-             */
-            static std::vector<uint_fast64_t> getSortedVariableIndices(DdManager<LibraryType> const& manager, std::set<storm::expressions::Variable> const& metaVariables);
-            
-            /*!
              * Adds the given set of meta variables to the DD.
              *
              * @param metaVariables The set of meta variables to add.
@@ -167,6 +158,15 @@ namespace storm {
              * @return The set of all contained meta variables.
              */
             static std::set<storm::expressions::Variable> joinMetaVariables(storm::dd::Dd<LibraryType> const& first, storm::dd::Dd<LibraryType> const& second);
+            
+            /*!
+             * Retrieves the set of meta variables that are contained in the first but not the second DD.
+             *
+             * @param first The first DD.
+             * @param second The second DD.
+             * @return The resulting set of meta variables.
+             */
+            static std::set<storm::expressions::Variable> subtractMetaVariables(storm::dd::Dd<LibraryType> const& first, storm::dd::Dd<LibraryType> const& second);
             
         private:
             // A pointer to the manager responsible for this DD.

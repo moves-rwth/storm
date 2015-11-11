@@ -14,6 +14,16 @@ namespace storm {
             Bdd<LibraryType> getBddOne() const;
             Bdd<LibraryType> getBddZero() const;
             DdMetaVariable<LibraryType> const& getMetaVariable(storm::expressions::Variable const& variable) const;
+            std::vector<std::string> getDdVariableNames() const;
+            
+            /*!
+             * Retrieves the (sorted) list of the variable indices of the DD variables given by the meta variable set.
+             *
+             * @param manager The manager responsible for the DD.
+             * @param metaVariable The set of meta variables for which to retrieve the index list.
+             * @return The sorted list of variable indices.
+             */
+            static std::vector<uint_fast64_t> getSortedVariableIndices(std::set<storm::expressions::Variable> const& metaVariables);
         };
     }
 }

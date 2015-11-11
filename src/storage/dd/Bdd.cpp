@@ -2,6 +2,8 @@
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Odd.h"
 
+#include "src/logic/ComparisonType.h"
+
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/storage/dd/DdManager.h"
 
@@ -19,22 +21,23 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        Bdd<LibraryType>::Bdd(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value) {
+        Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value) {
             switch (comparisonType) {
                 case storm::logic::ComparisonType::Less:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater<double>(), value, std::placeholders::_1));
-                    break;
+                    return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater<double>(), value, std::placeholders::_1));
                 case storm::logic::ComparisonType::LessEqual:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater_equal<double>(), value, std::placeholders::_1));
-                    break;
+                    return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater_equal<double>(), value, std::placeholders::_1));
                 case storm::logic::ComparisonType::Greater:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less<double>(), value, std::placeholders::_1));
-                    break;
+                    return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less<double>(), value, std::placeholders::_1));
                 case storm::logic::ComparisonType::GreaterEqual:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
-                    break;
+                    return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
             }
-
+        }
+        
+        template<DdType LibraryType>
+        template<typename ValueType>
+        Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
+            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(ddManager, values, odd, metaVariables, filter), metaVariables);
         }
         
         template<DdType LibraryType>
@@ -106,64 +109,36 @@ namespace storm {
 
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cubeBdd = this->getDdManager()->getBddOne();
-            
-            std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
-            for (auto const& metaVariable : metaVariables) {
-                // First check whether the BDD contains the meta variable and erase it, if this is the case.
-                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
-                newMetaVariables.erase(metaVariable);
-                
-                DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
-                cubeBdd &= ddMetaVariable.getCube();
-            }
-            
-            return Bdd<LibraryType>(internalBdd.existsAbstract(cubeBdd));
+            Bdd<LibraryType> cube = this->getCube(metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
 
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            InternalBdd<LibraryType> cubeBdd = this->getDdManager()->getBddOne();
-            
-            std::set<storm::expressions::Variable> newMetaVariables = this->getContainedMetaVariables();
-            for (auto const& metaVariable : metaVariables) {
-                // First check whether the BDD contains the meta variable and erase it, if this is the case.
-                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
-                newMetaVariables.erase(metaVariable);
-                
-                DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
-                cubeBdd &= ddMetaVariable.getCube();
-            }
-            
-            return Bdd<LibraryType>(internalBdd.universalAbstract(cubeBdd));
+            Bdd<LibraryType> cube = this->getCube(metaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.universalAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::andExists(Bdd<LibraryType> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const {
-            InternalBdd<DdType::CUDD> cubeBdd(this->getDdManager()->getBddOne());
-            for (auto const& metaVariable : existentialVariables) {
-                DdMetaVariable<DdType::CUDD> const& ddMetaVariable = this->getDdManager()->getMetaVariable(metaVariable);
-                cubeBdd &= ddMetaVariable.getCube();
-            }
+            Bdd<DdType::CUDD> cube = this->getCube(existentialVariables);
 
             std::set<storm::expressions::Variable> unionOfMetaVariables;
             std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(unionOfMetaVariables, unionOfMetaVariables.begin()));
             std::set<storm::expressions::Variable> containedMetaVariables;
             std::set_difference(unionOfMetaVariables.begin(), unionOfMetaVariables.end(), existentialVariables.begin(), existentialVariables.end(), std::inserter(containedMetaVariables, containedMetaVariables.begin()));
             
-            return Bdd<LibraryType>(internalBdd.andExists(other.internalBdd, cubeBdd));
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.andExists(other, cube), containedMetaVariables);
         }
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::constrain(Bdd<LibraryType> const& constraint) const {
-            this->addMetaVariables(constraint.getContainedMetaVariables());
-            return internalBdd.constraint(constraint.internalBdd);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.constrain(constraint), Dd<LibraryType>::joinMetaVariables(*this, constraint));
         }
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::restrict(Bdd<LibraryType> const& constraint) const {
-            this->addMetaVariables(constraint.getContainedMetaVariables());
-            return internalBdd.constraint(constraint.internalBdd);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.restrict(constraint), Dd<LibraryType>::joinMetaVariables(*this, constraint));
         }
         
         template<DdType LibraryType>
@@ -191,7 +166,7 @@ namespace storm {
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::getSupport() const {
-            return Bdd<LibraryType>(internalBdd.getSupport());
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.getSupport(), this->getContainedMetaVariables());
         }
         
         template<DdType LibraryType>
@@ -231,6 +206,26 @@ namespace storm {
         template<DdType LibraryType>
         void Bdd<LibraryType>::exportToDot(std::string const& filename) const {
             internalBdd.exportToDot(filename, this->getDdManager()->getDdVariableNames());
+        }
+        
+        template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::getCube(std::set<storm::expressions::Variable> const& metaVariables) const {
+            Bdd<LibraryType> cube = this->getDdManager()->getBddOne();
+            for (auto const& metaVariable : metaVariables) {
+                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
+                cube &= this->getDdManager()->getMetaVariable(metaVariable).getCube();
+            }
+            return cube;
+        }
+        
+        template<DdType LibraryType>
+        Bdd<LibraryType>::operator InternalBdd<LibraryType>() {
+            return internalBdd;
+        }
+
+        template<DdType LibraryType>
+        Bdd<LibraryType>::operator InternalBdd<LibraryType> const() const {
+            return internalBdd;
         }
         
         template class Bdd<storm::dd::DdType::CUDD>;

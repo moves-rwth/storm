@@ -2,6 +2,17 @@
 
 namespace storm {
     namespace dd {
+        InternalBdd<DdType::CUDD>::InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd) : ddManager(ddManager), cuddBdd(cuddBdd) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
+            std::vector<uint_fast64_t> ddVariableIndices = ddManager->getSortedVariableIndices(metaVariables);
+            uint_fast64_t offset = 0;
+            return BDD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, ddVariableIndices.size(), values, odd, ddVariableIndices, filter));
+        }
+        
         bool InternalBdd<DdType::CUDD>::operator==(InternalBdd<DdType::CUDD> const& other) const {
             return this->getCuddBdd() == other.getCuddBdd();
         }
@@ -11,7 +22,7 @@ namespace storm {
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::ite(InternalBdd<DdType::CUDD> const& thenDd, InternalBdd<DdType::CUDD> const& elseDd) const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Ite(thenDd.getCuddBdd(), elseDd.getCuddBdd()), metaVariableNames);
+            return InternalBdd<DdType::CUDD>(this->getCuddBdd().Ite(thenDd.getCuddBdd(), elseDd.getCuddBdd()));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::operator||(InternalBdd<DdType::CUDD> const& other) const {
@@ -37,15 +48,15 @@ namespace storm {
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::iff(InternalBdd<DdType::CUDD> const& other) const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Xnor(other.getCuddBdd()), metaVariables);
+            return InternalBdd<DdType::CUDD>(this->getCuddBdd().Xnor(other.getCuddBdd()));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::exclusiveOr(InternalBdd<DdType::CUDD> const& other) const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Xor(other.getCuddBdd()), metaVariables);
+            return InternalBdd<DdType::CUDD>(this->getCuddBdd().Xor(other.getCuddBdd()));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::implies(InternalBdd<DdType::CUDD> const& other) const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Ite(other.getCuddBdd(), this->getDdManager()->getBddOne().getCuddBdd()), metaVariables);
+            return InternalBdd<DdType::CUDD>(this->getCuddBdd().Ite(other.getCuddBdd(), this->getDdManager()->getBddOne().getCuddBdd()), metaVariables);
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::operator!() const {
@@ -164,39 +175,27 @@ namespace storm {
             return this->getCuddBdd().getNode();
         }
         
-
-        
-        
-        
-        
-        
-        
-        Add<DdType::CUDD> InternalBdd<DdType::CUDD>::toAdd() const {
-            return Add<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Add(), this->getContainedMetaVariables());
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         template<typename ValueType>
-        BDD InternalBdd<DdType::CUDD>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
-            std::vector<uint_fast64_t> ddVariableIndices = getSortedVariableIndices(*ddManager, metaVariables);
-            uint_fast64_t offset = 0;
-            return BDD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, ddVariableIndices.size(), values, odd, ddVariableIndices, filter));
+        Add<DdType::CUDD, ValueType> InternalBdd<DdType::CUDD>::toAdd() const {
+            return Add<DdType::CUDD, ValueType>(this->getCuddBdd().Add());
         }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         template<typename ValueType>
         DdNode* InternalBdd<DdType::CUDD>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter) {
@@ -288,28 +287,6 @@ namespace storm {
                 toVectorRec(Cudd_Regular(elseDdNode), manager, result, rowOdd.getElseSuccessor(), elseComplemented, currentRowLevel + 1, maxLevel, currentRowOffset, ddRowVariableIndices);
                 toVectorRec(Cudd_Regular(thenDdNode), manager, result, rowOdd.getThenSuccessor(), thenComplemented, currentRowLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), ddRowVariableIndices);
             }
-        }
-        
-        InternalBdd<DdType::CUDD>::InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<DdType::CUDD>(ddManager, containedMetaVariables), cuddBdd(cuddBdd) {
-            // Intentionally left empty.
-        }
-        
-        InternalBdd<DdType::CUDD>::InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value) : Dd<DdType::CUDD>(ddManager, metaVariables) {
-            switch (comparisonType) {
-                case storm::logic::ComparisonType::Less:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater<double>(), value, std::placeholders::_1));
-                    break;
-                case storm::logic::ComparisonType::LessEqual:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater_equal<double>(), value, std::placeholders::_1));
-                    break;
-                case storm::logic::ComparisonType::Greater:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less<double>(), value, std::placeholders::_1));
-                    break;
-                case storm::logic::ComparisonType::GreaterEqual:
-                    this->cuddBdd = fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::less_equal<double>(), value, std::placeholders::_1));
-                    break;
-            }
-            
         }
         
     }

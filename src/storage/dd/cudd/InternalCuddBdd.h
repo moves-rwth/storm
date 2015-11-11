@@ -1,9 +1,14 @@
 #ifndef STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_
 #define STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_
 
+#include <set>
+
 #include "src/storage/dd/DdType.h"
 #include "src/storage/dd/InternalBdd.h"
 #include "src/storage/dd/InternalAdd.h"
+
+#include "src/storage/dd/DdManager.h"
+#include "src/storage/dd/DdMetaVariable.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
@@ -29,16 +34,13 @@ namespace storm {
         class InternalBdd<storm::dd::DdType::CUDD> {
         public:
             /*!
-             * Constructs a BDD representation of all encodings that are in the requested relation with the given value.
+             * Creates a DD that encapsulates the given CUDD ADD.
              *
-             * @param ddManager The DD manager responsible for the resulting BDD.
-             * @param explicitValues The explicit values to compare to the given value.
-             * @param odd The ODD used for the translation from the explicit representation to a symbolic one.
-             * @param metaVariables The meta variables to use for the symbolic encoding.
-             * @param comparisonType The relation that needs to hold for the values (wrt. to the given value).
-             * @param value The value to compare with.
+             * @param ddManager The manager responsible for this DD.
+             * @param cuddBdd The CUDD BDD to store.
+             * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
+            InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             InternalBdd() = default;
@@ -47,6 +49,19 @@ namespace storm {
             InternalBdd(InternalBdd<DdType::CUDD>&& other) = default;
             InternalBdd& operator=(InternalBdd<DdType::CUDD>&& other) = default;
 
+            /*!
+             * Builds a BDD representing the values that make the given filter function evaluate to true.
+             *
+             * @param ddManager The manager responsible for the BDD.
+             * @param values The values that are to be checked against the filter function.
+             * @param odd The ODD used for the translation.
+             * @param metaVariables The meta variables used for the translation.
+             * @param filter The filter that evaluates whether an encoding is to be mapped to 0 or 1.
+             * @return The resulting BDD.
+             */
+            template<typename ValueType>
+            static InternalBdd<storm::dd::DdType::CUDD> fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
+            
             /*!
              * Retrieves whether the two BDDs represent the same function.
              *
@@ -165,7 +180,7 @@ namespace storm {
              * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
              * @return The resulting BDD.
              */
-            InternalBdd<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
+            InternalBdd<DdType::CUDD> swapVariables(std::vector<std::pair<std::reference_wrapper<DdMetaVariable<DdType::CUDD> const>, std::reference_wrapper<DdMetaVariable<DdType::CUDD> const>>> const& fromTo) const;
             
             /*!
              * Computes the logical and of the current and the given BDD and existentially abstracts from the given set
@@ -175,7 +190,7 @@ namespace storm {
              * @param existentialVariables The variables from which to existentially abstract.
              * @return A BDD representing the result.
              */
-            InternalBdd<DdType::CUDD> andExists(InternalBdd<DdType::CUDD> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const;
+            InternalBdd<DdType::CUDD> andExists(InternalBdd<DdType::CUDD> const& other, InternalBdd<storm::dd::DdType::CUDD> const& cube) const;
             
             /*!
              * Computes the constraint of the current BDD with the given constraint. That is, the function value of the
@@ -209,7 +224,7 @@ namespace storm {
              *
              * @return The number of encodings that are mapped to a non-zero value.
              */
-            uint_fast64_t getNonZeroCount() const;
+            uint_fast64_t getNonZeroCount(uint_fast64_t numberOfDdVariables) const;
             
             /*!
              * Retrieves the number of leaves of the DD.
@@ -272,28 +287,6 @@ namespace storm {
             
         private:
             /*!
-             * Creates a DD that encapsulates the given CUDD ADD.
-             *
-             * @param ddManager The manager responsible for this DD.
-             * @param cuddBdd The CUDD BDD to store.
-             * @param containedMetaVariables The meta variables that appear in the DD.
-             */
-            InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
-            
-            /*!
-             * Builds a BDD representing the values that make the given filter function evaluate to true.
-             *
-             * @param ddManager The manager responsible for the BDD.
-             * @param values The values that are to be checked against the filter function.
-             * @param odd The ODD used for the translation.
-             * @param metaVariables The meta variables used for the translation.
-             * @param filter The filter that evaluates whether an encoding is to be mapped to 0 or 1.
-             * @return The resulting (CUDD) BDD.
-             */
-            template<typename ValueType>
-            static BDD fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
-            
-            /*!
              * Builds a BDD representing the values that make the given filter function evaluate to true.
              *
              * @param manager The manager responsible for the BDD.
@@ -336,6 +329,8 @@ namespace storm {
              * @return The DD node of CUDD associated with this BDD.
              */
             DdNode* getCuddDdNode() const;
+            
+            std::shared_ptr<DdManager<DdType::CUDD> const> ddManager;
             
             BDD cuddBdd;
         };

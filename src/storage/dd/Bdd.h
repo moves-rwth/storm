@@ -215,7 +215,21 @@ namespace storm {
             
             virtual void exportToDot(std::string const& filename) const override;
             
+            /*!
+             * Retrieves the cube of all given meta variables.
+             *
+             * @param metaVariables The variables for which to create the cube.
+             * @return The resulting cube.
+             */
+            Bdd<LibraryType> getCube(std::set<storm::expressions::Variable> const& metaVariables) const;
+            
         private:
+            /*!
+             * We provide a conversion operator from the BDD to its internal type to ease calling the internal functions.
+             */
+            operator InternalBdd<LibraryType>();
+            operator InternalBdd<LibraryType> const() const;
+            
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.
              *
@@ -235,8 +249,8 @@ namespace storm {
              * @param comparisonType The relation that needs to hold for the values (wrt. to the given value).
              * @param value The value to compare with.
              */
-            Bdd(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
-            
+            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
+
             /*!
              * Builds a BDD representing the values that make the given filter function evaluate to true.
              *
@@ -248,8 +262,7 @@ namespace storm {
              * @return The resulting (CUDD) BDD.
              */
             template<typename ValueType>
-            static BDD fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
-            
+            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
             
             // The internal BDD that depends on the chosen library.
             InternalBdd<LibraryType> internalBdd;

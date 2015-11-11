@@ -62,28 +62,20 @@ namespace storm {
         
         template<DdType LibraryType>
         std::vector<uint_fast64_t> Dd<LibraryType>::getSortedVariableIndices() const {
-            return getSortedVariableIndices(*this->getDdManager(), this->getContainedMetaVariables());
-        }
-        
-        template<DdType LibraryType>
-        std::vector<uint_fast64_t> Dd<LibraryType>::getSortedVariableIndices(DdManager<LibraryType> const& manager, std::set<storm::expressions::Variable> const& metaVariables) {
-            std::vector<uint_fast64_t> ddVariableIndices;
-            for (auto const& metaVariableName : metaVariables) {
-                auto const& metaVariable = manager.getMetaVariable(metaVariableName);
-                for (auto const& ddVariable : metaVariable.getDdVariables()) {
-                    ddVariableIndices.push_back(ddVariable.getIndex());
-                }
-            }
-            
-            // Next, we need to sort them, since they may be arbitrarily ordered otherwise.
-            std::sort(ddVariableIndices.begin(), ddVariableIndices.end());
-            return ddVariableIndices;
+            return this->getDdManager()->getSortedVariableIndices(this->getContainedMetaVariables());
         }
         
         template<DdType LibraryType>
         std::set<storm::expressions::Variable> Dd<LibraryType>::joinMetaVariables(storm::dd::Dd<LibraryType> const& first, storm::dd::Dd<LibraryType> const& second) {
             std::set<storm::expressions::Variable> metaVariables;
             std::set_union(first.getContainedMetaVariables().begin(), first.getContainedMetaVariables().end(), second.getContainedMetaVariables().begin(), second.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));
+            return metaVariables;
+        }
+        
+        template<DdType LibraryType>
+        std::set<storm::expressions::Variable> Dd<LibraryType>::subtractMetaVariables(storm::dd::Dd<LibraryType> const& first, storm::dd::Dd<LibraryType> const& second) {
+            std::set<storm::expressions::Variable> metaVariables;
+            std::set_difference(first.getContainedMetaVariables().begin(), first.getContainedMetaVariables().end(), second.getContainedMetaVariables().begin(), second.getContainedMetaVariables().end(), std::inserter(metaVariables, metaVariables.begin()));
             return metaVariables;
         }
         
