@@ -6,7 +6,11 @@
 namespace storm {
     namespace dd {
         // Declare DdMetaVariable class so we can then specialize it for the different DD types.
-        template<DdType Type> class DdMetaVariable;
+        template<DdType LibraryType>
+        class DdMetaVariable {
+        public:
+            InternalBdd<LibraryType> getCube() const;
+        };
     }
 }
 

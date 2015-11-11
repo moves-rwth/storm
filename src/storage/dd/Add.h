@@ -6,8 +6,10 @@
 
 namespace storm {
     namespace dd {
-        // Declare Add class so we can then specialize it for the different ADD types.
-        template<DdType Type> class Add;
+        template<DdType Type, typename ValueType>
+        class Add {
+            
+        };
     }
 }
 

@@ -1,9 +1,9 @@
-#ifndef STORM_STORAGE_DD_CUDDBDD_H_
-#define STORM_STORAGE_DD_CUDDBDD_H_
+#ifndef STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_
+#define STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_
 
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/cudd/CuddDd.h"
-#include "src/utility/OsDetection.h"
+#include "src/storage/dd/DdType.h"
+#include "src/storage/dd/InternalBdd.h"
+#include "src/storage/dd/InternalAdd.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
@@ -20,18 +20,13 @@ namespace storm {
     namespace storage {
         class BitVector;
     }
-    
-    
-    
+
     namespace dd {
-        // Forward-declare some classes.
-        template<DdType Type> class DdManager;
-        template<DdType Type> class Odd;
-        template<DdType Type> class Add;
-        template<DdType Type> class DdForwardIterator;
+        template<storm::dd::DdType LibraryType>
+        class Odd;
         
         template<>
-        class Bdd<DdType::CUDD> : public Dd<DdType::CUDD> {
+        class InternalBdd<storm::dd::DdType::CUDD> {
         public:
             /*!
              * Constructs a BDD representation of all encodings that are in the requested relation with the given value.
@@ -43,30 +38,22 @@ namespace storm {
              * @param comparisonType The relation that needs to hold for the values (wrt. to the given value).
              * @param value The value to compare with.
              */
-            Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
-            
-            // Declare the DdManager and DdIterator class as friend so it can access the internals of a DD.
-            friend class DdManager<DdType::CUDD>;
-            friend class DdForwardIterator<DdType::CUDD>;
-            friend class Add<DdType::CUDD>;
-            friend class Odd<DdType::CUDD>;
+            InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
-            Bdd() = default;
-            Bdd(Bdd<DdType::CUDD> const& other) = default;
-            Bdd& operator=(Bdd<DdType::CUDD> const& other) = default;
-#ifndef WINDOWS
-            Bdd(Bdd<DdType::CUDD>&& other) = default;
-            Bdd& operator=(Bdd<DdType::CUDD>&& other) = default;
-#endif
-            
+            InternalBdd() = default;
+            InternalBdd(InternalBdd<DdType::CUDD> const& other) = default;
+            InternalBdd& operator=(InternalBdd<DdType::CUDD> const& other) = default;
+            InternalBdd(InternalBdd<DdType::CUDD>&& other) = default;
+            InternalBdd& operator=(InternalBdd<DdType::CUDD>&& other) = default;
+
             /*!
              * Retrieves whether the two BDDs represent the same function.
              *
              * @param other The BDD that is to be compared with the current one.
              * @return True if the BDDs represent the same function.
              */
-            bool operator==(Bdd<DdType::CUDD> const& other) const;
+            bool operator==(InternalBdd<DdType::CUDD> const& other) const;
             
             /*!
              * Retrieves whether the two BDDs represent different functions.
@@ -74,7 +61,7 @@ namespace storm {
              * @param other The BDD that is to be compared with the current one.
              * @return True if the BDDs represent the different functions.
              */
-            bool operator!=(Bdd<DdType::CUDD> const& other) const;
+            bool operator!=(InternalBdd<DdType::CUDD> const& other) const;
             
             /*!
              * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to a non-zero
@@ -85,7 +72,7 @@ namespace storm {
              * @param elseBdd The BDD defining the 'else' part.
              * @return The resulting BDD.
              */
-            Bdd<DdType::CUDD> ite(Bdd<DdType::CUDD> const& thenBdd, Bdd<DdType::CUDD> const& elseBdd) const;
+            InternalBdd<DdType::CUDD> ite(InternalBdd<DdType::CUDD> const& thenBdd, InternalBdd<DdType::CUDD> const& elseBdd) const;
             
             /*!
              * Performs a logical or of the current and the given BDD.
@@ -93,7 +80,7 @@ namespace storm {
              * @param other The second BDD used for the operation.
              * @return The logical or of the operands.
              */
-            Bdd<DdType::CUDD> operator||(Bdd<DdType::CUDD> const& other) const;
+            InternalBdd<DdType::CUDD> operator||(InternalBdd<DdType::CUDD> const& other) const;
             
             /*!
              * Performs a logical or of the current and the given BDD and assigns it to the current BDD.
@@ -101,7 +88,7 @@ namespace storm {
              * @param other The second BDD used for the operation.
              * @return A reference to the current BDD after the operation
              */
-            Bdd<DdType::CUDD>& operator|=(Bdd<DdType::CUDD> const& other);
+            InternalBdd<DdType::CUDD>& operator|=(InternalBdd<DdType::CUDD> const& other);
             
             /*!
              * Performs a logical and of the current and the given BDD.
@@ -109,7 +96,7 @@ namespace storm {
              * @param other The second BDD used for the operation.
              * @return The logical and of the operands.
              */
-            Bdd<DdType::CUDD> operator&&(Bdd<DdType::CUDD> const& other) const;
+            InternalBdd<DdType::CUDD> operator&&(InternalBdd<DdType::CUDD> const& other) const;
             
             /*!
              * Performs a logical and of the current and the given BDD and assigns it to the current BDD.
@@ -117,7 +104,7 @@ namespace storm {
              * @param other The second BDD used for the operation.
              * @return A reference to the current BDD after the operation
              */
-            Bdd<DdType::CUDD>& operator&=(Bdd<DdType::CUDD> const& other);
+            InternalBdd<DdType::CUDD>& operator&=(InternalBdd<DdType::CUDD> const& other);
             
             /*!
              * Performs a logical iff of the current and the given BDD.
@@ -125,7 +112,7 @@ namespace storm {
              * @param other The second BDD used for the operation.
              * @return The logical iff of the operands.
              */
-            Bdd<DdType::CUDD> iff(Bdd<DdType::CUDD> const& other) const;
+            InternalBdd<DdType::CUDD> iff(InternalBdd<DdType::CUDD> const& other) const;
             
             /*!
              * Performs a logical exclusive-or of the current and the given BDD.
@@ -133,7 +120,7 @@ namespace storm {
              * @param other The second BDD used for the operation.
              * @return The logical exclusive-or of the operands.
              */
-            Bdd<DdType::CUDD> exclusiveOr(Bdd<DdType::CUDD> const& other) const;
+            InternalBdd<DdType::CUDD> exclusiveOr(InternalBdd<DdType::CUDD> const& other) const;
             
             /*!
              * Performs a logical implication of the current and the given BDD.
@@ -141,35 +128,35 @@ namespace storm {
              * @param other The second BDD used for the operation.
              * @return The logical implication of the operands.
              */
-            Bdd<DdType::CUDD> implies(Bdd<DdType::CUDD> const& other) const;
+            InternalBdd<DdType::CUDD> implies(InternalBdd<DdType::CUDD> const& other) const;
             
             /*!
              * Logically inverts the current BDD.
              *
              * @return The resulting BDD.
              */
-            Bdd<DdType::CUDD> operator!() const;
+            InternalBdd<DdType::CUDD> operator!() const;
             
             /*!
              * Logically complements the current BDD.
              *
              * @return A reference to the current BDD after the operation.
              */
-            Bdd<DdType::CUDD>& complement();
+            InternalBdd<DdType::CUDD>& complement();
             
             /*!
              * Existentially abstracts from the given meta variables.
              *
              * @param metaVariables The meta variables from which to abstract.
              */
-            Bdd<DdType::CUDD> existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
+            InternalBdd<DdType::CUDD> existsAbstract(InternalBdd<DdType::CUDD> const& cube) const;
             
             /*!
              * Universally abstracts from the given meta variables.
              *
              * @param metaVariables The meta variables from which to abstract.
              */
-            Bdd<DdType::CUDD> universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const;
+            InternalBdd<DdType::CUDD> universalAbstract(InternalBdd<DdType::CUDD> const& cube) const;
             
             /*!
              * Swaps the given pairs of meta variables in the BDD. The pairs of meta variables must be guaranteed to have
@@ -178,8 +165,8 @@ namespace storm {
              * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
              * @return The resulting BDD.
              */
-            Bdd<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
-
+            InternalBdd<DdType::CUDD> swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const;
+            
             /*!
              * Computes the logical and of the current and the given BDD and existentially abstracts from the given set
              * of variables.
@@ -188,7 +175,7 @@ namespace storm {
              * @param existentialVariables The variables from which to existentially abstract.
              * @return A BDD representing the result.
              */
-            Bdd<DdType::CUDD> andExists(Bdd<DdType::CUDD> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const;
+            InternalBdd<DdType::CUDD> andExists(InternalBdd<DdType::CUDD> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const;
             
             /*!
              * Computes the constraint of the current BDD with the given constraint. That is, the function value of the
@@ -198,7 +185,7 @@ namespace storm {
              * @param constraint The constraint to use for the operation.
              * @return The resulting BDD.
              */
-            Bdd<DdType::CUDD> constrain(Bdd<DdType::CUDD> const& constraint) const;
+            InternalBdd<DdType::CUDD> constrain(InternalBdd<DdType::CUDD> const& constraint) const;
             
             /*!
              * Computes the restriction of the current BDD with the given constraint. That is, the function value of the
@@ -208,35 +195,35 @@ namespace storm {
              * @param constraint The constraint to use for the operation.
              * @return The resulting BDD.
              */
-            Bdd<DdType::CUDD> restrict(Bdd<DdType::CUDD> const& constraint) const;
+            InternalBdd<DdType::CUDD> restrict(InternalBdd<DdType::CUDD> const& constraint) const;
             
             /*!
              * Retrieves the support of the current BDD.
              *
              * @return The support represented as a BDD.
              */
-            virtual Bdd<DdType::CUDD> getSupport() const override;
+            InternalBdd<DdType::CUDD> getSupport() const;
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
              * @return The number of encodings that are mapped to a non-zero value.
              */
-            virtual uint_fast64_t getNonZeroCount() const override;
+            uint_fast64_t getNonZeroCount() const;
             
             /*!
              * Retrieves the number of leaves of the DD.
              *
              * @return The number of leaves of the DD.
              */
-            virtual uint_fast64_t getLeafCount() const override;
+            uint_fast64_t getLeafCount() const;
             
             /*!
              * Retrieves the number of nodes necessary to represent the DD.
              *
              * @return The number of nodes in this DD.
              */
-            virtual uint_fast64_t getNodeCount() const override;
+            uint_fast64_t getNodeCount() const;
             
             /*!
              * Retrieves whether this DD represents the constant one function.
@@ -257,23 +244,22 @@ namespace storm {
              *
              * @return The index of the topmost variable in BDD.
              */
-            virtual uint_fast64_t getIndex() const override;
+            uint_fast64_t getIndex() const;
             
             /*!
              * Exports the BDD to the given file in the dot format.
              *
              * @param filename The name of the file to which the BDD is to be exported.
              */
-            virtual void exportToDot(std::string const& filename = "") const override;
-            
-            friend std::ostream & operator<<(std::ostream& out, const Bdd<DdType::CUDD>& bdd);
-            
+            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const;
+                        
             /*!
              * Converts a BDD to an equivalent ADD.
              *
              * @return The corresponding ADD.
              */
-            Add<DdType::CUDD> toAdd() const;
+            template<typename ValueType>
+            InternalAdd<DdType::CUDD, ValueType> toAdd() const;
             
             /*!
              * Converts the BDD to a bit vector. The given offset-labeled DD is used to determine the correct row of
@@ -286,27 +272,13 @@ namespace storm {
             
         private:
             /*!
-             * Retrieves the CUDD BDD object associated with this DD.
-             *
-             * @return The CUDD BDD object associated with this DD.
-             */
-            BDD getCuddBdd() const;
-            
-            /*!
-             * Retrieves the raw DD node of CUDD associated with this BDD.
-             *
-             * @return The DD node of CUDD associated with this BDD.
-             */
-            DdNode* getCuddDdNode() const;
-            
-            /*!
              * Creates a DD that encapsulates the given CUDD ADD.
              *
              * @param ddManager The manager responsible for this DD.
              * @param cuddBdd The CUDD BDD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             /*!
              * Builds a BDD representing the values that make the given filter function evaluate to true.
@@ -351,10 +323,23 @@ namespace storm {
              */
             void toVectorRec(DdNode const* dd, Cudd const& manager, storm::storage::BitVector& result, Odd<DdType::CUDD> const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
             
-            // The BDD created by CUDD.
+            /*!
+             * Retrieves the CUDD BDD object associated with this DD.
+             *
+             * @return The CUDD BDD object associated with this DD.
+             */
+            BDD getCuddBdd() const;
+            
+            /*!
+             * Retrieves the raw DD node of CUDD associated with this BDD.
+             *
+             * @return The DD node of CUDD associated with this BDD.
+             */
+            DdNode* getCuddDdNode() const;
+            
             BDD cuddBdd;
         };
     }
 }
 
-#endif /* STORM_STORAGE_DD_CUDDBDD_H_ */
+#endif /* STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_ */

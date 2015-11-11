@@ -5,8 +5,10 @@
 
 namespace storm {
     namespace dd {
-        // Declare Odd class so we can then specialize it for the different DD types.
-        template<DdType Type> class Odd;
+        template<DdType Type>
+        class Odd {
+            
+        };
     }
 }
 
