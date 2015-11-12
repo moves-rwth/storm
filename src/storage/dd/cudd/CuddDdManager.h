@@ -192,20 +192,6 @@ namespace storm {
             std::vector<storm::expressions::Variable> getDdVariables() const;
             
             /*!
-             * Retrieves the underlying CUDD manager.
-             *
-             * @return The underlying CUDD manager.
-             */
-            Cudd& getCuddManager();
-            
-            /*!
-             * Retrieves the underlying CUDD manager.
-             *
-             * @return The underlying CUDD manager.
-             */
-            Cudd const& getCuddManager() const;
-            
-            /*!
              * Retrieves the underlying expression manager.
              *
              * @return The underlying expression manager.
@@ -221,12 +207,6 @@ namespace storm {
             
             // A mapping from variables to the meta variable information.
             std::unordered_map<storm::expressions::Variable, DdMetaVariable<DdType::CUDD>> metaVariableMap;
-            
-            // The manager responsible for the DDs created/modified with this DdManager.
-            Cudd cuddManager;
-            
-            // The technique that is used for dynamic reordering.
-            Cudd_ReorderingType reorderingTechnique;
 
             // The manager responsible for the variables.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;

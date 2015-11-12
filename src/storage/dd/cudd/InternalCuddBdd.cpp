@@ -1,16 +1,17 @@
 #include "src/storage/dd/cudd/InternalCuddBdd.h"
 
+#include "src/storage/dd/cudd/InternalCuddDdManager.h"
+
 namespace storm {
     namespace dd {
-        InternalBdd<DdType::CUDD>::InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd) : ddManager(ddManager), cuddBdd(cuddBdd) {
+        InternalBdd<DdType::CUDD>::InternalBdd(InternalDdManager<DdType::CUDD> const* ddManager, BDD cuddBdd) : ddManager(ddManager), cuddBdd(cuddBdd) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
-            std::vector<uint_fast64_t> ddVariableIndices = ddManager->getSortedVariableIndices(metaVariables);
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (ValueType const&)> const& filter) {
             uint_fast64_t offset = 0;
-            return BDD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, ddVariableIndices.size(), values, odd, ddVariableIndices, filter));
+            return InternalBdd<DdType::CUDD>(ddManager, BDD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, sortedDdVariableIndices.size(), values, odd, sortedDdVariableIndices, filter)));
         }
         
         bool InternalBdd<DdType::CUDD>::operator==(InternalBdd<DdType::CUDD> const& other) const {
@@ -22,7 +23,7 @@ namespace storm {
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::ite(InternalBdd<DdType::CUDD> const& thenDd, InternalBdd<DdType::CUDD> const& elseDd) const {
-            return InternalBdd<DdType::CUDD>(this->getCuddBdd().Ite(thenDd.getCuddBdd(), elseDd.getCuddBdd()));
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Ite(thenDd.getCuddBdd(), elseDd.getCuddBdd()));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::operator||(InternalBdd<DdType::CUDD> const& other) const {
@@ -48,15 +49,15 @@ namespace storm {
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::iff(InternalBdd<DdType::CUDD> const& other) const {
-            return InternalBdd<DdType::CUDD>(this->getCuddBdd().Xnor(other.getCuddBdd()));
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Xnor(other.getCuddBdd()));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::exclusiveOr(InternalBdd<DdType::CUDD> const& other) const {
-            return InternalBdd<DdType::CUDD>(this->getCuddBdd().Xor(other.getCuddBdd()));
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Xor(other.getCuddBdd()));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::implies(InternalBdd<DdType::CUDD> const& other) const {
-            return InternalBdd<DdType::CUDD>(this->getCuddBdd().Ite(other.getCuddBdd(), this->getDdManager()->getBddOne().getCuddBdd()), metaVariables);
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Ite(other.getCuddBdd(), ddManager->getBddOne().getCuddBdd()));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::operator!() const {
@@ -70,27 +71,27 @@ namespace storm {
             return *this;
         }
         
-        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::existsAbstract(InternalBdd<DdType> const& cube) const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().ExistAbstract(cube.getCuddBdd()), newMetaVariables);
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::existsAbstract(InternalBdd<DdType::CUDD> const& cube) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().ExistAbstract(cube.getCuddBdd()));
         }
         
-        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::universalAbstract(InternalBdd<DdType> const& cube) const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().UnivAbstract(cube.getCuddBdd()), newMetaVariables);
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::universalAbstract(InternalBdd<DdType::CUDD> const& cube) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().UnivAbstract(cube.getCuddBdd()));
         }
         
-        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::andExists(InternalBdd<DdType::CUDD> const& other, InternalBdd<DdType> const& cube) const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().AndAbstract(other.getCuddBdd(), cube.getCuddBdd()), containedMetaVariables);
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::andExists(InternalBdd<DdType::CUDD> const& other, InternalBdd<DdType::CUDD> const& cube) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().AndAbstract(other.getCuddBdd(), cube.getCuddBdd()));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::constrain(InternalBdd<DdType::CUDD> const& constraint) const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Constrain(constraint.getCuddBdd()), metaVariables);
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Constrain(constraint.getCuddBdd()));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::restrict(InternalBdd<DdType::CUDD> const& constraint) const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Restrict(constraint.getCuddBdd()), metaVariables);
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Restrict(constraint.getCuddBdd()));
         }
         
-        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::swapVariables(std::vector<std::pair<std::reference_wrapper<DdMetaVariable<LibraryType> const>, std::reference_wrapper<DdMetaVariable<LibraryType> const>>> const& fromTo) const {
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::swapVariables(std::vector<std::pair<std::reference_wrapper<DdMetaVariable<DdType::CUDD> const>, std::reference_wrapper<DdMetaVariable<DdType::CUDD> const>>> const& fromTo) const {
             std::vector<BDD> fromBdd;
             std::vector<BDD> toBdd;
             for (auto const& metaVariablePair : fromTo) {
@@ -107,11 +108,11 @@ namespace storm {
             }
             
             // Finally, call CUDD to swap the variables.
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().SwapVariables(fromBdd, toBdd), newContainedMetaVariables);
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().SwapVariables(fromBdd, toBdd));
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::getSupport() const {
-            return InternalBdd<DdType::CUDD>(this->getDdManager(), this->getCuddBdd().Support(), this->getContainedMetaVariables());
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Support());
         }
         
         uint_fast64_t InternalBdd<DdType::CUDD>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
@@ -155,7 +156,7 @@ namespace storm {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");
             std::vector<BDD> cuddBddVector = { this->getCuddBdd() };
-            this->getDdManager()->getCuddManager().DumpDot(cuddBddVector, &ddVariableNames[0], &ddNames[0], filePointer);
+            ddManager->getCuddManager().DumpDot(cuddBddVector, &ddVariableNames[0], &ddNames[0], filePointer);
             fclose(filePointer);
             
             // Finally, delete the names.
@@ -176,26 +177,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        Add<DdType::CUDD, ValueType> InternalBdd<DdType::CUDD>::toAdd() const {
-            return Add<DdType::CUDD, ValueType>(this->getCuddBdd().Add());
+        InternalAdd<DdType::CUDD, ValueType> InternalBdd<DdType::CUDD>::toAdd() const {
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddBdd().Add());
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         template<typename ValueType>
         DdNode* InternalBdd<DdType::CUDD>::fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter) {

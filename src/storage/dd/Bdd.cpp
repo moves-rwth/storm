@@ -37,7 +37,7 @@ namespace storm {
         template<DdType LibraryType>
         template<typename ValueType>
         Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
-            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(ddManager, values, odd, metaVariables, filter), metaVariables);
+            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(ddManager, values, odd, ddManager->getSortedVariableIndices(metaVariables), filter), metaVariables);
         }
         
         template<DdType LibraryType>

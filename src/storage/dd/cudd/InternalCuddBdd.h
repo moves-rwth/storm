@@ -7,7 +7,6 @@
 #include "src/storage/dd/InternalBdd.h"
 #include "src/storage/dd/InternalAdd.h"
 
-#include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/DdMetaVariable.h"
 
 // Include the C++-interface of CUDD.
@@ -27,6 +26,9 @@ namespace storm {
     }
 
     namespace dd {
+        template<DdType LibraryType>
+        class InternalDdManager;
+        
         template<storm::dd::DdType LibraryType>
         class Odd;
         
@@ -40,7 +42,7 @@ namespace storm {
              * @param cuddBdd The CUDD BDD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            InternalBdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, BDD cuddBdd);
+            InternalBdd(InternalDdManager<DdType::CUDD> const* ddManager, BDD cuddBdd);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             InternalBdd() = default;
@@ -60,7 +62,7 @@ namespace storm {
              * @return The resulting BDD.
              */
             template<typename ValueType>
-            static InternalBdd<storm::dd::DdType::CUDD> fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
+            static InternalBdd<storm::dd::DdType::CUDD> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (ValueType const&)> const& filter);
             
             /*!
              * Retrieves whether the two BDDs represent the same function.
@@ -330,7 +332,7 @@ namespace storm {
              */
             DdNode* getCuddDdNode() const;
             
-            std::shared_ptr<DdManager<DdType::CUDD> const> ddManager;
+            InternalDdManager<DdType::CUDD> const* ddManager;
             
             BDD cuddBdd;
         };

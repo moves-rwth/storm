@@ -14,6 +14,7 @@ namespace storm {
         template<DdType LibraryType>
         class Bdd : public Dd<LibraryType> {
         public:
+            friend class DdManager<LibraryType>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Bdd() = default;
