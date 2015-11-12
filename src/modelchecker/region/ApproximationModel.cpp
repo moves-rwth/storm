@@ -277,8 +277,6 @@ namespace storm {
                 //TODO: at this point, set policy to the one stored in the region.
                 invokeSolver(computeLowerBounds, policy);
                 
-                //TODO: policy for games.
-                if(policy.empty()) return this->solverData.result[this->solverData.initialStateIndex]; //This can be deleted as soon as policy for games is supported
                 //TODO: (maybe) when a few parameters are mapped to another value, build a "nicer" scheduler and check whether it induces values that are more optimal.
                 //Get the set of parameters which are (according to the policy) always mapped to the same region boundary.
                 //First, collect all (relevant) parameters, i.e., the ones that are set to the lower or upper boundary.
@@ -403,7 +401,10 @@ namespace storm {
             void ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, Policy& policy){
                 storm::solver::SolveGoal player2Goal(computeLowerBounds);
                 std::unique_ptr<storm::solver::GameSolver<double>> solver = storm::utility::solver::GameSolverFactory<double>().create(this->solverData.player1Matrix, this->matrixData.matrix);
-                solver->solveGame(this->solverData.player1Goal.direction(), player2Goal.direction(), this->solverData.result, this->vectorData.vector);
+                solver->setPolicyTracking();
+                solver->solveGame(this->solverData.player1Goal.direction(), player2Goal.direction(), this->solverData.result, this->vectorData.vector, &this->solverData.lastPlayer1Policy, &policy);
+                this->solverData.lastPlayer1Policy = solver->getPlayer1Policy();
+                policy = solver->getPlayer2Policy();
             }
             
                 

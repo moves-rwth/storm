@@ -718,6 +718,48 @@ namespace storm {
             return matrixBuilder.build();
         }
         
+        template<typename ValueType>
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::selectRowsFromRowIndexSequence(std::vector<index_type> const& rowIndexSequence, bool insertDiagonalEntries) const{
+            // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
+            // diagonal entries if requested.
+            index_type newEntries = 0;
+            for(index_type row = 0, rowEnd = rowIndexSequence.size(); row < rowEnd; ++row) {
+                bool foundDiagonalElement = false;
+                for (const_iterator it = this->begin(rowIndexSequence[row]), ite = this->end(rowIndexSequence[row]); it != ite; ++it) {
+                    if (it->getColumn() == row) {
+                        foundDiagonalElement = true;
+                    }
+                    ++newEntries;
+                }
+                if (insertDiagonalEntries && !foundDiagonalElement) {
+                    ++newEntries;
+                }
+            }
+            
+            // Now create the matrix to be returned with the appropriate size.
+            SparseMatrixBuilder<ValueType> matrixBuilder(rowIndexSequence.size(), columnCount, newEntries);
+            
+            // Copy over the selected rows from the source matrix.
+            for(index_type row = 0, rowEnd = rowIndexSequence.size(); row < rowEnd; ++row) {
+                bool insertedDiagonalElement = false;
+                for (const_iterator it = this->begin(rowIndexSequence[row]), ite = this->end(rowIndexSequence[row]); it != ite; ++it) {
+                    if (it->getColumn() == row) {
+                        insertedDiagonalElement = true;
+                    } else if (insertDiagonalEntries && !insertedDiagonalElement && it->getColumn() > row) {
+                        matrixBuilder.addNextValue(row, row, storm::utility::zero<ValueType>());
+                        insertedDiagonalElement = true;
+                    }
+                    matrixBuilder.addNextValue(row, it->getColumn(), it->getValue());
+                }
+                if (insertDiagonalEntries && !insertedDiagonalElement) {
+                    matrixBuilder.addNextValue(row, row, storm::utility::zero<ValueType>());
+                }
+            }
+            
+            // Finally create matrix and return result.
+            return matrixBuilder.build();
+        }
+        
         template <typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::transpose(bool joinGroups, bool keepZeros) const {
             index_type rowCount = this->getColumnCount();

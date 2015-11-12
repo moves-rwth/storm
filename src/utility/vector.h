@@ -150,6 +150,20 @@ namespace storm {
             }
             
             /*!
+             * Selects values from a vector at the specified sequence of indices and writes them into another vector
+             *
+             * @param vector The vector into which the selected elements are written.
+             * @param indexSequence a sequence of indices at which the desired values can be found
+             * @param values the values from which to select
+             */
+            template<class T>
+            void selectVectorValues(std::vector<T>& vector, std::vector<uint_fast64_t> const& indexSequence, std::vector<T> const& values) {
+                for (uint_fast64_t vectorIndex = 0; vectorIndex < vector.size(); ++vectorIndex){
+                    vector[vectorIndex] = values[indexSequence[vectorIndex]];
+                }
+            }
+            
+            /*!
              * Selects values from a vector at the specified positions and writes them into another vector as often as given by
              * the size of the corresponding group of elements.
              *

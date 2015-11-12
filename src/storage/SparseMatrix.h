@@ -634,6 +634,17 @@ namespace storm {
             SparseMatrix selectRowsFromRowGroups(std::vector<index_type> const& rowGroupToRowIndexMapping, bool insertDiagonalEntries = true) const;
             
             /*!
+             * Selects the rows that are given by the sequence of row indices, allowing to select rows arbitrarily often and with an arbitrary order
+             * The resulting matrix will have a trivial row grouping
+             *
+             * @param rowIndexSequence the sequence of row indices which specifies, which rows are contained in the new matrix
+             * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
+             * each row. This can then be used for inserting other values later.
+             * @return A matrix which rows are selected from this matrix according to the given index sequence
+             */
+            SparseMatrix selectRowsFromRowIndexSequence(std::vector<index_type> const& rowIndexSequence, bool insertDiagonalEntries = true) const;
+            
+            /*!
              * Transposes the matrix.
              *
              * @param joinGroups A flag indicating whether the row groups are supposed to be treated as single rows.

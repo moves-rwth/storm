@@ -2,6 +2,8 @@
 #define STORM_SOLVER_ABSTRACTGAMESOLVER_H_
 
 #include <cstdint>
+#include "src/storage/sparse/StateType.h"
+#include "src/utility/vector.h"
 
 namespace storm {
     namespace solver {
@@ -23,6 +25,11 @@ namespace storm {
              * @param relative A flag indicating whether a relative or an absolute stopping criterion is to be used.
              */
             AbstractGameSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
+            
+            void setPolicyTracking(bool setToTrue=true);
+            
+            std::vector<storm::storage::sparse::state_type> getPlayer1Policy() const;
+            std::vector<storm::storage::sparse::state_type> getPlayer2Policy() const;
 
         protected:
             // The precision to achieve.
@@ -33,6 +40,14 @@ namespace storm {
 
             // A flag indicating whether a relative or an absolute stopping criterion is to be used.
             bool relative;
+            
+            // Whether we track the policies we generate.
+            bool trackPolicies;
+            
+            // The policies for the different players
+            mutable std::vector<storm::storage::sparse::state_type> player1Policy;
+            mutable std::vector<storm::storage::sparse::state_type> player2Policy;
+            
         };
     }
 }

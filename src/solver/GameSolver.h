@@ -45,9 +45,11 @@ namespace storm {
              * @param player2Goal Sets whether player 2 wants to minimize or maximize.
              * @param x The initial guess of the solution.
              * @param b The vector to add after matrix-vector multiplication.
+             * @param initialPlayer1Policy A policy that selects rows in every rowgroup of player1. This will be used as an initial guess
+             * @param initialPlayer2Policy A policy that selects rows in every rowgroup of player2. This will be used as an initial guess
              * @return The solution vector in the for of the vector x.
              */
-            virtual void solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            virtual void solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<storm::storage::sparse::state_type>* initialPlayer1Policy = nullptr, std::vector<storm::storage::sparse::state_type>* initialPlayer2Policy = nullptr) const;
 
         private:
             // The matrix defining the choices of player 1.
@@ -55,6 +57,7 @@ namespace storm {
 
             // The matrix defining the choices of player 2.
             storm::storage::SparseMatrix<ValueType> const& player2Matrix;
+            
         };
     }
 }

@@ -18,5 +18,19 @@ namespace storm {
         AbstractGameSolver::AbstractGameSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
             // Intentionally left empty.
         }
+        
+        void AbstractGameSolver::setPolicyTracking(bool setToTrue) {
+            this->trackPolicies = setToTrue;
+        }
+        
+        std::vector<storm::storage::sparse::state_type> AbstractGameSolver::getPlayer1Policy() const {
+            assert(!this->player1Policy.empty());
+            return player1Policy;
+        }
+        
+        std::vector<storm::storage::sparse::state_type> AbstractGameSolver::getPlayer2Policy() const {
+            assert(!this->player2Policy.empty());
+            return player2Policy;
+        }
     }
 }
