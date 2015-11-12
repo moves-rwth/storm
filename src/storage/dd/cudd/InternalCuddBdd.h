@@ -7,8 +7,6 @@
 #include "src/storage/dd/InternalBdd.h"
 #include "src/storage/dd/InternalAdd.h"
 
-#include "src/storage/dd/DdMetaVariable.h"
-
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
 
@@ -182,7 +180,7 @@ namespace storm {
              * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
              * @return The resulting BDD.
              */
-            InternalBdd<DdType::CUDD> swapVariables(std::vector<std::pair<std::reference_wrapper<DdMetaVariable<DdType::CUDD> const>, std::reference_wrapper<DdMetaVariable<DdType::CUDD> const>>> const& fromTo) const;
+            InternalBdd<DdType::CUDD> swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const;
             
             /*!
              * Computes the logical and of the current and the given BDD and existentially abstracts from the given set

@@ -19,6 +19,8 @@ namespace storm {
         template<DdType LibraryType>
         class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
         public:
+            friend class Bdd<LibraryType>;
+            
             /*!
              * Creates an empty manager without any meta variables.
              */
@@ -177,7 +179,7 @@ namespace storm {
              * @param metaVariable The set of meta variables for which to retrieve the index list.
              * @return The sorted list of variable indices.
              */
-            std::vector<uint_fast64_t> getSortedVariableIndices(std::set<storm::expressions::Variable> const& metaVariables);
+            std::vector<uint_fast64_t> getSortedVariableIndices(std::set<storm::expressions::Variable> const& metaVariables) const;
             
             /*!
              * Retrieves the internal DD manager.

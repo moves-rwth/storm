@@ -265,7 +265,7 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        std::vector<uint_fast64_t> DdManager<LibraryType>::getSortedVariableIndices(std::set<storm::expressions::Variable> const& metaVariables) {
+        std::vector<uint_fast64_t> DdManager<LibraryType>::getSortedVariableIndices(std::set<storm::expressions::Variable> const& metaVariables) const {
             std::vector<uint_fast64_t> ddVariableIndices;
             for (auto const& metaVariable : metaVariableMap) {
                 for (auto const& ddVariable : metaVariable.second.getDdVariables()) {

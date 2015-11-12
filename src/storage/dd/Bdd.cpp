@@ -144,13 +144,28 @@ namespace storm {
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const {
             std::set<storm::expressions::Variable> newContainedMetaVariables;
-            std::vector<std::pair<std::reference_wrapper<DdMetaVariable<LibraryType> const>, std::reference_wrapper<DdMetaVariable<LibraryType> const>>> fromTo;
+            std::vector<InternalBdd<LibraryType>> from;
+            std::vector<InternalBdd<LibraryType>> to;
             for (auto const& metaVariablePair : metaVariablePairs) {
-                std::reference_wrapper<DdMetaVariable<LibraryType> const> variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
-                std::reference_wrapper<DdMetaVariable<LibraryType> const> variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
-                fromTo.push_back(std::make_pair(variable1, variable2));
+                DdMetaVariable<LibraryType> const& variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
+                DdMetaVariable<LibraryType> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
+                
+                // Keep track of the contained meta variables in the DD.
+                if (this->containsMetaVariable(metaVariablePair.first)) {
+                    newContainedMetaVariables.insert(metaVariablePair.second);
+                }
+                if (this->containsMetaVariable(metaVariablePair.second)) {
+                    newContainedMetaVariables.insert(metaVariablePair.first);
+                }
+                
+                for (auto const& ddVariable : variable1.getDdVariables()) {
+                    from.push_back(ddVariable);
+                }
+                for (auto const& ddVariable : variable2.getDdVariables()) {
+                    to.push_back(ddVariable);
+                }
             }
-            return Bdd<LibraryType>(internalBdd.swapVariables(fromTo));
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.swapVariables(from, to), newContainedMetaVariables);
         }
         
         template<DdType LibraryType>

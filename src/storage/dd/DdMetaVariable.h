@@ -11,6 +11,9 @@ namespace storm {
         template<DdType LibraryType>
         class DdManager;
         
+        template<DdType LibraryType, typename ValueTpe>
+        class Add;
+
         // An enumeration for all legal types of meta variables.
         enum class MetaVariableType { Bool, Int };
         
@@ -19,6 +22,8 @@ namespace storm {
         class DdMetaVariable {
         public:
             friend class DdManager<LibraryType>;
+            friend class Bdd<LibraryType>;
+            friend class Add<LibraryType, double>;
             
             /*!
              * Retrieves the name of the meta variable.

@@ -91,23 +91,13 @@ namespace storm {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Restrict(constraint.getCuddBdd()));
         }
         
-        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::swapVariables(std::vector<std::pair<std::reference_wrapper<DdMetaVariable<DdType::CUDD> const>, std::reference_wrapper<DdMetaVariable<DdType::CUDD> const>>> const& fromTo) const {
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const {
             std::vector<BDD> fromBdd;
             std::vector<BDD> toBdd;
-            for (auto const& metaVariablePair : fromTo) {
-                DdMetaVariable<DdType::CUDD> const& variable1 = metaVariablePair.first.get();
-                DdMetaVariable<DdType::CUDD> const& variable2 = metaVariablePair.second.get();
-                
-                // Add the variables to swap to the corresponding vectors.
-                for (auto const& ddVariable : variable1.getDdVariables()) {
-                    fromBdd.push_back(ddVariable.getCuddBdd());
-                }
-                for (auto const& ddVariable : variable2.getDdVariables()) {
-                    toBdd.push_back(ddVariable.getCuddBdd());
-                }
+            for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
+                fromBdd.push_back(it1->getCuddBdd());
+                toBdd.push_back(it2->getCuddBdd());
             }
-            
-            // Finally, call CUDD to swap the variables.
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().SwapVariables(fromBdd, toBdd));
         }
         

@@ -6,9 +6,7 @@
 namespace storm {
     namespace dd {
         template<DdType Type>
-        class Odd {
-            
-        };
+        class Odd;
     }
 }
 
