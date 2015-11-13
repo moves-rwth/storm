@@ -1,4 +1,4 @@
-#include "src/storage/dd/cudd/CuddDdForwardIterator.h"
+#include "src/storage/dd/cudd/CuddAddIterator.h"
 #include "src/storage/dd/cudd/CuddDdManager.h"
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/utility/macros.h"
@@ -6,11 +6,13 @@
 
 namespace storm {
     namespace dd {
-        DdForwardIterator<DdType::CUDD>::DdForwardIterator() : ddManager(), generator(), cube(), value(), isAtEnd(), metaVariables(), enumerateDontCareMetaVariables(), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
+        template<typename ValueType>
+        AddIterator<DdType::CUDD, ValueType>::DdForwardIterator() : ddManager(), generator(), cube(), value(), isAtEnd(), metaVariables(), enumerateDontCareMetaVariables(), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
             // Intentionally left empty.
         }
         
-        DdForwardIterator<DdType::CUDD>::DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
+        template<typename ValueType>
+        AddIterator<DdType::CUDD, ValueType>::DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
             // If the given generator is not yet at its end, we need to create the current valuation from the cube from
             // scratch.
             if (!this->isAtEnd) {
@@ -19,13 +21,15 @@ namespace storm {
             }
         }
         
-        DdForwardIterator<DdType::CUDD>::DdForwardIterator(DdForwardIterator<DdType::CUDD>&& other) : ddManager(other.ddManager), generator(other.generator), cube(other.cube), value(other.value), isAtEnd(other.isAtEnd), metaVariables(other.metaVariables), cubeCounter(other.cubeCounter), relevantDontCareDdVariables(other.relevantDontCareDdVariables), currentValuation(other.currentValuation) {
+        template<typename ValueType>
+        AddIterator<DdType::CUDD, ValueType>::DdForwardIterator(AddIterator<DdType::CUDD, ValueType>&& other) : ddManager(other.ddManager), generator(other.generator), cube(other.cube), value(other.value), isAtEnd(other.isAtEnd), metaVariables(other.metaVariables), cubeCounter(other.cubeCounter), relevantDontCareDdVariables(other.relevantDontCareDdVariables), currentValuation(other.currentValuation) {
             // Null-out the pointers of which we took possession.
             other.cube = nullptr;
             other.generator = nullptr;
         }
         
-        DdForwardIterator<DdType::CUDD>& DdForwardIterator<DdType::CUDD>::operator=(DdForwardIterator<DdType::CUDD>&& other) {
+        template<typename ValueType>
+        AddIterator<DdType::CUDD, ValueType>& AddIterator<DdType::CUDD, ValueType>::operator=(AddIterator<DdType::CUDD, ValueType>&& other) {
             if (this != &other) {
                 this->ddManager = other.ddManager;
                 this->generator = other.generator;
@@ -44,7 +48,8 @@ namespace storm {
             return *this;
         }
         
-        DdForwardIterator<DdType::CUDD>::~DdForwardIterator() {
+        template<typename ValueType>
+        AddIterator<DdType::CUDD, ValueType>::~DdForwardIterator() {
             // We free the pointers sind Cudd allocates them using malloc rather than new/delete.
             if (this->cube != nullptr) {
                 free(this->cube);
@@ -54,7 +59,8 @@ namespace storm {
             }
         }
         
-        DdForwardIterator<DdType::CUDD>& DdForwardIterator<DdType::CUDD>::operator++() {
+        template<typename ValueType>
+        AddIterator<DdType::CUDD, ValueType>& AddIterator<DdType::CUDD, ValueType>::operator++() {
             STORM_LOG_ASSERT(!this->isAtEnd, "Illegally incrementing iterator that is already at its end.");
             
             // If there were no (relevant) don't cares or we have enumerated all combination, we need to eliminate the
@@ -76,7 +82,8 @@ namespace storm {
             return *this;
         }
         
-        void DdForwardIterator<DdType::CUDD>::treatNextInCube() {
+        template<typename ValueType>
+        void AddIterator<DdType::CUDD, ValueType>::treatNextInCube() {
             // Start by increasing the counter and check which bits we need to set/unset in the new valuation.
             ++this->cubeCounter;
             
@@ -99,7 +106,8 @@ namespace storm {
             }
         }
         
-        void DdForwardIterator<DdType::CUDD>::treatNewCube() {
+        template<typename ValueType>
+        void AddIterator<DdType::CUDD, ValueType>::treatNewCube() {
             this->relevantDontCareDdVariables.clear();
             
             // Now loop through the bits of all meta variables and check whether they need to be set, not set or are
@@ -150,7 +158,8 @@ namespace storm {
             this->cubeCounter = 0;
         }
         
-        bool DdForwardIterator<DdType::CUDD>::operator==(DdForwardIterator<DdType::CUDD> const& other) const {
+        template<typename ValueType>
+        bool AddIterator<DdType::CUDD, ValueType>::operator==(AddIterator<DdType::CUDD, ValueType> const& other) const {
             if (this->isAtEnd && other.isAtEnd) {
                 return true;
             } else {
@@ -162,12 +171,16 @@ namespace storm {
             }
         }
         
-        bool DdForwardIterator<DdType::CUDD>::operator!=(DdForwardIterator<DdType::CUDD> const& other) const {
+        template<typename ValueType>
+        bool AddIterator<DdType::CUDD, ValueType>::operator!=(AddIterator<DdType::CUDD, ValueType> const& other) const {
             return !(*this == other);
         }
         
-        std::pair<storm::expressions::SimpleValuation, double> DdForwardIterator<DdType::CUDD>::operator*() const {
+        template<typename ValueType>
+        std::pair<storm::expressions::SimpleValuation, double> AddIterator<DdType::CUDD, ValueType>::operator*() const {
             return std::make_pair(currentValuation, value);
         }
+        
+        template class AddIterator<DdType::CUDD, double>;
     }
 }

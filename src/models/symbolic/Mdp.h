@@ -11,17 +11,17 @@ namespace storm {
             /*!
              * This class represents a discrete-time Markov decision process.
              */
-            template<storm::dd::DdType Type>
-            class Mdp : public NondeterministicModel<Type> {
+            template<storm::dd::DdType Type, typename ValueType = double>
+            class Mdp : public NondeterministicModel<Type, ValueType> {
             public:
-                typedef typename NondeterministicModel<Type>::RewardModelType RewardModelType;
+                typedef typename NondeterministicModel<Type, ValueType>::RewardModelType RewardModelType;
 
-                Mdp(Mdp<Type> const& other) = default;
-                Mdp& operator=(Mdp<Type> const& other) = default;
+                Mdp(Mdp<Type, ValueType> const& other) = default;
+                Mdp& operator=(Mdp<Type, ValueType> const& other) = default;
                 
 #ifndef WINDOWS
-                Mdp(Mdp<Type>&& other) = default;
-                Mdp& operator=(Mdp<Type>&& other) = default;
+                Mdp(Mdp<Type, ValueType>&& other) = default;
+                Mdp& operator=(Mdp<Type, ValueType>&& other) = default;
 #endif
                 
                 /*!
@@ -46,11 +46,11 @@ namespace storm {
                 Mdp(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                     storm::dd::Bdd<Type> reachableStates,
                     storm::dd::Bdd<Type> initialStates,
-                    storm::dd::Add<Type> transitionMatrix,
+                    storm::dd::Add<Type, ValueType> transitionMatrix,
                     std::set<storm::expressions::Variable> const& rowVariables,
-                    std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter,
+                    std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
                     std::set<storm::expressions::Variable> const& columnVariables,
-                    std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
+                    std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter,
                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                     std::set<storm::expressions::Variable> const& nondeterminismVariables,
                     std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),

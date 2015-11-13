@@ -36,7 +36,7 @@ namespace storm {
         
         template<DdType LibraryType>
         template<typename ValueType>
-        Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
+        Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
             return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(ddManager, values, odd, ddManager->getSortedVariableIndices(metaVariables), filter), metaVariables);
         }
         
@@ -52,7 +52,7 @@ namespace storm {
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::ite(Bdd<LibraryType> const& thenBdd, Bdd<LibraryType> const& elseBdd) const {
-            std::set<storm::expressions::Variable> metaVariables = Dd<LibraryType>::joinMetaVariables(*this, thenBdd);
+            std::set<storm::expressions::Variable> metaVariables = Dd<LibraryType>::joinMetaVariables(thenBdd, elseBdd);
             metaVariables.insert(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end());
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.ite(thenBdd.internalBdd, elseBdd.internalBdd), metaVariables);
         }

@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_DD_CUDDDDFORWARDITERATOR_H_
-#define STORM_STORAGE_DD_CUDDDDFORWARDITERATOR_H_
+#ifndef STORM_STORAGE_DD_CUDDAddIterator_H_
+#define STORM_STORAGE_DD_CUDDAddIterator_H_
 
 #include <memory>
 #include <cstdint>
@@ -7,7 +7,7 @@
 #include <tuple>
 #include <utility>
 
-#include "src/storage/dd/DdForwardIterator.h"
+#include "src/storage/dd/AddIterator.h"
 #include "src/storage/expressions/SimpleValuation.h"
 
 // Include the C++-interface of CUDD.
@@ -19,31 +19,31 @@ namespace storm {
         template<DdType Type> class DdManager;
         template<DdType Type> class Add;
         
-        template<>
-        class DdForwardIterator<DdType::CUDD> {
+        template<typename ValueType>
+        class AddIterator<DdType::CUDD, ValueType> {
         public:
             friend class Add<DdType::CUDD>;
 
             // Default-instantiate the constructor.
-            DdForwardIterator();
+            AddIterator();
             
             // Forbid copy-construction and copy assignment, because ownership of the internal pointer is unclear then.
-            DdForwardIterator(DdForwardIterator<DdType::CUDD> const& other) = delete;
-            DdForwardIterator& operator=(DdForwardIterator<DdType::CUDD> const& other) = delete;
+            AddIterator(AddIterator<DdType::CUDD, ValueType> const& other) = delete;
+            AddIterator& operator=(AddIterator<DdType::CUDD, ValueType> const& other) = delete;
             
             // Provide move-construction and move-assignment, though.
-            DdForwardIterator(DdForwardIterator<DdType::CUDD>&& other);
-            DdForwardIterator& operator=(DdForwardIterator<DdType::CUDD>&& other);
+            AddIterator(AddIterator<DdType::CUDD, ValueType>&& other);
+            AddIterator& operator=(AddIterator<DdType::CUDD, ValueType>&& other);
             
             /*!
              * Destroys the forward iterator and frees the generator as well as the cube if they are not the nullptr.
              */
-            ~DdForwardIterator();
+            ~AddIterator();
             
             /*!
              * Moves the iterator one position forward.
              */
-            DdForwardIterator<DdType::CUDD>& operator++();
+            AddIterator<DdType::CUDD, ValueType>& operator++();
             
             /*!
              * Returns a pair consisting of a valuation of meta variables and the value to which this valuation is
@@ -60,7 +60,7 @@ namespace storm {
              * @param other The iterator with which to compare.
              * @return True if the two iterators are considered equal.
              */
-            bool operator==(DdForwardIterator<DdType::CUDD> const& other) const;
+            bool operator==(AddIterator<DdType::CUDD, ValueType> const& other) const;
             
             /*!
              * Compares the iterator with the given one. Two iterators are considered unequal iff they are not
@@ -69,7 +69,7 @@ namespace storm {
              * @param other The iterator with which to compare.
              * @return True if the two iterators are considered unequal.
              */
-            bool operator!=(DdForwardIterator<DdType::CUDD> const& other) const;
+            bool operator!=(AddIterator<DdType::CUDD, ValueType> const& other) const;
             
         private:
             /*!
@@ -85,7 +85,7 @@ namespace storm {
              * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
              * if a meta variable does not at all influence the the function value.
              */
-            DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
+            AddIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
             
             /*!
              * Recreates the internal information when a new cube needs to be treated.
@@ -133,4 +133,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_DD_CUDDDDFORWARDITERATOR_H_ */
+#endif /* STORM_STORAGE_DD_CUDDAddIterator_H_ */

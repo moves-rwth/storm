@@ -2,15 +2,15 @@
 #define STORM_MODELCHECKER_HYBRIDQUANTITATIVECHECKRESULT_H_
 
 #include "src/storage/dd/DdType.h"
-#include "src/storage/dd/cudd/CuddAdd.h"
-#include "src/storage/dd/cudd/CuddBdd.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/cudd/CuddOdd.h"
 #include "src/modelchecker/results/QuantitativeCheckResult.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace modelchecker {
-        template<storm::dd::DdType Type>
+        template<storm::dd::DdType Type, typename ValueType = double>
         class HybridQuantitativeCheckResult : public QuantitativeCheckResult {
         public:
             HybridQuantitativeCheckResult() = default;
@@ -34,21 +34,21 @@ namespace storm {
             
             storm::dd::Bdd<Type> const& getSymbolicStates() const;
             
-            storm::dd::Add<Type> const& getSymbolicValueVector() const;
+            storm::dd::Add<Type, ValueType> const& getSymbolicValueVector() const;
             
             storm::dd::Bdd<Type> const& getExplicitStates() const;
             
             storm::dd::Odd<Type> const& getOdd() const;
             
-            std::vector<double> const& getExplicitValueVector() const;
+            std::vector<ValueType> const& getExplicitValueVector() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             virtual void filter(QualitativeCheckResult const& filter) override;
             
-            virtual double getMin() const;
+            virtual ValueType getMin() const;
 
-            virtual double getMax() const;
+            virtual ValueType getMax() const;
             
         private:
             // The set of all reachable states.
@@ -58,7 +58,7 @@ namespace storm {
             storm::dd::Bdd<Type> symbolicStates;
 
             // The symbolic value vector.
-            storm::dd::Add<Type> symbolicValues;
+            storm::dd::Add<Type, ValueType> symbolicValues;
             
             // The set of all states whose result is stored explicitly.
             storm::dd::Bdd<Type> explicitStates;
@@ -67,7 +67,7 @@ namespace storm {
             storm::dd::Odd<Type> odd;
 
             // The explicit value vector.
-            std::vector<double> explicitValues;
+            std::vector<ValueType> explicitValues;
         };
     }
 }

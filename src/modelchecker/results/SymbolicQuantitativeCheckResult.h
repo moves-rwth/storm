@@ -2,13 +2,13 @@
 #define STORM_MODELCHECKER_SYMBOLICQUANTITATIVECHECKRESULT_H_
 
 #include "src/storage/dd/DdType.h"
-#include "src/storage/dd/cudd/CuddAdd.h"
+#include "src/storage/dd/Add.h"
 #include "src/modelchecker/results/QuantitativeCheckResult.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
     namespace modelchecker {
-        template<storm::dd::DdType Type>
+        template<storm::dd::DdType Type, typename ValueType = double>
         class SymbolicQuantitativeCheckResult : public QuantitativeCheckResult {
         public:
             SymbolicQuantitativeCheckResult() = default;
@@ -28,15 +28,15 @@ namespace storm {
             
             virtual bool isSymbolicQuantitativeCheckResult() const override;
             
-            storm::dd::Add<Type> const& getValueVector() const;
+            storm::dd::Add<Type, ValueType> const& getValueVector() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             virtual void filter(QualitativeCheckResult const& filter) override;
             
-            virtual double getMin() const;
+            virtual ValueType getMin() const;
             
-            virtual double getMax() const;
+            virtual ValueType getMax() const;
             
         private:
             // The set of all reachable states.
@@ -46,7 +46,7 @@ namespace storm {
             storm::dd::Bdd<Type> states;
             
             // The values of the quantitative check result.
-            storm::dd::Add<Type> values;
+            storm::dd::Add<Type, ValueType> values;
         };
     }
 }

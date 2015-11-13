@@ -11,7 +11,7 @@
 namespace storm {
     namespace adapters {
         
-        template<storm::dd::DdType Type>
+        template<storm::dd::DdType Type, typename ValueType = double>
         class AddExpressionAdapter : public storm::expressions::ExpressionVisitor {
         public:
             AddExpressionAdapter(std::shared_ptr<storm::dd::DdManager<Type>> ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping);

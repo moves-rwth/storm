@@ -21,16 +21,24 @@ namespace storm {
     namespace models {
         
         namespace symbolic {
-            template<storm::dd::DdType T> class Model;
-            template<storm::dd::DdType T> class DeterministicModel;
-            template<storm::dd::DdType T> class NondeterministicModel;
+            template<storm::dd::DdType Type, typename ValueType>
+            class Model;
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            class DeterministicModel;
+            
+            template<storm::dd::DdType Type, typename ValueType>
+            class NondeterministicModel;
         }
         
     }
     
     namespace dd {
-        template<storm::dd::DdType T> class Bdd;
-        template<storm::dd::DdType T> class Add;
+        template<storm::dd::DdType Type>
+        class Bdd;
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        class Add;
         
     }
     
@@ -409,8 +417,8 @@ namespace storm {
              * @param psiStates The BDD containing all psi states of the model.
              * @return A BDD representing all such states.
              */
-            template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProbGreater0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+            template <storm::dd::DdType Type, typename ValueType = double>
+            storm::dd::Bdd<Type> performProbGreater0E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
              * Computes the set of states for which there does not exist a scheduler that achieves a probability greater
@@ -422,8 +430,8 @@ namespace storm {
              * @param psiStates The psi states of the model.
              * @return A BDD representing all such states.
              */
-            template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProb0A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+            template <storm::dd::DdType Type, typename ValueType = double>
+            storm::dd::Bdd<Type> performProb0A(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
              * Computes the set of states for which all schedulers achieve a probability greater than zero of satisfying
@@ -435,8 +443,8 @@ namespace storm {
              * @param psiStates The BDD containing all psi states of the model.
              * @return A BDD representing all such states.
              */
-            template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProbGreater0A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+            template <storm::dd::DdType Type, typename ValueType = double>
+            storm::dd::Bdd<Type> performProbGreater0A(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
              * Computes the set of states for which there exists a scheduler that achieves probability zero of satisfying
@@ -448,8 +456,8 @@ namespace storm {
              * @param psiStates The BDD containing all psi states of the model.
              * @return A BDD representing all such states.
              */
-            template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProb0E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
+            template <storm::dd::DdType Type, typename ValueType = double>
+            storm::dd::Bdd<Type> performProb0E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
             
             /*!
              * Computes the set of states for which all schedulers achieve probability one of satisfying phi until psi.
@@ -462,8 +470,8 @@ namespace storm {
              * all schedulers.
              * @return A BDD representing all such states.
              */
-            template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProb1A(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0A);
+            template <storm::dd::DdType Type, typename ValueType = double>
+            storm::dd::Bdd<Type> performProb1A(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0A);
             
             /*!
              * Computes the set of states for which there exists a scheduler that achieves probability one of satisfying
@@ -477,14 +485,14 @@ namespace storm {
              * greater than zero.
              * @return A BDD representing all such states.
              */
-            template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProb1E(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0E) ;
+            template <storm::dd::DdType Type, typename ValueType = double>
+            storm::dd::Bdd<Type> performProb1E(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0E);
             
-            template <storm::dd::DdType Type>
-            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
+            template <storm::dd::DdType Type, typename ValueType = double>
+            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Max(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
-            template <storm::dd::DdType Type>
-            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
+            template <storm::dd::DdType Type, typename ValueType = double>
+            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01Min(storm::models::symbolic::NondeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
              * Performs a topological sort of the states of the system according to the given transitions.

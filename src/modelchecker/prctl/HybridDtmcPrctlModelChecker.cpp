@@ -4,7 +4,7 @@
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
 #include "src/storage/dd/cudd/CuddOdd.h"
-#include "src/storage/dd/cudd/CuddDdManager.h"
+#include "src/storage/dd/DdManager.h"
 
 #include "src/utility/macros.h"
 #include "src/utility/graph.h"

@@ -3,9 +3,9 @@
 #include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "src/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 
-#include "src/storage/dd/cudd/CuddDdManager.h"
-#include "src/storage/dd/cudd/CuddAdd.h"
-#include "src/storage/dd/cudd/CuddBdd.h"
+#include "src/storage/dd/DdManager.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/cudd/CuddOdd.h"
 
 #include "src/utility/macros.h"
@@ -27,23 +27,23 @@ namespace storm {
         namespace helper {
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeReachabilityRewards(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeReachabilityRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 return HybridDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(model, computeProbabilityMatrix(model, rateMatrix, exitRateVector), rewardModel.divideStateRewardVector(exitRateVector), targetStates, qualitative, linearEquationSolverFactory);
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeNextProbabilities(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector, storm::dd::Bdd<DdType> const& nextStates) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeNextProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& nextStates) {
                 return HybridDtmcPrctlHelper<DdType, ValueType>::computeNextProbabilities(model, computeProbabilityMatrix(model, rateMatrix, exitRateVector), nextStates);
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeUntilProbabilities(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeUntilProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 return HybridDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(model, computeProbabilityMatrix(model, rateMatrix, exitRateVector), phiStates, psiStates, qualitative, linearEquationSolverFactory);
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeBoundedUntilProbabilities(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeBoundedUntilProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // If the time bounds are [0, inf], we rather call untimed reachability.
                 if (storm::utility::isZero(lowerBound) && upperBound == storm::utility::infinity<ValueType>()) {
@@ -74,10 +74,10 @@ namespace storm {
                             STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                             
                             // Compute the uniformized matrix.
-                            storm::dd::Add<DdType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, statesWithProbabilityGreater0NonPsi, uniformizationRate);
+                            storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, statesWithProbabilityGreater0NonPsi, uniformizationRate);
                             
                             // Compute the vector that is to be added as a compensation for removing the absorbing states.
-                            storm::dd::Add<DdType> b = (statesWithProbabilityGreater0NonPsi.toAdd() * rateMatrix * psiStates.swapVariables(model.getRowColumnMetaVariablePairs()).toAdd()).sumAbstract(model.getColumnVariables()) / model.getManager().getConstant(uniformizationRate);
+                            storm::dd::Add<DdType, ValueType> b = (statesWithProbabilityGreater0NonPsi.toAdd() * rateMatrix * psiStates.swapVariables(model.getRowColumnMetaVariablePairs()).toAdd()).sumAbstract(model.getColumnVariables()) / model.getManager().getConstant(uniformizationRate);
                             
                             // Create an ODD for the translation to an explicit representation.
                             storm::dd::Odd<DdType> odd(statesWithProbabilityGreater0NonPsi);
@@ -122,7 +122,7 @@ namespace storm {
                             ValueType uniformizationRate = 1.02 * (relevantStates.toAdd() * exitRateVector).getMax();
                             
                             // Compute the uniformized matrix.
-                            storm::dd::Add<DdType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, relevantStates, uniformizationRate);
+                            storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, relevantStates, uniformizationRate);
                             storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                             
                             // Compute the transient probabilities.
@@ -140,10 +140,10 @@ namespace storm {
                                 STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                                 
                                 // Compute the (first) uniformized matrix.
-                                storm::dd::Add<DdType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, statesWithProbabilityGreater0NonPsi, uniformizationRate);
+                                storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, statesWithProbabilityGreater0NonPsi, uniformizationRate);
                                 
                                 // Create the one-step vector.
-                                storm::dd::Add<DdType> b = (statesWithProbabilityGreater0NonPsi.toAdd() * rateMatrix * psiStates.swapVariables(model.getRowColumnMetaVariablePairs()).toAdd()).sumAbstract(model.getColumnVariables()) / model.getManager().getConstant(uniformizationRate);
+                                storm::dd::Add<DdType, ValueType> b = (statesWithProbabilityGreater0NonPsi.toAdd() * rateMatrix * psiStates.swapVariables(model.getRowColumnMetaVariablePairs()).toAdd()).sumAbstract(model.getColumnVariables()) / model.getManager().getConstant(uniformizationRate);
                                 
                                 // Build an ODD for the relevant states and translate the symbolic parts to their explicit representation.
                                 storm::dd::Odd<DdType> odd = storm::dd::Odd<DdType>(statesWithProbabilityGreater0NonPsi);
@@ -204,7 +204,7 @@ namespace storm {
                                 STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                                 
                                 // Finally, we compute the second set of transient probabilities.
-                                storm::dd::Add<DdType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, statesWithProbabilityGreater0, uniformizationRate);
+                                storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, statesWithProbabilityGreater0, uniformizationRate);
                                 storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                                 
                                 newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, linearEquationSolverFactory);
@@ -219,7 +219,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeInstantaneousRewards(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeInstantaneousRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
@@ -235,7 +235,7 @@ namespace storm {
                     ValueType uniformizationRate = 1.02 * exitRateVector.getMax();
                     STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                     
-                    storm::dd::Add<DdType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, model.getReachableStates(), uniformizationRate);
+                    storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, model.getReachableStates(), uniformizationRate);
                     
                     storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                     result = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, result, linearEquationSolverFactory);
@@ -245,7 +245,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeCumulativeRewards(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeCumulativeRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -264,11 +264,11 @@ namespace storm {
                 storm::dd::Odd<DdType> odd(model.getReachableStates());
                 
                 // Compute the uniformized matrix.
-                storm::dd::Add<DdType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector,  model.getReachableStates(), uniformizationRate);
+                storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector,  model.getReachableStates(), uniformizationRate);
                 storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                 
                 // Then compute the state reward vector to use in the computation.
-                storm::dd::Add<DdType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, model.getColumnVariables(), exitRateVector);
+                storm::dd::Add<DdType, ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, model.getColumnVariables(), exitRateVector);
                 std::vector<ValueType> explicitTotalRewardVector = totalRewardVector.template toVector<ValueType>(odd);
                 
                 // Finally, compute the transient probabilities.
@@ -277,8 +277,8 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverage(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                storm::dd::Add<DdType> probabilityMatrix = computeProbabilityMatrix(model, rateMatrix, exitRateVector);
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverage(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(model, rateMatrix, exitRateVector);
                 
                 // Create ODD for the translation.
                 storm::dd::Odd<DdType> odd(model.getReachableStates());
@@ -291,17 +291,17 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            storm::dd::Add<DdType> HybridCtmcCslHelper<DdType, ValueType>::computeUniformizedMatrix(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& transitionMatrix, storm::dd::Add<DdType> const& exitRateVector, storm::dd::Bdd<DdType> const& maybeStates, ValueType uniformizationRate) {
+            storm::dd::Add<DdType, ValueType> HybridCtmcCslHelper<DdType, ValueType>::computeUniformizedMatrix(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& maybeStates, ValueType uniformizationRate) {
                 STORM_LOG_DEBUG("Computing uniformized matrix using uniformization rate " << uniformizationRate << ".");
                 STORM_LOG_DEBUG("Keeping " << maybeStates.getNonZeroCount() << " rows.");
                 
                 // Cut all non-maybe rows/columns from the transition matrix.
-                storm::dd::Add<DdType> uniformizedMatrix = transitionMatrix * maybeStates.toAdd() * maybeStates.swapVariables(model.getRowColumnMetaVariablePairs()).toAdd();
+                storm::dd::Add<DdType, ValueType> uniformizedMatrix = transitionMatrix * maybeStates.toAdd() * maybeStates.swapVariables(model.getRowColumnMetaVariablePairs()).toAdd();
                 
                 // Now perform the uniformization.
                 uniformizedMatrix = uniformizedMatrix / model.getManager().getConstant(uniformizationRate);
-                storm::dd::Add<DdType> diagonal = model.getRowColumnIdentity() * maybeStates.toAdd();
-                storm::dd::Add<DdType> diagonalOffset = diagonal;
+                storm::dd::Add<DdType, ValueType> diagonal = model.getRowColumnIdentity() * maybeStates.toAdd();
+                storm::dd::Add<DdType, ValueType> diagonalOffset = diagonal;
                 diagonalOffset -= diagonal * (exitRateVector / model.getManager().getConstant(uniformizationRate));
                 uniformizedMatrix += diagonalOffset;
                 
@@ -309,7 +309,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            storm::dd::Add<DdType> HybridCtmcCslHelper<DdType, ValueType>::computeProbabilityMatrix(storm::models::symbolic::Model<DdType> const& model, storm::dd::Add<DdType> const& rateMatrix, storm::dd::Add<DdType> const& exitRateVector) {
+            storm::dd::Add<DdType, ValueType> HybridCtmcCslHelper<DdType, ValueType>::computeProbabilityMatrix(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector) {
                 return rateMatrix / exitRateVector;
             }
 
