@@ -14,7 +14,7 @@ namespace storm {
         class HybridQuantitativeCheckResult : public QuantitativeCheckResult {
         public:
             HybridQuantitativeCheckResult() = default;
-            HybridQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& symbolicStates, storm::dd::Add<Type> const& symbolicValues, storm::dd::Bdd<Type> const& explicitStates, storm::dd::Odd<Type> const& odd, std::vector<double> const& explicitValues);
+            HybridQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& symbolicStates, storm::dd::Add<Type, ValueType> const& symbolicValues, storm::dd::Bdd<Type> const& explicitStates, storm::dd::Odd<Type> const& odd, std::vector<ValueType> const& explicitValues);
             
             HybridQuantitativeCheckResult(HybridQuantitativeCheckResult const& other) = default;
             HybridQuantitativeCheckResult& operator=(HybridQuantitativeCheckResult const& other) = default;

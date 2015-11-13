@@ -109,19 +109,19 @@ namespace storm {
 
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = this->getCube(metaVariables);
+            Bdd<LibraryType> cube = getCube(*this->getDdManager(), metaVariables);
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
 
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = this->getCube(metaVariables);
+            Bdd<LibraryType> cube = getCube(*this->getDdManager(), metaVariables);
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.universalAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::andExists(Bdd<LibraryType> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const {
-            Bdd<DdType::CUDD> cube = this->getCube(existentialVariables);
+            Bdd<DdType::CUDD> cube = getCube(*this->getDdManager(), existentialVariables);
 
             std::set<storm::expressions::Variable> unionOfMetaVariables;
             std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(unionOfMetaVariables, unionOfMetaVariables.begin()));
@@ -224,11 +224,10 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        Bdd<LibraryType> Bdd<LibraryType>::getCube(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = this->getDdManager()->getBddOne();
+        Bdd<LibraryType> Bdd<LibraryType>::getCube(DdManager<LibraryType> const& manager, std::set<storm::expressions::Variable> const& metaVariables) {
+            Bdd<LibraryType> cube = manager.getBddOne();
             for (auto const& metaVariable : metaVariables) {
-                STORM_LOG_THROW(this->containsMetaVariable(metaVariable), storm::exceptions::InvalidArgumentException, "Cannot abstract from meta variable '" << metaVariable.getName() << "' that is not present in the DD.");
-                cube &= this->getDdManager()->getMetaVariable(metaVariable).getCube();
+                cube &= manager.getMetaVariable(metaVariable).getCube();
             }
             return cube;
         }

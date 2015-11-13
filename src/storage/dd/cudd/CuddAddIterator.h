@@ -16,13 +16,16 @@
 namespace storm {
     namespace dd {
         // Forward-declare the DdManager class.
-        template<DdType Type> class DdManager;
-        template<DdType Type> class Add;
+        template<DdType Type>
+        class DdManager;
+        
+        template<DdType Type, typename ValueType>
+        class Add;
         
         template<typename ValueType>
         class AddIterator<DdType::CUDD, ValueType> {
         public:
-            friend class Add<DdType::CUDD>;
+            friend class Add<DdType::CUDD, ValueType>;
 
             // Default-instantiate the constructor.
             AddIterator();

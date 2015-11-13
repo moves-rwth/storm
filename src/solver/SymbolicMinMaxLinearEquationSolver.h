@@ -9,12 +9,13 @@
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/dd/DdType.h"
 
-#include "src/storage/dd/cudd/CuddAdd.h"
-
 namespace storm {
     namespace dd {
-        template<storm::dd::DdType T> class Add;
-        template<storm::dd::DdType T> class Bdd;
+        template<storm::dd::DdType Type, typename ValueType>
+        class Add;
+        
+        template<storm::dd::DdType T>
+        class Bdd;
     }
     
     namespace solver {
@@ -38,7 +39,7 @@ namespace storm {
              * @param rowColumnMetaVariablePairs The pairs of row meta variables and the corresponding column meta
              * variables.
              */
-            SymbolicMinMaxLinearEquationSolver(storm::dd::Add<DdType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
+            SymbolicMinMaxLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs);
             
             /*!
              * Constructs a symbolic linear equation solver with the given meta variable sets and pairs.
@@ -56,7 +57,7 @@ namespace storm {
              * equation system iteratively.
              * @param relative Sets whether or not to use a relativ stopping criterion rather than an absolute one.
              */
-            SymbolicMinMaxLinearEquationSolver(storm::dd::Add<DdType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
+            SymbolicMinMaxLinearEquationSolver(storm::dd::Add<DdType, ValueType> const& A, storm::dd::Bdd<DdType> const& allRows, storm::dd::Bdd<DdType> const& illegalMask, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& choiceVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
             
             /*!
              * Solves the equation system A*x = b. The matrix A is required to be square and have a unique solution.
@@ -71,7 +72,7 @@ namespace storm {
              * of A.
              * @return The solution of the equation system.
              */
-            virtual storm::dd::Add<DdType> solveEquationSystem(bool minimize, storm::dd::Add<DdType> const& x, storm::dd::Add<DdType> const& b) const;
+            virtual storm::dd::Add<DdType, ValueType> solveEquationSystem(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const;
             
             /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After
@@ -86,17 +87,17 @@ namespace storm {
              * to the number of row groups of A.
              * @return The solution of the equation system.
              */
-            virtual storm::dd::Add<DdType> performMatrixVectorMultiplication(bool minimize, storm::dd::Add<DdType> const& x, storm::dd::Add<DdType> const* b = nullptr, uint_fast64_t n = 1) const;
+            virtual storm::dd::Add<DdType, ValueType> performMatrixVectorMultiplication(bool minimize, storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const* b = nullptr, uint_fast64_t n = 1) const;
             
         protected:
             // The matrix defining the coefficients of the linear equation system.
-            storm::dd::Add<DdType> const& A;
+            storm::dd::Add<DdType, ValueType> const& A;
             
             // A BDD characterizing all rows of the equation system.
             storm::dd::Bdd<DdType> const& allRows;
             
             // An ADD characterizing the illegal choices.
-            storm::dd::Add<DdType> illegalMaskAdd;
+            storm::dd::Add<DdType, ValueType> illegalMaskAdd;
             
             // The row variables.
             std::set<storm::expressions::Variable> rowMetaVariables;

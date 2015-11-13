@@ -4,6 +4,7 @@
 
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/storage/dd/DdManager.h"
+#include "src/storage/dd/cudd/CuddOdd.h"
 
 #include "src/storage/SparseMatrix.h"
 
@@ -83,7 +84,7 @@ namespace storm {
 
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::operator-() const {
-            return this->getDdManager()->getAddZero() - *this;
+            return this->getDdManager()->template getAddZero<ValueType>() - *this;
         }
 
         template<DdType LibraryType, typename ValueType>
@@ -177,19 +178,19 @@ namespace storm {
 
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::sumAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = this->getCube(metaVariables);
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(*this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.sumAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
 
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::minAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = this->getCube(metaVariables);
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(*this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.minAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
         
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::maxAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = this->getCube(metaVariables);
+            Bdd<LibraryType> cube = Bdd<LibraryType>::getCube(*this->getDdManager(), metaVariables);
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.maxAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
 
@@ -216,13 +217,13 @@ namespace storm {
                 }
                 
                 for (auto const& ddVariable : variable1.getDdVariables()) {
-                    from.push_back(ddVariable.toAdd());
+                    from.push_back(ddVariable.template toAdd<ValueType>());
                 }
                 for (auto const& ddVariable : variable2.getDdVariables()) {
-                    to.push_back(ddVariable.toAdd());
+                    to.push_back(ddVariable.template toAdd<ValueType>());
                 }
             }
-            return Bdd<LibraryType>(this->getDdManager(), internalAdd.swapVariables(from, to), newContainedMetaVariables);
+            return Add<LibraryType>(this->getDdManager(), internalAdd.swapVariables(from, to), newContainedMetaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -231,7 +232,7 @@ namespace storm {
             std::vector<InternalAdd<LibraryType, ValueType>> summationDdVariables;
             for (auto const& metaVariable : summationMetaVariables) {
                 for (auto const& ddVariable : this->getDdManager()->getMetaVariable(metaVariable).getDdVariables()) {
-                    summationDdVariables.push_back(ddVariable.toAdd());
+                    summationDdVariables.push_back(ddVariable.template toAdd<ValueType>());
                 }
             }
             
@@ -335,7 +336,7 @@ namespace storm {
                 this->addMetaVariable(nameValuePair.first);
             }
             
-            internalAdd = valueEncoding.toAdd().ite(this->getDdManager()->getConstant(targetValue), internalAdd);
+            internalAdd = valueEncoding.template toAdd<ValueType>().ite(this->getDdManager()->getConstant(targetValue), *this);
         }
 
         template<DdType LibraryType, typename ValueType>
@@ -351,7 +352,7 @@ namespace storm {
             
             STORM_LOG_THROW(remainingMetaVariables.empty(), storm::exceptions::InvalidArgumentException, "Cannot evaluate function for which not all inputs were given.");
             
-            Add<LibraryType, ValueType> value = *this * valueEncoding.toAdd();
+            Add<LibraryType, ValueType> value = *this * valueEncoding.template toAdd<ValueType>();
             value = value.sumAbstract(this->getContainedMetaVariables());
             return value.getMax();
         }
@@ -384,7 +385,7 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         std::vector<ValueType> Add<LibraryType, ValueType>::toVector(Odd<LibraryType> const& rowOdd) const {
             std::vector<ValueType> result(rowOdd.getTotalOffset());
-            std::vector<uint_fast64_t> ddVariableIndices = this->getDdManager().getSortedVariableIndices();
+            std::vector<uint_fast64_t> ddVariableIndices = this->getDdManager()->getSortedVariableIndices();
             addToVector(rowOdd, ddVariableIndices, result);
             return result;
         }
@@ -528,7 +529,7 @@ namespace storm {
             }
             std::sort(ddGroupVariableIndices.begin(), ddGroupVariableIndices.end());
             
-            return internalAdd.toMatrix(ddGroupVariableIndices, rowOdd, ddRowVariableIndices, columnOdd, ddColumnVariableIndices);
+            return internalAdd.toMatrix(ddGroupVariableIndices, Bdd<LibraryType>::getCube(*this->getDdManager(), groupMetaVariables), rowOdd, ddRowVariableIndices, columnOdd, ddColumnVariableIndices, Bdd<LibraryType>::getCube(*this->getDdManager(), columnMetaVariables));
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -584,7 +585,7 @@ namespace storm {
             }
             std::sort(ddGroupVariableIndices.begin(), ddGroupVariableIndices.end());
             
-            return internalAdd.toMatrixVector(vector.internalAdd, ddGroupVariableIndices, std::move(rowGroupIndices), rowOdd, ddRowVariableIndices, columnOdd, ddColumnVariableIndices);
+            return internalAdd.toMatrixVector(vector.internalAdd, ddGroupVariableIndices, std::move(rowGroupIndices), rowOdd, ddRowVariableIndices, columnOdd, ddColumnVariableIndices, Bdd<LibraryType>::getCube(*this->getDdManager(), columnMetaVariables));
         }
 
         template<DdType LibraryType, typename ValueType>
@@ -594,7 +595,7 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::begin(bool enumerateDontCareMetaVariables) const {
-            internalAdd.begin(this->getContainedMetaVariables(), enumerateDontCareMetaVariables);
+            return internalAdd.begin(this->getContainedMetaVariables(), enumerateDontCareMetaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -621,7 +622,7 @@ namespace storm {
 
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables) {
-            return Add<LibraryType, ValueType>(ddManager, InternalAdd<LibraryType, ValueType>::fromVector(ddManager, values, odd, ddManager->getSortedVariableIndices(metaVariables)), metaVariables);
+            return Add<LibraryType, ValueType>(ddManager, InternalAdd<LibraryType, ValueType>::fromVector(ddManager->getInternalDdManagerPointer(), values, odd, ddManager->getSortedVariableIndices(metaVariables)), metaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>

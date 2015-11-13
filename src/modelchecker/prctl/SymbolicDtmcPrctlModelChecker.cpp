@@ -20,12 +20,12 @@
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicDtmcPrctlModelChecker<DdType, ValueType>::SymbolicDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType> const& model, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        SymbolicDtmcPrctlModelChecker<DdType, ValueType>::SymbolicDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicDtmcPrctlModelChecker<DdType, ValueType>::SymbolicDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType> const& model) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(new storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>()) {
+        SymbolicDtmcPrctlModelChecker<DdType, ValueType>::SymbolicDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(new storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>()) {
             // Intentionally left empty.
         }
         
@@ -86,8 +86,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::models::symbolic::Dtmc<DdType> const& SymbolicDtmcPrctlModelChecker<DdType, ValueType>::getModel() const {
-            return this->template getModelAs<storm::models::symbolic::Dtmc<DdType>>();
+        storm::models::symbolic::Dtmc<DdType, ValueType> const& SymbolicDtmcPrctlModelChecker<DdType, ValueType>::getModel() const {
+            return this->template getModelAs<storm::models::symbolic::Dtmc<DdType, ValueType>>();
         }
         
         template class SymbolicDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double>;

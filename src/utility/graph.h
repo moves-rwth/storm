@@ -154,8 +154,8 @@ namespace storm {
              * @param stepBound If given, this number indicates the maximal amount of steps allowed.
              * @return All states with positive probability.
              */
-            template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProbGreater0(storm::models::symbolic::Model<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, boost::optional<uint_fast64_t> const& stepBound = boost::optional<uint_fast64_t>());
+            template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> performProbGreater0(storm::models::symbolic::Model<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, boost::optional<uint_fast64_t> const& stepBound = boost::optional<uint_fast64_t>());
             /*!
              * Computes the set of states that have a probability of one of reaching psi states after only passing
              * through phi states before.
@@ -168,8 +168,8 @@ namespace storm {
              * until psi as a BDD.
              * @return All states with probability 1.
              */
-            template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProb1(storm::models::symbolic::Model<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0);
+            template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> performProb1(storm::models::symbolic::Model<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates, storm::dd::Bdd<Type> const& statesWithProbabilityGreater0);
             
             /*!
              * Computes the set of states that have a probability of one of reaching psi states after only passing
@@ -181,8 +181,8 @@ namespace storm {
              * @param psiStates The BDD containing all psi states of the model.
              * @return All states with probability 1.
              */
-            template <storm::dd::DdType Type>
-            storm::dd::Bdd<Type> performProb1(storm::models::symbolic::Model<Type> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
+            template <storm::dd::DdType Type, typename ValueType>
+            storm::dd::Bdd<Type> performProb1(storm::models::symbolic::Model<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
             
             /*!
              * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi until psi in a
@@ -193,8 +193,8 @@ namespace storm {
              * @param psiStates The BDD containing all psi states of the model.
              * @return A pair of BDDs that represent all states with probability 0 and 1, respectively.
              */
-            template <storm::dd::DdType Type>
-            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::models::symbolic::DeterministicModel<Type> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+            template <storm::dd::DdType Type, typename ValueType>
+            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::models::symbolic::DeterministicModel<Type, ValueType> const& model, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
              * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi until psi in a
@@ -206,8 +206,8 @@ namespace storm {
              * @param psiStates The BDD containing all psi states of the model.
              * @return A pair of BDDs that represent all states with probability 0 and 1, respectively.
              */
-            template <storm::dd::DdType Type>
-            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::models::symbolic::Model<Type> const& model, storm::dd::Add<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
+            template <storm::dd::DdType Type, typename ValueType>
+            std::pair<storm::dd::Bdd<Type>, storm::dd::Bdd<Type>> performProb01(storm::models::symbolic::Model<Type, ValueType> const& model, storm::dd::Add<Type, ValueType> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
              * Computes a scheduler for the given states that chooses an action that stays completely in the very same set.

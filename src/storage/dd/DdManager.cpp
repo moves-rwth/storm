@@ -265,6 +265,20 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        std::set<storm::expressions::Variable> DdManager<LibraryType>::getAllMetaVariables() const {
+            std::set<storm::expressions::Variable> result;
+            for (auto const& variable : this->metaVariableMap) {
+                result.insert(variable.first);
+            }
+            return result;
+        }
+        
+        template<DdType LibraryType>
+        std::vector<uint_fast64_t> DdManager<LibraryType>::getSortedVariableIndices() const {
+            return this->getSortedVariableIndices(this->getAllMetaVariables());
+        }
+        
+        template<DdType LibraryType>
         std::vector<uint_fast64_t> DdManager<LibraryType>::getSortedVariableIndices(std::set<storm::expressions::Variable> const& metaVariables) const {
             std::vector<uint_fast64_t> ddVariableIndices;
             for (auto const& metaVariable : metaVariableMap) {
@@ -286,6 +300,16 @@ namespace storm {
         template<DdType LibraryType>
         InternalDdManager<LibraryType> const& DdManager<LibraryType>::getInternalDdManager() const {
             return internalDdManager;
+        }
+        
+        template<DdType LibraryType>
+        InternalDdManager<LibraryType>* DdManager<LibraryType>::getInternalDdManagerPointer() {
+            return &internalDdManager;
+        }
+        
+        template<DdType LibraryType>
+        InternalDdManager<LibraryType> const* DdManager<LibraryType>::getInternalDdManagerPointer() const {
+            return &internalDdManager;
         }
         
         template class DdManager<DdType::CUDD>;

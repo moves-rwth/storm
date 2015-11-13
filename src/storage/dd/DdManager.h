@@ -20,6 +20,7 @@ namespace storm {
         class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
         public:
             friend class Bdd<LibraryType>;
+            friend class Add<LibraryType, double>;
             
             /*!
              * Creates an empty manager without any meta variables.
@@ -172,6 +173,17 @@ namespace storm {
              */
             std::shared_ptr<DdManager<LibraryType> const> asSharedPointer() const;
             
+            std::set<storm::expressions::Variable> getAllMetaVariables() const;
+            
+            /*!
+             * Retrieves the (sorted) list of the variable indices of the DD variables given by the meta variable set.
+             *
+             * @param manager The manager responsible for the DD.
+             * @param metaVariable The set of meta variables for which to retrieve the index list.
+             * @return The sorted list of variable indices.
+             */
+            std::vector<uint_fast64_t> getSortedVariableIndices() const;
+            
             /*!
              * Retrieves the (sorted) list of the variable indices of the DD variables given by the meta variable set.
              *
@@ -223,6 +235,9 @@ namespace storm {
              * @return The underlying expression manager.
              */
             storm::expressions::ExpressionManager& getExpressionManager();
+            
+            InternalDdManager<LibraryType>* getInternalDdManagerPointer();
+            InternalDdManager<LibraryType> const* getInternalDdManagerPointer() const;
             
             // A mapping from variables to the meta variable information.
             std::unordered_map<storm::expressions::Variable, DdMetaVariable<LibraryType>> metaVariableMap;

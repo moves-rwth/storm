@@ -2,8 +2,8 @@
 srcdir = .
 top_srcdir = ../../../../..
 top_builddir = ../../../../..
-prefix = /Users/chris/work/storm/build/resources/3rdparty/xercesc-3.1.2
-INSTALL = /usr/bin/install -c
+prefix = /Users/chris/work/storm/build_xcode/resources/3rdparty/xercesc-3.1.2
+INSTALL = /usr/local/bin/ginstall -c
 INSTALL_PROGRAM = ${INSTALL}
 mkdir_p = $(MKDIR_P)
 

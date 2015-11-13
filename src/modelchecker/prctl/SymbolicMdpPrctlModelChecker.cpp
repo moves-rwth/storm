@@ -20,12 +20,12 @@
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicMdpPrctlModelChecker<DdType, ValueType>::SymbolicMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType> const& model, std::unique_ptr<storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        SymbolicMdpPrctlModelChecker<DdType, ValueType>::SymbolicMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        SymbolicMdpPrctlModelChecker<DdType, ValueType>::SymbolicMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType> const& model) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(new storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>()) {
+        SymbolicMdpPrctlModelChecker<DdType, ValueType>::SymbolicMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(new storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<DdType, ValueType>()) {
             // Intentionally left empty.
         }
         
@@ -86,7 +86,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::models::symbolic::Mdp<DdType> const& SymbolicMdpPrctlModelChecker<DdType, ValueType>::getModel() const {
+        storm::models::symbolic::Mdp<DdType, ValueType> const& SymbolicMdpPrctlModelChecker<DdType, ValueType>::getModel() const {
             return this->template getModelAs<storm::models::symbolic::Mdp<DdType>>();
         }
         

@@ -575,7 +575,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> InternalAdd<DdType::CUDD, ValueType>::toMatrixVector(InternalAdd<DdType::CUDD, ValueType> const& vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices, std::vector<uint_fast64_t>&& rowGroupIndices, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices, InternalBdd<DdType::CUDD> const& columnVariableCube) {
+        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> InternalAdd<DdType::CUDD, ValueType>::toMatrixVector(InternalAdd<DdType::CUDD, ValueType> const& vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices, std::vector<uint_fast64_t>&& rowGroupIndices, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices, InternalBdd<DdType::CUDD> const& columnVariableCube) const {
             // Transform the row group sizes to the actual row group indices.
             rowGroupIndices.resize(rowGroupIndices.size() + 1);
             uint_fast64_t tmp = 0;

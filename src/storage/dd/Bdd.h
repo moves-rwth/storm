@@ -15,6 +15,7 @@ namespace storm {
         class Bdd : public Dd<LibraryType> {
         public:
             friend class DdManager<LibraryType>;
+            friend class Add<LibraryType, double>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Bdd() = default;
@@ -22,6 +23,18 @@ namespace storm {
             Bdd& operator=(Bdd<LibraryType> const& other) = default;
             Bdd(Bdd<LibraryType>&& other) = default;
             Bdd& operator=(Bdd<LibraryType>&& other) = default;
+            
+            /*!
+             * Constructs a BDD representation of all encodings that are in the requested relation with the given value.
+             *
+             * @param ddManager The DD manager responsible for the resulting BDD.
+             * @param explicitValues The explicit values to compare to the given value.
+             * @param odd The ODD used for the translation from the explicit representation to a symbolic one.
+             * @param metaVariables The meta variables to use for the symbolic encoding.
+             * @param comparisonType The relation that needs to hold for the values (wrt. to the given value).
+             * @param value The value to compare with.
+             */
+            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
             
             /*!
              * Retrieves whether the two BDDs represent the same function.
@@ -222,7 +235,7 @@ namespace storm {
              * @param metaVariables The variables for which to create the cube.
              * @return The resulting cube.
              */
-            Bdd<LibraryType> getCube(std::set<storm::expressions::Variable> const& metaVariables) const;
+            static Bdd<LibraryType> getCube(DdManager<LibraryType> const& manager, std::set<storm::expressions::Variable> const& metaVariables);
             
         private:
             /*!
@@ -240,18 +253,6 @@ namespace storm {
              */
             Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
-            /*!
-             * Constructs a BDD representation of all encodings that are in the requested relation with the given value.
-             *
-             * @param ddManager The DD manager responsible for the resulting BDD.
-             * @param explicitValues The explicit values to compare to the given value.
-             * @param odd The ODD used for the translation from the explicit representation to a symbolic one.
-             * @param metaVariables The meta variables to use for the symbolic encoding.
-             * @param comparisonType The relation that needs to hold for the values (wrt. to the given value).
-             * @param value The value to compare with.
-             */
-            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
-
             /*!
              * Builds a BDD representing the values that make the given filter function evaluate to true.
              *

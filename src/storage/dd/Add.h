@@ -7,6 +7,7 @@
 #include "src/storage/dd/DdType.h"
 
 #include "src/storage/dd/cudd/InternalCuddAdd.h"
+#include "src/storage/dd/cudd/CuddAddIterator.h"
 
 namespace storm {
     namespace dd {
@@ -23,6 +24,7 @@ namespace storm {
         class Add : public Dd<LibraryType> {
         public:
             friend class DdManager<LibraryType>;
+            friend class Bdd<LibraryType>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Add() = default;
