@@ -4,6 +4,7 @@
 #include "src/utility/solver.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/vector.h"
+#include "src/utility/graph.h"
 
 namespace storm {
     namespace solver {
@@ -34,10 +35,24 @@ namespace storm {
                     selectedRows[pl1State] = player2Matrix.getRowGroupIndices()[pl2State] + (*initialPlayer2Policy)[pl2State];
                 }
                 storm::storage::SparseMatrix<ValueType> eqSysMatrix = player2Matrix.selectRowsFromRowIndexSequence(selectedRows, true);
-                eqSysMatrix.convertToEquationSystem();
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(eqSysMatrix);
                 std::vector<ValueType> subB(numberOfPlayer1States);
                 storm::utility::vector::selectVectorValues<ValueType>(subB, selectedRows, b);
+                //depending on the choices, qualitative properties might have changed.
+                storm::storage::BitVector targetStates(subB.size(), false);
+                for(std::size_t index = 0; index < targetStates.size(); ++index){
+                    if(!storm::utility::isZero(subB[index])){
+                        targetStates.set(index);
+                    }
+                }
+                auto prob01States = storm::utility::graph::performProb01(eqSysMatrix.transpose(), storm::storage::BitVector(targetStates.size(), true), targetStates);
+                for(auto const& probZeroState : prob01States.first){
+                    x[probZeroState] = storm::utility::zero<ValueType>();
+                }
+                for(auto const& probZeroState : prob01States.second){
+                    x[probZeroState] = storm::utility::one<ValueType>();
+                }
+                eqSysMatrix.convertToEquationSystem();
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(eqSysMatrix);
                 solver->solveEquationSystem(x, subB);
             }
             

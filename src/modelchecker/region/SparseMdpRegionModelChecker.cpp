@@ -58,13 +58,13 @@ namespace storm {
                     if (eventuallyFormula.getSubformula().isPropositionalFormula()) {
                         return true;
                     }
-                } else if (formula.isReachabilityRewardFormula()) {
-                    storm::logic::ReachabilityRewardFormula reachabilityRewardFormula = formula.asReachabilityRewardFormula();
-                    if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
-                        return true;
-                    }
+              //  } else if (formula.isReachabilityRewardFormula()) {
+              //      storm::logic::ReachabilityRewardFormula reachabilityRewardFormula = formula.asReachabilityRewardFormula();
+             //       if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
+             //           return true;
+             //      }
                 }
-                 STORM_LOG_DEBUG("Region Model Checker could not handle (sub)formula " << formula);
+                STORM_LOG_DEBUG("Region Model Checker could not handle (sub)formula " << formula);
                 return false;
             }
 
@@ -77,7 +77,10 @@ namespace storm {
                 STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Input model is required to have exactly one initial state.");
                 storm::storage::BitVector maybeStates, targetStates;
                 preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, constantResult);
-                
+                if(constantResult && constantResult.get()>=storm::utility::zero<ConstantType>()){
+                    //The result is already known. Nothing else to do here
+                    return;
+                }
                 STORM_LOG_DEBUG("Elimination of deterministic states with constant outgoing transitions is happening now.");
                 // Determine the set of states that is reachable from the initial state without jumping over a target state.
                 storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, targetStates);
@@ -198,9 +201,10 @@ namespace storm {
                                                                                                                   boost::optional<ConstantType>& constantResult) {
                 STORM_LOG_DEBUG("Preprocessing for Mdps and reachability probabilities invoked.");
                 //Get Target States
-                storm::logic::AtomicLabelFormula const& labelFormula = this->getSpecifiedFormula()->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().asAtomicLabelFormula();
                 storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType> modelChecker(this->getModel());
-                std::unique_ptr<CheckResult> targetStatesResultPtr = modelChecker.checkAtomicLabelFormula(labelFormula);
+                std::unique_ptr<CheckResult> targetStatesResultPtr = modelChecker.check(
+                            this->getSpecifiedFormula()->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula()
+                        );
                 targetStates = std::move(targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector());
                 
                 //maybeStates: Compute the subset of states that have a probability of 0 or 1, respectively and reduce the considered states accordingly.
@@ -216,6 +220,7 @@ namespace storm {
                 if (!maybeStates.get(initialState)) {
                     STORM_LOG_WARN("The probability of the initial state is constant (zero or one)");
                     constantResult = statesWithProbability01.first.get(initialState) ? storm::utility::zero<ConstantType>() : storm::utility::one<ConstantType>();
+                    isApproximationApplicable = true;
                     return; //nothing else to do...
                 }
                 //extend target states

@@ -194,7 +194,6 @@ namespace storm {
 
                 STORM_LOG_THROW(this->getSpecifiedFormula()!=nullptr, storm::exceptions::InvalidStateException, "Tried to analyze a region although no property has been specified" );
                 STORM_LOG_DEBUG("Analyzing the region " << region.toString());
-                //std::cout << "Analyzing the region " << region.toString() << std::endl;
 
                 //switches for the different steps.
                 bool done=false;
@@ -203,7 +202,7 @@ namespace storm {
                 bool doSampling=storm::settings::regionSettings().doSample();
                 bool doSmt=storm::settings::regionSettings().doSmt();
 
-                if(!done && this->isResultConstant()){
+                if(this->isResultConstant()){
                     STORM_LOG_DEBUG("Checking a region although the result is constant, i.e., independent of the region. This makes sense none.");
                     if(this->valueIsInBoundOfFormula(this->getReachabilityValue(region.getSomePoint()))){
                         region.setCheckResult(RegionCheckResult::ALLSAT);
@@ -435,6 +434,7 @@ namespace storm {
                 }
                 else{
                     outstream << "Simple model: " << this->getSimpleModel()->getNumberOfStates() << " states, " << this->getSimpleModel()->getNumberOfTransitions() << " transitions" << std::endl;
+                    outstream << "Simple formula: " << *this->getSimpleFormula() << std::endl;
                 }
                 outstream << "Approximation is " << (this->isApproximationApplicable ? "" : "not ") << "applicable" << std::endl;
                 outstream << "Number of checked regions: " << this->numOfCheckedRegions << std::endl;

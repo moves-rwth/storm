@@ -9,6 +9,7 @@
 
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "utility/graph.h"
 
 namespace storm {
     namespace solver {
@@ -49,13 +50,27 @@ namespace storm {
                                 if(initialPolicy != nullptr){
                                     //Get initial values for x like it is done for policy iteration.
                                     storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(*initialPolicy, true);
-                                    submatrix.convertToEquationSystem();
-                                    GmmxxLinearEquationSolver<ValueType> gmmLinearEquationSolver(submatrix);
                                     std::vector<ValueType> subB(rowGroupIndices.size() - 1);
                                     storm::utility::vector::selectVectorValues<ValueType>(subB, *initialPolicy, rowGroupIndices, b);
+                                    //depending on the choice, qualitative properties might have changed.
+                                    storm::storage::BitVector targetStates(subB.size(), false);
+                                    for(std::size_t index = 0; index < targetStates.size(); ++index){
+                                        if(!storm::utility::isZero(subB[index])){
+                                            targetStates.set(index);
+                                        }
+                                    }
+                                    auto prob01States = storm::utility::graph::performProb01(submatrix.transpose(), storm::storage::BitVector(targetStates.size(), true), targetStates);
+                                    for(auto const& probZeroState : prob01States.first){
+                                        (*currentX)[probZeroState] = storm::utility::zero<ValueType>();
+                                    }
+                                    for(auto const& probZeroState : prob01States.second){
+                                        (*currentX)[probZeroState] = storm::utility::one<ValueType>();
+                                    }
+                                    
+                                    submatrix.convertToEquationSystem();
+                                    GmmxxLinearEquationSolver<ValueType> gmmLinearEquationSolver(submatrix);
                                     // Solve the resulting linear equation system
-                                    std::vector<ValueType> deterministicMultiplyResult(rowGroupIndices.size() - 1);
-                                    gmmLinearEquationSolver.solveEquationSystem(*currentX, subB, &deterministicMultiplyResult);
+                                    gmmLinearEquationSolver.solveEquationSystem(*currentX, subB);
                                 }
                                 
 				uint_fast64_t iterations = 0;

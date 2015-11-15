@@ -90,6 +90,10 @@ namespace storm {
                 } else {
                     preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, constantResult);
                 }
+                if(constantResult && constantResult.get()>=storm::utility::zero<ConstantType>()){
+                    //The result is already known. Nothing else to do here
+                    return;
+                }
                 STORM_LOG_DEBUG("Elimination of states with constant outgoing transitions is happening now.");
                 // Determine the set of states that is reachable from the initial state without jumping over a target state.
                 storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, targetStates);
@@ -245,9 +249,10 @@ namespace storm {
                                                                                                                    boost::optional<ConstantType>& constantResult) {
                 STORM_LOG_DEBUG("Preprocessing for Dtmcs and reachability probabilities invoked.");
                 //Get Target States
-                storm::logic::AtomicLabelFormula const& labelFormula = this->getSpecifiedFormula()->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().asAtomicLabelFormula();
                 storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType> modelChecker(this->getModel());
-                std::unique_ptr<CheckResult> targetStatesResultPtr = modelChecker.checkAtomicLabelFormula(labelFormula);
+                std::unique_ptr<CheckResult> targetStatesResultPtr = modelChecker.check(
+                            this->getSpecifiedFormula()->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula()
+                        );
                 targetStates = std::move(targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector());
                 //maybeStates: Compute the subset of states that have a probability of 0 or 1, respectively and reduce the considered states accordingly.
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), storm::storage::BitVector(this->getModel().getNumberOfStates(),true), targetStates);
@@ -258,6 +263,7 @@ namespace storm {
                     STORM_LOG_WARN("The probability of the initial state is constant (zero or one)");
                     this->reachabilityFunction = std::make_shared<ParametricType>(statesWithProbability01.first.get(initialState) ? storm::utility::zero<ParametricType>() : storm::utility::one<ParametricType>());
                     constantResult = statesWithProbability01.first.get(initialState) ? storm::utility::zero<ConstantType>() : storm::utility::one<ConstantType>();
+                    isApproximationApplicable = true;
                     return; //nothing else to do...
                 }
                 //extend target states
@@ -302,9 +308,10 @@ namespace storm {
                     rewardModel=&(this->getModel().getUniqueRewardModel()->second);
                 }
                 //Get target states
-                storm::logic::AtomicLabelFormula const& labelFormula = this->getSpecifiedFormula()->asRewardOperatorFormula().getSubformula().asReachabilityRewardFormula().getSubformula().asAtomicLabelFormula();
-                storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType>  modelChecker(this->getModel());
-                std::unique_ptr<CheckResult> targetStatesResultPtr= modelChecker.checkAtomicLabelFormula(labelFormula);
+                storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType> modelChecker(this->getModel());
+                std::unique_ptr<CheckResult> targetStatesResultPtr = modelChecker.check(
+                            this->getSpecifiedFormula()->asRewardOperatorFormula().getSubformula().asReachabilityRewardFormula().getSubformula()
+                        );
                 targetStates = std::move(targetStatesResultPtr->asExplicitQualitativeCheckResult().getTruthValuesVector());
                 //maybeStates: Compute the subset of states that has a reachability reward less than infinity.
                 storm::storage::BitVector statesWithProbability1 = storm::utility::graph::performProb1(this->getModel().getBackwardTransitions(), storm::storage::BitVector(this->getModel().getNumberOfStates(), true), targetStates);
@@ -319,6 +326,7 @@ namespace storm {
                     // In that case, we are going to throw in exception if the function is accessed (i.e. in getReachabilityFunction);
                     this->reachabilityFunction = statesWithProbability1.get(initialState) ? std::make_shared<ParametricType>(storm::utility::zero<ParametricType>()) : nullptr;
                     constantResult = statesWithProbability1.get(initialState) ? storm::utility::zero<ConstantType>() : storm::utility::infinity<ConstantType>();
+                    isApproximationApplicable = true;
                     return; //nothing else to do...
                 }
                  //check if approximation is applicable and whether the result is constant

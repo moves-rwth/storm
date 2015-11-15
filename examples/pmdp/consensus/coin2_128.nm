@@ -6,7 +6,7 @@ const double p2; // in [0.2 , 0.8]
 
 
 const int N=2;
-const int K=2;
+const int K=128;
 const int range = 2*(K+1)*N;
 const int counter_init = (K+1)*N;
 const int left = N;

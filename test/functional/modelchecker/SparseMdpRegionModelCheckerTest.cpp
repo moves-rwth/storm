@@ -72,7 +72,7 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
 TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pmdp/consensus/coin2_2.nm";
-    std::string const& formulaAsString = "P>0.25 [F \"finish_with_1\" ]";
+    std::string const& formulaAsString = "P>0.25 [F \"finished\"&\"all_coins_equal_1\" ]";
     std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
     //Build model, formula, region model checker
@@ -91,9 +91,9 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     modelchecker.specifyFormula(formulas[0]);
     
     //start testing
-    auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.3<=p<=0.45,0.2<=q<=0.54");
-    auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=p<=0.65,0.5<=q<=0.7");
-    auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=p<=0.7,0.55<=q<=0.6");
+    auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.3<=p1<=0.45,0.2<=p2<=0.54");
+    auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=p1<=0.65,0.5<=p2<=0.7");
+    auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=p1<=0.7,0.55<=p2<=0.6");
 
     EXPECT_NEAR(0.95127874851, modelchecker.getReachabilityValue(allSatRegion.getLowerBounds()), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.26787251126, modelchecker.getReachabilityValue(allSatRegion.getUpperBounds()),  storm::settings::generalSettings().getPrecision());
