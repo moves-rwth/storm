@@ -31,7 +31,7 @@ namespace storm {
 
         
         template<typename ValueType>
-        void GmmxxMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX, std::vector<storm::storage::sparse::state_type>* initialPolicy) const {
+        void GmmxxMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			if (this->useValueIteration) {
 				// Set up the environment for the power method. If scratch memory was not provided, we need to create it.
 				bool multiplyResultMemoryProvided = true;
@@ -46,32 +46,6 @@ namespace storm {
 					newX = new std::vector<ValueType>(x.size());
 					xMemoryProvided = false;
 				}
-                                
-                                if(initialPolicy != nullptr){
-                                    //Get initial values for x like it is done for policy iteration.
-                                    storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(*initialPolicy, true);
-                                    std::vector<ValueType> subB(rowGroupIndices.size() - 1);
-                                    storm::utility::vector::selectVectorValues<ValueType>(subB, *initialPolicy, rowGroupIndices, b);
-                                    //depending on the choice, qualitative properties might have changed.
-                                    storm::storage::BitVector targetStates(subB.size(), false);
-                                    for(std::size_t index = 0; index < targetStates.size(); ++index){
-                                        if(!storm::utility::isZero(subB[index])){
-                                            targetStates.set(index);
-                                        }
-                                    }
-                                    auto prob01States = storm::utility::graph::performProb01(submatrix.transpose(), storm::storage::BitVector(targetStates.size(), true), targetStates);
-                                    for(auto const& probZeroState : prob01States.first){
-                                        (*currentX)[probZeroState] = storm::utility::zero<ValueType>();
-                                    }
-                                    for(auto const& probZeroState : prob01States.second){
-                                        (*currentX)[probZeroState] = storm::utility::one<ValueType>();
-                                    }
-                                    
-                                    submatrix.convertToEquationSystem();
-                                    GmmxxLinearEquationSolver<ValueType> gmmLinearEquationSolver(submatrix);
-                                    // Solve the resulting linear equation system
-                                    gmmLinearEquationSolver.solveEquationSystem(*currentX, subB);
-                                }
                                 
 				uint_fast64_t iterations = 0;
 				bool converged = false;
@@ -127,11 +101,7 @@ namespace storm {
 			} else {
 				// We will use Policy Iteration to solve the given system.
 				// We first guess an initial choice resolution which will be refined after each iteration.
-                                if(initialPolicy == nullptr){
-                                    this->policy = std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupIndices().size() - 1);
-                                } else {
-                                    this->policy = *initialPolicy;
-                                }
+                                this->policy = std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupIndices().size() - 1);
 
 				// Create our own multiplyResult for solving the deterministic sub-instances.
 				std::vector<ValueType> deterministicMultiplyResult(rowGroupIndices.size() - 1);

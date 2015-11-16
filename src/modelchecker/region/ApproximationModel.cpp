@@ -18,6 +18,7 @@
 #include "src/utility/region.h"
 #include "src/utility/solver.h"
 #include "src/utility/vector.h"
+#include "src/utility/policyguessing.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "exceptions/NotImplementedException.h"
@@ -83,7 +84,7 @@ namespace storm {
                  * each rowgroup containing 2^#par rows, where #par is the number of parameters that occur in the original row.
                  * We also store the substitution that needs to be applied for each row.
                  */
-                ConstantType dummyValue = storm::utility::one<ConstantType>();
+                ConstantType dummyNonZeroValue = storm::utility::one<ConstantType>();
                 storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(0, //Unknown number of rows
                                                                                 this->maybeStates.getNumberOfSetBits(), //columns
                                                                                 0, //Unknown number of entries
@@ -125,7 +126,7 @@ namespace storm {
                             //Note that this is still executed once, even if no parameters occur.
                             for(auto const& oldEntry : parametricModel.getTransitionMatrix().getRow(oldRow)){
                                 if(this->maybeStates.get(oldEntry.getColumn())){
-                                    matrixBuilder.addNextValue(curRow, newIndices[oldEntry.getColumn()], dummyValue);
+                                    matrixBuilder.addNextValue(curRow, newIndices[oldEntry.getColumn()], dummyNonZeroValue);
                                 }
                             }
                             ++curRow;
@@ -137,6 +138,7 @@ namespace storm {
                 
                 //Now run again through both matrices to get the remaining ingredients of the matrixData and vectorData
                 this->matrixData.assignment.reserve(this->matrixData.matrix.getEntryCount());
+                this->matrixData.targetChoices = storm::storage::BitVector(this->matrixData.matrix.getRowCount(), false);
                 this->vectorData.vector = std::vector<ConstantType>(this->matrixData.matrix.getRowCount()); //Important to initialize here since iterators have to remain valid
                 auto vectorIt = this->vectorData.vector.begin();
                 this->vectorData.assignment.reserve(vectorData.vector.size());
@@ -145,6 +147,7 @@ namespace storm {
                     for (std::size_t oldRow = parametricModel.getTransitionMatrix().getRowGroupIndices()[oldRowGroup]; oldRow < parametricModel.getTransitionMatrix().getRowGroupIndices()[oldRowGroup+1]; ++oldRow){
                         ParametricType targetProbability = storm::utility::region::getNewFunction<ParametricType, CoefficientType>(storm::utility::zero<CoefficientType>());
                         if(!this->computeRewards){
+                            //Compute the target probability to insert it in every new row
                             for(auto const& oldEntry : parametricModel.getTransitionMatrix().getRow(oldRow)){
                                 if(this->targetStates.get(oldEntry.getColumn())){
                                     targetProbability += oldEntry.getValue();
@@ -161,20 +164,24 @@ namespace storm {
                                     if(storm::utility::isConstant(oldEntry.getValue())){
                                         eqSysMatrixEntry->setValue(storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(oldEntry.getValue())));
                                     } else {
-                                        auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(oldEntry.getValue(), this->matrixData.rowSubstitutions[curRow]), dummyValue)).first;
+                                        auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(oldEntry.getValue(), this->matrixData.rowSubstitutions[curRow]), dummyNonZeroValue)).first;
                                         this->matrixData.assignment.emplace_back(eqSysMatrixEntry, functionsIt->second);
                                         //Note that references to elements of an unordered map remain valid after calling unordered_map::insert.
                                     }
                                     ++eqSysMatrixEntry;
+                                }
+                                if(this->targetStates.get(oldEntry.getColumn())){
+                                    //Store that this row has a transition to target
+                                    this->matrixData.targetChoices.set(curRow);
                                 }
                             }
                             if(!this->computeRewards){
                                 if(storm::utility::isConstant(storm::utility::simplify(targetProbability))){
                                     *vectorIt = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(targetProbability));
                                 } else {
-                                    auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(targetProbability, this->matrixData.rowSubstitutions[curRow]), dummyValue)).first;
+                                    auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(targetProbability, this->matrixData.rowSubstitutions[curRow]), dummyNonZeroValue)).first;
                                     this->vectorData.assignment.emplace_back(vectorIt, functionsIt->second);
-                                    *vectorIt = dummyValue;
+                                    *vectorIt = dummyNonZeroValue;
                                 }
                             }
                             ++vectorIt;
@@ -198,7 +205,7 @@ namespace storm {
                 // run through the state reward vector of the parametric model.
                 // Constant entries can be set directly.
                 // For Parametric entries we set a dummy value and insert the corresponding function and the assignment
-                ConstantType dummyValue = storm::utility::one<ConstantType>();
+                ConstantType dummyNonZeroValue = storm::utility::one<ConstantType>();
                 auto vectorIt = this->vectorData.vector.begin();
                 for(auto oldState : this->maybeStates){
                     if(storm::utility::isConstant(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[oldState])){
@@ -220,10 +227,10 @@ namespace storm {
                                 substitution.insert(typename std::map<VariableType, RegionBoundary>::value_type(rewardVar, RegionBoundary::UNSPECIFIED));
                             }
                             // insert the FunctionSubstitution
-                            auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[oldState], this->matrixData.rowSubstitutions[matrixRow]), dummyValue)).first;
+                            auto functionsIt = this->funcSubData.functions.insert(FunctionEntry(FunctionSubstitution(parametricModel.getUniqueRewardModel()->second.getStateRewardVector()[oldState], this->matrixData.rowSubstitutions[matrixRow]), dummyNonZeroValue)).first;
                             //insert assignment and dummy data
                             this->vectorData.assignment.emplace_back(vectorIt, functionsIt->second);
-                            *vectorIt = dummyValue;
+                            *vectorIt = dummyNonZeroValue;
                             ++vectorIt;
                         }
                     }
@@ -392,19 +399,22 @@ namespace storm {
             void ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, Policy& policy){
                 storm::solver::SolveGoal goal(computeLowerBounds);
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
-                solver->setPolicyTracking();
-                solver->solveEquationSystem(goal.direction(), this->solverData.result, this->vectorData.vector, nullptr, nullptr, &policy);
-                policy = solver->getPolicy();
+                storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
+                                    this->solverData.result, this->vectorData.vector,
+                                    goal.direction(),
+                                    policy,
+                                    this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<double>() : storm::utility::zero<double>()));
             }
             
             template<>
             void ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, Policy& policy){
                 storm::solver::SolveGoal player2Goal(computeLowerBounds);
                 std::unique_ptr<storm::solver::GameSolver<double>> solver = storm::utility::solver::GameSolverFactory<double>().create(this->solverData.player1Matrix, this->matrixData.matrix);
-                solver->setPolicyTracking();
-                solver->solveGame(this->solverData.player1Goal.direction(), player2Goal.direction(), this->solverData.result, this->vectorData.vector, &this->solverData.lastPlayer1Policy, &policy);
-                this->solverData.lastPlayer1Policy = solver->getPlayer1Policy();
-                policy = solver->getPlayer2Policy();
+                storm::utility::policyguessing::solveGame(*solver, 
+                                                          this->solverData.result, this->vectorData.vector,
+                                                          this->solverData.player1Goal.direction(), player2Goal.direction(), 
+                                                          this->solverData.lastPlayer1Policy, policy,
+                                                          this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<double>() : storm::utility::zero<double>()));
             }
             
                 

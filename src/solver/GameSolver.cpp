@@ -19,45 +19,10 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void GameSolver<ValueType>::solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<storm::storage::sparse::state_type>* initialPlayer1Policy, std::vector<storm::storage::sparse::state_type>* initialPlayer2Policy) const {
-            uint_fast64_t numberOfPlayer1States = x.size();
-            
-            if(initialPlayer1Policy != nullptr || initialPlayer2Policy != nullptr){
-                //Either we work with both policies or none of them
-                assert(initialPlayer1Policy != nullptr && initialPlayer2Policy != nullptr);
-                //The policies select certain rows in the matrix of player2.
-                //However, note that rows can be selected more then once and in an arbitrary order.
-                std::vector<storm::storage::sparse::state_type> selectedRows(numberOfPlayer1States);
-                for (uint_fast64_t pl1State = 0; pl1State < numberOfPlayer1States; ++pl1State){
-                    auto const& pl1Choice = player1Matrix.getRow(player1Matrix.getRowGroupIndices()[pl1State] + (*initialPlayer1Policy)[pl1State]);
-                    assert(pl1Choice.getNumberOfEntries()==1);
-                    uint_fast64_t pl2State = pl1Choice.begin()->getColumn();
-                    selectedRows[pl1State] = player2Matrix.getRowGroupIndices()[pl2State] + (*initialPlayer2Policy)[pl2State];
-                }
-                storm::storage::SparseMatrix<ValueType> eqSysMatrix = player2Matrix.selectRowsFromRowIndexSequence(selectedRows, true);
-                std::vector<ValueType> subB(numberOfPlayer1States);
-                storm::utility::vector::selectVectorValues<ValueType>(subB, selectedRows, b);
-                //depending on the choices, qualitative properties might have changed.
-                storm::storage::BitVector targetStates(subB.size(), false);
-                for(std::size_t index = 0; index < targetStates.size(); ++index){
-                    if(!storm::utility::isZero(subB[index])){
-                        targetStates.set(index);
-                    }
-                }
-                auto prob01States = storm::utility::graph::performProb01(eqSysMatrix.transpose(), storm::storage::BitVector(targetStates.size(), true), targetStates);
-                for(auto const& probZeroState : prob01States.first){
-                    x[probZeroState] = storm::utility::zero<ValueType>();
-                }
-                for(auto const& probZeroState : prob01States.second){
-                    x[probZeroState] = storm::utility::one<ValueType>();
-                }
-                eqSysMatrix.convertToEquationSystem();
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(eqSysMatrix);
-                solver->solveEquationSystem(x, subB);
-            }
-            
+        void GameSolver<ValueType>::solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // Set up the environment for value iteration.
             bool converged = false;
+            uint_fast64_t numberOfPlayer1States = x.size();
             std::vector<ValueType> tmpResult(numberOfPlayer1States);
             std::vector<ValueType> nondetResult(player2Matrix.getRowCount());
             std::vector<ValueType> player2Result(player2Matrix.getRowGroupCount());
@@ -143,6 +108,16 @@ namespace storm {
                     }
                 }
             }
+        }
+
+        template <typename ValueType>
+        storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& GameSolver<ValueType>::getPlayer1Matrix() const {
+            return player1Matrix;
+        }
+        
+        template <typename ValueType>
+        storm::storage::SparseMatrix<ValueType> const& GameSolver<ValueType>::getPlayer2Matrix() const {
+            return player2Matrix;
         }
 
         template class GameSolver<double>;

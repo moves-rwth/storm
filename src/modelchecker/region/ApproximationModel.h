@@ -117,6 +117,7 @@ namespace storm {
                     storm::storage::SparseMatrix<ConstantType> matrix; //The matrix itself.
                     std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> assignment; // Connection of matrix entries with placeholders
                     std::vector<std::size_t> rowSubstitutions; //used to obtain which row corresponds to which substitution (used to retrieve information from a scheduler)
+                    storm::storage::BitVector targetChoices; //indicate which rows of the matrix have a positive value to a target state
                 } matrixData;
                 struct VectorData {
                     std::vector<ConstantType> vector; //The vector itself.

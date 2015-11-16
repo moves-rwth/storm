@@ -38,18 +38,20 @@ namespace storm {
             GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
 
             /*!
-             * Solves the equation system defined by the game matrix. Note that the game matrix has to be given upon
+             * Solves the equation system defined by the game matrices. Note that the game matrices have to be given upon
              * construction time of the solver object.
              *
              * @param player1Goal Sets whether player 1 wants to minimize or maximize.
              * @param player2Goal Sets whether player 2 wants to minimize or maximize.
-             * @param x The initial guess of the solution.
+             * @param x The initial guess of the solution. For correctness, the guess has to be less (or equal) to the final solution (unless both players minimize)
              * @param b The vector to add after matrix-vector multiplication.
-             * @param initialPlayer1Policy A policy that selects rows in every rowgroup of player1. This will be used as an initial guess
-             * @param initialPlayer2Policy A policy that selects rows in every rowgroup of player2. This will be used as an initial guess
              * @return The solution vector in the for of the vector x.
              */
-            virtual void solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<storm::storage::sparse::state_type>* initialPlayer1Policy = nullptr, std::vector<storm::storage::sparse::state_type>* initialPlayer2Policy = nullptr) const;
+            virtual void solveGame(OptimizationDirection player1Goal, OptimizationDirection player2Goal, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            
+            
+            storm::storage::SparseMatrix<ValueType> const& getPlayer2Matrix() const;
+            storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& getPlayer1Matrix() const;
 
         private:
             // The matrix defining the choices of player 1.

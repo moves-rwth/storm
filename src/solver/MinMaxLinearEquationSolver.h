@@ -97,7 +97,7 @@ namespace storm {
              * vector must be equal to the length of the vector x (and thus to the number of columns of A).
              * @return The solution vector x of the system of linear equations as the content of the parameter x.
              */
-            virtual void solveEquationSystem(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr, std::vector<storm::storage::sparse::state_type>* initialPolicy = nullptr) const = 0;
+            virtual void solveEquationSystem(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
             
             /*!
              * As solveEquationSystem with an optimization-direction, but this uses the internally set direction.
@@ -136,6 +136,10 @@ namespace storm {
             
             void setEarlyTerminationCriterion(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v) {
                 earlyTermination = std::move(v);
+            }
+
+            storm::storage::SparseMatrix<ValueType> const& getMatrix() const {
+                return A;
             }
             
             

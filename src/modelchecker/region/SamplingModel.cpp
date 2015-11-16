@@ -17,6 +17,7 @@
 #include "src/utility/region.h"
 #include "src/utility/solver.h"
 #include "src/utility/vector.h"
+#include "src/utility/policyguessing.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "storage/dd/CuddBdd.h"
@@ -117,6 +118,7 @@ namespace storm {
                 //Now run again through both matrices to get the remaining ingredients of the matrixData and vectorData.
                 //Note that we need the matrix (I-P) in case of a dtmc.
                 this->matrixData.assignment.reserve(this->matrixData.matrix.getEntryCount()); 
+                this->matrixData.targetChoices = storm::storage::BitVector(this->matrixData.matrix.getRowCount(), false);
                 this->vectorData.vector = std::vector<ConstantType>(this->matrixData.matrix.getRowCount()); //Important to initialize here since iterators have to remain valid
                 auto vectorIt = this->vectorData.vector.begin();
                 this->vectorData.assignment.reserve(vectorData.vector.size());
@@ -159,8 +161,11 @@ namespace storm {
                                 }
                                 ++eqSysMatrixEntry;
                             }
-                            else if(!this->computeRewards && this->targetStates.get(oldEntry.getColumn())){
-                                targetProbability += oldEntry.getValue();
+                            else if(this->targetStates.get(oldEntry.getColumn())){
+                                if(!this->computeRewards){
+                                    targetProbability += oldEntry.getValue();
+                                }
+                                this->matrixData.targetChoices.set(curRow);
                             }
                         }
                         if(!this->computeRewards){
@@ -254,9 +259,11 @@ namespace storm {
             template<>
             void SamplingModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(){
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(this->solverData.solveGoal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
-                solver->setPolicyTracking();
-                solver->solveEquationSystem(this->solverData.solveGoal.direction(), this->solverData.result, this->vectorData.vector, nullptr, nullptr, &this->solverData.lastPolicy);
-                this->solverData.lastPolicy = solver->getPolicy();
+                storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
+                                    this->solverData.result, this->vectorData.vector,
+                                    this->solverData.solveGoal.direction(),
+                                    this->solverData.lastPolicy,
+                                    this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<double>() : storm::utility::zero<double>()));
             }
             
             
