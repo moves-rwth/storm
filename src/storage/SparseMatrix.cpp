@@ -1000,6 +1000,15 @@ namespace storm {
 #endif
         
         template<typename ValueType>
+        ValueType SparseMatrix<ValueType>::multiplyRowWithVector(index_type row, std::vector<ValueType> const& vector) const {
+            ValueType result = storm::utility::zero<ValueType>();
+            for(auto const& entry : this->getRow(row)){
+                result += entry.getValue() * vector[entry.getColumn()];
+            }
+            return result;
+        }
+        
+        template<typename ValueType>
         void SparseMatrix<ValueType>::performSuccessiveOverRelaxationStep(ValueType omega, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             const_iterator it = this->begin();
             const_iterator ite;

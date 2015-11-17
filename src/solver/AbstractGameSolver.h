@@ -30,6 +30,8 @@ namespace storm {
             
             std::vector<storm::storage::sparse::state_type> getPlayer1Policy() const;
             std::vector<storm::storage::sparse::state_type> getPlayer2Policy() const;
+            double getPrecision() const;
+            bool getRelative() const;
 
         protected:
             // The precision to achieve.

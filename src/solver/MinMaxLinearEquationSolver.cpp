@@ -27,5 +27,14 @@ namespace storm {
             assert(!policy.empty());
             return policy;
         }
+        
+        double AbstractMinMaxLinearEquationSolver::getPrecision() const {
+            return precision;
+        }
+        
+        bool AbstractMinMaxLinearEquationSolver::getRelative() const {
+            return relative;
+        }
+        
     }
 }

@@ -27,6 +27,9 @@ namespace storm {
             
             std::vector<storm::storage::sparse::state_type> getPolicy() const;
             
+            double getPrecision() const;
+            bool getRelative() const;
+            
             void setOptimizationDirection(OptimizationDirection d) {
                 direction = convert(d);
             }

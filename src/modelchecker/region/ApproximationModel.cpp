@@ -67,13 +67,13 @@ namespace storm {
                 this->vectorData.assignment.shrink_to_fit();
                 if(parametricModel.getType()==storm::models::ModelType::Mdp){
                     initializePlayer1Matrix(parametricModel);
+                    this->solverData.lastPlayer1Policy = Policy(this->solverData.player1Matrix.getRowGroupCount(), 0);
                 }
                 
                 this->solverData.result = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), this->computeRewards ? storm::utility::one<ConstantType>() : ConstantType(0.5));
                 this->solverData.initialStateIndex = newIndices[initialState];
                 this->solverData.lastMinimizingPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
                 this->solverData.lastMaximizingPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
-                this->solverData.lastPlayer1Policy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
             }                
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -325,9 +325,9 @@ namespace storm {
                 }
        //         std::cout << "Used Approximation" << std::endl;
                 for (auto const& varcount : VarCount){
-                    if(varcount.second.first > 0 && varcount.second.second > 0){
-              //          std::cout << "  Variable " << varcount.first << " has been set to lower " << varcount.second.first << " times and to upper " << varcount.second.second << " times. (total: " << substitutionCount << ")" << std::endl;
-                    }
+                  //  if(varcount.second.first > 0 && varcount.second.second > 0){
+          //              std::cout << "  Variable " << varcount.first << " has been set to lower " << varcount.second.first << " times and to upper " << varcount.second.second << " times. (total: " << substitutionCount << ")" << std::endl;
+                 //   }
                 }
                 for (auto const& fixVar : fixedVariables){
                     //std::cout << "  APPROXMODEL: variable " << fixVar.first << " is always mapped to " << fixVar.second << std::endl;

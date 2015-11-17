@@ -32,5 +32,14 @@ namespace storm {
             assert(!this->player2Policy.empty());
             return player2Policy;
         }
+        
+        double AbstractGameSolver::getPrecision() const {
+            return precision;
+        }
+        
+        bool AbstractGameSolver::getRelative() const {
+            return relative;
+        }
+        
     }
 }
