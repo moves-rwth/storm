@@ -39,6 +39,7 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator|=(InternalAdd<DdType::CUDD, ValueType> const& other) {
             this->cuddAdd = this->getCuddAdd() | other.getCuddAdd();
+            return *this;
         }
         
         template<typename ValueType>
@@ -49,6 +50,7 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator+=(InternalAdd<DdType::CUDD, ValueType> const& other) {
             this->cuddAdd = this->getCuddAdd() + other.getCuddAdd();
+            return *this;
         }
         
         template<typename ValueType>
@@ -59,6 +61,7 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator*=(InternalAdd<DdType::CUDD, ValueType> const& other) {
             this->cuddAdd = this->getCuddAdd() * other.getCuddAdd();
+            return *this;
         }
         
         template<typename ValueType>
@@ -69,16 +72,18 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator-=(InternalAdd<DdType::CUDD, ValueType> const& other) {
             this->cuddAdd = this->getCuddAdd() - other.getCuddAdd();
+            return *this;
         }
         
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator/(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd() / other.getCuddAdd());
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Divide(other.getCuddAdd()));
         }
         
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator/=(InternalAdd<DdType::CUDD, ValueType> const& other) {
-            this->cuddAdd = this->getCuddAdd() / other.getCuddAdd();
+            this->cuddAdd = this->getCuddAdd().Divide(other.getCuddAdd());
+            return *this;
         }
         
         template<typename ValueType>
@@ -148,17 +153,17 @@ namespace storm {
         
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::sumAbstract(InternalBdd<DdType::CUDD> const& cube) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().ExistAbstract(cube.getCuddBdd()));
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().ExistAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }
         
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::minAbstract(InternalBdd<DdType::CUDD> const& cube) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstract(cube.getCuddBdd()));
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MinAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }
         
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::maxAbstract(InternalBdd<DdType::CUDD> const& cube) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MaxAbstract(cube.getCuddBdd()));
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MaxAbstract(cube.toAdd<ValueType>().getCuddAdd()));
         }
         
         template<typename ValueType>
@@ -178,7 +183,7 @@ namespace storm {
                 fromAdd.push_back(it1->getCuddAdd());
                 toAdd.push_back(it2->getCuddAdd());
             }
-            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().SwapVariables(fromAdd, toAdd));
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().SwapVariables(fromAdd, toAdd));
         }
         
         template<typename ValueType>
@@ -186,7 +191,7 @@ namespace storm {
             // Create the CUDD summation variables.
             std::vector<ADD> summationAdds;
             for (auto const& ddVariable : summationDdVariables) {
-                summationAdds.push_back(ddVariable.toAdd().getCuddAdd());
+                summationAdds.push_back(ddVariable.getCuddAdd());
             }
             
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MatrixMultiply(otherMatrix.getCuddAdd(), summationAdds));
@@ -302,7 +307,7 @@ namespace storm {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");
             std::vector<ADD> cuddAddVector = { this->getCuddAdd() };
-            this->getDdManager()->getCuddManager().DumpDot(cuddAddVector, &ddVariableNames[0], &ddNames[0], filePointer);
+            ddManager->getCuddManager().DumpDot(cuddAddVector, &ddVariableNames[0], &ddNames[0], filePointer);
             fclose(filePointer);
             
             // Finally, delete the names.
@@ -315,16 +320,16 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::begin(std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
+        AddIterator<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::begin(std::shared_ptr<DdManager<DdType::CUDD> const> fullDdManager, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
             int* cube;
             double value;
             DdGen* generator = this->getCuddAdd().FirstCube(&cube, &value);
-            return AddIterator<DdType::CUDD, ValueType>(ddManager, generator, cube, value, (Cudd_IsGenEmpty(generator) != 0), &metaVariables, enumerateDontCareMetaVariables);
+            return AddIterator<DdType::CUDD, ValueType>(fullDdManager, generator, cube, value, (Cudd_IsGenEmpty(generator) != 0), &metaVariables, enumerateDontCareMetaVariables);
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::end(bool enumerateDontCareMetaVariables) const {
-            return AddIterator<DdType::CUDD, ValueType>(ddManager, nullptr, nullptr, 0, true, nullptr, enumerateDontCareMetaVariables);
+        AddIterator<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::end(std::shared_ptr<DdManager<DdType::CUDD> const> fullDdManager, bool enumerateDontCareMetaVariables) const {
+            return AddIterator<DdType::CUDD, ValueType>(fullDdManager, nullptr, nullptr, 0, true, nullptr, enumerateDontCareMetaVariables);
         }
         
         template<typename ValueType>
@@ -404,10 +409,10 @@ namespace storm {
         }
         
         template<typename ValueType>
-        storm::storage::SparseMatrix<ValueType> InternalAdd<DdType::CUDD, ValueType>::toMatrix(storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices) const {
+        storm::storage::SparseMatrix<ValueType> InternalAdd<DdType::CUDD, ValueType>::toMatrix(uint_fast64_t numberOfDdVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices) const {
             // Prepare the vectors that represent the matrix.
             std::vector<uint_fast64_t> rowIndications(rowOdd.getTotalOffset() + 1);
-            std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>> columnsAndValues(this->getNonZeroCount());
+            std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>> columnsAndValues(this->getNonZeroCount(numberOfDdVariables));
             
             // Create a trivial row grouping.
             std::vector<uint_fast64_t> trivialRowGroupIndices(rowIndications.size());
@@ -450,7 +455,7 @@ namespace storm {
         template<typename ValueType>
         void InternalAdd<DdType::CUDD, ValueType>::toMatrixRec(DdNode const* dd, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>>& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues) const {
             // For the empty DD, we do not need to add any entries.
-            if (dd == Cudd_ReadZero(this->getDdManager()->getCuddManager().getManager())) {
+            if (dd == Cudd_ReadZero(ddManager->getCuddManager().getManager())) {
                 return;
             }
             
@@ -503,10 +508,9 @@ namespace storm {
         template<typename ValueType>
         storm::storage::SparseMatrix<ValueType> InternalAdd<DdType::CUDD, ValueType>::toMatrix(std::vector<uint_fast64_t> const& ddGroupVariableIndices, InternalBdd<DdType::CUDD> const& groupVariableCube, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices, InternalBdd<DdType::CUDD> const& columnVariableCube) const {
             // Start by computing the offsets (in terms of rows) for each row group.
-            InternalAdd<DdType::CUDD, ValueType> stateToNumberOfChoices = this->notZero().existsAbstract(columnVariableCube).toAdd().sumAbstract(groupVariableCube);
-            std::vector<ValueType> rowGroupIndicesAsValueType = stateToNumberOfChoices.toVector(rowOdd);
-            std::vector<uint_fast64_t> rowGroupIndices(rowGroupIndicesAsValueType.size() + 1);
-            std::transform(rowGroupIndicesAsValueType.begin(), rowGroupIndicesAsValueType.end(), rowGroupIndices.begin(), [] (ValueType const& value) { return static_cast<uint_fast64_t>(value); });
+            InternalAdd<DdType::CUDD, uint_fast64_t> stateToNumberOfChoices = this->notZero().existsAbstract(columnVariableCube).template toAdd<uint_fast64_t>().sumAbstract(groupVariableCube);
+            std::vector<ValueType> rowGroupIndices = stateToNumberOfChoices.toVector(rowOdd);
+            rowGroupIndices.resize(rowGroupIndices.size() + 1);
             uint_fast64_t tmp = 0;
             uint_fast64_t tmp2 = 0;
             for (uint_fast64_t i = 1; i < rowGroupIndices.size(); ++i) {
@@ -540,7 +544,7 @@ namespace storm {
             }
             
             // Since we modified the rowGroupIndices, we need to restore the correct values.
-            std::function<uint_fast64_t (uint_fast64_t const&, double const&)> fct = [] (uint_fast64_t const& a, double const& b) -> uint_fast64_t { return a - static_cast<uint_fast64_t>(b); };
+            std::function<uint_fast64_t (uint_fast64_t const&, uint_fast64_t const&)> fct = [] (uint_fast64_t const& a, double const& b) -> uint_fast64_t { return a - static_cast<uint_fast64_t>(b); };
             composeVectorRec(stateToRowGroupCount.getCuddDdNode(), 0, ddRowVariableIndices.size(), 0, rowOdd, ddRowVariableIndices, rowGroupIndices, fct);
             
             // Now that we computed the number of entries in each row, compute the corresponding offsets in the entry vector.

@@ -25,6 +25,7 @@ namespace storm {
         public:
             friend class DdManager<LibraryType>;
             friend class Bdd<LibraryType>;
+            friend class Odd<LibraryType>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Add() = default;
@@ -629,8 +630,7 @@ namespace storm {
             /*!
              * We provide a conversion operator from the BDD to its internal type to ease calling the internal functions.
              */
-            operator InternalAdd<LibraryType, ValueType>();
-            operator InternalAdd<LibraryType, ValueType> const() const;
+            operator InternalAdd<LibraryType, ValueType>() const;
             
             /*!
              * Converts the ADD to a row-grouped (sparse) double matrix. If the optional vector is given, it is also

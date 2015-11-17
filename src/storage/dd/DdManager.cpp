@@ -118,8 +118,8 @@ namespace storm {
                 variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.second, {unprimed}));
             }
 
-            metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, low, high, variables, this->shared_from_this()));
-            metaVariableMap.emplace(primed, DdMetaVariable<LibraryType>(name + "'", low, high, variablesPrime, this->shared_from_this()));
+            metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, low, high, variables));
+            metaVariableMap.emplace(primed, DdMetaVariable<LibraryType>(name + "'", low, high, variablesPrime));
             
             return std::make_pair(unprimed, primed);
         }
@@ -141,8 +141,8 @@ namespace storm {
             variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.first, {unprimed}));
             variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.second, {primed}));
             
-            metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, variables, this->shared_from_this()));
-            metaVariableMap.emplace(primed, DdMetaVariable<LibraryType>(name + "'", variablesPrime, this->shared_from_this()));
+            metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, variables));
+            metaVariableMap.emplace(primed, DdMetaVariable<LibraryType>(name + "'", variablesPrime));
             
             return std::make_pair(unprimed, primed);
         }

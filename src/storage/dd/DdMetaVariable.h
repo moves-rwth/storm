@@ -5,6 +5,7 @@
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/dd/Bdd.h"
+#include "src/storage/dd/AddIterator.h"
 
 namespace storm {
     namespace dd {
@@ -23,7 +24,12 @@ namespace storm {
         public:
             friend class DdManager<LibraryType>;
             friend class Bdd<LibraryType>;
-            friend class Add<LibraryType, double>;
+
+            template <DdType LibraryTypePrime, typename ValueTypePrime>
+            friend class Add;
+
+            template <DdType LibraryTypePrime, typename ValueTypePrime>
+            friend class AddIterator;
             
             /*!
              * Retrieves the name of the meta variable.

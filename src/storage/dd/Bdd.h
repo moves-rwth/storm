@@ -241,8 +241,7 @@ namespace storm {
             /*!
              * We provide a conversion operator from the BDD to its internal type to ease calling the internal functions.
              */
-            operator InternalBdd<LibraryType>();
-            operator InternalBdd<LibraryType> const() const;
+            operator InternalBdd<LibraryType>() const;
             
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.

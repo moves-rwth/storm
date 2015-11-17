@@ -16,12 +16,16 @@ namespace storm {
 
         template<DdType LibraryType>
         class InternalBdd;
+
+        template<DdType LibraryType>
+        class Odd;
         
         template<>
         class InternalDdManager<DdType::CUDD> {
         public:
             friend class InternalAdd<DdType::CUDD, double>;
             friend class InternalBdd<DdType::CUDD>;
+            friend class Odd<DdType::CUDD>;
             
             /*!
              * Creates a new internal manager for CUDD DDs.

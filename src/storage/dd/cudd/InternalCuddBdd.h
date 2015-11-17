@@ -288,7 +288,7 @@ namespace storm {
              * @param rowOdd The ODD used for determining the correct row.
              * @return The bit vector that is represented by this BDD.
              */
-            storm::storage::BitVector toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd) const;
+            storm::storage::BitVector toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const;
             
         private:
             /*!

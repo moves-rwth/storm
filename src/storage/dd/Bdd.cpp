@@ -37,7 +37,7 @@ namespace storm {
         template<DdType LibraryType>
         template<typename ValueType>
         Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
-            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(ddManager, values, odd, ddManager->getSortedVariableIndices(metaVariables), filter), metaVariables);
+            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager->internalDdManager, values, odd, ddManager->getSortedVariableIndices(metaVariables), filter), metaVariables);
         }
         
         template<DdType LibraryType>
@@ -176,7 +176,7 @@ namespace storm {
         
         template<DdType LibraryType>
         storm::storage::BitVector Bdd<LibraryType>::toVector(storm::dd::Odd<LibraryType> const& rowOdd) const {
-            return internalBdd.toVector(rowOdd);
+            return internalBdd.toVector(rowOdd, this->getDdManager()->getSortedVariableIndices());
         }
         
         template<DdType LibraryType>
@@ -233,12 +233,7 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        Bdd<LibraryType>::operator InternalBdd<LibraryType>() {
-            return internalBdd;
-        }
-
-        template<DdType LibraryType>
-        Bdd<LibraryType>::operator InternalBdd<LibraryType> const() const {
+        Bdd<LibraryType>::operator InternalBdd<LibraryType>() const {
             return internalBdd;
         }
         

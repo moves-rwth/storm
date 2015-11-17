@@ -1,5 +1,5 @@
 #include "src/storage/dd/cudd/CuddAddIterator.h"
-#include "src/storage/dd/cudd/CuddDdManager.h"
+#include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/utility/macros.h"
 #include "src/storage/expressions/ExpressionManager.h"
@@ -7,12 +7,12 @@
 namespace storm {
     namespace dd {
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType>::DdForwardIterator() : ddManager(), generator(), cube(), value(), isAtEnd(), metaVariables(), enumerateDontCareMetaVariables(), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
+        AddIterator<DdType::CUDD, ValueType>::AddIterator() : ddManager(), generator(), cube(), value(), isAtEnd(), metaVariables(), enumerateDontCareMetaVariables(), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType>::DdForwardIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
+        AddIterator<DdType::CUDD, ValueType>::AddIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
             // If the given generator is not yet at its end, we need to create the current valuation from the cube from
             // scratch.
             if (!this->isAtEnd) {
@@ -22,7 +22,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType>::DdForwardIterator(AddIterator<DdType::CUDD, ValueType>&& other) : ddManager(other.ddManager), generator(other.generator), cube(other.cube), value(other.value), isAtEnd(other.isAtEnd), metaVariables(other.metaVariables), cubeCounter(other.cubeCounter), relevantDontCareDdVariables(other.relevantDontCareDdVariables), currentValuation(other.currentValuation) {
+        AddIterator<DdType::CUDD, ValueType>::AddIterator(AddIterator<DdType::CUDD, ValueType>&& other) : ddManager(other.ddManager), generator(other.generator), cube(other.cube), value(other.value), isAtEnd(other.isAtEnd), metaVariables(other.metaVariables), cubeCounter(other.cubeCounter), relevantDontCareDdVariables(other.relevantDontCareDdVariables), currentValuation(other.currentValuation) {
             // Null-out the pointers of which we took possession.
             other.cube = nullptr;
             other.generator = nullptr;
@@ -49,7 +49,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType>::~DdForwardIterator() {
+        AddIterator<DdType::CUDD, ValueType>::~AddIterator() {
             // We free the pointers sind Cudd allocates them using malloc rather than new/delete.
             if (this->cube != nullptr) {
                 free(this->cube);
@@ -89,7 +89,7 @@ namespace storm {
             
             for (uint_fast64_t index = 0; index < this->relevantDontCareDdVariables.size(); ++index) {
                 auto const& ddMetaVariable = this->ddManager->getMetaVariable(std::get<0>(this->relevantDontCareDdVariables[index]));
-                if (ddMetaVariable.getType() == DdMetaVariable<DdType::CUDD>::MetaVariableType::Bool) {
+                if (ddMetaVariable.getType() == MetaVariableType::Bool) {
                     if ((this->cubeCounter & (1ull << index)) != 0) {
                         currentValuation.setBooleanValue(std::get<0>(this->relevantDontCareDdVariables[index]), true);
                     } else {
@@ -117,7 +117,7 @@ namespace storm {
                 bool metaVariableAppearsInCube = false;
                 std::vector<std::tuple<storm::expressions::Variable, uint_fast64_t>> localRelenvantDontCareDdVariables;
                 auto const& ddMetaVariable = this->ddManager->getMetaVariable(metaVariable);
-                if (ddMetaVariable.getType() == DdMetaVariable<DdType::CUDD>::MetaVariableType::Bool) {
+                if (ddMetaVariable.getType() == MetaVariableType::Bool) {
                     if (this->cube[ddMetaVariable.getDdVariables().front().getIndex()] == 0) {
                         metaVariableAppearsInCube = true;
                         currentValuation.setBooleanValue(metaVariable, false);

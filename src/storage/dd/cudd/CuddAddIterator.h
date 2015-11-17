@@ -20,12 +20,12 @@ namespace storm {
         class DdManager;
         
         template<DdType Type, typename ValueType>
-        class Add;
+        class InternalAdd;
         
         template<typename ValueType>
         class AddIterator<DdType::CUDD, ValueType> {
         public:
-            friend class Add<DdType::CUDD, ValueType>;
+            friend class InternalAdd<DdType::CUDD, ValueType>;
 
             // Default-instantiate the constructor.
             AddIterator();

@@ -1,6 +1,9 @@
 #include "src/storage/dd/cudd/InternalCuddBdd.h"
 
 #include "src/storage/dd/cudd/InternalCuddDdManager.h"
+#include "src/storage/dd/cudd/CuddOdd.h"
+
+#include "src/storage/BitVector.h"
 
 namespace storm {
     namespace dd {
@@ -228,10 +231,9 @@ namespace storm {
             }
         }
         
-        storm::storage::BitVector InternalBdd<DdType::CUDD>::toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd) const {
-            std::vector<uint_fast64_t> ddVariableIndices = this->getSortedVariableIndices();
+        storm::storage::BitVector InternalBdd<DdType::CUDD>::toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const {
             storm::storage::BitVector result(rowOdd.getTotalOffset());
-            this->toVectorRec(this->getCuddDdNode(), this->getDdManager()->getCuddManager(), result, rowOdd, Cudd_IsComplement(this->getCuddDdNode()), 0, ddVariableIndices.size(), 0, ddVariableIndices);
+            this->toVectorRec(this->getCuddDdNode(), ddManager->getCuddManager(), result, rowOdd, Cudd_IsComplement(this->getCuddDdNode()), 0, ddVariableIndices.size(), 0, ddVariableIndices);
             return result;
         }
         

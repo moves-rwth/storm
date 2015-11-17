@@ -8,8 +8,8 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/macros.h"
 
-#include "src/storage/dd/cudd/CuddDdManager.h"
-#include "src/storage/dd/cudd/CuddDdMetaVariable.h"
+#include "src/storage/dd/DdManager.h"
+#include "src/storage/dd/DdMetaVariable.h"
 
 namespace storm {
     namespace dd {
@@ -23,7 +23,7 @@ namespace storm {
             std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd<DdType::CUDD>>>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure from the ADD.
-            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddFromAddRec(add.getCuddDdNode(), manager->getCuddManager(), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
+            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddFromAddRec(add.internalAdd.getCuddDdNode(), manager->internalDdManager.getCuddManager(), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
             
             // Finally, move the children of the root ODD into this ODD.
             this->elseNode = std::move(rootOdd->elseNode);
@@ -42,7 +42,7 @@ namespace storm {
             std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd<DdType::CUDD>>, HashFunctor>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure from the BDD.
-            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddFromBddRec(Cudd_Regular(bdd.getCuddDdNode()), manager->getCuddManager(), 0, Cudd_IsComplement(bdd.getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
+            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddFromBddRec(Cudd_Regular(bdd.getCuddDdNode()), manager->internalDdManager.getCuddManager(), 0, Cudd_IsComplement(bdd.getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
             
             // Finally, move the children of the root ODD into this ODD.
             this->elseNode = std::move(rootOdd->elseNode);

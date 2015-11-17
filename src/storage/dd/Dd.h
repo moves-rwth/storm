@@ -11,14 +11,21 @@
 namespace storm {
     namespace dd {
         // Forward-declare some classes.
-        template<DdType LibraryType> class DdManager;
-        template<DdType LibraryType> class Bdd;
+        template<DdType LibraryType>
+        class DdManager;
+        
+        template<DdType LibraryType>
+        class Bdd;
+
+        template<DdType LibraryType>
+        class Odd;
         
         template<DdType LibraryType>
         class Dd {
         public:
             // Declare the DdManager so it can access the internals of a DD.
             friend class DdManager<LibraryType>;
+            friend class Odd<LibraryType>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Dd() = default;

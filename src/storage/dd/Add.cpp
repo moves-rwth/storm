@@ -595,12 +595,12 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::begin(bool enumerateDontCareMetaVariables) const {
-            return internalAdd.begin(this->getContainedMetaVariables(), enumerateDontCareMetaVariables);
+            return internalAdd.begin(this->getDdManager(), this->getContainedMetaVariables(), enumerateDontCareMetaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
         AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::end(bool enumerateDontCareMetaVariables) const {
-            return internalAdd.end(enumerateDontCareMetaVariables);
+            return internalAdd.end(this->getDdManager(), enumerateDontCareMetaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -630,6 +630,11 @@ namespace storm {
             return Bdd<DdType::CUDD>(this->getDdManager(), internalAdd.toBdd(), this->getContainedMetaVariables());
         }
 
+        template<DdType LibraryType, typename ValueType>
+        Add<LibraryType, ValueType>::operator InternalAdd<LibraryType, ValueType>() const {
+            return internalAdd;
+        }
+        
         template class Add<storm::dd::DdType::CUDD, double>;
     }
 }

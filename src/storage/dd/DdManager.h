@@ -8,6 +8,7 @@
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/Add.h"
+#include "src/storage/dd/AddIterator.h"
 
 #include "src/storage/expressions/Variable.h"
 
@@ -15,12 +16,17 @@
 
 namespace storm {
     namespace dd {
+        template<DdType LibraryType>
+        class Odd;
+        
         // Declare DdManager class so we can then specialize it for the different DD types.
         template<DdType LibraryType>
         class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
         public:
             friend class Bdd<LibraryType>;
             friend class Add<LibraryType, double>;
+            friend class AddIterator<LibraryType, double>;
+            friend class Odd<LibraryType>;
             
             /*!
              * Creates an empty manager without any meta variables.
