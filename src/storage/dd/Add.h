@@ -27,6 +27,9 @@ namespace storm {
             friend class Bdd<LibraryType>;
             friend class Odd<LibraryType>;
             
+            template<DdType LibraryTypePrime, typename ValueTypePrime>
+            friend class Add;
+            
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Add() = default;
             Add(Add<LibraryType, ValueType> const& other) = default;
@@ -673,7 +676,7 @@ namespace storm {
              * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
              * @param targetVector The vector to which the translated DD-based vector is to be added.
              */
-            void addToVector(Odd<LibraryType> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
+            void addToExplicitVector(Odd<LibraryType> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
             
             /*!
              * Builds an ADD representing the given vector.

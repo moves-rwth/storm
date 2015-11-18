@@ -500,25 +500,15 @@ namespace storm {
              */
              AddIterator<DdType::CUDD, ValueType> end(std::shared_ptr<DdManager<DdType::CUDD> const> fullDdManager, bool enumerateDontCareMetaVariables = true) const;
             
-            void composeVectors(storm::dd::Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            void composeWithExplicitVector(Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
-//            /*!
-//             * Converts the ADD to a vector. The given offset-labeled DD is used to determine the correct row of
-//             * each entry.
-//             *
-//             * @param rowOdd The ODD used for determining the correct row.
-//             * @return The vector that is represented by this ADD.
-//             */
-//            std::vector<ValueType> toVector(std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& groupOffsets) const;
-//            
-//            void addToExplicitVector(storm::dd::Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
-//            
-//
-//            storm::storage::SparseMatrix<ValueType> toMatrix(uint_fast64_t numberOfDdVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices) const;
-//            
-//            storm::storage::SparseMatrix<ValueType> toMatrix(std::vector<uint_fast64_t> const& ddGroupVariableIndices, InternalBdd<DdType::CUDD> const& groupVariableCube, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices, InternalBdd<DdType::CUDD> const& columnVariableCube) const;
-//            
-//            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(InternalAdd<DdType::CUDD, ValueType> const& vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices, std::vector<uint_fast64_t>&& rowGroupIndices, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices, InternalBdd<DdType::CUDD> const& columnVariableCube) const;
+            void composeWithExplicitVector(Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            
+            std::vector<InternalAdd<DdType::CUDD, ValueType>> splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
+            
+            void toMatrixComponents(std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const;
+            
+            std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>> splitIntoGroups(InternalAdd<DdType::CUDD, ValueType> vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
             
             static InternalAdd<DdType::CUDD, ValueType> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, storm::dd::Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
             
@@ -549,21 +539,21 @@ namespace storm {
              * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
              * @param targetVector The vector to which the translated DD-based vector is to be added.
              */
-            void composeVectorsRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            void composeWithExplicitVectorRec(DdNode const* dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
             /*!
-             * Helper function to convert the DD into an (explicit) vector.
+             * Splits the given matrix DD into the groups using the given group variables.
              *
-             * @param dd The DD to convert.
-             * @param result The vector that will hold the values upon successful completion.
-             * @param rowGroupOffsets The row offsets at which a given row group starts.
-             * @param rowOdd The ODD used for the row translation.
-             * @param currentRowLevel The currently considered row level in the DD.
+             * @param dd The DD to split.
+             * @param groups A vector that is to be filled with the DDs for the individual groups.
+             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
+             * @param currentLevel The currently considered level in the DD.
              * @param maxLevel The number of levels that need to be considered.
-             * @param currentRowOffset The current row offset.
-             * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
              */
-            void toVectorRec(DdNode const* dd, std::vector<ValueType>& result, std::vector<uint_fast64_t> const& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
+            void splitIntoGroupsRec(DdNode* dd, std::vector<InternalAdd<DdType::CUDD, ValueType>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
+            
+            void splitIntoGroupsRec(DdNode* dd1, DdNode* dd2, std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
             
             /*!
              * Helper function to convert the DD into a (sparse) matrix.
@@ -590,33 +580,7 @@ namespace storm {
              * only works if the offsets given in rowIndications are already correct. If they need to be computed first,
              * this flag needs to be false.
              */
-            void toMatrixRec(DdNode const* dd, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>>& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues = true) const;
-            
-            /*!
-             * Splits the given matrix DD into the groups using the given group variables.
-             *
-             * @param dd The DD to split.
-             * @param groups A vector that is to be filled with the DDs for the individual groups.
-             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
-             * @param currentLevel The currently considered level in the DD.
-             * @param maxLevel The number of levels that need to be considered.
-             * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
-             */
-            void splitGroupsRec(DdNode* dd, std::vector<InternalAdd<DdType::CUDD, ValueType>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
-            
-            /*!
-             * Splits the given matrix and vector DDs into the groups using the given group variables.
-             *
-             * @param dd1 The matrix DD to split.
-             * @param dd2 The vector DD to split.
-             * @param groups A vector that is to be filled with the pairs of matrix/vector DDs for the individual groups.
-             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
-             * @param currentLevel The currently considered level in the DD.
-             * @param maxLevel The number of levels that need to be considered.
-             * @param remainingMetaVariables1 The meta variables that remain in the matrix DD after the groups have been split.
-             * @param remainingMetaVariables2 The meta variables that remain in the vector DD after the groups have been split.
-             */
-            void splitGroupsRec(DdNode* dd1, DdNode* dd2, std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
+            void toMatrixComponentsRec(DdNode const* dd, std::vector<uint_fast64_t> const& rowGroupOffsets, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>>& columnsAndValues, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const;
             
             /*!
              * Builds an ADD representing the given vector.
