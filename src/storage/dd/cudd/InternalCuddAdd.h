@@ -500,24 +500,25 @@ namespace storm {
              */
              AddIterator<DdType::CUDD, ValueType> end(std::shared_ptr<DdManager<DdType::CUDD> const> fullDdManager, bool enumerateDontCareMetaVariables = true) const;
             
-            /*!
-             * Converts the ADD to a vector. The given offset-labeled DD is used to determine the correct row of
-             * each entry.
-             *
-             * @param rowOdd The ODD used for determining the correct row.
-             * @return The vector that is represented by this ADD.
-             */
-            std::vector<ValueType> toVector(std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& groupOffsets) const;
+            void composeVectors(storm::dd::Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
-            void addToExplicitVector(storm::dd::Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
-            
-            void composeVector(storm::dd::Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
-            
-            storm::storage::SparseMatrix<ValueType> toMatrix(uint_fast64_t numberOfDdVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices) const;
-            
-            storm::storage::SparseMatrix<ValueType> toMatrix(std::vector<uint_fast64_t> const& ddGroupVariableIndices, InternalBdd<DdType::CUDD> const& groupVariableCube, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices, InternalBdd<DdType::CUDD> const& columnVariableCube) const;
-            
-            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(InternalAdd<DdType::CUDD, ValueType> const& vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices, std::vector<uint_fast64_t>&& rowGroupIndices, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices, InternalBdd<DdType::CUDD> const& columnVariableCube) const;
+//            /*!
+//             * Converts the ADD to a vector. The given offset-labeled DD is used to determine the correct row of
+//             * each entry.
+//             *
+//             * @param rowOdd The ODD used for determining the correct row.
+//             * @return The vector that is represented by this ADD.
+//             */
+//            std::vector<ValueType> toVector(std::vector<uint_fast64_t> const& ddGroupVariableIndices, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& groupOffsets) const;
+//            
+//            void addToExplicitVector(storm::dd::Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
+//            
+//
+//            storm::storage::SparseMatrix<ValueType> toMatrix(uint_fast64_t numberOfDdVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices) const;
+//            
+//            storm::storage::SparseMatrix<ValueType> toMatrix(std::vector<uint_fast64_t> const& ddGroupVariableIndices, InternalBdd<DdType::CUDD> const& groupVariableCube, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices, InternalBdd<DdType::CUDD> const& columnVariableCube) const;
+//            
+//            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(InternalAdd<DdType::CUDD, ValueType> const& vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices, std::vector<uint_fast64_t>&& rowGroupIndices, storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, storm::dd::Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddColumnVariableIndices, InternalBdd<DdType::CUDD> const& columnVariableCube) const;
             
             static InternalAdd<DdType::CUDD, ValueType> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, storm::dd::Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
             
@@ -548,7 +549,7 @@ namespace storm {
              * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
              * @param targetVector The vector to which the translated DD-based vector is to be added.
              */
-            void composeVectorRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            void composeVectorsRec(DdNode const* dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
             /*!
              * Helper function to convert the DD into an (explicit) vector.
