@@ -38,6 +38,17 @@ namespace storm {
             Add& operator=(Add<LibraryType, ValueType>&& other) = default;
 
             /*!
+             * Builds an ADD representing the given vector.
+             *
+             * @param ddManager The manager responsible for the ADD.
+             * @param values The vector that is to be represented by the ADD.
+             * @param odd The ODD used for the translation.
+             * @param metaVariables The meta variables used for the translation.
+             * @return The resulting (CUDD) ADD.
+             */
+            static Add<LibraryType, ValueType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables);
+            
+            /*!
              * Retrieves whether the two DDs represent the same function.
              *
              * @param other The DD that is to be compared with the current one.
@@ -668,27 +679,7 @@ namespace storm {
              * (if it was given).
              */
             std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const;
-            
-            /*!
-             * Adds the current (DD-based) vector to the given explicit one.
-             *
-             * @param odd The ODD used for the translation.
-             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
-             * @param targetVector The vector to which the translated DD-based vector is to be added.
-             */
-            void addToExplicitVector(Odd<LibraryType> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
-            
-            /*!
-             * Builds an ADD representing the given vector.
-             *
-             * @param ddManager The manager responsible for the ADD.
-             * @param values The vector that is to be represented by the ADD.
-             * @param odd The ODD used for the translation.
-             * @param metaVariables The meta variables used for the translation.
-             * @return The resulting (CUDD) ADD.
-             */
-            static Add<LibraryType, ValueType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables);
-            
+                        
             // The internal ADD that depends on the chosen library.
             InternalAdd<LibraryType, ValueType> internalAdd;
         };

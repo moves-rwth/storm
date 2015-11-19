@@ -37,7 +37,7 @@ namespace storm {
         template<DdType LibraryType>
         template<typename ValueType>
         Add<LibraryType, ValueType> DdManager<LibraryType>::getConstant(ValueType const& value) const {
-            return Add<LibraryType, ValueType>(this->shared_from_this(), internalDdManager.constant(value));
+            return Add<LibraryType, ValueType>(this->shared_from_this(), internalDdManager.getConstant(value));
         }
         
         template<DdType LibraryType>
@@ -89,7 +89,7 @@ namespace storm {
             
             Add<LibraryType, ValueType> result = this->getAddZero<ValueType>();
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
-                result += this->getEncoding(variable, value).toAdd() * this->getConstant(value);
+                result += this->getEncoding(variable, value).template toAdd<ValueType>() * this->getConstant(static_cast<ValueType>(value));
             }
             return result;
         }
@@ -115,7 +115,7 @@ namespace storm {
             for (std::size_t i = 0; i < numberOfBits; ++i) {
                 auto ddVariablePair = internalDdManager.createNewDdVariablePair();
                 variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.first, {unprimed}));
-                variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.second, {unprimed}));
+                variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.second, {primed}));
             }
 
             metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, low, high, variables));
@@ -281,8 +281,8 @@ namespace storm {
         template<DdType LibraryType>
         std::vector<uint_fast64_t> DdManager<LibraryType>::getSortedVariableIndices(std::set<storm::expressions::Variable> const& metaVariables) const {
             std::vector<uint_fast64_t> ddVariableIndices;
-            for (auto const& metaVariable : metaVariableMap) {
-                for (auto const& ddVariable : metaVariable.second.getDdVariables()) {
+            for (auto const& metaVariable : metaVariables) {
+                for (auto const& ddVariable : metaVariableMap.at(metaVariable).getDdVariables()) {
                     ddVariableIndices.push_back(ddVariable.getIndex());
                 }
             }
@@ -313,5 +313,17 @@ namespace storm {
         }
         
         template class DdManager<DdType::CUDD>;
+        
+        template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddZero() const;
+        template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddZero() const;
+
+        template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddOne() const;
+        template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddOne() const;
+
+        template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getConstant(double const& value) const;
+        template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;
+        
+        template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
+        template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
     }
 }

@@ -45,7 +45,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die) {
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -54,7 +54,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -63,7 +63,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -72,7 +72,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Die) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult4 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult4 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(3.6666622161865234, quantitativeResult4.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(3.6666622161865234, quantitativeResult4.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -98,7 +98,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds) {
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(0.33288236360191303, quantitativeResult1.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.33288236360191303, quantitativeResult1.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -107,7 +107,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(0.15222081144084315, quantitativeResult2.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.15222081144084315, quantitativeResult2.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -116,7 +116,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(0.3215392962289586, quantitativeResult3.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.3215392962289586, quantitativeResult3.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -150,7 +150,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader) {
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0, quantitativeResult1.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0, quantitativeResult1.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -159,7 +159,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -168,7 +168,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());

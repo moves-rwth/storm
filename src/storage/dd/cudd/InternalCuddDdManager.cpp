@@ -84,5 +84,22 @@ namespace storm {
         void InternalDdManager<DdType::CUDD>::triggerReordering() {
             this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
         }
+        
+        Cudd& InternalDdManager<DdType::CUDD>::getCuddManager() {
+            return cuddManager;
+        }
+        
+        Cudd const& InternalDdManager<DdType::CUDD>::getCuddManager() const {
+            return cuddManager;
+        }
+
+        template InternalAdd<DdType::CUDD, double> InternalDdManager<DdType::CUDD>::getAddOne() const;
+        template InternalAdd<DdType::CUDD, uint_fast64_t> InternalDdManager<DdType::CUDD>::getAddOne() const;
+        
+        template InternalAdd<DdType::CUDD, double> InternalDdManager<DdType::CUDD>::getAddZero() const;
+        template InternalAdd<DdType::CUDD, uint_fast64_t> InternalDdManager<DdType::CUDD>::getAddZero() const;
+        
+        template InternalAdd<DdType::CUDD, double> InternalDdManager<DdType::CUDD>::getConstant(double const& value) const;
+        template InternalAdd<DdType::CUDD, uint_fast64_t> InternalDdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;
     }
 }

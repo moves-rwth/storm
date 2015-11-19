@@ -1,15 +1,12 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storage/dd/cudd/CuddDdManager.h"
-#include "src/storage/dd/cudd/CuddAdd.h"
-#include "src/storage/dd/cudd/CuddBdd.h"
+#include "src/storage/dd/DdManager.h"
 #include "src/utility/solver.h"
 #include "src/settings/SettingsManager.h"
 
 #include "src/solver/SymbolicGameSolver.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
-
 
 TEST(FullySymbolicGameSolverTest, Solve) {
     // Create some variables.
@@ -26,45 +23,45 @@ TEST(FullySymbolicGameSolverTest, Solve) {
     std::set<storm::expressions::Variable> player2Variables({pl2.first});
 
     // Construct simple game.
-    storm::dd::Add<storm::dd::DdType::CUDD> matrix = manager->getEncoding(state.first, 1).toAdd() * manager->getEncoding(state.second, 2).toAdd() * manager->getEncoding(pl1.first, 0).toAdd() * manager->getEncoding(pl2.first, 0).toAdd() * manager->getConstant(0.6);
-    matrix += manager->getEncoding(state.first, 1).toAdd() * manager->getEncoding(state.second, 1).toAdd() * manager->getEncoding(pl1.first, 0).toAdd() * manager->getEncoding(pl2.first, 0).toAdd() * manager->getConstant(0.4);
+    storm::dd::Add<storm::dd::DdType::CUDD, double> matrix = manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 2).template toAdd<double>() * manager->getEncoding(pl1.first, 0).template toAdd<double>() * manager->getEncoding(pl2.first, 0).template toAdd<double>() * manager->getConstant(0.6);
+    matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 1).template toAdd<double>() * manager->getEncoding(pl1.first, 0).template toAdd<double>() * manager->getEncoding(pl2.first, 0).template toAdd<double>() * manager->getConstant(0.4);
 
-    matrix += manager->getEncoding(state.first, 1).toAdd() * manager->getEncoding(state.second, 2).toAdd() * manager->getEncoding(pl1.first, 0).toAdd() * manager->getEncoding(pl2.first, 1).toAdd() * manager->getConstant(0.2);
-    matrix += manager->getEncoding(state.first, 1).toAdd() * manager->getEncoding(state.second, 3).toAdd() * manager->getEncoding(pl1.first, 0).toAdd() * manager->getEncoding(pl2.first, 1).toAdd() * manager->getConstant(0.8);
+    matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 2).template toAdd<double>() * manager->getEncoding(pl1.first, 0).template toAdd<double>() * manager->getEncoding(pl2.first, 1).template toAdd<double>() * manager->getConstant(0.2);
+    matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 3).template toAdd<double>() * manager->getEncoding(pl1.first, 0).template toAdd<double>() * manager->getEncoding(pl2.first, 1).template toAdd<double>() * manager->getConstant(0.8);
 
-    matrix += manager->getEncoding(state.first, 1).toAdd() * manager->getEncoding(state.second, 3).toAdd() * manager->getEncoding(pl1.first, 1).toAdd() * manager->getEncoding(pl2.first, 0).toAdd() * manager->getConstant(0.5);
-    matrix += manager->getEncoding(state.first, 1).toAdd() * manager->getEncoding(state.second, 4).toAdd() * manager->getEncoding(pl1.first, 1).toAdd() * manager->getEncoding(pl2.first, 0).toAdd() * manager->getConstant(0.5);
+    matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 3).template toAdd<double>() * manager->getEncoding(pl1.first, 1).template toAdd<double>() * manager->getEncoding(pl2.first, 0).template toAdd<double>() * manager->getConstant(0.5);
+    matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 4).template toAdd<double>() * manager->getEncoding(pl1.first, 1).template toAdd<double>() * manager->getEncoding(pl2.first, 0).template toAdd<double>() * manager->getConstant(0.5);
     
-    matrix += manager->getEncoding(state.first, 1).toAdd() * manager->getEncoding(state.second, 1).toAdd() * manager->getEncoding(pl1.first, 1).toAdd() * manager->getEncoding(pl2.first, 1).toAdd() * manager->getConstant(1);
+    matrix += manager->getEncoding(state.first, 1).template toAdd<double>() * manager->getEncoding(state.second, 1).template toAdd<double>() * manager->getEncoding(pl1.first, 1).template toAdd<double>() * manager->getEncoding(pl2.first, 1).template toAdd<double>() * manager->getConstant<double>(1);
     
-    std::unique_ptr<storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD>> solverFactory(new storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD>());
+    std::unique_ptr<storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>> solverFactory(new storm::utility::solver::SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>());
     std::unique_ptr<storm::solver::SymbolicGameSolver<storm::dd::DdType::CUDD>> solver = solverFactory->create(matrix, allRows, rowMetaVariables, columnMetaVariables, rowColumnMetaVariablePairs, player1Variables,player2Variables);
     
     // Create solution and target state vector.
-    storm::dd::Add<storm::dd::DdType::CUDD> x = manager->getAddZero();
-    storm::dd::Add<storm::dd::DdType::CUDD> b = manager->getEncoding(state.first, 2).toAdd() + manager->getEncoding(state.first, 4).toAdd();
+    storm::dd::Add<storm::dd::DdType::CUDD, double> x = manager->template getAddZero<double>();
+    storm::dd::Add<storm::dd::DdType::CUDD, double> b = manager->getEncoding(state.first, 2).template toAdd<double>() + manager->getEncoding(state.first, 4).template toAdd<double>();
     
     // Now solve the game with different strategies for the players.
     storm::dd::Add<storm::dd::DdType::CUDD> result = solver->solveGame(storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Minimize, x, b);
-    result *= manager->getEncoding(state.first, 1).toAdd();
+    result *= manager->getEncoding(state.first, 1).template toAdd<double>();
     result = result.sumAbstract({state.first});
     EXPECT_NEAR(0, result.getValue(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    x = manager->getAddZero();
+    x = manager->getAddZero<double>();
     result = solver->solveGame(storm::OptimizationDirection::Minimize, storm::OptimizationDirection::Maximize, x, b);
-    result *= manager->getEncoding(state.first, 1).toAdd();
+    result *= manager->getEncoding(state.first, 1).template toAdd<double>();
     result = result.sumAbstract({state.first});
     EXPECT_NEAR(0.5, result.getValue(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
-    x = manager->getAddZero();
+    x = manager->getAddZero<double>();
     result = solver->solveGame(storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Minimize, x, b);
-    result *= manager->getEncoding(state.first, 1).toAdd();
+    result *= manager->getEncoding(state.first, 1).template toAdd<double>();
     result = result.sumAbstract({state.first});
     EXPECT_NEAR(0.2, result.getValue(), storm::settings::nativeEquationSolverSettings().getPrecision());
 
-    x = manager->getAddZero();
+    x = manager->getAddZero<double>();
     result = solver->solveGame(storm::OptimizationDirection::Maximize, storm::OptimizationDirection::Maximize, x, b);
-    result *= manager->getEncoding(state.first, 1).toAdd();
+    result *= manager->getEncoding(state.first, 1).template toAdd<double>();
     result = result.sumAbstract({state.first});
     EXPECT_NEAR(0.99999892625817599, result.getValue(), storm::settings::nativeEquationSolverSettings().getPrecision());
 }

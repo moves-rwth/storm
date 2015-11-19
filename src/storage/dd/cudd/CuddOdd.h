@@ -21,7 +21,8 @@ namespace storm {
              *
              * @param add The ADD for which to build the offset-labeled ADD.
              */
-            Odd(Add<DdType::CUDD> const& add);
+            template<typename ValueType>
+            Odd(Add<DdType::CUDD, ValueType> const& add);
             
             /*!
              * Constructs an offset-labeled DD from the given BDD.

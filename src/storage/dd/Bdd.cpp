@@ -16,7 +16,7 @@ namespace storm {
     namespace dd {
         
         template<DdType LibraryType>
-        Bdd<LibraryType>::Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<LibraryType>(ddManager, containedMetaVariables), internalBdd(internalBdd) {
+        Bdd<LibraryType>::Bdd(std::shared_ptr<DdManager<LibraryType> const> ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<LibraryType>(ddManager, containedMetaVariables), internalBdd(internalBdd) {
             // Intentionally left empty.
         }
         
@@ -36,7 +36,7 @@ namespace storm {
         
         template<DdType LibraryType>
         template<typename ValueType>
-        Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
+        Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
             return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager->internalDdManager, values, odd, ddManager->getSortedVariableIndices(metaVariables), filter), metaVariables);
         }
         
@@ -121,7 +121,7 @@ namespace storm {
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::andExists(Bdd<LibraryType> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const {
-            Bdd<DdType::CUDD> cube = getCube(*this->getDdManager(), existentialVariables);
+            Bdd<LibraryType> cube = getCube(*this->getDdManager(), existentialVariables);
 
             std::set<storm::expressions::Variable> unionOfMetaVariables;
             std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(unionOfMetaVariables, unionOfMetaVariables.begin()));
@@ -171,12 +171,12 @@ namespace storm {
         template<DdType LibraryType>
         template<typename ValueType>
         Add<LibraryType, ValueType> Bdd<LibraryType>::toAdd() const {
-            return Add<LibraryType, ValueType>(internalBdd.template toAdd<ValueType>());
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalBdd.template toAdd<ValueType>(), this->getContainedMetaVariables());
         }
         
         template<DdType LibraryType>
         storm::storage::BitVector Bdd<LibraryType>::toVector(storm::dd::Odd<LibraryType> const& rowOdd) const {
-            return internalBdd.toVector(rowOdd, this->getDdManager()->getSortedVariableIndices());
+            return internalBdd.toVector(rowOdd, this->getSortedVariableIndices());
         }
         
         template<DdType LibraryType>
@@ -237,6 +237,12 @@ namespace storm {
             return internalBdd;
         }
         
-        template class Bdd<storm::dd::DdType::CUDD>;
+        template class Bdd<DdType::CUDD>;
+        
+        template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
+        template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<uint_fast64_t> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
+        
+        template Add<DdType::CUDD, double> Bdd<DdType::CUDD>::toAdd() const;
+        template Add<DdType::CUDD, uint_fast64_t> Bdd<DdType::CUDD>::toAdd() const;
     }
 }

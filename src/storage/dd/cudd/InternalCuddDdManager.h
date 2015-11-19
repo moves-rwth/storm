@@ -23,10 +23,12 @@ namespace storm {
         template<>
         class InternalDdManager<DdType::CUDD> {
         public:
-            friend class InternalAdd<DdType::CUDD, double>;
             friend class InternalBdd<DdType::CUDD>;
             friend class Odd<DdType::CUDD>;
-            
+
+            template<DdType LibraryType, typename ValueType>
+            friend class InternalAdd;
+
             /*!
              * Creates a new internal manager for CUDD DDs.
              */
@@ -116,7 +118,7 @@ namespace storm {
             
             // The technique that is used for dynamic reordering.
             Cudd_ReorderingType reorderingTechnique;
-        };
+        };        
     }
 }
 

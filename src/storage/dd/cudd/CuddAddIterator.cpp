@@ -7,12 +7,12 @@
 namespace storm {
     namespace dd {
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType>::AddIterator() : ddManager(), generator(), cube(), value(), isAtEnd(), metaVariables(), enumerateDontCareMetaVariables(), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
+        AddIterator<DdType::CUDD, ValueType>::AddIterator() : ddManager(), generator(), cube(), valueAsDouble(), isAtEnd(), metaVariables(), enumerateDontCareMetaVariables(), cubeCounter(), relevantDontCareDdVariables(), currentValuation() {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType>::AddIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), value(value), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
+        AddIterator<DdType::CUDD, ValueType>::AddIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, ValueType const& value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), valueAsDouble(static_cast<double>(value)), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
             // If the given generator is not yet at its end, we need to create the current valuation from the cube from
             // scratch.
             if (!this->isAtEnd) {
@@ -22,7 +22,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType>::AddIterator(AddIterator<DdType::CUDD, ValueType>&& other) : ddManager(other.ddManager), generator(other.generator), cube(other.cube), value(other.value), isAtEnd(other.isAtEnd), metaVariables(other.metaVariables), cubeCounter(other.cubeCounter), relevantDontCareDdVariables(other.relevantDontCareDdVariables), currentValuation(other.currentValuation) {
+        AddIterator<DdType::CUDD, ValueType>::AddIterator(AddIterator<DdType::CUDD, ValueType>&& other) : ddManager(other.ddManager), generator(other.generator), cube(other.cube), valueAsDouble(other.valueAsDouble), isAtEnd(other.isAtEnd), metaVariables(other.metaVariables), cubeCounter(other.cubeCounter), relevantDontCareDdVariables(other.relevantDontCareDdVariables), currentValuation(other.currentValuation) {
             // Null-out the pointers of which we took possession.
             other.cube = nullptr;
             other.generator = nullptr;
@@ -34,7 +34,7 @@ namespace storm {
                 this->ddManager = other.ddManager;
                 this->generator = other.generator;
                 this->cube = other.cube;
-                this->value = other.value;
+                this->valueAsDouble = other.valueAsDouble;
                 this->isAtEnd = other.isAtEnd;
                 this->metaVariables = other.metaVariables;
                 this->cubeCounter = other.cubeCounter;
@@ -67,7 +67,7 @@ namespace storm {
             // found solutions and get the next "first" cube.
             if (this->relevantDontCareDdVariables.empty() || this->cubeCounter >= std::pow(2, this->relevantDontCareDdVariables.size()) - 1) {
                 // Get the next cube and check for emptiness.
-                ABDD::NextCube(generator, &cube, &value);
+                ABDD::NextCube(generator, &cube, &valueAsDouble);
                 this->isAtEnd = (Cudd_IsGenEmpty(generator) != 0);
 
                 // In case we are not done yet, we get ready to treat the next cube.
@@ -164,7 +164,7 @@ namespace storm {
                 return true;
             } else {
                 return this->ddManager.get() == other.ddManager.get() && this->generator == other.generator
-                && this->cube == other.cube && this->value == other.value && this->isAtEnd == other.isAtEnd
+                && this->cube == other.cube && this->valueAsDouble == other.valueAsDouble && this->isAtEnd == other.isAtEnd
                 && this->metaVariables == other.metaVariables && this->cubeCounter == other.cubeCounter
                 && this->relevantDontCareDdVariables == other.relevantDontCareDdVariables
                 && this->currentValuation == other.currentValuation;
@@ -177,10 +177,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::pair<storm::expressions::SimpleValuation, double> AddIterator<DdType::CUDD, ValueType>::operator*() const {
-            return std::make_pair(currentValuation, value);
+        std::pair<storm::expressions::SimpleValuation, ValueType> AddIterator<DdType::CUDD, ValueType>::operator*() const {
+            return std::make_pair(currentValuation, static_cast<ValueType>(valueAsDouble));
         }
         
         template class AddIterator<DdType::CUDD, double>;
+        template class AddIterator<DdType::CUDD, uint_fast64_t>;
     }
 }

@@ -265,5 +265,10 @@ namespace storm {
             }
         }
         
+        template InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<double> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (double const&)> const& filter);
+        template InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<uint_fast64_t> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (uint_fast64_t const&)> const& filter);
+        
+        template InternalAdd<DdType::CUDD, double> InternalBdd<DdType::CUDD>::toAdd() const;
+        template InternalAdd<DdType::CUDD, uint_fast64_t> InternalBdd<DdType::CUDD>::toAdd() const;
     }
 }

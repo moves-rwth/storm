@@ -164,17 +164,17 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::BooleanLiteralExpression const& expression) {
-            return ddManager->getConstant(expression.getValue());
+            return ddManager->getConstant(static_cast<ValueType>(expression.getValue()));
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::IntegerLiteralExpression const& expression) {
-            return ddManager->getConstant(expression.getValue());
+            return ddManager->getConstant(static_cast<ValueType>(expression.getValue()));
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::DoubleLiteralExpression const& expression) {
-            return ddManager->getConstant(expression.getValue());
+            return ddManager->getConstant(static_cast<ValueType>(expression.getValue()));
         }
         
         // Explicitly instantiate the symbolic expression adapter

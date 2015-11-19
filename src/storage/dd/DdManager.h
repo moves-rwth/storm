@@ -24,9 +24,13 @@ namespace storm {
         class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
         public:
             friend class Bdd<LibraryType>;
-            friend class Add<LibraryType, double>;
-            friend class AddIterator<LibraryType, double>;
             friend class Odd<LibraryType>;
+            
+            template<DdType LibraryTypePrime, typename ValueType>
+            friend class Add;
+
+            template<DdType LibraryTypePrime, typename ValueType>
+            friend class AddIterator;
             
             /*!
              * Creates an empty manager without any meta variables.

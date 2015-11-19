@@ -34,8 +34,8 @@
 #include "src/models/symbolic/Model.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 
-#include "src/storage/dd/cudd/CuddAdd.h"
-#include "src/storage/dd/cudd/CuddBdd.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/Bdd.h"
 
 #include "src/parser/AutoParser.h"
 

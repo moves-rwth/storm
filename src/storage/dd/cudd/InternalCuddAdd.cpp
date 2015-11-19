@@ -8,9 +8,15 @@
 #include "src/storage/SparseMatrix.h"
 
 #include "src/utility/constants.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace dd {
+        template<typename ValueType>
+        InternalAdd<DdType::CUDD, ValueType>::InternalAdd(InternalDdManager<DdType::CUDD> const* ddManager, ADD cuddAdd) : ddManager(ddManager), cuddAdd(cuddAdd) {
+            // Intentionally left empty.
+        }
+        
         template<typename ValueType>
         bool InternalAdd<DdType::CUDD, ValueType>::operator==(InternalAdd<DdType::CUDD, ValueType> const& other) const {
             return this->getCuddAdd() == other.getCuddAdd();
@@ -179,6 +185,7 @@ namespace storm {
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::swapVariables(std::vector<InternalAdd<DdType::CUDD, ValueType>> const& from, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& to) const {
             std::vector<ADD> fromAdd;
             std::vector<ADD> toAdd;
+            STORM_LOG_ASSERT(fromAdd.size() == toAdd.size(), "Sizes of vectors do not match.");
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
                 fromAdd.push_back(it1->getCuddAdd());
                 toAdd.push_back(it2->getCuddAdd());
@@ -403,7 +410,7 @@ namespace storm {
         template<typename ValueType>
         std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>> InternalAdd<DdType::CUDD, ValueType>::splitIntoGroups(InternalAdd<DdType::CUDD, ValueType> vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
             std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>> result;
-            splitGroupsRec(this->getCuddDdNode(), vector.getCuddDdNode(), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            splitIntoGroupsRec(this->getCuddDdNode(), vector.getCuddDdNode(), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
             return result;
         }
         
@@ -418,18 +425,18 @@ namespace storm {
                 groups.push_back(std::make_pair(InternalAdd<DdType::CUDD, ValueType>(ddManager, ADD(ddManager->getCuddManager(), dd1)), InternalAdd<DdType::CUDD, ValueType>(ddManager, ADD(ddManager->getCuddManager(), dd2))));
             } else if (ddGroupVariableIndices[currentLevel] < dd1->index) {
                 if (ddGroupVariableIndices[currentLevel] < dd2->index) {
-                    splitGroupsRec(dd1, dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
-                    splitGroupsRec(dd1, dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                    splitIntoGroupsRec(dd1, dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                    splitIntoGroupsRec(dd1, dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 } else {
-                    splitGroupsRec(dd1, Cudd_T(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
-                    splitGroupsRec(dd1, Cudd_E(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                    splitIntoGroupsRec(dd1, Cudd_T(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                    splitIntoGroupsRec(dd1, Cudd_E(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 }
             } else if (ddGroupVariableIndices[currentLevel] < dd2->index) {
-                splitGroupsRec(Cudd_T(dd1), dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
-                splitGroupsRec(Cudd_E(dd1), dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(Cudd_T(dd1), dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(Cudd_E(dd1), dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             } else {
-                splitGroupsRec(Cudd_T(dd1), Cudd_T(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
-                splitGroupsRec(Cudd_E(dd1), Cudd_E(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(Cudd_T(dd1), Cudd_T(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(Cudd_E(dd1), Cudd_E(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             }
         }
         
@@ -439,7 +446,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void InternalAdd<DdType::CUDD, ValueType>::toMatrixComponentsRec(DdNode const* dd, std::vector<uint_fast64_t> const& rowGroupOffsets, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>>& columnsAndValues, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues) const {
+        void InternalAdd<DdType::CUDD, ValueType>::toMatrixComponentsRec(DdNode const* dd, std::vector<uint_fast64_t> const& rowGroupOffsets, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues) const {
             // For the empty DD, we do not need to add any entries.
             if (dd == Cudd_ReadZero(ddManager->getCuddManager().getManager())) {
                 return;
@@ -448,7 +455,7 @@ namespace storm {
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentRowLevel + currentColumnLevel == maxLevel) {
                 if (generateValues) {
-                    columnsAndValues[rowIndications[rowGroupOffsets[currentRowOffset]]] = storm::storage::MatrixEntry<uint_fast64_t, double>(currentColumnOffset, Cudd_V(dd));
+                    columnsAndValues[rowIndications[rowGroupOffsets[currentRowOffset]]] = storm::storage::MatrixEntry<uint_fast64_t, ValueType>(currentColumnOffset, Cudd_V(dd));
                 }
                 ++rowIndications[rowGroupOffsets[currentRowOffset]];
             } else {
@@ -770,5 +777,6 @@ namespace storm {
         }
         
         template class InternalAdd<DdType::CUDD, double>;
+        template class InternalAdd<DdType::CUDD, uint_fast64_t>;
     }
 }

@@ -46,7 +46,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die) {
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
@@ -55,7 +55,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
@@ -64,7 +64,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
@@ -73,7 +73,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Die) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult4 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult4 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(11.0/3.0, quantitativeResult4.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(11.0/3.0, quantitativeResult4.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
@@ -99,7 +99,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Crowds) {
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(0.3328800375801578281, quantitativeResult1.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.3328800375801578281, quantitativeResult1.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
@@ -108,7 +108,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Crowds) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(0.1522194965, quantitativeResult2.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.1522194965, quantitativeResult2.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
@@ -117,7 +117,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, Crowds) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(0.32153724292835045, quantitativeResult3.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.32153724292835045, quantitativeResult3.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
@@ -151,7 +151,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, SynchronousLeader) {
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0, quantitativeResult1.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0, quantitativeResult1.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
@@ -160,7 +160,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, SynchronousLeader) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
@@ -169,7 +169,7 @@ TEST(GmmxxHybridDtmcPrctlModelCheckerTest, SynchronousLeader) {
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
-    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD>();
+    storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
     EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());

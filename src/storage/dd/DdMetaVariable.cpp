@@ -1,5 +1,7 @@
 #include "src/storage/dd/DdMetaVariable.h"
 
+#include "src/utility/macros.h"
+
 namespace storm {
     namespace dd {
         template<DdType LibraryType>
@@ -49,6 +51,7 @@ namespace storm {
         
         template<DdType LibraryType>
         void DdMetaVariable<LibraryType>::createCube() {
+            STORM_LOG_ASSERT(!this->ddVariables.empty(), "The DD variables must not be empty.");
             auto it = this->ddVariables.begin();
             this->cube = *it;
             ++it;

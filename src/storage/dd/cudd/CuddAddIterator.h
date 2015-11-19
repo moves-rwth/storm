@@ -54,7 +54,7 @@ namespace storm {
              *
              * @return A pair of a valuation and the function value.
              */
-            std::pair<storm::expressions::SimpleValuation, double> operator*() const;
+            std::pair<storm::expressions::SimpleValuation, ValueType> operator*() const;
             
             /*!
              * Compares the iterator with the given one. Two iterators are considered equal when all their underlying
@@ -88,7 +88,7 @@ namespace storm {
              * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
              * if a meta variable does not at all influence the the function value.
              */
-            AddIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, double value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
+            AddIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, ValueType const& value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables = nullptr, bool enumerateDontCareMetaVariables = true);
             
             /*!
              * Recreates the internal information when a new cube needs to be treated.
@@ -110,7 +110,7 @@ namespace storm {
             int* cube;
 
             // The function value of the current cube.
-            double value;
+            double valueAsDouble;
             
             // A flag that indicates whether the iterator is at its end and may not be moved further. This is also used
             // for the check against the end iterator.

@@ -13,7 +13,8 @@
 
 namespace storm {
     namespace dd {
-        Odd<DdType::CUDD>::Odd(Add<DdType::CUDD> const& add) {
+        template<typename ValueType>
+        Odd<DdType::CUDD>::Odd(Add<DdType::CUDD, ValueType> const& add) {
             std::shared_ptr<DdManager<DdType::CUDD> const> manager = add.getDdManager();
             
             // First, we need to determine the involved DD variables indices.
@@ -37,12 +38,12 @@ namespace storm {
             
             // First, we need to determine the involved DD variables indices.
             std::vector<uint_fast64_t> ddVariableIndices = bdd.getSortedVariableIndices();
-            
+
             // Prepare a unique table for each level that keeps the constructed ODD nodes unique.
             std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd<DdType::CUDD>>, HashFunctor>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure from the BDD.
-            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddFromBddRec(Cudd_Regular(bdd.getCuddDdNode()), manager->internalDdManager.getCuddManager(), 0, Cudd_IsComplement(bdd.getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
+            std::shared_ptr<Odd<DdType::CUDD>> rootOdd = buildOddFromBddRec(Cudd_Regular(bdd.internalBdd.getCuddDdNode()), manager->internalDdManager.getCuddManager(), 0, Cudd_IsComplement(bdd.internalBdd.getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
             
             // Finally, move the children of the root ODD into this ODD.
             this->elseNode = std::move(rootOdd->elseNode);
@@ -116,7 +117,7 @@ namespace storm {
             std::vector<uint_fast64_t> ddVariableIndices = selectedValues.getSortedVariableIndices();
             
             uint_fast64_t currentIndex = 0;
-            addSelectedValuesToVectorRec(selectedValues.getCuddDdNode(), selectedValues.getDdManager()->getCuddManager(), 0, Cudd_IsComplement(selectedValues.getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, 0, *this, result, currentIndex, values);
+            addSelectedValuesToVectorRec(selectedValues.internalBdd.getCuddDdNode(), selectedValues.getDdManager()->internalDdManager.getCuddManager(), 0, Cudd_IsComplement(selectedValues.internalBdd.getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, 0, *this, result, currentIndex, values);
             return result;
         }
         
@@ -324,5 +325,8 @@ namespace storm {
                 }
             }
         }
+        
+        template Odd<DdType::CUDD>::Odd(Add<DdType::CUDD, double> const& add);
+        template Odd<DdType::CUDD>::Odd(Add<DdType::CUDD, uint_fast64_t> const& add);
     }
 }

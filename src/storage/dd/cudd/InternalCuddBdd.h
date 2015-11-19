@@ -37,6 +37,7 @@ namespace storm {
         class InternalBdd<DdType::CUDD> {
         public:
             friend class InternalAdd<DdType::CUDD, double>;
+            friend class Odd<DdType::CUDD>;
             
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.

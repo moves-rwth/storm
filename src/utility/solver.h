@@ -11,12 +11,24 @@
 
 namespace storm {
     namespace solver {
-        template<storm::dd::DdType T>  class SymbolicGameSolver;
-        template<storm::dd::DdType T, typename V> class SymbolicLinearEquationSolver;
-        template<storm::dd::DdType T, typename V> class SymbolicMinMaxLinearEquationSolver;
-        template<typename V> class GameSolver;
-        template<typename V> class LinearEquationSolver;
-        template<typename V> class MinMaxLinearEquationSolver;
+        template<storm::dd::DdType T, typename ValueType>
+        class SymbolicGameSolver;
+        
+        template<storm::dd::DdType T, typename V>
+        class SymbolicLinearEquationSolver;
+        
+        template<storm::dd::DdType T, typename V>
+        class SymbolicMinMaxLinearEquationSolver;
+        
+        template<typename V>
+        class GameSolver;
+        
+        template<typename V>
+        class LinearEquationSolver;
+        
+        template<typename V>
+        class MinMaxLinearEquationSolver;
+        
         class LpSolver;
         class SmtSolver;
         
@@ -60,7 +72,7 @@ namespace storm {
             template<storm::dd::DdType Type, typename ValueType>
             class SymbolicGameSolverFactory {
             public:
-                virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
+                virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
             };
             
             template<typename ValueType>

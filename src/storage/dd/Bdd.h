@@ -12,10 +12,17 @@ namespace storm {
         class Add;
         
         template<DdType LibraryType>
+        class Odd;
+        
+        template<DdType LibraryType>
         class Bdd : public Dd<LibraryType> {
         public:
             friend class DdManager<LibraryType>;
-            friend class Add<LibraryType, double>;
+            
+            template<DdType LibraryTypePrime, typename ValueTypePrime>
+            friend class Add;
+            
+            friend class Odd<LibraryType>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Bdd() = default;
@@ -250,7 +257,7 @@ namespace storm {
              * @param cuddBdd The CUDD BDD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Bdd(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            Bdd(std::shared_ptr<DdManager<LibraryType> const> ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             /*!
              * Builds a BDD representing the values that make the given filter function evaluate to true.
@@ -263,7 +270,7 @@ namespace storm {
              * @return The resulting (CUDD) BDD.
              */
             template<typename ValueType>
-            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
+            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
             
             // The internal BDD that depends on the chosen library.
             InternalBdd<LibraryType> internalBdd;

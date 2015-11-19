@@ -182,7 +182,7 @@ namespace storm {
              * @return All states with probability 1.
              */
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Bdd<Type> performProb1(storm::models::symbolic::Model<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates) ;
+            storm::dd::Bdd<Type> performProb1(storm::models::symbolic::Model<Type, ValueType> const& model, storm::dd::Bdd<Type> const& transitionMatrix, storm::dd::Bdd<Type> const& phiStates, storm::dd::Bdd<Type> const& psiStates);
             
             /*!
              * Computes the sets of states that have probability 0 or 1, respectively, of satisfying phi until psi in a
