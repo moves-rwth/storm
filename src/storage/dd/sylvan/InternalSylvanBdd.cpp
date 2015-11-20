@@ -2,7 +2,6 @@
 
 #include "src/storage/dd/sylvan/InternalSylvanAdd.h"
 #include "src/storage/dd/sylvan/SylvanAddIterator.h"
-#
 
 #include "src/storage/BitVector.h"
 

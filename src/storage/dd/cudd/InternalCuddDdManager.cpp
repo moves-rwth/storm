@@ -85,11 +85,11 @@ namespace storm {
             this->getCuddManager().ReduceHeap(this->reorderingTechnique, 0);
         }
         
-        Cudd& InternalDdManager<DdType::CUDD>::getCuddManager() {
+        cudd::Cudd& InternalDdManager<DdType::CUDD>::getCuddManager() {
             return cuddManager;
         }
         
-        Cudd const& InternalDdManager<DdType::CUDD>::getCuddManager() const {
+        cudd::Cudd const& InternalDdManager<DdType::CUDD>::getCuddManager() const {
             return cuddManager;
         }
 

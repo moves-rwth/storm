@@ -8,6 +8,8 @@
 #include "src/storage/dd/InternalBdd.h"
 #include "src/storage/dd/InternalAdd.h"
 
+#include "sylvan_obj.hpp"
+
 namespace storm {
     namespace storage {
         class BitVector;
@@ -16,9 +18,6 @@ namespace storm {
     namespace dd {
         template<DdType LibraryType>
         class InternalDdManager;
-        
-        template<DdType LibraryType, typename ValueType>
-        class InternalAdd;
         
         class Odd;
         

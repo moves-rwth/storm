@@ -47,7 +47,7 @@ namespace storm {
              * @param cuddAdd The CUDD ADD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            InternalAdd(InternalDdManager<DdType::CUDD> const* ddManager, ADD cuddAdd);
+            InternalAdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::ADD cuddAdd);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             InternalAdd() = default;
@@ -586,7 +586,7 @@ namespace storm {
              *
              * @return The CUDD ADD object associated with this ADD.
              */
-            ADD getCuddAdd() const;
+            cudd::ADD getCuddAdd() const;
             
             /*!
              * Retrieves the raw DD node of CUDD associated with this ADD.
@@ -687,11 +687,11 @@ namespace storm {
              * ODD nodes for the same DD and level unique.
              * @return A pointer to the constructed ODD for the given arguments.
              */
-            static std::shared_ptr<Odd> createOddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd>>>& uniqueTableForLevels);
+            static std::shared_ptr<Odd> createOddRec(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd>>>& uniqueTableForLevels);
             
             InternalDdManager<DdType::CUDD> const* ddManager;
             
-            ADD cuddAdd;
+            cudd::ADD cuddAdd;
         };
     }
 }

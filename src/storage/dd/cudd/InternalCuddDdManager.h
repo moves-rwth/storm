@@ -100,17 +100,17 @@ namespace storm {
              *
              * @return The underlying CUDD manager.
              */
-            Cudd& getCuddManager();
+            cudd::Cudd& getCuddManager();
             
             /*!
              * Retrieves the underlying CUDD manager.
              *
              * @return The underlying CUDD manager.
              */
-            Cudd const& getCuddManager() const;
+            cudd::Cudd const& getCuddManager() const;
             
             // The manager responsible for the DDs created/modified with this DdManager.
-            Cudd cuddManager;
+            cudd::Cudd cuddManager;
             
             // The technique that is used for dynamic reordering.
             Cudd_ReorderingType reorderingTechnique;

@@ -13,7 +13,7 @@
 namespace storm {
     namespace dd {
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType>::InternalAdd(InternalDdManager<DdType::CUDD> const* ddManager, ADD cuddAdd) : ddManager(ddManager), cuddAdd(cuddAdd) {
+        InternalAdd<DdType::CUDD, ValueType>::InternalAdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::ADD cuddAdd) : ddManager(ddManager), cuddAdd(cuddAdd) {
             // Intentionally left empty.
         }
         
@@ -183,8 +183,8 @@ namespace storm {
         
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::swapVariables(std::vector<InternalAdd<DdType::CUDD, ValueType>> const& from, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& to) const {
-            std::vector<ADD> fromAdd;
-            std::vector<ADD> toAdd;
+            std::vector<cudd::ADD> fromAdd;
+            std::vector<cudd::ADD> toAdd;
             STORM_LOG_ASSERT(fromAdd.size() == toAdd.size(), "Sizes of vectors do not match.");
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
                 fromAdd.push_back(it1->getCuddAdd());
@@ -196,7 +196,7 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::multiplyMatrix(InternalAdd<DdType::CUDD, ValueType> const& otherMatrix, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& summationDdVariables) const {
             // Create the CUDD summation variables.
-            std::vector<ADD> summationAdds;
+            std::vector<cudd::ADD> summationAdds;
             for (auto const& ddVariable : summationDdVariables) {
                 summationAdds.push_back(ddVariable.getCuddAdd());
             }
@@ -261,13 +261,13 @@ namespace storm {
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::CUDD, ValueType>::getMin() const {
-            ADD constantMinAdd = this->getCuddAdd().FindMin();
+            cudd::ADD constantMinAdd = this->getCuddAdd().FindMin();
             return static_cast<double>(Cudd_V(constantMinAdd.getNode()));
         }
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::CUDD, ValueType>::getMax() const {
-            ADD constantMaxAdd = this->getCuddAdd().FindMax();
+            cudd::ADD constantMaxAdd = this->getCuddAdd().FindMax();
             return static_cast<double>(Cudd_V(constantMaxAdd.getNode()));
         }
         
@@ -313,7 +313,7 @@ namespace storm {
             
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");
-            std::vector<ADD> cuddAddVector = { this->getCuddAdd() };
+            std::vector<cudd::ADD> cuddAddVector = { this->getCuddAdd() };
             ddManager->getCuddManager().DumpDot(cuddAddVector, &ddVariableNames[0], &ddNames[0], filePointer);
             fclose(filePointer);
             
@@ -340,7 +340,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        ADD InternalAdd<DdType::CUDD, ValueType>::getCuddAdd() const {
+        cudd::ADD InternalAdd<DdType::CUDD, ValueType>::getCuddAdd() const {
             return this->cuddAdd;
         }
         
@@ -362,7 +362,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::shared_ptr<Odd> InternalAdd<DdType::CUDD, ValueType>::createOddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd>>>& uniqueTableForLevels) {
+        std::shared_ptr<Odd> InternalAdd<DdType::CUDD, ValueType>::createOddRec(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd>>>& uniqueTableForLevels) {
             // Check whether the ODD for this node has already been computed (for this level) and if so, return this instead.
             auto const& iterator = uniqueTableForLevels[currentLevel].find(dd);
             if (iterator != uniqueTableForLevels[currentLevel].end()) {
@@ -449,7 +449,7 @@ namespace storm {
             }
             
             if (currentLevel == maxLevel) {
-                groups.push_back(InternalAdd<DdType::CUDD, ValueType>(ddManager, ADD(ddManager->getCuddManager(), dd)));
+                groups.push_back(InternalAdd<DdType::CUDD, ValueType>(ddManager, cudd::ADD(ddManager->getCuddManager(), dd)));
             } else if (ddGroupVariableIndices[currentLevel] < dd->index) {
                 splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
@@ -474,7 +474,7 @@ namespace storm {
             }
             
             if (currentLevel == maxLevel) {
-                groups.push_back(std::make_pair(InternalAdd<DdType::CUDD, ValueType>(ddManager, ADD(ddManager->getCuddManager(), dd1)), InternalAdd<DdType::CUDD, ValueType>(ddManager, ADD(ddManager->getCuddManager(), dd2))));
+                groups.push_back(std::make_pair(InternalAdd<DdType::CUDD, ValueType>(ddManager, cudd::ADD(ddManager->getCuddManager(), dd1)), InternalAdd<DdType::CUDD, ValueType>(ddManager, cudd::ADD(ddManager->getCuddManager(), dd2))));
             } else if (ddGroupVariableIndices[currentLevel] < dd1->index) {
                 if (ddGroupVariableIndices[currentLevel] < dd2->index) {
                     splitIntoGroupsRec(dd1, dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
@@ -553,7 +553,7 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices) {
             uint_fast64_t offset = 0;
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, ADD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, ddVariableIndices.size(), values, odd, ddVariableIndices)));
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, cudd::ADD(ddManager->getCuddManager(), fromVectorRec(ddManager->getCuddManager().getManager(), offset, 0, ddVariableIndices.size(), values, odd, ddVariableIndices)));
         }
         
         template<typename ValueType>

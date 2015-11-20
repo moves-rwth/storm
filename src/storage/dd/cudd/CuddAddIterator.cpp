@@ -67,7 +67,7 @@ namespace storm {
             // found solutions and get the next "first" cube.
             if (this->relevantDontCareDdVariables.empty() || this->cubeCounter >= std::pow(2, this->relevantDontCareDdVariables.size()) - 1) {
                 // Get the next cube and check for emptiness.
-                ABDD::NextCube(generator, &cube, &valueAsDouble);
+                cudd::ABDD::NextCube(generator, &cube, &valueAsDouble);
                 this->isAtEnd = (Cudd_IsGenEmpty(generator) != 0);
 
                 // In case we are not done yet, we get ready to treat the next cube.

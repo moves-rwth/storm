@@ -37,7 +37,7 @@ namespace storm {
              * @param cuddBdd The CUDD BDD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            InternalBdd(InternalDdManager<DdType::CUDD> const* ddManager, BDD cuddBdd);
+            InternalBdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::BDD cuddBdd);
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             InternalBdd() = default;
@@ -310,7 +310,7 @@ namespace storm {
              *
              * @return The CUDD BDD object associated with this DD.
              */
-            BDD getCuddBdd() const;
+            cudd::BDD getCuddBdd() const;
             
             /*!
              * Retrieves the raw DD node of CUDD associated with this BDD.
@@ -348,7 +348,7 @@ namespace storm {
              * @param currentRowOffset The current row offset.
              * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
              */
-            void toVectorRec(DdNode const* dd, Cudd const& manager, storm::storage::BitVector& result, Odd const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
+            void toVectorRec(DdNode const* dd, cudd::Cudd const& manager, storm::storage::BitVector& result, Odd const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
             
             // Declare a hash functor that is used for the unique tables in the construction process of ODDs.
             class HashFunctor {
@@ -369,7 +369,7 @@ namespace storm {
              * ODD nodes for the same DD and level unique.
              * @return A pointer to the constructed ODD for the given arguments.
              */
-            static std::shared_ptr<Odd> createOddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels);
+            static std::shared_ptr<Odd> createOddRec(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels);
             
             /*!
              * Adds the selected values the target vector.
@@ -386,11 +386,11 @@ namespace storm {
              * @param values The value vector from which to select the values.
              */
             template<typename ValueType>
-            static void filterExplicitVectorRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values);
+            static void filterExplicitVectorRec(DdNode* dd, cudd::Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values);
             
             InternalDdManager<DdType::CUDD> const* ddManager;
             
-            BDD cuddBdd;
+            cudd::BDD cuddBdd;
         };
     }
 }
