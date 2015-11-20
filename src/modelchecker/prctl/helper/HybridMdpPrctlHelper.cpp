@@ -149,13 +149,13 @@ namespace storm {
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
                 // Create the ODD for the translation between symbolic and explicit storage.
-                storm::dd::Odd odd =model.getReachableStates().createOdd();
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
                 // Translate the symbolic matrix to its explicit representations.
                 storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
                 
                 // Create the solution vector (and initialize it to the state rewards of the model).
-                std::vector<ValueType> x = rewardModel.getStateRewardVector().toVector(model.getNondeterminismVariables(), odd, explicitMatrix.getRowGroupIndices());
+                std::vector<ValueType> x = rewardModel.getStateRewardVector().toVector(odd);
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
@@ -179,13 +179,16 @@ namespace storm {
                 // Create the solution vector.
                 std::vector<ValueType> x(model.getNumberOfStates(), storm::utility::zero<ValueType>());
                 
+                // Before cutting the non-maybe columns, we need to compute the sizes of the row groups.
+                storm::dd::Add<DdType, uint_fast64_t> stateActionAdd = (transitionMatrix.notZero().existsAbstract(model.getColumnVariables()) || totalRewardVector.notZero()).template toAdd<uint_fast64_t>();
+                std::vector<uint_fast64_t> rowGroupSizes = stateActionAdd.sumAbstract(model.getNondeterminismVariables()).toVector(odd);
+                
                 // Translate the symbolic matrix/vector to their explicit representations.
-                storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-                std::vector<ValueType> b = totalRewardVector.toVector(model.getNondeterminismVariables(), odd, explicitMatrix.getRowGroupIndices());
+                std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> explicitRepresentation = transitionMatrix.toMatrixVector(totalRewardVector, std::move(rowGroupSizes), model.getNondeterminismVariables(), odd, odd);
                 
                 // Perform the matrix-vector multiplication.
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
-                solver->performMatrixVectorMultiplication(dir, x, &b, stepBound);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitRepresentation.first);
+                solver->performMatrixVectorMultiplication(dir, x, &explicitRepresentation.second, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));

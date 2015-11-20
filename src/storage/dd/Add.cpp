@@ -390,48 +390,7 @@ namespace storm {
             internalAdd.composeWithExplicitVector(rowOdd, ddVariableIndices, result, std::plus<ValueType>());
             return result;
         }
-        
-        template<DdType LibraryType, typename ValueType>
-        std::vector<ValueType> Add<LibraryType, ValueType>::toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& groupOffsets) const {
-            std::set<storm::expressions::Variable> rowMetaVariables;
-            
-            // Prepare the proper sets of meta variables.
-            for (auto const& variable : this->getContainedMetaVariables()) {
-                if (groupMetaVariables.find(variable) != groupMetaVariables.end()) {
-                    continue;
-                }
                 
-                rowMetaVariables.insert(variable);
-            }
-            std::vector<uint_fast64_t> ddGroupVariableIndices;
-            for (auto const& variable : groupMetaVariables) {
-                DdMetaVariable<LibraryType> const& metaVariable = this->getDdManager()->getMetaVariable(variable);
-                for (auto const& ddVariable : metaVariable.getDdVariables()) {
-                    ddGroupVariableIndices.push_back(ddVariable.getIndex());
-                }
-            }
-            std::vector<uint_fast64_t> ddRowVariableIndices;
-            for (auto const& variable : rowMetaVariables) {
-                DdMetaVariable<LibraryType> const& metaVariable = this->getDdManager()->getMetaVariable(variable);
-                for (auto const& ddVariable : metaVariable.getDdVariables()) {
-                    ddRowVariableIndices.push_back(ddVariable.getIndex());
-                }
-            }
-            
-            // Use the group variables to split the ADD into separate ADDs for each group.
-            std::vector<InternalAdd<LibraryType, ValueType>> groups = internalAdd.splitIntoGroups(ddGroupVariableIndices);
-            
-            // Now iterate over the groups and add them to the resulting vector.
-            std::vector<ValueType> result(groupOffsets.back(), storm::utility::zero<ValueType>());
-            for (uint_fast64_t i = 0; i < groups.size(); ++i) {
-                internalAdd.composeWithExplicitVector(rowOdd, ddRowVariableIndices, groupOffsets, result, std::plus<ValueType>());
-                
-                // FIXME: something more needed? modification of groupOffsets?
-            }
-            
-            return result;
-        }
-        
         template<DdType LibraryType, typename ValueType>
         storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix() const {
             std::set<storm::expressions::Variable> rowVariables;

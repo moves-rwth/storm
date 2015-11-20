@@ -525,17 +525,6 @@ namespace storm {
             std::vector<ValueType> toVector(storm::dd::Odd const& rowOdd) const;
             
             /*!
-             * Converts the ADD to a row-grouped vector. The given offset-labeled DD is used to determine the correct
-             * row group of each entry. Note that the group meta variables are assumed to be at the very top in the
-             * variable ordering.
-             *
-             * @param groupMetaVariables The meta variables responsible for the row-grouping.
-             * @param rowOdd The ODD used for determining the correct row.
-             * @return The vector that is represented by this ADD.
-             */
-            std::vector<ValueType> toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& groupOffsets) const;
-            
-            /*!
              * Converts the ADD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
              * row, whereas all primed variables are assumed to encode the column.
              *

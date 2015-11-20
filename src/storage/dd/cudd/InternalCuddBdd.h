@@ -12,14 +12,6 @@
 #include "cuddObj.hh"
 
 namespace storm {
-    namespace logic {
-        enum class ComparisonType;
-    }
-    
-    namespace expressions {
-        class Variable;
-    }
-    
     namespace storage {
         class BitVector;
     }
@@ -165,34 +157,34 @@ namespace storm {
             InternalBdd<DdType::CUDD>& complement();
             
             /*!
-             * Existentially abstracts from the given meta variables.
+             * Existentially abstracts from the given cube.
              *
-             * @param metaVariables The meta variables from which to abstract.
+             * @param cube The cube from which to abstract.
              */
             InternalBdd<DdType::CUDD> existsAbstract(InternalBdd<DdType::CUDD> const& cube) const;
             
             /*!
-             * Universally abstracts from the given meta variables.
+             * Universally abstracts from the given cube.
              *
-             * @param metaVariables The meta variables from which to abstract.
+             * @param cube The cube from which to abstract.
              */
             InternalBdd<DdType::CUDD> universalAbstract(InternalBdd<DdType::CUDD> const& cube) const;
             
             /*!
-             * Swaps the given pairs of meta variables in the BDD. The pairs of meta variables must be guaranteed to have
-             * the same number of underlying BDD variables.
+             * Swaps the given pairs of DD variables in the BDD. The pairs of meta variables have to be represented by
+             * BDDs must have equal length.
              *
-             * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
+             * @param from The vector that specifies the 'from' part of the variable renaming.
+             * @param to The vector that specifies the 'to' part of the variable renaming.
              * @return The resulting BDD.
              */
             InternalBdd<DdType::CUDD> swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const;
             
             /*!
-             * Computes the logical and of the current and the given BDD and existentially abstracts from the given set
-             * of variables.
+             * Computes the logical and of the current and the given BDD and existentially abstracts from the given cube.
              *
              * @param other The second BDD for the logical and.
-             * @param existentialVariables The variables from which to existentially abstract.
+             * @param cube The cube to existentially abstract.
              * @return A BDD representing the result.
              */
             InternalBdd<DdType::CUDD> andExists(InternalBdd<DdType::CUDD> const& other, InternalBdd<storm::dd::DdType::CUDD> const& cube) const;
@@ -227,6 +219,7 @@ namespace storm {
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
+             * @param The number of DD variables contained in this BDD.
              * @return The number of encodings that are mapped to a non-zero value.
              */
             uint_fast64_t getNonZeroCount(uint_fast64_t numberOfDdVariables) const;
@@ -270,6 +263,7 @@ namespace storm {
              * Exports the BDD to the given file in the dot format.
              *
              * @param filename The name of the file to which the BDD is to be exported.
+             * @param ddVariableNamesAsStrings The names of the variables to display in the dot file.
              */
             void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const;
                         
@@ -286,6 +280,7 @@ namespace storm {
              * each entry.
              *
              * @param rowOdd The ODD used for determining the correct row.
+             * @param ddVariableIndices The indices of the DD variables contained in this BDD.
              * @return The bit vector that is represented by this BDD.
              */
             storm::storage::BitVector toVector(storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const;
@@ -293,14 +288,37 @@ namespace storm {
             /*!
              * Creates an ODD based on the current BDD.
              *
+             * @param ddVariableIndices The indices of the DD variables contained in this BDD.
              * @return The corresponding ODD.
              */
             Odd createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const;
             
+            /*!
+             * Uses the current BDD to filter values from the explicit vector.
+             *
+             * @param odd The ODD used to determine which entries to select.
+             * @param ddVariableIndices The indices of the DD variables contained in this BDD.
+             * @param sourceValues The source vector.
+             * @param targetValues The vector to which to write the selected values.
+             */
             template<typename ValueType>
             void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const;
             
         private:
+            /*!
+             * Retrieves the CUDD BDD object associated with this DD.
+             *
+             * @return The CUDD BDD object associated with this DD.
+             */
+            BDD getCuddBdd() const;
+            
+            /*!
+             * Retrieves the raw DD node of CUDD associated with this BDD.
+             *
+             * @return The DD node of CUDD associated with this BDD.
+             */
+            DdNode* getCuddDdNode() const;
+            
             /*!
              * Builds a BDD representing the values that make the given filter function evaluate to true.
              *
@@ -311,6 +329,7 @@ namespace storm {
              * @param values The values that are to be checked against the filter function.
              * @param odd The ODD used for the translation.
              * @param ddVariableIndices The (sorted) list of DD variable indices to use.
+             * @param filter A function that determines which encodings are to be mapped to true.
              * @return The resulting (CUDD) BDD node.
              */
             template<typename ValueType>
@@ -368,20 +387,6 @@ namespace storm {
              */
             template<typename ValueType>
             static void filterExplicitVectorRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values);
-            
-            /*!
-             * Retrieves the CUDD BDD object associated with this DD.
-             *
-             * @return The CUDD BDD object associated with this DD.
-             */
-            BDD getCuddBdd() const;
-            
-            /*!
-             * Retrieves the raw DD node of CUDD associated with this BDD.
-             *
-             * @return The DD node of CUDD associated with this BDD.
-             */
-            DdNode* getCuddDdNode() const;
             
             InternalDdManager<DdType::CUDD> const* ddManager;
             

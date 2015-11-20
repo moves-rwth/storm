@@ -92,7 +92,7 @@ namespace storm {
             InternalAdd<DdType::CUDD, ValueType> operator!() const;
             
             /*!
-             * Performs a logical or of the current anBd the given ADD. As a prerequisite, the operand ADDs need to be
+             * Performs a logical or of the current and the given ADD. As a prerequisite, the operand ADDs need to be
              * 0/1 ADDs.
              *
              * @param other The second ADD used for the operation.
@@ -281,23 +281,23 @@ namespace storm {
             InternalAdd<DdType::CUDD, ValueType> maximum(InternalAdd<DdType::CUDD, ValueType> const& other) const;
             
             /*!
-             * Sum-abstracts from the given meta variables.
+             * Sum-abstracts from the given cube.
              *
-             * @param metaVariables The meta variables from which to abstract.
+             * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::CUDD, ValueType> sumAbstract(InternalBdd<DdType::CUDD> const& cube) const;
             
             /*!
-             * Min-abstracts from the given meta variables.
+             * Min-abstracts from the given cube.
              *
-             * @param metaVariables The meta variables from which to abstract.
+             * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::CUDD, ValueType> minAbstract(InternalBdd<DdType::CUDD> const& cube) const;
             
             /*!
-             * Max-abstracts from the given meta variables.
+             * Max-abstracts from the given cube.
              *
-             * @param metaVariables The meta variables from which to abstract.
+             * @param cube The cube from which to abstract.
              */
             InternalAdd<DdType::CUDD, ValueType> maxAbstract(InternalBdd<DdType::CUDD> const& cube) const;
             
@@ -313,10 +313,11 @@ namespace storm {
             bool equalModuloPrecision(InternalAdd<DdType::CUDD, ValueType> const& other, double precision, bool relative = true) const;
             
             /*!
-             * Swaps the given pairs of meta variables in the ADD. The pairs of meta variables must be guaranteed to have
-             * the same number of underlying ADD variables.
+             * Swaps the given pairs of DD variables in the ADD. The pairs of meta variables have to be represented by
+             * ADDs must have equal length.
              *
-             * @param metaVariablePairs A vector of meta variable pairs that are to be swapped for one another.
+             * @param from The vector that specifies the 'from' part of the variable renaming.
+             * @param to The vector that specifies the 'to' part of the variable renaming.
              * @return The resulting ADD.
              */
             InternalAdd<DdType::CUDD, ValueType> swapVariables(std::vector<InternalAdd<DdType::CUDD, ValueType>> const& from, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& to) const;
@@ -326,8 +327,7 @@ namespace storm {
              * variables.
              *
              * @param otherMatrix The matrix with which to multiply.
-             * @param summationMetaVariables The names of the meta variables over which to sum during the matrix-
-             * matrix multiplication.
+             * @param summationDdVariables The DD variables (represented as ADDs) over which to sum.
              * @return An ADD representing the result of the matrix-matrix multiplication.
              */
             InternalAdd<DdType::CUDD, ValueType> multiplyMatrix(InternalAdd<DdType::CUDD, ValueType> const& otherMatrix, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& summationDdVariables) const;
@@ -406,6 +406,7 @@ namespace storm {
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
+             * @param The number of DD variables contained in this ADD.
              * @return The number of encodings that are mapped to a non-zero value.
              */
             virtual uint_fast64_t getNonZeroCount(uint_fast64_t numberOfDdVariables) const;
@@ -478,12 +479,15 @@ namespace storm {
              * Exports the DD to the given file in the dot format.
              *
              * @param filename The name of the file to which the DD is to be exported.
+             * @param ddVariableNamesAsString The names of the DD variables to display in the dot file.
              */
             void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const;
             
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
              *
+             * @param fullDdManager The DD manager responsible for this ADD.
+             * @param metaVariables The meta variables contained in the ADD.
              * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
              * if a meta variable does not at all influence the the function value.
              * @return An iterator that points to the first meta variable assignment with a non-zero function value.
@@ -493,22 +497,80 @@ namespace storm {
             /*!
              * Retrieves an iterator that points past the end of the container.
              *
+             * @param fullDdManager The DD manager responsible for this ADD.
              * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
              * if a meta variable does not at all influence the the function value.
              * @return An iterator that points past the end of the container.
              */
             AddIterator<DdType::CUDD, ValueType> end(std::shared_ptr<DdManager<DdType::CUDD> const> fullDdManager, bool enumerateDontCareMetaVariables = true) const;
             
+            /*!
+             * Composes the ADD with an explicit vector by performing a specified function between the entries of this
+             * ADD and the explicit vector.
+             *
+             * @param odd The ODD to use for the translation from symbolic to explicit positions.
+             * @param ddVariableIndices The indices of the DD variables present in this ADD.
+             * @param targetVector The explicit vector that is to be composed with the ADD. The results are written to
+             * this vector again.
+             * @param function The function to perform in the composition.
+             */
             void composeWithExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
+            /*!
+             * Composes the (row-grouped) ADD with an explicit vector by performing a specified function between the
+             * entries of this ADD and the explicit vector.
+             *
+             * @param odd The ODD to use for the translation from symbolic to explicit positions.
+             * @param ddVariableIndices The indices of the DD variables present in this ADD.
+             * @param offsets The offsets
+             * @param targetVector The explicit vector that is to be composed with the ADD. The results are written to
+             * this vector again.
+             * @param function The function to perform in the composition.
+             */
             void composeWithExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
+            /*!
+             * Splits the ADD into several ADDs that differ in the encoding of the given group variables (given via indices).
+             *
+             * @param ddGroupVariableIndices The indices of the variables that are used to distinguish the groups.
+             * @return A vector of ADDs that are the separate groups (wrt. to the encoding of the given variables).
+             */
             std::vector<InternalAdd<DdType::CUDD, ValueType>> splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
             
-            void toMatrixComponents(std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd const& rowOdd, Odd const& columnOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const;
-            
+            /*!
+             * Simultaneously splits the ADD and the given vector ADD into several ADDs that differ in the encoding of
+             * the given group variables (given via indices).
+             *
+             * @param vector The vector to split (in addition to the current ADD).
+             * @param ddGroupVariableIndices The indices of the variables that are used to distinguish the groups.
+             * @return A vector of pairs of ADDs that are the separate groups of the current ADD and the vector,
+             * respectively (wrt. to the encoding of the given variables).
+             */
             std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>> splitIntoGroups(InternalAdd<DdType::CUDD, ValueType> vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
             
+            /*!
+             * Translates the ADD into the components needed for constructing a matrix.
+             *
+             * @param rowGroupIndices The row group indices.
+             * @param rowIndications The vector that is to be filled with the row indications.
+             * @param columnsAndValues The vector that is to be filled with the non-zero entries of the matrix.
+             * @param rowOdd The ODD used for translating the rows.
+             * @param columnOdd The ODD used for translating the columns.
+             * @param ddRowVariableIndices The variable indices of the row variables.
+             * @param ddColumnVariableIndices The variable indices of the column variables.
+             * @param writeValues A flag that indicates whether or not to write to the entry vector. If this is not set,
+             * only the row indications are modified.
+             */
+            void toMatrixComponents(std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd const& rowOdd, Odd const& columnOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const;
+            
+            /*!
+             * Creates an ADD from the given explicit vector.
+             *
+             * @param ddManager The manager to use to built the ADD.
+             * @param values The explicit vector to encode.
+             * @param odd The ODD to use for the translation.
+             * @param ddVariableIndices The indices of the variables to use in the ADD.
+             */
             static InternalAdd<DdType::CUDD, ValueType> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
             
             /*!
@@ -559,6 +621,17 @@ namespace storm {
              */
             void splitIntoGroupsRec(DdNode* dd, std::vector<InternalAdd<DdType::CUDD, ValueType>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
             
+            /*!
+             * Splits the given DDs into the groups using the given group variables.
+             *
+             * @param dd1 The first DD to split.
+             * @param dd2 The second DD to split.
+             * @param groups A vector that is to be filled with the DDs for the individual groups.
+             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
+             */
             void splitIntoGroupsRec(DdNode* dd1, DdNode* dd2, std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
             
             /*!
