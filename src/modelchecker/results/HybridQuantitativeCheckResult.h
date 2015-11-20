@@ -4,7 +4,7 @@
 #include "src/storage/dd/DdType.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/cudd/CuddOdd.h"
+#include "src/storage/dd/Odd.h"
 #include "src/modelchecker/results/QuantitativeCheckResult.h"
 #include "src/utility/OsDetection.h"
 
@@ -14,7 +14,7 @@ namespace storm {
         class HybridQuantitativeCheckResult : public QuantitativeCheckResult {
         public:
             HybridQuantitativeCheckResult() = default;
-            HybridQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& symbolicStates, storm::dd::Add<Type, ValueType> const& symbolicValues, storm::dd::Bdd<Type> const& explicitStates, storm::dd::Odd<Type> const& odd, std::vector<ValueType> const& explicitValues);
+            HybridQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& symbolicStates, storm::dd::Add<Type, ValueType> const& symbolicValues, storm::dd::Bdd<Type> const& explicitStates, storm::dd::Odd const& odd, std::vector<ValueType> const& explicitValues);
             
             HybridQuantitativeCheckResult(HybridQuantitativeCheckResult const& other) = default;
             HybridQuantitativeCheckResult& operator=(HybridQuantitativeCheckResult const& other) = default;
@@ -38,7 +38,7 @@ namespace storm {
             
             storm::dd::Bdd<Type> const& getExplicitStates() const;
             
-            storm::dd::Odd<Type> const& getOdd() const;
+            storm::dd::Odd const& getOdd() const;
             
             std::vector<ValueType> const& getExplicitValueVector() const;
             
@@ -64,7 +64,7 @@ namespace storm {
             storm::dd::Bdd<Type> explicitStates;
             
             // The ODD that enables translation of the explicit values to a symbolic format.
-            storm::dd::Odd<Type> odd;
+            storm::dd::Odd odd;
 
             // The explicit value vector.
             std::vector<ValueType> explicitValues;

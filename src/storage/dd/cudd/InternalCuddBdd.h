@@ -2,6 +2,7 @@
 #define STORM_STORAGE_DD_CUDD_INTERNALCUDDBDD_H_
 
 #include <set>
+#include <unordered_map>
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/dd/InternalBdd.h"
@@ -30,14 +31,12 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         class InternalAdd;
         
-        template<storm::dd::DdType LibraryType>
         class Odd;
         
         template<>
         class InternalBdd<DdType::CUDD> {
         public:
             friend class InternalAdd<DdType::CUDD, double>;
-            friend class Odd<DdType::CUDD>;
             
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.
@@ -66,7 +65,7 @@ namespace storm {
              * @return The resulting BDD.
              */
             template<typename ValueType>
-            static InternalBdd<storm::dd::DdType::CUDD> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (ValueType const&)> const& filter);
+            static InternalBdd<storm::dd::DdType::CUDD> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (ValueType const&)> const& filter);
             
             /*!
              * Retrieves whether the two BDDs represent the same function.
@@ -289,7 +288,17 @@ namespace storm {
              * @param rowOdd The ODD used for determining the correct row.
              * @return The bit vector that is represented by this BDD.
              */
-            storm::storage::BitVector toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            storm::storage::BitVector toVector(storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            
+            /*!
+             * Creates an ODD based on the current BDD.
+             *
+             * @return The corresponding ODD.
+             */
+            Odd createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            
+            template<typename ValueType>
+            void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const;
             
         private:
             /*!
@@ -305,7 +314,7 @@ namespace storm {
              * @return The resulting (CUDD) BDD node.
              */
             template<typename ValueType>
-            static DdNode* fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter);
+            static DdNode* fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter);
             
             /*!
              * Helper function to convert the DD into a bit vector.
@@ -320,7 +329,45 @@ namespace storm {
              * @param currentRowOffset The current row offset.
              * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
              */
-            void toVectorRec(DdNode const* dd, Cudd const& manager, storm::storage::BitVector& result, Odd<DdType::CUDD> const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
+            void toVectorRec(DdNode const* dd, Cudd const& manager, storm::storage::BitVector& result, Odd const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
+            
+            // Declare a hash functor that is used for the unique tables in the construction process of ODDs.
+            class HashFunctor {
+            public:
+                std::size_t operator()(std::pair<DdNode*, bool> const& key) const;
+            };
+            
+            /*!
+             * Recursively builds the ODD from a BDD (that potentially has complement edges).
+             *
+             * @param dd The DD for which to build the ODD.
+             * @param manager The manager responsible for the DD.
+             * @param currentLevel The currently considered level in the DD.
+             * @param complement A flag indicating whether or not the given node is to be considered as complemented.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
+             * @param uniqueTableForLevels A vector of unique tables, one for each level to be considered, that keeps
+             * ODD nodes for the same DD and level unique.
+             * @return A pointer to the constructed ODD for the given arguments.
+             */
+            static std::shared_ptr<Odd> createOddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<DdNode*, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels);
+            
+            /*!
+             * Adds the selected values the target vector.
+             *
+             * @param dd The current node of the DD representing the selected values.
+             * @param manager The manager responsible for the DD.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The sorted list of variable indices to use.
+             * @param currentOffset The offset along the path taken in the DD representing the selected values.
+             * @param odd The current ODD node.
+             * @param result The target vector to which to write the values.
+             * @param currentIndex The index at which the next element is to be written.
+             * @param values The value vector from which to select the values.
+             */
+            template<typename ValueType>
+            static void filterExplicitVectorRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values);
             
             /*!
              * Retrieves the CUDD BDD object associated with this DD.

@@ -3,7 +3,7 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
-#include "src/storage/dd/cudd/CuddOdd.h"
+#include "src/storage/dd/Odd.h"
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/settings/SettingsManager.h"
 
@@ -323,8 +323,8 @@ TEST(CuddDd, AddOddTest) {
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
         
     storm::dd::Add<storm::dd::DdType::CUDD, double> dd = manager->template getIdentity<double>(x.first);
-    storm::dd::Odd<storm::dd::DdType::CUDD> odd;
-    ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
+    storm::dd::Odd odd;
+    ASSERT_NO_THROW(odd = dd.createOdd());
     EXPECT_EQ(9ul, odd.getTotalOffset());
     EXPECT_EQ(12ul, odd.getNodeCount());
 
@@ -340,10 +340,10 @@ TEST(CuddDd, AddOddTest) {
     dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
     
     // Create the ODDs.
-    storm::dd::Odd<storm::dd::DdType::CUDD> rowOdd;
-    ASSERT_NO_THROW(rowOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange(x.first).template toAdd<double>()));
-    storm::dd::Odd<storm::dd::DdType::CUDD> columnOdd;
-    ASSERT_NO_THROW(columnOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange(x.second).template toAdd<double>()));
+    storm::dd::Odd rowOdd;
+    ASSERT_NO_THROW(rowOdd = manager->getRange(x.first).template toAdd<double>().createOdd());
+    storm::dd::Odd columnOdd;
+    ASSERT_NO_THROW(columnOdd = manager->getRange(x.second).template toAdd<double>().createOdd());
     
     // Try to translate the matrix.
     storm::storage::SparseMatrix<double> matrix;
@@ -367,8 +367,8 @@ TEST(CuddDd, BddOddTest) {
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     
     storm::dd::Add<storm::dd::DdType::CUDD, double> dd = manager->template getIdentity<double>(x.first);
-    storm::dd::Odd<storm::dd::DdType::CUDD> odd;
-    ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
+    storm::dd::Odd odd;
+    ASSERT_NO_THROW(odd = dd.createOdd());
     EXPECT_EQ(9ul, odd.getTotalOffset());
     EXPECT_EQ(12ul, odd.getNodeCount());
     
@@ -386,10 +386,10 @@ TEST(CuddDd, BddOddTest) {
     dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
     
     // Create the ODDs.
-    storm::dd::Odd<storm::dd::DdType::CUDD> rowOdd;
-    ASSERT_NO_THROW(rowOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange(x.first)));
-    storm::dd::Odd<storm::dd::DdType::CUDD> columnOdd;
-    ASSERT_NO_THROW(columnOdd = storm::dd::Odd<storm::dd::DdType::CUDD>(manager->getRange(x.second)));
+    storm::dd::Odd rowOdd;
+    ASSERT_NO_THROW(rowOdd = manager->getRange(x.first).createOdd());
+    storm::dd::Odd columnOdd;
+    ASSERT_NO_THROW(columnOdd = manager->getRange(x.second).createOdd());
     
     // Try to translate the matrix.
     storm::storage::SparseMatrix<double> matrix;

@@ -4,7 +4,7 @@
 
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/storage/dd/DdManager.h"
-#include "src/storage/dd/cudd/CuddOdd.h"
+#include "src/storage/dd/Odd.h"
 
 #include "src/storage/SparseMatrix.h"
 
@@ -380,11 +380,11 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         std::vector<ValueType> Add<LibraryType, ValueType>::toVector() const {
-            return this->toVector(Odd<LibraryType>(*this));
+            return this->toVector(this->createOdd());
         }
         
         template<DdType LibraryType, typename ValueType>
-        std::vector<ValueType> Add<LibraryType, ValueType>::toVector(Odd<LibraryType> const& rowOdd) const {
+        std::vector<ValueType> Add<LibraryType, ValueType>::toVector(Odd const& rowOdd) const {
             std::vector<ValueType> result(rowOdd.getTotalOffset());
             std::vector<uint_fast64_t> ddVariableIndices = this->getSortedVariableIndices();
             internalAdd.composeWithExplicitVector(rowOdd, ddVariableIndices, result, std::plus<ValueType>());
@@ -392,7 +392,7 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
-        std::vector<ValueType> Add<LibraryType, ValueType>::toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, std::vector<uint_fast64_t> const& groupOffsets) const {
+        std::vector<ValueType> Add<LibraryType, ValueType>::toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& groupOffsets) const {
             std::set<storm::expressions::Variable> rowMetaVariables;
             
             // Prepare the proper sets of meta variables.
@@ -445,11 +445,11 @@ namespace storm {
                 }
             }
             
-            return toMatrix(rowVariables, columnVariables, Odd<LibraryType>(this->sumAbstract(rowVariables)), Odd<LibraryType>(this->sumAbstract(columnVariables)));
+            return toMatrix(rowVariables, columnVariables, this->sumAbstract(rowVariables).createOdd(), this->sumAbstract(columnVariables).createOdd());
         }
         
         template<DdType LibraryType, typename ValueType>
-        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const {
+        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::set<storm::expressions::Variable> rowMetaVariables;
             std::set<storm::expressions::Variable> columnMetaVariables;
             
@@ -465,7 +465,7 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
-        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const {
+        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::vector<uint_fast64_t> ddRowVariableIndices;
             std::vector<uint_fast64_t> ddColumnVariableIndices;
             
@@ -528,7 +528,7 @@ namespace storm {
         }
         
         template<DdType LibraryType, typename ValueType>
-        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const {
+        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::set<storm::expressions::Variable> rowMetaVariables;
             std::set<storm::expressions::Variable> columnMetaVariables;
             
@@ -550,7 +550,7 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const {
+        storm::storage::SparseMatrix<ValueType> Add<LibraryType, ValueType>::toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::vector<uint_fast64_t> ddRowVariableIndices;
             std::vector<uint_fast64_t> ddColumnVariableIndices;
             std::vector<uint_fast64_t> ddGroupVariableIndices;
@@ -652,7 +652,7 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const {
+        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::set<storm::expressions::Variable> rowMetaVariables;
             std::set<storm::expressions::Variable> columnMetaVariables;
             
@@ -674,7 +674,7 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupIndices, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const {
+        std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> Add<LibraryType, ValueType>::toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupIndices, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const {
             std::vector<uint_fast64_t> ddRowVariableIndices;
             std::vector<uint_fast64_t> ddColumnVariableIndices;
             std::vector<uint_fast64_t> ddGroupVariableIndices;
@@ -803,13 +803,18 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables) {
+        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables) {
             return Add<LibraryType, ValueType>(ddManager, InternalAdd<LibraryType, ValueType>::fromVector(ddManager->getInternalDdManagerPointer(), values, odd, ddManager->getSortedVariableIndices(metaVariables)), metaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::toBdd() const {
             return Bdd<DdType::CUDD>(this->getDdManager(), internalAdd.toBdd(), this->getContainedMetaVariables());
+        }
+        
+        template<DdType LibraryType, typename ValueType>
+        Odd Add<LibraryType, ValueType>::createOdd() const {
+            return internalAdd.createOdd(this->getSortedVariableIndices());
         }
 
         template<DdType LibraryType, typename ValueType>

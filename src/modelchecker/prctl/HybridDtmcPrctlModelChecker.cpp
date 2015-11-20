@@ -3,7 +3,7 @@
 #include "src/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
-#include "src/storage/dd/cudd/CuddOdd.h"
+#include "src/storage/dd/Odd.h"
 #include "src/storage/dd/DdManager.h"
 
 #include "src/utility/macros.h"
@@ -94,7 +94,7 @@ namespace storm {
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
             // Create ODD for the translation.
-            storm::dd::Odd<DdType> odd(this->getModel().getReachableStates());
+            storm::dd::Odd odd = this->getModel().getReachableStates().createOdd();
             
             storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = this->getModel().getTransitionMatrix().toMatrix(odd, odd);
             

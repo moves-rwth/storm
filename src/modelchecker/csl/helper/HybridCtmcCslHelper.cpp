@@ -6,7 +6,6 @@
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/cudd/CuddOdd.h"
 
 #include "src/utility/macros.h"
 #include "src/utility/graph.h"
@@ -80,7 +79,7 @@ namespace storm {
                             storm::dd::Add<DdType, ValueType> b = (statesWithProbabilityGreater0NonPsi.template toAdd<ValueType>() * rateMatrix * psiStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>()).sumAbstract(model.getColumnVariables()) / model.getManager().getConstant(uniformizationRate);
                             
                             // Create an ODD for the translation to an explicit representation.
-                            storm::dd::Odd<DdType> odd(statesWithProbabilityGreater0NonPsi);
+                            storm::dd::Odd odd = statesWithProbabilityGreater0NonPsi.createOdd();
                             
                             // Convert the symbolic parts to their explicit representation.
                             storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
@@ -107,7 +106,7 @@ namespace storm {
                             unboundedResult->filter(SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), relevantStates));
                             
                             // Build an ODD for the relevant states.
-                            storm::dd::Odd<DdType> odd(relevantStates);
+                            storm::dd::Odd odd = relevantStates.createOdd();
                             
                             std::vector<ValueType> result;
                             if (unboundedResult->isHybridQuantitativeCheckResult()) {
@@ -146,7 +145,7 @@ namespace storm {
                                 storm::dd::Add<DdType, ValueType> b = (statesWithProbabilityGreater0NonPsi.template toAdd<ValueType>() * rateMatrix * psiStates.swapVariables(model.getRowColumnMetaVariablePairs()).template toAdd<ValueType>()).sumAbstract(model.getColumnVariables()) / model.getManager().getConstant(uniformizationRate);
                                 
                                 // Build an ODD for the relevant states and translate the symbolic parts to their explicit representation.
-                                storm::dd::Odd<DdType> odd = storm::dd::Odd<DdType>(statesWithProbabilityGreater0NonPsi);
+                                storm::dd::Odd odd = statesWithProbabilityGreater0NonPsi.createOdd();
                                 storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                                 std::vector<ValueType> explicitB = b.toVector(odd);
                                 
@@ -166,7 +165,7 @@ namespace storm {
                                 hybridResult.filter(SymbolicQualitativeCheckResult<DdType>(model.getReachableStates(), relevantStates));
                                 
                                 // Build an ODD for the relevant states.
-                                odd = storm::dd::Odd<DdType>(relevantStates);
+                                odd = relevantStates.createOdd();
                                 
                                 std::unique_ptr<CheckResult> explicitResult = hybridResult.toExplicitQuantitativeCheckResult();
                                 std::vector<ValueType> newSubresult = std::move(explicitResult->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
@@ -179,7 +178,7 @@ namespace storm {
                                 // If the lower and upper bounds coincide, we have only determined the relevant states at this
                                 // point, but we still need to construct the starting vector.
                                 if (lowerBound == upperBound) {
-                                    odd = storm::dd::Odd<DdType>(relevantStates);
+                                    odd = relevantStates.createOdd();
                                     newSubresult = psiStates.template toAdd<ValueType>().toVector(odd);
                                 }
                                 
@@ -194,7 +193,7 @@ namespace storm {
                                 // In this case, the interval is of the form [t, t] with t != 0, t != inf.
                                 
                                 // Build an ODD for the relevant states.
-                                storm::dd::Odd<DdType> odd = storm::dd::Odd<DdType>(statesWithProbabilityGreater0);
+                                storm::dd::Odd odd = statesWithProbabilityGreater0.createOdd();
                                 
                                 std::vector<ValueType> newSubresult = psiStates.template toAdd<ValueType>().toVector(odd);
                                 
@@ -225,7 +224,7 @@ namespace storm {
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
                 // Create ODD for the translation.
-                storm::dd::Odd<DdType> odd(model.getReachableStates());
+                storm::dd::Odd odd =model.getReachableStates().createOdd();
                 
                 // Initialize result to state rewards of the model.
                 std::vector<ValueType> result = rewardModel.getStateRewardVector().toVector(odd);
@@ -261,7 +260,7 @@ namespace storm {
                 STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                 
                 // Create ODD for the translation.
-                storm::dd::Odd<DdType> odd(model.getReachableStates());
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
                 // Compute the uniformized matrix.
                 storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector,  model.getReachableStates(), uniformizationRate);
@@ -281,7 +280,7 @@ namespace storm {
                 storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(model, rateMatrix, exitRateVector);
                 
                 // Create ODD for the translation.
-                storm::dd::Odd<DdType> odd(model.getReachableStates());
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);

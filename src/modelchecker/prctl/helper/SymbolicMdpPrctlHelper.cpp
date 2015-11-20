@@ -5,7 +5,6 @@
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/cudd/CuddOdd.h"
 
 #include "src/utility/graph.h"
 #include "src/utility/constants.h"

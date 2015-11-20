@@ -17,14 +17,10 @@ namespace storm {
         template<DdType LibraryType>
         class InternalBdd;
 
-        template<DdType LibraryType>
-        class Odd;
-        
         template<>
         class InternalDdManager<DdType::CUDD> {
         public:
             friend class InternalBdd<DdType::CUDD>;
-            friend class Odd<DdType::CUDD>;
 
             template<DdType LibraryType, typename ValueType>
             friend class InternalAdd;

@@ -11,7 +11,7 @@
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType Type, typename ValueType>
-        HybridQuantitativeCheckResult<Type, ValueType>::HybridQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& symbolicStates, storm::dd::Add<Type, ValueType> const& symbolicValues, storm::dd::Bdd<Type> const& explicitStates, storm::dd::Odd<Type> const& odd, std::vector<ValueType> const& explicitValues) : reachableStates(reachableStates), symbolicStates(symbolicStates), symbolicValues(symbolicValues), explicitStates(explicitStates), odd(odd), explicitValues(explicitValues) {
+        HybridQuantitativeCheckResult<Type, ValueType>::HybridQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& symbolicStates, storm::dd::Add<Type, ValueType> const& symbolicValues, storm::dd::Bdd<Type> const& explicitStates, storm::dd::Odd const& odd, std::vector<ValueType> const& explicitValues) : reachableStates(reachableStates), symbolicStates(symbolicStates), symbolicValues(symbolicValues), explicitStates(explicitStates), odd(odd), explicitValues(explicitValues) {
             // Intentionally left empty.
         }
         
@@ -39,7 +39,7 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> HybridQuantitativeCheckResult<Type, ValueType>::toExplicitQuantitativeCheckResult() const {
             storm::dd::Bdd<Type> allStates = symbolicStates || explicitStates;
-            storm::dd::Odd<Type> allStatesOdd(allStates);
+            storm::dd::Odd allStatesOdd = allStates.createOdd();
             
             std::vector<ValueType> fullExplicitValues = symbolicValues.toVector(allStatesOdd);
             this->odd.expandExplicitVector(allStatesOdd, this->explicitValues, fullExplicitValues);
@@ -77,7 +77,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        storm::dd::Odd<Type> const& HybridQuantitativeCheckResult<Type, ValueType>::getOdd() const {
+        storm::dd::Odd const& HybridQuantitativeCheckResult<Type, ValueType>::getOdd() const {
             return odd;
         }
         
@@ -130,10 +130,10 @@ namespace storm {
 
             // Start by computing the new set of states that is stored explictly and the corresponding ODD.
             this->explicitStates = this->explicitStates && filter.asSymbolicQualitativeCheckResult<Type>().getTruthValuesVector();
-            storm::dd::Odd<Type> newOdd(explicitStates);
+            storm::dd::Odd newOdd = explicitStates.createOdd();
             
             // Then compute the new vector of explicit values and set the new data fields.
-            this->explicitValues = this->odd.filterExplicitVector(explicitStates, this->explicitValues);
+            this->explicitValues = explicitStates.filterExplicitVector(this->odd, explicitValues);
             this->odd = newOdd;
         }
         

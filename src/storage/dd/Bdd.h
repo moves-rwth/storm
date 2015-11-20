@@ -11,7 +11,6 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         class Add;
         
-        template<DdType LibraryType>
         class Odd;
         
         template<DdType LibraryType>
@@ -21,8 +20,6 @@ namespace storm {
             
             template<DdType LibraryTypePrime, typename ValueTypePrime>
             friend class Add;
-            
-            friend class Odd<LibraryType>;
             
             // Instantiate all copy/move constructors/assignments with the default implementation.
             Bdd() = default;
@@ -41,7 +38,7 @@ namespace storm {
              * @param comparisonType The relation that needs to hold for the values (wrt. to the given value).
              * @param value The value to compare with.
              */
-            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
+            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value);
             
             /*!
              * Retrieves whether the two BDDs represent the same function.
@@ -222,7 +219,7 @@ namespace storm {
              * @param rowOdd The ODD used for determining the correct row.
              * @return The bit vector that is represented by this BDD.
              */
-            storm::storage::BitVector toVector(storm::dd::Odd<LibraryType> const& rowOdd) const;
+            storm::storage::BitVector toVector(storm::dd::Odd const& rowOdd) const;
             
             virtual Bdd<LibraryType> getSupport() const override;
             
@@ -243,6 +240,23 @@ namespace storm {
              * @return The resulting cube.
              */
             static Bdd<LibraryType> getCube(DdManager<LibraryType> const& manager, std::set<storm::expressions::Variable> const& metaVariables);
+            
+            /*!
+             * Creates an ODD based on the current BDD.
+             *
+             * @return The corresponding ODD.
+             */
+            Odd createOdd() const;
+            
+            /*!
+             * Filters the given explicit vector using the symbolic representation of which values to select.
+             *
+             * @param selectedValues A symbolic representation of which values to select.
+             * @param values The value vector from which to select the values.
+             * @return The resulting vector.
+             */
+            template<typename ValueType>
+            std::vector<ValueType> filterExplicitVector(Odd const& odd, std::vector<ValueType> const& values) const;
             
         private:
             /*!
@@ -270,7 +284,7 @@ namespace storm {
              * @return The resulting (CUDD) BDD.
              */
             template<typename ValueType>
-            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
+            static Bdd<LibraryType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);
             
             // The internal BDD that depends on the chosen library.
             InternalBdd<LibraryType> internalBdd;

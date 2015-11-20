@@ -4,7 +4,6 @@
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/cudd/CuddOdd.h"
 
 #include "src/solver/SymbolicLinearEquationSolver.h"
 
@@ -38,9 +37,6 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
-                        // Create the ODD for the translation between symbolic and explicit storage.
-                        storm::dd::Odd<DdType> odd(maybeStates);
-                        
                         // Create the matrix and the vector for the equation system.
                         storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
                         
@@ -86,9 +82,6 @@ namespace storm {
                 
                 // If there are maybe states, we need to perform matrix-vector multiplications.
                 if (!maybeStates.isZero()) {
-                    // Create the ODD for the translation between symbolic and explicit storage.
-                    storm::dd::Odd<DdType> odd(maybeStates);
-                    
                     // Create the matrix and the vector for the equation system.
                     storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
                     
@@ -159,9 +152,6 @@ namespace storm {
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
-                        // Create the ODD for the translation between symbolic and explicit storage.
-                        storm::dd::Odd<DdType> odd(maybeStates);
-                        
                         // Create the matrix and the vector for the equation system.
                         storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
                         

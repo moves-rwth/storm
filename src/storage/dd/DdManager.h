@@ -16,15 +16,11 @@
 
 namespace storm {
     namespace dd {
-        template<DdType LibraryType>
-        class Odd;
-        
         // Declare DdManager class so we can then specialize it for the different DD types.
         template<DdType LibraryType>
         class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
         public:
             friend class Bdd<LibraryType>;
-            friend class Odd<LibraryType>;
             
             template<DdType LibraryTypePrime, typename ValueType>
             friend class Add;

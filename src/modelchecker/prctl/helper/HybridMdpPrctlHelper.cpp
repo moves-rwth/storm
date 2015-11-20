@@ -3,7 +3,7 @@
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/cudd/CuddOdd.h"
+#include "src/storage/dd/Odd.h"
 
 #include "src/utility/graph.h"
 #include "src/utility/constants.h"
@@ -47,7 +47,7 @@ namespace storm {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
                         // Create the ODD for the translation between symbolic and explicit storage.
-                        storm::dd::Odd<DdType> odd(maybeStates);
+                        storm::dd::Odd odd = maybeStates.createOdd();
                         
                         // Create the matrix and the vector for the equation system.
                         storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
@@ -107,7 +107,7 @@ namespace storm {
                 // If there are maybe states, we need to perform matrix-vector multiplications.
                 if (!maybeStates.isZero()) {
                     // Create the ODD for the translation between symbolic and explicit storage.
-                    storm::dd::Odd<DdType> odd(maybeStates);
+                    storm::dd::Odd odd = maybeStates.createOdd();
                     
                     // Create the matrix and the vector for the equation system.
                     storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();
@@ -149,7 +149,7 @@ namespace storm {
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
                 // Create the ODD for the translation between symbolic and explicit storage.
-                storm::dd::Odd<DdType> odd(model.getReachableStates());
+                storm::dd::Odd odd =model.getReachableStates().createOdd();
                 
                 // Translate the symbolic matrix to its explicit representations.
                 storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
@@ -174,7 +174,7 @@ namespace storm {
                 storm::dd::Add<DdType, ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix, model.getColumnVariables());
                 
                 // Create the ODD for the translation between symbolic and explicit storage.
-                storm::dd::Odd<DdType> odd(model.getReachableStates());
+                storm::dd::Odd odd = model.getReachableStates().createOdd();
                 
                 // Create the solution vector.
                 std::vector<ValueType> x(model.getNumberOfStates(), storm::utility::zero<ValueType>());
@@ -220,7 +220,7 @@ namespace storm {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
                         // Create the ODD for the translation between symbolic and explicit storage.
-                        storm::dd::Odd<DdType> odd(maybeStates);
+                        storm::dd::Odd odd = maybeStates.createOdd();
                         
                         // Create the matrix and the vector for the equation system.
                         storm::dd::Add<DdType, ValueType> maybeStatesAdd = maybeStates.template toAdd<ValueType>();

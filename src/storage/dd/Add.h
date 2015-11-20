@@ -8,15 +8,13 @@
 
 #include "src/storage/dd/cudd/InternalCuddAdd.h"
 #include "src/storage/dd/cudd/CuddAddIterator.h"
+#include "src/storage/dd/Odd.h"
 
 namespace storm {
     namespace dd {
         template<DdType LibraryType>
         class Bdd;
 
-        template<DdType LibraryType>
-        class Odd;
-        
         template<DdType LibraryType, typename ValueType>
         class AddIterator;
         
@@ -25,7 +23,6 @@ namespace storm {
         public:
             friend class DdManager<LibraryType>;
             friend class Bdd<LibraryType>;
-            friend class Odd<LibraryType>;
             
             template<DdType LibraryTypePrime, typename ValueTypePrime>
             friend class Add;
@@ -46,7 +43,7 @@ namespace storm {
              * @param metaVariables The meta variables used for the translation.
              * @return The resulting (CUDD) ADD.
              */
-            static Add<LibraryType, ValueType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd<LibraryType> const& odd, std::set<storm::expressions::Variable> const& metaVariables);
+            static Add<LibraryType, ValueType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables);
             
             /*!
              * Retrieves whether the two DDs represent the same function.
@@ -525,7 +522,7 @@ namespace storm {
              * @param rowOdd The ODD used for determining the correct row.
              * @return The vector that is represented by this ADD.
              */
-            std::vector<ValueType> toVector(storm::dd::Odd<LibraryType> const& rowOdd) const;
+            std::vector<ValueType> toVector(storm::dd::Odd const& rowOdd) const;
             
             /*!
              * Converts the ADD to a row-grouped vector. The given offset-labeled DD is used to determine the correct
@@ -536,7 +533,7 @@ namespace storm {
              * @param rowOdd The ODD used for determining the correct row.
              * @return The vector that is represented by this ADD.
              */
-            std::vector<ValueType> toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, std::vector<uint_fast64_t> const& groupOffsets) const;
+            std::vector<ValueType> toVector(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& groupOffsets) const;
             
             /*!
              * Converts the ADD to a (sparse) double matrix. All contained non-primed variables are assumed to encode the
@@ -555,7 +552,7 @@ namespace storm {
              * @param columnOdd The ODD used for determining the correct column.
              * @return The matrix that is represented by this ADD.
              */
-            storm::storage::SparseMatrix<ValueType> toMatrix(storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const;
+            storm::storage::SparseMatrix<ValueType> toMatrix(storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
             
             /*!
              * Converts the ADD to a (sparse) double matrix. The given offset-labeled DDs are used to determine the
@@ -567,7 +564,7 @@ namespace storm {
              * @param columnOdd The ODD used for determining the correct column.
              * @return The matrix that is represented by this ADD.
              */
-            storm::storage::SparseMatrix<ValueType> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const;
+            storm::storage::SparseMatrix<ValueType> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
             
             /*!
              * Converts the ADD to a row-grouped (sparse) double matrix. The given offset-labeled DDs are used to
@@ -579,7 +576,7 @@ namespace storm {
              * @param columnOdd The ODD used for determining the correct column.
              * @return The matrix that is represented by this ADD.
              */
-            storm::storage::SparseMatrix<ValueType> toMatrix(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const;
+            storm::storage::SparseMatrix<ValueType> toMatrix(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
             
             /*!
              * Converts the ADD to a row-grouped (sparse) double matrix and the given vector to a row-grouped vector.
@@ -594,7 +591,7 @@ namespace storm {
              * @param columnOdd The ODD used for determining the correct column.
              * @return The matrix that is represented by this ADD.
              */
-            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const;
+            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
             
             /*!
              * Exports the DD to the given file in the dot format.
@@ -631,6 +628,13 @@ namespace storm {
              */
             Bdd<LibraryType> toBdd() const;
             
+            /*!
+             * Creates an ODD based on the current ADD.
+             *
+             * @return The corresponding ODD.
+             */
+            Odd createOdd() const;
+            
         private:
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.
@@ -660,7 +664,7 @@ namespace storm {
              * @return The matrix that is represented by this ADD and and a vector corresponding to the symbolic vector
              * (if it was given).
              */
-            storm::storage::SparseMatrix<ValueType> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const;
+            storm::storage::SparseMatrix<ValueType> toMatrix(std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
             
             /*!
              * Converts the ADD to a row-grouped (sparse) double matrix and the given vector to an equally row-grouped
@@ -678,7 +682,7 @@ namespace storm {
              * @return The matrix that is represented by this ADD and and a vector corresponding to the symbolic vector
              * (if it was given).
              */
-            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<LibraryType> const& rowOdd, storm::dd::Odd<LibraryType> const& columnOdd) const;
+            std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> toMatrixVector(storm::dd::Add<LibraryType, ValueType> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd const& rowOdd, storm::dd::Odd const& columnOdd) const;
                         
             // The internal ADD that depends on the chosen library.
             InternalAdd<LibraryType, ValueType> internalAdd;

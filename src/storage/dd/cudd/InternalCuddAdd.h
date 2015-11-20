@@ -2,9 +2,11 @@
 #define STORM_STORAGE_DD_CUDD_INTERNALCUDDADD_H_
 
 #include <set>
+#include <unordered_map>
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/dd/InternalAdd.h"
+#include "src/storage/dd/Odd.h"
 
 #include "src/storage/expressions/Variable.h"
 
@@ -25,24 +27,19 @@ namespace storm {
     namespace dd {
         template<DdType LibraryType>
         class DdManager;
-
+        
         template<DdType LibraryType>
         class InternalDdManager;
         
         template<DdType LibraryType>
         class InternalBdd;
-
+        
         template<DdType LibraryType, typename ValueType>
         class AddIterator;
-        
-        template<DdType LibraryType>
-        class Odd;
         
         template<typename ValueType>
         class InternalAdd<DdType::CUDD, ValueType> {
         public:
-            friend class Odd<DdType::CUDD>;
-            
             /*!
              * Creates an ADD that encapsulates the given CUDD ADD.
              *
@@ -500,19 +497,26 @@ namespace storm {
              * if a meta variable does not at all influence the the function value.
              * @return An iterator that points past the end of the container.
              */
-             AddIterator<DdType::CUDD, ValueType> end(std::shared_ptr<DdManager<DdType::CUDD> const> fullDdManager, bool enumerateDontCareMetaVariables = true) const;
+            AddIterator<DdType::CUDD, ValueType> end(std::shared_ptr<DdManager<DdType::CUDD> const> fullDdManager, bool enumerateDontCareMetaVariables = true) const;
             
-            void composeWithExplicitVector(Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            void composeWithExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
-            void composeWithExplicitVector(Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            void composeWithExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
             std::vector<InternalAdd<DdType::CUDD, ValueType>> splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
             
-            void toMatrixComponents(std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const;
+            void toMatrixComponents(std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd const& rowOdd, Odd const& columnOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const;
             
             std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>> splitIntoGroups(InternalAdd<DdType::CUDD, ValueType> vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
             
-            static InternalAdd<DdType::CUDD, ValueType> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, storm::dd::Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
+            static InternalAdd<DdType::CUDD, ValueType> fromVector(InternalDdManager<DdType::CUDD> const* ddManager, std::vector<ValueType> const& values, storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
+            
+            /*!
+             * Creates an ODD based on the current ADD.
+             *
+             * @return The corresponding ODD.
+             */
+            Odd createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const;
             
         private:
             /*!
@@ -541,7 +545,7 @@ namespace storm {
              * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
              * @param targetVector The vector to which the translated DD-based vector is to be added.
              */
-            void composeWithExplicitVectorRec(DdNode const* dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            void composeWithExplicitVectorRec(DdNode const* dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
             /*!
              * Splits the given matrix DD into the groups using the given group variables.
@@ -582,7 +586,7 @@ namespace storm {
              * only works if the offsets given in rowIndications are already correct. If they need to be computed first,
              * this flag needs to be false.
              */
-            void toMatrixComponentsRec(DdNode const* dd, std::vector<uint_fast64_t> const& rowGroupOffsets, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const;
+            void toMatrixComponentsRec(DdNode const* dd, std::vector<uint_fast64_t> const& rowGroupOffsets, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd const& rowOdd, Odd const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const;
             
             /*!
              * Builds an ADD representing the given vector.
@@ -596,7 +600,21 @@ namespace storm {
              * @param ddVariableIndices The (sorted) list of DD variable indices to use.
              * @return The resulting (CUDD) ADD node.
              */
-            static DdNode* fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
+            static DdNode* fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
+            
+            /*!
+             * Recursively builds the ODD from an ADD (that has no complement edges).
+             *
+             * @param dd The DD for which to build the ODD.
+             * @param manager The manager responsible for the DD.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
+             * @param uniqueTableForLevels A vector of unique tables, one for each level to be considered, that keeps
+             * ODD nodes for the same DD and level unique.
+             * @return A pointer to the constructed ODD for the given arguments.
+             */
+            static std::shared_ptr<Odd> createOddRec(DdNode* dd, Cudd const& manager, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<DdNode*, std::shared_ptr<Odd>>>& uniqueTableForLevels);
             
             InternalDdManager<DdType::CUDD> const* ddManager;
             
