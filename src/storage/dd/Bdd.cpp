@@ -261,5 +261,17 @@ namespace storm {
         
         template std::vector<double> Bdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<double> const& values) const;
         template std::vector<uint_fast64_t> Bdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& values) const;
+        
+        
+        template class Bdd<DdType::Sylvan>;
+
+        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(std::shared_ptr<DdManager<DdType::Sylvan> const> ddManager, std::vector<double> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
+        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(std::shared_ptr<DdManager<DdType::Sylvan> const> ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
+        
+        template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::toAdd() const;
+        template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::toAdd() const;
+        
+        template std::vector<double> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<double> const& values) const;
+        template std::vector<uint_fast64_t> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& values) const;
     }
 }

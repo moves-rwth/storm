@@ -51,7 +51,7 @@ namespace storm {
             
             std::vector<Bdd<LibraryType>> const& ddVariables = metaVariable.getDdVariables();
             
-            Bdd<DdType::CUDD> result;
+            Bdd<LibraryType> result;
             if (value & (1ull << (ddVariables.size() - 1))) {
                 result = ddVariables[0];
             } else {
@@ -114,8 +114,8 @@ namespace storm {
             std::vector<Bdd<LibraryType>> variablesPrime;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
                 auto ddVariablePair = internalDdManager.createNewDdVariablePair();
-                variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.first, {unprimed}));
-                variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.second, {primed}));
+                variables.emplace_back(Bdd<LibraryType>(this->shared_from_this(), ddVariablePair.first, {unprimed}));
+                variablesPrime.emplace_back(Bdd<LibraryType>(this->shared_from_this(), ddVariablePair.second, {primed}));
             }
 
             metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, low, high, variables));
@@ -138,8 +138,8 @@ namespace storm {
             std::vector<Bdd<LibraryType>> variables;
             std::vector<Bdd<LibraryType>> variablesPrime;
             auto ddVariablePair = internalDdManager.createNewDdVariablePair();
-            variables.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.first, {unprimed}));
-            variablesPrime.emplace_back(Bdd<DdType::CUDD>(this->shared_from_this(), ddVariablePair.second, {primed}));
+            variables.emplace_back(Bdd<LibraryType>(this->shared_from_this(), ddVariablePair.first, {unprimed}));
+            variablesPrime.emplace_back(Bdd<LibraryType>(this->shared_from_this(), ddVariablePair.second, {primed}));
             
             metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, variables));
             metaVariableMap.emplace(primed, DdMetaVariable<LibraryType>(name + "'", variablesPrime));
@@ -220,7 +220,7 @@ namespace storm {
             // First, we initialize a list DD variables and their names.
             std::vector<std::pair<uint_fast64_t, storm::expressions::Variable>> variablePairs;
             for (auto const& variablePair : this->metaVariableMap) {
-                DdMetaVariable<DdType::CUDD> const& metaVariable = variablePair.second;
+                DdMetaVariable<LibraryType> const& metaVariable = variablePair.second;
                 // If the meta variable is of type bool, we don't need to suffix it with the bit number.
                 if (metaVariable.getType() == MetaVariableType::Bool) {
                     variablePairs.emplace_back(metaVariable.getDdVariables().front().getIndex(), variablePair.first);
@@ -325,5 +325,20 @@ namespace storm {
         
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
         template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getIdentity(storm::expressions::Variable const& variable) const;
+        
+        
+        template class DdManager<DdType::Sylvan>;
+        
+        template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddZero() const;
+        template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddZero() const;
+        
+        template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddOne() const;
+        template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddOne() const;
+        
+        template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getConstant(double const& value) const;
+        template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
+        
+        template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
+        template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
     }
 }

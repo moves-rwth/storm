@@ -61,5 +61,6 @@ namespace storm {
         }
         
         template class DdMetaVariable<DdType::CUDD>;
+        template class DdMetaVariable<DdType::Sylvan>;
     }
 }

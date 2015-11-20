@@ -118,10 +118,10 @@ namespace storm {
             int_fast64_t high;
             
             // The vector of variables that are used to encode the meta variable.
-            std::vector<Bdd<DdType::CUDD>> ddVariables;
+            std::vector<Bdd<LibraryType>> ddVariables;
             
             // The cube consisting of all variables that encode the meta variable.
-            Bdd<DdType::CUDD> cube;
+            Bdd<LibraryType> cube;
         };
     }
 }

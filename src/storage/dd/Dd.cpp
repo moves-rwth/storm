@@ -85,5 +85,6 @@ namespace storm {
         }
         
         template class Dd<storm::dd::DdType::CUDD>;
+        template class Dd<storm::dd::DdType::Sylvan>;
     }
 }

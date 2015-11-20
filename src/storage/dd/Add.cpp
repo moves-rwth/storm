@@ -768,7 +768,7 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::toBdd() const {
-            return Bdd<DdType::CUDD>(this->getDdManager(), internalAdd.toBdd(), this->getContainedMetaVariables());
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.toBdd(), this->getContainedMetaVariables());
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -783,5 +783,8 @@ namespace storm {
         
         template class Add<storm::dd::DdType::CUDD, double>;
         template class Add<storm::dd::DdType::CUDD, uint_fast64_t>;
+
+        template class Add<storm::dd::DdType::Sylvan, double>;
+        template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
     }
 }

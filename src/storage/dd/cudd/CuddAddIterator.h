@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_DD_CUDDAddIterator_H_
-#define STORM_STORAGE_DD_CUDDAddIterator_H_
+#ifndef STORM_STORAGE_DD_CUDDADDITERATOR_H_
+#define STORM_STORAGE_DD_CUDDADDITERATOR_H_
 
 #include <memory>
 #include <cstdint>
@@ -136,4 +136,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_DD_CUDDAddIterator_H_ */
+#endif /* STORM_STORAGE_DD_CUDDADDITERATOR_H_ */

@@ -5,6 +5,7 @@
 #include "src/storage/dd/DdType.h"
 
 #include "src/storage/dd/cudd/InternalCuddBdd.h"
+#include "src/storage/dd/sylvan/InternalSylvanBdd.h"
 
 namespace storm {
     namespace logic {

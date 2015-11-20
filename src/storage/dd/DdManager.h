@@ -13,6 +13,7 @@
 #include "src/storage/expressions/Variable.h"
 
 #include "src/storage/dd/cudd/InternalCuddDdManager.h"
+#include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
 
 namespace storm {
     namespace dd {

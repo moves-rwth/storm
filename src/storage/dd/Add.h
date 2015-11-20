@@ -5,10 +5,13 @@
 
 #include "src/storage/dd/Dd.h"
 #include "src/storage/dd/DdType.h"
+#include "src/storage/dd/Odd.h"
 
 #include "src/storage/dd/cudd/InternalCuddAdd.h"
+#include "src/storage/dd/sylvan/InternalSylvanAdd.h"
+
 #include "src/storage/dd/cudd/CuddAddIterator.h"
-#include "src/storage/dd/Odd.h"
+#include "src/storage/dd/sylvan/SylvanAddIterator.h"
 
 namespace storm {
     namespace dd {

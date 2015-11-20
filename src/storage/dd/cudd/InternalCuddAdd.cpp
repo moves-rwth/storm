@@ -179,7 +179,7 @@ namespace storm {
             } else {
                 return this->getCuddAdd().EqualSupNorm(other.getCuddAdd(), precision);
             }
-        };
+        }
         
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::swapVariables(std::vector<InternalAdd<DdType::CUDD, ValueType>> const& from, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& to) const {

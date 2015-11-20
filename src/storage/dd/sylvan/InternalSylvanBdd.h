@@ -1,0 +1,301 @@
+#ifndef STORM_STORAGE_DD_CUDD_INTERNALSYLVANBDD_H_
+#define STORM_STORAGE_DD_CUDD_INTERNALSYLVANBDD_H_
+
+#include <vector>
+#include <functional>
+
+#include "src/storage/dd/DdType.h"
+#include "src/storage/dd/InternalBdd.h"
+#include "src/storage/dd/InternalAdd.h"
+
+namespace storm {
+    namespace storage {
+        class BitVector;
+    }
+    
+    namespace dd {
+        template<DdType LibraryType>
+        class InternalDdManager;
+        
+        template<DdType LibraryType, typename ValueType>
+        class InternalAdd;
+        
+        class Odd;
+        
+        template<>
+        class InternalBdd<DdType::Sylvan> {
+        public:
+            friend class InternalAdd<DdType::Sylvan, double>;
+            
+            // Instantiate all copy/move constructors/assignments with the default implementation.
+            InternalBdd() = default;
+            InternalBdd(InternalBdd<DdType::Sylvan> const& other) = default;
+            InternalBdd& operator=(InternalBdd<DdType::Sylvan> const& other) = default;
+            InternalBdd(InternalBdd<DdType::Sylvan>&& other) = default;
+            InternalBdd& operator=(InternalBdd<DdType::Sylvan>&& other) = default;
+            
+            /*!
+             * Builds a BDD representing the values that make the given filter function evaluate to true.
+             *
+             * @param ddManager The manager responsible for the BDD.
+             * @param values The values that are to be checked against the filter function.
+             * @param odd The ODD used for the translation.
+             * @param metaVariables The meta variables used for the translation.
+             * @param filter The filter that evaluates whether an encoding is to be mapped to 0 or 1.
+             * @return The resulting BDD.
+             */
+            template<typename ValueType>
+            static InternalBdd<storm::dd::DdType::Sylvan> fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (ValueType const&)> const& filter);
+            
+            /*!
+             * Retrieves whether the two BDDs represent the same function.
+             *
+             * @param other The BDD that is to be compared with the current one.
+             * @return True if the BDDs represent the same function.
+             */
+            bool operator==(InternalBdd<DdType::Sylvan> const& other) const;
+            
+            /*!
+             * Retrieves whether the two BDDs represent different functions.
+             *
+             * @param other The BDD that is to be compared with the current one.
+             * @return True if the BDDs represent the different functions.
+             */
+            bool operator!=(InternalBdd<DdType::Sylvan> const& other) const;
+            
+            /*!
+             * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to a non-zero
+             * function value to the function values specified by the first DD and all others to the function values
+             * specified by the second DD.
+             *
+             * @param thenBdd The BDD defining the 'then' part.
+             * @param elseBdd The BDD defining the 'else' part.
+             * @return The resulting BDD.
+             */
+            InternalBdd<DdType::Sylvan> ite(InternalBdd<DdType::Sylvan> const& thenBdd, InternalBdd<DdType::Sylvan> const& elseBdd) const;
+            
+            /*!
+             * Performs a logical or of the current and the given BDD.
+             *
+             * @param other The second BDD used for the operation.
+             * @return The logical or of the operands.
+             */
+            InternalBdd<DdType::Sylvan> operator||(InternalBdd<DdType::Sylvan> const& other) const;
+            
+            /*!
+             * Performs a logical or of the current and the given BDD and assigns it to the current BDD.
+             *
+             * @param other The second BDD used for the operation.
+             * @return A reference to the current BDD after the operation
+             */
+            InternalBdd<DdType::Sylvan>& operator|=(InternalBdd<DdType::Sylvan> const& other);
+            
+            /*!
+             * Performs a logical and of the current and the given BDD.
+             *
+             * @param other The second BDD used for the operation.
+             * @return The logical and of the operands.
+             */
+            InternalBdd<DdType::Sylvan> operator&&(InternalBdd<DdType::Sylvan> const& other) const;
+            
+            /*!
+             * Performs a logical and of the current and the given BDD and assigns it to the current BDD.
+             *
+             * @param other The second BDD used for the operation.
+             * @return A reference to the current BDD after the operation
+             */
+            InternalBdd<DdType::Sylvan>& operator&=(InternalBdd<DdType::Sylvan> const& other);
+            
+            /*!
+             * Performs a logical iff of the current and the given BDD.
+             *
+             * @param other The second BDD used for the operation.
+             * @return The logical iff of the operands.
+             */
+            InternalBdd<DdType::Sylvan> iff(InternalBdd<DdType::Sylvan> const& other) const;
+            
+            /*!
+             * Performs a logical exclusive-or of the current and the given BDD.
+             *
+             * @param other The second BDD used for the operation.
+             * @return The logical exclusive-or of the operands.
+             */
+            InternalBdd<DdType::Sylvan> exclusiveOr(InternalBdd<DdType::Sylvan> const& other) const;
+            
+            /*!
+             * Performs a logical implication of the current and the given BDD.
+             *
+             * @param other The second BDD used for the operation.
+             * @return The logical implication of the operands.
+             */
+            InternalBdd<DdType::Sylvan> implies(InternalBdd<DdType::Sylvan> const& other) const;
+            
+            /*!
+             * Logically inverts the current BDD.
+             *
+             * @return The resulting BDD.
+             */
+            InternalBdd<DdType::Sylvan> operator!() const;
+            
+            /*!
+             * Logically complements the current BDD.
+             *
+             * @return A reference to the current BDD after the operation.
+             */
+            InternalBdd<DdType::Sylvan>& complement();
+            
+            /*!
+             * Existentially abstracts from the given cube.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalBdd<DdType::Sylvan> existsAbstract(InternalBdd<DdType::Sylvan> const& cube) const;
+            
+            /*!
+             * Universally abstracts from the given cube.
+             *
+             * @param cube The cube from which to abstract.
+             */
+            InternalBdd<DdType::Sylvan> universalAbstract(InternalBdd<DdType::Sylvan> const& cube) const;
+            
+            /*!
+             * Swaps the given pairs of DD variables in the BDD. The pairs of meta variables have to be represented by
+             * BDDs must have equal length.
+             *
+             * @param from The vector that specifies the 'from' part of the variable renaming.
+             * @param to The vector that specifies the 'to' part of the variable renaming.
+             * @return The resulting BDD.
+             */
+            InternalBdd<DdType::Sylvan> swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const;
+            
+            /*!
+             * Computes the logical and of the current and the given BDD and existentially abstracts from the given cube.
+             *
+             * @param other The second BDD for the logical and.
+             * @param cube The cube to existentially abstract.
+             * @return A BDD representing the result.
+             */
+            InternalBdd<DdType::Sylvan> andExists(InternalBdd<DdType::Sylvan> const& other, InternalBdd<storm::dd::DdType::Sylvan> const& cube) const;
+            
+            /*!
+             * Computes the constraint of the current BDD with the given constraint. That is, the function value of the
+             * resulting BDD will be the same as the current ones for all assignments mapping to one in the constraint
+             * and may be different otherwise.
+             *
+             * @param constraint The constraint to use for the operation.
+             * @return The resulting BDD.
+             */
+            InternalBdd<DdType::Sylvan> constrain(InternalBdd<DdType::Sylvan> const& constraint) const;
+            
+            /*!
+             * Computes the restriction of the current BDD with the given constraint. That is, the function value of the
+             * resulting DD will be the same as the current ones for all assignments mapping to one in the constraint
+             * and may be different otherwise.
+             *
+             * @param constraint The constraint to use for the operation.
+             * @return The resulting BDD.
+             */
+            InternalBdd<DdType::Sylvan> restrict(InternalBdd<DdType::Sylvan> const& constraint) const;
+            
+            /*!
+             * Retrieves the support of the current BDD.
+             *
+             * @return The support represented as a BDD.
+             */
+            InternalBdd<DdType::Sylvan> getSupport() const;
+            
+            /*!
+             * Retrieves the number of encodings that are mapped to a non-zero value.
+             *
+             * @param The number of DD variables contained in this BDD.
+             * @return The number of encodings that are mapped to a non-zero value.
+             */
+            uint_fast64_t getNonZeroCount(uint_fast64_t numberOfDdVariables) const;
+            
+            /*!
+             * Retrieves the number of leaves of the DD.
+             *
+             * @return The number of leaves of the DD.
+             */
+            uint_fast64_t getLeafCount() const;
+            
+            /*!
+             * Retrieves the number of nodes necessary to represent the DD.
+             *
+             * @return The number of nodes in this DD.
+             */
+            uint_fast64_t getNodeCount() const;
+            
+            /*!
+             * Retrieves whether this DD represents the constant one function.
+             *
+             * @return True if this DD represents the constant one function.
+             */
+            bool isOne() const;
+            
+            /*!
+             * Retrieves whether this DD represents the constant zero function.
+             *
+             * @return True if this DD represents the constant zero function.
+             */
+            bool isZero() const;
+            
+            /*!
+             * Retrieves the index of the topmost variable in the BDD.
+             *
+             * @return The index of the topmost variable in BDD.
+             */
+            uint_fast64_t getIndex() const;
+            
+            /*!
+             * Exports the BDD to the given file in the dot format.
+             *
+             * @param filename The name of the file to which the BDD is to be exported.
+             * @param ddVariableNamesAsStrings The names of the variables to display in the dot file.
+             */
+            void exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const;
+            
+            /*!
+             * Converts a BDD to an equivalent ADD.
+             *
+             * @return The corresponding ADD.
+             */
+            template<typename ValueType>
+            InternalAdd<DdType::Sylvan, ValueType> toAdd() const;
+            
+            /*!
+             * Converts the BDD to a bit vector. The given offset-labeled DD is used to determine the correct row of
+             * each entry.
+             *
+             * @param rowOdd The ODD used for determining the correct row.
+             * @param ddVariableIndices The indices of the DD variables contained in this BDD.
+             * @return The bit vector that is represented by this BDD.
+             */
+            storm::storage::BitVector toVector(storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            
+            /*!
+             * Creates an ODD based on the current BDD.
+             *
+             * @param ddVariableIndices The indices of the DD variables contained in this BDD.
+             * @return The corresponding ODD.
+             */
+            Odd createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const;
+            
+            /*!
+             * Uses the current BDD to filter values from the explicit vector.
+             *
+             * @param odd The ODD used to determine which entries to select.
+             * @param ddVariableIndices The indices of the DD variables contained in this BDD.
+             * @param sourceValues The source vector.
+             * @param targetValues The vector to which to write the selected values.
+             */
+            template<typename ValueType>
+            void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const;
+            
+        private:
+            InternalDdManager<DdType::Sylvan> const* ddManager;
+        };
+    }
+}
+
+#endif /* STORM_STORAGE_DD_CUDD_INTERNALSYLVANBDD_H_ */
