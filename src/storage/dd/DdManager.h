@@ -146,21 +146,21 @@ namespace storm {
             bool hasMetaVariable(std::string const& variableName) const;
             
             /*!
-             * Sets whether or not dynamic reordering is allowed for the DDs managed by this manager.
+             * Sets whether or not dynamic reordering is allowed for the DDs managed by this manager (if supported).
              *
              * @param value If set to true, dynamic reordering is allowed and forbidden otherwise.
              */
             void allowDynamicReordering(bool value);
             
             /*!
-             * Retrieves whether dynamic reordering is currently allowed.
+             * Retrieves whether dynamic reordering is currently allowed (if supported).
              *
              * @return True iff dynamic reordering is currently allowed.
              */
             bool isDynamicReorderingAllowed() const;
             
             /*!
-             * Triggers a reordering of the DDs managed by this manager.
+             * Triggers a reordering of the DDs managed by this manager (if supported).
              */
             void triggerReordering();
             
@@ -179,6 +179,11 @@ namespace storm {
              */
             std::shared_ptr<DdManager<LibraryType> const> asSharedPointer() const;
             
+            /*!
+             * Retrieves the set of meta variables contained in the DD.
+             *
+             * @return All contained meta variables.
+             */
             std::set<storm::expressions::Variable> getAllMetaVariables() const;
             
             /*!
@@ -242,7 +247,18 @@ namespace storm {
              */
             storm::expressions::ExpressionManager& getExpressionManager();
             
+            /*!
+             * Retrieves a pointer to the internal DD manager.
+             *
+             * @return A pointer to the internal DD manager.
+             */
             InternalDdManager<LibraryType>* getInternalDdManagerPointer();
+
+            /*!
+             * Retrieves a pointer to the internal DD manager.
+             *
+             * @return A pointer to the internal DD manager.
+             */
             InternalDdManager<LibraryType> const* getInternalDdManagerPointer() const;
             
             // A mapping from variables to the meta variable information.

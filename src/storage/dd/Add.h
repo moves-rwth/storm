@@ -626,10 +626,10 @@ namespace storm {
             
         private:
             /*!
-             * Creates a DD that encapsulates the given CUDD ADD.
+             * Creates a DD that encapsulates the given CUDD internal ADD.
              *
              * @param ddManager The manager responsible for this DD.
-             * @param cuddBdd The CUDD BDD to store.
+             * @param internalAdd The internal ADD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
             Add(std::shared_ptr<DdManager<LibraryType> const> ddManager, InternalAdd<LibraryType, ValueType> const& internalAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());

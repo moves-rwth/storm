@@ -59,6 +59,7 @@ namespace storm {
             if (this->isTerminalNode()) {
                 return 1;
             } else {
+                // Since both subtrees have the same height, we only count the height of the else-tree.
                 return 1 + this->getElseSuccessor().getHeight();
             }
         }

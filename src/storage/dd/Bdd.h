@@ -7,6 +7,10 @@
 #include "src/storage/dd/cudd/InternalCuddBdd.h"
 
 namespace storm {
+    namespace logic {
+        enum class ComparisonType;
+    }
+    
     namespace dd {
         template<DdType LibraryType, typename ValueType>
         class Add;
@@ -265,10 +269,10 @@ namespace storm {
             operator InternalBdd<LibraryType>() const;
             
             /*!
-             * Creates a DD that encapsulates the given CUDD ADD.
+             * Creates a DD that encapsulates the given internal BDD.
              *
              * @param ddManager The manager responsible for this DD.
-             * @param cuddBdd The CUDD BDD to store.
+             * @param internalBdd The internal BDD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
             Bdd(std::shared_ptr<DdManager<LibraryType> const> ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
