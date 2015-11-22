@@ -71,7 +71,7 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
 
 TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pmdp/consensus/coin2_2.nm";
+    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pmdp/coin/coin2_2.pm";
     std::string const& formulaAsString = "P>0.25 [F \"finished\"&\"all_coins_equal_1\" ]";
     std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     

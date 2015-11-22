@@ -12,10 +12,6 @@ const int MAX = 2;
 const double pL;
 const double pK;
 
-// timeouts
-const double TOMsg;
-const double TOAck;
-
 module sender
 
     s : [0..6];
@@ -137,14 +133,3 @@ module  channelL
     [TO_Ack] (l=2) -> (l'=0);
     
 endmodule
-
-rewards
-	[TO_Msg] true : TOMsg;
-	[TO_Ack] true : TOAck;
-endrewards
-
-label "error" = s=5;
-label "success" = (s=0) & (srep=3);
-label "target" = (s=5) | (s=0 & srep=3);
-
-

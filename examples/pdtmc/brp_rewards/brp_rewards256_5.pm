@@ -4,13 +4,17 @@
 dtmc
 
 // number of chunks
-const int N = 16;
+const int N = 256;
 // maximum number of retransmissions
-const int MAX = 2;
+const int MAX = 5;
 
 // reliability of channels
 const double pL;
 const double pK;
+
+// timeouts
+const double TOMsg;
+const double TOAck;
 
 module sender
 
@@ -134,4 +138,9 @@ module  channelL
     
 endmodule
 
-label "target" = s=5;
+rewards
+	[TO_Msg] true : TOMsg;
+	[TO_Ack] true : TOAck;
+endrewards
+
+
