@@ -23,7 +23,7 @@
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp/brp16_2.pm";
-    std::string const& formulaAsString = "P<=0.84 [F \"target\" ]";
+    std::string const& formulaAsString = "P<=0.84 [F s=5 ]";
     std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
     //Build model, formula, region model checker
@@ -92,7 +92,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
 
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards/brp_rewards16_2.pm";
-    std::string const& formulaAsString = "R>2.5 [F \"target\" ]";
+    std::string const& formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string const& constantsAsString = "pL=0.9,TOAck=0.5";
     
     //Build model, formula, region model checker
@@ -185,7 +185,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards/brp_rewards16_2.pm";
-    std::string const& formulaAsString = "R>2.5 [F \"success\" ]";
+    std::string const& formulaAsString = "R>2.5 [F (s=0&srep=3) ]";
     std::string const& constantsAsString = "";
     
     //Build model, formula, region model checker
@@ -232,7 +232,7 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     
     std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards/brp_rewards16_2.pm";
-    std::string const& formulaAsString = "R>2.5 [F \"target\" ]";
+    std::string const& formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string const& constantsAsString = ""; //!! this model will have 4 parameters
     
     //Build model, formula, region model checker
