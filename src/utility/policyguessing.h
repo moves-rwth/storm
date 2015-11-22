@@ -162,7 +162,9 @@ namespace storm {
                                            std::vector<ValueType>& x,
                                            std::vector<ValueType> const& b,
                                            storm::storage::BitVector const& probGreater0States,
-                                           ValueType const& prob0Value
+                                           ValueType const& prob0Value,
+                                           ValueType const& precision,
+                                           bool relative
                                         );
             
             /*!

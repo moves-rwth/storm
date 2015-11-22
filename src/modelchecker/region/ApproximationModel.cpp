@@ -283,7 +283,7 @@ namespace storm {
                 Policy& policy = computeLowerBounds ? this->solverData.lastMinimizingPolicy : this->solverData.lastMaximizingPolicy;
                 //TODO: at this point, set policy to the one stored in the region.
                 invokeSolver(computeLowerBounds, policy);
-                
+    /*
                 //TODO: (maybe) when a few parameters are mapped to another value, build a "nicer" scheduler and check whether it induces values that are more optimal.
                 //Get the set of parameters which are (according to the policy) always mapped to the same region boundary.
                 //First, collect all (relevant) parameters, i.e., the ones that are set to the lower or upper boundary.
@@ -325,15 +325,16 @@ namespace storm {
                 }
        //         std::cout << "Used Approximation" << std::endl;
                 for (auto const& varcount : VarCount){
-                  //  if(varcount.second.first > 0 && varcount.second.second > 0){
-          //              std::cout << "  Variable " << varcount.first << " has been set to lower " << varcount.second.first << " times and to upper " << varcount.second.second << " times. (total: " << substitutionCount << ")" << std::endl;
-                 //   }
+                    if(varcount.second.first > 0 && varcount.second.second > 0){
+                        std::cout << "  Variable " << varcount.first << " has been set to lower " << varcount.second.first << " times and to upper " << varcount.second.second << " times. (total: " << substitutionCount << ", " << (computeLowerBounds ? "MIN" : "MAX") << ")" << std::endl;
+                    }
                 }
                 for (auto const& fixVar : fixedVariables){
                     //std::cout << "  APPROXMODEL: variable " << fixVar.first << " is always mapped to " << fixVar.second << std::endl;
                 }
                     
         //        std::cout << "    Result is " << this->solverData.result[this->solverData.initialStateIndex] << std::endl;
+     */
                 return this->solverData.result[this->solverData.initialStateIndex];
             }
             
@@ -415,6 +416,9 @@ namespace storm {
                                                           this->solverData.player1Goal.direction(), player2Goal.direction(), 
                                                           this->solverData.lastPlayer1Policy, policy,
                                                           this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<double>() : storm::utility::zero<double>()));
+                
+               // this->solverData.result = std::vector<double>(this->solverData.result.size(), 0.0);
+               // solver->solveGame(this->solverData.player1Goal.direction(), player2Goal.direction(), this->solverData.result, this->vectorData.vector);
             }
             
                 

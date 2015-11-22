@@ -71,7 +71,7 @@ namespace storm {
                 ++iterations;
             } while (!converged && iterations < maximalNumberOfIterations);
             
-            STORM_LOG_WARN_COND(converged, "Iterative solver for stochastic two player games did not converge after " << iterations << "iterations.");
+            STORM_LOG_WARN_COND(converged, "Iterative solver for stochastic two player games did not converge after " << iterations << " iterations.");
             
             if(this->trackPolicies){
                 this->player2Policy = std::vector<storm::storage::sparse::state_type>(player2Matrix.getRowGroupCount());

@@ -37,7 +37,7 @@ namespace storm {
                 storm::storage::BitVector probGreater0States;
                 getInducedEquationSystem(solver, b, player1Policy, player2Policy, targetChoices, inducedA, inducedB, probGreater0States);
                 
-                solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value);
+                solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                 
                 solver.setPolicyTracking();
                 bool resultCorrect = false;
@@ -52,7 +52,7 @@ namespace storm {
                     if(!resultCorrect){
                         //If the policy could not be fixed, it indicates that our guessed values were to high.
                         STORM_LOG_WARN("Policies could not be fixed. Restarting Gamesolver. ");
-                        solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value);
+                        solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                         //x = std::vector<ValueType>(x.size(), storm::utility::zero<ValueType>());
                     }
                 }
@@ -107,7 +107,7 @@ namespace storm {
                 std::vector<ValueType> inducedB;
                 storm::storage::BitVector probGreater0States;
                 getInducedEquationSystem(solver, b, policy, targetChoices, inducedA, inducedB, probGreater0States);
-                solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value);
+                solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                 
                 solver.setPolicyTracking();
                 bool resultCorrect = false;
@@ -122,15 +122,12 @@ namespace storm {
                     if(!resultCorrect){
                         //If the policy could not be fixed, it indicates that our guessed values were to high.
                         STORM_LOG_WARN("Policy could not be fixed. Restarting MinMaxsolver." );
-                        solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value);
-                        //x = std::vector<ValueType>(x.size(), storm::utility::zero<ValueType>());
+                        solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                     }
                 }
                 
                 
             }
-            
-            
             
             template <typename ValueType>
             void getInducedEquationSystem(storm::solver::GameSolver<ValueType> const& solver,
@@ -198,7 +195,9 @@ namespace storm {
                                            std::vector<ValueType>& x,
                                            std::vector<ValueType> const& b,
                                            storm::storage::BitVector const& probGreater0States,
-                                           ValueType const& prob0Value
+                                           ValueType const& prob0Value,
+                                           ValueType const& precision,
+                                           bool relative
                                         ){
                 //Get the submatrix/subvector A,x, and b and invoke linear equation solver
                 storm::storage::SparseMatrix<ValueType> subA = A.getSubmatrix(true, probGreater0States, probGreater0States, true);
@@ -209,7 +208,18 @@ namespace storm {
                 storm::utility::vector::selectVectorValues(subB, probGreater0States, b);
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSysSolver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(subA);
                 linEqSysSolver->solveEquationSystem(subX, subB);
-            
+                
+                //Performing a couple of iterations makes the result "stable" when doing value iteration, i.e.,
+                //if the given equation system is induced by an optimal policy, value iteration will terminate after the first iteration.
+                subA.convertToEquationSystem();
+                linEqSysSolver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(subA);
+                std::vector<ValueType> copyX(subX.size());
+                std::size_t iterations = 100000; //don't run into an endless loop...
+                do {
+                    linEqSysSolver->performMatrixVectorMultiplication(subX, &subB, 10, &copyX);
+                    --iterations;
+                } while(!storm::utility::vector::equalModuloPrecision(subX, copyX, precision, relative) && iterations>0);
+                STORM_LOG_WARN_COND(iterations>0, "Iterations on result of linear equation solver did not converge.");
                 //fill in the result
                 storm::utility::vector::setVectorValues(x, probGreater0States, subX);
                 storm::utility::vector::setVectorValues(x, (~probGreater0States), prob0Value);
@@ -238,7 +248,7 @@ namespace storm {
                      * 2. There is another choice that leads to target
                      * 3. The value of that choice is equal to the value of the choice given by the policy
                      * Note that the values of the result will not change this way.
-                     * We do this unil the policy does not change anymore
+                     * We do this until the policy does not change anymore
                      */
                     policyChanged = false;
                     //Player 1:
@@ -403,7 +413,9 @@ namespace storm {
                                            std::vector<double>& x,
                                            std::vector<double> const& b,
                                            storm::storage::BitVector const& probGreater0States,
-                                           double const& prob0Value
+                                           double const& prob0Value,
+                                           double const& precision,
+                                           bool relative
                             );
             
             template bool checkAndFixPolicy<double>(storm::solver::GameSolver<double> const& solver,
