@@ -24,9 +24,14 @@ namespace storm {
             friend class InternalAdd;
             
             /*!
-             * Creates a new internal manager for CUDD DDs.
+             * Creates a new internal manager for Sylvan DDs.
              */
             InternalDdManager();
+
+            /*!
+             * Destroys the internal manager.
+             */
+            ~InternalDdManager();
             
             /*!
              * Retrieves a BDD representing the constant one function.
@@ -93,7 +98,14 @@ namespace storm {
             void triggerReordering();
             
         private:
-
+            // A counter for the number of instances of this class. This is used to determine when to initialize and
+            // quit the sylvan. This is because Sylvan does not know the concept of managers but implicitly has a
+            // 'global' manager.
+            static uint_fast64_t numberOfInstances;
+            
+            // The index of the next free variable index. This needs to be shared across all instances since the sylvan
+            // manager is implicitly 'global'.
+            static uint_fast64_t nextFreeVariableIndex;
         };
     }
 }

@@ -26,6 +26,8 @@ namespace storm {
         public:
             friend class InternalAdd<DdType::Sylvan, double>;
             
+            InternalBdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Bdd const& sylvanBdd);
+            
             // Instantiate all copy/move constructors/assignments with the default implementation.
             InternalBdd() = default;
             InternalBdd(InternalBdd<DdType::Sylvan> const& other) = default;
@@ -206,10 +208,11 @@ namespace storm {
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
-             * @param The number of DD variables contained in this BDD.
+             * @param cube The cube of variables contained in this BDD.
+             * @param numberOfDdVariables The number of DD variables contained in this BDD. This is ignored.
              * @return The number of encodings that are mapped to a non-zero value.
              */
-            uint_fast64_t getNonZeroCount(uint_fast64_t numberOfDdVariables) const;
+            uint_fast64_t getNonZeroCount(InternalBdd<DdType::Sylvan> const& cube, uint_fast64_t numberOfDdVariables) const;
             
             /*!
              * Retrieves the number of leaves of the DD.
@@ -292,7 +295,12 @@ namespace storm {
             void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const;
             
         private:
+            sylvan::Bdd& getSylvanBdd();
+            sylvan::Bdd const& getSylvanBdd() const;
+            
             InternalDdManager<DdType::Sylvan> const* ddManager;
+            
+            sylvan::Bdd sylvanBdd;
         };
     }
 }

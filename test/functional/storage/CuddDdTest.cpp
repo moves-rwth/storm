@@ -9,7 +9,7 @@
 
 #include "src/storage/SparseMatrix.h"
 
-TEST(CuddDdManager, Constants) {
+TEST(CuddDd, Constants) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     storm::dd::Add<storm::dd::DdType::CUDD, double> zero;
     ASSERT_NO_THROW(zero = manager->template getAddZero<double>());
@@ -39,7 +39,7 @@ TEST(CuddDdManager, Constants) {
     EXPECT_EQ(2, two.getMax());
 }
 
-TEST(CuddDdManager, AddGetMetaVariableTest) {
+TEST(CuddDd, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
     EXPECT_EQ(2ul, manager->getNumberOfMetaVariables());
@@ -56,7 +56,7 @@ TEST(CuddDdManager, AddGetMetaVariableTest) {
     EXPECT_EQ(metaVariableSet, manager->getAllMetaVariableNames());
 }
 
-TEST(CuddDdManager, EncodingTest) {
+TEST(CuddDd, EncodingTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     
@@ -76,7 +76,7 @@ TEST(CuddDdManager, EncodingTest) {
     EXPECT_EQ(2ul, encoding.template toAdd<double>().getLeafCount());
 }
 
-TEST(CuddDdManager, RangeTest) {
+TEST(CuddDd, RangeTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x;
     ASSERT_NO_THROW(x = manager->addMetaVariable("x", 1, 9));
@@ -89,7 +89,7 @@ TEST(CuddDdManager, RangeTest) {
     EXPECT_EQ(5ul, range.getNodeCount());
 }
 
-TEST(CuddDdManager, IdentityTest) {
+TEST(CuddDd, IdentityTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     

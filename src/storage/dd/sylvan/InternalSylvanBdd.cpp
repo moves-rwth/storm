@@ -10,113 +10,139 @@
 
 namespace storm {
     namespace dd {
+        InternalBdd<DdType::Sylvan>::InternalBdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Bdd const& sylvanBdd) : ddManager(ddManager), sylvanBdd(sylvanBdd) {
+            // Intentionally left empty.
+        }
+        
         template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& sortedDdVariableIndices, std::function<bool (ValueType const&)> const& filter) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
         }
         
         bool InternalBdd<DdType::Sylvan>::operator==(InternalBdd<DdType::Sylvan> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return sylvanBdd == other.sylvanBdd;
         }
         
         bool InternalBdd<DdType::Sylvan>::operator!=(InternalBdd<DdType::Sylvan> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return sylvanBdd != other.sylvanBdd;
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::ite(InternalBdd<DdType::Sylvan> const& thenDd, InternalBdd<DdType::Sylvan> const& elseDd) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Ite(thenDd.sylvanBdd, elseDd.sylvanBdd));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::operator||(InternalBdd<DdType::Sylvan> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd | other.sylvanBdd);
         }
         
         InternalBdd<DdType::Sylvan>& InternalBdd<DdType::Sylvan>::operator|=(InternalBdd<DdType::Sylvan> const& other) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            this->sylvanBdd |= other.sylvanBdd;
+            return *this;
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::operator&&(InternalBdd<DdType::Sylvan> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd & other.sylvanBdd);
         }
         
         InternalBdd<DdType::Sylvan>& InternalBdd<DdType::Sylvan>::operator&=(InternalBdd<DdType::Sylvan> const& other) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            this->sylvanBdd &= other.sylvanBdd;
+            return *this;
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::iff(InternalBdd<DdType::Sylvan> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, !(this->sylvanBdd ^ other.sylvanBdd));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::exclusiveOr(InternalBdd<DdType::Sylvan> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd ^ other.sylvanBdd);
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::implies(InternalBdd<DdType::Sylvan> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, !this->sylvanBdd | other.sylvanBdd);
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::operator!() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, !this->sylvanBdd);
         }
         
         InternalBdd<DdType::Sylvan>& InternalBdd<DdType::Sylvan>::complement() {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            this->sylvanBdd = !this->sylvanBdd;
+            return *this;
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::existsAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.ExistAbstract(cube.sylvanBdd));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::universalAbstract(InternalBdd<DdType::Sylvan> const& cube) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.UnivAbstract(cube.sylvanBdd));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::andExists(InternalBdd<DdType::Sylvan> const& other, InternalBdd<DdType::Sylvan> const& cube) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.AndAbstract(other.sylvanBdd, cube.sylvanBdd));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::constrain(InternalBdd<DdType::Sylvan> const& constraint) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Constrain(constraint.sylvanBdd));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::restrict(InternalBdd<DdType::Sylvan> const& constraint) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Restrict(constraint.sylvanBdd));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            std::vector<sylvan::Bdd> fromBdd;
+            std::vector<sylvan::Bdd> toBdd;
+            for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
+                fromBdd.push_back(it1->getSylvanBdd());
+                toBdd.push_back(it2->getSylvanBdd());
+            }
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Permute(fromBdd, toBdd));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::getSupport() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Support());
         }
         
-        uint_fast64_t InternalBdd<DdType::Sylvan>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+        uint_fast64_t InternalBdd<DdType::Sylvan>::getNonZeroCount(InternalBdd<DdType::Sylvan> const& cube, uint_fast64_t numberOfDdVariables) const {
+            return static_cast<uint_fast64_t>(this->sylvanBdd.SatCount(cube.sylvanBdd));
         }
         
         uint_fast64_t InternalBdd<DdType::Sylvan>::getLeafCount() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            // For BDDs, the leaf count is always one, because the only leaf is the false leaf (and true is represented
+            // by a negation edge to false).
+            return 1;
         }
         
         uint_fast64_t InternalBdd<DdType::Sylvan>::getNodeCount() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            // We have to add one to also count the false-leaf, which is the only leaf appearing in BDDs.
+            return static_cast<uint_fast64_t>(this->sylvanBdd.NodeCount()) + 1;
         }
         
         bool InternalBdd<DdType::Sylvan>::isOne() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return this->sylvanBdd.isOne();
         }
         
         bool InternalBdd<DdType::Sylvan>::isZero() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return this->sylvanBdd.isZero();
         }
         
         uint_fast64_t InternalBdd<DdType::Sylvan>::getIndex() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return static_cast<uint_fast64_t>(this->sylvanBdd.GetBDD());
         }
         
         void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            FILE* filePointer = fopen(filename.c_str() , "w");
+            this->sylvanBdd.PrintDot(filePointer);
+            fclose(filePointer);
+        }
+        
+        sylvan::Bdd& InternalBdd<DdType::Sylvan>::getSylvanBdd() {
+            return sylvanBdd;
+        }
+        
+        sylvan::Bdd const& InternalBdd<DdType::Sylvan>::getSylvanBdd() const {
+            return sylvanBdd;
         }
         
         template<typename ValueType>

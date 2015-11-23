@@ -110,7 +110,7 @@ namespace storm {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Support());
         }
         
-        uint_fast64_t InternalBdd<DdType::CUDD>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
+        uint_fast64_t InternalBdd<DdType::CUDD>::getNonZeroCount(InternalBdd<DdType::CUDD> const& cube, uint_fast64_t numberOfDdVariables) const {
             return static_cast<uint_fast64_t>(this->getCuddBdd().CountMinterm(static_cast<int>(numberOfDdVariables)));
         }
         
@@ -149,8 +149,8 @@ namespace storm {
             }
             
             // Open the file, dump the DD and close it again.
-            FILE* filePointer = fopen(filename.c_str() , "w");
             std::vector<cudd::BDD> cuddBddVector = { this->getCuddBdd() };
+            FILE* filePointer = fopen(filename.c_str() , "w");
             ddManager->getCuddManager().DumpDot(cuddBddVector, &ddVariableNames[0], &ddNames[0], filePointer);
             fclose(filePointer);
             
