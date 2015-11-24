@@ -40,13 +40,21 @@ namespace storm {
         template<typename ValueType>
         class InternalAdd<DdType::Sylvan, ValueType> {
         public:
+            /*!
+             * Creates an ADD that encapsulates the given Sylvan MTBDD.
+             *
+             * @param ddManager The manager responsible for this DD.
+             * @param sylvanMtbdd The sylvan MTBDD to store.
+             */
+            InternalAdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Mtbdd const& sylvanMtbdd);
+            
             // Instantiate all copy/move constructors/assignments with the default implementation.
             InternalAdd() = default;
             InternalAdd(InternalAdd<DdType::Sylvan, ValueType> const& other) = default;
             InternalAdd& operator=(InternalAdd<DdType::Sylvan, ValueType> const& other) = default;
             InternalAdd(InternalAdd<DdType::Sylvan, ValueType>&& other) = default;
             InternalAdd& operator=(InternalAdd<DdType::Sylvan, ValueType>&& other) = default;
-            
+                        
             /*!
              * Retrieves whether the two DDs represent the same function.
              *
@@ -397,10 +405,11 @@ namespace storm {
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
-             * @param The number of DD variables contained in this ADD.
+             * @param cube The cube of variables contained in this BDD.
+             * @param numberOfDdVariables The number of DD variables contained in this BDD. This is ignored.
              * @return The number of encodings that are mapped to a non-zero value.
              */
-            virtual uint_fast64_t getNonZeroCount(uint_fast64_t numberOfDdVariables) const;
+            virtual uint_fast64_t getNonZeroCount(InternalBdd<DdType::Sylvan> const& cube, uint_fast64_t numberOfDdVariables) const;
             
             /*!
              * Retrieves the number of leaves of the ADD.
@@ -574,6 +583,7 @@ namespace storm {
         private:
             InternalDdManager<DdType::Sylvan> const* ddManager;
             
+            sylvan::Mtbdd sylvanMtbdd;
         };
     }
 }

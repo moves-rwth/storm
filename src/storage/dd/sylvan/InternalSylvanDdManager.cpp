@@ -1,5 +1,6 @@
 #include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
 
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/NotSupportedException.h"
@@ -33,23 +34,38 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddOne());
         }
         
-        template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getAddOne() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+        template<>
+        InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddOne() const {
+            return InternalAdd<DdType::Sylvan, double>(this, sylvan::Mtbdd::doubleTerminal(storm::utility::one<double>()));
+        }
+
+        template<>
+        InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const {
+            return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::uint64Terminal(storm::utility::one<uint_fast64_t>()));
         }
         
         InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddZero() const {
             return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddZero());
         }
         
-        template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getAddZero() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+        template<>
+        InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const {
+            return InternalAdd<DdType::Sylvan, double>(this, sylvan::Mtbdd::doubleTerminal(storm::utility::zero<double>()));
+        }
+
+        template<>
+        InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const {
+            return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::uint64Terminal(storm::utility::zero<uint_fast64_t>()));
         }
         
-        template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalDdManager<DdType::Sylvan>::getConstant(ValueType const& value) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+        template<>
+        InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const {
+            return InternalAdd<DdType::Sylvan, double>(this, sylvan::Mtbdd::doubleTerminal(value));
+        }
+
+        template<>
+        InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const {
+            return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::uint64Terminal(value));
         }
         
         std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createNewDdVariablePair() {

@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_DD_SYLVANADDITERATOR_H_
-#define STORM_STORAGE_DD_SYLVANADDITERATOR_H_
+#ifndef STORM_STORAGE_DD_SYLVAN_SYLVANADDITERATOR_H_
+#define STORM_STORAGE_DD_SYLVAN_SYLVANADDITERATOR_H_
 
 #include "src/storage/dd/AddIterator.h"
 #include "src/storage/expressions/SimpleValuation.h"
@@ -66,4 +66,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_DD_SYLVANADDITERATOR_H_ */
+#endif /* STORM_STORAGE_DD_SYLVAN_SYLVANADDITERATOR_H_ */

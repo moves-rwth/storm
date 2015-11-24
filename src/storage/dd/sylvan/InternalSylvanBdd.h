@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_DD_CUDD_INTERNALSYLVANBDD_H_
-#define STORM_STORAGE_DD_CUDD_INTERNALSYLVANBDD_H_
+#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_
+#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_
 
 #include <vector>
 #include <functional>
@@ -24,7 +24,8 @@ namespace storm {
         template<>
         class InternalBdd<DdType::Sylvan> {
         public:
-            friend class InternalAdd<DdType::Sylvan, double>;
+            template <DdType LibraryType, typename ValueType>
+            friend class InternalAdd;
             
             InternalBdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Bdd const& sylvanBdd);
             
@@ -305,4 +306,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_DD_CUDD_INTERNALSYLVANBDD_H_ */
+#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_ */

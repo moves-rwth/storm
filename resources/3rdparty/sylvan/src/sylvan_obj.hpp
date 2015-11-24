@@ -517,10 +517,20 @@ public:
     Mtbdd Plus(const Mtbdd &other) const;
 
     /**
+     * @brief Computes f - g
+     */
+    Mtbdd Minus(const Mtbdd &other) const;
+    
+    /**
      * @brief Computes f * g
      */
     Mtbdd Times(const Mtbdd &other) const;
 
+    /**
+     * @brief Computes f / g
+     */
+    Mtbdd Divide(const Mtbdd &other) const;
+    
     /**
      * @brief Computes min(f, g)
      */

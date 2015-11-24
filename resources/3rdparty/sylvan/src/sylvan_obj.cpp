@@ -725,10 +725,25 @@ Mtbdd::Plus(const Mtbdd &other) const
 }
 
 Mtbdd
+Mtbdd::Minus(const Mtbdd &other) const
+{
+    LACE_ME;
+    return mtbdd_minus(mtbdd, other.mtbdd);
+}
+
+
+Mtbdd
 Mtbdd::Times(const Mtbdd &other) const
 {
     LACE_ME;
     return mtbdd_times(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::Divide(const Mtbdd &other) const
+{
+    LACE_ME;
+    return mtbdd_divide(mtbdd, other.mtbdd);
 }
 
 Mtbdd

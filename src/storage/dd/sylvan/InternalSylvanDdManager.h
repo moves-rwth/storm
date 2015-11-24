@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_DD_INTERNALSYLVANDDMANAGER_H_
-#define STORM_STORAGE_DD_INTERNALSYLVANDDMANAGER_H_
+#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
+#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/dd/InternalDdManager.h"
@@ -107,7 +107,26 @@ namespace storm {
             // manager is implicitly 'global'.
             static uint_fast64_t nextFreeVariableIndex;
         };
+        
+        template<>
+        InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+        
+        template<>
+        InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+
+        template<>
+        InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+        
+        template<>
+        InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+
+        template<>
+        InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;
+        
+        template<>
+        InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
+
     }
 }
 
-#endif /* STORM_STORAGE_DD_INTERNALSYLVANDDMANAGER_H_ */
+#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANDDMANAGER_H_ */

@@ -102,38 +102,38 @@ TEST(SylvanDd, RangeTest) {
 //    EXPECT_EQ(21ul, identity.getNodeCount());
 //}
 //
-//TEST(SylvanDd, OperatorTest) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-//    EXPECT_TRUE(manager->template getAddZero<double>() == manager->template getAddZero<double>());
-//    EXPECT_FALSE(manager->template getAddZero<double>() == manager->template getAddOne<double>());
-//    
-//    EXPECT_FALSE(manager->template getAddZero<double>() != manager->template getAddZero<double>());
-//    EXPECT_TRUE(manager->template getAddZero<double>() != manager->template getAddOne<double>());
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1 = manager->template getAddOne<double>();
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd2 = manager->template getAddOne<double>();
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd3 = dd1 + dd2;
-//    EXPECT_TRUE(dd3 == manager->template getConstant<double>(2));
-//    
-//    dd3 += manager->template getAddZero<double>();
-//    EXPECT_TRUE(dd3 == manager->template getConstant<double>(2));
-//    
-//    dd3 = dd1 * manager->template getConstant<double>(3);
-//    EXPECT_TRUE(dd3 == manager->template getConstant<double>(3));
-//    
-//    dd3 *= manager->template getConstant<double>(2);
-//    EXPECT_TRUE(dd3 == manager->template getConstant<double>(6));
-//    
-//    dd3 = dd1 - dd2;
-//    EXPECT_TRUE(dd3.isZero());
-//    
-//    dd3 -= manager->template getConstant<double>(-2);
-//    EXPECT_TRUE(dd3 == manager->template getConstant<double>(2));
-//    
-//    dd3 /= manager->template getConstant<double>(2);
-//    EXPECT_TRUE(dd3.isOne());
-//    
+TEST(SylvanDd, OperatorTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    EXPECT_TRUE(manager->template getAddZero<double>() == manager->template getAddZero<double>());
+    EXPECT_FALSE(manager->template getAddZero<double>() == manager->template getAddOne<double>());
+    
+    EXPECT_FALSE(manager->template getAddZero<double>() != manager->template getAddZero<double>());
+    EXPECT_TRUE(manager->template getAddZero<double>() != manager->template getAddOne<double>());
+
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1 = manager->template getAddOne<double>();
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd2 = manager->template getAddOne<double>();
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd3 = dd1 + dd2;
+    EXPECT_TRUE(dd3 == manager->template getConstant<double>(2));
+    
+    dd3 += manager->template getAddZero<double>();
+    EXPECT_TRUE(dd3 == manager->template getConstant<double>(2));
+    
+    dd3 = dd1 * manager->template getConstant<double>(3);
+    EXPECT_TRUE(dd3 == manager->template getConstant<double>(3));
+    
+    dd3 *= manager->template getConstant<double>(2);
+    EXPECT_TRUE(dd3 == manager->template getConstant<double>(6));
+    
+    dd3 = dd1 - dd2;
+    EXPECT_TRUE(dd3.isZero());
+    
+    dd3 -= manager->template getConstant<double>(-2);
+    EXPECT_TRUE(dd3 == manager->template getConstant<double>(2));
+    
+    dd3 /= manager->template getConstant<double>(2);
+    EXPECT_TRUE(dd3.isOne());
+    
 //    dd3 = !dd3;
 //    EXPECT_TRUE(dd3.isZero());
 //    
@@ -182,8 +182,8 @@ TEST(SylvanDd, RangeTest) {
 //    dd2 = manager->template getConstant<double>(0.01 + 1e-6);
 //    EXPECT_TRUE(dd1.equalModuloPrecision(dd2, 1e-6, false));
 //    EXPECT_FALSE(dd1.equalModuloPrecision(dd2, 1e-6));
-//}
-//
+}
+
 //TEST(SylvanDd, AbstractionTest) {
 //    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
 //    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);

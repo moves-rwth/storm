@@ -287,10 +287,17 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         uint_fast64_t Add<LibraryType, ValueType>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
-            for (auto const& metaVariable : this->getContainedMetaVariables()) {
-                numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
+            if (LibraryType == DdType::CUDD) {
+                std::size_t numberOfDdVariables = 0;
+                for (auto const& metaVariable : this->getContainedMetaVariables()) {
+                    numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
+                }
             }
-            return internalAdd.getNonZeroCount(numberOfDdVariables);
+            Bdd<LibraryType> cube;
+            if (LibraryType == DdType::Sylvan) {
+                cube = Bdd<LibraryType>::getCube(*this->getDdManager(), this->getContainedMetaVariables());
+            }
+            return internalAdd.getNonZeroCount(cube, numberOfDdVariables);
         }
         
         template<DdType LibraryType, typename ValueType>

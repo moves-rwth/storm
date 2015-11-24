@@ -245,7 +245,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
+        uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getNonZeroCount(InternalBdd<DdType::CUDD> const& cube, uint_fast64_t numberOfDdVariables) const {
             return static_cast<uint_fast64_t>(this->getCuddAdd().CountMinterm(static_cast<int>(numberOfDdVariables)));
         }
         

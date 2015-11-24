@@ -28,7 +28,8 @@ namespace storm {
         template<>
         class InternalBdd<DdType::CUDD> {
         public:
-            friend class InternalAdd<DdType::CUDD, double>;
+            template <DdType LibraryType, typename ValueType>
+            friend class InternalAdd;
             
             /*!
              * Creates a DD that encapsulates the given CUDD ADD.

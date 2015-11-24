@@ -225,6 +225,14 @@ TASK_DECL_2(MTBDD, mtbdd_op_times, MTBDD*, MTBDD*);
 TASK_DECL_3(MTBDD, mtbdd_abstract_op_times, MTBDD, MTBDD, int);
 
 /**
+ * Binary operation Divide (for MTBDDs of same type)
+ * Only for MTBDDs where all leaves are Double.
+ * If either operand is mtbdd_false (not defined),
+ * then the result is mtbdd_false (i.e. not defined).
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_divide, MTBDD*, MTBDD*);
+    
+/**
  * Binary operation Minimum (for MTBDDs of same type)
  * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
  * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
@@ -257,6 +265,11 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
  */
 #define mtbdd_times(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_times))
 
+/**
+ * Compute a / b
+ */
+#define mtbdd_divide(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_divide))
+    
 /**
  * Compute min(a, b)
  */
