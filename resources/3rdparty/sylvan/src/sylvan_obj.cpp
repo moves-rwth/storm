@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <sylvan_obj.hpp>
+#include "sylvan_obj.hpp"
 
 using namespace sylvan;
 
@@ -897,6 +897,13 @@ Mtbdd::BddStrictThreshold(double value) const
 {
     LACE_ME;
     return mtbdd_strict_threshold_double(mtbdd, value);
+}
+
+Bdd
+Mtbdd::NotZero() const
+{
+    LACE_ME;
+    return mtbdd_not_zero(mtbdd);
 }
 
 Mtbdd

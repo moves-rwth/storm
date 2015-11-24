@@ -178,7 +178,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::Sylvan, ValueType> equals(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
+            InternalBdd<DdType::Sylvan> equals(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one that have distinct function values.
@@ -186,7 +186,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::Sylvan, ValueType> notEquals(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
+            InternalBdd<DdType::Sylvan> notEquals(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are less
@@ -195,7 +195,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::Sylvan, ValueType> less(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
+            InternalBdd<DdType::Sylvan> less(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are less or
@@ -204,7 +204,7 @@ namespace storm {
              * @param other The DD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::Sylvan, ValueType> lessOrEqual(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
+            InternalBdd<DdType::Sylvan> lessOrEqual(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are greater
@@ -213,7 +213,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::Sylvan, ValueType> greater(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
+            InternalBdd<DdType::Sylvan> greater(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are greater
@@ -222,7 +222,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::Sylvan, ValueType> greaterOrEqual(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
+            InternalBdd<DdType::Sylvan> greaterOrEqual(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that represents the current ADD to the power of the given ADD.
@@ -438,15 +438,7 @@ namespace storm {
              * @return The highest function value of any encoding.
              */
             ValueType getMax() const;
-            
-            /*!
-             * Converts the ADD to a BDD by mapping all values unequal to zero to 1. This effectively does the same as
-             * a call to notZero().
-             *
-             * @return The corresponding BDD.
-             */
-            InternalBdd<DdType::Sylvan> toBdd() const;
-            
+                        
             /*!
              * Retrieves whether this ADD represents the constant one function.
              *

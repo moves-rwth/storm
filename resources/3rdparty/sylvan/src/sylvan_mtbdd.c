@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <sylvan_config.h>
+#include "sylvan_config.h"
 
 #include <assert.h>
 #include <inttypes.h>
@@ -25,11 +25,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <refs.h>
-#include <sha2.h>
-#include <sylvan.h>
-#include <sylvan_common.h>
-#include <sylvan_mtbdd_int.h>
+#include "refs.h"
+#include "sha2.h"
+#include "sylvan.h"
+#include "sylvan_common.h"
+#include "sylvan_mtbdd_int.h"
 
 /* Primitives */
 int
@@ -1193,41 +1193,38 @@ TASK_IMPL_2(MTBDD, mtbdd_op_times, MTBDD*, pa, MTBDD*, pb)
 
 /**
  * Binary operation Times (for MTBDDs of same type)
- * Only for MTBDDs where either all leaves are Double.
- * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
+ * Only for MTBDDs where either all leaves are Integer or Double.
+ * If either operand is mtbdd_false (not defined),
  * then the result is mtbdd_false (i.e. not defined).
  */
 TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
 {
     MTBDD a = *pa, b = *pb;
-//    if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
+    if (a == mtbdd_false || b == mtbdd_false) return mtbdd_false;
     
-    // Handle Boolean MTBDDs: interpret as And
-//    if (a == mtbdd_true) return b;
-//    if (b == mtbdd_true) return a;
+    // Do not handle Boolean MTBDDs...
     
     mtbddnode_t na = GETNODE(a);
     mtbddnode_t nb = GETNODE(b);
     
     if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
-//        uint64_t val_a = mtbddnode_getvalue(na);
-//        uint64_t val_b = mtbddnode_getvalue(nb);
-//        if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-//            // both uint64_t
-//            if (val_a == 0) return a;
-//            else if (val_b == 0) return b;
-//            else {
-//                MTBDD result;
-//                if (val_a == 1) result = b;
-//                else if (val_b == 1) result = a;
-//                else result = mtbdd_uint64(val_a*val_b);
-//                int nega = mtbdd_isnegated(a);
-//                int negb = mtbdd_isnegated(b);
-//                if (nega ^ negb) return mtbdd_negate(result);
-//                else return result;
-//            }
-//        } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
-        if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
+        uint64_t val_a = mtbddnode_getvalue(na);
+        uint64_t val_b = mtbddnode_getvalue(nb);
+        if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
+            // both uint64_t
+            if (val_a == 0) return a;
+            else if (val_b == 0) return b;
+            else {
+                MTBDD result;
+                if (val_a == 1) result = b;
+                else if (val_b == 1) result = a;
+                else result = mtbdd_uint64(val_a*val_b);
+                int nega = mtbdd_isnegated(a);
+                int negb = mtbdd_isnegated(b);
+                if (nega ^ negb) return mtbdd_negate(result);
+                else return result;
+            }
+        } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // both double
             double vval_a = *(double*)&val_a;
             double vval_b = *(double*)&val_b;
@@ -1244,32 +1241,32 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
                 else return result;
             }
         }
-//        else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
-//            // both fraction
-//            uint64_t nom_a = val_a>>32;
-//            uint64_t nom_b = val_b>>32;
-//            uint64_t denom_a = val_a&0xffffffff;
-//            uint64_t denom_b = val_b&0xffffffff;
-//            // multiply!
-//            uint32_t c = gcd(nom_b, denom_a);
-//            uint32_t d = gcd(nom_a, denom_b);
-//            nom_a /= d;
-//            denom_a /= c;
-//            nom_a *= (nom_b/c);
-//            denom_a *= (denom_b/d);
-//            // compute result
-//            int nega = mtbdd_isnegated(a);
-//            int negb = mtbdd_isnegated(b);
-//            MTBDD result = mtbdd_fraction(nom_a, denom_a);
-//            if (nega ^ negb) return mtbdd_negate(result);
-//            else return result;
-//        }
+        else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
+            // both fraction
+            uint64_t nom_a = val_a>>32;
+            uint64_t nom_b = val_b>>32;
+            uint64_t denom_a = val_a&0xffffffff;
+            uint64_t denom_b = val_b&0xffffffff;
+            // multiply!
+            uint32_t c = gcd(denom_b, denom_a);
+            uint32_t d = gcd(nom_a, nom_b);
+            nom_a /= d;
+            denom_a /= c;
+            nom_a *= (denom_b/c);
+            denom_a *= (nom_b/d);
+            // compute result
+            int nega = mtbdd_isnegated(a);
+            int negb = mtbdd_isnegated(b);
+            MTBDD result = mtbdd_fraction(nom_a, denom_a);
+            if (nega ^ negb) return mtbdd_negate(result);
+            else return result;
+        }
     }
     
-//    if (a < b) {
-//        *pa = b;
-//        *pb = a;
-//    }
+    if (a < b) {
+        *pa = b;
+        *pb = a;
+    }
     
     return mtbdd_invalid;
 }
@@ -1535,6 +1532,28 @@ TASK_IMPL_2(MTBDD, mtbdd_op_strict_threshold_double, MTBDD, a, size_t, svalue)
         }
     }
 
+    return mtbdd_invalid;
+}
+
+TASK_IMPL_1(MTBDD, mtbdd_not_zero, MTBDD, a)
+{
+    /* We only expect "double" terminals, or false */
+    if (a == mtbdd_false) return mtbdd_false;
+    if (a == mtbdd_true) return mtbdd_invalid;
+    
+    // a != constant
+    mtbddnode_t na = GETNODE(a);
+    
+    if (mtbddnode_isleaf(na)) {
+        if (mtbddnode_gettype(na) == 0) {
+            return mtbdd_getuint64(a) != 0 ? mtbdd_true : mtbdd_false;
+        } else if (mtbddnode_gettype(na) == 1) {
+            return mtbdd_getdouble(a) != 0.0 ? mtbdd_true : mtbdd_false;
+        } else if (mtbddnode_gettype(na) == 2) {
+            return mtbdd_getnumer(a) != 0 ? mtbdd_true : mtbdd_false;
+        }
+    }
+    
     return mtbdd_invalid;
 }
 

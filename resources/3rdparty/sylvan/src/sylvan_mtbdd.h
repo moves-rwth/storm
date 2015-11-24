@@ -226,7 +226,7 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_times, MTBDD, MTBDD, int);
 
 /**
  * Binary operation Divide (for MTBDDs of same type)
- * Only for MTBDDs where all leaves are Double.
+ * Only for MTBDDs where all leaves are Integer or Double.
  * If either operand is mtbdd_false (not defined),
  * then the result is mtbdd_false (i.e. not defined).
  */
@@ -258,7 +258,7 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
 /**
  * Compute a - b
  */
-#define mtbdd_minus(a, b) mtbdd_plus(a, mtbdd_negate(minus))
+#define mtbdd_minus(a, b) mtbdd_plus(a, mtbdd_negate(b))
 
 /**
  * Compute a * b
@@ -324,6 +324,12 @@ TASK_DECL_2(MTBDD, mtbdd_op_threshold_double, MTBDD, size_t)
  */
 TASK_DECL_2(MTBDD, mtbdd_op_strict_threshold_double, MTBDD, size_t)
 
+/**
+ * Monad that converts double to a Boolean MTBDD, translate terminals != 0 to 1 and to 0 otherwise;
+ */
+TASK_DECL_1(MTBDD, mtbdd_not_zero, MTBDD)
+#define mtbdd_not_zero(dd) CALL(mtbdd_not_zero, dd)
+    
 /**
  * Convert double to a Boolean MTBDD, translate terminals >= value to 1 and to 0 otherwise;
  */

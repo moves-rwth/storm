@@ -178,7 +178,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            Add<LibraryType, ValueType> equals(Add<LibraryType, ValueType> const& other) const;
+            Bdd<LibraryType> equals(Add<LibraryType, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one that have distinct function values.
@@ -186,7 +186,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            Add<LibraryType, ValueType> notEquals(Add<LibraryType, ValueType> const& other) const;
+            Bdd<LibraryType> notEquals(Add<LibraryType, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are less
@@ -195,7 +195,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            Add<LibraryType, ValueType> less(Add<LibraryType, ValueType> const& other) const;
+            Bdd<LibraryType> less(Add<LibraryType, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are less or
@@ -204,7 +204,7 @@ namespace storm {
              * @param other The DD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            Add<LibraryType, ValueType> lessOrEqual(Add<LibraryType, ValueType> const& other) const;
+            Bdd<LibraryType> lessOrEqual(Add<LibraryType, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are greater
@@ -213,7 +213,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            Add<LibraryType, ValueType> greater(Add<LibraryType, ValueType> const& other) const;
+            Bdd<LibraryType> greater(Add<LibraryType, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are greater
@@ -222,7 +222,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            Add<LibraryType, ValueType> greaterOrEqual(Add<LibraryType, ValueType> const& other) const;
+            Bdd<LibraryType> greaterOrEqual(Add<LibraryType, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that represents the current ADD to the power of the given ADD.

@@ -107,35 +107,35 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::equals(Add<LibraryType, ValueType> const& other) const {
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.equals(other), Dd<LibraryType>::joinMetaVariables(*this, other));
+        Bdd<LibraryType> Add<LibraryType, ValueType>::equals(Add<LibraryType, ValueType> const& other) const {
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.equals(other), Dd<LibraryType>::joinMetaVariables(*this, other));
         }
         
         template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::notEquals(Add<LibraryType, ValueType> const& other) const {
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.notEquals(other), Dd<LibraryType>::joinMetaVariables(*this, other));
+        Bdd<LibraryType> Add<LibraryType, ValueType>::notEquals(Add<LibraryType, ValueType> const& other) const {
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.notEquals(other), Dd<LibraryType>::joinMetaVariables(*this, other));
 
         }
         
         template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::less(Add<LibraryType, ValueType> const& other) const {
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.less(other), Dd<LibraryType>::joinMetaVariables(*this, other));
+        Bdd<LibraryType> Add<LibraryType, ValueType>::less(Add<LibraryType, ValueType> const& other) const {
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.less(other), Dd<LibraryType>::joinMetaVariables(*this, other));
         }
         
         template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::lessOrEqual(Add<LibraryType, ValueType> const& other) const {
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.lessOrEqual(other), Dd<LibraryType>::joinMetaVariables(*this, other));
+        Bdd<LibraryType> Add<LibraryType, ValueType>::lessOrEqual(Add<LibraryType, ValueType> const& other) const {
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.lessOrEqual(other), Dd<LibraryType>::joinMetaVariables(*this, other));
 
         }
         
         template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::greater(Add<LibraryType, ValueType> const& other) const {
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.greater(other), Dd<LibraryType>::joinMetaVariables(*this, other));
+        Bdd<LibraryType> Add<LibraryType, ValueType>::greater(Add<LibraryType, ValueType> const& other) const {
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.greater(other), Dd<LibraryType>::joinMetaVariables(*this, other));
         }
 
         template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::greaterOrEqual(Add<LibraryType, ValueType> const& other) const {
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.greaterOrEqual(other), Dd<LibraryType>::joinMetaVariables(*this, other));
+        Bdd<LibraryType> Add<LibraryType, ValueType>::greaterOrEqual(Add<LibraryType, ValueType> const& other) const {
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.greaterOrEqual(other), Dd<LibraryType>::joinMetaVariables(*this, other));
 
         }
 
@@ -266,7 +266,7 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::notZero() const {
-            return this->toBdd();
+            return Bdd<LibraryType>(this->getDdManager(), internalAdd.notZero(), this->getContainedMetaVariables());
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -288,7 +288,6 @@ namespace storm {
         uint_fast64_t Add<LibraryType, ValueType>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
             if (LibraryType == DdType::CUDD) {
-                std::size_t numberOfDdVariables = 0;
                 for (auto const& metaVariable : this->getContainedMetaVariables()) {
                     numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
                 }
@@ -775,7 +774,7 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         Bdd<LibraryType> Add<LibraryType, ValueType>::toBdd() const {
-            return Bdd<LibraryType>(this->getDdManager(), internalAdd.toBdd(), this->getContainedMetaVariables());
+            return this->notZero();
         }
         
         template<DdType LibraryType, typename ValueType>

@@ -118,7 +118,7 @@ namespace storm {
                         columnMetaVariables.insert(variablePair.second);
                         variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
                         
-                        storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
+                        storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
                         variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
                         rowColumnMetaVariablePairs.push_back(variablePair);
                         
@@ -135,7 +135,7 @@ namespace storm {
                         columnMetaVariables.insert(variablePair.second);
                         variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                         
-                        storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second));
+                        storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>();
                         variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
                         
                         rowColumnMetaVariablePairs.push_back(variablePair);
@@ -159,7 +159,7 @@ namespace storm {
                             columnMetaVariables.insert(variablePair.second);
                             variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
                             
-                            storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
+                            storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
                             variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
                             moduleIdentity *= variableIdentity;
                             moduleRange *= manager->getRange(variablePair.first).template toAdd<ValueType>();
@@ -176,7 +176,7 @@ namespace storm {
                             columnMetaVariables.insert(variablePair.second);
                             variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                             
-                            storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
+                            storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
                             variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
                             moduleIdentity *= variableIdentity;
                             moduleRange *= manager->getRange(variablePair.first).template toAdd<ValueType>();
@@ -334,7 +334,7 @@ namespace storm {
                 storm::dd::Add<Type, ValueType> result = updateExpression * guard;
                 
                 // Combine the variable and the assigned expression.
-                result = result.equals(writtenVariable);
+                result = result.equals(writtenVariable).template toAdd<ValueType>();
                 result *= guard;
                 
                 // Restrict the transitions to the range of the written variable.
@@ -572,9 +572,9 @@ namespace storm {
                 // Calculate number of required variables to encode the nondeterminism.
                 uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
                 
-                storm::dd::Add<Type, ValueType> equalsNumberOfChoicesDd = generationInfo.manager->template getAddZero<ValueType>();
+                storm::dd::Bdd<Type> equalsNumberOfChoicesDd;
                 std::vector<storm::dd::Add<Type, ValueType>> choiceDds(maxChoices, generationInfo.manager->template getAddZero<ValueType>());
-                std::vector<storm::dd::Add<Type, ValueType>> remainingDds(maxChoices, generationInfo.manager->template getAddZero<ValueType>());
+                std::vector<storm::dd::Bdd<Type>> remainingDds(maxChoices, generationInfo.manager->getBddZero());
                 
                 for (uint_fast64_t currentChoices = 1; currentChoices <= maxChoices; ++currentChoices) {
                     // Determine the set of states with exactly currentChoices choices.
@@ -594,7 +594,7 @@ namespace storm {
                     for (std::size_t j = 0; j < commandDds.size(); ++j) {
                         // Check if command guard overlaps with equalsNumberOfChoicesDd. That is, there are states with exactly currentChoices
                         // choices such that one outgoing choice is given by the j-th command.
-                        storm::dd::Add<Type, ValueType> guardChoicesIntersection = commandDds[j].guardDd * equalsNumberOfChoicesDd;
+                        storm::dd::Bdd<Type> guardChoicesIntersection = commandDds[j].guardDd.toBdd() && equalsNumberOfChoicesDd;
                         
                         // If there is no such state, continue with the next command.
                         if (guardChoicesIntersection.isZero()) {
@@ -604,19 +604,19 @@ namespace storm {
                         // Split the currentChoices nondeterministic choices.
                         for (uint_fast64_t k = 0; k < currentChoices; ++k) {
                             // Calculate the overlapping part of command guard and the remaining DD.
-                            storm::dd::Add<Type, ValueType> remainingGuardChoicesIntersection = guardChoicesIntersection * remainingDds[k];
+                            storm::dd::Bdd<Type> remainingGuardChoicesIntersection = guardChoicesIntersection && remainingDds[k];
                             
                             // Check if we can add some overlapping parts to the current index.
                             if (!remainingGuardChoicesIntersection.isZero()) {
                                 // Remove overlapping parts from the remaining DD.
-                                remainingDds[k] = remainingDds[k] * !remainingGuardChoicesIntersection;
+                                remainingDds[k] = remainingDds[k] && !remainingGuardChoicesIntersection;
                                 
                                 // Combine the overlapping part of the guard with command updates and add it to the resulting DD.
-                                choiceDds[k] += remainingGuardChoicesIntersection * commandDds[j].transitionsDd;
+                                choiceDds[k] += remainingGuardChoicesIntersection.template toAdd<ValueType>() * commandDds[j].transitionsDd;
                             }
                             
                             // Remove overlapping parts from the command guard DD
-                            guardChoicesIntersection = guardChoicesIntersection * !remainingGuardChoicesIntersection;
+                            guardChoicesIntersection = guardChoicesIntersection && !remainingGuardChoicesIntersection;
                             
                             // If the guard DD has become equivalent to false, we can stop here.
                             if (guardChoicesIntersection.isZero()) {
@@ -631,7 +631,7 @@ namespace storm {
                     }
                     
                     // Delete currentChoices out of overlapping DD
-                    sumOfGuards = sumOfGuards * !equalsNumberOfChoicesDd;
+                    sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd).template toAdd<ValueType>();
                 }
                 
                 return ActionDecisionDiagram(allGuards, allCommands, assignedGlobalVariables, nondeterminismVariableOffset + numberOfBinaryVariables);

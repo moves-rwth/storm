@@ -30,7 +30,7 @@ namespace storm {
             // Start by computing the Jacobi decomposition of the matrix A.
             storm::dd::Add<DdType, ValueType> diagonal = x.getDdManager()->template getAddOne<ValueType>();
             for (auto const& pair : rowColumnMetaVariablePairs) {
-                diagonal *= x.getDdManager()->template getIdentity<ValueType>(pair.first).equals(x.getDdManager()->template getIdentity<ValueType>(pair.second));
+                diagonal *= x.getDdManager()->template getIdentity<ValueType>(pair.first).equals(x.getDdManager()->template getIdentity<ValueType>(pair.second)).template toAdd<ValueType>();
                 diagonal *= x.getDdManager()->getRange(pair.first).template toAdd<ValueType>() * x.getDdManager()->getRange(pair.second).template toAdd<ValueType>();
             }
             diagonal *= allRows.template toAdd<ValueType>();

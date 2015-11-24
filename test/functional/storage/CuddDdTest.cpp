@@ -145,26 +145,26 @@ TEST(CuddDd, OperatorTest) {
     dd1 = manager->template getIdentity<double>(x.first);
     dd2 = manager->template getConstant<double>(5);
 
-    dd3 = dd1.equals(dd2);
+    dd3 = dd1.equals(dd2).template toAdd<double>();
     EXPECT_EQ(1ul, dd3.getNonZeroCount());
     
-    storm::dd::Add<storm::dd::DdType::CUDD, double> dd4 = dd1.notEquals(dd2);
+    storm::dd::Add<storm::dd::DdType::CUDD, double> dd4 = dd1.notEquals(dd2).template toAdd<double>();
     EXPECT_TRUE(dd4.toBdd() == !dd3.toBdd());
     
-    dd3 = dd1.less(dd2);
+    dd3 = dd1.less(dd2).template toAdd<double>();
     EXPECT_EQ(11ul, dd3.getNonZeroCount());
     
-    dd3 = dd1.lessOrEqual(dd2);
+    dd3 = dd1.lessOrEqual(dd2).template toAdd<double>();
     EXPECT_EQ(12ul, dd3.getNonZeroCount());
     
-    dd3 = dd1.greater(dd2);
+    dd3 = dd1.greater(dd2).template toAdd<double>();
     EXPECT_EQ(4ul, dd3.getNonZeroCount());
 
-    dd3 = dd1.greaterOrEqual(dd2);
+    dd3 = dd1.greaterOrEqual(dd2).template toAdd<double>();
     EXPECT_EQ(5ul, dd3.getNonZeroCount());
     
     dd3 = (manager->getEncoding(x.first, 2).template toAdd<double>()).ite(dd2, dd1);
-    dd4 = dd3.less(dd2);
+    dd4 = dd3.less(dd2).template toAdd<double>();
     EXPECT_EQ(10ul, dd4.getNonZeroCount());
     
     dd4 = dd3.minimum(dd1);
@@ -192,7 +192,7 @@ TEST(CuddDd, AbstractionTest) {
     
     dd1 = manager->template getIdentity<double>(x.first);
     dd2 = manager->template getConstant<double>(5);
-    dd3 = dd1.equals(dd2);
+    dd3 = dd1.equals(dd2).template toAdd<double>();
     storm::dd::Bdd<storm::dd::DdType::CUDD> dd3Bdd = dd3.toBdd();
     EXPECT_EQ(1ul, dd3Bdd.getNonZeroCount());
     ASSERT_THROW(dd3Bdd = dd3Bdd.existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
@@ -200,28 +200,28 @@ TEST(CuddDd, AbstractionTest) {
     EXPECT_EQ(1ul, dd3Bdd.getNonZeroCount());
     EXPECT_EQ(1, dd3Bdd.template toAdd<double>().getMax());
 
-    dd3 = dd1.equals(dd2);
+    dd3 = dd1.equals(dd2).template toAdd<double>();
     dd3 *= manager->template getConstant<double>(3);
     EXPECT_EQ(1ul, dd3.getNonZeroCount());
     ASSERT_THROW(dd3Bdd = dd3.toBdd().existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3Bdd = dd3.toBdd().existsAbstract({x.first}));
     EXPECT_TRUE(dd3Bdd.isOne());
 
-    dd3 = dd1.equals(dd2);
+    dd3 = dd1.equals(dd2).template toAdd<double>();
     dd3 *= manager->template getConstant<double>(3);
     ASSERT_THROW(dd3 = dd3.sumAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.sumAbstract({x.first}));
     EXPECT_EQ(1ul, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
 
-    dd3 = dd1.equals(dd2);
+    dd3 = dd1.equals(dd2).template toAdd<double>();
     dd3 *= manager->template getConstant<double>(3);
     ASSERT_THROW(dd3 = dd3.minAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.minAbstract({x.first}));
     EXPECT_EQ(0ul, dd3.getNonZeroCount());
     EXPECT_EQ(0, dd3.getMax());
 
-    dd3 = dd1.equals(dd2);
+    dd3 = dd1.equals(dd2).template toAdd<double>();
     dd3 *= manager->template getConstant<double>(3);
     ASSERT_THROW(dd3 = dd3.maxAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.maxAbstract({x.first}));
@@ -247,7 +247,7 @@ TEST(CuddDd, MultiplyMatrixTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     
-    storm::dd::Add<storm::dd::DdType::CUDD, double> dd1 = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second));
+    storm::dd::Add<storm::dd::DdType::CUDD, double> dd1 = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)).template toAdd<double>();
     storm::dd::Add<storm::dd::DdType::CUDD, double> dd2 = manager->getRange(x.second).template toAdd<double>();
     storm::dd::Add<storm::dd::DdType::CUDD, double> dd3;
     dd1 *= manager->template getConstant<double>(2);
@@ -336,7 +336,7 @@ TEST(CuddDd, AddOddTest) {
     }
     
     // Create a non-trivial matrix.
-    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)) * manager->getRange(x.first).template toAdd<double>();
+    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
     dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
     
     // Create the ODDs.
@@ -382,7 +382,7 @@ TEST(CuddDd, BddOddTest) {
     storm::dd::Add<storm::dd::DdType::CUDD, double> vectorAdd = storm::dd::Add<storm::dd::DdType::CUDD, double>::fromVector(manager, ddAsVector, odd, {x.first});
     
     // Create a non-trivial matrix.
-    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)) * manager->getRange(x.first).template toAdd<double>();
+    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
     dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
     
     // Create the ODDs.

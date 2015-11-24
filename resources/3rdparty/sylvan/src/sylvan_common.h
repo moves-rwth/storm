@@ -15,9 +15,9 @@
  */
 
 #include <assert.h>
-#include <sylvan.h>
-#include <tls.h>
-#include <sylvan_config.h>
+#include "sylvan.h"
+#include "tls.h"
+#include "sylvan_config.h"
 
 #ifndef SYLVAN_COMMON_H
 #define SYLVAN_COMMON_H

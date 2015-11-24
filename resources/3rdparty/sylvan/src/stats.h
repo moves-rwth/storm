@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <lace.h>
-#include <sylvan_config.h>
+#include "lace.h"
+#include "sylvan_config.h"
 
 #ifndef SYLVAN_STATS_H
 #define SYLVAN_STATS_H

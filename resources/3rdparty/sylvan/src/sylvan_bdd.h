@@ -16,7 +16,7 @@
 
 /* Do not include this file directly. Instead, include sylvan.h */
 
-#include <tls.h>
+#include "tls.h"
 
 #ifndef SYLVAN_BDD_H
 #define SYLVAN_BDD_H

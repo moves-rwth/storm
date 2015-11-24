@@ -123,7 +123,7 @@ namespace storm {
             storm::dd::Add<Type, ValueType> Model<Type, ValueType>::getRowColumnIdentity() const {
                 storm::dd::Add<Type, ValueType> result = this->getManager().template getAddOne<ValueType>();
                 for (auto const& pair : this->getRowColumnMetaVariablePairs()) {
-                    result *= this->getManager().template getIdentity<ValueType>(pair.first).equals(this->getManager().template getIdentity<ValueType>(pair.second));
+                    result *= this->getManager().template getIdentity<ValueType>(pair.first).equals(this->getManager().template getIdentity<ValueType>(pair.second)).template toAdd<ValueType>();
                     result *= this->getManager().getRange(pair.first).template toAdd<ValueType>() * this->getManager().getRange(pair.second).template toAdd<ValueType>();
                 }
                 return result;

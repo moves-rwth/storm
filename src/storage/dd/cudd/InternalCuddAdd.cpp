@@ -93,33 +93,33 @@ namespace storm {
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::equals(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Equals(other.getCuddAdd()));
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::equals(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().Equals(other.getCuddAdd()).BddPattern());
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::notEquals(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().NotEquals(other.getCuddAdd()));
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::notEquals(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().NotEquals(other.getCuddAdd()).BddPattern());
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::less(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().LessThan(other.getCuddAdd()));
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::less(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().LessThan(other.getCuddAdd()).BddPattern());
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().LessThanOrEqual(other.getCuddAdd()));
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::lessOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().LessThanOrEqual(other.getCuddAdd()).BddPattern());
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::greater(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().GreaterThan(other.getCuddAdd()));
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greater(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().GreaterThan(other.getCuddAdd()).BddPattern());
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().GreaterThanOrEqual(other.getCuddAdd()));
+        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::greaterOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const {
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().GreaterThanOrEqual(other.getCuddAdd()).BddPattern());
         }
         
         template<typename ValueType>
@@ -226,7 +226,7 @@ namespace storm {
         
         template<typename ValueType>
         InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::notZero() const {
-            return this->toBdd();
+            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().BddPattern());
         }
         
         template<typename ValueType>
@@ -269,11 +269,6 @@ namespace storm {
         ValueType InternalAdd<DdType::CUDD, ValueType>::getMax() const {
             cudd::ADD constantMaxAdd = this->getCuddAdd().FindMax();
             return static_cast<double>(Cudd_V(constantMaxAdd.getNode()));
-        }
-        
-        template<typename ValueType>
-        InternalBdd<DdType::CUDD> InternalAdd<DdType::CUDD, ValueType>::toBdd() const {
-            return InternalBdd<DdType::CUDD>(ddManager, this->getCuddAdd().BddPattern());
         }
         
         template<typename ValueType>

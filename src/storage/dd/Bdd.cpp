@@ -189,7 +189,6 @@ namespace storm {
         uint_fast64_t Bdd<LibraryType>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
             if (LibraryType == DdType::CUDD) {
-                std::size_t numberOfDdVariables = 0;
                 for (auto const& metaVariable : this->getContainedMetaVariables()) {
                     numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
                 }

@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 
-#include <lace.h>
-#include <sylvan.h>
+#include "lace.h"
+#include "sylvan.h"
 
 namespace sylvan {
 
@@ -587,6 +587,8 @@ public:
      * Same as MtbddStrictThreshold (Bdd = Boolean Mtbdd)
      */
     Bdd BddStrictThreshold(double value) const;
+    
+    Bdd NotZero() const;
 
     /**
      * @brief Computes the support of a Mtbdd.

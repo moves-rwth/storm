@@ -139,7 +139,7 @@ TEST(SylvanDd, OperatorTest) {
 //    
 //    dd1 = !dd3;
 //    EXPECT_TRUE(dd1.isOne());
-//    
+//
 //    dd3 = dd1 || dd2;
 //    EXPECT_TRUE(dd3.isOne());
 //    

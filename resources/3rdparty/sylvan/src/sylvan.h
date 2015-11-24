@@ -35,16 +35,16 @@
  * To temporarily disable garbage collection, use sylvan_gc_disable() and sylvan_gc_enable().
  */
 
-#include <sylvan_config.h>
+#include "sylvan_config.h"
 
 #include <stdint.h>
 #include <stdio.h> // for FILE
 #include <stdlib.h>
-#include <lace.h> // for definitions
+#include "lace.h" // for definitions
 
-#include <sylvan_cache.h>
-#include <llmsset.h>
-#include <stats.h>
+#include "sylvan_cache.h"
+#include "llmsset.h"
+#include "stats.h"
 
 #ifndef SYLVAN_H
 #define SYLVAN_H
@@ -175,8 +175,8 @@ extern llmsset_t nodes;
 }
 #endif /* __cplusplus */
 
-#include <sylvan_bdd.h>
-#include <sylvan_ldd.h>
-#include <sylvan_mtbdd.h>
+#include "sylvan_bdd.h"
+#include "sylvan_ldd.h"
+#include "sylvan_mtbdd.h"
 
 #endif

@@ -178,7 +178,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::CUDD, ValueType> equals(InternalAdd<DdType::CUDD, ValueType> const& other) const;
+            InternalBdd<DdType::CUDD> equals(InternalAdd<DdType::CUDD, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one that have distinct function values.
@@ -186,7 +186,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::CUDD, ValueType> notEquals(InternalAdd<DdType::CUDD, ValueType> const& other) const;
+            InternalBdd<DdType::CUDD> notEquals(InternalAdd<DdType::CUDD, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are less
@@ -195,7 +195,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::CUDD, ValueType> less(InternalAdd<DdType::CUDD, ValueType> const& other) const;
+            InternalBdd<DdType::CUDD> less(InternalAdd<DdType::CUDD, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are less or
@@ -204,7 +204,7 @@ namespace storm {
              * @param other The DD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::CUDD, ValueType> lessOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const;
+            InternalBdd<DdType::CUDD> lessOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are greater
@@ -213,7 +213,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::CUDD, ValueType> greater(InternalAdd<DdType::CUDD, ValueType> const& other) const;
+            InternalBdd<DdType::CUDD> greater(InternalAdd<DdType::CUDD, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that maps all evaluations to one whose function value in the first ADD are greater
@@ -222,7 +222,7 @@ namespace storm {
              * @param other The ADD with which to perform the operation.
              * @return The resulting function represented as an ADD.
              */
-            InternalAdd<DdType::CUDD, ValueType> greaterOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const;
+            InternalBdd<DdType::CUDD> greaterOrEqual(InternalAdd<DdType::CUDD, ValueType> const& other) const;
             
             /*!
              * Retrieves the function that represents the current ADD to the power of the given ADD.
@@ -438,14 +438,6 @@ namespace storm {
              * @return The highest function value of any encoding.
              */
             ValueType getMax() const;
-            
-            /*!
-             * Converts the ADD to a BDD by mapping all values unequal to zero to 1. This effectively does the same as
-             * a call to notZero().
-             *
-             * @return The corresponding BDD.
-             */
-            InternalBdd<DdType::CUDD> toBdd() const;
             
             /*!
              * Retrieves whether this ADD represents the constant one function.
