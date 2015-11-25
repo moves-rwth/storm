@@ -81,7 +81,7 @@ namespace storm {
              *
              * @return The resulting ADD.
              */
-            Add<LibraryType, ValueType> operator!() const;
+//            Add<LibraryType, ValueType> operator!() const;
             
             /*!
              * Performs a logical or of the current anBd the given ADD. As a prerequisite, the operand ADDs need to be

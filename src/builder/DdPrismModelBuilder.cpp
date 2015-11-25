@@ -1033,7 +1033,7 @@ namespace storm {
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
             if (options.terminalStates || options.negatedTerminalStates) {
-                storm::dd::Add<Type, ValueType> terminalStatesAdd = generationInfo.manager->template getAddZero<ValueType>();
+                storm::dd::Bdd<Type> terminalStatesBdd = generationInfo.manager->getBddZero();
                 if (options.terminalStates) {
                     storm::expressions::Expression terminalExpression;
                     if (options.terminalStates.get().type() == typeid(storm::expressions::Expression)) {
@@ -1044,7 +1044,7 @@ namespace storm {
                     }
                 
                     STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
-                    terminalStatesAdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression);
+                    terminalStatesBdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
                 }
                 if (options.negatedTerminalStates) {
                     storm::expressions::Expression nonTerminalExpression;
@@ -1056,10 +1056,10 @@ namespace storm {
                     }
                     
                     STORM_LOG_TRACE("Making the states *not* satisfying " << nonTerminalExpression << " terminal.");
-                    terminalStatesAdd |= !generationInfo.rowExpressionAdapter->translateExpression(nonTerminalExpression);
+                    terminalStatesBdd |= !generationInfo.rowExpressionAdapter->translateExpression(nonTerminalExpression).toBdd();
                 }
                 
-                transitionMatrix *= !terminalStatesAdd;
+                transitionMatrix *= (!terminalStatesBdd).template toAdd<ValueType>();
             }
             
             // Cut the transitions and rewards to the reachable fragment of the state space.
@@ -1095,7 +1095,10 @@ namespace storm {
                         // For MDPs, however, we need to select an action associated with the self-loop, if we do not
                         // want to attach a lot of self-loops to the deadlock states.
                         storm::dd::Add<Type, ValueType> action = generationInfo.manager->template getAddOne<ValueType>();
-                        std::for_each(generationInfo.allNondeterminismVariables.begin(), generationInfo.allNondeterminismVariables.end(), [&action,&generationInfo] (storm::expressions::Variable const& metaVariable) { action *= !generationInfo.manager->template getIdentity<ValueType>(metaVariable); } );
+                        std::for_each(generationInfo.allNondeterminismVariables.begin(), generationInfo.allNondeterminismVariables.end(),
+                                      [&action, &generationInfo] (storm::expressions::Variable const& metaVariable) {
+                                          action *= generationInfo.manager->template getIdentity<ValueType>(metaVariable);
+                                      });
                         // Make sure that global variables do not change along the introduced self-loops.
                         for (auto const& var : generationInfo.allGlobalVariables) {
                             action *= generationInfo.variableToIdentityMap.at(var);
