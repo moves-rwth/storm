@@ -589,6 +589,8 @@ public:
     Bdd BddStrictThreshold(double value) const;
     
     Bdd NotZero() const;
+    
+    Bdd Equals(const Mtbdd& other) const;
 
     /**
      * @brief Computes the support of a Mtbdd.

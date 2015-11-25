@@ -24,7 +24,7 @@ namespace storm {
         
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::ite(InternalAdd<DdType::Sylvan, ValueType> const& thenDd, InternalAdd<DdType::Sylvan, ValueType> const& elseDd) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.NotZero().Ite(thenDd.sylvanMtbdd, elseDd.sylvanMtbdd));
         }
                 
         template<typename ValueType>
@@ -73,12 +73,12 @@ namespace storm {
         
         template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::equals(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager,  this->sylvanMtbdd.Equals(other.sylvanMtbdd));
         }
         
         template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::notEquals(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return !this->equals(other);
         }
         
         template<typename ValueType>
@@ -93,12 +93,12 @@ namespace storm {
         
         template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greater(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return !this->lessOrEqual(other);
         }
         
         template<typename ValueType>
         InternalBdd<DdType::Sylvan> InternalAdd<DdType::Sylvan, ValueType>::greaterOrEqual(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return !this->less(other);
         }
         
         template<typename ValueType>

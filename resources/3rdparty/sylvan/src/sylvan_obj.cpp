@@ -906,6 +906,12 @@ Mtbdd::NotZero() const
     return mtbdd_not_zero(mtbdd);
 }
 
+Bdd
+Mtbdd::Equals(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_equals(mtbdd, other.mtbdd);
+}
+
 Mtbdd
 Mtbdd::Support() const
 {

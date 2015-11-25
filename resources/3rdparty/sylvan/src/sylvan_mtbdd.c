@@ -1428,6 +1428,59 @@ TASK_IMPL_2(MTBDD, mtbdd_op_max, MTBDD*, pa, MTBDD*, pb)
 }
 
 /**
+ * Binary operation Equals (for MTBDDs of same type)
+ * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
+ * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
+ * then the result is mtbdd_false (i.e. not defined).
+ */
+TASK_IMPL_2(MTBDD, mtbdd_op_equals, MTBDD*, pa, MTBDD*, pb)
+{
+    MTBDD a = *pa, b = *pb;
+    if (a == mtbdd_false && b == mtbdd_false) return mtbdd_true;
+    if (a == mtbdd_true && b == mtbdd_true) return mtbdd_true;
+    
+    mtbddnode_t na = GETNODE(a);
+    mtbddnode_t nb = GETNODE(b);
+    
+    if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
+        uint64_t val_a = mtbddnode_getvalue(na);
+        uint64_t val_b = mtbddnode_getvalue(nb);
+        if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
+            // both uint64_t
+            int nega = mtbdd_isnegated(a);
+            int negb = mtbdd_isnegated(b);
+            if (val_a == val_b && !(nega ^ negb)) return mtbdd_true;
+            return mtbdd_false;
+        } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
+            // both double
+            double vval_a = *(double*)&val_a;
+            double vval_b = *(double*)&val_b;
+            int nega = mtbdd_isnegated(a);
+            int negb = mtbdd_isnegated(b);
+            if (vval_a == vval_b && !(nega ^ negb)) return mtbdd_true;
+            return mtbdd_false;
+        } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
+            // both fraction
+            uint64_t nom_a = val_a>>32;
+            uint64_t nom_b = val_b>>32;
+            uint64_t denom_a = val_a&0xffffffff;
+            uint64_t denom_b = val_b&0xffffffff;
+            int nega = mtbdd_isnegated(a);
+            int negb = mtbdd_isnegated(b);
+            if (nom_a == nom_b && denom_a == denom_b && !(nega ^ negb)) return mtbdd_true;
+            return mtbdd_false;
+        }
+    }
+    
+    if (a < b) {
+        *pa = b;
+        *pb = a;
+    }
+    
+    return mtbdd_invalid;
+}
+
+/**
  * Compute IF <f> THEN <g> ELSE <h>.
  * <f> must be a Boolean MTBDD (or standard BDD).
  */

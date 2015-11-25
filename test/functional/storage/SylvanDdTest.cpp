@@ -110,10 +110,11 @@ TEST(SylvanDd, OperatorTest) {
     
     EXPECT_FALSE(manager->template getAddZero<double>() != manager->template getAddZero<double>());
     EXPECT_TRUE(manager->template getAddZero<double>() != manager->template getAddOne<double>());
-
+    
     storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1 = manager->template getAddOne<double>();
     storm::dd::Add<storm::dd::DdType::Sylvan, double> dd2 = manager->template getAddOne<double>();
     storm::dd::Add<storm::dd::DdType::Sylvan, double> dd3 = dd1 + dd2;
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> bdd;
     EXPECT_TRUE(dd3 == manager->template getConstant<double>(2));
     
     dd3 += manager->template getAddZero<double>();
@@ -134,15 +135,15 @@ TEST(SylvanDd, OperatorTest) {
     dd3 /= manager->template getConstant<double>(2);
     EXPECT_TRUE(dd3.isOne());
     
-//    dd3 = !dd3;
-//    EXPECT_TRUE(dd3.isZero());
-//    
-//    dd1 = !dd3;
-//    EXPECT_TRUE(dd1.isOne());
-//
-//    dd3 = dd1 || dd2;
-//    EXPECT_TRUE(dd3.isOne());
-//    
+    bdd = !dd3.toBdd();
+    EXPECT_TRUE(bdd.isZero());
+    
+    bdd = !bdd;
+    EXPECT_TRUE(bdd.isOne());
+    
+    bdd = dd1.toBdd() || dd2.toBdd();
+    EXPECT_TRUE(bdd.isOne());
+    
 //    dd1 = manager->template getIdentity<double>(x.first);
 //    dd2 = manager->template getConstant<double>(5);
 //    

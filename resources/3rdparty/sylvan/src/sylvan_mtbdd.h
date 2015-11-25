@@ -251,6 +251,19 @@ TASK_DECL_2(MTBDD, mtbdd_op_max, MTBDD*, MTBDD*);
 TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
 
 /**
+ * Binary operation equals (for MTBDDs of same type)
+ * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
+ * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
+ * then the result is the other operand.
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_equals, MTBDD*, MTBDD*);
+
+/**
+ * Compute a == b
+ */
+#define mtbdd_equals(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_equals))
+    
+/**
  * Compute a + b
  */
 #define mtbdd_plus(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_plus))
