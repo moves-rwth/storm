@@ -26,22 +26,7 @@ namespace storm {
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::ite(InternalAdd<DdType::Sylvan, ValueType> const& thenDd, InternalAdd<DdType::Sylvan, ValueType> const& elseDd) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
         }
-        
-        template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator!() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
-        }
-        
-        template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator||(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
-        }
-        
-        template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType>& InternalAdd<DdType::Sylvan, ValueType>::operator|=(InternalAdd<DdType::Sylvan, ValueType> const& other) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
-        }
-        
+                
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator+(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Plus(other.sylvanMtbdd));

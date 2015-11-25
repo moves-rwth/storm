@@ -31,23 +31,7 @@ namespace storm {
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::ite(InternalAdd<DdType::CUDD, ValueType> const& thenDd, InternalAdd<DdType::CUDD, ValueType> const& elseDd) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().Ite(thenDd.getCuddAdd(), elseDd.getCuddAdd()));
         }
-        
-        template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator!() const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, ~this->getCuddAdd());
-        }
-        
-        template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator||(InternalAdd<DdType::CUDD, ValueType> const& other) const {
-            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd() | other.getCuddAdd());
-        }
-        
-        template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType>& InternalAdd<DdType::CUDD, ValueType>::operator|=(InternalAdd<DdType::CUDD, ValueType> const& other) {
-            this->cuddAdd = this->getCuddAdd() | other.getCuddAdd();
-            return *this;
-        }
-        
+                
         template<typename ValueType>
         InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::operator+(InternalAdd<DdType::CUDD, ValueType> const& other) const {
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd() + other.getCuddAdd());

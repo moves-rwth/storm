@@ -35,23 +35,6 @@ namespace storm {
             metaVariables.insert(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end());
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.ite(thenAdd.internalAdd, elseAdd.internalAdd), metaVariables);
         }
-        
-//        template<DdType LibraryType, typename ValueType>
-//        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::operator!() const {
-//            return Add<LibraryType, ValueType>(this->getDdManager(), !internalAdd, this->getContainedMetaVariables());
-//        }
-        
-        template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::operator||(Add<LibraryType, ValueType> const& other) const {
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd || other.internalAdd, Dd<LibraryType>::joinMetaVariables(*this, other));
-        }
-        
-        template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType>& Add<LibraryType, ValueType>::operator|=(Add<LibraryType, ValueType> const& other) {
-            this->addMetaVariables(other.getContainedMetaVariables());
-            internalAdd |= other.internalAdd;
-            return *this;
-        }
 
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::operator+(Add<LibraryType, ValueType> const& other) const {

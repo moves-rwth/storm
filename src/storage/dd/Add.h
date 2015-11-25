@@ -76,32 +76,6 @@ namespace storm {
             Add<LibraryType, ValueType> ite(Add<LibraryType, ValueType> const& thenAdd, Add<LibraryType, ValueType> const& elseAdd) const;
             
             /*!
-             * Logically inverts the current ADD. That is, all inputs yielding non-zero values will be mapped to zero in
-             * the result and vice versa.
-             *
-             * @return The resulting ADD.
-             */
-//            Add<LibraryType, ValueType> operator!() const;
-            
-            /*!
-             * Performs a logical or of the current anBd the given ADD. As a prerequisite, the operand ADDs need to be
-             * 0/1 ADDs.
-             *
-             * @param other The second ADD used for the operation.
-             * @return The logical or of the operands.
-             */
-            Add<LibraryType, ValueType> operator||(Add<LibraryType, ValueType> const& other) const;
-            
-            /*!
-             * Performs a logical or of the current and the given ADD and assigns it to the current ADD. As a
-             * prerequisite, the operand ADDs need to be 0/1 ADDs.
-             *
-             * @param other The second ADD used for the operation.
-             * @return A reference to the current ADD after the operation
-             */
-            Add<LibraryType, ValueType>& operator|=(Add<LibraryType, ValueType> const& other);
-            
-            /*!
              * Adds the two ADDs.
              *
              * @param other The ADD to add to the current one.

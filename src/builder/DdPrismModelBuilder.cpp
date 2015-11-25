@@ -543,7 +543,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::combineCommandsToActionMDP(GenerationInformation& generationInfo, std::vector<ActionDecisionDiagram>& commandDds, uint_fast64_t nondeterminismVariableOffset) {
-            storm::dd::Add<Type, ValueType> allGuards = generationInfo.manager->template getAddZero<ValueType>();
+            storm::dd::Bdd<Type> allGuards = generationInfo.manager->getBddZero();
             storm::dd::Add<Type, ValueType> allCommands = generationInfo.manager->template getAddZero<ValueType>();
             
             // Make all command DDs assign to the same global variables.
@@ -553,7 +553,7 @@ namespace storm {
             storm::dd::Add<Type, ValueType> sumOfGuards = generationInfo.manager->template getAddZero<ValueType>();
             for (auto const& commandDd : commandDds) {
                 sumOfGuards += commandDd.guardDd;
-                allGuards = allGuards || commandDd.guardDd;
+                allGuards |= commandDd.guardDd.toBdd();
             }
             uint_fast64_t maxChoices = static_cast<uint_fast64_t>(sumOfGuards.getMax());
 
@@ -634,7 +634,7 @@ namespace storm {
                     sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd).template toAdd<ValueType>();
                 }
                 
-                return ActionDecisionDiagram(allGuards, allCommands, assignedGlobalVariables, nondeterminismVariableOffset + numberOfBinaryVariables);
+                return ActionDecisionDiagram(allGuards.template toAdd<ValueType>(), allCommands, assignedGlobalVariables, nondeterminismVariableOffset + numberOfBinaryVariables);
             }
         }
 
@@ -685,7 +685,7 @@ namespace storm {
                 // Add a new variable that resolves the nondeterminism between the two choices.
                 storm::dd::Add<Type, ValueType> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables], 1).template toAdd<ValueType>().ite(action2Extended, action1Extended);
                 
-                return ActionDecisionDiagram(action1.guardDd || action2.guardDd, combinedTransitions, assignedGlobalVariables, numberOfUsedNondeterminismVariables + 1);
+                return ActionDecisionDiagram((action1.guardDd.toBdd() || action2.guardDd.toBdd()).template toAdd<ValueType>(), combinedTransitions, assignedGlobalVariables, numberOfUsedNondeterminismVariables + 1);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Illegal model type.");
             }

@@ -81,33 +81,7 @@ namespace storm {
              * @return The ADD corresponding to the if-then-else of the operands.
              */
             InternalAdd<DdType::Sylvan, ValueType> ite(InternalAdd<DdType::Sylvan, ValueType> const& thenAdd, InternalAdd<DdType::Sylvan, ValueType> const& elseAdd) const;
-            
-            /*!
-             * Logically inverts the current ADD. That is, all inputs yielding non-zero values will be mapped to zero in
-             * the result and vice versa.
-             *
-             * @return The resulting ADD.
-             */
-            InternalAdd<DdType::Sylvan, ValueType> operator!() const;
-            
-            /*!
-             * Performs a logical or of the current and the given ADD. As a prerequisite, the operand ADDs need to be
-             * 0/1 ADDs.
-             *
-             * @param other The second ADD used for the operation.
-             * @return The logical or of the operands.
-             */
-            InternalAdd<DdType::Sylvan, ValueType> operator||(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
-            
-            /*!
-             * Performs a logical or of the current and the given ADD and assigns it to the current ADD. As a
-             * prerequisite, the operand ADDs need to be 0/1 ADDs.
-             *
-             * @param other The second ADD used for the operation.
-             * @return A reference to the current ADD after the operation
-             */
-            InternalAdd<DdType::Sylvan, ValueType>& operator|=(InternalAdd<DdType::Sylvan, ValueType> const& other);
-            
+                        
             /*!
              * Adds the two ADDs.
              *
