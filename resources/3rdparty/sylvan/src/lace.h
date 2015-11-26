@@ -182,7 +182,7 @@ struct __lace_common_fields_only { TASK_COMMON_FIELDS(_Task) };
 #define LACE_COMMON_FIELD_SIZE sizeof(struct __lace_common_fields_only)
 
 typedef struct _Task {
-    TASK_COMMON_FIELDS(_Task);
+    TASK_COMMON_FIELDS(_Task)
     char p1[PAD(LACE_COMMON_FIELD_SIZE, P_SZ)];
     char d[LACE_TASKSIZE];
     char p2[PAD(ROUND(LACE_COMMON_FIELD_SIZE, P_SZ) + LACE_TASKSIZE, LINE_SIZE)];

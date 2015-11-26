@@ -144,36 +144,36 @@ TEST(SylvanDd, OperatorTest) {
     bdd = dd1.toBdd() || dd2.toBdd();
     EXPECT_TRUE(bdd.isOne());
     
-//    dd1 = manager->template getIdentity<double>(x.first);
-//    dd2 = manager->template getConstant<double>(5);
-//    
-//    dd3 = dd1.equals(dd2);
-//    EXPECT_EQ(1ul, dd3.getNonZeroCount());
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd4 = dd1.notEquals(dd2);
-//    EXPECT_TRUE(dd4.toBdd() == !dd3.toBdd());
-//    
-//    dd3 = dd1.less(dd2);
-//    EXPECT_EQ(11ul, dd3.getNonZeroCount());
-//    
-//    dd3 = dd1.lessOrEqual(dd2);
-//    EXPECT_EQ(12ul, dd3.getNonZeroCount());
-//    
-//    dd3 = dd1.greater(dd2);
-//    EXPECT_EQ(4ul, dd3.getNonZeroCount());
-//    
-//    dd3 = dd1.greaterOrEqual(dd2);
-//    EXPECT_EQ(5ul, dd3.getNonZeroCount());
-//    
-//    dd3 = (manager->getEncoding(x.first, 2).template toAdd<double>()).ite(dd2, dd1);
-//    dd4 = dd3.less(dd2);
-//    EXPECT_EQ(10ul, dd4.getNonZeroCount());
-//    
-//    dd4 = dd3.minimum(dd1);
-//    dd4 *= manager->getEncoding(x.first, 2).template toAdd<double>();
-//    dd4 = dd4.sumAbstract({x.first});
-//    EXPECT_EQ(2, dd4.getValue());
-//    
+    dd1 = manager->template getIdentity<double>(x.first);
+    dd2 = manager->template getConstant<double>(5);
+    
+    bdd = dd1.equals(dd2);
+    EXPECT_EQ(1ul, bdd.getNonZeroCount());
+    
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> bdd2 = dd1.notEquals(dd2);
+    EXPECT_TRUE(bdd2 == !bdd);
+    
+    bdd = dd1.less(dd2);
+    EXPECT_EQ(11ul, bdd.getNonZeroCount());
+    
+    bdd = dd1.lessOrEqual(dd2);
+    EXPECT_EQ(12ul, bdd.getNonZeroCount());
+    
+    bdd = dd1.greater(dd2);
+    EXPECT_EQ(4ul, bdd.getNonZeroCount());
+    
+    bdd = dd1.greaterOrEqual(dd2);
+    EXPECT_EQ(5ul, bdd.getNonZeroCount());
+    
+    dd3 = (manager->getEncoding(x.first, 2).template toAdd<double>()).ite(dd2, dd1);
+    bdd = dd3.less(dd2);
+    EXPECT_EQ(10ul, bdd.getNonZeroCount());
+
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd4 = dd3.minimum(dd1);
+    dd4 *= manager->getEncoding(x.first, 2).template toAdd<double>();
+    dd4 = dd4.sumAbstract({x.first});
+    EXPECT_EQ(2, dd4.getValue());
+//
 //    dd4 = dd3.maximum(dd1);
 //    dd4 *= manager->getEncoding(x.first, 2).template toAdd<double>();
 //    dd4 = dd4.sumAbstract({x.first});

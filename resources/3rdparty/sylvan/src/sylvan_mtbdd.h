@@ -259,6 +259,22 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
 TASK_DECL_2(MTBDD, mtbdd_op_equals, MTBDD*, MTBDD*);
 
 /**
+ * Binary operation Less (for MTBDDs of same type)
+ * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
+ * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
+ * then the result is the other operand.
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_less, MTBDD*, MTBDD*);
+
+/**
+ * Binary operation Less (for MTBDDs of same type)
+ * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
+ * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
+ * then the result is the other operand.
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, MTBDD*);
+    
+/**
  * Compute a == b
  */
 #define mtbdd_equals(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_equals))
@@ -292,6 +308,9 @@ TASK_DECL_2(MTBDD, mtbdd_op_equals, MTBDD*, MTBDD*);
  * Compute max(a, b)
  */
 #define mtbdd_max(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_max))
+    
+#define mtbdd_less_as_bdd(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_less))
+#define mtbdd_less_or_equal_as_bdd(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_less_or_equal))
 
 /**
  * Abstract the variables in <v> from <a> by taking the sum of all values
@@ -340,8 +359,12 @@ TASK_DECL_2(MTBDD, mtbdd_op_strict_threshold_double, MTBDD, size_t)
 /**
  * Monad that converts double to a Boolean MTBDD, translate terminals != 0 to 1 and to 0 otherwise;
  */
-TASK_DECL_1(MTBDD, mtbdd_not_zero, MTBDD)
-#define mtbdd_not_zero(dd) CALL(mtbdd_not_zero, dd)
+TASK_DECL_2(MTBDD, mtbdd_op_not_zero, MTBDD, size_t)
+    
+/**
+ * Monad that converts Boolean to a Double MTBDD, translate terminals true to 1 and to 0 otherwise;
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_bool_to_double, MTBDD, size_t)
     
 /**
  * Convert double to a Boolean MTBDD, translate terminals >= value to 1 and to 0 otherwise;
@@ -355,6 +378,12 @@ TASK_DECL_2(MTBDD, mtbdd_threshold_double, MTBDD, double);
 TASK_DECL_2(MTBDD, mtbdd_strict_threshold_double, MTBDD, double);
 #define mtbdd_strict_threshold_double(dd, value) CALL(mtbdd_strict_threshold_double, dd, value)
 
+TASK_DECL_1(MTBDD, mtbdd_not_zero, MTBDD)
+#define mtbdd_not_zero(dd) CALL(mtbdd_not_zero, dd)
+    
+TASK_DECL_1(MTBDD, mtbdd_bool_to_double, MTBDD)
+#define mtbdd_bool_to_double(dd) CALL(mtbdd_bool_to_double, dd)
+    
 /**
  * For two Double MTBDDs, calculate whether they are equal module some value epsilon
  * i.e. abs(a-b)<3

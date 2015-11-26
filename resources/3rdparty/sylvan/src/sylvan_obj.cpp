@@ -443,6 +443,12 @@ Bdd::NodeCount() const
     return sylvan_nodecount(bdd);
 }
 
+Mtbdd
+Bdd::toDoubleMtbdd() const {
+    LACE_ME;
+    return mtbdd_bool_to_double(bdd);
+}
+
 Bdd
 Bdd::bddOne()
 {
@@ -910,6 +916,32 @@ Bdd
 Mtbdd::Equals(const Mtbdd& other) const {
     LACE_ME;
     return mtbdd_equals(mtbdd, other.mtbdd);
+}
+
+Bdd
+Mtbdd::Less(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_less_as_bdd(mtbdd, other.mtbdd);
+}
+
+Bdd
+Mtbdd::LessOrEqual(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_less_or_equal_as_bdd(mtbdd, other.mtbdd);
+}
+
+double
+Mtbdd::getDoubleMax() const {
+    LACE_ME;
+    MTBDD maxNode = mtbdd_maximum(mtbdd);
+    return mtbdd_getdouble(maxNode);
+}
+
+double
+Mtbdd::getDoubleMin() const {
+    LACE_ME;
+    MTBDD minNode = mtbdd_minimum(mtbdd);
+    return mtbdd_getdouble(minNode);
 }
 
 Mtbdd

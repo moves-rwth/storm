@@ -27,6 +27,8 @@ namespace sylvan {
 
 class BddMap;
 
+class Mtbdd;
+    
 class Bdd {
     friend class Sylvan;
     friend class BddMap;
@@ -317,6 +319,8 @@ public:
      */
     size_t NodeCount() const;
 
+    Mtbdd toDoubleMtbdd() const;
+    
 private:
     BDD bdd;
 };
@@ -591,7 +595,15 @@ public:
     Bdd NotZero() const;
     
     Bdd Equals(const Mtbdd& other) const;
+    
+    Bdd Less(const Mtbdd& other) const;
 
+    Bdd LessOrEqual(const Mtbdd& other) const;
+    
+    double getDoubleMax() const;
+
+    double getDoubleMin() const;
+    
     /**
      * @brief Computes the support of a Mtbdd.
      */
