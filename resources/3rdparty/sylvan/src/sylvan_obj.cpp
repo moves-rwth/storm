@@ -944,6 +944,49 @@ Mtbdd::getDoubleMin() const {
     return mtbdd_getdouble(minNode);
 }
 
+bool
+Mtbdd::EqualNorm(const Mtbdd& other, double epsilon) const {
+    LACE_ME;
+    return mtbdd_equal_norm_d(mtbdd, other.mtbdd, epsilon);
+}
+
+bool
+Mtbdd::EqualNormRel(const Mtbdd& other, double epsilon) const {
+    LACE_ME;
+    return mtbdd_equal_norm_rel_d(mtbdd, other.mtbdd, epsilon);
+}
+
+Mtbdd
+Mtbdd::Floor() const {
+    LACE_ME;
+    return mtbdd_floor(mtbdd);
+}
+
+Mtbdd
+Mtbdd::Ceil() const {
+    LACE_ME;
+    return mtbdd_ceil(mtbdd);
+}
+
+Mtbdd
+Mtbdd::Pow(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_pow(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::Mod(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_mod(mtbdd, other.mtbdd);
+}
+
+Mtbdd
+Mtbdd::Logxy(const Mtbdd& other) const {
+    LACE_ME;
+    return mtbdd_logxy(mtbdd, other.mtbdd);
+}
+
+
 Mtbdd
 Mtbdd::Support() const
 {

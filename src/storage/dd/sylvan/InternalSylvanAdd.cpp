@@ -103,27 +103,27 @@ namespace storm {
         
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::pow(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Pow(other.sylvanMtbdd));
         }
         
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::mod(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Mod(other.sylvanMtbdd));
         }
         
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::logxy(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Logxy(other.sylvanMtbdd));
         }
         
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::floor() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Floor());
         }
         
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::ceil() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Ceil());
         }
         
         template<typename ValueType>
@@ -153,7 +153,11 @@ namespace storm {
         
         template<typename ValueType>
         bool InternalAdd<DdType::Sylvan, ValueType>::equalModuloPrecision(InternalAdd<DdType::Sylvan, ValueType> const& other, double precision, bool relative) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            if (relative) {
+                return this->sylvanMtbdd.EqualNormRel(other.sylvanMtbdd, precision);
+            } else {
+                return this->sylvanMtbdd.EqualNorm(other.sylvanMtbdd, precision);
+            }
         }
         
         template<typename ValueType>
@@ -227,12 +231,12 @@ namespace storm {
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::Sylvan, ValueType>::getMin() const {
-            return static_cast<ValueType>(this-sylvanMtbdd.getDoubleMin());
+            return static_cast<ValueType>(this->sylvanMtbdd.getDoubleMin());
         }
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::Sylvan, ValueType>::getMax() const {
-            return static_cast<ValueType>(this-sylvanMtbdd.getDoubleMax());
+            return static_cast<ValueType>(this->sylvanMtbdd.getDoubleMax());
         }
         
         template<typename ValueType>

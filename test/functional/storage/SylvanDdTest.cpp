@@ -173,16 +173,16 @@ TEST(SylvanDd, OperatorTest) {
     dd4 *= manager->getEncoding(x.first, 2).template toAdd<double>();
     dd4 = dd4.sumAbstract({x.first});
     EXPECT_EQ(2, dd4.getValue());
-//
-//    dd4 = dd3.maximum(dd1);
-//    dd4 *= manager->getEncoding(x.first, 2).template toAdd<double>();
-//    dd4 = dd4.sumAbstract({x.first});
-//    EXPECT_EQ(5, dd4.getValue());
-//    
-//    dd1 = manager->template getConstant<double>(0.01);
-//    dd2 = manager->template getConstant<double>(0.01 + 1e-6);
-//    EXPECT_TRUE(dd1.equalModuloPrecision(dd2, 1e-6, false));
-//    EXPECT_FALSE(dd1.equalModuloPrecision(dd2, 1e-6));
+
+    dd4 = dd3.maximum(dd1);
+    dd4 *= manager->getEncoding(x.first, 2).template toAdd<double>();
+    dd4 = dd4.sumAbstract({x.first});
+    EXPECT_EQ(5, dd4.getValue());
+    
+    dd1 = manager->template getConstant<double>(0.01);
+    dd2 = manager->template getConstant<double>(0.01 + 1e-6);
+    EXPECT_TRUE(dd1.equalModuloPrecision(dd2, 1e-6, false));
+    EXPECT_FALSE(dd1.equalModuloPrecision(dd2, 1e-6));
 }
 
 //TEST(SylvanDd, AbstractionTest) {

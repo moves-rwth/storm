@@ -604,6 +604,20 @@ public:
 
     double getDoubleMin() const;
     
+    bool EqualNorm(const Mtbdd& other, double epsilon) const;
+
+    bool EqualNormRel(const Mtbdd& other, double epsilon) const;
+    
+    Mtbdd Floor() const;
+
+    Mtbdd Ceil() const;
+    
+    Mtbdd Pow(const Mtbdd& other) const;
+
+    Mtbdd Mod(const Mtbdd& other) const;
+
+    Mtbdd Logxy(const Mtbdd& other) const;
+
     /**
      * @brief Computes the support of a Mtbdd.
      */
