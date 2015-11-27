@@ -58,7 +58,6 @@ VOID_TASK_0(llmsset_init_worker)
     // yes, ugly. for now, we use a global thread-local value.
     // that is a problem with multiple tables.
     // so, for now, do NOT use multiple tables!!
-    INIT_THREAD_LOCAL(my_region);
     CALL(llmsset_reset_region);
 }
 
@@ -387,6 +386,7 @@ llmsset_create(size_t initial_size, size_t max_size)
     dbs->destroy_cb = NULL;
 
     LACE_ME;
+    INIT_THREAD_LOCAL(my_region);
     TOGETHER(llmsset_init_worker);
 
     return dbs;
