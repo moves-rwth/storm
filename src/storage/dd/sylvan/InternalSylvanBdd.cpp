@@ -104,8 +104,11 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Support());
         }
         
-        uint_fast64_t InternalBdd<DdType::Sylvan>::getNonZeroCount(InternalBdd<DdType::Sylvan> const& cube, uint_fast64_t numberOfDdVariables) const {
-            return static_cast<uint_fast64_t>(this->sylvanBdd.SatCount(cube.sylvanBdd));
+        uint_fast64_t InternalBdd<DdType::Sylvan>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
+            if (numberOfDdVariables == 0) {
+                return 0;
+            }
+            return static_cast<uint_fast64_t>(this->sylvanBdd.SatCount(numberOfDdVariables));
         }
         
         uint_fast64_t InternalBdd<DdType::Sylvan>::getLeafCount() const {

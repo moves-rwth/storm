@@ -10,35 +10,35 @@
 
 #include "src/storage/SparseMatrix.h"
 
-//TEST(SylvanDd, Constants) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> zero;
-//    ASSERT_NO_THROW(zero = manager->template getAddZero<double>());
-//    
-//    EXPECT_EQ(0ul, zero.getNonZeroCount());
-//    EXPECT_EQ(1ul, zero.getLeafCount());
-//    EXPECT_EQ(1ul, zero.getNodeCount());
-//    EXPECT_EQ(0, zero.getMin());
-//    EXPECT_EQ(0, zero.getMax());
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> one;
-//    ASSERT_NO_THROW(one = manager->template getAddOne<double>());
-//    
-//    EXPECT_EQ(1ul, one.getNonZeroCount());
-//    EXPECT_EQ(1ul, one.getLeafCount());
-//    EXPECT_EQ(1ul, one.getNodeCount());
-//    EXPECT_EQ(1, one.getMin());
-//    EXPECT_EQ(1, one.getMax());
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> two;
-//    ASSERT_NO_THROW(two = manager->template getConstant<double>(2));
-//    
-//    EXPECT_EQ(1ul, two.getNonZeroCount());
-//    EXPECT_EQ(1ul, two.getLeafCount());
-//    EXPECT_EQ(1ul, two.getNodeCount());
-//    EXPECT_EQ(2, two.getMin());
-//    EXPECT_EQ(2, two.getMax());
-//}
+TEST(SylvanDd, Constants) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> zero;
+    ASSERT_NO_THROW(zero = manager->template getAddZero<double>());
+    
+    EXPECT_EQ(0ul, zero.getNonZeroCount());
+    EXPECT_EQ(1ul, zero.getLeafCount());
+    EXPECT_EQ(1ul, zero.getNodeCount());
+    EXPECT_EQ(0, zero.getMin());
+    EXPECT_EQ(0, zero.getMax());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> one;
+    ASSERT_NO_THROW(one = manager->template getAddOne<double>());
+    
+    EXPECT_EQ(0ul, one.getNonZeroCount());
+    EXPECT_EQ(1ul, one.getLeafCount());
+    EXPECT_EQ(1ul, one.getNodeCount());
+    EXPECT_EQ(1, one.getMin());
+    EXPECT_EQ(1, one.getMax());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> two;
+    ASSERT_NO_THROW(two = manager->template getConstant<double>(2));
+    
+    EXPECT_EQ(0ul, two.getNonZeroCount());
+    EXPECT_EQ(1ul, two.getLeafCount());
+    EXPECT_EQ(1ul, two.getNodeCount());
+    EXPECT_EQ(2, two.getMin());
+    EXPECT_EQ(2, two.getMax());
+}
 
 TEST(SylvanDd, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
@@ -72,11 +72,17 @@ TEST(SylvanDd, EncodingTest) {
     EXPECT_EQ(5ul, encoding.getNodeCount());
     EXPECT_EQ(1ul, encoding.getLeafCount());
     
-//    // As an MTBDD, the 0-leaf is there, so the count is actually 2 and the node count is 6.
-//    EXPECT_EQ(6ul, encoding.template toAdd<double>().getNodeCount());
-//    EXPECT_EQ(2ul, encoding.template toAdd<double>().getLeafCount());
+    encoding.exportToDot("encoding.dot");
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> add;
+    ASSERT_NO_THROW(add = encoding.template toAdd<double>());
+
+    // As an MTBDD, the 0-leaf is there, so the count is actually 2 and the node count is 6.
+    add.exportToDot("add.dot");
+    EXPECT_EQ(6ul, add.getNodeCount());
+    EXPECT_EQ(2ul, add.getLeafCount());
 }
-//
+
 TEST(SylvanDd, RangeTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x;
@@ -90,18 +96,18 @@ TEST(SylvanDd, RangeTest) {
     EXPECT_EQ(5ul, range.getNodeCount());
 }
 
-//TEST(SylvanDd, IdentityTest) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> identity;
-//    ASSERT_NO_THROW(identity = manager->getIdentity<double>(x.first));
-//    
-//    EXPECT_EQ(9ul, identity.getNonZeroCount());
-//    EXPECT_EQ(10ul, identity.getLeafCount());
-//    EXPECT_EQ(21ul, identity.getNodeCount());
-//}
-//
+TEST(SylvanDd, IdentityTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> identity;
+    ASSERT_NO_THROW(identity = manager->getIdentity<double>(x.first));
+
+    EXPECT_EQ(9ul, identity.getNonZeroCount());
+    EXPECT_EQ(10ul, identity.getLeafCount());
+    EXPECT_EQ(21ul, identity.getNodeCount());
+}
+
 TEST(SylvanDd, OperatorTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
@@ -213,7 +219,7 @@ TEST(SylvanDd, OperatorTest) {
 //    dd3 *= manager->template getConstant<double>(3);
 //    ASSERT_THROW(dd3 = dd3.sumAbstract({x.second}), storm::exceptions::InvalidArgumentException);
 //    ASSERT_NO_THROW(dd3 = dd3.sumAbstract({x.first}));
-//    EXPECT_EQ(1ul, dd3.getNonZeroCount());
+//    EXPECT_EQ(0ul, dd3.getNonZeroCount());
 //    EXPECT_EQ(3, dd3.getMax());
 //    
 //    dd3 = dd1.equals(dd2);
@@ -227,7 +233,7 @@ TEST(SylvanDd, OperatorTest) {
 //    dd3 *= manager->template getConstant<double>(3);
 //    ASSERT_THROW(dd3 = dd3.maxAbstract({x.second}), storm::exceptions::InvalidArgumentException);
 //    ASSERT_NO_THROW(dd3 = dd3.maxAbstract({x.first}));
-//    EXPECT_EQ(1ul, dd3.getNonZeroCount());
+//    EXPECT_EQ(0ul, dd3.getNonZeroCount());
 //    EXPECT_EQ(3, dd3.getMax());
 //}
 //

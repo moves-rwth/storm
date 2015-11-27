@@ -93,3 +93,10 @@ TASK_DECL_1(MTBDD, mtbdd_ceil, MTBDD)
 TASK_DECL_2(MTBDD, mtbdd_op_bool_to_double, MTBDD, size_t)
 TASK_DECL_1(MTBDD, mtbdd_bool_to_double, MTBDD)
 #define mtbdd_bool_to_double(dd) CALL(mtbdd_bool_to_double, dd)
+
+/**
+ * Count the number of assignments (minterms) leading to a non-zero
+ */
+TASK_DECL_2(double, mtbdd_non_zero_count, MTBDD, size_t);
+#define mtbdd_non_zero_count(dd, nvars) CALL(mtbdd_non_zero_count, dd, nvars)
+

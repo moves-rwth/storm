@@ -23,7 +23,7 @@ TEST(CuddDd, Constants) {
     storm::dd::Add<storm::dd::DdType::CUDD, double> one;
     ASSERT_NO_THROW(one = manager->template getAddOne<double>());
     
-    EXPECT_EQ(1ul, one.getNonZeroCount());
+    EXPECT_EQ(0ul, one.getNonZeroCount());
     EXPECT_EQ(1ul, one.getLeafCount());
     EXPECT_EQ(1ul, one.getNodeCount());
     EXPECT_EQ(1, one.getMin());
@@ -32,7 +32,7 @@ TEST(CuddDd, Constants) {
     storm::dd::Add<storm::dd::DdType::CUDD, double> two;
     ASSERT_NO_THROW(two = manager->template getConstant<double>(2));
     
-    EXPECT_EQ(1ul, two.getNonZeroCount());
+    EXPECT_EQ(0ul, two.getNonZeroCount());
     EXPECT_EQ(1ul, two.getLeafCount());
     EXPECT_EQ(1ul, two.getNodeCount());
     EXPECT_EQ(2, two.getMin());
@@ -212,7 +212,7 @@ TEST(CuddDd, AbstractionTest) {
     dd3 *= manager->template getConstant<double>(3);
     ASSERT_THROW(dd3 = dd3.sumAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.sumAbstract({x.first}));
-    EXPECT_EQ(1ul, dd3.getNonZeroCount());
+    EXPECT_EQ(0ul, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
 
     dd3 = dd1.equals(dd2).template toAdd<double>();
@@ -226,7 +226,7 @@ TEST(CuddDd, AbstractionTest) {
     dd3 *= manager->template getConstant<double>(3);
     ASSERT_THROW(dd3 = dd3.maxAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.maxAbstract({x.first}));
-    EXPECT_EQ(1ul, dd3.getNonZeroCount());
+    EXPECT_EQ(0ul, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
 }
 

@@ -110,7 +110,7 @@ namespace storm {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Support());
         }
         
-        uint_fast64_t InternalBdd<DdType::CUDD>::getNonZeroCount(InternalBdd<DdType::CUDD> const& cube, uint_fast64_t numberOfDdVariables) const {
+        uint_fast64_t InternalBdd<DdType::CUDD>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
             return static_cast<uint_fast64_t>(this->getCuddBdd().CountMinterm(static_cast<int>(numberOfDdVariables)));
         }
         

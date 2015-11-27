@@ -188,16 +188,10 @@ namespace storm {
         template<DdType LibraryType>
         uint_fast64_t Bdd<LibraryType>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
-            if (LibraryType == DdType::CUDD) {
-                for (auto const& metaVariable : this->getContainedMetaVariables()) {
-                    numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
-                }
+            for (auto const& metaVariable : this->getContainedMetaVariables()) {
+                numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
             }
-            Bdd<LibraryType> cube;
-            if (LibraryType == DdType::Sylvan) {
-                cube = Bdd<LibraryType>::getCube(*this->getDdManager(), this->getContainedMetaVariables());
-            }
-            return internalBdd.getNonZeroCount(cube, numberOfDdVariables);
+            return internalBdd.getNonZeroCount(numberOfDdVariables);
         }
         
         template<DdType LibraryType>

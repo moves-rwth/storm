@@ -185,8 +185,8 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const {
             std::set<storm::expressions::Variable> newContainedMetaVariables;
-            std::vector<InternalAdd<LibraryType, ValueType>> from;
-            std::vector<InternalAdd<LibraryType, ValueType>> to;
+            std::vector<InternalBdd<LibraryType>> from;
+            std::vector<InternalBdd<LibraryType>> to;
             for (auto const& metaVariablePair : metaVariablePairs) {
                 DdMetaVariable<LibraryType> const& variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
                 DdMetaVariable<LibraryType> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
@@ -200,10 +200,10 @@ namespace storm {
                 }
                 
                 for (auto const& ddVariable : variable1.getDdVariables()) {
-                    from.push_back(ddVariable.template toAdd<ValueType>());
+                    from.push_back(ddVariable);
                 }
                 for (auto const& ddVariable : variable2.getDdVariables()) {
-                    to.push_back(ddVariable.template toAdd<ValueType>());
+                    to.push_back(ddVariable);
                 }
             }
             STORM_LOG_THROW(from.size() == to.size(), storm::exceptions::InvalidArgumentException, "Unable to swap mismatching meta variables.");
@@ -270,16 +270,10 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         uint_fast64_t Add<LibraryType, ValueType>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
-            if (LibraryType == DdType::CUDD) {
-                for (auto const& metaVariable : this->getContainedMetaVariables()) {
-                    numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
-                }
+            for (auto const& metaVariable : this->getContainedMetaVariables()) {
+                numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
             }
-            Bdd<LibraryType> cube;
-            if (LibraryType == DdType::Sylvan) {
-                cube = Bdd<LibraryType>::getCube(*this->getDdManager(), this->getContainedMetaVariables());
-            }
-            return internalAdd.getNonZeroCount(cube, numberOfDdVariables);
+            return internalAdd.getNonZeroCount(numberOfDdVariables);
         }
         
         template<DdType LibraryType, typename ValueType>

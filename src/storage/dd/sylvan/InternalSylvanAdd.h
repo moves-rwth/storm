@@ -293,7 +293,7 @@ namespace storm {
              * @param to The vector that specifies the 'to' part of the variable renaming.
              * @return The resulting ADD.
              */
-            InternalAdd<DdType::Sylvan, ValueType> swapVariables(std::vector<InternalAdd<DdType::Sylvan, ValueType>> const& from, std::vector<InternalAdd<DdType::Sylvan, ValueType>> const& to) const;
+            InternalAdd<DdType::Sylvan, ValueType> swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const;
             
             /*!
              * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta
@@ -379,11 +379,10 @@ namespace storm {
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
-             * @param cube The cube of variables contained in this BDD.
-             * @param numberOfDdVariables The number of DD variables contained in this BDD. This is ignored.
+             * @param numberOfDdVariables The number of DD variables contained in this BDD.
              * @return The number of encodings that are mapped to a non-zero value.
              */
-            virtual uint_fast64_t getNonZeroCount(InternalBdd<DdType::Sylvan> const& cube, uint_fast64_t numberOfDdVariables) const;
+            virtual uint_fast64_t getNonZeroCount(uint_fast64_t numberOfDdVariables) const;
             
             /*!
              * Retrieves the number of leaves of the ADD.

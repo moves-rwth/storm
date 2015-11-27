@@ -287,13 +287,13 @@ namespace storm {
             
             /*!
              * Swaps the given pairs of DD variables in the ADD. The pairs of meta variables have to be represented by
-             * ADDs must have equal length.
+             * vectors of BDDs must have equal length.
              *
              * @param from The vector that specifies the 'from' part of the variable renaming.
              * @param to The vector that specifies the 'to' part of the variable renaming.
              * @return The resulting ADD.
              */
-            InternalAdd<DdType::CUDD, ValueType> swapVariables(std::vector<InternalAdd<DdType::CUDD, ValueType>> const& from, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& to) const;
+            InternalAdd<DdType::CUDD, ValueType> swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const;
             
             /*!
              * Multiplies the current ADD (representing a matrix) with the given matrix by summing over the given meta
@@ -379,11 +379,10 @@ namespace storm {
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
-             * @param cube A cube of variables that is ignored.
              * @param numberOfDdVariables The number of DD variables contained in this BDD.
              * @return The number of encodings that are mapped to a non-zero value.
              */
-            uint_fast64_t getNonZeroCount(InternalBdd<DdType::CUDD> const& cube, uint_fast64_t numberOfDdVariables) const;
+            uint_fast64_t getNonZeroCount(uint_fast64_t numberOfDdVariables) const;
             
             /*!
              * Retrieves the number of leaves of the ADD.

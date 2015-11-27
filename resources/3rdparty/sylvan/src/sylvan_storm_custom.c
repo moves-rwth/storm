@@ -380,7 +380,9 @@ TASK_IMPL_2(MTBDD, mtbdd_op_not_zero, MTBDD, a, size_t, v)
     }
     
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
-    return v > 0 ? mtbdd_invalid : mtbdd_invalid;
+    (void)v;
+    
+    return mtbdd_invalid;
 }
 
 TASK_IMPL_1(MTBDD, mtbdd_not_zero, MTBDD, dd)
@@ -410,7 +412,9 @@ TASK_IMPL_2(MTBDD, mtbdd_op_floor, MTBDD, a, size_t, v)
     }
     
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
-    return v > 0 ? mtbdd_invalid : mtbdd_invalid;
+    (void)v;
+    
+    return mtbdd_invalid;
 }
 
 TASK_IMPL_1(MTBDD, mtbdd_floor, MTBDD, dd)
@@ -438,9 +442,11 @@ TASK_IMPL_2(MTBDD, mtbdd_op_ceil, MTBDD, a, size_t, v)
             return mtbdd_isnegated(a) ? mtbdd_negate(result) : result;
         }
     }
-    
+
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
-    return v > 0 ? mtbdd_invalid : mtbdd_invalid;
+    (void)v;
+    
+    return mtbdd_invalid;
 }
 
 TASK_IMPL_1(MTBDD, mtbdd_ceil, MTBDD, dd)
@@ -455,10 +461,54 @@ TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_double, MTBDD, a, size_t, v)
     if (a == mtbdd_true) return mtbdd_double(1.0);
     
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
-    return v > 0 ? mtbdd_invalid : mtbdd_invalid;
+    (void)v;
+    
+    return mtbdd_invalid;
 }
 
 TASK_IMPL_1(MTBDD, mtbdd_bool_to_double, MTBDD, dd)
 {
     return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_double), 0);
+}
+
+/**
+ * Calculate the number of satisfying variable assignments according to <variables>.
+ */
+TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
+{
+    /* Trivial cases */
+    if (dd == mtbdd_false) return 0.0;
+
+    mtbddnode_t na = GETNODE(dd);
+    
+    if (mtbdd_isleaf(dd)) {
+        if (mtbddnode_gettype(na) == 0) {
+            return mtbdd_getuint64(dd) != 0 ? powl(2.0L, nvars) : 0.0;
+        } else if (mtbddnode_gettype(na) == 1) {
+            return mtbdd_getdouble(dd) != 0 ? powl(2.0L, nvars) : 0.0;
+        } else if (mtbddnode_gettype(na) == 2) {
+            return mtbdd_getnumer(dd) != 0 ? powl(2.0L, nvars) : 0.0;
+        }
+    }
+    
+    /* Perhaps execute garbage collection */
+    sylvan_gc_test();
+    
+    union {
+        double d;
+        uint64_t s;
+    } hack;
+    
+    /* Consult cache */
+    if (cache_get3(CACHE_BDD_SATCOUNT, dd, 0, nvars, &hack.s)) {
+        sylvan_stats_count(BDD_SATCOUNT_CACHED);
+        return hack.d;
+    }
+    
+    SPAWN(mtbdd_non_zero_count, mtbdd_gethigh(dd), nvars-1);
+    double low = CALL(mtbdd_non_zero_count, mtbdd_getlow(dd), nvars-1);
+    hack.d = low + SYNC(mtbdd_non_zero_count);
+    
+    cache_put3(CACHE_BDD_SATCOUNT, dd, 0, nvars, hack.s);
+    return hack.d;
 }

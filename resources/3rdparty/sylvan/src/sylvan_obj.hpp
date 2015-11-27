@@ -273,7 +273,7 @@ public:
     /**
      * @brief Computes the number of satisfying variable assignments, using variables in cube.
      */
-    double SatCount(const Bdd &variables) const;
+    double SatCount(size_t variableCount) const;
 
     /**
      * @brief Gets one satisfying assignment according to the variables.
@@ -617,6 +617,10 @@ public:
     Mtbdd Mod(const Mtbdd& other) const;
 
     Mtbdd Logxy(const Mtbdd& other) const;
+    
+    size_t CountLeaves() const;
+    
+    Mtbdd Permute(const std::vector<Bdd>& from, const std::vector<Bdd>& to) const;
 
     /**
      * @brief Computes the support of a Mtbdd.
@@ -638,8 +642,13 @@ public:
     /**
      * @brief Compute the number of satisfying variable assignments, using variables in cube.
      */
-    double SatCount(const Mtbdd &variables) const;
+    double SatCount(size_t variableCount) const;
 
+    /**
+     * @brief Compute the number of non-zero variable assignments, using variables in cube.
+     */
+    double NonZeroCount(size_t variableCount) const;
+    
     /**
      * @brief Gets the number of nodes in this Bdd. Not thread-safe!
      */

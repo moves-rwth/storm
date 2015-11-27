@@ -220,11 +220,10 @@ namespace storm {
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
              *
-             * @param cube A cube of variables that is ignored.
              * @param numberOfDdVariables The number of DD variables contained in this BDD.
              * @return The number of encodings that are mapped to a non-zero value.
              */
-            uint_fast64_t getNonZeroCount(InternalBdd<DdType::CUDD> const& cube, uint_fast64_t numberOfDdVariables) const;
+            uint_fast64_t getNonZeroCount(uint_fast64_t numberOfDdVariables) const;
             
             /*!
              * Retrieves the number of leaves of the DD.

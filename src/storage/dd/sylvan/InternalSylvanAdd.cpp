@@ -1,5 +1,7 @@
 #include "src/storage/dd/sylvan/InternalSylvanAdd.h"
 
+#include <iostream>
+
 #include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
 
 #include "src/utility/macros.h"
@@ -161,8 +163,14 @@ namespace storm {
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::swapVariables(std::vector<InternalAdd<DdType::Sylvan, ValueType>> const& from, std::vector<InternalAdd<DdType::Sylvan, ValueType>> const& to) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const {
+            std::vector<sylvan::Bdd> fromBdd;
+            std::vector<sylvan::Bdd> toBdd;
+            for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
+                fromBdd.push_back(it1->getSylvanBdd());
+                toBdd.push_back(it2->getSylvanBdd());
+            }
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Permute(fromBdd, toBdd));
         }
         
         template<typename ValueType>
@@ -215,18 +223,21 @@ namespace storm {
         }
         
         template<typename ValueType>
-        uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getNonZeroCount(InternalBdd<DdType::Sylvan> const& cube, uint_fast64_t numberOfDdVariables) const {
-            return static_cast<uint_fast64_t>(this->sylvanMtbdd.SatCount(cube.sylvanBdd));
+        uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
+            if (numberOfDdVariables == 0) {
+                return 0;
+            }
+            return static_cast<uint_fast64_t>(this->sylvanMtbdd.NonZeroCount(numberOfDdVariables));
         }
         
         template<typename ValueType>
         uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getLeafCount() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return static_cast<uint_fast64_t>(this->sylvanMtbdd.CountLeaves());
         }
         
         template<typename ValueType>
         uint_fast64_t InternalAdd<DdType::Sylvan, ValueType>::getNodeCount() const {
-            return static_cast<uint_fast64_t>(this->sylvanMtbdd.NodeCount()) + this->getLeafCount();
+            return static_cast<uint_fast64_t>(this->sylvanMtbdd.NodeCount());
         }
         
         template<typename ValueType>

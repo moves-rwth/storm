@@ -166,13 +166,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::swapVariables(std::vector<InternalAdd<DdType::CUDD, ValueType>> const& from, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& to) const {
+        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::swapVariables(std::vector<InternalBdd<DdType::CUDD>> const& from, std::vector<InternalBdd<DdType::CUDD>> const& to) const {
             std::vector<cudd::ADD> fromAdd;
             std::vector<cudd::ADD> toAdd;
             STORM_LOG_ASSERT(fromAdd.size() == toAdd.size(), "Sizes of vectors do not match.");
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
-                fromAdd.push_back(it1->getCuddAdd());
-                toAdd.push_back(it2->getCuddAdd());
+                fromAdd.push_back(it1->getCuddBdd().Add());
+                toAdd.push_back(it2->getCuddBdd().Add());
             }
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().SwapVariables(fromAdd, toAdd));
         }
@@ -229,7 +229,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getNonZeroCount(InternalBdd<DdType::CUDD> const& cube, uint_fast64_t numberOfDdVariables) const {
+        uint_fast64_t InternalAdd<DdType::CUDD, ValueType>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
+            // If the number of DD variables is zero, CUDD returns a number greater 0 for constant nodes different from
+            // zero, which is not the behaviour we expect.
+            if (numberOfDdVariables == 0) {
+                return 0;
+            }
             return static_cast<uint_fast64_t>(this->getCuddAdd().CountMinterm(static_cast<int>(numberOfDdVariables)));
         }
         

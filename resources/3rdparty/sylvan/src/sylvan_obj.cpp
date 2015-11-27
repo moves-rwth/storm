@@ -340,10 +340,10 @@ Bdd::GetShaHash() const
 }
 
 double
-Bdd::SatCount(const Bdd &variables) const
+Bdd::SatCount(size_t variableCount) const
 {
     LACE_ME;
-    return sylvan_satcount_cached(bdd, variables.bdd);
+    return mtbdd_satcount(bdd, variableCount);
 }
 
 void
@@ -986,6 +986,30 @@ Mtbdd::Logxy(const Mtbdd& other) const {
     return mtbdd_logxy(mtbdd, other.mtbdd);
 }
 
+size_t
+Mtbdd::CountLeaves() const {
+    LACE_ME;
+    return mtbdd_leafcount(mtbdd);
+}
+
+double
+Mtbdd::NonZeroCount(size_t variableCount) const {
+    LACE_ME;
+    return mtbdd_non_zero_count(mtbdd, variableCount);
+}
+
+Mtbdd
+Mtbdd::Permute(const std::vector<Bdd>& from, const std::vector<Bdd>& to) const {
+    LACE_ME;
+    
+    /* Create a map */
+    MtbddMap map;
+    for (int i=from.size()-1; i>=0; i--) {
+        map.put(from[i].TopVar(), to[i]);
+    }
+    
+    return sylvan_compose(mtbdd, map.mtbdd);
+}
 
 Mtbdd
 Mtbdd::Support() const
@@ -1008,10 +1032,10 @@ Mtbdd::Compose(MtbddMap &m) const
 }
 
 double
-Mtbdd::SatCount(const Mtbdd &variables) const
+Mtbdd::SatCount(size_t variableCount) const
 {
     LACE_ME;
-    return mtbdd_satcount(mtbdd, variables.mtbdd);
+    return mtbdd_satcount(mtbdd, variableCount);
 }
 
 size_t
@@ -1020,7 +1044,6 @@ Mtbdd::NodeCount() const
     LACE_ME;
     return mtbdd_nodecount(mtbdd);
 }
-
 
 /***
  * Implementation of class MtbddMap

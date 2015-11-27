@@ -12,7 +12,7 @@ namespace storm {
         
         InternalDdManager<DdType::Sylvan>::InternalDdManager() {
             if (numberOfInstances == 0) {
-                // Initialize lace: auto-detecting number of workers.
+                // Initialize lace: auto-detect number of workers.
                 lace_init(0, 1000000);
                 lace_startup(0, 0, 0);
                 
@@ -27,6 +27,7 @@ namespace storm {
             --numberOfInstances;
             if (numberOfInstances == 0) {
                 sylvan::Sylvan::quitPackage();
+                lace_exit();
             }
         }
         
