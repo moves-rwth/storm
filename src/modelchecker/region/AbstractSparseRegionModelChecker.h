@@ -33,7 +33,7 @@ namespace storm {
                 typedef typename storm::utility::region::VariableType<ParametricType> VariableType;
                 typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
 
-                explicit AbstractSparseRegionModelChecker(ParametricSparseModelType const& model);
+                explicit AbstractSparseRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model);
 
                 virtual ~AbstractSparseRegionModelChecker();
                 
@@ -66,7 +66,6 @@ namespace storm {
                 /*!
                  * Checks whether the given formula holds for all parameters that lie in the given region.
                  * Sets the region checkresult accordingly.
-                 * TODO: set region.satpoint and violated point correctly.
                  * 
                  * @note A formula has to be specified first.
                  * 
@@ -76,11 +75,20 @@ namespace storm {
                 void checkRegion(ParameterRegion<ParametricType>& region);
                 
                 /*!
-                 * Returns the reachability Value at the specified point by instantiating the sampling model. 
+                 * Returns the reachability Value at the specified point by instantiating and checking the sampling model. 
                  * 
                  * @param point The point (i.e. parameter evaluation) at which to compute the reachability value.
                  */
                 ConstantType getReachabilityValue(std::map<VariableType, CoefficientType>const& point);
+                
+                /*!
+                 * Returns the approximative Value for the given region by instantiating and checking the approximation model. 
+                 * 
+                 * @param region The region for which to compute the approximative value
+                 * @param proveAllSat if set to true, the returned value can be used to prove that the property is SATISFIED for all parameters in the given region. (false for VIOLATED)
+                 * @return a lower or upper bound of the actual reachability value (depending on the given flag 'proveAllSat' and whether the specified formula has a lower or an upper bound)
+                 */
+                ConstantType getApproximativeReachabilityValue(ParameterRegion<ParametricType> const& region, bool proveAllSat);
                 
                 /*!
                  * Returns true iff the given value satisfies the bound given by the specified property
@@ -97,16 +105,23 @@ namespace storm {
                  */
                 void printStatisticsToStream(std::ostream& outstream);
                 
+                /*!
+                 * Returns the model that has been specified upon initialization of this
+                 */
+                std::shared_ptr<ParametricSparseModelType> const& getModel() const;
+                
+                /*!
+                 * Returns the formula that has been specified upon initialization of this
+                 */
+                std::shared_ptr<storm::logic::OperatorFormula> const& getSpecifiedFormula() const;
 
             protected:
                 
                 /*!
                  * some trivial getters
                  */
-                ParametricSparseModelType const& getModel() const;
-                std::shared_ptr<storm::logic::OperatorFormula> const& getSpecifiedFormula() const;
                 ConstantType getSpecifiedFormulaBound() const;
-                bool specifiedFormulaHasUpperBound() const;
+                bool specifiedFormulaHasLowerBound() const;
                 bool const& isComputeRewards() const;
                 bool const isResultConstant() const;
                 std::shared_ptr<ParametricSparseModelType> const& getSimpleModel() const;
@@ -189,7 +204,7 @@ namespace storm {
                 void initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula);
                 
                 // The model this model checker is supposed to analyze.
-                ParametricSparseModelType const& model;
+                std::shared_ptr<ParametricSparseModelType> model;
                 //The currently specified formula
                 std::shared_ptr<storm::logic::OperatorFormula> specifiedFormula;
                 //A flag that is true iff we are interested in rewards
@@ -227,6 +242,7 @@ namespace storm {
             protected:
                 std::chrono::high_resolution_clock::duration timeComputeReachabilityFunction;
             };
+            
         } //namespace region
     } //namespace modelchecker
 } //namespace storm

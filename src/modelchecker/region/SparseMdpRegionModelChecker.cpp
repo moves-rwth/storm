@@ -34,9 +34,9 @@ namespace storm {
         namespace region {
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseMdpRegionModelChecker(ParametricSparseModelType const& model) : 
+            SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseMdpRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
                     AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
-                //intentionally left empty
+                STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidArgumentException, "Tried to create an mdp region model checker for a model that is not an mdp");
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -74,7 +74,7 @@ namespace storm {
                                                                                                   bool& isApproximationApplicable,
                                                                                                   boost::optional<ConstantType>& constantResult){
                 STORM_LOG_DEBUG("Preprocessing for MDPs started.");
-                STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Input model is required to have exactly one initial state.");
+                STORM_LOG_THROW(this->getModel()->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Input model is required to have exactly one initial state.");
                 storm::storage::BitVector maybeStates, targetStates;
                 preprocessForProbabilities(maybeStates, targetStates, isApproximationApplicable, constantResult);
                 if(constantResult && constantResult.get()>=storm::utility::zero<ConstantType>()){
@@ -83,15 +83,15 @@ namespace storm {
                 }
                 STORM_LOG_DEBUG("Elimination of deterministic states with constant outgoing transitions is happening now.");
                 // Determine the set of states that is reachable from the initial state without jumping over a target state.
-                storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, targetStates);
+                storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel()->getTransitionMatrix(), this->getModel()->getInitialStates(), maybeStates, targetStates);
                 // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
                 maybeStates &= reachableStates;
                 // Create a vector for the probabilities to go to a target state in one step.
-                std::vector<ParametricType> oneStepProbabilities = this->getModel().getTransitionMatrix().getConstrainedRowGroupSumVector(maybeStates, targetStates);
+                std::vector<ParametricType> oneStepProbabilities = this->getModel()->getTransitionMatrix().getConstrainedRowGroupSumVector(maybeStates, targetStates);
                 // Determine the initial state of the sub-model.
-                storm::storage::sparse::state_type initialState = *(this->getModel().getInitialStates() % maybeStates).begin();
+                storm::storage::sparse::state_type initialState = *(this->getModel()->getInitialStates() % maybeStates).begin();
                 // We then build the submatrix that only has the transitions of the maybe states.
-                storm::storage::SparseMatrix<ParametricType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates);
+                storm::storage::SparseMatrix<ParametricType> submatrix = this->getModel()->getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates);
                 boost::optional<std::vector<ParametricType>> noStateRewards;
                 // Eliminate all deterministic states with only constant outgoing transitions
                 // Convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
@@ -186,7 +186,7 @@ namespace storm {
                 //Other ingredients
                 std::unordered_map<std::string, ParametricRewardModelType> noRewardModels;
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> noChoiceLabeling;  
-                simpleModel = std::make_shared<ParametricSparseModelType>(matrixBuilder.build(), std::move(labeling), std::move(noRewardModels), std::move(noChoiceLabeling));
+                simpleModel = std::make_shared<storm::models::sparse::Mdp<ParametricType>>(matrixBuilder.build(), std::move(labeling), std::move(noRewardModels), std::move(noChoiceLabeling));
                 
                 //Get the simplified formula
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
@@ -201,7 +201,7 @@ namespace storm {
                                                                                                                   boost::optional<ConstantType>& constantResult) {
                 STORM_LOG_DEBUG("Preprocessing for Mdps and reachability probabilities invoked.");
                 //Get Target States
-                storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType> modelChecker(this->getModel());
+                storm::modelchecker::SparsePropositionalModelChecker<ParametricSparseModelType> modelChecker(*(this->getModel()));
                 std::unique_ptr<CheckResult> targetStatesResultPtr = modelChecker.check(
                             this->getSpecifiedFormula()->asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula()
                         );
@@ -209,14 +209,14 @@ namespace storm {
                 
                 //maybeStates: Compute the subset of states that have a probability of 0 or 1, respectively and reduce the considered states accordingly.
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
-                if (this->specifiedFormulaHasUpperBound()){
-                    statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel(), storm::storage::BitVector(this->getModel().getNumberOfStates(),true), targetStates);
+                if (this->specifiedFormulaHasLowerBound()){
+                    statesWithProbability01 = storm::utility::graph::performProb01Min(this->getModel()->getTransitionMatrix(), this->getModel()->getTransitionMatrix().getRowGroupIndices(), this->getModel()->getBackwardTransitions(), storm::storage::BitVector(this->getModel()->getNumberOfStates(),true), targetStates);
                 } else {
-                    statesWithProbability01 = storm::utility::graph::performProb01Min(this->getModel(), storm::storage::BitVector(this->getModel().getNumberOfStates(),true), targetStates);
+                    statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel()->getTransitionMatrix(), this->getModel()->getTransitionMatrix().getRowGroupIndices(), this->getModel()->getBackwardTransitions(), storm::storage::BitVector(this->getModel()->getNumberOfStates(),true), targetStates);
                 }
                 maybeStates = ~(statesWithProbability01.first | statesWithProbability01.second);
                 // If the initial state is known to have either probability 0 or 1, we can directly set the reachProbFunction.
-                storm::storage::sparse::state_type initialState = *this->getModel().getInitialStates().begin();
+                storm::storage::sparse::state_type initialState = *(this->getModel()->getInitialStates().begin());
                 if (!maybeStates.get(initialState)) {
                     STORM_LOG_WARN("The probability of the initial state is constant (zero or one)");
                     constantResult = statesWithProbability01.first.get(initialState) ? storm::utility::zero<ConstantType>() : storm::utility::one<ConstantType>();
@@ -229,7 +229,7 @@ namespace storm {
                 isApproximationApplicable=true;
                 bool isResultConstant=true;
                 for (auto state=maybeStates.begin(); (state!=maybeStates.end()) && isApproximationApplicable; ++state) {
-                    for(auto const& entry : this->getModel().getTransitionMatrix().getRowGroup(*state)){
+                    for(auto const& entry : this->getModel()->getTransitionMatrix().getRowGroup(*state)){
                         if(!storm::utility::isConstant(entry.getValue())){
                             isResultConstant=false;
                             if(!storm::utility::region::functionIsLinear(entry.getValue())){
@@ -276,7 +276,7 @@ namespace storm {
             }
 
 #ifdef STORM_HAVE_CARL
-            template class SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+            template class SparseMdpRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
 #endif
         } // namespace region 
     } // namespace modelchecker

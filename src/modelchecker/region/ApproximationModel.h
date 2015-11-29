@@ -80,6 +80,8 @@ namespace storm {
 
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
+                //The model type of the original (parametric) model
+                storm::models::ModelType typeOfParametricModel;
                 
                 //Some designated states in the original model
                 storm::storage::BitVector targetStates, maybeStates;

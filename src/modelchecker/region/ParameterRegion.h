@@ -30,10 +30,10 @@ namespace storm {
                 virtual ~ParameterRegion();
 
                 std::set<VariableType> getVariables() const;
-                CoefficientType const& getLowerBound(VariableType const& variable) const;
-                CoefficientType const& getUpperBound(VariableType const& variable) const;
-                const VariableSubstitutionType getUpperBounds() const;
-                const VariableSubstitutionType getLowerBounds() const;
+                CoefficientType const& getLowerBoundary(VariableType const& variable) const;
+                CoefficientType const& getUpperBoundary(VariableType const& variable) const;
+                const VariableSubstitutionType getUpperBoundaries() const;
+                const VariableSubstitutionType getLowerBoundaries() const;
 
                 /*!
                  * Returns a vector of all possible combinations of lower and upper bounds of the given variables.
@@ -89,15 +89,15 @@ namespace storm {
                 std::string toString() const;
 
                 /*
-                 * Can be used to parse a single parameter with its bounds from a string of the form "0.3<=p<=0.5".
+                 * Can be used to parse a single parameter with its boundaries from a string of the form "0.3<=p<=0.5".
                  * The numbers are parsed as doubles and then converted to SparseDtmcRegionModelChecker::CoefficientType.
                  * The results will be inserted in the given maps
                  * 
                  */
-                static void parseParameterBounds( 
-                        VariableSubstitutionType& lowerBounds,
-                        VariableSubstitutionType& upperBounds,
-                        std::string const& parameterBoundsString
+                static void parseParameterBoundaries( 
+                        VariableSubstitutionType& lowerBoundaries,
+                        VariableSubstitutionType& upperBoundaries,
+                        std::string const& parameterBoundariesString
                 );
 
                 /*
@@ -128,8 +128,8 @@ namespace storm {
 
                 void init();
 
-                VariableSubstitutionType const lowerBounds;
-                VariableSubstitutionType const upperBounds;
+                VariableSubstitutionType const lowerBoundaries;
+                VariableSubstitutionType const upperBoundaries;
                 std::set<VariableType> variables;
                 RegionCheckResult checkResult;
                 VariableSubstitutionType satPoint;

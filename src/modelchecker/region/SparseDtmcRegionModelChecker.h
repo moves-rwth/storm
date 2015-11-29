@@ -20,7 +20,7 @@ namespace storm {
                 typedef typename storm::utility::region::VariableType<ParametricType> VariableType;
                 typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
 
-                explicit SparseDtmcRegionModelChecker(ParametricSparseModelType const& model);
+                explicit SparseDtmcRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model);
 
                 virtual ~SparseDtmcRegionModelChecker();
 
@@ -86,7 +86,7 @@ namespace storm {
                  * Computes the reachability function via state elimination
                  * @note computeFlagsAndSimplifiedModel should be called before calling this
                  */
-                void computeReachabilityFunction(ParametricSparseModelType const& simpleModel);
+                void computeReachabilityFunction(storm::models::sparse::Dtmc<ParametricType> const& simpleModel);
 
                 /*!
                  * Checks the value of the function at the given sampling point.

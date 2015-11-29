@@ -27,32 +27,22 @@ namespace storm {
         inline void verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
             if (storm::settings::generalSettings().isParametricRegionSet()){
                 auto regions=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::getRegionsFromSettings();
-                if(model->getType() == storm::models::ModelType::Dtmc){
-                    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-                    storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double> modelchecker(*dtmc);
-                    for (auto const& formula : formulas) {
-                        std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given regions." << std::endl;
-                        STORM_LOG_THROW(modelchecker.canHandle(*formula.get()), storm::exceptions::InvalidSettingsException, "The parametric region check engine does not support this property.");
-                        modelchecker.specifyFormula(formula);
-                        modelchecker.checkRegions(regions);
-                        modelchecker.printStatisticsToStream(std::cout);
-                    }
-                } else if (model->getType() == storm::models::ModelType::Mdp){
-                    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = model->template as<storm::models::sparse::Mdp<storm::RationalFunction>>();
-                    storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double> modelchecker(*mdp);
-                    for (auto const& formula : formulas) {
-                        std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given regions." << std::endl;
-                        STORM_LOG_THROW(modelchecker.canHandle(*formula.get()), storm::exceptions::InvalidSettingsException, "The parametric region check engine does not support this property.");
-                        modelchecker.specifyFormula(formula);
-                        modelchecker.checkRegions(regions);
-                        modelchecker.printStatisticsToStream(std::cout);
-                    }
+                std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+                if(model->isOfType(storm::models::ModelType::Dtmc)){
+                    modelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(model);
+                } else if (model->isOfType(storm::models::ModelType::Mdp)){
+                    modelchecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(model);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Currently parametric region verification is only available for DTMCs and Mdps.");
                 }
-               // for(auto const& reg : regions){
-               //     std::cout << reg.toString() << "      Result: " << reg.getCheckResult() << std::endl;
-               // }
+                for (auto const& formula : formulas) {
+                    std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given regions." << std::endl;
+                    STORM_LOG_THROW(modelchecker->canHandle(*formula.get()), storm::exceptions::InvalidSettingsException, "The parametric region check engine does not support this property.");
+                    modelchecker->specifyFormula(formula);
+                    modelchecker->checkRegions(regions);
+                    modelchecker->printStatisticsToStream(std::cout);
+                    std::cout << std::endl;
+                }
             } else {
                 for (auto const& formula : formulas) {
                     STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");

@@ -30,11 +30,13 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             ApproximationModel<ParametricSparseModelType, ConstantType>::ApproximationModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula) {
                 //First some simple checks and initializations
+                this->typeOfParametricModel = parametricModel.getType();
                 if(formula->isProbabilityOperatorFormula()){
                     this->computeRewards=false;
+                    STORM_LOG_THROW(this->typeOfParametricModel==storm::models::ModelType::Dtmc || this->typeOfParametricModel==storm::models::ModelType::Mdp, storm::exceptions::InvalidArgumentException, "Approximation with probabilities is only implemented for Dtmcs and Mdps");
                 } else if(formula->isRewardOperatorFormula()){
                     this->computeRewards=true;
-                    STORM_LOG_THROW(parametricModel.getType()==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Approximation with rewards is only implemented for Dtmcs");
+                    STORM_LOG_THROW(this->typeOfParametricModel==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Approximation with rewards is only implemented for Dtmcs");
                     STORM_LOG_THROW(parametricModel.hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the approximation model should be unique");
                     STORM_LOG_THROW(parametricModel.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the approximation model should have state rewards only");
                 } else {
@@ -65,7 +67,7 @@ namespace storm {
                 }
                 this->matrixData.assignment.shrink_to_fit();
                 this->vectorData.assignment.shrink_to_fit();
-                if(parametricModel.getType()==storm::models::ModelType::Mdp){
+                if(this->typeOfParametricModel==storm::models::ModelType::Mdp){
                     initializePlayer1Matrix(parametricModel);
                     this->solverData.lastPlayer1Policy = Policy(this->solverData.player1Matrix.getRowGroupCount(), 0);
                 }
@@ -108,7 +110,7 @@ namespace storm {
                         for(uint_fast64_t substitutionId=0ull; substitutionId<numOfSubstitutions; ++substitutionId){
                             //compute actual substitution from substitutionId by interpreting the Id as a bit sequence.
                             //the occurringVariables.size() least significant bits of substitutionId will represent the substitution that we have to consider
-                            //(00...0 = lower bounds for all parameters, 11...1 = upper bounds for all parameters)
+                            //(00...0 = lower boundaries for all parameters, 11...1 = upper boundaries for all parameters)
                             std::map<VariableType, RegionBoundary> currSubstitution;
                             std::size_t parameterIndex=0ull;
                             for(auto const& parameter : occurringVariables){
@@ -196,7 +198,6 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             void ApproximationModel<ParametricSparseModelType, ConstantType>::initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices){
                 STORM_LOG_DEBUG("Approximation model initialization for Rewards");
-                STORM_LOG_THROW(parametricModel.getType()==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Rewards are only supported for DTMCs (yet)");
                 //Note: Since the original model is assumed to be a DTMC, there is no outgoing transition of a maybeState that leads to an infinity state.
                 //Hence, we do not have to set entries of the eqSys vector to infinity (as it would be required for mdp model checking...)
                 STORM_LOG_THROW(this->vectorData.vector.size()==this->matrixData.matrix.getRowCount(), storm::exceptions::UnexpectedException, "The size of the eq-sys vector does not match to the number of rows in the eq-sys matrix");
@@ -347,10 +348,10 @@ namespace storm {
                     for(std::pair<VariableType, RegionBoundary> const& sub : this->funcSubData.substitutions[substitutionIndex]){
                         switch(sub.second){
                             case RegionBoundary::LOWER:
-                                instantiatedSubs[substitutionIndex].insert(std::make_pair(sub.first, region.getLowerBound(sub.first)));
+                                instantiatedSubs[substitutionIndex].insert(std::make_pair(sub.first, region.getLowerBoundary(sub.first)));
                                 break;
                             case RegionBoundary::UPPER:
-                                instantiatedSubs[substitutionIndex].insert(std::make_pair(sub.first, region.getUpperBound(sub.first)));
+                                instantiatedSubs[substitutionIndex].insert(std::make_pair(sub.first, region.getUpperBoundary(sub.first)));
                                 break;
                             case RegionBoundary::UNSPECIFIED:
                                 //Insert some dummy value
@@ -396,37 +397,38 @@ namespace storm {
             }
             
                         
-            template<>
-            void ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, Policy& policy){
-                storm::solver::SolveGoal goal(computeLowerBounds);
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
-                storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
-                                    this->solverData.result, this->vectorData.vector,
-                                    goal.direction(),
-                                    policy,
-                                    this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<double>() : storm::utility::zero<double>()));
-            }
-            
-            template<>
-            void ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(bool computeLowerBounds, Policy& policy){
+            template<typename ParametricSparseModelType, typename ConstantType>
+            void ApproximationModel<ParametricSparseModelType, ConstantType>::invokeSolver(bool computeLowerBounds, Policy& policy){
                 storm::solver::SolveGoal player2Goal(computeLowerBounds);
-                std::unique_ptr<storm::solver::GameSolver<double>> solver = storm::utility::solver::GameSolverFactory<double>().create(this->solverData.player1Matrix, this->matrixData.matrix);
-                storm::utility::policyguessing::solveGame(*solver, 
-                                                          this->solverData.result, this->vectorData.vector,
-                                                          this->solverData.player1Goal.direction(), player2Goal.direction(), 
-                                                          this->solverData.lastPlayer1Policy, policy,
-                                                          this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<double>() : storm::utility::zero<double>()));
-                
-               // this->solverData.result = std::vector<double>(this->solverData.result.size(), 0.0);
-               // solver->solveGame(this->solverData.player1Goal.direction(), player2Goal.direction(), this->solverData.result, this->vectorData.vector);
+                if(this->typeOfParametricModel == storm::models::ModelType::Dtmc){
+                    //Invoke mdp model checking
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ConstantType>> solver = storm::solver::configureMinMaxLinearEquationSolver(player2Goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
+                    storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
+                                this->solverData.result, this->vectorData.vector,
+                                player2Goal.direction(),
+                                policy,
+                                this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>())
+                        );
+                } else if(this->typeOfParametricModel == storm::models::ModelType::Mdp){
+                    //Invoke stochastic two player game model checking
+                    std::unique_ptr<storm::solver::GameSolver<ConstantType>> solver = storm::utility::solver::GameSolverFactory<ConstantType>().create(this->solverData.player1Matrix, this->matrixData.matrix);
+                    storm::utility::policyguessing::solveGame(*solver, 
+                                this->solverData.result, this->vectorData.vector,
+                                this->solverData.player1Goal.direction(), player2Goal.direction(), 
+                                this->solverData.lastPlayer1Policy, policy,
+                                this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>())
+                        );
+                   // Alternatively(without policy guessing) 
+                   // this->solverData.result = std::vector<ConstantType>(this->solverData.result.size(), 0.0);
+                   // solver->solveGame(this->solverData.player1Goal.direction(), player2Goal.direction(), this->solverData.result, this->vectorData.vector);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Type of model");
+                }
             }
             
-                
-
 
 #ifdef STORM_HAVE_CARL
-            template class ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
-            template class ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+            template class ApproximationModel<storm::models::sparse::Model<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
 #endif
         } //namespace region
     }

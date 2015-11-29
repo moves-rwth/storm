@@ -33,10 +33,10 @@ namespace storm {
         namespace region {
                                 
             template<typename ParametricSparseModelType, typename ConstantType>
-            AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::AbstractSparseRegionModelChecker(ParametricSparseModelType const& model) : 
+            AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::AbstractSparseRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
                     model(model),
                     specifiedFormula(nullptr){
-                STORM_LOG_THROW(model.getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Model is required to have exactly one initial state.");
+                STORM_LOG_THROW(model->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Model is required to have exactly one initial state.");
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -45,13 +45,13 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            ParametricSparseModelType const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getModel() const {
+            std::shared_ptr<ParametricSparseModelType> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getModel() const {
                 return this->model;
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
             std::shared_ptr<storm::logic::OperatorFormula> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormula() const {
-                return specifiedFormula;
+                return this->specifiedFormula;
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -60,8 +60,8 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifiedFormulaHasUpperBound() const {
-                return !storm::logic::isLowerBound(this->getSpecifiedFormula()->getComparisonType());
+            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifiedFormulaHasLowerBound() const {
+                return storm::logic::isLowerBound(this->getSpecifiedFormula()->getComparisonType());
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -308,9 +308,7 @@ namespace storm {
                          proveAllSat=true;
                 }
 
-                bool computeLowerBounds = (!this->specifiedFormulaHasUpperBound() && proveAllSat) || (this->specifiedFormulaHasUpperBound() && !proveAllSat);
-                STORM_LOG_DEBUG("Approximation for " << (computeLowerBounds ? "lower" : "upper") << "bounds");
-                bool formulaSatisfied = this->valueIsInBoundOfFormula(this->getApproximationModel()->computeInitialStateValue(region, computeLowerBounds));
+                bool formulaSatisfied = this->valueIsInBoundOfFormula(this->getApproximativeReachabilityValue(region, proveAllSat));
 
                 //check if approximation was conclusive
                 if(proveAllSat && formulaSatisfied){
@@ -325,8 +323,7 @@ namespace storm {
                 if(region.getCheckResult()==RegionCheckResult::UNKNOWN){
                     //In this case, it makes sense to try to prove the contrary statement
                     proveAllSat=!proveAllSat;
-                    computeLowerBounds=!computeLowerBounds;
-                    formulaSatisfied = this->valueIsInBoundOfFormula(this->getApproximationModel()->computeInitialStateValue(region, computeLowerBounds));
+                    formulaSatisfied = this->valueIsInBoundOfFormula(this->getApproximativeReachabilityValue(region, proveAllSat));
 
                     //check if approximation was conclusive
                     if(proveAllSat && formulaSatisfied){
@@ -340,6 +337,12 @@ namespace storm {
                 }
                 //if we reach this point than the result is still inconclusive.
                 return false;            
+            }
+            
+            template<typename ParametricSparseModelType, typename ConstantType>
+            ConstantType AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getApproximativeReachabilityValue(ParameterRegion<ParametricType> const& region, bool proveAllSat){
+                bool computeLowerBounds = (this->specifiedFormulaHasLowerBound() && proveAllSat) || (!this->specifiedFormulaHasLowerBound() && !proveAllSat);
+                return this->getApproximationModel()->computeInitialStateValue(region, computeLowerBounds);
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -427,7 +430,7 @@ namespace storm {
 
                 outstream << std::endl << "Region Model Checker Statistics:" << std::endl;
                 outstream << "-----------------------------------------------" << std::endl;
-                outstream << "Model: " << this->model.getNumberOfStates() << " states, " << this->model.getNumberOfTransitions() << " transitions." << std::endl;
+                outstream << "Model: " << this->model->getNumberOfStates() << " states, " << this->model->getNumberOfTransitions() << " transitions." << std::endl;
                 outstream << "Formula: " << *this->getSpecifiedFormula() << std::endl;
                 if(this->isResultConstant()){
                     outstream << "The requested value is constant (i.e. independent of any parameters)" << std::endl;
@@ -468,8 +471,7 @@ namespace storm {
         
         //note: for other template instantiations, add rules for the typedefs of VariableType and CoefficientType in utility/regions.h
 #ifdef STORM_HAVE_CARL
-        template class AbstractSparseRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
-        template class AbstractSparseRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+        template class AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
 #endif
         } // namespace region
     } //namespace modelchecker

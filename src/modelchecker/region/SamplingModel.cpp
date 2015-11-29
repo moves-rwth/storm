@@ -29,11 +29,13 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             SamplingModel<ParametricSparseModelType, ConstantType>::SamplingModel(ParametricSparseModelType const& parametricModel, std::shared_ptr<storm::logic::OperatorFormula> formula){
                 //First some simple checks and initializations..
+                this->typeOfParametricModel = parametricModel.getType();
                 if(formula->isProbabilityOperatorFormula()){
                     this->computeRewards=false;
+                    STORM_LOG_THROW(this->typeOfParametricModel==storm::models::ModelType::Dtmc || this->typeOfParametricModel==storm::models::ModelType::Mdp, storm::exceptions::InvalidArgumentException, "Sampling with probabilities is only implemented for Dtmcs and Mdps");
                 } else if(formula->isRewardOperatorFormula()){
                     this->computeRewards=true;
-                    STORM_LOG_THROW(parametricModel.getType()==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Sampling with rewards is only implemented for Dtmcs");
+                    STORM_LOG_THROW(this->typeOfParametricModel==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Sampling with rewards is only implemented for Dtmcs");
                     STORM_LOG_THROW(parametricModel.hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should be unique");
                     STORM_LOG_THROW(parametricModel.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should have state rewards only");
                 } else {
@@ -75,7 +77,7 @@ namespace storm {
                 //First run: get a matrix with dummy entries at the new positions
                 ConstantType dummyValue = storm::utility::one<ConstantType>();
                 bool addRowGroups = parametricModel.getTransitionMatrix().hasNontrivialRowGrouping();
-                bool isDtmc = (parametricModel.getType()==storm::models::ModelType::Dtmc); //The equation system for DTMCs need the (I-P)-matrix (i.e., we need diagonal entries)
+                bool isDtmc = (this->typeOfParametricModel==storm::models::ModelType::Dtmc); //The equation system for DTMCs need the (I-P)-matrix (i.e., we need diagonal entries)
                 auto numOfMaybeStates = this->maybeStates.getNumberOfSetBits();
                 storm::storage::SparseMatrixBuilder<ConstantType> matrixBuilder(addRowGroups ? parametricModel.getTransitionMatrix().getRowCount() : numOfMaybeStates,
                                                                                 numOfMaybeStates,
@@ -188,7 +190,6 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             void SamplingModel<ParametricSparseModelType, ConstantType>::initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices){
                 //Run through the state reward vector... Note that this only works for dtmcs
-                STORM_LOG_THROW(parametricModel.getType()==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Rewards are only supported for DTMCs (yet)");
                 STORM_LOG_THROW(this->vectorData.vector.size()==this->matrixData.matrix.getRowCount(), storm::exceptions::UnexpectedException, "The size of the eq-sys vector does not match to the number of rows in the eq-sys matrix");
                 this->vectorData.assignment.reserve(vectorData.vector.size());
                 ConstantType dummyValue = storm::utility::one<ConstantType>();
@@ -251,26 +252,26 @@ namespace storm {
                 }
             }
             
-            template<>
-            void SamplingModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>::invokeSolver(){
-                std::unique_ptr<storm::solver::LinearEquationSolver<double>> solver = storm::utility::solver::LinearEquationSolverFactory<double>().create(this->matrixData.matrix);
-                solver->solveEquationSystem(this->solverData.result, this->vectorData.vector);
+            template<typename ParametricSparseModelType, typename ConstantType>
+            void SamplingModel<ParametricSparseModelType, ConstantType>::invokeSolver(){
+                if(this->typeOfParametricModel == storm::models::ModelType::Dtmc){
+                    std::unique_ptr<storm::solver::LinearEquationSolver<double>> solver = storm::utility::solver::LinearEquationSolverFactory<double>().create(this->matrixData.matrix);
+                    solver->solveEquationSystem(this->solverData.result, this->vectorData.vector);
+                } else if(this->typeOfParametricModel == storm::models::ModelType::Mdp){
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(this->solverData.solveGoal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
+                    storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
+                                        this->solverData.result, this->vectorData.vector,
+                                        this->solverData.solveGoal.direction(),
+                                        this->solverData.lastPolicy,
+                                        this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<double>() : storm::utility::zero<double>()));
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Type of model");
+                }
             }
-            template<>
-            void SamplingModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>::invokeSolver(){
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(this->solverData.solveGoal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
-                storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
-                                    this->solverData.result, this->vectorData.vector,
-                                    this->solverData.solveGoal.direction(),
-                                    this->solverData.lastPolicy,
-                                    this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<double>() : storm::utility::zero<double>()));
-            }
-            
             
         
 #ifdef STORM_HAVE_CARL
-            template class SamplingModel<storm::models::sparse::Dtmc<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
-            template class SamplingModel<storm::models::sparse::Mdp<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+            template class SamplingModel<storm::models::sparse::Model<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
 #endif
         } //namespace region
     }

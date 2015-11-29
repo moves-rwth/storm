@@ -302,6 +302,95 @@ namespace storm {
         }
         return result;
     }
+    
+    /*!
+     * Initializes a region model checker.
+     * 
+     * @param regionModelChecker the resulting model checker object
+     * @param programFilePath a path to the prism program file
+     * @param formulaString The considered formula (as path to the file or directly as string.) Should be exactly one formula.
+     * @param constantsString can be used to specify constants for certain parameters, e.g., "p=0.9,R=42"
+     * @return true when initialization was successful
+     */
+    inline bool initializeRegionModelChecker(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>& regionModelChecker,
+                                      std::string const& programFilePath,
+                                      std::string const& formulaString,
+                                      std::string const& constantsString=""){
+        regionModelChecker.reset();
+        // Program and formula
+        storm::prism::Program program = parseProgram(programFilePath);
+        program.checkValidity();
+        std::vector<std::shared_ptr<storm::logic::Formula>> formulas = parseFormulasForProgram(formulaString, program);
+        if(formulas.size()!=1){
+            STORM_LOG_ERROR("The given formulaString does not specify exactly one formula");
+            return false;
+        }
+        // Parametric model
+        typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
+        options.addConstantDefinitionsFromString(program, constantsString); 
+        options.preserveFormula(*formulas[0]);
+        std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program, options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+        preprocessModel(model,formulas);
+        // ModelChecker
+        if(model->isOfType(storm::models::ModelType::Dtmc)){
+            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(model);
+        } else if (model->isOfType(storm::models::ModelType::Mdp)){
+            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(model);
+        } else {
+            STORM_LOG_ERROR("The type of the given model is not supported (only Dtmcs or Mdps are supported");
+            return false;
+        }
+        // Specify the formula
+        if(!regionModelChecker->canHandle(*formulas[0])){
+            STORM_LOG_ERROR("The given formula is not supported.");
+            return false;
+        }
+        regionModelChecker->specifyFormula(formulas[0]);
+        return true;
+    }
+    
+    /*!
+     * Computes the reachability value at the given point by instantiating the model.
+     * 
+     * @param regionModelChecker the model checker object that is to be used
+     * @param point the valuation of the different variables
+     * @return true iff the specified formula is satisfied (i.e., iff the reachability value is within the bound of the formula)
+     */
+    inline bool checkSamplingPoint(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> regionModelChecker,
+                                   std::map<storm::Variable, storm::RationalNumber> const& point){
+        return regionModelChecker->valueIsInBoundOfFormula(regionModelChecker->getReachabilityValue(point));
+    }
+    
+    /*!
+     * Does an approximation of the reachability value for all parameters in the given region.
+     * @param regionModelChecker the model checker object that is to be used
+     * @param lowerBoundaries maps every variable to its lowest possible value within the region. (corresponds to the bottom left corner point in the 2D case)
+     * @param upperBoundaries maps every variable to its highest possible value within the region. (corresponds to the top right corner point in the 2D case)
+     * @param proveAllSat if set to true, it is checked whether the property is satisfied for all parameters in the given region. Otherwise, it is checked
+     *                    whether the property is violated for all parameters.
+     * @return true iff the objective was accomplished.
+     * 
+     * So there are the following cases:
+     * proveAllSat=true,  return=true  ==> the property is SATISFIED for all parameters in the given region
+     * proveAllSat=true,  return=false ==> the approximative value is NOT within the bound of the formula (either the approximation is too bad or there are points in the region that violate the property)
+     * proveAllSat=false, return=true  ==> the property is VIOLATED for all parameters in teh given region
+     * proveAllSat=false, return=false ==> the approximative value IS within the bound of the formula (either the approximation is too bad or there are points in the region that satisfy the property)
+     */
+    inline bool checkRegionApproximation(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> regionModelChecker,
+                                         std::map<storm::Variable, storm::RationalNumber> const& lowerBoundaries,
+                                         std::map<storm::Variable, storm::RationalNumber> const& upperBoundaries,
+                                         bool proveAllSat){
+        storm::modelchecker::region::ParameterRegion<storm::RationalFunction> region(lowerBoundaries, upperBoundaries);
+        double result=regionModelChecker->getApproximativeReachabilityValue(region, proveAllSat);
+        if(proveAllSat && regionModelChecker->valueIsInBoundOfFormula(result)){
+            return true;
+        } else if (!proveAllSat && !regionModelChecker->valueIsInBoundOfFormula(result)){
+            return true;
+        } else {
+            return false;
+        }
+    }
+    
             
 #endif
 

@@ -20,26 +20,26 @@ namespace storm {
         namespace region {
 
             template<typename ParametricType>
-            ParameterRegion<ParametricType>::ParameterRegion(VariableSubstitutionType const& lowerBounds, VariableSubstitutionType const& upperBounds) : lowerBounds(lowerBounds), upperBounds(upperBounds), checkResult(RegionCheckResult::UNKNOWN) {
+            ParameterRegion<ParametricType>::ParameterRegion(VariableSubstitutionType const& lowerBoundaries, VariableSubstitutionType const& upperBoundaries) : lowerBoundaries(lowerBoundaries), upperBoundaries(upperBoundaries), checkResult(RegionCheckResult::UNKNOWN) {
                 init();
             }
 
             template<typename ParametricType>
-            ParameterRegion<ParametricType>::ParameterRegion(VariableSubstitutionType&& lowerBounds, VariableSubstitutionType&& upperBounds) : lowerBounds(std::move(lowerBounds)), upperBounds(std::move(upperBounds)), checkResult(RegionCheckResult::UNKNOWN) {
+            ParameterRegion<ParametricType>::ParameterRegion(VariableSubstitutionType&& lowerBoundaries, VariableSubstitutionType&& upperBoundaries) : lowerBoundaries(std::move(lowerBoundaries)), upperBoundaries(std::move(upperBoundaries)), checkResult(RegionCheckResult::UNKNOWN) {
                 init();
             }
 
             template<typename ParametricType>
             void ParameterRegion<ParametricType>::init() {
-                //check whether both mappings map the same variables, check that lowerbound <= upper bound,  and pre-compute the set of variables
-                for (auto const& variableWithLowerBound : this->lowerBounds) {
-                    auto variableWithUpperBound = this->upperBounds.find(variableWithLowerBound.first);
-                    STORM_LOG_THROW((variableWithUpperBound != upperBounds.end()), storm::exceptions::InvalidArgumentException, "Couldn't create region. No upper bound specified for Variable " << variableWithLowerBound.first);
-                    STORM_LOG_THROW((variableWithLowerBound.second<=variableWithUpperBound->second), storm::exceptions::InvalidArgumentException, "Couldn't create region. The lower bound for " << variableWithLowerBound.first << " is larger then the upper bound");
-                    this->variables.insert(variableWithLowerBound.first);
+                //check whether both mappings map the same variables, check that lowerboundary <= upper boundary,  and pre-compute the set of variables
+                for (auto const& variableWithLowerBoundary : this->lowerBoundaries) {
+                    auto variableWithUpperBoundary = this->upperBoundaries.find(variableWithLowerBoundary.first);
+                    STORM_LOG_THROW((variableWithUpperBoundary != upperBoundaries.end()), storm::exceptions::InvalidArgumentException, "Couldn't create region. No upper boundary specified for Variable " << variableWithLowerBoundary.first);
+                    STORM_LOG_THROW((variableWithLowerBoundary.second<=variableWithUpperBoundary->second), storm::exceptions::InvalidArgumentException, "Couldn't create region. The lower boundary for " << variableWithLowerBoundary.first << " is larger then the upper boundary");
+                    this->variables.insert(variableWithLowerBoundary.first);
                 }
-                for (auto const& variableWithBound : this->upperBounds) {
-                    STORM_LOG_THROW((this->variables.find(variableWithBound.first) != this->variables.end()), storm::exceptions::InvalidArgumentException, "Couldn't create region. No lower bound specified for Variable " << variableWithBound.first);
+                for (auto const& variableWithBoundary : this->upperBoundaries) {
+                    STORM_LOG_THROW((this->variables.find(variableWithBoundary.first) != this->variables.end()), storm::exceptions::InvalidArgumentException, "Couldn't create region. No lower boundary specified for Variable " << variableWithBoundary.first);
                 }
             }
 
@@ -54,27 +54,27 @@ namespace storm {
             }
 
             template<typename ParametricType>
-            typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getLowerBound(VariableType const& variable) const {
-                auto const& result = lowerBounds.find(variable);
-                STORM_LOG_THROW(result != lowerBounds.end(), storm::exceptions::InvalidArgumentException, "tried to find a lower bound of a variable that is not specified by this region");
+            typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getLowerBoundary(VariableType const& variable) const {
+                auto const& result = lowerBoundaries.find(variable);
+                STORM_LOG_THROW(result != lowerBoundaries.end(), storm::exceptions::InvalidArgumentException, "tried to find a lower boundary of a variable that is not specified by this region");
                 return (*result).second;
             }
 
             template<typename ParametricType>
-            typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getUpperBound(VariableType const& variable) const {
-                auto const& result = upperBounds.find(variable);
-                STORM_LOG_THROW(result != upperBounds.end(), storm::exceptions::InvalidArgumentException, "tried to find an upper bound of a variable that is not specified by this region");
+            typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getUpperBoundary(VariableType const& variable) const {
+                auto const& result = upperBoundaries.find(variable);
+                STORM_LOG_THROW(result != upperBoundaries.end(), storm::exceptions::InvalidArgumentException, "tried to find an upper boundary of a variable that is not specified by this region");
                 return (*result).second;
             }
 
             template<typename ParametricType>
-            const typename ParameterRegion<ParametricType>::VariableSubstitutionType ParameterRegion<ParametricType>::getUpperBounds() const {
-                return upperBounds;
+            const typename ParameterRegion<ParametricType>::VariableSubstitutionType ParameterRegion<ParametricType>::getUpperBoundaries() const {
+                return upperBoundaries;
             }
 
             template<typename ParametricType>
-            const typename ParameterRegion<ParametricType>::VariableSubstitutionType ParameterRegion<ParametricType>::getLowerBounds() const {
-                return lowerBounds;
+            const typename ParameterRegion<ParametricType>::VariableSubstitutionType ParameterRegion<ParametricType>::getLowerBoundaries() const {
+                return lowerBoundaries;
             }
 
             template<typename ParametricType>
@@ -90,13 +90,13 @@ namespace storm {
                 for (uint_fast64_t vertexId = 0; vertexId < numOfVertices; ++vertexId) {
                     //interprete vertexId as a bit sequence
                     //the consideredVariables.size() least significant bits of vertex will always represent the next vertex
-                    //(00...0 = lower bounds for all variables, 11...1 = upper bounds for all variables)
+                    //(00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
                     std::size_t variableIndex = 0;
                     for (auto const& variable : consideredVariables) {
                         if ((vertexId >> variableIndex) % 2 == 0) {
-                            resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getLowerBound(variable)));
+                            resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getLowerBoundary(variable)));
                         } else {
-                            resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getUpperBound(variable)));
+                            resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getUpperBoundary(variable)));
                         }
                         ++variableIndex;
                     }
@@ -106,7 +106,7 @@ namespace storm {
 
             template<typename ParametricType>
             typename ParameterRegion<ParametricType>::VariableSubstitutionType ParameterRegion<ParametricType>::getSomePoint() const {
-                return this->getLowerBounds();
+                return this->getLowerBoundaries();
             }
 
             template<typename ParametricType>
@@ -163,11 +163,11 @@ namespace storm {
             std::string ParameterRegion<ParametricType>::toString() const {
                 std::stringstream regionstringstream;
                 for (auto var : this->getVariables()) {
-                    regionstringstream << storm::utility::region::convertNumber<double>(this->getLowerBound(var));
+                    regionstringstream << storm::utility::region::convertNumber<double>(this->getLowerBoundary(var));
                     regionstringstream << "<=";
                     regionstringstream << storm::utility::region::getVariableName(var);
                     regionstringstream << "<=";
-                    regionstringstream << storm::utility::region::convertNumber<double>(this->getUpperBound(var));
+                    regionstringstream << storm::utility::region::convertNumber<double>(this->getUpperBoundary(var));
                     regionstringstream << ",";
                 }
                 std::string regionstring = regionstringstream.str();
@@ -179,41 +179,41 @@ namespace storm {
 
 
                   template<typename ParametricType>
-                void ParameterRegion<ParametricType>::parseParameterBounds(
-                        VariableSubstitutionType& lowerBounds,
-                        VariableSubstitutionType& upperBounds,
-                        std::string const& parameterBoundsString){
+                void ParameterRegion<ParametricType>::parseParameterBoundaries(
+                        VariableSubstitutionType& lowerBoundaries,
+                        VariableSubstitutionType& upperBoundaries,
+                        std::string const& parameterBoundariesString){
 
-                    std::string::size_type positionOfFirstRelation = parameterBoundsString.find("<=");
-                    STORM_LOG_THROW(positionOfFirstRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundsString << " I could not find  a '<=' after the first number");
-                    std::string::size_type positionOfSecondRelation = parameterBoundsString.find("<=", positionOfFirstRelation+2);
-                    STORM_LOG_THROW(positionOfSecondRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundsString << " I could not find  a '<=' after the parameter");
+                    std::string::size_type positionOfFirstRelation = parameterBoundariesString.find("<=");
+                    STORM_LOG_THROW(positionOfFirstRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find  a '<=' after the first number");
+                    std::string::size_type positionOfSecondRelation = parameterBoundariesString.find("<=", positionOfFirstRelation+2);
+                    STORM_LOG_THROW(positionOfSecondRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find  a '<=' after the parameter");
 
-                    std::string parameter=parameterBoundsString.substr(positionOfFirstRelation+2,positionOfSecondRelation-(positionOfFirstRelation+2));
+                    std::string parameter=parameterBoundariesString.substr(positionOfFirstRelation+2,positionOfSecondRelation-(positionOfFirstRelation+2));
                     //removes all whitespaces from the parameter string:
                     parameter.erase(std::remove_if(parameter.begin(), parameter.end(), ::isspace), parameter.end());
-                    STORM_LOG_THROW(parameter.length()>0, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundsString << " I could not find a parameter");
+                    STORM_LOG_THROW(parameter.length()>0, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find a parameter");
 
                     VariableType var = storm::utility::region::getVariableFromString<VariableType>(parameter);
-                    CoefficientType lb = storm::utility::region::convertNumber<CoefficientType>(parameterBoundsString.substr(0,positionOfFirstRelation));
-                    CoefficientType ub = storm::utility::region::convertNumber<CoefficientType>(parameterBoundsString.substr(positionOfSecondRelation+2));
-                    lowerBounds.emplace(std::make_pair(var, lb));  
-                    upperBounds.emplace(std::make_pair(var, ub));
+                    CoefficientType lb = storm::utility::region::convertNumber<CoefficientType>(parameterBoundariesString.substr(0,positionOfFirstRelation));
+                    CoefficientType ub = storm::utility::region::convertNumber<CoefficientType>(parameterBoundariesString.substr(positionOfSecondRelation+2));
+                    lowerBoundaries.emplace(std::make_pair(var, lb));  
+                    upperBoundaries.emplace(std::make_pair(var, ub));
                 }
 
                 template<typename ParametricType>
                 ParameterRegion<ParametricType> ParameterRegion<ParametricType>::parseRegion(
                         std::string const& regionString){
-                    VariableSubstitutionType lowerBounds;
-                    VariableSubstitutionType upperBounds;
-                    std::vector<std::string> parameterBounds;
-                    boost::split(parameterBounds, regionString, boost::is_any_of(","));
-                    for(auto const& parameterBound : parameterBounds){
-                        if(!std::all_of(parameterBound.begin(),parameterBound.end(), ::isspace)){ //skip this string if it only consists of space
-                            parseParameterBounds(lowerBounds, upperBounds, parameterBound);
+                    VariableSubstitutionType lowerBoundaries;
+                    VariableSubstitutionType upperBoundaries;
+                    std::vector<std::string> parameterBoundaries;
+                    boost::split(parameterBoundaries, regionString, boost::is_any_of(","));
+                    for(auto const& parameterBoundary : parameterBoundaries){
+                        if(!std::all_of(parameterBoundary.begin(),parameterBoundary.end(), ::isspace)){ //skip this string if it only consists of space
+                            parseParameterBoundaries(lowerBoundaries, upperBoundaries, parameterBoundary);
                         }
                     }
-                    return ParameterRegion(std::move(lowerBounds), std::move(upperBounds));
+                    return ParameterRegion(std::move(lowerBoundaries), std::move(upperBoundaries));
                 }
 
                 template<typename ParametricType>

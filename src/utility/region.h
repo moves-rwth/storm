@@ -24,6 +24,7 @@ namespace storm {
     namespace utility{
         namespace region {
             
+            //Obtain the correct type for Variables and Coefficients out of a given Function type
 #ifdef STORM_HAVE_CARL
             template<typename FunctionType>
             using VariableType    = typename std::conditional<(std::is_same<FunctionType, storm::RationalFunction>::value), storm::Variable, std::nullptr_t>::type;
@@ -35,10 +36,6 @@ namespace storm {
             template<typename Functiontype>
             using CoefficientType = std::nullptr_t;
 #endif
-       //     template<typename FunctionType>
-        //    using PointType = std::map<VariableType<FunctionType>, CoefficientType<FunctionType>>;
-            
-            enum class VariableSort {VS_BOOL, VS_REAL, VS_INT};
             
             /*
              * Converts a number from one type to a number from the other.
@@ -61,6 +58,7 @@ namespace storm {
             template<typename VarType>
             VarType getVariableFromString(std::string variableString);
             
+            enum class VariableSort {VS_BOOL, VS_REAL, VS_INT};
             /*
              * Creates a new variable with the given name and the given sort
              * If there is already a variable with that name, that variable is returned.
