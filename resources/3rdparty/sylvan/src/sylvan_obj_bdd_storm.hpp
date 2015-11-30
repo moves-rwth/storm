@@ -1,0 +1,1 @@
+    Mtbdd toDoubleMtbdd() const;
