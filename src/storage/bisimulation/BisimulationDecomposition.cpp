@@ -86,6 +86,13 @@ namespace storm {
             if (formula.isProbabilityOperatorFormula()) {
                 if (formula.asProbabilityOperatorFormula().hasOptimalityType()) {
                     optimalityType = formula.asProbabilityOperatorFormula().getOptimalityType();
+                } else if (formula.asProbabilityOperatorFormula().hasBound()) {
+                    storm::logic::ComparisonType comparisonType = formula.asProbabilityOperatorFormula().getComparisonType();
+                    if (comparisonType == storm::logic::ComparisonType::Less || comparisonType == storm::logic::ComparisonType::LessEqual) {
+                        optimalityType = OptimizationDirection::Maximize;
+                    } else {
+                        optimalityType = OptimizationDirection::Minimize;
+                    }
                 }
                 newFormula = formula.asProbabilityOperatorFormula().getSubformula().asSharedPointer();
             } else if (formula.isRewardOperatorFormula()) {
