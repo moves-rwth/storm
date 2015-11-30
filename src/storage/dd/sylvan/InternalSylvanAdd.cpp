@@ -164,22 +164,23 @@ namespace storm {
         
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const {
-            std::vector<sylvan::Bdd> fromBdd;
-            std::vector<sylvan::Bdd> toBdd;
+            std::vector<sylvan::Mtbdd> fromMtbdd;
+            std::vector<sylvan::Mtbdd> toMtbdd;
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
-                fromBdd.push_back(it1->getSylvanBdd());
-                toBdd.push_back(it2->getSylvanBdd());
+                fromMtbdd.push_back(it1->getSylvanBdd());
+                toMtbdd.push_back(it2->getSylvanBdd());
             }
-            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Permute(fromBdd, toBdd));
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Permute(fromMtbdd, toMtbdd));
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::multiplyMatrix(InternalAdd<DdType::Sylvan, ValueType> const& otherMatrix, std::vector<InternalAdd<DdType::Sylvan, ValueType>> const& summationDdVariables) const {
-            sylvan::Mtbdd summationVariables = sylvan::Mtbdd::mtbddOne();
+        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::multiplyMatrix(InternalAdd<DdType::Sylvan, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const {
+            InternalBdd<DdType::Sylvan> summationVariables = ddManager->getBddOne();
             for (auto const& ddVariable : summationDdVariables) {
-                summationVariables *= ddVariable.sylvanMtbdd;
+                summationVariables &= ddVariable;
             }
-            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AndExists(otherMatrix.sylvanMtbdd, summationVariables));
+            
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.AndExists(otherMatrix.sylvanMtbdd, summationVariables.getSylvanBdd()));
         }
         
         template<typename ValueType>
@@ -321,6 +322,11 @@ namespace storm {
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<ValueType> const& values, storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+        }
+        
+        template<typename ValueType>
+        sylvan::Mtbdd InternalAdd<DdType::Sylvan, ValueType>::getSylvanMtbdd() const {
+            return sylvanMtbdd;
         }
         
         template class InternalAdd<DdType::Sylvan, double>;

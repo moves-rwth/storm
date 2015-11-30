@@ -72,13 +72,10 @@ TEST(SylvanDd, EncodingTest) {
     EXPECT_EQ(5ul, encoding.getNodeCount());
     EXPECT_EQ(1ul, encoding.getLeafCount());
     
-    encoding.exportToDot("encoding.dot");
-    
     storm::dd::Add<storm::dd::DdType::Sylvan, double> add;
     ASSERT_NO_THROW(add = encoding.template toAdd<double>());
 
     // As an MTBDD, the 0-leaf is there, so the count is actually 2 and the node count is 6.
-    add.exportToDot("add.dot");
     EXPECT_EQ(6ul, add.getNodeCount());
     EXPECT_EQ(2ul, add.getLeafCount());
 }
@@ -191,97 +188,96 @@ TEST(SylvanDd, OperatorTest) {
     EXPECT_FALSE(dd1.equalModuloPrecision(dd2, 1e-6));
 }
 
-//TEST(SylvanDd, AbstractionTest) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1;
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd2;
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd3;
-//    
-//    dd1 = manager->template getIdentity<double>(x.first);
-//    dd2 = manager->template getConstant<double>(5);
-//    dd3 = dd1.equals(dd2);
-//    storm::dd::Bdd<storm::dd::DdType::Sylvan> dd3Bdd = dd3.toBdd();
-//    EXPECT_EQ(1ul, dd3Bdd.getNonZeroCount());
-//    ASSERT_THROW(dd3Bdd = dd3Bdd.existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
-//    ASSERT_NO_THROW(dd3Bdd = dd3Bdd.existsAbstract({x.first}));
-//    EXPECT_EQ(1ul, dd3Bdd.getNonZeroCount());
-//    EXPECT_EQ(1, dd3Bdd.template toAdd<double>().getMax());
-//    
-//    dd3 = dd1.equals(dd2);
-//    dd3 *= manager->template getConstant<double>(3);
-//    EXPECT_EQ(1ul, dd3.getNonZeroCount());
-//    ASSERT_THROW(dd3Bdd = dd3.toBdd().existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
-//    ASSERT_NO_THROW(dd3Bdd = dd3.toBdd().existsAbstract({x.first}));
-//    EXPECT_TRUE(dd3Bdd.isOne());
-//    
-//    dd3 = dd1.equals(dd2);
-//    dd3 *= manager->template getConstant<double>(3);
-//    ASSERT_THROW(dd3 = dd3.sumAbstract({x.second}), storm::exceptions::InvalidArgumentException);
-//    ASSERT_NO_THROW(dd3 = dd3.sumAbstract({x.first}));
-//    EXPECT_EQ(0ul, dd3.getNonZeroCount());
-//    EXPECT_EQ(3, dd3.getMax());
-//    
-//    dd3 = dd1.equals(dd2);
-//    dd3 *= manager->template getConstant<double>(3);
-//    ASSERT_THROW(dd3 = dd3.minAbstract({x.second}), storm::exceptions::InvalidArgumentException);
-//    ASSERT_NO_THROW(dd3 = dd3.minAbstract({x.first}));
-//    EXPECT_EQ(0ul, dd3.getNonZeroCount());
-//    EXPECT_EQ(0, dd3.getMax());
-//    
-//    dd3 = dd1.equals(dd2);
-//    dd3 *= manager->template getConstant<double>(3);
-//    ASSERT_THROW(dd3 = dd3.maxAbstract({x.second}), storm::exceptions::InvalidArgumentException);
-//    ASSERT_NO_THROW(dd3 = dd3.maxAbstract({x.first}));
-//    EXPECT_EQ(0ul, dd3.getNonZeroCount());
-//    EXPECT_EQ(3, dd3.getMax());
-//}
-//
-//TEST(SylvanDd, SwapTest) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> z = manager->addMetaVariable("z", 2, 8);
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1;
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd2;
-//    
-//    dd1 = manager->template getIdentity<double>(x.first);
-//    ASSERT_THROW(dd1 = dd1.swapVariables({std::make_pair(x.first, z.first)}), storm::exceptions::InvalidArgumentException);
-//    ASSERT_NO_THROW(dd1 = dd1.swapVariables({std::make_pair(x.first, x.second)}));
-//    EXPECT_TRUE(dd1 == manager->template getIdentity<double>(x.second));
-//}
-//
-//TEST(SylvanDd, MultiplyMatrixTest) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1 = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second));
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd2 = manager->getRange(x.second).template toAdd<double>();
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd3;
-//    dd1 *= manager->template getConstant<double>(2);
-//    
-//    ASSERT_NO_THROW(dd3 = dd1.multiplyMatrix(dd2, {x.second}));
-//    ASSERT_NO_THROW(dd3 = dd3.swapVariables({std::make_pair(x.first, x.second)}));
-//    EXPECT_TRUE(dd3 == dd2 * manager->template getConstant<double>(2));
-//}
-//
-//TEST(SylvanDd, GetSetValueTest) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1 = manager->template getAddOne<double>();
-//    ASSERT_NO_THROW(dd1.setValue(x.first, 4, 2));
-//    EXPECT_EQ(2ul, dd1.getLeafCount());
-//    
-//    std::map<storm::expressions::Variable, int_fast64_t> metaVariableToValueMap;
-//    metaVariableToValueMap.emplace(x.first, 1);
-//    EXPECT_EQ(1, dd1.getValue(metaVariableToValueMap));
-//    
-//    metaVariableToValueMap.clear();
-//    metaVariableToValueMap.emplace(x.first, 4);
-//    EXPECT_EQ(2, dd1.getValue(metaVariableToValueMap));
-//}
-//
+TEST(SylvanDd, AbstractionTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1;
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd2;
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd3;
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> bdd;
+    
+    dd1 = manager->template getIdentity<double>(x.first);
+    dd2 = manager->template getConstant<double>(5);
+    bdd = dd1.equals(dd2);
+    EXPECT_EQ(1ul, bdd.getNonZeroCount());
+    ASSERT_THROW(bdd = bdd.existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(bdd = bdd.existsAbstract({x.first}));
+    EXPECT_EQ(0ul, bdd.getNonZeroCount());
+    EXPECT_EQ(1, bdd.template toAdd<double>().getMax());
+    
+    dd3 = dd1.equals(dd2).template toAdd<double>();
+    dd3 *= manager->template getConstant<double>(3);
+    EXPECT_EQ(1ul, dd3.getNonZeroCount());
+    ASSERT_THROW(bdd = dd3.toBdd().existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(bdd = dd3.toBdd().existsAbstract({x.first}));
+    EXPECT_TRUE(bdd.isOne());
+    
+    dd3 = dd1.equals(dd2).template toAdd<double>();
+    dd3 *= manager->template getConstant<double>(3);
+    ASSERT_THROW(dd3 = dd3.sumAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.sumAbstract({x.first}));
+    EXPECT_EQ(0ul, dd3.getNonZeroCount());
+    EXPECT_EQ(3, dd3.getMax());
+    
+    dd3 = dd1.equals(dd2).template toAdd<double>();
+    dd3 *= manager->template getConstant<double>(3);
+    ASSERT_THROW(dd3 = dd3.minAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.minAbstract({x.first}));
+    EXPECT_EQ(0ul, dd3.getNonZeroCount());
+    EXPECT_EQ(0, dd3.getMax());
+    
+    dd3 = dd1.equals(dd2).template toAdd<double>();
+    dd3 *= manager->template getConstant<double>(3);
+    ASSERT_THROW(dd3 = dd3.maxAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd3 = dd3.maxAbstract({x.first}));
+    EXPECT_EQ(0ul, dd3.getNonZeroCount());
+    EXPECT_EQ(3, dd3.getMax());
+}
+
+TEST(SylvanDd, SwapTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> z = manager->addMetaVariable("z", 2, 8);
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1;
+    
+    dd1 = manager->template getIdentity<double>(x.first);
+    ASSERT_THROW(dd1 = dd1.swapVariables({std::make_pair(x.first, z.first)}), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(dd1 = dd1.swapVariables({std::make_pair(x.first, x.second)}));
+    EXPECT_TRUE(dd1 == manager->template getIdentity<double>(x.second));
+}
+
+TEST(SylvanDd, MultiplyMatrixTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1 = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)).template toAdd<double>();
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd2 = manager->getRange(x.second).template toAdd<double>();
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd3;
+    dd1 *= manager->template getConstant<double>(2);
+    
+    ASSERT_NO_THROW(dd3 = dd1.multiplyMatrix(dd2, {x.second}));
+    ASSERT_NO_THROW(dd3 = dd3.swapVariables({std::make_pair(x.first, x.second)}));
+    EXPECT_TRUE(dd3 == dd2 * manager->template getConstant<double>(2));
+}
+
+TEST(SylvanDd, GetSetValueTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1 = manager->template getAddOne<double>();
+    ASSERT_NO_THROW(dd1.setValue(x.first, 4, 2));
+    EXPECT_EQ(2ul, dd1.getLeafCount());
+    
+    std::map<storm::expressions::Variable, int_fast64_t> metaVariableToValueMap;
+    metaVariableToValueMap.emplace(x.first, 1);
+    EXPECT_EQ(1, dd1.getValue(metaVariableToValueMap));
+    
+    metaVariableToValueMap.clear();
+    metaVariableToValueMap.emplace(x.first, 4);
+    EXPECT_EQ(2, dd1.getValue(metaVariableToValueMap));
+}
+
 //TEST(SylvanDd, ForwardIteratorTest) {
 //    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
 //    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);

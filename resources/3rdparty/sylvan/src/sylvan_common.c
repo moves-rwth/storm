@@ -16,6 +16,7 @@
 
 #include <sylvan_config.h>
 
+#include <sylvan.h>
 #include <sylvan_common.h>
 
 #ifndef cas

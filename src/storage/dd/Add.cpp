@@ -213,10 +213,10 @@ namespace storm {
         template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::multiplyMatrix(Add<LibraryType, ValueType> const& otherMatrix, std::set<storm::expressions::Variable> const& summationMetaVariables) const {
             // Create the CUDD summation variables.
-            std::vector<InternalAdd<LibraryType, ValueType>> summationDdVariables;
+            std::vector<InternalBdd<LibraryType>> summationDdVariables;
             for (auto const& metaVariable : summationMetaVariables) {
                 for (auto const& ddVariable : this->getDdManager()->getMetaVariable(metaVariable).getDdVariables()) {
-                    summationDdVariables.push_back(ddVariable.template toAdd<ValueType>());
+                    summationDdVariables.push_back(ddVariable);
                 }
             }
             

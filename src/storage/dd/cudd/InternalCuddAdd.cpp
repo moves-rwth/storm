@@ -178,11 +178,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::multiplyMatrix(InternalAdd<DdType::CUDD, ValueType> const& otherMatrix, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& summationDdVariables) const {
+        InternalAdd<DdType::CUDD, ValueType> InternalAdd<DdType::CUDD, ValueType>::multiplyMatrix(InternalAdd<DdType::CUDD, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::CUDD>> const& summationDdVariables) const {
             // Create the CUDD summation variables.
             std::vector<cudd::ADD> summationAdds;
             for (auto const& ddVariable : summationDdVariables) {
-                summationAdds.push_back(ddVariable.getCuddAdd());
+                summationAdds.push_back(ddVariable.toAdd<ValueType>().getCuddAdd());
             }
             
             return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddAdd().MatrixMultiply(otherMatrix.getCuddAdd(), summationAdds));

@@ -303,7 +303,7 @@ namespace storm {
              * @param summationDdVariables The DD variables (represented as ADDs) over which to sum.
              * @return An ADD representing the result of the matrix-matrix multiplication.
              */
-            InternalAdd<DdType::Sylvan, ValueType> multiplyMatrix(InternalAdd<DdType::Sylvan, ValueType> const& otherMatrix, std::vector<InternalAdd<DdType::Sylvan, ValueType>> const& summationDdVariables) const;
+            InternalAdd<DdType::Sylvan, ValueType> multiplyMatrix(InternalAdd<DdType::Sylvan, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::Sylvan>> const& summationDdVariables) const;
             
             /*!
              * Computes a BDD that represents the function in which all assignments with a function value strictly
@@ -546,6 +546,8 @@ namespace storm {
             Odd createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const;
             
         private:
+            sylvan::Mtbdd getSylvanMtbdd() const;
+            
             InternalDdManager<DdType::Sylvan> const* ddManager;
             
             sylvan::Mtbdd sylvanMtbdd;

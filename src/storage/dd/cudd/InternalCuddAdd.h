@@ -303,7 +303,7 @@ namespace storm {
              * @param summationDdVariables The DD variables (represented as ADDs) over which to sum.
              * @return An ADD representing the result of the matrix-matrix multiplication.
              */
-            InternalAdd<DdType::CUDD, ValueType> multiplyMatrix(InternalAdd<DdType::CUDD, ValueType> const& otherMatrix, std::vector<InternalAdd<DdType::CUDD, ValueType>> const& summationDdVariables) const;
+            InternalAdd<DdType::CUDD, ValueType> multiplyMatrix(InternalAdd<DdType::CUDD, ValueType> const& otherMatrix, std::vector<InternalBdd<DdType::CUDD>> const& summationDdVariables) const;
             
             /*!
              * Computes a BDD that represents the function in which all assignments with a function value strictly

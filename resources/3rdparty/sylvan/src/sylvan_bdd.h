@@ -16,7 +16,7 @@
 
 /* Do not include this file directly. Instead, include sylvan.h */
 
-#include "tls.h"
+#include <tls.h>
 
 #ifndef SYLVAN_BDD_H
 #define SYLVAN_BDD_H
@@ -263,13 +263,10 @@ void sylvan_getsha(BDD bdd, char *target); // target must be at least 65 bytes..
 /**
  * Calculate number of satisfying variable assignments.
  * The set of variables must be >= the support of the BDD.
- * 
- * The cached version uses the operation cache, but is limited to 64-bit floating point numbers.
  */
 
 TASK_DECL_3(double, sylvan_satcount, BDD, BDDSET, BDDVAR);
 #define sylvan_satcount(bdd, variables) CALL(sylvan_satcount, bdd, variables, 0)
-#define sylvan_satcount_cached(bdd, variables) CALL(sylvan_satcount, bdd, variables, 0)
 
 /**
  * Create a BDD cube representing the conjunction of variables in their positive or negative

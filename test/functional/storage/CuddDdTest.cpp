@@ -198,7 +198,7 @@ TEST(CuddDd, AbstractionTest) {
     EXPECT_EQ(1ul, dd3Bdd.getNonZeroCount());
     ASSERT_THROW(dd3Bdd = dd3Bdd.existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3Bdd = dd3Bdd.existsAbstract({x.first}));
-    EXPECT_EQ(1ul, dd3Bdd.getNonZeroCount());
+    EXPECT_EQ(0ul, dd3Bdd.getNonZeroCount());
     EXPECT_EQ(1, dd3Bdd.template toAdd<double>().getMax());
 
     dd3 = dd1.equals(dd2).template toAdd<double>();

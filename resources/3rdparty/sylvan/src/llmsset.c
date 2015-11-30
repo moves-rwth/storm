@@ -53,14 +53,6 @@ VOID_TASK_0(llmsset_reset_region)
     SET_THREAD_LOCAL(my_region, my_region);
 }
 
-VOID_TASK_0(llmsset_init_worker)
-{
-    // yes, ugly. for now, we use a global thread-local value.
-    // that is a problem with multiple tables.
-    // so, for now, do NOT use multiple tables!!
-    CALL(llmsset_reset_region);
-}
-
 static uint64_t
 claim_data_bucket(const llmsset_t dbs)
 {
@@ -385,9 +377,13 @@ llmsset_create(size_t initial_size, size_t max_size)
     dbs->create_cb = NULL;
     dbs->destroy_cb = NULL;
 
+    // yes, ugly. for now, we use a global thread-local value.
+    // that is a problem with multiple tables.
+    // so, for now, do NOT use multiple tables!!
+
     LACE_ME;
     INIT_THREAD_LOCAL(my_region);
-    TOGETHER(llmsset_init_worker);
+    TOGETHER(llmsset_reset_region);
 
     return dbs;
 }

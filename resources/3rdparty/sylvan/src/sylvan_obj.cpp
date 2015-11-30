@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "sylvan_obj.hpp"
+#include <sylvan_obj.hpp>
 
 using namespace sylvan;
 
@@ -296,13 +296,13 @@ Bdd
 Bdd::Permute(const std::vector<Bdd>& from, const std::vector<Bdd>& to) const
 {
     LACE_ME;
-
+    
     /* Create a map */
     BddMap map;
     for (int i=from.size()-1; i>=0; i--) {
         map.put(from[i].TopVar(), to[i]);
     }
-
+    
     return sylvan_compose(bdd, map.bdd);
 }
 
@@ -340,10 +340,19 @@ Bdd::GetShaHash() const
 }
 
 double
-Bdd::SatCount(size_t variableCount) const
+Bdd::SatCount(const Bdd &variables) const
 {
     LACE_ME;
-    return mtbdd_satcount(bdd, variableCount);
+    return sylvan_satcount(bdd, variables.bdd);
+}
+
+
+double
+Bdd::SatCount(size_t nvars) const
+{
+    LACE_ME;
+    // Note: the mtbdd_satcount can be called without initializing the MTBDD module.
+    return mtbdd_satcount(bdd, nvars);
 }
 
 void
@@ -357,12 +366,12 @@ std::vector<bool>
 Bdd::PickOneCube(const Bdd &variables) const
 {
     std::vector<bool> result = std::vector<bool>();
-
+    
     BDD bdd = this->bdd;
     BDD vars = variables.bdd;
-
+    
     if (bdd == sylvan_false) return result;
-
+    
     for (; !sylvan_set_isempty(vars); vars = sylvan_set_next(vars)) {
         uint32_t var = sylvan_set_var(vars);
         if (bdd == sylvan_true) {
@@ -385,7 +394,7 @@ Bdd::PickOneCube(const Bdd &variables) const
             }
         }
     }
-
+    
     return result;
 }
 
@@ -441,12 +450,6 @@ size_t
 Bdd::NodeCount() const
 {
     return sylvan_nodecount(bdd);
-}
-
-Mtbdd
-Bdd::toDoubleMtbdd() const {
-    LACE_ME;
-    return mtbdd_bool_to_double(bdd);
 }
 
 Bdd
@@ -731,25 +734,10 @@ Mtbdd::Plus(const Mtbdd &other) const
 }
 
 Mtbdd
-Mtbdd::Minus(const Mtbdd &other) const
-{
-    LACE_ME;
-    return mtbdd_minus(mtbdd, other.mtbdd);
-}
-
-
-Mtbdd
 Mtbdd::Times(const Mtbdd &other) const
 {
     LACE_ME;
     return mtbdd_times(mtbdd, other.mtbdd);
-}
-
-Mtbdd
-Mtbdd::Divide(const Mtbdd &other) const
-{
-    LACE_ME;
-    return mtbdd_divide(mtbdd, other.mtbdd);
 }
 
 Mtbdd
@@ -905,112 +893,6 @@ Mtbdd::BddStrictThreshold(double value) const
     return mtbdd_strict_threshold_double(mtbdd, value);
 }
 
-Bdd
-Mtbdd::NotZero() const
-{
-    LACE_ME;
-    return mtbdd_not_zero(mtbdd);
-}
-
-Bdd
-Mtbdd::Equals(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_equals(mtbdd, other.mtbdd);
-}
-
-Bdd
-Mtbdd::Less(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_less_as_bdd(mtbdd, other.mtbdd);
-}
-
-Bdd
-Mtbdd::LessOrEqual(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_less_or_equal_as_bdd(mtbdd, other.mtbdd);
-}
-
-double
-Mtbdd::getDoubleMax() const {
-    LACE_ME;
-    MTBDD maxNode = mtbdd_maximum(mtbdd);
-    return mtbdd_getdouble(maxNode);
-}
-
-double
-Mtbdd::getDoubleMin() const {
-    LACE_ME;
-    MTBDD minNode = mtbdd_minimum(mtbdd);
-    return mtbdd_getdouble(minNode);
-}
-
-bool
-Mtbdd::EqualNorm(const Mtbdd& other, double epsilon) const {
-    LACE_ME;
-    return mtbdd_equal_norm_d(mtbdd, other.mtbdd, epsilon);
-}
-
-bool
-Mtbdd::EqualNormRel(const Mtbdd& other, double epsilon) const {
-    LACE_ME;
-    return mtbdd_equal_norm_rel_d(mtbdd, other.mtbdd, epsilon);
-}
-
-Mtbdd
-Mtbdd::Floor() const {
-    LACE_ME;
-    return mtbdd_floor(mtbdd);
-}
-
-Mtbdd
-Mtbdd::Ceil() const {
-    LACE_ME;
-    return mtbdd_ceil(mtbdd);
-}
-
-Mtbdd
-Mtbdd::Pow(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_pow(mtbdd, other.mtbdd);
-}
-
-Mtbdd
-Mtbdd::Mod(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_mod(mtbdd, other.mtbdd);
-}
-
-Mtbdd
-Mtbdd::Logxy(const Mtbdd& other) const {
-    LACE_ME;
-    return mtbdd_logxy(mtbdd, other.mtbdd);
-}
-
-size_t
-Mtbdd::CountLeaves() const {
-    LACE_ME;
-    return mtbdd_leafcount(mtbdd);
-}
-
-double
-Mtbdd::NonZeroCount(size_t variableCount) const {
-    LACE_ME;
-    return mtbdd_non_zero_count(mtbdd, variableCount);
-}
-
-Mtbdd
-Mtbdd::Permute(const std::vector<Bdd>& from, const std::vector<Bdd>& to) const {
-    LACE_ME;
-    
-    /* Create a map */
-    MtbddMap map;
-    for (int i=from.size()-1; i>=0; i--) {
-        map.put(from[i].TopVar(), to[i]);
-    }
-    
-    return sylvan_compose(mtbdd, map.mtbdd);
-}
-
 Mtbdd
 Mtbdd::Support() const
 {
@@ -1031,11 +913,31 @@ Mtbdd::Compose(MtbddMap &m) const
     return mtbdd_compose(mtbdd, m.mtbdd);
 }
 
-double
-Mtbdd::SatCount(size_t variableCount) const
+Mtbdd
+Mtbdd::Permute(const std::vector<Mtbdd>& from, const std::vector<Mtbdd>& to) const
 {
     LACE_ME;
-    return mtbdd_satcount(mtbdd, variableCount);
+    
+    /* Create a map */
+    MtbddMap map;
+    for (int i=from.size()-1; i>=0; i--) {
+        map.put(from[i].TopVar(), to[i]);
+    }
+    
+    return mtbdd_compose(mtbdd, map.mtbdd);
+}
+
+double
+Mtbdd::SatCount(size_t nvars) const
+{
+    LACE_ME;
+    return mtbdd_satcount(mtbdd, nvars);
+}
+
+double
+Mtbdd::SatCount(const Mtbdd &variables) const
+{
+    return SatCount(sylvan_set_count(variables.mtbdd));
 }
 
 size_t
@@ -1044,6 +946,7 @@ Mtbdd::NodeCount() const
     LACE_ME;
     return mtbdd_nodecount(mtbdd);
 }
+
 
 /***
  * Implementation of class MtbddMap
@@ -1132,3 +1035,5 @@ Sylvan::quitPackage()
 {
     sylvan_quit();
 }
+
+#include "sylvan_obj_storm.cpp"

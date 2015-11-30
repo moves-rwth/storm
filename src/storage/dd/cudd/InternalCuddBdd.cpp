@@ -111,6 +111,11 @@ namespace storm {
         }
         
         uint_fast64_t InternalBdd<DdType::CUDD>::getNonZeroCount(uint_fast64_t numberOfDdVariables) const {
+            // If the number of DD variables is zero, CUDD returns a number greater 0 for constant nodes different from
+            // zero, which is not the behaviour we expect.
+            if (numberOfDdVariables == 0) {
+                return 0;
+            }
             return static_cast<uint_fast64_t>(this->getCuddBdd().CountMinterm(static_cast<int>(numberOfDdVariables)));
         }
         
