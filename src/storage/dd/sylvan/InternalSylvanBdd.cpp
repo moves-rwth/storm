@@ -91,13 +91,13 @@ namespace storm {
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const {
-            std::vector<sylvan::Bdd> fromBdd;
-            std::vector<sylvan::Bdd> toBdd;
+            std::vector<uint32_t> fromIndices;
+            std::vector<uint32_t> toIndices;
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
-                fromBdd.push_back(it1->getSylvanBdd());
-                toBdd.push_back(it2->getSylvanBdd());
+                fromIndices.push_back(it1->getIndex());
+                toIndices.push_back(it2->getIndex());
             }
-            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Permute(fromBdd, toBdd));
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Permute(fromIndices, toIndices));
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::getSupport() const {
@@ -131,7 +131,7 @@ namespace storm {
         }
         
         uint_fast64_t InternalBdd<DdType::Sylvan>::getIndex() const {
-            return static_cast<uint_fast64_t>(this->sylvanBdd.GetBDD());
+            return static_cast<uint_fast64_t>(this->sylvanBdd.TopVar());
         }
         
         void InternalBdd<DdType::Sylvan>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
