@@ -84,7 +84,16 @@ namespace storm {
              * @return The ralational product.
              */
             InternalBdd<DdType::CUDD> relationalProduct(InternalBdd<DdType::CUDD> const& relation, std::vector<InternalBdd<DdType::CUDD>> const& rowVariables) const;
-            
+
+            /*!
+             * Computes the inverse relational product of the current BDD and the given BDD representing a relation.
+             *
+             * @param relation The relation to use.
+             * @param columnVariables The row variables of the relation represented as individual BDDs.
+             * @return The ralational product.
+             */
+            InternalBdd<DdType::CUDD> inverseRelationalProduct(InternalBdd<DdType::CUDD> const& relation, std::vector<InternalBdd<DdType::CUDD>> const& columnVariables) const;
+
             /*!
              * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to a non-zero
              * function value to the function values specified by the first DD and all others to the function values

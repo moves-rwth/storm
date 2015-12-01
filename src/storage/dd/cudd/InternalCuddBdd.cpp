@@ -37,10 +37,28 @@ namespace storm {
             
             InternalBdd<DdType::CUDD> result = this->andExists(relation, cube);
             
-            // Create the corresponding "from" vector for the variable swap.
+            // Create the corresponding column variable vector for the variable swap.
             std::vector<InternalBdd<DdType::CUDD>> columnVariables;
             for (auto const& variable : rowVariables) {
                 columnVariables.push_back(InternalBdd<DdType::CUDD>(ddManager, ddManager->getCuddManager().bddVar(variable.getIndex() + 1)));
+            }
+            result = result.swapVariables(rowVariables, columnVariables);
+            
+            return result;
+        }
+        
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::inverseRelationalProduct(InternalBdd<DdType::CUDD> const& relation, std::vector<InternalBdd<DdType::CUDD>> const& columnVariables) const {
+            InternalBdd<DdType::CUDD> cube = ddManager->getBddOne();
+            for (auto const& variable : columnVariables) {
+                cube &= variable;
+            }
+            
+            InternalBdd<DdType::CUDD> result = this->andExists(relation, cube);
+            
+            // Create the corresponding column variable vector for the variable swap.
+            std::vector<InternalBdd<DdType::CUDD>> rowVariables;
+            for (auto const& variable : rowVariables) {
+                rowVariables.push_back(InternalBdd<DdType::CUDD>(ddManager, ddManager->getCuddManager().bddVar(variable.getIndex() - 1)));
             }
             result = result.swapVariables(rowVariables, columnVariables);
             

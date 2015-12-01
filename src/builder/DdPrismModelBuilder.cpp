@@ -1174,7 +1174,7 @@ namespace storm {
             do {
                 STORM_LOG_TRACE("Iteration " << iteration << " of reachability analysis.");
                 changed = false;
-                storm::dd::Bdd<Type> tmp = reachableStates.relationalProduct(transitionBdd, generationInfo.rowMetaVariables);
+                storm::dd::Bdd<Type> tmp = reachableStates.relationalProduct(transitionBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
                 storm::dd::Bdd<Type> newReachableStates = tmp && (!reachableStates);
                                 
                 // Check whether new states were indeed discovered.

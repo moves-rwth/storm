@@ -8,7 +8,10 @@
 namespace storm {
     namespace dd {
         uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
-        uint_fast64_t InternalDdManager<DdType::Sylvan>::nextFreeVariableIndex = 0;
+        
+        // We let the variables start at an odd offset, since some functions provided by sylvan assume that the source/row
+        // variables are at odd levels.
+        uint_fast64_t InternalDdManager<DdType::Sylvan>::nextFreeVariableIndex = 1;
         
         InternalDdManager<DdType::Sylvan>::InternalDdManager() {
             if (numberOfInstances == 0) {

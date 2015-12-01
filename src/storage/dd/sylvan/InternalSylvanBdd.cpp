@@ -1,5 +1,6 @@
 #include "src/storage/dd/sylvan/InternalSylvanBdd.h"
 
+#include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
 #include "src/storage/dd/sylvan/InternalSylvanAdd.h"
 #include "src/storage/dd/sylvan/SylvanAddIterator.h"
 
@@ -7,7 +8,6 @@
 
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
-
 
 #include <iostream>
 
@@ -31,6 +31,15 @@ namespace storm {
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::relationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables) const {
+            InternalBdd<DdType::Sylvan> cube = ddManager->getBddOne();
+            for (auto const& variable : rowVariables) {
+                cube &= variable;
+            }
+            
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.RelNext(relation.sylvanBdd, cube.sylvanBdd));
+        }
+
+        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::inverseRelationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
         }
         
