@@ -69,6 +69,7 @@ namespace storm {
             
             // Explicitly instantiate the template class.
             template class NondeterministicModel<storm::dd::DdType::CUDD, double>;
+            template class NondeterministicModel<storm::dd::DdType::Sylvan, double>;
             
         } // namespace symbolic
     } // namespace models

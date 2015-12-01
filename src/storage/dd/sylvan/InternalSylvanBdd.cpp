@@ -8,6 +8,9 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
 
+
+#include <iostream>
+
 namespace storm {
     namespace dd {
         InternalBdd<DdType::Sylvan>::InternalBdd(InternalDdManager<DdType::Sylvan> const* ddManager, sylvan::Bdd const& sylvanBdd) : ddManager(ddManager), sylvanBdd(sylvanBdd) {
@@ -25,6 +28,10 @@ namespace storm {
         
         bool InternalBdd<DdType::Sylvan>::operator!=(InternalBdd<DdType::Sylvan> const& other) const {
             return sylvanBdd != other.sylvanBdd;
+        }
+        
+        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::relationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::ite(InternalBdd<DdType::Sylvan> const& thenDd, InternalBdd<DdType::Sylvan> const& elseDd) const {
@@ -95,7 +102,9 @@ namespace storm {
             std::vector<uint32_t> toIndices;
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
                 fromIndices.push_back(it1->getIndex());
+                fromIndices.push_back(it2->getIndex());
                 toIndices.push_back(it2->getIndex());
+                toIndices.push_back(it1->getIndex());
             }
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Permute(fromIndices, toIndices));
         }

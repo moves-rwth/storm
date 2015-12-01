@@ -28,6 +28,7 @@ namespace storm {
             
             // Explicitly instantiate the template class.
             template class Dtmc<storm::dd::DdType::CUDD, double>;
+            template class Dtmc<storm::dd::DdType::Sylvan, double>;
             
         } // namespace symbolic
     } // namespace models

@@ -17,20 +17,33 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type> AddExpressionAdapter<Type, ValueType>::translateExpression(storm::expressions::Expression const& expression) {
+        storm::dd::Add<Type, ValueType> AddExpressionAdapter<Type, ValueType>::translateExpression(storm::expressions::Expression const& expression) {
             if (expression.hasBooleanType()) {
                 return boost::any_cast<storm::dd::Bdd<Type>>(expression.accept(*this)).template toAdd<ValueType>();
             } else {
-                return boost::any_cast<storm::dd::Add<Type>>(expression.accept(*this));
+                return boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.accept(*this));
             }
         }
         
         template<storm::dd::DdType Type, typename ValueType>
+        storm::dd::Bdd<Type> AddExpressionAdapter<Type, ValueType>::translateBooleanExpression(storm::expressions::Expression const& expression) {
+            STORM_LOG_THROW(expression.hasBooleanType(), storm::exceptions::InvalidArgumentException, "Expected expression of boolean type.");
+            return boost::any_cast<storm::dd::Bdd<Type>>(expression.accept(*this));
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::IfThenElseExpression const& expression) {
-            storm::dd::Add<Type> elseDd = boost::any_cast<storm::dd::Add<Type>>(expression.getElseExpression()->accept(*this));
-            storm::dd::Add<Type> thenDd = boost::any_cast<storm::dd::Add<Type>>(expression.getThenExpression()->accept(*this));
-            storm::dd::Add<Type> conditionDd = boost::any_cast<storm::dd::Add<Type>>(expression.getCondition()->accept(*this));
-            return conditionDd.ite(thenDd, elseDd);
+            if (expression.hasBooleanType()) {
+                storm::dd::Bdd<Type> elseDd = boost::any_cast<storm::dd::Bdd<Type>>(expression.getElseExpression()->accept(*this));
+                storm::dd::Bdd<Type> thenDd = boost::any_cast<storm::dd::Bdd<Type>>(expression.getThenExpression()->accept(*this));
+                storm::dd::Bdd<Type> conditionDd = boost::any_cast<storm::dd::Bdd<Type>>(expression.getCondition()->accept(*this));
+                return conditionDd.ite(thenDd, elseDd);
+            } else {
+                storm::dd::Add<Type, ValueType> elseDd = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getElseExpression()->accept(*this));
+                storm::dd::Add<Type, ValueType> thenDd = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getThenExpression()->accept(*this));
+                storm::dd::Add<Type, ValueType> conditionDd = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getCondition()->accept(*this));
+                return conditionDd.ite(thenDd, elseDd);
+            }
         }
         
         template<storm::dd::DdType Type, typename ValueType>
@@ -62,10 +75,10 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::BinaryNumericalFunctionExpression const& expression) {
-            storm::dd::Add<Type> leftResult = boost::any_cast<storm::dd::Add<Type>>(expression.getFirstOperand()->accept(*this));
-            storm::dd::Add<Type> rightResult = boost::any_cast<storm::dd::Add<Type>>(expression.getSecondOperand()->accept(*this));
+            storm::dd::Add<Type, ValueType> leftResult = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getFirstOperand()->accept(*this));
+            storm::dd::Add<Type, ValueType> rightResult = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getSecondOperand()->accept(*this));
             
-            storm::dd::Add<Type> result;
+            storm::dd::Add<Type, ValueType> result;
             switch (expression.getOperatorType()) {
                 case storm::expressions::BinaryNumericalFunctionExpression::OperatorType::Plus:
                     result = leftResult + rightResult;
@@ -97,8 +110,8 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::BinaryRelationExpression const& expression) {
-            storm::dd::Add<Type> leftResult = boost::any_cast<storm::dd::Add<Type>>(expression.getFirstOperand()->accept(*this));
-            storm::dd::Add<Type> rightResult = boost::any_cast<storm::dd::Add<Type>>(expression.getSecondOperand()->accept(*this));
+            storm::dd::Add<Type, ValueType> leftResult = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getFirstOperand()->accept(*this));
+            storm::dd::Add<Type, ValueType> rightResult = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getSecondOperand()->accept(*this));
 
             storm::dd::Bdd<Type> result;
             switch (expression.getRelationType()) {
@@ -151,7 +164,7 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::UnaryNumericalFunctionExpression const& expression) {
-            storm::dd::Add<Type> result = boost::any_cast<storm::dd::Add<Type>>(expression.getOperand()->accept(*this));
+            storm::dd::Add<Type, ValueType> result = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getOperand()->accept(*this));
             
             switch (expression.getOperatorType()) {
                 case storm::expressions::UnaryNumericalFunctionExpression::OperatorType::Minus:
@@ -187,6 +200,7 @@ namespace storm {
         
         // Explicitly instantiate the symbolic expression adapter
         template class AddExpressionAdapter<storm::dd::DdType::CUDD, double>;
+        template class AddExpressionAdapter<storm::dd::DdType::Sylvan, double>;
         
     } // namespace adapters
 } // namespace storm

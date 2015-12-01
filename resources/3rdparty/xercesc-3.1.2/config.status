@@ -439,8 +439,8 @@ gives unlimited permission to copy, distribute and modify it."
 
 ac_pwd='/Users/chris/work/storm/resources/3rdparty/xercesc-3.1.2'
 srcdir='.'
-INSTALL='/usr/local/bin/ginstall -c'
-MKDIR_P='/usr/local/bin/gmkdir -p'
+INSTALL='/usr/bin/install -c'
+MKDIR_P='config/install-sh -c -d'
 AWK='awk'
 test -n "$AWK" || AWK=awk
 # The default lists apply if the user does not specify any file.
@@ -998,7 +998,7 @@ S["am__leading_dot"]="."
 S["SET_MAKE"]=""
 S["AWK"]="awk"
 S["mkdir_p"]="$(MKDIR_P)"
-S["MKDIR_P"]="/usr/local/bin/gmkdir -p"
+S["MKDIR_P"]="config/install-sh -c -d"
 S["INSTALL_STRIP_PROGRAM"]="$(install_sh) -c -s"
 S["STRIP"]="strip"
 S["install_sh"]="${SHELL} /Users/chris/work/storm/resources/3rdparty/xercesc-3.1.2/config/install-sh"

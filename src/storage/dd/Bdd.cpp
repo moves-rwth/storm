@@ -143,6 +143,23 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::relationalProduct(Bdd<LibraryType> const& relation, std::set<storm::expressions::Variable> const& rowMetaVariables) const {
+            std::set<storm::expressions::Variable> tmpMetaVariables = Dd<LibraryType>::joinMetaVariables(*this, relation);
+            std::set<storm::expressions::Variable> newMetaVariables;
+            std::set_difference(tmpMetaVariables.begin(), tmpMetaVariables.end(), rowMetaVariables.begin(), rowMetaVariables.end(), std::inserter(newMetaVariables, newMetaVariables.begin()));
+            
+            std::vector<InternalBdd<LibraryType>> rowVariables;
+            for (auto const& metaVariable : rowMetaVariables) {
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                for (auto const& ddVariable : variable.getDdVariables()) {
+                    rowVariables.push_back(ddVariable);
+                }
+            }
+            
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.relationalProduct(relation, rowVariables), newMetaVariables);
+        }
+        
+        template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::swapVariables(std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& metaVariablePairs) const {
             std::set<storm::expressions::Variable> newContainedMetaVariables;
             std::vector<InternalBdd<LibraryType>> from;

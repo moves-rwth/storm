@@ -166,11 +166,11 @@ namespace storm {
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::swapVariables(std::vector<InternalBdd<DdType::Sylvan>> const& from, std::vector<InternalBdd<DdType::Sylvan>> const& to) const {
             std::vector<uint32_t> fromIndices;
             std::vector<uint32_t> toIndices;
-            uint_fast64_t var = 0;
             for (auto it1 = from.begin(), ite1 = from.end(), it2 = to.begin(); it1 != ite1; ++it1, ++it2) {
                 fromIndices.push_back(it1->getIndex());
+                fromIndices.push_back(it2->getIndex());
                 toIndices.push_back(it2->getIndex());
-                ++var;
+                toIndices.push_back(it1->getIndex());
             }
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Permute(fromIndices, toIndices));
         }

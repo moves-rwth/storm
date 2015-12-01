@@ -29,6 +29,7 @@ namespace storm {
             
             // Explicitly instantiate the template class.
             template class DeterministicModel<storm::dd::DdType::CUDD>;
+            template class DeterministicModel<storm::dd::DdType::Sylvan>;
             
         } // namespace symbolic
     } // namespace models

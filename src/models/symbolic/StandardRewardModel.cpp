@@ -152,6 +152,7 @@ namespace storm {
             }
             
             template class StandardRewardModel<storm::dd::DdType::CUDD, double>;
+            template class StandardRewardModel<storm::dd::DdType::Sylvan, double>;
         }
     }
 }

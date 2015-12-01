@@ -7,6 +7,8 @@
 
 #include "src/storage/BitVector.h"
 
+#include <iostream>
+
 namespace storm {
     namespace dd {
         InternalBdd<DdType::CUDD>::InternalBdd(InternalDdManager<DdType::CUDD> const* ddManager, cudd::BDD cuddBdd) : ddManager(ddManager), cuddBdd(cuddBdd) {
@@ -25,6 +27,24 @@ namespace storm {
         
         bool InternalBdd<DdType::CUDD>::operator!=(InternalBdd<DdType::CUDD> const& other) const {
             return !(*this == other);
+        }
+        
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::relationalProduct(InternalBdd<DdType::CUDD> const& relation, std::vector<InternalBdd<DdType::CUDD>> const& rowVariables) const {
+            InternalBdd<DdType::CUDD> cube = ddManager->getBddOne();
+            for (auto const& variable : rowVariables) {
+                cube &= variable;
+            }
+            
+            InternalBdd<DdType::CUDD> result = this->andExists(relation, cube);
+            
+            // Create the corresponding "from" vector for the variable swap.
+            std::vector<InternalBdd<DdType::CUDD>> columnVariables;
+            for (auto const& variable : rowVariables) {
+                columnVariables.push_back(InternalBdd<DdType::CUDD>(ddManager, ddManager->getCuddManager().bddVar(variable.getIndex() + 1)));
+            }
+            result = result.swapVariables(rowVariables, columnVariables);
+            
+            return result;
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::ite(InternalBdd<DdType::CUDD> const& thenDd, InternalBdd<DdType::CUDD> const& elseDd) const {

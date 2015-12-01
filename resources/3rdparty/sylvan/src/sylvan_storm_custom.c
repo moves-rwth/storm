@@ -43,7 +43,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
                 
                 int nega = mtbdd_isnegated(a);
                 int negb = mtbdd_isnegated(b);
-                result = mtbdd_double(a / b);
+                result = mtbdd_double(vval_a / vval_b);
                 if (nega ^ negb) return mtbdd_negate(result);
                 else return result;
             }

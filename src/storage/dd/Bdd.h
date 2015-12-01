@@ -187,6 +187,15 @@ namespace storm {
             Bdd<LibraryType> restrict(Bdd<LibraryType> const& constraint) const;
             
             /*!
+             * Computes the relational product of the current BDD and the given BDD representing a relation.
+             *
+             * @param relation The relation to use.
+             * @param rowMetaVariables The row meta variables used in the relation.
+             * @return The ralational product.
+             */
+            Bdd<LibraryType> relationalProduct(Bdd<LibraryType> const& relation, std::set<storm::expressions::Variable> const& rowMetaVariables) const;
+            
+            /*!
              * Swaps the given pairs of meta variables in the BDD. The pairs of meta variables must be guaranteed to have
              * the same number of underlying BDD variables.
              *

@@ -228,7 +228,9 @@ namespace storm {
             }
             
             // Explicitly instantiate the template class.
-            template class Model<storm::dd::DdType::CUDD>;
+            template class Model<storm::dd::DdType::CUDD, double>;
+            template class Model<storm::dd::DdType::Sylvan, double>;
+
         } // namespace symbolic
     } // namespace models
 } // namespace storm

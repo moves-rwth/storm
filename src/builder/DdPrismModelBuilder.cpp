@@ -144,8 +144,8 @@ namespace storm {
 
                     // Create meta variables for each of the modules' variables.
                     for (storm::prism::Module const& module : program.getModules()) {
-                        storm::dd::Add<Type, ValueType> moduleIdentity = manager->template getAddOne<ValueType>();
-                        storm::dd::Add<Type, ValueType> moduleRange = manager->template getAddOne<ValueType>();
+                        storm::dd::Bdd<Type> moduleIdentity = manager->getBddOne();
+                        storm::dd::Bdd<Type> moduleRange = manager->getBddOne();
                         
                         for (storm::prism::IntegerVariable const& integerVariable : module.getIntegerVariables()) {
                             int_fast64_t low = integerVariable.getLowerBoundExpression().evaluateAsInt();
@@ -159,10 +159,10 @@ namespace storm {
                             columnMetaVariables.insert(variablePair.second);
                             variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
                             
-                            storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
-                            variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
-                            moduleIdentity *= variableIdentity;
-                            moduleRange *= manager->getRange(variablePair.first).template toAdd<ValueType>();
+                            storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
+                            variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
+                            moduleIdentity &= variableIdentity;
+                            moduleRange &= manager->getRange(variablePair.first);
                             
                             rowColumnMetaVariablePairs.push_back(variablePair);
                         }
@@ -176,15 +176,15 @@ namespace storm {
                             columnMetaVariables.insert(variablePair.second);
                             variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                             
-                            storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
-                            variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
-                            moduleIdentity *= variableIdentity;
-                            moduleRange *= manager->getRange(variablePair.first).template toAdd<ValueType>();
+                            storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
+                            variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
+                            moduleIdentity &= variableIdentity;
+                            moduleRange &= manager->getRange(variablePair.first);
 
                             rowColumnMetaVariablePairs.push_back(variablePair);
                         }
-                        moduleToIdentityMap[module.getName()] = moduleIdentity;
-                        moduleToRangeMap[module.getName()] = moduleRange;
+                        moduleToIdentityMap[module.getName()] = moduleIdentity.template toAdd<ValueType>();
+                        moduleToRangeMap[module.getName()] = moduleRange.template toAdd<ValueType>();
                     }
                 }
             };
@@ -347,6 +347,7 @@ namespace storm {
             std::set<storm::expressions::Variable> assignedGlobalVariables;
             std::set_intersection(assignedVariables.begin(), assignedVariables.end(), generationInfo.allGlobalVariables.begin(), generationInfo.allGlobalVariables.end(), std::inserter(assignedGlobalVariables, assignedGlobalVariables.begin()));
             
+            int index = 0;
             // All unassigned boolean variables need to keep their value.
             for (storm::prism::BooleanVariable const& booleanVariable : module.getBooleanVariables()) {
                 if (assignedVariables.find(booleanVariable.getExpressionVariable()) == assignedVariables.end()) {
@@ -369,14 +370,14 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::createCommandDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, storm::prism::Command const& command) {
             STORM_LOG_TRACE("Translating guard " << command.getGuardExpression());
-            storm::dd::Add<Type, ValueType> guardDd = generationInfo.rowExpressionAdapter->translateExpression(command.getGuardExpression()) * generationInfo.moduleToRangeMap[module.getName()];
-            STORM_LOG_WARN_COND(!guardDd.isZero(), "The guard '" << command.getGuardExpression() << "' is unsatisfiable.");
+            storm::dd::Add<Type, ValueType> guard = generationInfo.rowExpressionAdapter->translateExpression(command.getGuardExpression()) * generationInfo.moduleToRangeMap[module.getName()];
+            STORM_LOG_WARN_COND(!guard.isZero(), "The guard '" << command.getGuardExpression() << "' is unsatisfiable.");
             
-            if (!guardDd.isZero()) {
+            if (!guard.isZero()) {
                 // Create the DDs representing the individual updates.
                 std::vector<UpdateDecisionDiagram> updateResults;
                 for (storm::prism::Update const& update : command.getUpdates()) {
-                    updateResults.push_back(createUpdateDecisionDiagram(generationInfo, module, guardDd, update));
+                    updateResults.push_back(createUpdateDecisionDiagram(generationInfo, module, guard, update));
                     
                     STORM_LOG_WARN_COND(!updateResults.back().updateDd.isZero(), "Update '" << update << "' does not have any effect.");
                 }
@@ -412,7 +413,7 @@ namespace storm {
                     commandDd += updateResultsIt->updateDd * probabilityDd;
                 }
                 
-                return ActionDecisionDiagram(guardDd, guardDd * commandDd, globalVariablesInSomeUpdate);
+                return ActionDecisionDiagram(guard, guard * commandDd, globalVariablesInSomeUpdate);
             } else {
                 return ActionDecisionDiagram(*generationInfo.manager);
             }
@@ -516,7 +517,7 @@ namespace storm {
                 STORM_LOG_WARN_COND(temporary.isZero() || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC, "Guard of a command overlaps with previous guards.");
                 
                 allGuards += commandDd.guardDd;
-                allCommands += commandDd.guardDd * commandDd.transitionsDd ;
+                allCommands += commandDd.guardDd * commandDd.transitionsDd;
             }
             
             return ActionDecisionDiagram(allGuards, allCommands, assignedGlobalVariables);
@@ -1028,6 +1029,7 @@ namespace storm {
 
             SystemResult system = createSystemDecisionDiagram(generationInfo);
             storm::dd::Add<Type, ValueType> transitionMatrix = system.allTransitionsDd;
+            
             ModuleDecisionDiagram const& globalModule = system.globalModule;
             storm::dd::Add<Type, ValueType> stateActionDd = system.stateActionDd;
             
@@ -1073,7 +1075,7 @@ namespace storm {
             storm::dd::Add<Type, ValueType> reachableStatesAdd = reachableStates.template toAdd<ValueType>();
             transitionMatrix *= reachableStatesAdd;
             stateActionDd *= reachableStatesAdd;
-
+            
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);
             storm::dd::Add<Type, ValueType> deadlockStates = (reachableStates && !statesWithTransition).template toAdd<ValueType>();
@@ -1172,11 +1174,9 @@ namespace storm {
             do {
                 STORM_LOG_TRACE("Iteration " << iteration << " of reachability analysis.");
                 changed = false;
-                storm::dd::Bdd<Type> tmp = reachableStates.andExists(transitionBdd, generationInfo.rowMetaVariables);
-                tmp = tmp.swapVariables(generationInfo.rowColumnMetaVariablePairs);
-
+                storm::dd::Bdd<Type> tmp = reachableStates.relationalProduct(transitionBdd, generationInfo.rowMetaVariables);
                 storm::dd::Bdd<Type> newReachableStates = tmp && (!reachableStates);
-                
+                                
                 // Check whether new states were indeed discovered.
                 if (!newReachableStates.isZero()) {
                     changed = true;
@@ -1189,9 +1189,10 @@ namespace storm {
             return reachableStates;
         }
         
-        // Explicitly instantiate the symbolic expression adapter
+        // Explicitly instantiate the symbolic model builder.
         template class DdPrismModelBuilder<storm::dd::DdType::CUDD>;
-        
+        template class DdPrismModelBuilder<storm::dd::DdType::Sylvan>;
+
     } // namespace adapters
 } // namespace storm
 

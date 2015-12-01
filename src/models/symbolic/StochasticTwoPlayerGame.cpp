@@ -40,7 +40,8 @@ namespace storm {
             }
             
             // Explicitly instantiate the template class.
-            template class StochasticTwoPlayerGame<storm::dd::DdType::CUDD>;
+            template class StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>;
+            template class StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>;
             
         } // namespace symbolic
     } // namespace models
