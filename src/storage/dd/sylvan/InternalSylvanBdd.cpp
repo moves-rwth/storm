@@ -30,16 +30,25 @@ namespace storm {
             return sylvanBdd != other.sylvanBdd;
         }
         
-        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::relationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables) const {
+        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::relationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
             InternalBdd<DdType::Sylvan> cube = ddManager->getBddOne();
             for (auto const& variable : rowVariables) {
                 cube &= variable;
             }
+            for (auto const& variable : columnVariables) {
+                cube &= variable;
+            }
             
-            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.RelNext(relation.sylvanBdd, cube.sylvanBdd));
+            this->exportToDot("set.dot", {});
+            relation.exportToDot("relation.dot", {});
+            cube.exportToDot("cube.dot", {});
+            
+            InternalBdd<DdType::Sylvan> result(ddManager, this->sylvanBdd.RelNext(relation.sylvanBdd, cube.sylvanBdd));
+            result.exportToDot("result.dot", {});
+            return result;
         }
 
-        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::inverseRelationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
+        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::inverseRelationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
         }
         

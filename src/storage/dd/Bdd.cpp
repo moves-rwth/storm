@@ -156,7 +156,15 @@ namespace storm {
                 }
             }
             
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.relationalProduct(relation, rowVariables), newMetaVariables);
+            std::vector<InternalBdd<LibraryType>> columnVariables;
+            for (auto const& metaVariable : columnMetaVariables) {
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                for (auto const& ddVariable : variable.getDdVariables()) {
+                    columnVariables.push_back(ddVariable);
+                }
+            }
+            
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.relationalProduct(relation, rowVariables, columnVariables), newMetaVariables);
         }
         
         template<DdType LibraryType>
@@ -164,6 +172,14 @@ namespace storm {
             std::set<storm::expressions::Variable> tmpMetaVariables = Dd<LibraryType>::joinMetaVariables(*this, relation);
             std::set<storm::expressions::Variable> newMetaVariables;
             std::set_difference(tmpMetaVariables.begin(), tmpMetaVariables.end(), rowMetaVariables.begin(), rowMetaVariables.end(), std::inserter(newMetaVariables, newMetaVariables.begin()));
+            
+            std::vector<InternalBdd<LibraryType>> rowVariables;
+            for (auto const& metaVariable : rowMetaVariables) {
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                for (auto const& ddVariable : variable.getDdVariables()) {
+                    rowVariables.push_back(ddVariable);
+                }
+            }
             
             std::vector<InternalBdd<LibraryType>> columnVariables;
             for (auto const& metaVariable : columnMetaVariables) {
@@ -173,7 +189,7 @@ namespace storm {
                 }
             }
             
-            return Bdd<LibraryType>(this->getDdManager(), internalBdd.inverseRelationalProduct(relation, columnVariables), newMetaVariables);
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.inverseRelationalProduct(relation, rowVariables, columnVariables), newMetaVariables);
         }
         
         template<DdType LibraryType>
