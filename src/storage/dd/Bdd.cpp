@@ -144,9 +144,8 @@ namespace storm {
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::relationalProduct(Bdd<LibraryType> const& relation, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables) const {
-            std::set<storm::expressions::Variable> tmpMetaVariables = Dd<LibraryType>::joinMetaVariables(*this, relation);
             std::set<storm::expressions::Variable> newMetaVariables;
-            std::set_difference(tmpMetaVariables.begin(), tmpMetaVariables.end(), columnMetaVariables.begin(), columnMetaVariables.end(), std::inserter(newMetaVariables, newMetaVariables.begin()));
+            std::set_difference(relation.getContainedMetaVariables().begin(), relation.getContainedMetaVariables().end(), columnMetaVariables.begin(), columnMetaVariables.end(), std::inserter(newMetaVariables, newMetaVariables.begin()));
             
             std::vector<InternalBdd<LibraryType>> rowVariables;
             for (auto const& metaVariable : rowMetaVariables) {
@@ -169,9 +168,8 @@ namespace storm {
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::inverseRelationalProduct(Bdd<LibraryType> const& relation, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables) const {
-            std::set<storm::expressions::Variable> tmpMetaVariables = Dd<LibraryType>::joinMetaVariables(*this, relation);
             std::set<storm::expressions::Variable> newMetaVariables;
-            std::set_difference(tmpMetaVariables.begin(), tmpMetaVariables.end(), rowMetaVariables.begin(), rowMetaVariables.end(), std::inserter(newMetaVariables, newMetaVariables.begin()));
+            std::set_difference(relation.getContainedMetaVariables().begin(), relation.getContainedMetaVariables().end(), columnMetaVariables.begin(), columnMetaVariables.end(), std::inserter(newMetaVariables, newMetaVariables.begin()));
             
             std::vector<InternalBdd<LibraryType>> rowVariables;
             for (auto const& metaVariable : rowMetaVariables) {
@@ -190,6 +188,30 @@ namespace storm {
             }
             
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.inverseRelationalProduct(relation, rowVariables, columnVariables), newMetaVariables);
+        }
+        
+        template<DdType LibraryType>
+        Bdd<LibraryType> Bdd<LibraryType>::inverseRelationalProductWithExtendedRelation(Bdd<LibraryType> const& relation, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables) const {
+            std::set<storm::expressions::Variable> newMetaVariables;
+            std::set_difference(relation.getContainedMetaVariables().begin(), relation.getContainedMetaVariables().end(), columnMetaVariables.begin(), columnMetaVariables.end(), std::inserter(newMetaVariables, newMetaVariables.begin()));
+            
+            std::vector<InternalBdd<LibraryType>> rowVariables;
+            for (auto const& metaVariable : rowMetaVariables) {
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                for (auto const& ddVariable : variable.getDdVariables()) {
+                    rowVariables.push_back(ddVariable);
+                }
+            }
+            
+            std::vector<InternalBdd<LibraryType>> columnVariables;
+            for (auto const& metaVariable : columnMetaVariables) {
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                for (auto const& ddVariable : variable.getDdVariables()) {
+                    columnVariables.push_back(ddVariable);
+                }
+            }
+            
+            return Bdd<LibraryType>(this->getDdManager(), internalBdd.inverseRelationalProductWithExtendedRelation(relation, rowVariables, columnVariables), newMetaVariables);
         }
         
         template<DdType LibraryType>

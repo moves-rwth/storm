@@ -86,6 +86,17 @@ namespace storm {
             InternalBdd<DdType::Sylvan> inverseRelationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const;
             
             /*!
+             * Computes the inverse relational product of the current BDD and the given BDD representing a relation that
+             * contains more than just the row and column variables.
+             *
+             * @param relation The relation to use.
+             * @param rowVariables The row variables of the relation represented as individual BDDs.
+             * @param columnVariables The row variables of the relation represented as individual BDDs.
+             * @return The ralational product.
+             */
+            InternalBdd<DdType::Sylvan> inverseRelationalProductWithExtendedRelation(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const;
+            
+            /*!
              * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to a non-zero
              * function value to the function values specified by the first DD and all others to the function values
              * specified by the second DD.

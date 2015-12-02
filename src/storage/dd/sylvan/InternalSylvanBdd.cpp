@@ -31,25 +31,22 @@ namespace storm {
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::relationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
-            InternalBdd<DdType::Sylvan> cube = ddManager->getBddOne();
-            for (auto const& variable : rowVariables) {
-                cube &= variable;
-            }
-            for (auto const& variable : columnVariables) {
-                cube &= variable;
-            }
-            
-            this->exportToDot("set.dot", {});
-            relation.exportToDot("relation.dot", {});
-            cube.exportToDot("cube.dot", {});
-            
-            InternalBdd<DdType::Sylvan> result(ddManager, this->sylvanBdd.RelNext(relation.sylvanBdd, cube.sylvanBdd));
-            result.exportToDot("result.dot", {});
-            return result;
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.RelNext(relation.sylvanBdd, sylvan::Bdd(sylvan_false)));
         }
 
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::inverseRelationalProduct(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.RelPrev(relation.sylvanBdd, sylvan::Bdd(sylvan_false)));
+        }
+        
+        InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::inverseRelationalProductWithExtendedRelation(InternalBdd<DdType::Sylvan> const& relation, std::vector<InternalBdd<DdType::Sylvan>> const& rowVariables, std::vector<InternalBdd<DdType::Sylvan>> const& columnVariables) const {
+            // Currently, there is no specialized version to perform this operation, so we fall back to the regular operations.
+            
+            InternalBdd<DdType::Sylvan> columnCube = ddManager->getBddOne();
+            for (auto const& variable : columnVariables) {
+                columnCube &= variable;
+            }
+
+            return this->swapVariables(rowVariables, columnVariables).andExists(relation, columnCube);
         }
         
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::ite(InternalBdd<DdType::Sylvan> const& thenDd, InternalBdd<DdType::Sylvan> const& elseDd) const {

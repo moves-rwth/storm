@@ -1175,15 +1175,6 @@ namespace storm {
                 STORM_LOG_TRACE("Iteration " << iteration << " of reachability analysis.");
                 changed = false;
                 storm::dd::Bdd<Type> tmp = reachableStates.relationalProduct(transitionBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
-                
-                storm::dd::Bdd<Type> tmp2 = reachableStates.andExists(transitionBdd, generationInfo.rowMetaVariables);
-                tmp2 = tmp2.swapVariables(generationInfo.rowColumnMetaVariablePairs);
-                
-                tmp2.exportToDot("tmp2.dot");
-                tmp.exportToDot("tmp.dot");
-
-                assert(tmp == tmp2);
-                
                 storm::dd::Bdd<Type> newReachableStates = tmp && (!reachableStates);
                                 
                 // Check whether new states were indeed discovered.
@@ -1192,8 +1183,6 @@ namespace storm {
                 }
                 
                 reachableStates |= newReachableStates;
-                
-                std::cout << "iter: " << iteration << " with nnz: " << reachableStates.getNonZeroCount() << std::endl;
                 
                 ++iteration;
             } while (changed);

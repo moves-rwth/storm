@@ -187,8 +187,9 @@ namespace storm {
             Bdd<LibraryType> restrict(Bdd<LibraryType> const& constraint) const;
             
             /*!
-             * Computes the relational product of the current BDD and the given BDD representing a relation. Note that
-             * this operation assumes that the row and column variables are interleaved.
+             * Computes the relational product of the current BDD and the given BDD representing a relation.
+             * Note that this operation assumes that the row and column variables are interleaved and that the relation
+             * only contains the row and column variables.
              *
              * @param relation The relation to use.
              * @param rowMetaVariables The row meta variables used in the relation.
@@ -199,7 +200,8 @@ namespace storm {
             
             /*!
              * Computes the inverse relational product of the current BDD and the given BDD representing a relation.
-             * Note that this operation assumes that the row and column variables are interleaved.
+             * Note that this operation assumes that the row and column variables are interleaved and that the relation
+             * only contains the row and column variables.
              *
              * @param relation The relation to use.
              * @param rowMetaVariables The row meta variables used in the relation.
@@ -207,6 +209,18 @@ namespace storm {
              * @return The inverse relational product.
              */
             Bdd<LibraryType> inverseRelationalProduct(Bdd<LibraryType> const& relation, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables) const;
+            
+            /*!
+             * Computes the inverse relational product of the current BDD and the given BDD representing a relation that
+             * contains more variables than just the row and column variables.
+             * Note that this operation assumes that the row and column variables are interleaved.
+             *
+             * @param relation The relation to use.
+             * @param rowMetaVariables The row meta variables used in the relation.
+             * @param columnMetaVariables The row meta variables used in the relation.
+             * @return The inverse relational product.
+             */
+            Bdd<LibraryType> inverseRelationalProductWithExtendedRelation(Bdd<LibraryType> const& relation, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables) const;
             
             /*!
              * Swaps the given pairs of meta variables in the BDD. The pairs of meta variables must be guaranteed to have

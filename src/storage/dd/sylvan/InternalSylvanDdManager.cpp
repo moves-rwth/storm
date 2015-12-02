@@ -29,6 +29,11 @@ namespace storm {
         InternalDdManager<DdType::Sylvan>::~InternalDdManager() {
             --numberOfInstances;
             if (numberOfInstances == 0) {
+                // Enable this to print the sylvan statistics to a file.
+//                FILE* filePointer = fopen("sylvan.stats", "w");
+//                sylvan_stats_report(filePointer, 0);
+//                fclose(filePointer);
+                
                 sylvan::Sylvan::quitPackage();
                 lace_exit();
             }

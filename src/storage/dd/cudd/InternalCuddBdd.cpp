@@ -46,9 +46,12 @@ namespace storm {
                 cube &= variable;
             }
             
-            InternalBdd<DdType::CUDD> result = this->andExists(relation, cube);
-            result = result.swapVariables(rowVariables, columnVariables);
+            InternalBdd<DdType::CUDD> result = this->swapVariables(rowVariables, columnVariables).andExists(relation, cube);
             return result;
+        }
+        
+        InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::inverseRelationalProductWithExtendedRelation(InternalBdd<DdType::CUDD> const& relation, std::vector<InternalBdd<DdType::CUDD>> const& rowVariables, std::vector<InternalBdd<DdType::CUDD>> const& columnVariables) const {
+            return this->inverseRelationalProduct(relation, rowVariables, columnVariables);
         }
         
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::ite(InternalBdd<DdType::CUDD> const& thenDd, InternalBdd<DdType::CUDD> const& elseDd) const {
