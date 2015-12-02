@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "sylvan_config.h"
+#include <sylvan_config.h>
 
 #include <assert.h>
 #include <inttypes.h>
@@ -25,11 +25,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "refs.h"
-#include "sha2.h"
-#include "sylvan.h"
-#include "sylvan_common.h"
-#include "sylvan_mtbdd_int.h"
+#include <refs.h>
+#include <sha2.h>
+#include <sylvan.h>
+#include <sylvan_common.h>
+#include <sylvan_mtbdd_int.h>
 
 /* Primitives */
 int
@@ -2326,6 +2326,111 @@ TASK_IMPL_2(double, mtbdd_satcount, MTBDD, dd, size_t, nvars)
     return hack.d;
 }
 
+static MTBDD
+mtbdd_enum_next_leaf(MTBDD dd, MTBDD variables, MTBDD prev)
+{
+    // dd is a leaf
+
+    if (variables == mtbdd_true) {
+        // if prev is not false, then it equals dd and we should return false (seen before)
+        if (prev != mtbdd_false) return mtbdd_false;
+        else return dd;
+    } else {
+        // get next variable from <variables>
+        uint32_t v = mtbdd_getvar(variables);
+        variables = mtbdd_gethigh(variables);
+
+        // if prev is not false, get plow and phigh (one of these leads to "false")
+        MTBDD plow, phigh;
+        if (prev != mtbdd_false) {
+            mtbddnode_t pn = GETNODE(prev);
+            assert(!mtbdd_isleaf(prev) && mtbddnode_getvariable(pn) == v);
+            plow = node_getlow(prev, pn);
+            phigh = node_gethigh(prev, pn);
+            assert(plow == mtbdd_false || phigh == mtbdd_false);
+        } else {
+            plow = phigh = mtbdd_false;
+        }
+
+        MTBDD sub;
+
+        // first maybe follow low
+        if (phigh == mtbdd_false) {
+            sub = mtbdd_enum_next_leaf(dd, variables, plow);
+            if (sub != mtbdd_false) return mtbdd_makenode(v, sub, mtbdd_false);
+        }
+
+        // if not low, try following high
+        sub = mtbdd_enum_next_leaf(dd, variables, phigh);
+        if (sub != mtbdd_false) return mtbdd_makenode(v,  mtbdd_false, sub);
+
+        // we've tried low and high, return false
+        return mtbdd_false;
+    }
+}
+
+MTBDD
+mtbdd_enum_next(MTBDD dd, MTBDD variables, MTBDD prev, mtbdd_enum_filter_cb filter_cb)
+{
+    if (dd == mtbdd_false) {
+        // the leaf dd is skipped
+        return mtbdd_false;
+    } else if (mtbdd_isleaf(dd)) {
+        // a leaf for which the filter returns 0 is skipped
+        if (filter_cb != NULL && filter_cb(dd) == 0) return mtbdd_false;
+        // ok, we have a leaf that is not skipped, go for it!
+        return mtbdd_enum_next_leaf(dd, variables, prev);
+    } else {
+        // if variables == true, then dd must be a leaf. But then this line is unreachable.
+        assert(variables != mtbdd_true);
+
+        // get next variable from <variables>
+        uint32_t v = mtbdd_getvar(variables);
+        variables = mtbdd_gethigh(variables);
+
+        // if prev is not false, get plow and phigh (one of these leads to "false")
+        MTBDD plow, phigh;
+        if (prev != mtbdd_false) {
+            mtbddnode_t pn = GETNODE(prev);
+            assert(!mtbdd_isleaf(prev) && mtbddnode_getvariable(pn) == v);
+            plow = node_getlow(prev, pn);
+            phigh = node_gethigh(prev, pn);
+            assert(plow == mtbdd_false || phigh == mtbdd_false);
+        } else {
+            plow = phigh = mtbdd_false;
+        }
+
+        // get cofactors ddlow and ddhigh
+        MTBDD ddlow, ddhigh;
+        if (!mtbdd_isleaf(dd)) {
+            mtbddnode_t n = GETNODE(dd);
+            if (mtbddnode_getvariable(n) == v) {
+                ddlow = node_getlow(dd, n);
+                ddhigh = node_gethigh(dd, n);
+            } else {
+                ddlow = ddhigh = dd;
+            }
+        } else {
+            ddlow = ddhigh = dd;
+        }
+
+        MTBDD sub;
+
+        // first maybe follow low
+        if (phigh == mtbdd_false) {
+            sub = mtbdd_enum_next(ddlow, variables, plow, filter_cb);
+            if (sub != mtbdd_false) return mtbdd_makenode(v, sub, mtbdd_false);
+        }
+
+        // if not low, try following high
+        sub = mtbdd_enum_next(ddhigh, variables, phigh, filter_cb);
+        if (sub != mtbdd_false) return mtbdd_makenode(v,  mtbdd_false, sub);
+
+        // we've tried low and high, return false
+        return mtbdd_false;
+    }
+}
+
 /**
  * Helper function for recursive unmarking
  */
@@ -2583,3 +2688,4 @@ mtbdd_map_removeall(MTBDDMAP map, MTBDD variables)
 }
 
 #include "sylvan_storm_custom.c"
+

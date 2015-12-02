@@ -119,7 +119,7 @@ TASK_DECL_4(BDD, sylvan_and_exists, BDD, BDD, BDDSET, BDDVAR);
 /**
  * Compute R(s,t) = \exists x: A(s,x) \and B(x,t)
  *      or R(s)   = \exists x: A(s,x) \and B(x)
- * Assumes s,t are interleaved with s odd and t even.
+ * Assumes s,t are interleaved with s even and t odd (s+1).
  * Parameter vars is the cube of all s and/or t variables.
  * Other variables in A are "ignored" (existential quantification)
  * Other variables in B are kept
@@ -134,7 +134,7 @@ TASK_DECL_4(BDD, sylvan_relprev, BDD, BDD, BDDSET, BDDVAR);
 /**
  * Compute R(s) = \exists x: A(x) \and B(x,s)
  * with support(result) = s, support(A) = s, support(B) = s+t
- * Assumes s,t are interleaved with s odd and t even.
+ * Assumes s,t are interleaved with s even and t odd (s+1).
  * Parameter vars is the cube of all s and/or t variables.
  * Other variables in A are kept
  * Other variables in B are "ignored" (existential quantification)
@@ -152,7 +152,7 @@ TASK_DECL_4(BDD, sylvan_relnext, BDD, BDD, BDDSET, BDDVAR);
  *     30th ACM Design Automation Conference, 1993.
  *
  * The input BDD must be a transition relation that only has levels of s,t
- * with s,t interleaved with s odd and t even, i.e.
+ * with s,t interleaved with s even and t odd, i.e.
  * s level 0,2,4 matches with t level 1,3,5 and so forth.
  */
 TASK_DECL_2(BDD, sylvan_closure, BDD, BDDVAR);

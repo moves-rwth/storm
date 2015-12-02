@@ -223,7 +223,7 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_plus, MTBDD, MTBDD, int);
  */
 TASK_DECL_2(MTBDD, mtbdd_op_times, MTBDD*, MTBDD*);
 TASK_DECL_3(MTBDD, mtbdd_abstract_op_times, MTBDD, MTBDD, int);
-    
+
 /**
  * Binary operation Minimum (for MTBDDs of same type)
  * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
@@ -241,7 +241,7 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_min, MTBDD, MTBDD, int);
  */
 TASK_DECL_2(MTBDD, mtbdd_op_max, MTBDD*, MTBDD*);
 TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
-    
+
 /**
  * Compute a + b
  */
@@ -250,13 +250,13 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
 /**
  * Compute a - b
  */
-//#define mtbdd_minus(a, b) mtbdd_plus(a, mtbdd_negate(b))
+//#define mtbdd_minus(a, b) mtbdd_plus(a, mtbdd_negate(minus))
 
 /**
  * Compute a * b
  */
 #define mtbdd_times(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_times))
-    
+
 /**
  * Compute min(a, b)
  */
@@ -310,7 +310,7 @@ TASK_DECL_2(MTBDD, mtbdd_op_threshold_double, MTBDD, size_t)
  * Monad that converts double to a Boolean MTBDD, translate terminals > value to 1 and to 0 otherwise;
  */
 TASK_DECL_2(MTBDD, mtbdd_op_strict_threshold_double, MTBDD, size_t)
-    
+
 /**
  * Convert double to a Boolean MTBDD, translate terminals >= value to 1 and to 0 otherwise;
  */
@@ -322,7 +322,7 @@ TASK_DECL_2(MTBDD, mtbdd_threshold_double, MTBDD, double);
  */
 TASK_DECL_2(MTBDD, mtbdd_strict_threshold_double, MTBDD, double);
 #define mtbdd_strict_threshold_double(dd, value) CALL(mtbdd_strict_threshold_double, dd, value)
-    
+
 /**
  * For two Double MTBDDs, calculate whether they are equal module some value epsilon
  * i.e. abs(a-b)<3
@@ -331,7 +331,7 @@ TASK_DECL_3(MTBDD, mtbdd_equal_norm_d, MTBDD, MTBDD, double);
 #define mtbdd_equal_norm_d(a, b, epsilon) CALL(mtbdd_equal_norm_d, a, b, epsilon)
 
 /**
- * For two Double MTBDDs, calculate whether they are relatively equal module some value epsilon
+ * For two Double MTBDDs, calculate whether they are equal modulo some value epsilon
  * i.e. abs((a-b)/a) < e
  */
 TASK_DECL_3(MTBDD, mtbdd_equal_norm_rel_d, MTBDD, MTBDD, double);
@@ -390,6 +390,23 @@ TASK_DECL_1(MTBDD, mtbdd_minimum, MTBDD);
  */
 TASK_DECL_1(MTBDD, mtbdd_maximum, MTBDD);
 #define mtbdd_maximum(dd) CALL(mtbdd_maximum, dd)
+
+/**
+ * Enumeration. Get the next cube+terminal encoded by the MTBDD.
+ * The cube follows a variable assignment to each variable in the cube and
+ * ends with the terminal that the MTBDD assigns to that assignment.
+ * Terminal "false" is always skipped.
+ *
+ * Usage:
+ * MTBDD cube = mtbdd_enum_next(dd, variables, mtbdd_false, NULL);
+ * while (cube != mtbdd_false) {
+ *     ....
+ *     cube = mtbdd_enum_next(dd, variables, cube, NULL);
+ * }
+ * The callback is an optional function that returns 0 when the given terminal node should be skipped.
+ */
+typedef int (*mtbdd_enum_filter_cb)(MTBDD);
+MTBDD mtbdd_enum_next(MTBDD dd, MTBDD variables, MTBDD prev, mtbdd_enum_filter_cb filter_cb);
 
 /**
  * Write a DOT representation of a MTBDD
