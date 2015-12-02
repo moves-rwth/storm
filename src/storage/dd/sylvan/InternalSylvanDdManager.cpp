@@ -19,7 +19,7 @@ namespace storm {
                 lace_init(0, 1000000);
                 lace_startup(0, 0, 0);
                 
-                sylvan::Sylvan::initPackage(1ull << 16, 1ull << 32, 1ull << 16, 1ull << 32);
+                sylvan::Sylvan::initPackage(1ull << 16, 1ull << 28, 1ul << 16, 1ull << 25);
                 sylvan::Sylvan::initBdd(1);
                 sylvan::Sylvan::initMtbdd();
             }

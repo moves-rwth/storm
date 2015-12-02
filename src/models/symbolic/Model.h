@@ -49,12 +49,12 @@ namespace storm {
                 static const storm::dd::DdType DdType = Type;
                 typedef StandardRewardModel<Type, ValueType> RewardModelType;
                 
-                Model(Model<Type> const& other) = default;
-                Model& operator=(Model<Type> const& other) = default;
+                Model(Model<Type, ValueType> const& other) = default;
+                Model& operator=(Model<Type, ValueType> const& other) = default;
                 
 #ifndef WINDOWS
-                Model(Model<Type>&& other) = default;
-                Model& operator=(Model<Type>&& other) = default;
+                Model(Model<Type, ValueType>&& other) = default;
+                Model& operator=(Model<Type, ValueType>&& other) = default;
 #endif
                 
                 /*!

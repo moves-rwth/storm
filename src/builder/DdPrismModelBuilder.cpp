@@ -347,7 +347,6 @@ namespace storm {
             std::set<storm::expressions::Variable> assignedGlobalVariables;
             std::set_intersection(assignedVariables.begin(), assignedVariables.end(), generationInfo.allGlobalVariables.begin(), generationInfo.allGlobalVariables.end(), std::inserter(assignedGlobalVariables, assignedGlobalVariables.begin()));
             
-            int index = 0;
             // All unassigned boolean variables need to keep their value.
             for (storm::prism::BooleanVariable const& booleanVariable : module.getBooleanVariables()) {
                 if (assignedVariables.find(booleanVariable.getExpressionVariable()) == assignedVariables.end()) {

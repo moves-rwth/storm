@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <map>
+#include <memory>
 
 namespace storm {
     namespace dd {

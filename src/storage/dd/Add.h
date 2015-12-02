@@ -2,6 +2,7 @@
 #define STORM_STORAGE_DD_ADD_H_
 
 #include <map>
+#include <functional>
 
 #include "src/storage/dd/Dd.h"
 #include "src/storage/dd/DdType.h"
@@ -584,7 +585,8 @@ namespace storm {
              */
             AddIterator<LibraryType, ValueType> end(bool enumerateDontCareMetaVariables = true) const;
             
-            friend std::ostream & operator<<(std::ostream& out, const Add<LibraryType, ValueType>& add);
+            template<DdType LibraryTypePrime, typename ValueTypePrime>
+            friend std::ostream & operator<<(std::ostream& out, Add<LibraryTypePrime, ValueTypePrime> const& add);
             
             /*!
              * Converts the ADD to a BDD by mapping all values unequal to zero to 1. This effectively does the same as
