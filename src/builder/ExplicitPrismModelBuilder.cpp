@@ -295,7 +295,7 @@ namespace storm {
             // Now that the program is fixed, we we need to substitute all constants with their concrete value.
             preparedProgram = preparedProgram.substituteConstants();
             
-            STORM_LOG_DEBUG("Building representation of program :" << std::endl << preparedProgram << std::endl);
+            STORM_LOG_DEBUG("Building representation of program:" << std::endl << preparedProgram << std::endl);
                 
             // Select the appropriate reward models (after the constants have been substituted).
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;

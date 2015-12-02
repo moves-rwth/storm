@@ -1,7 +1,8 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/AutoParser.h"
-#include "src/storage/DeterministicModelBisimulationDecomposition.h"
+#include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
+#include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/StandardRewardModel.h"
 
 TEST(DeterministicModelBisimulationDecomposition, Die) {
@@ -10,7 +11,8 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim(*dtmc);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim(*dtmc);
+    ASSERT_NO_THROW(bisim.computeBisimulationDecomposition());
     std::shared_ptr<storm::models::sparse::Model<double>> result;
     ASSERT_NO_THROW(result = bisim.getQuotient());
 
@@ -19,13 +21,14 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     EXPECT_EQ(20ul, result->getNumberOfTransitions());
 
 #ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
 #else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
 #endif
     options.respectedAtomicPropositions = std::set<std::string>({"one"});
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim2(*dtmc, options);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim2(*dtmc, options);
+    ASSERT_NO_THROW(bisim2.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim2.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
@@ -33,9 +36,10 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     EXPECT_EQ(8ul, result->getNumberOfTransitions());
 
     options.bounded = false;
-    options.weak = true;
+    options.type = storm::storage::BisimulationType::Weak;
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim3(*dtmc, options);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim3(*dtmc, options);
+    ASSERT_NO_THROW(bisim3.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim3.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
@@ -46,12 +50,13 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
 
 #ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options2(*dtmc, *eventuallyFormula);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *eventuallyFormula);
 #else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options2(*dtmc, *eventuallyFormula);
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *eventuallyFormula);
 #endif
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim4(*dtmc, options2);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim4(*dtmc, options2);
+    ASSERT_NO_THROW(bisim4.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim4.getQuotient());
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
     EXPECT_EQ(5ul, result->getNumberOfStates());
@@ -64,8 +69,9 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     ASSERT_EQ(abstractModel->getType(), storm::models::ModelType::Dtmc);
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim(*dtmc);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim(*dtmc);
     std::shared_ptr<storm::models::sparse::Model<double>> result;
+    ASSERT_NO_THROW(bisim.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
@@ -73,13 +79,14 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(546ul, result->getNumberOfTransitions());
 
 #ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
 #else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options;
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options;
 #endif
     options.respectedAtomicPropositions = std::set<std::string>({"observe0Greater1"});
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim2(*dtmc, options);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim2(*dtmc, options);
+    ASSERT_NO_THROW(bisim2.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim2.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
@@ -87,9 +94,10 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(105ul, result->getNumberOfTransitions());
 
     options.bounded = false;
-    options.weak = true;
+    options.type = storm::storage::BisimulationType::Weak;
 
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim3(*dtmc, options);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim3(*dtmc, options);
+    ASSERT_NO_THROW(bisim3.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim3.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
@@ -100,11 +108,12 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     auto eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
 
 #ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options2(*dtmc, *eventuallyFormula);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *eventuallyFormula);
 #else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options2(*dtmc, *eventuallyFormula);
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options2(*dtmc, *eventuallyFormula);
 #endif
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim4(*dtmc, options2);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim4(*dtmc, options2);
+    ASSERT_NO_THROW(bisim4.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim4.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
@@ -114,11 +123,12 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     auto probabilityOperatorFormula = std::make_shared<storm::logic::ProbabilityOperatorFormula>(eventuallyFormula);
 
 #ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options3(*dtmc, *probabilityOperatorFormula);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options3(*dtmc, *probabilityOperatorFormula);
 #else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options3(*dtmc, *probabilityOperatorFormula);
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options3(*dtmc, *probabilityOperatorFormula);
 #endif
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim5(*dtmc, options3);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim5(*dtmc, options3);
+    ASSERT_NO_THROW(bisim5.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim5.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
@@ -128,11 +138,12 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     auto boundedUntilFormula = std::make_shared<storm::logic::BoundedUntilFormula>(std::make_shared<storm::logic::BooleanLiteralFormula>(true), labelFormula, 50);
 
 #ifdef WINDOWS
-    storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options4(*dtmc, *boundedUntilFormula);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options4(*dtmc, *boundedUntilFormula);
 #else
-    typename storm::storage::DeterministicModelBisimulationDecomposition<double>::Options options4(*dtmc, *boundedUntilFormula);
+    typename storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>::Options options4(*dtmc, *boundedUntilFormula);
 #endif
-    storm::storage::DeterministicModelBisimulationDecomposition<double> bisim6(*dtmc, options4);
+    storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim6(*dtmc, options4);
+    ASSERT_NO_THROW(bisim6.computeBisimulationDecomposition());
     ASSERT_NO_THROW(result = bisim6.getQuotient());
 
     EXPECT_EQ(storm::models::ModelType::Dtmc, result->getType());
