@@ -326,6 +326,21 @@ namespace storm {
             void filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const;
             
         private:
+            /*!
+             * Builds a BDD representing the values that make the given filter function evaluate to true.
+             *
+             * @param currentOffset The current offset in the vector.
+             * @param currentLevel The current level in the DD.
+             * @param maxLevel The maximal level in the DD.
+             * @param values The values that are to be checked against the filter function.
+             * @param odd The ODD used for the translation.
+             * @param ddVariableIndices The (sorted) list of DD variable indices to use.
+             * @param filter A function that determines which encodings are to be mapped to true.
+             * @return The resulting (Sylvan) BDD node.
+             */
+            template<typename ValueType>
+            static BDD fromVectorRec(uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter);
+
             sylvan::Bdd& getSylvanBdd();
             sylvan::Bdd const& getSylvanBdd() const;
             
