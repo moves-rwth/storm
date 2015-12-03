@@ -916,7 +916,7 @@ namespace storm {
                     ActionDecisionDiagram const& actionDd = stateActionReward.isLabeled() ? globalModule.synchronizingActionToDecisionDiagramMap.at(stateActionReward.getActionIndex()) : globalModule.independentAction;
                     states *= actionDd.guardDd * reachableStatesAdd;
                     storm::dd::Add<Type, ValueType> stateActionRewardDd = synchronization * states * rewards;
-
+                    
                     // If we are building the state-action rewards for an MDP, we need to make sure that the encoding
                     // of the nondeterminism is present in the reward vector, so we ne need to multiply it with the
                     // legal state-actions.

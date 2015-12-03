@@ -84,7 +84,7 @@ namespace storm {
             
             template <storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type, ValueType> const& filterAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const {
-                storm::dd::Add<Type, ValueType> result = transitionMatrix.getDdManager()->template getAddZero<ValueType>();
+                storm::dd::Add<Type, ValueType> result = transitionMatrix.getDdManager().template getAddZero<ValueType>();
                 if (this->hasStateRewards()) {
                     result += filterAdd * optionalStateRewardVector.get();
                 }
@@ -99,7 +99,7 @@ namespace storm {
             
             template <storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const {
-                storm::dd::Add<Type, ValueType> result = transitionMatrix.getDdManager()->template getAddZero<ValueType>();
+                storm::dd::Add<Type, ValueType> result = transitionMatrix.getDdManager().template getAddZero<ValueType>();
                 if (this->hasStateRewards()) {
                     result += optionalStateRewardVector.get();
                 }
@@ -114,7 +114,7 @@ namespace storm {
             
             template <storm::dd::DdType Type, typename ValueType>
             storm::dd::Add<Type, ValueType> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, storm::dd::Add<Type, ValueType> const& weights) const {
-                storm::dd::Add<Type, ValueType> result = transitionMatrix.getDdManager()->template getAddZero<ValueType>();
+                storm::dd::Add<Type, ValueType> result = transitionMatrix.getDdManager().template getAddZero<ValueType>();
                 if (this->hasStateRewards()) {
                     result += optionalStateRewardVector.get();
                 }

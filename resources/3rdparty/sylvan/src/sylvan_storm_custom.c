@@ -500,8 +500,8 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
     } hack;
     
     /* Consult cache */
-    if (cache_get3(CACHE_BDD_SATCOUNT, dd, 0, nvars, &hack.s)) {
-        sylvan_stats_count(BDD_SATCOUNT_CACHED);
+    if (cache_get3(CACHE_MTBDD_NONZERO_COUNT, dd, 0, nvars, &hack.s)) {
+        sylvan_stats_count(CACHE_MTBDD_NONZERO_COUNT);
         return hack.d;
     }
     
@@ -509,6 +509,6 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
     double low = CALL(mtbdd_non_zero_count, mtbdd_getlow(dd), nvars-1);
     hack.d = low + SYNC(mtbdd_non_zero_count);
     
-    cache_put3(CACHE_BDD_SATCOUNT, dd, 0, nvars, hack.s);
+    cache_put3(CACHE_MTBDD_NONZERO_COUNT, dd, 0, nvars, hack.s);
     return hack.d;
 }

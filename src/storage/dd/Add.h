@@ -47,7 +47,7 @@ namespace storm {
              * @param metaVariables The meta variables used for the translation.
              * @return The resulting (CUDD) ADD.
              */
-            static Add<LibraryType, ValueType> fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables);
+            static Add<LibraryType, ValueType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables);
             
             /*!
              * Retrieves whether the two DDs represent the same function.
@@ -611,7 +611,7 @@ namespace storm {
              * @param internalAdd The internal ADD to store.
              * @param containedMetaVariables The meta variables that appear in the DD.
              */
-            Add(std::shared_ptr<DdManager<LibraryType> const> ddManager, InternalAdd<LibraryType, ValueType> const& internalAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
+            Add(DdManager<LibraryType> const& ddManager, InternalAdd<LibraryType, ValueType> const& internalAdd, std::set<storm::expressions::Variable> const& containedMetaVariables = std::set<storm::expressions::Variable>());
             
             /*!
              * We provide a conversion operator from the BDD to its internal type to ease calling the internal functions.

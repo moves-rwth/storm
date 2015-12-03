@@ -5,6 +5,8 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/NotSupportedException.h"
 
+#include <iostream>
+
 namespace storm {
     namespace dd {
         uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;

@@ -1035,4 +1035,11 @@ Sylvan::quitPackage()
     sylvan_quit();
 }
 
+void
+Sylvan::triggerGarbageCollection() {
+//    LACE_ME;
+//    sylvan_gc();
+}
+
+
 #include "sylvan_obj_storm.cpp"

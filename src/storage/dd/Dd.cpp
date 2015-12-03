@@ -10,7 +10,7 @@
 namespace storm {
     namespace dd {
         template<DdType LibraryType>
-        Dd<LibraryType>::Dd(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(ddManager), containedMetaVariables(containedMetaVariables) {
+        Dd<LibraryType>::Dd(DdManager<LibraryType> const& ddManager, std::set<storm::expressions::Variable> const& containedMetaVariables) : ddManager(&ddManager), containedMetaVariables(containedMetaVariables) {
             // Intentionally left empty.
         }
         
@@ -35,8 +35,8 @@ namespace storm {
         }
         
         template<DdType LibraryType>
-        std::shared_ptr<DdManager<LibraryType> const> Dd<LibraryType>::getDdManager() const {
-            return this->ddManager;
+        DdManager<LibraryType> const& Dd<LibraryType>::getDdManager() const {
+            return *this->ddManager;
         }
         
         template<DdType LibraryType>
@@ -65,7 +65,7 @@ namespace storm {
         
         template<DdType LibraryType>
         std::vector<uint_fast64_t> Dd<LibraryType>::getSortedVariableIndices() const {
-            return this->getDdManager()->getSortedVariableIndices(this->getContainedMetaVariables());
+            return this->getDdManager().getSortedVariableIndices(this->getContainedMetaVariables());
         }
         
         template<DdType LibraryType>

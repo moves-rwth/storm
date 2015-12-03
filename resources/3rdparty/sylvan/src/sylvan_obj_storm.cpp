@@ -110,3 +110,9 @@ Mtbdd::NonZeroCount(size_t variableCount) const {
     LACE_ME;
     return mtbdd_non_zero_count(mtbdd, variableCount);
 }
+
+bool
+Mtbdd::isValid() const {
+    LACE_ME;
+    return mtbdd_test_isvalid(mtbdd) == 1;
+}

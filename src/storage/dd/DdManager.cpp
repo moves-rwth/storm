@@ -14,30 +14,30 @@ namespace storm {
         
         template<DdType LibraryType>
         Bdd<LibraryType> DdManager<LibraryType>::getBddOne() const {
-            return Bdd<LibraryType>(this->shared_from_this(), internalDdManager.getBddOne());
+            return Bdd<LibraryType>(*this, internalDdManager.getBddOne());
         }
         
         template<DdType LibraryType>
         template<typename ValueType>
         Add<LibraryType, ValueType> DdManager<LibraryType>::getAddOne() const {
-            return Add<LibraryType, ValueType>(this->shared_from_this(), internalDdManager.template getAddOne<ValueType>());
+            return Add<LibraryType, ValueType>(*this, internalDdManager.template getAddOne<ValueType>());
         }
         
         template<DdType LibraryType>
         Bdd<LibraryType> DdManager<LibraryType>::getBddZero() const {
-            return Bdd<LibraryType>(this->shared_from_this(), internalDdManager.getBddZero());
+            return Bdd<LibraryType>(*this, internalDdManager.getBddZero());
         }
         
         template<DdType LibraryType>
         template<typename ValueType>
         Add<LibraryType, ValueType> DdManager<LibraryType>::getAddZero() const {
-            return Add<LibraryType, ValueType>(this->shared_from_this(), internalDdManager.template getAddZero<ValueType>());
+            return Add<LibraryType, ValueType>(*this, internalDdManager.template getAddZero<ValueType>());
         }
         
         template<DdType LibraryType>
         template<typename ValueType>
         Add<LibraryType, ValueType> DdManager<LibraryType>::getConstant(ValueType const& value) const {
-            return Add<LibraryType, ValueType>(this->shared_from_this(), internalDdManager.getConstant(value));
+            return Add<LibraryType, ValueType>(*this, internalDdManager.getConstant(value));
         }
         
         template<DdType LibraryType>
@@ -114,8 +114,8 @@ namespace storm {
             std::vector<Bdd<LibraryType>> variablesPrime;
             for (std::size_t i = 0; i < numberOfBits; ++i) {
                 auto ddVariablePair = internalDdManager.createNewDdVariablePair();
-                variables.emplace_back(Bdd<LibraryType>(this->shared_from_this(), ddVariablePair.first, {unprimed}));
-                variablesPrime.emplace_back(Bdd<LibraryType>(this->shared_from_this(), ddVariablePair.second, {primed}));
+                variables.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.first, {unprimed}));
+                variablesPrime.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.second, {primed}));
             }
 
             metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, low, high, variables));
@@ -138,8 +138,8 @@ namespace storm {
             std::vector<Bdd<LibraryType>> variables;
             std::vector<Bdd<LibraryType>> variablesPrime;
             auto ddVariablePair = internalDdManager.createNewDdVariablePair();
-            variables.emplace_back(Bdd<LibraryType>(this->shared_from_this(), ddVariablePair.first, {unprimed}));
-            variablesPrime.emplace_back(Bdd<LibraryType>(this->shared_from_this(), ddVariablePair.second, {primed}));
+            variables.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.first, {unprimed}));
+            variablesPrime.emplace_back(Bdd<LibraryType>(*this, ddVariablePair.second, {primed}));
             
             metaVariableMap.emplace(unprimed, DdMetaVariable<LibraryType>(name, variables));
             metaVariableMap.emplace(primed, DdMetaVariable<LibraryType>(name + "'", variablesPrime));
@@ -257,11 +257,6 @@ namespace storm {
         template<DdType LibraryType>
         void DdManager<LibraryType>::triggerReordering() {
             internalDdManager.triggerReordering();
-        }
-        
-        template<DdType LibraryType>
-        std::shared_ptr<DdManager<LibraryType> const> DdManager<LibraryType>::asSharedPointer() const {
-            return this->shared_from_this();
         }
         
         template<DdType LibraryType>

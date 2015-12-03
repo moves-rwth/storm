@@ -282,12 +282,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::begin(std::shared_ptr<DdManager<DdType::Sylvan> const> fullDdManager, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
+        AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::begin(DdManager<DdType::Sylvan> const& fullDdManager, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
         }
         
         template<typename ValueType>
-        AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::end(std::shared_ptr<DdManager<DdType::Sylvan> const> fullDdManager, bool enumerateDontCareMetaVariables) const {
+        AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::end(DdManager<DdType::Sylvan> const& fullDdManager, bool enumerateDontCareMetaVariables) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
         }
         

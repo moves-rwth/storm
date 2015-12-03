@@ -86,7 +86,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Ctmc) {
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/fms2.sm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
     EXPECT_EQ(810ul, model->getNumberOfStates());

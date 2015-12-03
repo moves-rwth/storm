@@ -34,6 +34,10 @@ namespace storm {
             }
         }
         
+        InternalDdManager<DdType::CUDD>::~InternalDdManager() {
+            // Intentionally left empty.
+        }
+        
         InternalBdd<DdType::CUDD> InternalDdManager<DdType::CUDD>::getBddOne() const {
             return InternalBdd<DdType::CUDD>(this, cuddManager.bddOne());
         }

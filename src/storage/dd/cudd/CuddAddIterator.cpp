@@ -12,7 +12,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        AddIterator<DdType::CUDD, ValueType>::AddIterator(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, DdGen* generator, int* cube, ValueType const& value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(ddManager), generator(generator), cube(cube), valueAsDouble(static_cast<double>(value)), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager->getExpressionManager().getSharedPointer()) {
+        AddIterator<DdType::CUDD, ValueType>::AddIterator(DdManager<DdType::CUDD> const& ddManager, DdGen* generator, int* cube, ValueType const& value, bool isAtEnd, std::set<storm::expressions::Variable> const* metaVariables, bool enumerateDontCareMetaVariables) : ddManager(&ddManager), generator(generator), cube(cube), valueAsDouble(static_cast<double>(value)), isAtEnd(isAtEnd), metaVariables(metaVariables), enumerateDontCareMetaVariables(enumerateDontCareMetaVariables), cubeCounter(), relevantDontCareDdVariables(), currentValuation(ddManager.getExpressionManager().getSharedPointer()) {
             // If the given generator is not yet at its end, we need to create the current valuation from the cube from
             // scratch.
             if (!this->isAtEnd) {
@@ -163,7 +163,7 @@ namespace storm {
             if (this->isAtEnd && other.isAtEnd) {
                 return true;
             } else {
-                return this->ddManager.get() == other.ddManager.get() && this->generator == other.generator
+                return this->ddManager == other.ddManager && this->generator == other.generator
                 && this->cube == other.cube && this->valueAsDouble == other.valueAsDouble && this->isAtEnd == other.isAtEnd
                 && this->metaVariables == other.metaVariables && this->cubeCounter == other.cubeCounter
                 && this->relevantDontCareDdVariables == other.relevantDontCareDdVariables

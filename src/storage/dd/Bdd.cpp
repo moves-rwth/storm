@@ -17,12 +17,12 @@ namespace storm {
     namespace dd {
         
         template<DdType LibraryType>
-        Bdd<LibraryType>::Bdd(std::shared_ptr<DdManager<LibraryType> const> ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<LibraryType>(ddManager, containedMetaVariables), internalBdd(internalBdd) {
+        Bdd<LibraryType>::Bdd(DdManager<LibraryType> const& ddManager, InternalBdd<LibraryType> const& internalBdd, std::set<storm::expressions::Variable> const& containedMetaVariables) : Dd<LibraryType>(ddManager, containedMetaVariables), internalBdd(internalBdd) {
             // Intentionally left empty.
         }
         
         template<DdType LibraryType>
-        Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<double> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value) {
+        Bdd<LibraryType> Bdd<LibraryType>::fromVector(DdManager<LibraryType> const& ddManager, std::vector<double> const& explicitValues, storm::dd::Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, storm::logic::ComparisonType comparisonType, double value) {
             switch (comparisonType) {
                 case storm::logic::ComparisonType::Less:
                     return fromVector<double>(ddManager, explicitValues, odd, metaVariables, std::bind(std::greater<double>(), value, std::placeholders::_1));
@@ -37,8 +37,8 @@ namespace storm {
         
         template<DdType LibraryType>
         template<typename ValueType>
-        Bdd<LibraryType> Bdd<LibraryType>::fromVector(std::shared_ptr<DdManager<LibraryType> const> ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
-            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager->internalDdManager, values, odd, ddManager->getSortedVariableIndices(metaVariables), filter), metaVariables);
+        Bdd<LibraryType> Bdd<LibraryType>::fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter) {
+            return Bdd<LibraryType>(ddManager, InternalBdd<LibraryType>::fromVector(&ddManager.internalDdManager, values, odd, ddManager.getSortedVariableIndices(metaVariables), filter), metaVariables);
         }
         
         template<DdType LibraryType>
@@ -110,19 +110,19 @@ namespace storm {
 
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::existsAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = getCube(*this->getDdManager(), metaVariables);
+            Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.existsAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
 
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::universalAbstract(std::set<storm::expressions::Variable> const& metaVariables) const {
-            Bdd<LibraryType> cube = getCube(*this->getDdManager(), metaVariables);
+            Bdd<LibraryType> cube = getCube(this->getDdManager(), metaVariables);
             return Bdd<LibraryType>(this->getDdManager(), internalBdd.universalAbstract(cube), Dd<LibraryType>::subtractMetaVariables(*this, cube));
         }
         
         template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::andExists(Bdd<LibraryType> const& other, std::set<storm::expressions::Variable> const& existentialVariables) const {
-            Bdd<LibraryType> cube = getCube(*this->getDdManager(), existentialVariables);
+            Bdd<LibraryType> cube = getCube(this->getDdManager(), existentialVariables);
 
             std::set<storm::expressions::Variable> unionOfMetaVariables;
             std::set_union(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end(), other.getContainedMetaVariables().begin(), other.getContainedMetaVariables().end(), std::inserter(unionOfMetaVariables, unionOfMetaVariables.begin()));
@@ -149,7 +149,7 @@ namespace storm {
             
             std::vector<InternalBdd<LibraryType>> rowVariables;
             for (auto const& metaVariable : rowMetaVariables) {
-                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
                     rowVariables.push_back(ddVariable);
                 }
@@ -157,7 +157,7 @@ namespace storm {
             
             std::vector<InternalBdd<LibraryType>> columnVariables;
             for (auto const& metaVariable : columnMetaVariables) {
-                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
                     columnVariables.push_back(ddVariable);
                 }
@@ -173,7 +173,7 @@ namespace storm {
             
             std::vector<InternalBdd<LibraryType>> rowVariables;
             for (auto const& metaVariable : rowMetaVariables) {
-                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
                     rowVariables.push_back(ddVariable);
                 }
@@ -181,7 +181,7 @@ namespace storm {
             
             std::vector<InternalBdd<LibraryType>> columnVariables;
             for (auto const& metaVariable : columnMetaVariables) {
-                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
                     columnVariables.push_back(ddVariable);
                 }
@@ -197,7 +197,7 @@ namespace storm {
             
             std::vector<InternalBdd<LibraryType>> rowVariables;
             for (auto const& metaVariable : rowMetaVariables) {
-                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
                     rowVariables.push_back(ddVariable);
                 }
@@ -205,7 +205,7 @@ namespace storm {
             
             std::vector<InternalBdd<LibraryType>> columnVariables;
             for (auto const& metaVariable : columnMetaVariables) {
-                DdMetaVariable<LibraryType> const& variable = this->getDdManager()->getMetaVariable(metaVariable);
+                DdMetaVariable<LibraryType> const& variable = this->getDdManager().getMetaVariable(metaVariable);
                 for (auto const& ddVariable : variable.getDdVariables()) {
                     columnVariables.push_back(ddVariable);
                 }
@@ -220,8 +220,8 @@ namespace storm {
             std::vector<InternalBdd<LibraryType>> from;
             std::vector<InternalBdd<LibraryType>> to;
             for (auto const& metaVariablePair : metaVariablePairs) {
-                DdMetaVariable<LibraryType> const& variable1 = this->getDdManager()->getMetaVariable(metaVariablePair.first);
-                DdMetaVariable<LibraryType> const& variable2 = this->getDdManager()->getMetaVariable(metaVariablePair.second);
+                DdMetaVariable<LibraryType> const& variable1 = this->getDdManager().getMetaVariable(metaVariablePair.first);
+                DdMetaVariable<LibraryType> const& variable2 = this->getDdManager().getMetaVariable(metaVariablePair.second);
                 
                 // Keep track of the contained meta variables in the DD.
                 if (this->containsMetaVariable(metaVariablePair.first)) {
@@ -261,7 +261,7 @@ namespace storm {
         uint_fast64_t Bdd<LibraryType>::getNonZeroCount() const {
             std::size_t numberOfDdVariables = 0;
             for (auto const& metaVariable : this->getContainedMetaVariables()) {
-                numberOfDdVariables += this->getDdManager()->getMetaVariable(metaVariable).getNumberOfDdVariables();
+                numberOfDdVariables += this->getDdManager().getMetaVariable(metaVariable).getNumberOfDdVariables();
             }
             return internalBdd.getNonZeroCount(numberOfDdVariables);
         }
@@ -293,7 +293,7 @@ namespace storm {
         
         template<DdType LibraryType>
         void Bdd<LibraryType>::exportToDot(std::string const& filename) const {
-            internalBdd.exportToDot(filename, this->getDdManager()->getDdVariableNames());
+            internalBdd.exportToDot(filename, this->getDdManager().getDdVariableNames());
         }
         
         template<DdType LibraryType>
@@ -325,8 +325,8 @@ namespace storm {
         
         template class Bdd<DdType::CUDD>;
         
-        template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<double> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
-        template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(std::shared_ptr<DdManager<DdType::CUDD> const> ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
+        template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(DdManager<DdType::CUDD> const& ddManager, std::vector<double> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
+        template Bdd<DdType::CUDD> Bdd<DdType::CUDD>::fromVector(DdManager<DdType::CUDD> const& ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
         
         template Add<DdType::CUDD, double> Bdd<DdType::CUDD>::toAdd() const;
         template Add<DdType::CUDD, uint_fast64_t> Bdd<DdType::CUDD>::toAdd() const;
@@ -337,8 +337,8 @@ namespace storm {
         
         template class Bdd<DdType::Sylvan>;
 
-        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(std::shared_ptr<DdManager<DdType::Sylvan> const> ddManager, std::vector<double> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
-        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(std::shared_ptr<DdManager<DdType::Sylvan> const> ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
+        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<double> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
+        template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
         
         template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::toAdd() const;
         template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::toAdd() const;

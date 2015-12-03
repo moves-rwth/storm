@@ -19,7 +19,7 @@ namespace storm {
     namespace dd {
         // Declare DdManager class so we can then specialize it for the different DD types.
         template<DdType LibraryType>
-        class DdManager : public std::enable_shared_from_this<DdManager<LibraryType>> {
+        class DdManager {
         public:
             friend class Bdd<LibraryType>;
             
@@ -172,14 +172,7 @@ namespace storm {
              * @return The corresponding meta variable.
              */
             DdMetaVariable<LibraryType> const& getMetaVariable(storm::expressions::Variable const& variable) const;
-            
-            /*!
-             * Retrieves the manager as a shared pointer.
-             *
-             * @return A shared pointer to the manager.
-             */
-            std::shared_ptr<DdManager<LibraryType> const> asSharedPointer() const;
-            
+                        
             /*!
              * Retrieves the set of meta variables contained in the DD.
              *
@@ -261,15 +254,18 @@ namespace storm {
              * @return A pointer to the internal DD manager.
              */
             InternalDdManager<LibraryType> const* getInternalDdManagerPointer() const;
+
+            // ATTENTION: as the DD packages typically perform garbage collection, the order of members is crucial here:
+            // First, the references to the DDs of the meta variables need to be disposed of and *then* the manager.
+            
+            // The DD manager that is customized according to the selected library type.
+            InternalDdManager<LibraryType> internalDdManager;
             
             // A mapping from variables to the meta variable information.
             std::unordered_map<storm::expressions::Variable, DdMetaVariable<LibraryType>> metaVariableMap;
             
             // The manager responsible for the variables.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
-            
-            // The DD manager that is customized according to the selected library type.
-            InternalDdManager<LibraryType> internalDdManager;
         };
     }
 }

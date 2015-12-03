@@ -20,6 +20,8 @@
 
 #include "lace.h"
 
+#include <assert.h>
+
 #ifndef LLMSSET_H
 #define LLMSSET_H
 
@@ -75,6 +77,7 @@ typedef struct llmsset
 /**
  * Retrieve a pointer to the data associated with the 42-bit value.
  */
+    
 static inline void*
 llmsset_index_to_ptr(const llmsset_t dbs, size_t index)
 {

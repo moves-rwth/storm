@@ -847,6 +847,8 @@ public:
      * Warning: if you have any Bdd objects which are not bddZero() or bddOne() after this, your program may crash!
      */
     static void quitPackage();
+    
+    static void triggerGarbageCollection();
 };
 
 }

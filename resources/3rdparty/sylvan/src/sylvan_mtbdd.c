@@ -90,7 +90,7 @@ VOID_TASK_IMPL_1(mtbdd_gc_mark_rec, MDD, mtbdd)
     if (mtbdd == mtbdd_true) return;
     if (mtbdd == mtbdd_false) return;
 
-    if (llmsset_mark(nodes, mtbdd&0x000000ffffffffff)) {
+    if (llmsset_mark(nodes, mtbdd&(~mtbdd_complement))) {
         mtbddnode_t n = GETNODE(mtbdd);
         if (!mtbddnode_isleaf(n)) {
             SPAWN(mtbdd_gc_mark_rec, mtbddnode_getlow(n));
@@ -699,8 +699,8 @@ TASK_IMPL_3(MTBDD, mtbdd_apply, MTBDD, a, MTBDD, b, mtbdd_apply_op, op)
     mtbdd_refs_spawn(SPAWN(mtbdd_apply, ahigh, bhigh, op));
     MTBDD low = mtbdd_refs_push(CALL(mtbdd_apply, alow, blow, op));
     MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_apply));
-    result = mtbdd_makenode(v, low, high);
     mtbdd_refs_pop(1);
+    result = mtbdd_makenode(v, low, high);
 
     /* Store in cache */
     cache_put3(CACHE_MTBDD_APPLY, a, b, (size_t)op, result);
@@ -764,8 +764,8 @@ TASK_IMPL_5(MTBDD, mtbdd_applyp, MTBDD, a, MTBDD, b, size_t, p, mtbdd_applyp_op,
     mtbdd_refs_spawn(SPAWN(mtbdd_applyp, ahigh, bhigh, p, op, opid));
     MTBDD low = mtbdd_refs_push(CALL(mtbdd_applyp, alow, blow, p, op, opid));
     MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_applyp));
-    result = mtbdd_makenode(v, low, high);
     mtbdd_refs_pop(1);
+    result = mtbdd_makenode(v, low, high);
 
     /* Store in cache */
     cache_put3(opid, a, b, p, result);
@@ -801,8 +801,8 @@ TASK_IMPL_3(MTBDD, mtbdd_uapply, MTBDD, dd, mtbdd_uapply_op, op, size_t, param)
     mtbdd_refs_spawn(SPAWN(mtbdd_uapply, ddhigh, op, param));
     MTBDD low = mtbdd_refs_push(CALL(mtbdd_uapply, ddlow, op, param));
     MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_uapply));
-    result = mtbdd_makenode(mtbddnode_getvariable(ndd), low, high);
     mtbdd_refs_pop(1);
+    result = mtbdd_makenode(mtbddnode_getvariable(ndd), low, high);
 
     /* Store in cache */
     cache_put3(CACHE_MTBDD_UAPPLY, dd, (size_t)op, param, result);
@@ -957,18 +957,15 @@ TASK_IMPL_3(MTBDD, mtbdd_abstract, MTBDD, a, MTBDD, v, mtbdd_abstract_op, op)
     if (v == mtbdd_true) {
         result = a;
     } else if (var_a < var_v) {
-        SPAWN(mtbdd_abstract, node_gethigh(a, na), v, op);
-        MTBDD low = CALL(mtbdd_abstract, node_getlow(a, na), v, op);
-        mtbdd_refs_push(low);
-        MTBDD high = SYNC(mtbdd_abstract);
+        mtbdd_refs_spawn(SPAWN(mtbdd_abstract, node_gethigh(a, na), v, op));
+        MTBDD low = mtbdd_refs_push(CALL(mtbdd_abstract, node_getlow(a, na), v, op));
+        MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_abstract));
         mtbdd_refs_pop(1);
         result = mtbdd_makenode(var_a, low, high);
     } else /* var_a == var_v */ {
-        SPAWN(mtbdd_abstract, node_gethigh(a, na), node_gethigh(v, nv), op);
-        MTBDD low = CALL(mtbdd_abstract, node_getlow(a, na), node_gethigh(v, nv), op);
-        mtbdd_refs_push(low);
-        MTBDD high = SYNC(mtbdd_abstract);
-        mtbdd_refs_push(high);
+        mtbdd_refs_spawn(SPAWN(mtbdd_abstract, node_gethigh(a, na), node_gethigh(v, nv), op));
+        MTBDD low = mtbdd_refs_push(CALL(mtbdd_abstract, node_getlow(a, na), node_gethigh(v, nv), op));
+        MTBDD high = mtbdd_refs_push(mtbdd_refs_sync(SYNC(mtbdd_abstract)));
         result = WRAP(op, low, high, 0);
         mtbdd_refs_pop(2);
     }
@@ -1394,9 +1391,9 @@ TASK_IMPL_3(MTBDD, mtbdd_ite, MTBDD, f, MTBDD, g, MTBDD, h)
     /* Recursive calls */
     mtbdd_refs_spawn(SPAWN(mtbdd_ite, fhigh, ghigh, hhigh));
     MTBDD low = mtbdd_refs_push(CALL(mtbdd_ite, flow, glow, hlow));
-    MTBDD high = mtbdd_refs_push(mtbdd_refs_sync(SYNC(mtbdd_ite)));
+    MTBDD high = mtbdd_refs_sync(SYNC(mtbdd_ite));
+    mtbdd_refs_pop(1);
     result = mtbdd_makenode(v, low, high);
-    mtbdd_refs_pop(2);
 
     /* Store in cache */
     cache_put3(CACHE_MTBDD_ITE, f, g, h, result);
@@ -2326,51 +2323,8 @@ TASK_IMPL_2(double, mtbdd_satcount, MTBDD, dd, size_t, nvars)
     return hack.d;
 }
 
-static MTBDD
-mtbdd_enum_next_leaf(MTBDD dd, MTBDD variables, MTBDD prev)
-{
-    // dd is a leaf
-
-    if (variables == mtbdd_true) {
-        // if prev is not false, then it equals dd and we should return false (seen before)
-        if (prev != mtbdd_false) return mtbdd_false;
-        else return dd;
-    } else {
-        // get next variable from <variables>
-        uint32_t v = mtbdd_getvar(variables);
-        variables = mtbdd_gethigh(variables);
-
-        // if prev is not false, get plow and phigh (one of these leads to "false")
-        MTBDD plow, phigh;
-        if (prev != mtbdd_false) {
-            mtbddnode_t pn = GETNODE(prev);
-            assert(!mtbdd_isleaf(prev) && mtbddnode_getvariable(pn) == v);
-            plow = node_getlow(prev, pn);
-            phigh = node_gethigh(prev, pn);
-            assert(plow == mtbdd_false || phigh == mtbdd_false);
-        } else {
-            plow = phigh = mtbdd_false;
-        }
-
-        MTBDD sub;
-
-        // first maybe follow low
-        if (phigh == mtbdd_false) {
-            sub = mtbdd_enum_next_leaf(dd, variables, plow);
-            if (sub != mtbdd_false) return mtbdd_makenode(v, sub, mtbdd_false);
-        }
-
-        // if not low, try following high
-        sub = mtbdd_enum_next_leaf(dd, variables, phigh);
-        if (sub != mtbdd_false) return mtbdd_makenode(v,  mtbdd_false, sub);
-
-        // we've tried low and high, return false
-        return mtbdd_false;
-    }
-}
-
 MTBDD
-mtbdd_enum_next(MTBDD dd, MTBDD variables, MTBDD prev, mtbdd_enum_filter_cb filter_cb)
+mtbdd_enum_first(MTBDD dd, MTBDD variables, uint8_t *arr, mtbdd_enum_filter_cb filter_cb)
 {
     if (dd == mtbdd_false) {
         // the leaf dd is skipped
@@ -2379,55 +2333,83 @@ mtbdd_enum_next(MTBDD dd, MTBDD variables, MTBDD prev, mtbdd_enum_filter_cb filt
         // a leaf for which the filter returns 0 is skipped
         if (filter_cb != NULL && filter_cb(dd) == 0) return mtbdd_false;
         // ok, we have a leaf that is not skipped, go for it!
-        return mtbdd_enum_next_leaf(dd, variables, prev);
+        while (variables != mtbdd_true) {
+            *arr++ = 2;
+            variables = mtbdd_gethigh(variables);
+        }
+        return dd;
     } else {
         // if variables == true, then dd must be a leaf. But then this line is unreachable.
+        // if this assertion fails, then <variables> is not the support of <dd>.
         assert(variables != mtbdd_true);
 
         // get next variable from <variables>
         uint32_t v = mtbdd_getvar(variables);
         variables = mtbdd_gethigh(variables);
 
-        // if prev is not false, get plow and phigh (one of these leads to "false")
-        MTBDD plow, phigh;
-        if (prev != mtbdd_false) {
-            mtbddnode_t pn = GETNODE(prev);
-            assert(!mtbdd_isleaf(prev) && mtbddnode_getvariable(pn) == v);
-            plow = node_getlow(prev, pn);
-            phigh = node_gethigh(prev, pn);
-            assert(plow == mtbdd_false || phigh == mtbdd_false);
-        } else {
-            plow = phigh = mtbdd_false;
+        // check if MTBDD is on this variable
+        mtbddnode_t n = GETNODE(dd);
+        if (mtbddnode_getvariable(n) != v) {
+            *arr = 2;
+            return mtbdd_enum_first(dd, variables, arr+1, filter_cb);
         }
-
-        // get cofactors ddlow and ddhigh
-        MTBDD ddlow, ddhigh;
-        if (!mtbdd_isleaf(dd)) {
-            mtbddnode_t n = GETNODE(dd);
-            if (mtbddnode_getvariable(n) == v) {
-                ddlow = node_getlow(dd, n);
-                ddhigh = node_gethigh(dd, n);
-            } else {
-                ddlow = ddhigh = dd;
-            }
-        } else {
-            ddlow = ddhigh = dd;
-        }
-
-        MTBDD sub;
 
         // first maybe follow low
-        if (phigh == mtbdd_false) {
-            sub = mtbdd_enum_next(ddlow, variables, plow, filter_cb);
-            if (sub != mtbdd_false) return mtbdd_makenode(v, sub, mtbdd_false);
+        MTBDD res = mtbdd_enum_first(node_getlow(dd, n), variables, arr+1, filter_cb);
+        if (res != mtbdd_false) {
+            *arr = 0;
+            return res;
         }
 
         // if not low, try following high
-        sub = mtbdd_enum_next(ddhigh, variables, phigh, filter_cb);
-        if (sub != mtbdd_false) return mtbdd_makenode(v,  mtbdd_false, sub);
-
+        res = mtbdd_enum_first(node_gethigh(dd, n), variables, arr+1, filter_cb);
+        if (res != mtbdd_false) {
+            *arr = 1;
+            return res;
+        }
+        
         // we've tried low and high, return false
         return mtbdd_false;
+    }
+}
+
+MTBDD
+mtbdd_enum_next(MTBDD dd, MTBDD variables, uint8_t *arr, mtbdd_enum_filter_cb filter_cb)
+{
+    if (mtbdd_isleaf(dd)) {
+        // we find the leaf in 'enum_next', then we've seen it before...
+        return mtbdd_false;
+    } else {
+        // if variables == true, then dd must be a leaf. But then this line is unreachable.
+        // if this assertion fails, then <variables> is not the support of <dd>.
+        assert(variables != mtbdd_true);
+
+        variables = mtbdd_gethigh(variables);
+
+        if (*arr == 0) {
+            // previous was low
+            mtbddnode_t n = GETNODE(dd);
+            MTBDD res = mtbdd_enum_next(node_getlow(dd, n), variables, arr+1, filter_cb);
+            if (res != mtbdd_false) {
+                return res;
+            } else {
+                // try to find new in high branch
+                res = mtbdd_enum_first(node_gethigh(dd, n), variables, arr+1, filter_cb);
+                if (res != mtbdd_false) {
+                    *arr = 1;
+                    return res;
+                } else {
+                    return mtbdd_false;
+                }
+            }
+        } else if (*arr == 1) {
+            // previous was high
+            mtbddnode_t n = GETNODE(dd);
+            return mtbdd_enum_next(node_gethigh(dd, n), variables, arr+1, filter_cb);
+        } else {
+            // previous was either
+            return mtbdd_enum_next(dd, variables, arr+1, filter_cb);
+        }
     }
 }
 
@@ -2490,6 +2472,73 @@ mtbdd_nodecount(MTBDD mtbdd)
 {
     size_t result = mtbdd_nodecount_mark(mtbdd);
     mtbdd_unmark_rec(mtbdd);
+    return result;
+}
+
+TASK_2(int, mtbdd_test_isvalid_rec, MTBDD, dd, uint32_t, parent_var)
+{
+    // check if True/False leaf
+    if (dd == mtbdd_true || dd == mtbdd_false) return 1;
+
+    // check if index is in array
+    uint64_t index = dd & (~mtbdd_complement);
+    assert(index > 1 && index < nodes->table_size);
+    if (index <= 1 || index >= nodes->table_size) return 0;
+
+    // check if marked
+    int marked = llmsset_is_marked(nodes, index);
+    assert(marked);
+    if (marked == 0) return 0;
+
+    // check if leaf
+    mtbddnode_t n = GETNODE(dd);
+    if (mtbddnode_isleaf(n)) return 1; // we're fine
+
+    // check variable order
+    uint32_t var = mtbddnode_getvariable(n);
+    assert(var > parent_var);
+    if (var <= parent_var) return 0;
+
+    // check cache
+    uint64_t result;
+    if (cache_get3(CACHE_BDD_ISBDD, dd, 0, 0, &result)) {
+        return result;
+    }
+
+    // check recursively
+    SPAWN(mtbdd_test_isvalid_rec, node_getlow(dd, n), var);
+    result = (uint64_t)CALL(mtbdd_test_isvalid_rec, node_gethigh(dd, n), var);
+    if (!SYNC(mtbdd_test_isvalid_rec)) result = 0;
+
+    // put in cache and return result
+    cache_put3(CACHE_BDD_ISBDD, dd, 0, 0, result);
+    return result;
+}
+
+TASK_IMPL_1(int, mtbdd_test_isvalid, MTBDD, dd)
+{
+    // check if True/False leaf
+    if (dd == mtbdd_true || dd == mtbdd_false) return 1;
+
+    // check if index is in array
+    uint64_t index = dd & (~mtbdd_complement);
+    assert(index > 1 && index < nodes->table_size);
+    if (index <= 1 || index >= nodes->table_size) return 0;
+
+    // check if marked
+    int marked = llmsset_is_marked(nodes, index);
+    assert(marked);
+    if (marked == 0) return 0;
+
+    // check if leaf
+    mtbddnode_t n = GETNODE(dd);
+    if (mtbddnode_isleaf(n)) return 1; // we're fine
+
+    // check recursively
+    uint32_t var = mtbddnode_getvariable(n);
+    SPAWN(mtbdd_test_isvalid_rec, node_getlow(dd, n), var);
+    int result = CALL(mtbdd_test_isvalid_rec, node_gethigh(dd, n), var);
+    if (!SYNC(mtbdd_test_isvalid_rec)) result = 0;
     return result;
 }
 
@@ -2688,4 +2737,3 @@ mtbdd_map_removeall(MTBDDMAP map, MTBDD variables)
 }
 
 #include "sylvan_storm_custom.c"
-

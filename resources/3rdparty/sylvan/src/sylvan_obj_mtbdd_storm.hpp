@@ -40,3 +40,5 @@
      * @brief Compute the number of non-zero variable assignments, using variables in cube.
      */
     double NonZeroCount(size_t variableCount) const;
+
+    bool isValid() const;

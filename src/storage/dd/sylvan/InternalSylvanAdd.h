@@ -457,7 +457,7 @@ namespace storm {
              * if a meta variable does not at all influence the the function value.
              * @return An iterator that points to the first meta variable assignment with a non-zero function value.
              */
-            AddIterator<DdType::Sylvan, ValueType> begin(std::shared_ptr<DdManager<DdType::Sylvan> const> fullDdManager, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables = true) const;
+            AddIterator<DdType::Sylvan, ValueType> begin(DdManager<DdType::Sylvan> const& fullDdManager, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables = true) const;
             
             /*!
              * Retrieves an iterator that points past the end of the container.
@@ -467,7 +467,7 @@ namespace storm {
              * if a meta variable does not at all influence the the function value.
              * @return An iterator that points past the end of the container.
              */
-            AddIterator<DdType::Sylvan, ValueType> end(std::shared_ptr<DdManager<DdType::Sylvan> const> fullDdManager, bool enumerateDontCareMetaVariables = true) const;
+            AddIterator<DdType::Sylvan, ValueType> end(DdManager<DdType::Sylvan> const& fullDdManager, bool enumerateDontCareMetaVariables = true) const;
             
             /*!
              * Composes the ADD with an explicit vector by performing a specified function between the entries of this

@@ -28,14 +28,14 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         storm::dd::Add<DdType, ValueType>  SymbolicLinearEquationSolver<DdType, ValueType>::solveEquationSystem(storm::dd::Add<DdType, ValueType> const& x, storm::dd::Add<DdType, ValueType> const& b) const {
             // Start by computing the Jacobi decomposition of the matrix A.
-            storm::dd::Add<DdType, ValueType> diagonal = x.getDdManager()->template getAddOne<ValueType>();
+            storm::dd::Add<DdType, ValueType> diagonal = x.getDdManager().template getAddOne<ValueType>();
             for (auto const& pair : rowColumnMetaVariablePairs) {
-                diagonal *= x.getDdManager()->template getIdentity<ValueType>(pair.first).equals(x.getDdManager()->template getIdentity<ValueType>(pair.second)).template toAdd<ValueType>();
-                diagonal *= x.getDdManager()->getRange(pair.first).template toAdd<ValueType>() * x.getDdManager()->getRange(pair.second).template toAdd<ValueType>();
+                diagonal *= x.getDdManager().template getIdentity<ValueType>(pair.first).equals(x.getDdManager().template getIdentity<ValueType>(pair.second)).template toAdd<ValueType>();
+                diagonal *= x.getDdManager().getRange(pair.first).template toAdd<ValueType>() * x.getDdManager().getRange(pair.second).template toAdd<ValueType>();
             }
             diagonal *= allRows.template toAdd<ValueType>();
             
-            storm::dd::Add<DdType, ValueType> lu = diagonal.ite(this->A.getDdManager()->template getAddZero<ValueType>(), this->A);
+            storm::dd::Add<DdType, ValueType> lu = diagonal.ite(this->A.getDdManager().template getAddZero<ValueType>(), this->A);
             storm::dd::Add<DdType, ValueType> dinv = diagonal / (diagonal * this->A);
             
             // Set up additional environment variables.

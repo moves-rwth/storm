@@ -380,7 +380,7 @@ TEST(CuddDd, BddOddTest) {
         EXPECT_TRUE(i+1 == ddAsVector[i]);
     }
     
-    storm::dd::Add<storm::dd::DdType::CUDD, double> vectorAdd = storm::dd::Add<storm::dd::DdType::CUDD, double>::fromVector(manager, ddAsVector, odd, {x.first});
+    storm::dd::Add<storm::dd::DdType::CUDD, double> vectorAdd = storm::dd::Add<storm::dd::DdType::CUDD, double>::fromVector(*manager, ddAsVector, odd, {x.first});
     
     // Create a non-trivial matrix.
     dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();

@@ -31,6 +31,11 @@ namespace storm {
             InternalDdManager();
             
             /*!
+             * Destroys the CUDD manager.
+             */
+            ~InternalDdManager();
+            
+            /*!
              * Retrieves a BDD representing the constant one function.
              *
              * @return A BDD representing the constant one function.
