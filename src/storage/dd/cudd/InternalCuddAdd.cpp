@@ -374,13 +374,13 @@ namespace storm {
                     return std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
                 } else {
                     // Otherwise, we compute the ODDs for both the then- and else successors.
-                    bool elseComplemented = Cudd_IsComplement(Cudd_E(dd));
-                    bool thenComplemented = Cudd_IsComplement(Cudd_T(dd));
                     std::shared_ptr<Odd> elseNode = createOddRec(Cudd_E(dd), manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     std::shared_ptr<Odd> thenNode = createOddRec(Cudd_T(dd), manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
+
                     uint_fast64_t totalElseOffset = elseNode->getElseOffset() + elseNode->getThenOffset();
                     uint_fast64_t totalThenOffset = thenNode->getElseOffset() + thenNode->getThenOffset();
-                    return std::make_shared<Odd>(elseNode, elseComplemented ? (1ull << (maxLevel - currentLevel - 1)) - totalElseOffset : totalElseOffset, thenNode, thenComplemented ? (1ull << (maxLevel - currentLevel - 1)) - totalThenOffset : totalThenOffset);
+
+                    return std::make_shared<Odd>(elseNode, totalElseOffset, thenNode, totalThenOffset);
                 }
             }
         }

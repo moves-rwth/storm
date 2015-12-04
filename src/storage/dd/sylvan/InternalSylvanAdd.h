@@ -546,10 +546,134 @@ namespace storm {
             Odd createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const;
             
         private:
+            /*!
+             * Recursively builds the ODD from an ADD.
+             *
+             * @param dd The DD for which to build the ODD.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
+             * @param uniqueTableForLevels A vector of unique tables, one for each level to be considered, that keeps
+             * ODD nodes for the same DD and level unique.
+             * @return A pointer to the constructed ODD for the given arguments.
+             */
+            static std::shared_ptr<Odd> createOddRec(BDD dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<BDD, std::shared_ptr<Odd>>>& uniqueTableForLevels);
+            
+            /*!
+             * Performs a recursive step to perform the given function between the given DD-based vector and the given
+             * explicit vector.
+             *
+             * @param dd The DD to add to the explicit vector.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param currentOffset The current offset.
+             * @param odd The ODD used for the translation.
+             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
+             * @param targetVector The vector to which the translated DD-based vector is to be added.
+             */
+            void composeWithExplicitVectorRec(MTBDD dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            
+            /*!
+             * Splits the given matrix DD into the groups using the given group variables.
+             *
+             * @param dd The DD to split.
+             * @param negated A flag indicating whether the given DD is to be interpreted as negated.
+             * @param groups A vector that is to be filled with the DDs for the individual groups.
+             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
+             */
+            void splitIntoGroupsRec(MTBDD dd, bool negated, std::vector<InternalAdd<DdType::Sylvan, ValueType>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
+            
+            /*!
+             * Splits the given DDs into the groups using the given group variables.
+             *
+             * @param dd1 The first DD to split.
+             * @param negated1 A flag indicating whether the first DD is to be interpreted as negated.
+             * @param dd2 The second DD to split.
+             * @param negated2 A flag indicating whether the second DD is to be interpreted as negated.
+             * @param groups A vector that is to be filled with the DDs for the individual groups.
+             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
+             */
+            void splitIntoGroupsRec(MTBDD dd1, bool negated1, MTBDD dd2, bool negated2, std::vector<std::pair<InternalAdd<DdType::Sylvan, ValueType>, InternalAdd<DdType::Sylvan, ValueType>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
+            
+            /*!
+             * Builds an ADD representing the given vector.
+             *
+             * @param currentOffset The current offset in the vector.
+             * @param currentLevel The current level in the DD.
+             * @param maxLevel The maximal level in the DD.
+             * @param values The vector that is to be represented by the ADD.
+             * @param odd The ODD used for the translation.
+             * @param ddVariableIndices The (sorted) list of DD variable indices to use.
+             * @return The resulting (CUDD) ADD node.
+             */
+            static MTBDD fromVectorRec(uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
+
+            /*!
+             * Helper function to convert the DD into a (sparse) matrix.
+             *
+             * @param dd The DD to convert.
+             * @param negated A flag indicating whether the given DD is to be interpreted as negated.
+             * @param rowIndications A vector indicating at which position in the columnsAndValues vector the entries
+             * of row i start. Note: this vector is modified in the computation. More concretely, each entry i in the
+             * vector will be increased by the number of entries in the row. This can be used to count the number
+             * of entries in each row. If the values are not to be modified, a copy needs to be provided or the entries
+             * need to be restored afterwards.
+             * @param columnsAndValues The vector that will hold the columns and values of non-zero entries upon successful
+             * completion.
+             * @param rowGroupOffsets The row offsets at which a given row group starts.
+             * @param rowOdd The ODD used for the row translation.
+             * @param columnOdd The ODD used for the column translation.
+             * @param currentRowLevel The currently considered row level in the DD.
+             * @param currentColumnLevel The currently considered row level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param currentRowOffset The current row offset.
+             * @param currentColumnOffset The current row offset.
+             * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             * @param ddColumnVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             * @param generateValues If set to true, the vector columnsAndValues is filled with the actual entries, which
+             * only works if the offsets given in rowIndications are already correct. If they need to be computed first,
+             * this flag needs to be false.
+             */
+            void toMatrixComponentsRec(MTBDD dd, bool negated, std::vector<uint_fast64_t> const& rowGroupOffsets, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd const& rowOdd, Odd const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const;
+            
+            /*!
+             * Retrieves the sylvan representation of the given double value.
+             *
+             * @return The sylvan node for the given value.
+             */
+            static MTBDD getLeaf(double value);
+            
+            /*!
+             * Retrieves the sylvan representation of the given unsigned value.
+             *
+             * @return The sylvan node for the given value.
+             */
+            static MTBDD getLeaf(uint_fast64_t value);
+            
+            /*!
+             * Retrieves the value of the given node (that must be a leaf).
+             *
+             * @return The value of the leaf.
+             */
+            static ValueType getValue(MTBDD const& node);
+            
+            /*!
+             * Retrieves the underlying sylvan MTBDD.
+             *
+             * @return The sylvan MTBDD.
+             */
             sylvan::Mtbdd getSylvanMtbdd() const;
             
+            // The manager responsible for this MTBDD.
             InternalDdManager<DdType::Sylvan> const* ddManager;
             
+            // The underlying sylvan MTBDD.
             sylvan::Mtbdd sylvanMtbdd;
         };
     }

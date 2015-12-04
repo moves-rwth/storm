@@ -368,10 +368,11 @@ TEST(CuddDd, BddOddTest) {
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     
     storm::dd::Add<storm::dd::DdType::CUDD, double> dd = manager->template getIdentity<double>(x.first);
+    storm::dd::Bdd<storm::dd::DdType::CUDD> bdd = dd.notZero();
     storm::dd::Odd odd;
-    ASSERT_NO_THROW(odd = dd.createOdd());
+    ASSERT_NO_THROW(odd = bdd.createOdd());
     EXPECT_EQ(9ul, odd.getTotalOffset());
-    EXPECT_EQ(12ul, odd.getNodeCount());
+    EXPECT_EQ(5ul, odd.getNodeCount());
     
     std::vector<double> ddAsVector;
     ASSERT_NO_THROW(ddAsVector = dd.toVector());
@@ -406,4 +407,4 @@ TEST(CuddDd, BddOddTest) {
     EXPECT_EQ(9ul, matrix.getRowGroupCount());
     EXPECT_EQ(9ul, matrix.getColumnCount());
     EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
-}
+ }

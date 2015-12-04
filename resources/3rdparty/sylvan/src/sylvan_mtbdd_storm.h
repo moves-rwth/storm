@@ -100,3 +100,7 @@ TASK_DECL_1(MTBDD, mtbdd_bool_to_double, MTBDD)
 TASK_DECL_2(double, mtbdd_non_zero_count, MTBDD, size_t);
 #define mtbdd_non_zero_count(dd, nvars) CALL(mtbdd_non_zero_count, dd, nvars)
 
+// Checks whether the given MTBDD represents a zero leaf.
+int mtbdd_iszero(MTBDD);
+
+#define mtbdd_regular(dd) (dd & ~mtbdd_complement)

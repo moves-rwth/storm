@@ -512,3 +512,14 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
     cache_put3(CACHE_MTBDD_NONZERO_COUNT, dd, 0, nvars, hack.s);
     return hack.d;
 }
+
+int mtbdd_iszero(MTBDD dd) {
+    if (mtbdd_gettype(dd) == 0) {
+        return mtbdd_getuint64(dd) == 0;
+    } else if (mtbdd_gettype(dd) == 1) {
+        return mtbdd_getdouble(dd) == 0;
+    } else if (mtbdd_gettype(dd) == 2) {
+        return mtbdd_getnumer(dd) == 0;
+    }
+    return 0;
+}

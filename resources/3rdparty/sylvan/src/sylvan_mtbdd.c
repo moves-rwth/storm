@@ -2736,4 +2736,4 @@ mtbdd_map_removeall(MTBDDMAP map, MTBDD variables)
     }
 }
 
-#include "sylvan_storm_custom.c"
+#include "sylvan_mtbdd_storm.c"

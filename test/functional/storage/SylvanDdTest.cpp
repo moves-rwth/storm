@@ -320,25 +320,25 @@ TEST(SylvanDd, GetSetValueTest) {
 //    }
 //    EXPECT_EQ(1ul, numberOfValuations);
 //}
-//
-//TEST(SylvanDd, AddOddTest) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd = manager->template getIdentity<double>(x.first);
-//    storm::dd::Odd odd;
-//    ASSERT_NO_THROW(odd = dd.createOdd());
-//    EXPECT_EQ(9ul, odd.getTotalOffset());
-//    EXPECT_EQ(12ul, odd.getNodeCount());
-//    
-//    std::vector<double> ddAsVector;
-//    ASSERT_NO_THROW(ddAsVector = dd.toVector());
-//    EXPECT_EQ(9ul, ddAsVector.size());
-//    for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
-//        EXPECT_TRUE(i+1 == ddAsVector[i]);
-//    }
-//    
+
+TEST(SylvanDd, AddOddTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd = manager->template getIdentity<double>(x.first);
+    storm::dd::Odd odd;
+    ASSERT_NO_THROW(odd = dd.createOdd());
+    EXPECT_EQ(9ul, odd.getTotalOffset());
+    EXPECT_EQ(12ul, odd.getNodeCount());
+    
+    std::vector<double> ddAsVector;
+    ASSERT_NO_THROW(ddAsVector = dd.toVector());
+    EXPECT_EQ(9ul, ddAsVector.size());
+    for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
+        EXPECT_TRUE(i+1 == ddAsVector[i]);
+    }
+    
 //    // Create a non-trivial matrix.
 //    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)) * manager->getRange(x.first).template toAdd<double>();
 //    dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
@@ -363,50 +363,51 @@ TEST(SylvanDd, GetSetValueTest) {
 //    EXPECT_EQ(9ul, matrix.getRowGroupCount());
 //    EXPECT_EQ(9ul, matrix.getColumnCount());
 //    EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
-//}
-//
-//TEST(SylvanDd, BddOddTest) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd = manager->template getIdentity<double>(x.first);
-//    storm::dd::Odd odd;
-//    ASSERT_NO_THROW(odd = dd.createOdd());
-//    EXPECT_EQ(9ul, odd.getTotalOffset());
-//    EXPECT_EQ(12ul, odd.getNodeCount());
-//    
-//    std::vector<double> ddAsVector;
-//    ASSERT_NO_THROW(ddAsVector = dd.toVector());
-//    EXPECT_EQ(9ul, ddAsVector.size());
-//    for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
-//        EXPECT_TRUE(i+1 == ddAsVector[i]);
-//    }
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> vectorAdd = storm::dd::Add<storm::dd::DdType::Sylvan, double>::fromVector(manager, ddAsVector, odd, {x.first});
-//    
-//    // Create a non-trivial matrix.
-//    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)) * manager->getRange(x.first).template toAdd<double>();
-//    dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
-//    
-//    // Create the ODDs.
-//    storm::dd::Odd rowOdd;
-//    ASSERT_NO_THROW(rowOdd = manager->getRange(x.first).createOdd());
-//    storm::dd::Odd columnOdd;
-//    ASSERT_NO_THROW(columnOdd = manager->getRange(x.second).createOdd());
-//    
-//    // Try to translate the matrix.
-//    storm::storage::SparseMatrix<double> matrix;
-//    ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, rowOdd, columnOdd));
-//    
-//    EXPECT_EQ(9ul, matrix.getRowCount());
-//    EXPECT_EQ(9ul, matrix.getColumnCount());
-//    EXPECT_EQ(25ul, matrix.getNonzeroEntryCount());
-//    
-//    dd = manager->getRange(x.first).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() * manager->getEncoding(a.first, 0).template toAdd<double>().ite(dd, dd + manager->template getConstant<double>(1));
-//    ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
-//    EXPECT_EQ(18ul, matrix.getRowCount());
-//    EXPECT_EQ(9ul, matrix.getRowGroupCount());
-//    EXPECT_EQ(9ul, matrix.getColumnCount());
-//    EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
-//}
+}
+
+TEST(SylvanDd, BddOddTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> a = manager->addMetaVariable("a");
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd = manager->template getIdentity<double>(x.first);
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> bdd = dd.notZero();
+    storm::dd::Odd odd;
+    ASSERT_NO_THROW(odd = bdd.createOdd());
+    EXPECT_EQ(9ul, odd.getTotalOffset());
+    EXPECT_EQ(5ul, odd.getNodeCount());
+
+    std::vector<double> ddAsVector;
+    ASSERT_NO_THROW(ddAsVector = dd.toVector());
+    EXPECT_EQ(9ul, ddAsVector.size());
+    for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
+        EXPECT_TRUE(i+1 == ddAsVector[i]);
+    }
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> vectorAdd = storm::dd::Add<storm::dd::DdType::Sylvan, double>::fromVector(manager, ddAsVector, odd, {x.first});
+    
+    // Create a non-trivial matrix.
+    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)) * manager->getRange(x.first).template toAdd<double>();
+    dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
+    
+    // Create the ODDs.
+    storm::dd::Odd rowOdd;
+    ASSERT_NO_THROW(rowOdd = manager->getRange(x.first).createOdd());
+    storm::dd::Odd columnOdd;
+    ASSERT_NO_THROW(columnOdd = manager->getRange(x.second).createOdd());
+    
+    // Try to translate the matrix.
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, rowOdd, columnOdd));
+    
+    EXPECT_EQ(9ul, matrix.getRowCount());
+    EXPECT_EQ(9ul, matrix.getColumnCount());
+    EXPECT_EQ(25ul, matrix.getNonzeroEntryCount());
+    
+    dd = manager->getRange(x.first).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() * manager->getEncoding(a.first, 0).template toAdd<double>().ite(dd, dd + manager->template getConstant<double>(1));
+    ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
+    EXPECT_EQ(18ul, matrix.getRowCount());
+    EXPECT_EQ(9ul, matrix.getRowGroupCount());
+    EXPECT_EQ(9ul, matrix.getColumnCount());
+    EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
+}

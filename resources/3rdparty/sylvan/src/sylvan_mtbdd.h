@@ -583,7 +583,7 @@ mtbdd_refs_sync(MTBDD result)
     return result;
 }
 
-#include "sylvan_storm_custom.h"
+#include "sylvan_mtbdd_storm.h"
     
 #ifdef __cplusplus
 }

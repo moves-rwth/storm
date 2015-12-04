@@ -248,26 +248,26 @@ namespace storm {
                 Cudd_Ref(thenSuccessor);
                 
                 // Create a node representing ITE(currentVar, thenSuccessor, elseSuccessor);
-                DdNode* result = Cudd_bddIthVar(manager, static_cast<int>(ddVariableIndices[currentLevel]));
+                DdNode* currentVar = Cudd_bddIthVar(manager, static_cast<int>(ddVariableIndices[currentLevel]));
+                Cudd_Ref(currentVar);
+                DdNode* result = Cudd_bddIte(manager, currentVar, thenSuccessor, elseSuccessor);
                 Cudd_Ref(result);
-                DdNode* newResult = Cudd_bddIte(manager, result, thenSuccessor, elseSuccessor);
-                Cudd_Ref(newResult);
                 
                 // Dispose of the intermediate results
-                Cudd_RecursiveDeref(manager, result);
+                Cudd_RecursiveDeref(manager, currentVar);
                 Cudd_RecursiveDeref(manager, thenSuccessor);
                 Cudd_RecursiveDeref(manager, elseSuccessor);
                 
                 // Before returning, we remove the protection imposed by the previous call to Cudd_Ref.
-                Cudd_Deref(newResult);
+                Cudd_Deref(result);
                 
-                return newResult;
+                return result;
             }
         }
         
         storm::storage::BitVector InternalBdd<DdType::CUDD>::toVector(storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const {
             storm::storage::BitVector result(rowOdd.getTotalOffset());
-            this->toVectorRec(this->getCuddDdNode(), ddManager->getCuddManager(), result, rowOdd, Cudd_IsComplement(this->getCuddDdNode()), 0, ddVariableIndices.size(), 0, ddVariableIndices);
+            this->toVectorRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), result, rowOdd, Cudd_IsComplement(this->getCuddDdNode()), 0, ddVariableIndices.size(), 0, ddVariableIndices);
             return result;
         }
         
@@ -325,7 +325,7 @@ namespace storm {
             } else {
                 // Otherwise, we need to recursively compute the ODD.
                 
-                // If we are already past the maximal level that is to be considered, we can simply create an Odd without
+                // If we are already at the maximal level that is to be considered, we can simply create an Odd without
                 // successors
                 if (currentLevel == maxLevel) {
                     uint_fast64_t elseOffset = 0;
@@ -369,7 +369,7 @@ namespace storm {
         template<typename ValueType>
         void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType> const& sourceValues, std::vector<ValueType>& targetValues) const {
             uint_fast64_t currentIndex = 0;
-            filterExplicitVectorRec(this->getCuddDdNode(), ddManager->getCuddManager(), 0, Cudd_IsComplement(this->getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, 0, odd, targetValues, currentIndex, sourceValues);
+            filterExplicitVectorRec(Cudd_Regular(this->getCuddDdNode()), ddManager->getCuddManager(), 0, Cudd_IsComplement(this->getCuddDdNode()), ddVariableIndices.size(), ddVariableIndices, 0, odd, targetValues, currentIndex, sourceValues);
         }
         
         template<typename ValueType>

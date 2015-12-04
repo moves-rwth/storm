@@ -2,6 +2,7 @@
 #define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANBDD_H_
 
 #include <vector>
+#include <unordered_map>
 #include <functional>
 
 #include "src/storage/dd/DdType.h"
@@ -341,11 +342,74 @@ namespace storm {
             template<typename ValueType>
             static BDD fromVectorRec(uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter);
 
+            // Declare a hash functor that is used for the unique tables in the construction process of ODDs.
+            class HashFunctor {
+            public:
+                std::size_t operator()(std::pair<BDD, bool> const& key) const;
+            };
+
+            /*!
+             * Recursively builds the ODD from a BDD (that potentially has complement edges).
+             *
+             * @param dd The BDD for which to build the ODD.
+             * @param currentLevel The currently considered level in the DD.
+             * @param complement A flag indicating whether or not the given node is to be considered as complemented.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
+             * @param uniqueTableForLevels A vector of unique tables, one for each level to be considered, that keeps
+             * ODD nodes for the same DD and level unique.
+             * @return A pointer to the constructed ODD for the given arguments.
+             */
+            static std::shared_ptr<Odd> createOddRec(BDD dd, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<BDD, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels);
+            
+            /*!
+             * Helper function to convert the DD into a bit vector.
+             *
+             * @param dd The DD to convert.
+             * @param result The vector that will hold the values upon successful completion.
+             * @param rowOdd The ODD used for the row translation.
+             * @param complement A flag indicating whether the result is to be interpreted as a complement.
+             * @param currentRowLevel The currently considered row level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param currentRowOffset The current row offset.
+             * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             */
+            void toVectorRec(BDD dd, storm::storage::BitVector& result, Odd const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
+            
+            /*!
+             * Adds the selected values the target vector.
+             *
+             * @param dd The current node of the DD representing the selected values.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param ddVariableIndices The sorted list of variable indices to use.
+             * @param currentOffset The offset along the path taken in the DD representing the selected values.
+             * @param odd The current ODD node.
+             * @param result The target vector to which to write the values.
+             * @param currentIndex The index at which the next element is to be written.
+             * @param values The value vector from which to select the values.
+             */
+            template<typename ValueType>
+            static void filterExplicitVectorRec(BDD dd, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, uint_fast64_t currentOffset, storm::dd::Odd const& odd, std::vector<ValueType>& result, uint_fast64_t& currentIndex, std::vector<ValueType> const& values);
+            
+            /*!
+             * Retrieves the sylvan BDD.
+             *
+             * @return The sylvan BDD.
+             */
             sylvan::Bdd& getSylvanBdd();
+
+            /*!
+             * Retrieves the sylvan BDD.
+             *
+             * @return The sylvan BDD.
+             */
             sylvan::Bdd const& getSylvanBdd() const;
             
+            // The internal manager responsible for this BDD.
             InternalDdManager<DdType::Sylvan> const* ddManager;
             
+            // The sylvan BDD.
             sylvan::Bdd sylvanBdd;
         };
     }

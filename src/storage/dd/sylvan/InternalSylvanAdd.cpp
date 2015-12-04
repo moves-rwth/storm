@@ -1,10 +1,11 @@
 #include "src/storage/dd/sylvan/InternalSylvanAdd.h"
 
-#include <iostream>
-
 #include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
 
+#include "src/storage/SparseMatrix.h"
+
 #include "src/utility/macros.h"
+#include "src/utility/constants.h"
 #include "src/exceptions/NotImplementedException.h"
 
 namespace storm {
@@ -293,37 +294,317 @@ namespace storm {
         
         template<typename ValueType>
         Odd InternalAdd<DdType::Sylvan, ValueType>::createOdd(std::vector<uint_fast64_t> const& ddVariableIndices) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            // Prepare a unique table for each level that keeps the constructed ODD nodes unique.
+            std::vector<std::unordered_map<BDD, std::shared_ptr<Odd>>> uniqueTableForLevels(ddVariableIndices.size() + 1);
+            
+            // Now construct the ODD structure from the ADD.
+            std::shared_ptr<Odd> rootOdd = createOddRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
+            
+            // Return a copy of the root node to remove the shared_ptr encapsulation.
+            return Odd(*rootOdd);
+        }
+        
+        template<typename ValueType>
+        std::shared_ptr<Odd> InternalAdd<DdType::Sylvan, ValueType>::createOddRec(BDD dd, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<BDD, std::shared_ptr<Odd>>>& uniqueTableForLevels) {
+            // Check whether the ODD for this node has already been computed (for this level) and if so, return this instead.
+            auto const& iterator = uniqueTableForLevels[currentLevel].find(dd);
+            if (iterator != uniqueTableForLevels[currentLevel].end()) {
+                return iterator->second;
+            } else {
+                // Otherwise, we need to recursively compute the ODD.
+                
+                // If we are already past the maximal level that is to be considered, we can simply create an Odd without
+                // successors
+                if (currentLevel == maxLevel) {
+                    uint_fast64_t elseOffset = 0;
+                    uint_fast64_t thenOffset = 0;
+                    
+                    STORM_LOG_ASSERT(mtbdd_isleaf(dd), "Expected leaf at last level.");
+                    
+                    // If the DD is not the zero leaf, then the then-offset is 1.
+                    if (!mtbdd_iszero(dd)) {
+                        thenOffset = 1;
+                    }
+
+                    return std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
+                } else if (mtbdd_isleaf(dd) || ddVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
+                    // If we skipped the level in the DD, we compute the ODD just for the else-successor and use the same
+                    // node for the then-successor as well.
+                    std::shared_ptr<Odd> elseNode = createOddRec(dd, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
+                    std::shared_ptr<Odd> thenNode = elseNode;
+                    return std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
+                } else {
+                    // Otherwise, we compute the ODDs for both the then- and else successors.
+                    std::shared_ptr<Odd> elseNode = createOddRec(mtbdd_regular(mtbdd_getlow(dd)), currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
+                    std::shared_ptr<Odd> thenNode = createOddRec(mtbdd_regular(mtbdd_gethigh(dd)), currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
+                    
+                    uint_fast64_t totalElseOffset = elseNode->getElseOffset() + elseNode->getThenOffset();
+                    uint_fast64_t totalThenOffset = thenNode->getElseOffset() + thenNode->getThenOffset();
+                    
+                    return std::make_shared<Odd>(elseNode, totalElseOffset, thenNode, totalThenOffset);
+                }
+            }
         }
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            composeWithExplicitVectorRec(this->getSylvanMtbdd().GetMTBDD(), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
         }
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), &offsets, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
+        }
+        
+        template<typename ValueType>
+        void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVectorRec(MTBDD dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
+            // For the empty DD, we do not need to add any entries.
+            if (mtbdd_isleaf(dd) && mtbdd_iszero(dd)) {
+                return;
+            }
+            
+            // If we are at the maximal level, the value to be set is stored as a constant in the DD.
+            if (currentLevel == maxLevel) {
+                ValueType& targetValue = targetVector[offsets != nullptr ? (*offsets)[currentOffset] : currentOffset];
+                targetValue = function(targetValue, getValue(dd));
+            } else if (mtbdd_isleaf(dd) || ddVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
+                // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
+                // and for the one in which it is not set.
+                composeWithExplicitVectorRec(dd, offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
+                composeWithExplicitVectorRec(dd, offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
+            } else {
+                // Otherwise, we simply recursively call the function for both (different) cases.
+                composeWithExplicitVectorRec(mtbdd_regular(mtbdd_getlow(dd)), offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
+                composeWithExplicitVectorRec(mtbdd_regular(mtbdd_gethigh(dd)), offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
+            }
         }
         
         template<typename ValueType>
         std::vector<InternalAdd<DdType::Sylvan, ValueType>> InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            std::vector<InternalAdd<DdType::Sylvan, ValueType>> result;
+            splitIntoGroupsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            return result;
         }
         
         template<typename ValueType>
         std::vector<std::pair<InternalAdd<DdType::Sylvan, ValueType>, InternalAdd<DdType::Sylvan, ValueType>>> InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroups(InternalAdd<DdType::Sylvan, ValueType> vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            std::vector<std::pair<InternalAdd<DdType::Sylvan, ValueType>, InternalAdd<DdType::Sylvan, ValueType>>> result;
+            splitIntoGroupsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), mtbdd_regular(vector.getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(vector.getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            return result;
+        }
+        
+        template<typename ValueType>
+        void InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroupsRec(MTBDD dd, bool negated, std::vector<InternalAdd<DdType::Sylvan, ValueType>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const {
+            // For the empty DD, we do not need to create a group.
+            if (mtbdd_isleaf(dd) && mtbdd_iszero(dd)) {
+                return;
+            }
+            
+            if (currentLevel == maxLevel) {
+                groups.push_back(InternalAdd<DdType::Sylvan, ValueType>(ddManager, sylvan::Mtbdd(negated ? mtbdd_negate(dd) : dd)));
+            } else if (mtbdd_isleaf(dd) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
+                splitIntoGroupsRec(dd, negated, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(dd, negated, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            } else {
+                // Otherwise, we compute the ODDs for both the then- and else successors.
+                MTBDD thenDdNode = mtbdd_gethigh(dd);
+                MTBDD elseDdNode = mtbdd_getlow(dd);
+                
+                // Determine whether we have to evaluate the successors as if they were complemented.
+                bool elseComplemented = mtbdd_isnegated(elseDdNode) ^ negated;
+                bool thenComplemented = mtbdd_isnegated(thenDdNode) ^ negated;
+                
+                splitIntoGroupsRec(mtbdd_regular(elseDdNode), elseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(mtbdd_regular(thenDdNode), thenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            }
+        }
+
+        template<typename ValueType>
+        void InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroupsRec(MTBDD dd1, bool negated1, MTBDD dd2, bool negated2, std::vector<std::pair<InternalAdd<DdType::Sylvan, ValueType>, InternalAdd<DdType::Sylvan, ValueType>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const {
+            // For the empty DD, we do not need to create a group.
+            if (mtbdd_isleaf(dd1) && mtbdd_isleaf(dd2) && mtbdd_iszero(dd1) && mtbdd_iszero(dd2)) {
+                return;
+            }
+            
+            if (currentLevel == maxLevel) {
+                groups.push_back(std::make_pair(InternalAdd<DdType::Sylvan, ValueType>(ddManager, sylvan::Mtbdd(negated1 ? mtbdd_negate(dd1) : dd1 )), InternalAdd<DdType::Sylvan, ValueType>(ddManager, sylvan::Mtbdd(negated2 ? mtbdd_negate(dd2) : dd2))));
+            } else if (mtbdd_isleaf(dd1) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd1)) {
+                if (mtbdd_isleaf(dd2) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd2)) {
+                    splitIntoGroupsRec(dd1, negated1, dd2, negated2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                    splitIntoGroupsRec(dd1, negated1, dd2, negated2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                } else {
+                    MTBDD dd2ThenNode = mtbdd_gethigh(dd2);
+                    MTBDD dd2ElseNode = mtbdd_getlow(dd2);
+                    
+                    // Determine whether we have to evaluate the successors as if they were complemented.
+                    bool elseComplemented = mtbdd_isnegated(dd2ElseNode) ^ negated2;
+                    bool thenComplemented = mtbdd_isnegated(dd2ThenNode) ^ negated2;
+                    
+                    splitIntoGroupsRec(dd1, negated1, mtbdd_regular(dd2ThenNode), thenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                    splitIntoGroupsRec(dd1, negated1, mtbdd_regular(dd2ElseNode), elseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                }
+            } else if (mtbdd_isleaf(dd2) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd2)) {
+                MTBDD dd1ThenNode = mtbdd_gethigh(dd1);
+                MTBDD dd1ElseNode = mtbdd_getlow(dd1);
+                
+                // Determine whether we have to evaluate the successors as if they were complemented.
+                bool elseComplemented = mtbdd_isnegated(dd1ElseNode) ^ negated1;
+                bool thenComplemented = mtbdd_isnegated(dd1ThenNode) ^ negated1;
+
+                splitIntoGroupsRec(mtbdd_regular(dd1ThenNode), thenComplemented, dd2, negated2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(mtbdd_regular(dd1ElseNode), elseComplemented, dd2, negated2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            } else {
+                MTBDD dd1ThenNode = mtbdd_gethigh(dd1);
+                MTBDD dd1ElseNode = mtbdd_getlow(dd1);
+                MTBDD dd2ThenNode = mtbdd_gethigh(dd2);
+                MTBDD dd2ElseNode = mtbdd_getlow(dd2);
+                
+                // Determine whether we have to evaluate the successors as if they were complemented.
+                bool dd1ElseComplemented = mtbdd_isnegated(dd1ElseNode) ^ negated1;
+                bool dd1ThenComplemented = mtbdd_isnegated(dd1ThenNode) ^ negated1;
+                bool dd2ElseComplemented = mtbdd_isnegated(dd2ElseNode) ^ negated2;
+                bool dd2ThenComplemented = mtbdd_isnegated(dd2ThenNode) ^ negated2;
+                
+                splitIntoGroupsRec(mtbdd_regular(dd1ThenNode), dd1ThenComplemented, mtbdd_regular(dd2ThenNode), dd2ThenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(mtbdd_regular(dd1ElseNode), dd1ElseComplemented, mtbdd_regular(dd2ElseNode), dd2ElseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            }
         }
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::toMatrixComponents(std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd const& rowOdd, Odd const& columnOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            return toMatrixComponentsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, writeValues);
+        }
+        
+        template<typename ValueType>
+        void InternalAdd<DdType::Sylvan, ValueType>::toMatrixComponentsRec(MTBDD dd, bool negated, std::vector<uint_fast64_t> const& rowGroupOffsets, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd const& rowOdd, Odd const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues) const {
+            // For the empty DD, we do not need to add any entries.
+            if (mtbdd_isleaf(dd) && mtbdd_iszero(dd)) {
+                return;
+            }
+            
+            // If we are at the maximal level, the value to be set is stored as a constant in the DD.
+            if (currentRowLevel + currentColumnLevel == maxLevel) {
+                if (generateValues) {
+                    columnsAndValues[rowIndications[rowGroupOffsets[currentRowOffset]]] = storm::storage::MatrixEntry<uint_fast64_t, ValueType>(currentColumnOffset, negated ? -getValue(dd) : getValue(dd));
+                }
+                ++rowIndications[rowGroupOffsets[currentRowOffset]];
+            } else {
+                MTBDD elseElse;
+                MTBDD elseThen;
+                MTBDD thenElse;
+                MTBDD thenThen;
+                
+                if (mtbdd_isleaf(dd) || ddColumnVariableIndices[currentColumnLevel] < mtbdd_getvar(dd)) {
+                    elseElse = elseThen = thenElse = thenThen = dd;
+                } else if (ddRowVariableIndices[currentColumnLevel] < mtbdd_getvar(dd)) {
+                    elseElse = thenElse = mtbdd_getlow(dd);
+                    elseThen = thenThen = mtbdd_gethigh(dd);
+                } else {
+                    MTBDD elseNode = mtbdd_getlow(dd);
+                    if (mtbdd_isleaf(elseNode) || ddColumnVariableIndices[currentColumnLevel] < mtbdd_getvar(elseNode)) {
+                        elseElse = elseThen = elseNode;
+                    } else {
+                        elseElse = mtbdd_getlow(elseNode);
+                        elseThen = mtbdd_gethigh(elseNode);
+                    }
+                    
+                    MTBDD thenNode = mtbdd_gethigh(dd);
+                    if (mtbdd_isleaf(thenNode) || ddColumnVariableIndices[currentColumnLevel] < mtbdd_getvar(thenNode)) {
+                        thenElse = thenThen = thenNode;
+                    } else {
+                        thenElse = mtbdd_getlow(thenNode);
+                        thenThen = mtbdd_gethigh(thenNode);
+                    }
+                }
+                
+                // Visit else-else.
+                toMatrixComponentsRec(mtbdd_regular(elseElse), mtbdd_isnegated(elseElse) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getElseSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices, generateValues);
+                // Visit else-then.
+                toMatrixComponentsRec(mtbdd_regular(elseThen), mtbdd_isnegated(elseThen) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getElseSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices, generateValues);
+                // Visit then-else.
+                toMatrixComponentsRec(mtbdd_regular(thenElse), mtbdd_isnegated(thenElse) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getThenSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices, generateValues);
+                // Visit then-then.
+                toMatrixComponentsRec(mtbdd_regular(thenThen), mtbdd_isnegated(thenThen) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getThenSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices, generateValues);
+            }
         }
         
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::fromVector(InternalDdManager<DdType::Sylvan> const* ddManager, std::vector<ValueType> const& values, storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+            uint_fast64_t offset = 0;
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, sylvan::Mtbdd(fromVectorRec(offset, 0, ddVariableIndices.size(), values, odd, ddVariableIndices)));
+        }
+        
+        template<typename ValueType>
+        MTBDD InternalAdd<DdType::Sylvan, ValueType>::fromVectorRec(uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices) {
+            if (currentLevel == maxLevel) {
+                // If we are in a terminal node of the ODD, we need to check whether the then-offset of the ODD is one
+                // (meaning the encoding is a valid one) or zero (meaning the encoding is not valid). Consequently, we
+                // need to copy the next value of the vector iff the then-offset is greater than zero.
+                if (odd.getThenOffset() > 0) {
+                    return getLeaf(values[currentOffset++]);
+                } else {
+                    return getLeaf(storm::utility::zero<ValueType>());
+                }
+            } else {
+                // If the total offset is zero, we can just return the constant zero DD.
+                if (odd.getThenOffset() + odd.getElseOffset() == 0) {
+                    return getLeaf(storm::utility::zero<ValueType>());
+                }
+                
+                // Determine the new else-successor.
+                MTBDD elseSuccessor;
+                if (odd.getElseOffset() > 0) {
+                    elseSuccessor = fromVectorRec(currentOffset, currentLevel + 1, maxLevel, values, odd.getElseSuccessor(), ddVariableIndices);
+                } else {
+                    elseSuccessor = getLeaf(storm::utility::zero<ValueType>());
+                }
+                mtbdd_refs_push(elseSuccessor);
+                
+                // Determine the new then-successor.
+                MTBDD thenSuccessor;
+                if (odd.getThenOffset() > 0) {
+                    thenSuccessor = fromVectorRec(currentOffset, currentLevel + 1, maxLevel, values, odd.getThenSuccessor(), ddVariableIndices);
+                } else {
+                    thenSuccessor = getLeaf(storm::utility::zero<ValueType>());
+                }
+                mtbdd_refs_push(thenSuccessor);
+                
+                // Create a node representing ITE(currentVar, thenSuccessor, elseSuccessor);
+                MTBDD currentVar = mtbdd_makenode(ddVariableIndices[currentLevel], mtbdd_false, mtbdd_true);
+                mtbdd_refs_push(thenSuccessor);
+                LACE_ME;
+                MTBDD result = mtbdd_ite(currentVar, thenSuccessor, elseSuccessor);
+                
+                // Dispose of the intermediate results
+                mtbdd_refs_pop(3);
+                
+                return result;
+            }
+        }
+        
+        template<typename ValueType>
+        MTBDD InternalAdd<DdType::Sylvan, ValueType>::getLeaf(double value) {
+            return mtbdd_double(value);
+        }
+        
+        template<typename ValueType>
+        MTBDD InternalAdd<DdType::Sylvan, ValueType>::getLeaf(uint_fast64_t value) {
+            return mtbdd_uint64(value);
+        }
+        
+        template<typename ValueType>
+        ValueType InternalAdd<DdType::Sylvan, ValueType>::getValue(MTBDD const& node) {
+            STORM_LOG_ASSERT(mtbdd_isleaf(node), "Expected leaf.");
+            
+            if (std::is_same<ValueType, double>::value) {
+                STORM_LOG_ASSERT(mtbdd_gettype(node) == 1, "Expected a double value.");
+                return mtbdd_getuint64(node);
+            } else if (std::is_same<ValueType, uint_fast64_t>::value) {
+                STORM_LOG_ASSERT(mtbdd_gettype(node) == 0, "Expected an unsigned value.");
+                return mtbdd_getdouble(node);
+            } else {
+                STORM_LOG_ASSERT(false, "Illegal or unknown type in MTBDD.");
+            }
         }
         
         template<typename ValueType>
