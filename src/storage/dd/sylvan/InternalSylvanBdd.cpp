@@ -8,7 +8,8 @@
 
 #include "src/storage/BitVector.h"
 
-#include <iostream>
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace dd {
@@ -227,7 +228,13 @@ namespace storm {
         
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalBdd<DdType::Sylvan>::toAdd() const {
-            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toDoubleMtbdd());
+            if (std::is_same<ValueType, double>::value) {
+                return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toDoubleMtbdd());
+            } else if (std::is_same<ValueType, uint_fast64_t>::value) {
+                return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toUint64Mtbdd());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal ADD type.");
+            }
         }
         
         storm::storage::BitVector InternalBdd<DdType::Sylvan>::toVector(storm::dd::Odd const& rowOdd, std::vector<uint_fast64_t> const& ddVariableIndices) const {
@@ -269,7 +276,7 @@ namespace storm {
             std::vector<std::unordered_map<std::pair<BDD, bool>, std::shared_ptr<Odd>, HashFunctor>> uniqueTableForLevels(ddVariableIndices.size() + 1);
             
             // Now construct the ODD structure from the BDD.
-            std::shared_ptr<Odd> rootOdd = createOddRec(bdd_regular(this->getSylvanBdd().GetBDD()), 0, bdd_isnegated(this->getSylvanBdd().GetBDD()), ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
+            std::shared_ptr<Odd> rootOdd = createOddRec(bdd_regular(this->getSylvanBdd().GetBDD()), bdd_isnegated(this->getSylvanBdd().GetBDD()), 0, ddVariableIndices.size(), ddVariableIndices, uniqueTableForLevels);
             
             // Return a copy of the root node to remove the shared_ptr encapsulation.
             return Odd(*rootOdd);
@@ -282,7 +289,7 @@ namespace storm {
             return result;
         }
         
-        std::shared_ptr<Odd> InternalBdd<DdType::Sylvan>::createOddRec(BDD dd, uint_fast64_t currentLevel, bool complement, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<BDD, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels) {
+        std::shared_ptr<Odd> InternalBdd<DdType::Sylvan>::createOddRec(BDD dd, bool complement, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<std::unordered_map<std::pair<BDD, bool>, std::shared_ptr<Odd>, HashFunctor>>& uniqueTableForLevels) {
             // Check whether the ODD for this node has already been computed (for this level) and if so, return this instead.
             auto const& iterator = uniqueTableForLevels[currentLevel].find(std::make_pair(dd, complement));
             if (iterator != uniqueTableForLevels[currentLevel].end()) {
@@ -310,7 +317,7 @@ namespace storm {
                 } else if (bdd_isterminal(dd) || ddVariableIndices[currentLevel] < sylvan_var(dd)) {
                     // If we skipped the level in the DD, we compute the ODD just for the else-successor and use the same
                     // node for the then-successor as well.
-                    std::shared_ptr<Odd> elseNode = createOddRec(dd, currentLevel + 1, complement, maxLevel, ddVariableIndices, uniqueTableForLevels);
+                    std::shared_ptr<Odd> elseNode = createOddRec(dd, complement, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     std::shared_ptr<Odd> thenNode = elseNode;
                     uint_fast64_t totalOffset = elseNode->getElseOffset() + elseNode->getThenOffset();
                     return std::make_shared<Odd>(elseNode, totalOffset, thenNode, totalOffset);
@@ -323,8 +330,8 @@ namespace storm {
                     bool elseComplemented = bdd_isnegated(elseDdNode) ^ complement;
                     bool thenComplemented = bdd_isnegated(thenDdNode) ^ complement;
                     
-                    std::shared_ptr<Odd> elseNode = createOddRec(bdd_regular(elseDdNode), currentLevel + 1, elseComplemented, maxLevel, ddVariableIndices, uniqueTableForLevels);
-                    std::shared_ptr<Odd> thenNode = createOddRec(bdd_regular(thenDdNode), currentLevel + 1, thenComplemented, maxLevel, ddVariableIndices, uniqueTableForLevels);
+                    std::shared_ptr<Odd> elseNode = createOddRec(bdd_regular(elseDdNode), elseComplemented, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
+                    std::shared_ptr<Odd> thenNode = createOddRec(bdd_regular(thenDdNode), thenComplemented, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
                     
                     return std::make_shared<Odd>(elseNode, elseNode->getElseOffset() + elseNode->getThenOffset(), thenNode, thenNode->getElseOffset() + thenNode->getThenOffset());
                 }

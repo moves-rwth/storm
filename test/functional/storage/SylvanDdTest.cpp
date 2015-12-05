@@ -339,30 +339,30 @@ TEST(SylvanDd, AddOddTest) {
         EXPECT_TRUE(i+1 == ddAsVector[i]);
     }
     
-//    // Create a non-trivial matrix.
-//    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)) * manager->getRange(x.first).template toAdd<double>();
-//    dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
-//    
-//    // Create the ODDs.
-//    storm::dd::Odd rowOdd;
-//    ASSERT_NO_THROW(rowOdd = manager->getRange(x.first).template toAdd<double>().createOdd());
-//    storm::dd::Odd columnOdd;
-//    ASSERT_NO_THROW(columnOdd = manager->getRange(x.second).template toAdd<double>().createOdd());
-//    
-//    // Try to translate the matrix.
-//    storm::storage::SparseMatrix<double> matrix;
-//    ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, rowOdd, columnOdd));
-//    
-//    EXPECT_EQ(9ul, matrix.getRowCount());
-//    EXPECT_EQ(9ul, matrix.getColumnCount());
-//    EXPECT_EQ(25ul, matrix.getNonzeroEntryCount());
-//    
-//    dd = manager->getRange(x.first).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() * manager->getEncoding(a.first, 0).template toAdd<double>().ite(dd, dd + manager->template getConstant<double>(1));
-//    ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
-//    EXPECT_EQ(18ul, matrix.getRowCount());
-//    EXPECT_EQ(9ul, matrix.getRowGroupCount());
-//    EXPECT_EQ(9ul, matrix.getColumnCount());
-//    EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
+    // Create a non-trivial matrix.
+    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
+    dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
+    
+    // Create the ODDs.
+    storm::dd::Odd rowOdd;
+    ASSERT_NO_THROW(rowOdd = manager->getRange(x.first).template toAdd<double>().createOdd());
+    storm::dd::Odd columnOdd;
+    ASSERT_NO_THROW(columnOdd = manager->getRange(x.second).template toAdd<double>().createOdd());
+    
+    // Try to translate the matrix.
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, rowOdd, columnOdd));
+    
+    EXPECT_EQ(9ul, matrix.getRowCount());
+    EXPECT_EQ(9ul, matrix.getColumnCount());
+    EXPECT_EQ(25ul, matrix.getNonzeroEntryCount());
+    
+    dd = manager->getRange(x.first).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() * manager->getEncoding(a.first, 0).template toAdd<double>().ite(dd, dd + manager->template getConstant<double>(1));
+    ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
+    EXPECT_EQ(18ul, matrix.getRowCount());
+    EXPECT_EQ(9ul, matrix.getRowGroupCount());
+    EXPECT_EQ(9ul, matrix.getColumnCount());
+    EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
 }
 
 TEST(SylvanDd, BddOddTest) {
@@ -381,13 +381,13 @@ TEST(SylvanDd, BddOddTest) {
     ASSERT_NO_THROW(ddAsVector = dd.toVector());
     EXPECT_EQ(9ul, ddAsVector.size());
     for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
-        EXPECT_TRUE(i+1 == ddAsVector[i]);
+        EXPECT_EQ(i+1, ddAsVector[i]);
     }
     
-    storm::dd::Add<storm::dd::DdType::Sylvan, double> vectorAdd = storm::dd::Add<storm::dd::DdType::Sylvan, double>::fromVector(manager, ddAsVector, odd, {x.first});
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> vectorAdd = storm::dd::Add<storm::dd::DdType::Sylvan, double>::fromVector(*manager, ddAsVector, odd, {x.first});
     
     // Create a non-trivial matrix.
-    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)) * manager->getRange(x.first).template toAdd<double>();
+    dd = manager->template getIdentity<double>(x.first).equals(manager->template getIdentity<double>(x.second)).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
     dd += manager->getEncoding(x.first, 1).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() + manager->getEncoding(x.second, 1).template toAdd<double>() * manager->getRange(x.first).template toAdd<double>();
     
     // Create the ODDs.

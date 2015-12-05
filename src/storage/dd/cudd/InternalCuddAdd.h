@@ -415,6 +415,13 @@ namespace storm {
             ValueType getMax() const;
             
             /*!
+             * Retrieves the value of this ADD that is required to be a leaf.
+             *
+             * @return The value of the leaf.
+             */
+            ValueType getValue() const;
+            
+            /*!
              * Retrieves whether this ADD represents the constant one function.
              *
              * @return True if this ADD represents the constant one function.

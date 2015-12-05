@@ -255,6 +255,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType InternalAdd<DdType::Sylvan, ValueType>::getValue() const {
+            return getValue(this->sylvanMtbdd.GetMTBDD());
+        }
+        
+        template<typename ValueType>
         bool InternalAdd<DdType::Sylvan, ValueType>::isOne() const {
             return *this == ddManager->getAddOne<ValueType>();
         }
@@ -348,16 +353,16 @@ namespace storm {
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            composeWithExplicitVectorRec(this->getSylvanMtbdd().GetMTBDD(), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
+            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
         }
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), &offsets, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
+            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), &offsets, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
         }
         
         template<typename ValueType>
-        void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVectorRec(MTBDD dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
+        void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVectorRec(MTBDD dd, bool negated, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
             // For the empty DD, we do not need to add any entries.
             if (mtbdd_isleaf(dd) && mtbdd_iszero(dd)) {
                 return;
@@ -370,12 +375,19 @@ namespace storm {
             } else if (mtbdd_isleaf(dd) || ddVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.
-                composeWithExplicitVectorRec(dd, offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
-                composeWithExplicitVectorRec(dd, offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
+                composeWithExplicitVectorRec(dd, negated, offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
+                composeWithExplicitVectorRec(dd, negated, offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
             } else {
                 // Otherwise, we simply recursively call the function for both (different) cases.
-                composeWithExplicitVectorRec(mtbdd_regular(mtbdd_getlow(dd)), offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
-                composeWithExplicitVectorRec(mtbdd_regular(mtbdd_gethigh(dd)), offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
+                MTBDD thenNode = mtbdd_gethigh(dd);
+                MTBDD elseNode = mtbdd_getlow(dd);
+                
+                // Determine whether we have to evaluate the successors as if they were complemented.
+                bool elseComplemented = mtbdd_isnegated(elseNode) ^ negated;
+                bool thenComplemented = mtbdd_isnegated(thenNode) ^ negated;
+                
+                composeWithExplicitVectorRec(mtbdd_regular(elseNode), elseComplemented, offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
+                composeWithExplicitVectorRec(mtbdd_regular(thenNode), thenComplemented, offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
             }
         }
         
@@ -594,14 +606,17 @@ namespace storm {
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::Sylvan, ValueType>::getValue(MTBDD const& node) {
-            STORM_LOG_ASSERT(mtbdd_isleaf(node), "Expected leaf.");
+            STORM_LOG_ASSERT(mtbdd_isleaf(node), "Expected leaf, but got variable " << mtbdd_getvar(node) << ".");
+            
+            bool negated = mtbdd_isnegated(node);
+            MTBDD n = mtbdd_regular(node);
             
             if (std::is_same<ValueType, double>::value) {
-                STORM_LOG_ASSERT(mtbdd_gettype(node) == 1, "Expected a double value.");
-                return mtbdd_getuint64(node);
+                STORM_LOG_ASSERT(mtbdd_gettype(n) == 1, "Expected a double value.");
+                return negated ? -mtbdd_getdouble(n) : mtbdd_getdouble(n);
             } else if (std::is_same<ValueType, uint_fast64_t>::value) {
                 STORM_LOG_ASSERT(mtbdd_gettype(node) == 0, "Expected an unsigned value.");
-                return mtbdd_getdouble(node);
+                return negated ? -mtbdd_getuint64(node) : mtbdd_getuint64(node);
             } else {
                 STORM_LOG_ASSERT(false, "Illegal or unknown type in MTBDD.");
             }

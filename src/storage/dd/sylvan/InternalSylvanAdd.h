@@ -411,7 +411,14 @@ namespace storm {
              * @return The highest function value of any encoding.
              */
             ValueType getMax() const;
-                        
+            
+            /*!
+             * Retrieves the value of this ADD that is required to be a leaf.
+             *
+             * @return The value of the leaf.
+             */
+            ValueType getValue() const;
+            
             /*!
              * Retrieves whether this ADD represents the constant one function.
              *
@@ -564,6 +571,7 @@ namespace storm {
              * explicit vector.
              *
              * @param dd The DD to add to the explicit vector.
+             * @param negated A flag indicating whether the DD node is to be interpreted as being negated.
              * @param currentLevel The currently considered level in the DD.
              * @param maxLevel The number of levels that need to be considered.
              * @param currentOffset The current offset.
@@ -571,7 +579,7 @@ namespace storm {
              * @param ddVariableIndices The (sorted) indices of all DD variables that need to be considered.
              * @param targetVector The vector to which the translated DD-based vector is to be added.
              */
-            void composeWithExplicitVectorRec(MTBDD dd, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
+            void composeWithExplicitVectorRec(MTBDD dd, bool negated, std::vector<uint_fast64_t> const* offsets, uint_fast64_t currentLevel, uint_fast64_t maxLevel, uint_fast64_t currentOffset, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const;
             
             /*!
              * Splits the given matrix DD into the groups using the given group variables.

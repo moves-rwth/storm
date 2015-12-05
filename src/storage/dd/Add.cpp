@@ -338,7 +338,7 @@ namespace storm {
             
             Add<LibraryType, ValueType> value = *this * valueEncoding.template toAdd<ValueType>();
             value = value.sumAbstract(this->getContainedMetaVariables());
-            return value.getMax();
+            return value.internalAdd.getValue();
         }
         
         template<DdType LibraryType, typename ValueType>

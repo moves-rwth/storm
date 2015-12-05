@@ -471,6 +471,23 @@ TASK_IMPL_1(MTBDD, mtbdd_bool_to_double, MTBDD, dd)
     return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_double), 0);
 }
 
+TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_uint64, MTBDD, a, size_t, v)
+{
+    /* We only expect "double" terminals, or false */
+    if (a == mtbdd_false) return mtbdd_uint64(0);
+    if (a == mtbdd_true) return mtbdd_uint64(1);
+    
+    // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
+    (void)v;
+    
+    return mtbdd_invalid;
+}
+
+TASK_IMPL_1(MTBDD, mtbdd_bool_to_uint64, MTBDD, dd)
+{
+    return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_uint64), 0);
+}
+
 /**
  * Calculate the number of satisfying variable assignments according to <variables>.
  */

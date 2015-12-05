@@ -5,6 +5,12 @@ Bdd::toDoubleMtbdd() const {
 }
 
 Mtbdd
+Bdd::toUint64Mtbdd() const {
+    LACE_ME;
+    return mtbdd_bool_to_uint64(bdd);
+}
+
+Mtbdd
 Mtbdd::Minus(const Mtbdd &other) const
 {
     LACE_ME;

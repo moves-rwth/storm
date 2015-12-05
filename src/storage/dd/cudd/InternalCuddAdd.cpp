@@ -261,6 +261,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType InternalAdd<DdType::CUDD, ValueType>::getValue() const {
+            return static_cast<ValueType>(Cudd_V(this->getCuddAdd().getNode()));
+        }
+        
+        template<typename ValueType>
         bool InternalAdd<DdType::CUDD, ValueType>::isOne() const {
             return this->getCuddAdd().IsOne();
         }
