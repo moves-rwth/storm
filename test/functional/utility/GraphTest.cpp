@@ -36,8 +36,7 @@ TEST(GraphTest, SymbolicProb01_Cudd) {
     EXPECT_EQ(1032ul, statesWithProbability01.second.getNonZeroCount());
 }
 
-// FIXME: re-enable as soon as the ADD iterator of sylvan works.
-TEST(DISABLED_GraphTest, SymbolicProb01_Sylvan) {
+TEST(GraphTest, SymbolicProb01_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
     

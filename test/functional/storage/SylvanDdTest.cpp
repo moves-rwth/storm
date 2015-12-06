@@ -278,48 +278,49 @@ TEST(SylvanDd, GetSetValueTest) {
     EXPECT_EQ(2, dd1.getValue(metaVariableToValueMap));
 }
 
-//TEST(SylvanDd, ForwardIteratorTest) {
-//    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
-//    std::pair<storm::expressions::Variable, storm::expressions::Variable> y = manager->addMetaVariable("y", 0, 3);
-//    
-//    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd;
-//    ASSERT_NO_THROW(dd = manager->getRange(x.first).template toAdd<double>());
-//    
-//    storm::dd::AddIterator<storm::dd::DdType::Sylvan, double> it, ite;
-//    ASSERT_NO_THROW(it = dd.begin());
-//    ASSERT_NO_THROW(ite = dd.end());
-//    std::pair<storm::expressions::SimpleValuation, double> valuationValuePair;
-//    uint_fast64_t numberOfValuations = 0;
-//    while (it != ite) {
-//        ASSERT_NO_THROW(valuationValuePair = *it);
-//        ASSERT_NO_THROW(++it);
-//        ++numberOfValuations;
-//    }
-//    EXPECT_EQ(9ul, numberOfValuations);
-//    
-//    dd = manager->getRange(x.first).template toAdd<double>();
-//    dd = dd.ite(manager->template getAddOne<double>(), manager->template getAddOne<double>());
-//    ASSERT_NO_THROW(it = dd.begin());
-//    ASSERT_NO_THROW(ite = dd.end());
-//    numberOfValuations = 0;
-//    while (it != ite) {
-//        ASSERT_NO_THROW(valuationValuePair = *it);
-//        ASSERT_NO_THROW(++it);
-//        ++numberOfValuations;
-//    }
-//    EXPECT_EQ(16ul, numberOfValuations);
-//    
-//    ASSERT_NO_THROW(it = dd.begin(false));
-//    ASSERT_NO_THROW(ite = dd.end());
-//    numberOfValuations = 0;
-//    while (it != ite) {
-//        ASSERT_NO_THROW(valuationValuePair = *it);
-//        ASSERT_NO_THROW(++it);
-//        ++numberOfValuations;
-//    }
-//    EXPECT_EQ(1ul, numberOfValuations);
-//}
+TEST(SylvanDd, AddIteratorTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> y = manager->addMetaVariable("y", 0, 3);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, double> dd;
+    ASSERT_NO_THROW(dd = manager->getRange(x.first).template toAdd<double>());
+    
+    storm::dd::AddIterator<storm::dd::DdType::Sylvan, double> it, ite;
+    ASSERT_NO_THROW(it = dd.begin());
+    ASSERT_NO_THROW(ite = dd.end());
+    std::pair<storm::expressions::SimpleValuation, double> valuationValuePair;
+    uint_fast64_t numberOfValuations = 0;
+    dd.exportToDot("dd.dot");
+    while (it != ite) {
+        ASSERT_NO_THROW(valuationValuePair = *it);
+        ASSERT_NO_THROW(++it);
+        ++numberOfValuations;
+    }
+    EXPECT_EQ(9ul, numberOfValuations);
+    
+    dd = manager->getRange(x.first).template toAdd<double>();
+    dd = dd.ite(manager->template getAddOne<double>(), manager->template getAddOne<double>());
+    ASSERT_NO_THROW(it = dd.begin());
+    ASSERT_NO_THROW(ite = dd.end());
+    numberOfValuations = 0;
+    while (it != ite) {
+        ASSERT_NO_THROW(valuationValuePair = *it);
+        ASSERT_NO_THROW(++it);
+        ++numberOfValuations;
+    }
+    EXPECT_EQ(16ul, numberOfValuations);
+    
+    ASSERT_NO_THROW(it = dd.begin(false));
+    ASSERT_NO_THROW(ite = dd.end());
+    numberOfValuations = 0;
+    while (it != ite) {
+        ASSERT_NO_THROW(valuationValuePair = *it);
+        ASSERT_NO_THROW(++it);
+        ++numberOfValuations;
+    }
+    EXPECT_EQ(1ul, numberOfValuations);
+}
 
 TEST(SylvanDd, AddOddTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());

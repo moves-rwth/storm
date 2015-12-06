@@ -725,12 +725,18 @@ namespace storm {
         
         template<DdType LibraryType, typename ValueType>
         AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::begin(bool enumerateDontCareMetaVariables) const {
-            return internalAdd.begin(this->getDdManager(), this->getContainedMetaVariables(), enumerateDontCareMetaVariables);
+            uint_fast64_t numberOfDdVariables = 0;
+            for (auto const& metaVariable : this->getContainedMetaVariables()) {
+                auto const& ddMetaVariable = this->getDdManager().getMetaVariable(metaVariable);
+                numberOfDdVariables += ddMetaVariable.getNumberOfDdVariables();
+            }
+            
+            return internalAdd.begin(this->getDdManager(), Bdd<LibraryType>::getCube(this->getDdManager(), this->getContainedMetaVariables()), numberOfDdVariables, this->getContainedMetaVariables(), enumerateDontCareMetaVariables);
         }
         
         template<DdType LibraryType, typename ValueType>
         AddIterator<LibraryType, ValueType> Add<LibraryType, ValueType>::end(bool enumerateDontCareMetaVariables) const {
-            return internalAdd.end(this->getDdManager(), enumerateDontCareMetaVariables);
+            return internalAdd.end(this->getDdManager());
         }
         
         template<DdType LibraryType, typename ValueType>

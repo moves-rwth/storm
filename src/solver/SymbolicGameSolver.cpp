@@ -58,6 +58,7 @@ namespace storm {
         }
         
         template class SymbolicGameSolver<storm::dd::DdType::CUDD, double>;
+        template class SymbolicGameSolver<storm::dd::DdType::Sylvan, double>;
         
     }
 }

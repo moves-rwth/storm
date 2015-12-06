@@ -66,5 +66,6 @@ namespace storm {
         }
         
         template class SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>;
+        template class SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>;
     }
 }

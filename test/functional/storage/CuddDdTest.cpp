@@ -275,7 +275,7 @@ TEST(CuddDd, GetSetValueTest) {
     EXPECT_EQ(2, dd1.getValue(metaVariableToValueMap));
 }
 
-TEST(CuddDd, ForwardIteratorTest) {
+TEST(CuddDd, AddIteratorTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     std::pair<storm::expressions::Variable, storm::expressions::Variable> y = manager->addMetaVariable("y", 0, 3);

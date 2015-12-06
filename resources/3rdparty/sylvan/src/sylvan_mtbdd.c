@@ -1134,8 +1134,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_times, MTBDD*, pa, MTBDD*, pb)
             else if (val_b == 0) return b;
             else {
                 MTBDD result;
-                if (val_a == 1) result = b;
-                else if (val_b == 1) result = a;
+                if (val_a == 1) result = mtbdd_regular(b);
+                else if (val_b == 1) result = mtbdd_regular(a);
                 else result = mtbdd_uint64(val_a*val_b);
                 int nega = mtbdd_isnegated(a);
                 int negb = mtbdd_isnegated(b);
@@ -1150,13 +1150,16 @@ TASK_IMPL_2(MTBDD, mtbdd_op_times, MTBDD*, pa, MTBDD*, pb)
             else if (vval_b == 0.0) return b;
             else {
                 MTBDD result;
-                if (vval_a == 1.0) result = b;
-                else if (vval_b == 1.0) result = a;
+                if (vval_a == 1.0) result = mtbdd_regular(b);
+                else if (vval_b == 1.0) result = mtbdd_regular(a);
                 else result = mtbdd_double(vval_a*vval_b);
                 int nega = mtbdd_isnegated(a);
                 int negb = mtbdd_isnegated(b);
-                if (nega ^ negb) return mtbdd_negate(result);
-                else return result;
+                if (nega ^ negb) {
+                    return mtbdd_negate(result);
+                } else {
+                    return result;
+                }
             }
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // both fraction
@@ -1560,8 +1563,7 @@ TASK_4(MTBDD, mtbdd_equal_norm_rel_d2, MTBDD, a, MTBDD, b, size_t, svalue, int*,
         double vb = mtbdd_getdouble(b);
         if (mtbdd_isnegated(b)) vb = -vb;
         if (va == 0) return mtbdd_false;
-        va = (va - vb) / va;
-        if (va < 0) va = -va;
+        va = fabs((va - vb) / va);
         return (va < *(double*)&svalue) ? mtbdd_true : mtbdd_false;
     }
 
@@ -2558,7 +2560,7 @@ mtbdd_fprintdot_rec(FILE *out, MTBDD mtbdd, print_terminal_label_cb cb)
     } else if (mtbddnode_isleaf(n)) {
         uint32_t type = mtbddnode_gettype(n);
         uint64_t value = mtbddnode_getvalue(n);
-        fprintf(out, "%" PRIu64 " [shape=box, style=filled, label=\"", MTBDD_STRIPMARK(mtbdd));
+        fprintf(out, "%" PRIu64 " [shape=box, style=filled, label=\"", mtbdd_regular(mtbdd));
         switch (type) {
         case 0:
             fprintf(out, "%" PRIu64, value);
@@ -2576,16 +2578,16 @@ mtbdd_fprintdot_rec(FILE *out, MTBDD mtbdd, print_terminal_label_cb cb)
         fprintf(out, "\"];\n");
     } else {
         fprintf(out, "%" PRIu64 " [label=\"%" PRIu32 "\"];\n",
-                MTBDD_STRIPMARK(mtbdd), mtbddnode_getvariable(n));
+                mtbdd_regular(mtbdd), mtbddnode_getvariable(n));
 
-        mtbdd_fprintdot_rec(out, mtbddnode_getlow(n), cb);
-        mtbdd_fprintdot_rec(out, mtbddnode_gethigh(n), cb);
+        mtbdd_fprintdot_rec(out, mtbdd_regular(mtbddnode_getlow(n)), cb);
+        mtbdd_fprintdot_rec(out, mtbdd_regular(mtbddnode_gethigh(n)), cb);
 
-        fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=dashed];\n",
-                mtbdd, mtbddnode_getlow(n));
+        fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=dashed dir=both arrowtail=%s];\n",
+                mtbdd, mtbdd_regular(mtbddnode_getlow(n)), mtbdd_isnegated(mtbddnode_getlow(n)) ? "dot" : "none");
         fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=solid dir=both arrowtail=%s];\n",
-                mtbdd, MTBDD_STRIPMARK(mtbddnode_gethigh(n)),
-                mtbddnode_getcomp(n) ? "dot" : "none");
+                mtbdd, mtbdd_regular(mtbddnode_gethigh(n)),
+                mtbdd_isnegated(mtbddnode_gethigh(n)) ? "dot" : "none");
     }
 }
 
@@ -2598,9 +2600,9 @@ mtbdd_fprintdot(FILE *out, MTBDD mtbdd, print_terminal_label_cb cb)
     fprintf(out, "edge [dir = forward];\n");
     fprintf(out, "root [style=invis];\n");
     fprintf(out, "root -> %" PRIu64 " [style=solid dir=both arrowtail=%s];\n",
-            MTBDD_STRIPMARK(mtbdd), MTBDD_HASMARK(mtbdd) ? "dot" : "none");
+            mtbdd_regular(mtbdd), mtbdd_isnegated(mtbdd) ? "dot" : "none");
 
-    mtbdd_fprintdot_rec(out, mtbdd, cb);
+    mtbdd_fprintdot_rec(out, mtbdd_regular(mtbdd), cb);
     mtbdd_unmark_rec(mtbdd);
 
     fprintf(out, "}\n");

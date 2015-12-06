@@ -1,9 +1,4 @@
 /**
- * Compute a - b
- */
-#define mtbdd_minus(a, b) mtbdd_plus(a, mtbdd_negate(b))
-
-/**
  * Binary operation Divide (for MTBDDs of same type)
  * Only for MTBDDs where all leaves are Integer or Double.
  * If either operand is mtbdd_false (not defined),
@@ -107,7 +102,8 @@ TASK_DECL_1(MTBDD, mtbdd_bool_to_uint64, MTBDD)
 TASK_DECL_2(double, mtbdd_non_zero_count, MTBDD, size_t);
 #define mtbdd_non_zero_count(dd, nvars) CALL(mtbdd_non_zero_count, dd, nvars)
 
-// Checks whether the given MTBDD represents a zero leaf.
+// Checks whether the given MTBDD (does represents a zero leaf.
 int mtbdd_iszero(MTBDD);
+int mtbdd_isnonzero(MTBDD);
 
 #define mtbdd_regular(dd) (dd & ~mtbdd_complement)

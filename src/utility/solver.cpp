@@ -189,8 +189,10 @@ namespace storm {
             }
 
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
+            template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
             template class SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicGameSolverFactory<storm::dd::DdType::CUDD, double>;
+            template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>;
             template class LinearEquationSolverFactory<double>;
             template class GmmxxLinearEquationSolverFactory<double>;
             template class NativeLinearEquationSolverFactory<double>;

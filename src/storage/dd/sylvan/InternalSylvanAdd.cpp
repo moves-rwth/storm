@@ -1,6 +1,8 @@
 #include "src/storage/dd/sylvan/InternalSylvanAdd.h"
 
+#include "src/storage/dd/sylvan/SylvanAddIterator.h"
 #include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
+#include "src/storage/dd/DdManager.h"
 
 #include "src/storage/SparseMatrix.h"
 
@@ -246,12 +248,12 @@ namespace storm {
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::Sylvan, ValueType>::getMin() const {
-            return static_cast<ValueType>(this->sylvanMtbdd.getDoubleMin());
+            return getValue(this->sylvanMtbdd.Minimum().GetMTBDD());
         }
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::Sylvan, ValueType>::getMax() const {
-            return static_cast<ValueType>(this->sylvanMtbdd.getDoubleMax());
+            return getValue(this->sylvanMtbdd.Maximum().GetMTBDD());
         }
         
         template<typename ValueType>
@@ -283,18 +285,18 @@ namespace storm {
         void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const& ddVariableNamesAsStrings) const {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "w");
-            mtbdd_fprintdot(filePointer, this->sylvanMtbdd.GetMTBDD(), nullptr);
+            this->sylvanMtbdd.PrintDot(filePointer);
             fclose(filePointer);
         }
         
         template<typename ValueType>
-        AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::begin(DdManager<DdType::Sylvan> const& fullDdManager, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+        AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::begin(DdManager<DdType::Sylvan> const& fullDdManager, InternalBdd<DdType::Sylvan> const& variableCube, uint_fast64_t numberOfDdVariables, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables) const {
+            return AddIterator<DdType::Sylvan, ValueType>::createBeginIterator(fullDdManager, this->getSylvanMtbdd(), variableCube.getSylvanBdd(), numberOfDdVariables, &metaVariables, enumerateDontCareMetaVariables);
         }
         
         template<typename ValueType>
-        AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::end(DdManager<DdType::Sylvan> const& fullDdManager, bool enumerateDontCareMetaVariables) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not yet implemented.");
+        AddIterator<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::end(DdManager<DdType::Sylvan> const& fullDdManager) const {
+            return AddIterator<DdType::Sylvan, ValueType>::createEndIterator(fullDdManager);
         }
         
         template<typename ValueType>

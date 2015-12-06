@@ -45,6 +45,7 @@ namespace storm {
             
             while (!converged && iterationCount < maximalNumberOfIterations) {
                 storm::dd::Add<DdType, ValueType> xCopyAsColumn = xCopy.swapVariables(this->rowColumnMetaVariablePairs);
+
                 storm::dd::Add<DdType, ValueType> tmp = lu.multiplyMatrix(xCopyAsColumn, this->columnMetaVariables);
                 tmp = b - tmp;
                 tmp = tmp.swapVariables(this->rowColumnMetaVariablePairs);
@@ -82,6 +83,7 @@ namespace storm {
         }
         
         template class SymbolicLinearEquationSolver<storm::dd::DdType::CUDD, double>;
+        template class SymbolicLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
         
     }
 }

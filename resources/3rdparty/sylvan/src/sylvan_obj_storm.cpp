@@ -49,20 +49,6 @@ Mtbdd::LessOrEqual(const Mtbdd& other) const {
     return mtbdd_less_or_equal_as_bdd(mtbdd, other.mtbdd);
 }
 
-double
-Mtbdd::getDoubleMax() const {
-    LACE_ME;
-    MTBDD maxNode = mtbdd_maximum(mtbdd);
-    return mtbdd_getdouble(maxNode);
-}
-
-double
-Mtbdd::getDoubleMin() const {
-    LACE_ME;
-    MTBDD minNode = mtbdd_minimum(mtbdd);
-    return mtbdd_getdouble(minNode);
-}
-
 bool
 Mtbdd::EqualNorm(const Mtbdd& other, double epsilon) const {
     LACE_ME;
@@ -121,4 +107,21 @@ bool
 Mtbdd::isValid() const {
     LACE_ME;
     return mtbdd_test_isvalid(mtbdd) == 1;
+}
+
+Mtbdd
+Mtbdd::Minimum() const {
+    LACE_ME;
+    return mtbdd_minimum(mtbdd);
+}
+
+Mtbdd
+Mtbdd::Maximum() const {
+    LACE_ME;
+    return mtbdd_maximum(mtbdd);
+}
+
+void
+Mtbdd::PrintDot(FILE *out) const {
+    mtbdd_fprintdot(out, mtbdd, NULL);
 }

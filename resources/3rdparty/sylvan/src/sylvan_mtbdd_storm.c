@@ -540,3 +540,7 @@ int mtbdd_iszero(MTBDD dd) {
     }
     return 0;
 }
+
+int mtbdd_isnonzero(MTBDD dd) {
+    return mtbdd_iszero(dd) ? 0 : 1;
+}

@@ -91,5 +91,6 @@ namespace storm {
         
         // Explicitly instantiate the class.
         template class SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>;
+        template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
     }
 }

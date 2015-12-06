@@ -61,5 +61,11 @@ namespace storm {
         template storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD, double>::getModelAs() const;
         template storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD, double>::getModelAs() const;
         template class SymbolicPropositionalModelChecker<storm::dd::DdType::CUDD, double>;
+
+        template storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::Sylvan, double>::getModelAs() const;
+        template storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::Sylvan, double>::getModelAs() const;
+        template storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double> const& SymbolicPropositionalModelChecker<storm::dd::DdType::Sylvan, double>::getModelAs() const;
+        template class SymbolicPropositionalModelChecker<storm::dd::DdType::Sylvan, double>;
+
     }
 }

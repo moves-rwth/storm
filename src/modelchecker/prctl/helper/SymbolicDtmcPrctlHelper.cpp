@@ -132,7 +132,6 @@ namespace storm {
             
             template<storm::dd::DdType DdType, typename ValueType>
             storm::dd::Add<DdType, ValueType> SymbolicDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType> const& linearEquationSolverFactory) {
-                
                 // Only compute the result if there is at least one reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -179,6 +178,7 @@ namespace storm {
             }
             
             template class SymbolicDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
+            template class SymbolicDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
             
         }
     }

@@ -17,16 +17,15 @@ TEST(DdPrismModelBuilderTest_Sylvan, Dtmc) {
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
     
-    // FIXME: re-enable as soon as sylvan ADD-iterator is done.
-//    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-//    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
-//    EXPECT_EQ(677ul, model->getNumberOfStates());
-//    EXPECT_EQ(867ul, model->getNumberOfTransitions());
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
+    EXPECT_EQ(677ul, model->getNumberOfStates());
+    EXPECT_EQ(867ul, model->getNumberOfTransitions());
 
-//    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
-//    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
-//    EXPECT_EQ(8607ul, model->getNumberOfStates());
-//    EXPECT_EQ(15113ul, model->getNumberOfTransitions());
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
+    EXPECT_EQ(8607ul, model->getNumberOfStates());
+    EXPECT_EQ(15113ul, model->getNumberOfTransitions());
 
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader-3-5.pm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
@@ -180,16 +179,15 @@ TEST(DdPrismModelBuilderTest_Sylvan, Mdp) {
     EXPECT_EQ(5585ul, mdp->getNumberOfTransitions());
     EXPECT_EQ(5519ul, mdp->getNumberOfChoices());
 
-    // FIXME: re-enable after Sylvan ADD iterator is done.
-//    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
-//    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
-//    
-//    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
-//    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
-//    
-//    EXPECT_EQ(37ul, mdp->getNumberOfStates());
-//    EXPECT_EQ(59ul, mdp->getNumberOfTransitions());
-//    EXPECT_EQ(59ul, mdp->getNumberOfChoices());
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(37ul, mdp->getNumberOfStates());
+    EXPECT_EQ(59ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(59ul, mdp->getNumberOfChoices());
 }
 
 TEST(DdPrismModelBuilderTest_Cudd, Mdp) {

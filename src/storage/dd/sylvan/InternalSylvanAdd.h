@@ -40,6 +40,8 @@ namespace storm {
         template<typename ValueType>
         class InternalAdd<DdType::Sylvan, ValueType> {
         public:
+            friend class AddIterator<DdType::Sylvan, ValueType>;
+            
             /*!
              * Creates an ADD that encapsulates the given Sylvan MTBDD.
              *
@@ -459,22 +461,22 @@ namespace storm {
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
              *
              * @param fullDdManager The DD manager responsible for this ADD.
+             * @param variableCube The cube of variables contained in this ADD.
+             * @param numberOfDdVariables The number of variables contained in this ADD.
              * @param metaVariables The meta variables contained in the ADD.
              * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
              * if a meta variable does not at all influence the the function value.
              * @return An iterator that points to the first meta variable assignment with a non-zero function value.
              */
-            AddIterator<DdType::Sylvan, ValueType> begin(DdManager<DdType::Sylvan> const& fullDdManager, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables = true) const;
+            AddIterator<DdType::Sylvan, ValueType> begin(DdManager<DdType::Sylvan> const& fullDdManager, InternalBdd<DdType::Sylvan> const& variableCube, uint_fast64_t numberOfDdVariables, std::set<storm::expressions::Variable> const& metaVariables, bool enumerateDontCareMetaVariables = true) const;
             
             /*!
              * Retrieves an iterator that points past the end of the container.
              *
              * @param fullDdManager The DD manager responsible for this ADD.
-             * @param enumerateDontCareMetaVariables If set to true, all meta variable assignments are enumerated, even
-             * if a meta variable does not at all influence the the function value.
              * @return An iterator that points past the end of the container.
              */
-            AddIterator<DdType::Sylvan, ValueType> end(DdManager<DdType::Sylvan> const& fullDdManager, bool enumerateDontCareMetaVariables = true) const;
+            AddIterator<DdType::Sylvan, ValueType> end(DdManager<DdType::Sylvan> const& fullDdManager) const;
             
             /*!
              * Composes the ADD with an explicit vector by performing a specified function between the entries of this

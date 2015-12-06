@@ -15,11 +15,11 @@
     Bdd Less(const Mtbdd& other) const;
 
     Bdd LessOrEqual(const Mtbdd& other) const;
-    
-    double getDoubleMax() const;
 
-    double getDoubleMin() const;
-    
+    Mtbdd Minimum() const;
+
+    Mtbdd Maximum() const;
+
     bool EqualNorm(const Mtbdd& other, double epsilon) const;
 
     bool EqualNormRel(const Mtbdd& other, double epsilon) const;
@@ -42,3 +42,10 @@
     double NonZeroCount(size_t variableCount) const;
 
     bool isValid() const;
+
+    /**
+     * @brief Writes .dot file of this Bdd. Not thread-safe!
+     */
+    void PrintDot(FILE *out) const;
+
+    

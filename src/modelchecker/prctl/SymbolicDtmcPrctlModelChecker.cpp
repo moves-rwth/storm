@@ -91,5 +91,6 @@ namespace storm {
         }
         
         template class SymbolicDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double>;
+        template class SymbolicDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double>;
     }
 }
