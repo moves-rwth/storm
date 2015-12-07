@@ -355,12 +355,12 @@ namespace storm {
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
+            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()), nullptr, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
         }
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::composeWithExplicitVector(storm::dd::Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& offsets, std::vector<ValueType>& targetVector, std::function<ValueType (ValueType const&, ValueType const&)> const& function) const {
-            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), &offsets, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
+            composeWithExplicitVectorRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()), &offsets, 0, ddVariableIndices.size(), 0, odd, ddVariableIndices, targetVector, function);
         }
         
         template<typename ValueType>
@@ -385,8 +385,8 @@ namespace storm {
                 MTBDD elseNode = mtbdd_getlow(dd);
                 
                 // Determine whether we have to evaluate the successors as if they were complemented.
-                bool elseComplemented = mtbdd_isnegated(elseNode) ^ negated;
-                bool thenComplemented = mtbdd_isnegated(thenNode) ^ negated;
+                bool elseComplemented = mtbdd_hascomp(elseNode) ^ negated;
+                bool thenComplemented = mtbdd_hascomp(thenNode) ^ negated;
                 
                 composeWithExplicitVectorRec(mtbdd_regular(elseNode), elseComplemented, offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
                 composeWithExplicitVectorRec(mtbdd_regular(thenNode), thenComplemented, offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
@@ -396,14 +396,14 @@ namespace storm {
         template<typename ValueType>
         std::vector<InternalAdd<DdType::Sylvan, ValueType>> InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroups(std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
             std::vector<InternalAdd<DdType::Sylvan, ValueType>> result;
-            splitIntoGroupsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            splitIntoGroupsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
             return result;
         }
         
         template<typename ValueType>
         std::vector<std::pair<InternalAdd<DdType::Sylvan, ValueType>, InternalAdd<DdType::Sylvan, ValueType>>> InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroups(InternalAdd<DdType::Sylvan, ValueType> vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
             std::vector<std::pair<InternalAdd<DdType::Sylvan, ValueType>, InternalAdd<DdType::Sylvan, ValueType>>> result;
-            splitIntoGroupsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), mtbdd_regular(vector.getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(vector.getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            splitIntoGroupsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()), mtbdd_regular(vector.getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(vector.getSylvanMtbdd().GetMTBDD()), result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
             return result;
         }
         
@@ -415,7 +415,7 @@ namespace storm {
             }
             
             if (currentLevel == maxLevel) {
-                groups.push_back(InternalAdd<DdType::Sylvan, ValueType>(ddManager, sylvan::Mtbdd(negated ? mtbdd_negate(dd) : dd)));
+                groups.push_back(InternalAdd<DdType::Sylvan, ValueType>(ddManager, negated ? sylvan::Mtbdd(dd).Negate() : sylvan::Mtbdd(dd)));
             } else if (mtbdd_isleaf(dd) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd)) {
                 splitIntoGroupsRec(dd, negated, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(dd, negated, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
@@ -425,8 +425,8 @@ namespace storm {
                 MTBDD elseDdNode = mtbdd_getlow(dd);
                 
                 // Determine whether we have to evaluate the successors as if they were complemented.
-                bool elseComplemented = mtbdd_isnegated(elseDdNode) ^ negated;
-                bool thenComplemented = mtbdd_isnegated(thenDdNode) ^ negated;
+                bool elseComplemented = mtbdd_hascomp(elseDdNode) ^ negated;
+                bool thenComplemented = mtbdd_hascomp(thenDdNode) ^ negated;
                 
                 splitIntoGroupsRec(mtbdd_regular(elseDdNode), elseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(mtbdd_regular(thenDdNode), thenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
@@ -441,7 +441,7 @@ namespace storm {
             }
             
             if (currentLevel == maxLevel) {
-                groups.push_back(std::make_pair(InternalAdd<DdType::Sylvan, ValueType>(ddManager, sylvan::Mtbdd(negated1 ? mtbdd_negate(dd1) : dd1 )), InternalAdd<DdType::Sylvan, ValueType>(ddManager, sylvan::Mtbdd(negated2 ? mtbdd_negate(dd2) : dd2))));
+                groups.push_back(std::make_pair(InternalAdd<DdType::Sylvan, ValueType>(ddManager, negated1 ? sylvan::Mtbdd(dd1).Negate() : sylvan::Mtbdd(dd1)), InternalAdd<DdType::Sylvan, ValueType>(ddManager, negated2 ? sylvan::Mtbdd(dd2).Negate() : sylvan::Mtbdd(dd2))));
             } else if (mtbdd_isleaf(dd1) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd1)) {
                 if (mtbdd_isleaf(dd2) || ddGroupVariableIndices[currentLevel] < mtbdd_getvar(dd2)) {
                     splitIntoGroupsRec(dd1, negated1, dd2, negated2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
@@ -451,8 +451,8 @@ namespace storm {
                     MTBDD dd2ElseNode = mtbdd_getlow(dd2);
                     
                     // Determine whether we have to evaluate the successors as if they were complemented.
-                    bool elseComplemented = mtbdd_isnegated(dd2ElseNode) ^ negated2;
-                    bool thenComplemented = mtbdd_isnegated(dd2ThenNode) ^ negated2;
+                    bool elseComplemented = mtbdd_hascomp(dd2ElseNode) ^ negated2;
+                    bool thenComplemented = mtbdd_hascomp(dd2ThenNode) ^ negated2;
                     
                     splitIntoGroupsRec(dd1, negated1, mtbdd_regular(dd2ThenNode), thenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                     splitIntoGroupsRec(dd1, negated1, mtbdd_regular(dd2ElseNode), elseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
@@ -462,8 +462,8 @@ namespace storm {
                 MTBDD dd1ElseNode = mtbdd_getlow(dd1);
                 
                 // Determine whether we have to evaluate the successors as if they were complemented.
-                bool elseComplemented = mtbdd_isnegated(dd1ElseNode) ^ negated1;
-                bool thenComplemented = mtbdd_isnegated(dd1ThenNode) ^ negated1;
+                bool elseComplemented = mtbdd_hascomp(dd1ElseNode) ^ negated1;
+                bool thenComplemented = mtbdd_hascomp(dd1ThenNode) ^ negated1;
 
                 splitIntoGroupsRec(mtbdd_regular(dd1ThenNode), thenComplemented, dd2, negated2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(mtbdd_regular(dd1ElseNode), elseComplemented, dd2, negated2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
@@ -474,10 +474,10 @@ namespace storm {
                 MTBDD dd2ElseNode = mtbdd_getlow(dd2);
                 
                 // Determine whether we have to evaluate the successors as if they were complemented.
-                bool dd1ElseComplemented = mtbdd_isnegated(dd1ElseNode) ^ negated1;
-                bool dd1ThenComplemented = mtbdd_isnegated(dd1ThenNode) ^ negated1;
-                bool dd2ElseComplemented = mtbdd_isnegated(dd2ElseNode) ^ negated2;
-                bool dd2ThenComplemented = mtbdd_isnegated(dd2ThenNode) ^ negated2;
+                bool dd1ElseComplemented = mtbdd_hascomp(dd1ElseNode) ^ negated1;
+                bool dd1ThenComplemented = mtbdd_hascomp(dd1ThenNode) ^ negated1;
+                bool dd2ElseComplemented = mtbdd_hascomp(dd2ElseNode) ^ negated2;
+                bool dd2ThenComplemented = mtbdd_hascomp(dd2ThenNode) ^ negated2;
                 
                 splitIntoGroupsRec(mtbdd_regular(dd1ThenNode), dd1ThenComplemented, mtbdd_regular(dd2ThenNode), dd2ThenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(mtbdd_regular(dd1ElseNode), dd1ElseComplemented, mtbdd_regular(dd2ElseNode), dd2ElseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
@@ -486,7 +486,7 @@ namespace storm {
         
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::toMatrixComponents(std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd const& rowOdd, Odd const& columnOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const {
-            return toMatrixComponentsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_isnegated(this->getSylvanMtbdd().GetMTBDD()), rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, writeValues);
+            return toMatrixComponentsRec(mtbdd_regular(this->getSylvanMtbdd().GetMTBDD()), mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()), rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, writeValues);
         }
         
         template<typename ValueType>
@@ -532,13 +532,13 @@ namespace storm {
                 }
                 
                 // Visit else-else.
-                toMatrixComponentsRec(mtbdd_regular(elseElse), mtbdd_isnegated(elseElse) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getElseSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices, generateValues);
+                toMatrixComponentsRec(mtbdd_regular(elseElse), mtbdd_hascomp(elseElse) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getElseSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices, generateValues);
                 // Visit else-then.
-                toMatrixComponentsRec(mtbdd_regular(elseThen), mtbdd_isnegated(elseThen) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getElseSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices, generateValues);
+                toMatrixComponentsRec(mtbdd_regular(elseThen), mtbdd_hascomp(elseThen) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getElseSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset, currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices, generateValues);
                 // Visit then-else.
-                toMatrixComponentsRec(mtbdd_regular(thenElse), mtbdd_isnegated(thenElse) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getThenSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices, generateValues);
+                toMatrixComponentsRec(mtbdd_regular(thenElse), mtbdd_hascomp(thenElse) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getThenSuccessor(), columnOdd.getElseSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset, ddRowVariableIndices, ddColumnVariableIndices, generateValues);
                 // Visit then-then.
-                toMatrixComponentsRec(mtbdd_regular(thenThen), mtbdd_isnegated(thenThen) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getThenSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices, generateValues);
+                toMatrixComponentsRec(mtbdd_regular(thenThen), mtbdd_hascomp(thenThen) ^ negated, rowGroupOffsets, rowIndications, columnsAndValues, rowOdd.getThenSuccessor(), columnOdd.getThenSuccessor(), currentRowLevel + 1, currentColumnLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), currentColumnOffset + columnOdd.getElseOffset(), ddRowVariableIndices, ddColumnVariableIndices, generateValues);
             }
         }
         
@@ -603,14 +603,14 @@ namespace storm {
         
         template<typename ValueType>
         MTBDD InternalAdd<DdType::Sylvan, ValueType>::getLeaf(uint_fast64_t value) {
-            return mtbdd_uint64(value);
+            return mtbdd_int64(value);
         }
         
         template<typename ValueType>
         ValueType InternalAdd<DdType::Sylvan, ValueType>::getValue(MTBDD const& node) {
             STORM_LOG_ASSERT(mtbdd_isleaf(node), "Expected leaf, but got variable " << mtbdd_getvar(node) << ".");
             
-            bool negated = mtbdd_isnegated(node);
+            bool negated = mtbdd_hascomp(node);
             MTBDD n = mtbdd_regular(node);
             
             if (std::is_same<ValueType, double>::value) {
@@ -618,7 +618,7 @@ namespace storm {
                 return negated ? -mtbdd_getdouble(n) : mtbdd_getdouble(n);
             } else if (std::is_same<ValueType, uint_fast64_t>::value) {
                 STORM_LOG_ASSERT(mtbdd_gettype(node) == 0, "Expected an unsigned value.");
-                return negated ? -mtbdd_getuint64(node) : mtbdd_getuint64(node);
+                return negated ? -mtbdd_getint64(node) : mtbdd_getint64(node);
             } else {
                 STORM_LOG_ASSERT(false, "Illegal or unknown type in MTBDD.");
             }

@@ -52,7 +52,7 @@ namespace storm {
 
         template<>
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const {
-            return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::uint64Terminal(storm::utility::one<uint_fast64_t>()));
+            return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::int64Terminal(storm::utility::one<uint_fast64_t>()));
         }
         
         InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddZero() const {
@@ -66,7 +66,7 @@ namespace storm {
 
         template<>
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const {
-            return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::uint64Terminal(storm::utility::zero<uint_fast64_t>()));
+            return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::int64Terminal(storm::utility::zero<uint_fast64_t>()));
         }
         
         template<>
@@ -76,7 +76,7 @@ namespace storm {
 
         template<>
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const {
-            return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::uint64Terminal(value));
+            return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::int64Terminal(value));
         }
         
         std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createNewDdVariablePair() {

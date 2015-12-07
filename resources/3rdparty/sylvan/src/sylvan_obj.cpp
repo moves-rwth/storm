@@ -593,9 +593,9 @@ BddMap::isEmpty() const
  */
 
 Mtbdd
-Mtbdd::uint64Terminal(uint64_t value)
+Mtbdd::int64Terminal(int64_t value)
 {
-    return mtbdd_uint64(value);
+    return mtbdd_int64(value);
 }
 
 Mtbdd
@@ -605,7 +605,7 @@ Mtbdd::doubleTerminal(double value)
 }
 
 Mtbdd
-Mtbdd::fractionTerminal(uint64_t nominator, uint64_t denominator)
+Mtbdd::fractionTerminal(int64_t nominator, uint64_t denominator)
 {
     return mtbdd_fraction(nominator, denominator);
 }
@@ -694,6 +694,7 @@ Mtbdd::Else() const
 Mtbdd
 Mtbdd::Negate() const
 {
+    LACE_ME;
     return mtbdd_negate(mtbdd);
 }
 
@@ -853,14 +854,14 @@ Mtbdd
 Mtbdd::operator-(const Mtbdd& other) const
 {
     LACE_ME;
-    return mtbdd_plus(mtbdd, mtbdd_negate(other.mtbdd));
+    return mtbdd_minus(mtbdd, other.mtbdd);
 }
 
 Mtbdd
 Mtbdd::operator-=(const Mtbdd& other)
 {
     LACE_ME;
-    mtbdd = mtbdd_plus(mtbdd, mtbdd_negate(other.mtbdd));
+    mtbdd = mtbdd_minus(mtbdd, other.mtbdd);
     return *this;
 }
 
@@ -1035,11 +1036,5 @@ Sylvan::quitPackage()
     sylvan_quit();
 }
 
-void
-Sylvan::triggerGarbageCollection() {
-//    LACE_ME;
-//    sylvan_gc();
-}
-
-
 #include "sylvan_obj_storm.cpp"
+

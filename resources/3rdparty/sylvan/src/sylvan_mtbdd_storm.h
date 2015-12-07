@@ -92,9 +92,9 @@ TASK_DECL_1(MTBDD, mtbdd_bool_to_double, MTBDD)
 /**
  * Monad that converts Boolean to a uint MTBDD, translate terminals true to 1 and to 0 otherwise;
  */
-TASK_DECL_2(MTBDD, mtbdd_op_bool_to_uint64, MTBDD, size_t)
-TASK_DECL_1(MTBDD, mtbdd_bool_to_uint64, MTBDD)
-#define mtbdd_bool_to_uint64(dd) CALL(mtbdd_bool_to_uint64, dd)
+TASK_DECL_2(MTBDD, mtbdd_op_bool_to_int64, MTBDD, size_t)
+TASK_DECL_1(MTBDD, mtbdd_bool_to_int64, MTBDD)
+#define mtbdd_bool_to_int64(dd) CALL(mtbdd_bool_to_int64, dd)
 
 /**
  * Count the number of assignments (minterms) leading to a non-zero

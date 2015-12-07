@@ -1,2 +1,2 @@
     Mtbdd toDoubleMtbdd() const;
-    Mtbdd toUint64Mtbdd() const;
+    Mtbdd toInt64Mtbdd() const;

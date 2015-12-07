@@ -18,18 +18,17 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // both uint64_t
-            if (val_a == 0) return a;
-            else if (val_b == 0) return b;
+            int64_t va = *(int64_t*)(&val_a);
+            int64_t vb = *(int64_t*)(&val_b);
+
+            if (va == 0) return a;
+            else if (vb == 0) return b;
             else {
                 MTBDD result;
-                if (val_a == 1) result = b;
-                else if (val_b == 1) result = a;
-                else result = mtbdd_uint64(val_a*val_b);
-                int nega = mtbdd_isnegated(a);
-                int negb = mtbdd_isnegated(b);
-                if (nega ^ negb) return mtbdd_negate(result);
-                else return result;
+                if (va == 1) result = b;
+                else if (vb == 1) result = a;
+                else result = mtbdd_int64(va*vb);
+                return result;
             }
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // both double
@@ -40,12 +39,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
             else {
                 MTBDD result;
                 if (vval_a == 0.0 || vval_b == 1.0) result = a;
-                
-                int nega = mtbdd_isnegated(a);
-                int negb = mtbdd_isnegated(b);
                 result = mtbdd_double(vval_a / vval_b);
-                if (nega ^ negb) return mtbdd_negate(result);
-                else return result;
+                return result;
             }
         }
         else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
@@ -62,11 +57,8 @@ TASK_IMPL_2(MTBDD, mtbdd_op_divide, MTBDD*, pa, MTBDD*, pb)
             nom_a *= (denom_b/c);
             denom_a *= (nom_b/d);
             // compute result
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
             MTBDD result = mtbdd_fraction(nom_a, denom_a);
-            if (nega ^ negb) return mtbdd_negate(result);
-            else return result;
+            return result;
         }
     }
     
@@ -92,18 +84,15 @@ TASK_IMPL_2(MTBDD, mtbdd_op_equals, MTBDD*, pa, MTBDD*, pb)
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // both uint64_t
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (val_a == val_b && !(nega ^ negb)) return mtbdd_true;
+            int64_t va = *(int64_t*)(&val_a);
+            int64_t vb = *(int64_t*)(&val_b);
+            if (va == vb) return mtbdd_true;
             return mtbdd_false;
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // both double
             double vval_a = *(double*)&val_a;
             double vval_b = *(double*)&val_b;
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (vval_a == vval_b && !(nega ^ negb)) return mtbdd_true;
+            if (vval_a == vval_b) return mtbdd_true;
             return mtbdd_false;
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // both fraction
@@ -111,9 +100,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_equals, MTBDD*, pa, MTBDD*, pb)
             uint64_t nom_b = val_b>>32;
             uint64_t denom_a = val_a&0xffffffff;
             uint64_t denom_b = val_b&0xffffffff;
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nom_a == nom_b && denom_a == denom_b && !(nega ^ negb)) return mtbdd_true;
+            if (nom_a == nom_b && denom_a == denom_b) return mtbdd_true;
             return mtbdd_false;
         }
     }
@@ -145,21 +132,14 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less, MTBDD*, pa, MTBDD*, pb)
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // both uint64_t
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega && !negb) return mtbdd_true;
-            if (!nega && negb) return mtbdd_false;
-            if (nega && negb && val_a < val_b) return mtbdd_false;
-            return mtbdd_true;
+            int64_t va = *(int64_t*)(&val_a);
+            int64_t vb = *(int64_t*)(&val_b);
+            if (va < vb) return mtbdd_true;
+            return mtbdd_false;
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // both double
             double vval_a = *(double*)&val_a;
             double vval_b = *(double*)&val_b;
-            int nega = mtbdd_isnegated(a);
-            if (nega) vval_a = -vval_a;
-            int negb = mtbdd_isnegated(b);
-            if (negb) vval_b = -vval_b;
             if (vval_a < vval_b) return mtbdd_true;
             return mtbdd_false;
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
@@ -168,10 +148,6 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less, MTBDD*, pa, MTBDD*, pb)
             uint64_t nom_b = val_b>>32;
             uint64_t denom_a = val_a&0xffffffff;
             uint64_t denom_b = val_b&0xffffffff;
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega && !negb) return mtbdd_true;
-            if (!nega && negb) return mtbdd_false;
             return nom_a * denom_b < nom_b * denom_a ? mtbdd_true : mtbdd_false;
         }
     }
@@ -198,31 +174,13 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, pa, MTBDD*, pb)
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // both uint64_t
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega && !negb) {
-                if (val_a != 0) return mtbdd_true;
-                if (val_b != 0) return mtbdd_true;
-                return mtbdd_false;
-            }
-            if (!nega && negb) {
-                if (val_b != 0) return mtbdd_false;
-                if (val_a != 0) return mtbdd_false;
-                return mtbdd_true;
-            }
-            if (nega && negb) {
-                return val_a >= val_b ? mtbdd_true : mtbdd_false;
-            }
-            return val_a <= val_b ? mtbdd_true : mtbdd_false;
+            int64_t va = *(int64_t*)(&val_a);
+            int64_t vb = *(int64_t*)(&val_b);
+            return va <= vb ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // both double
             double vval_a = *(double*)&val_a;
             double vval_b = *(double*)&val_b;
-            int nega = mtbdd_isnegated(a);
-            if (nega) vval_a = -vval_a;
-            int negb = mtbdd_isnegated(b);
-            if (negb) vval_b = -vval_b;
             if (vval_a <= vval_b) return mtbdd_true;
             return mtbdd_false;
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
@@ -231,24 +189,9 @@ TASK_IMPL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, pa, MTBDD*, pb)
             uint64_t nom_b = val_b>>32;
             uint64_t denom_a = val_a&0xffffffff;
             uint64_t denom_b = val_b&0xffffffff;
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
             nom_a *= denom_b;
             nom_b *= denom_a;
-            if (nega && !negb) {
-                if (nom_a != 0) return mtbdd_true;
-                if (nom_b != 0) return mtbdd_true;
-                return mtbdd_false;
-            }
-            if (!nega && negb) {
-                if (nom_a != 0) return mtbdd_false;
-                if (nom_b != 0) return mtbdd_false;
-                return mtbdd_true;
-            }
-            if (nega && negb) {
-                return nom_a >= nom_b ? mtbdd_true : mtbdd_false;
-            }
-            return val_a <= val_b ? mtbdd_true : mtbdd_false;
+            return nom_a <= nom_b ? mtbdd_true : mtbdd_false;
         }
     }
     
@@ -277,10 +220,6 @@ TASK_IMPL_2(MTBDD, mtbdd_op_pow, MTBDD*, pa, MTBDD*, pb)
             // both double
             double vval_a = *(double*)&val_a;
             double vval_b = *(double*)&val_b;
-            int nega = mtbdd_isnegated(a);
-            if (nega) vval_a = -vval_a;
-            int negb = mtbdd_isnegated(b);
-            if (negb) vval_b = -vval_b;
             return mtbdd_double(pow(vval_a, vval_b));
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             assert(0);
@@ -312,10 +251,6 @@ TASK_IMPL_2(MTBDD, mtbdd_op_mod, MTBDD*, pa, MTBDD*, pb)
             // both double
             double vval_a = *(double*)&val_a;
             double vval_b = *(double*)&val_b;
-            int nega = mtbdd_isnegated(a);
-            if (nega) vval_a = -vval_a;
-            int negb = mtbdd_isnegated(b);
-            if (negb) vval_b = -vval_b;
             return mtbdd_double(fmod(vval_a, vval_b));
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             assert(0);
@@ -347,10 +282,6 @@ TASK_IMPL_2(MTBDD, mtbdd_op_logxy, MTBDD*, pa, MTBDD*, pb)
             // both double
             double vval_a = *(double*)&val_a;
             double vval_b = *(double*)&val_b;
-            int nega = mtbdd_isnegated(a);
-            if (nega) vval_a = -vval_a;
-            int negb = mtbdd_isnegated(b);
-            if (negb) vval_b = -vval_b;
             return mtbdd_double(log(vval_a) / log(vval_b));
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             assert(0);
@@ -371,7 +302,7 @@ TASK_IMPL_2(MTBDD, mtbdd_op_not_zero, MTBDD, a, size_t, v)
     
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
-            return mtbdd_getuint64(a) != 0 ? mtbdd_true : mtbdd_false;
+            return mtbdd_getint64(a) != 0 ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 1) {
             return mtbdd_getdouble(a) != 0.0 ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 2) {
@@ -404,10 +335,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_floor, MTBDD, a, size_t, v)
             return a;
         } else if (mtbddnode_gettype(na) == 1) {
             MTBDD result = mtbdd_double(floor(mtbdd_getdouble(a)));
-            return mtbdd_isnegated(a) ? mtbdd_negate(result) : result;
+            return result;
         } else if (mtbddnode_gettype(na) == 2) {
             MTBDD result = mtbdd_fraction(mtbdd_getnumer(a) / mtbdd_getdenom(a), 1);
-            return mtbdd_isnegated(a) ? mtbdd_negate(result) : result;
+            return result;
         }
     }
     
@@ -436,10 +367,10 @@ TASK_IMPL_2(MTBDD, mtbdd_op_ceil, MTBDD, a, size_t, v)
             return a;
         } else if (mtbddnode_gettype(na) == 1) {
             MTBDD result = mtbdd_double(ceil(mtbdd_getdouble(a)));
-            return mtbdd_isnegated(a) ? mtbdd_negate(result) : result;
+            return result;
         } else if (mtbddnode_gettype(na) == 2) {
             MTBDD result = mtbdd_fraction(mtbdd_getnumer(a) / mtbdd_getdenom(a) + 1, 1);
-            return mtbdd_isnegated(a) ? mtbdd_negate(result) : result;
+            return result;
         }
     }
 
@@ -471,11 +402,11 @@ TASK_IMPL_1(MTBDD, mtbdd_bool_to_double, MTBDD, dd)
     return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_double), 0);
 }
 
-TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_uint64, MTBDD, a, size_t, v)
+TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_int64, MTBDD, a, size_t, v)
 {
     /* We only expect "double" terminals, or false */
-    if (a == mtbdd_false) return mtbdd_uint64(0);
-    if (a == mtbdd_true) return mtbdd_uint64(1);
+    if (a == mtbdd_false) return mtbdd_int64(0);
+    if (a == mtbdd_true) return mtbdd_int64(1);
     
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
     (void)v;
@@ -483,9 +414,9 @@ TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_uint64, MTBDD, a, size_t, v)
     return mtbdd_invalid;
 }
 
-TASK_IMPL_1(MTBDD, mtbdd_bool_to_uint64, MTBDD, dd)
+TASK_IMPL_1(MTBDD, mtbdd_bool_to_int64, MTBDD, dd)
 {
-    return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_uint64), 0);
+    return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_int64), 0);
 }
 
 /**
@@ -500,7 +431,7 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
     
     if (mtbdd_isleaf(dd)) {
         if (mtbddnode_gettype(na) == 0) {
-            return mtbdd_getuint64(dd) != 0 ? powl(2.0L, nvars) : 0.0;
+            return mtbdd_getint64(dd) != 0 ? powl(2.0L, nvars) : 0.0;
         } else if (mtbddnode_gettype(na) == 1) {
             return mtbdd_getdouble(dd) != 0 ? powl(2.0L, nvars) : 0.0;
         } else if (mtbddnode_gettype(na) == 2) {
@@ -532,7 +463,7 @@ TASK_IMPL_2(double, mtbdd_non_zero_count, MTBDD, dd, size_t, nvars)
 
 int mtbdd_iszero(MTBDD dd) {
     if (mtbdd_gettype(dd) == 0) {
-        return mtbdd_getuint64(dd) == 0;
+        return mtbdd_getint64(dd) == 0;
     } else if (mtbdd_gettype(dd) == 1) {
         return mtbdd_getdouble(dd) == 0;
     } else if (mtbdd_gettype(dd) == 2) {

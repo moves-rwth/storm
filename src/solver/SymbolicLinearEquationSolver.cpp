@@ -62,7 +62,7 @@ namespace storm {
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterationCount;
             }
-            
+                        
             return xCopy;
         }
         

@@ -20,15 +20,12 @@
  *
  * Three domains are supported by default: Boolean, Integer and Real.
  * Boolean MTBDDs are identical to BDDs (as supported by the bdd subpackage).
- * Integer MTBDDs are encoded using "uint64_t" terminals.
+ * Integer MTBDDs are encoded using "int64_t" terminals.
  * Real MTBDDs are encoded using "double" terminals.
- * Negative integers/reals are encoded using the complement edge.
  *
  * Labels of Boolean variables of MTBDD nodes are 24-bit integers.
  *
- * Custom terminals are supported. For notification when nodes are deleted in gc,
- * set a callback using sylvan_set_ondead and for each custom terminal node, call
- * the function mtbdd_notify_ondead.
+ * Custom terminals are supported.
  *
  * Terminal type "0" is the Integer type, type "1" is the Real type.
  * Type "2" is the Fraction type, consisting of two 32-bit integers (numerator and denominator)
@@ -100,26 +97,26 @@ MTBDD mtbdd_getlow(MTBDD node);
 MTBDD mtbdd_gethigh(MTBDD node);
 
 /**
- * Compute the negation of the MTBDD
- * For Boolean MTBDDs, this means "not X", for integer and reals, this means "-X".
+ * Compute the complement of the MTBDD.
+ * For Boolean MTBDDs, this means "not X".
  */
-#define mtbdd_isnegated(dd) ((dd & mtbdd_complement) ? 1 : 0)
-#define mtbdd_negate(dd) (dd ^ mtbdd_complement)
+#define mtbdd_hascomp(dd) ((dd & mtbdd_complement) ? 1 : 0)
+#define mtbdd_comp(dd) (dd ^ mtbdd_complement)
 #define mtbdd_not(dd) (dd ^ mtbdd_complement)
 
 /**
- * Create terminals representing uint64_t (type 0), double (type 1), or fraction (type 2) values
+ * Create terminals representing int64_t (type 0), double (type 1), or fraction (type 2) values
  */
-MTBDD mtbdd_uint64(uint64_t value);
+MTBDD mtbdd_int64(int64_t value);
 MTBDD mtbdd_double(double value);
-MTBDD mtbdd_fraction(uint64_t numer, uint64_t denom);
+MTBDD mtbdd_fraction(int64_t numer, uint64_t denom);
 
 /**
- * Get the value of a terminal (for Integer and Real terminals, types 0 and 1)
+ * Get the value of a terminal (for Integer, Real and Fraction terminals, types 0, 1 and 2)
  */
-#define mtbdd_getuint64(terminal) mtbdd_getvalue(terminal)
+int64_t mtbdd_getint64(MTBDD terminal);
 double mtbdd_getdouble(MTBDD terminal);
-#define mtbdd_getnumer(terminal) ((uint32_t)(mtbdd_getvalue(terminal)>>32))
+#define mtbdd_getnumer(terminal) ((int32_t)(mtbdd_getvalue(terminal)>>32))
 #define mtbdd_getdenom(terminal) ((uint32_t)(mtbdd_getvalue(terminal)&0xffffffff))
 
 /**
@@ -208,12 +205,26 @@ TASK_DECL_3(MTBDD, mtbdd_abstract, MTBDD, MTBDD, mtbdd_abstract_op);
 #define mtbdd_abstract(a, v, op) CALL(mtbdd_abstract, a, v, op)
 
 /**
+ * Unary operation Negate.
+ * Supported domains: Integer, Real, Fraction
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_negate, MTBDD, size_t);
+
+/**
  * Binary operation Plus (for MTBDDs of same type)
  * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
  * For Integer/Double MTBDDs, mtbdd_false is interpreted as "0" or "0.0".
  */
 TASK_DECL_2(MTBDD, mtbdd_op_plus, MTBDD*, MTBDD*);
 TASK_DECL_3(MTBDD, mtbdd_abstract_op_plus, MTBDD, MTBDD, int);
+
+/**
+ * Binary operation Minus (for MTBDDs of same type)
+ * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
+ * For Integer/Double MTBDDs, mtbdd_false is interpreted as "0" or "0.0".
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_minus, MTBDD*, MTBDD*);
+TASK_DECL_3(MTBDD, mtbdd_abstract_op_minus, MTBDD, MTBDD, int);
 
 /**
  * Binary operation Times (for MTBDDs of same type)
@@ -243,6 +254,11 @@ TASK_DECL_2(MTBDD, mtbdd_op_max, MTBDD*, MTBDD*);
 TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
 
 /**
+ * Compute -a
+ */
+#define mtbdd_negate(a) mtbdd_uapply(a, TASK(mtbdd_op_negate), 0)
+
+/**
  * Compute a + b
  */
 #define mtbdd_plus(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_plus))
@@ -250,7 +266,7 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_max, MTBDD, MTBDD, int);
 /**
  * Compute a - b
  */
-#define mtbdd_minus(a, b) mtbdd_plus(a, mtbdd_negate(b))
+#define mtbdd_minus(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_minus))
 
 /**
  * Compute a * b
@@ -325,13 +341,14 @@ TASK_DECL_2(MTBDD, mtbdd_strict_threshold_double, MTBDD, double);
 
 /**
  * For two Double MTBDDs, calculate whether they are equal module some value epsilon
- * i.e. abs(a-b)<3
+ * i.e. abs(a-b) < e
  */
 TASK_DECL_3(MTBDD, mtbdd_equal_norm_d, MTBDD, MTBDD, double);
 #define mtbdd_equal_norm_d(a, b, epsilon) CALL(mtbdd_equal_norm_d, a, b, epsilon)
 
 /**
  * For two Double MTBDDs, calculate whether they are equal modulo some value epsilon
+ * This version computes the relative difference vs the value in a.
  * i.e. abs((a-b)/a) < e
  */
 TASK_DECL_3(MTBDD, mtbdd_equal_norm_rel_d, MTBDD, MTBDD, double);

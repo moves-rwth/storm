@@ -147,7 +147,7 @@ namespace storm {
                 if (qualitative) {
                     // Set the values for all maybe-states to 1 to indicate that their reward values
                     // are neither 0 nor infinity.
-                    return infinityStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::infinity<ValueType>()) + maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::one<ValueType>());
+                    return infinityStates.template toAdd<ValueType>().ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()) + maybeStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::one<ValueType>());
                 } else {
                     // If there are maybe states, we need to solve an equation system.
                     if (!maybeStates.isZero()) {
@@ -170,9 +170,9 @@ namespace storm {
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
                         storm::dd::Add<DdType, ValueType> result = solver->solveEquationSystem(model.getManager().getConstant(0.5) * maybeStatesAdd, subvector);
                         
-                        return infinityStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::infinity<ValueType>()) + result;
+                        return infinityStates.template toAdd<ValueType>().ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result);
                     } else {
-                        return infinityStates.template toAdd<ValueType>() * model.getManager().getConstant(storm::utility::infinity<ValueType>());
+                        return infinityStates.template toAdd<ValueType>().ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().getConstant(storm::utility::zero<ValueType>()));
                     }
                 }
             }

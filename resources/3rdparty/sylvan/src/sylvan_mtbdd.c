@@ -71,13 +71,20 @@ mtbdd_getvalue(MTBDD leaf)
     return mtbddnode_getvalue(GETNODE(leaf));
 }
 
+// for leaf type 0 (integer)
+int64_t
+mtbdd_getint64(MTBDD leaf)
+{
+    uint64_t value = mtbdd_getvalue(leaf);
+    return *(int64_t*)&value;
+}
+
+// for leaf type 1 (double)
 double
 mtbdd_getdouble(MTBDD leaf)
 {
     uint64_t value = mtbdd_getvalue(leaf);
-    double dv = *(double*)&value;
-    if (mtbdd_isnegated(leaf)) return -dv;
-    else return dv;
+    return *(double*)&value;
 }
 
 /**
@@ -469,31 +476,26 @@ gcd(uint32_t u, uint32_t v)
  */
 
 MTBDD
-mtbdd_uint64(uint64_t value)
+mtbdd_int64(int64_t value)
 {
-    return mtbdd_makeleaf(0, value);
+    return mtbdd_makeleaf(0, *(uint64_t*)&value);
 }
 
 MTBDD
 mtbdd_double(double value)
 {
-    if (value < 0.0) {
-        value = -value;
-        return mtbdd_negate(mtbdd_makeleaf(1, *(uint64_t*)&value));
-    } else {
-        return mtbdd_makeleaf(1, *(uint64_t*)&value);
-    }
+    return mtbdd_makeleaf(1, *(uint64_t*)&value);
 }
 
 MTBDD
-mtbdd_fraction(uint64_t nom, uint64_t denom)
+mtbdd_fraction(int64_t nom, uint64_t denom)
 {
     if (nom == 0) return mtbdd_makeleaf(2, 1);
-    uint32_t c = gcd(nom, denom);
+    uint32_t c = gcd(nom < 0 ? -nom : nom, denom);
     nom /= c;
     denom /= c;
-    if (nom > 0xffffffff || denom > 0xffffffff) fprintf(stderr, "mtbdd_fraction: fraction overflow\n");
-    return mtbdd_makeleaf(2, ((uint64_t)nom)<<32|denom);
+    if (nom > 2147483647 || nom < -2147483647 || denom > 4294967295) fprintf(stderr, "mtbdd_fraction: fraction overflow\n");
+    return mtbdd_makeleaf(2, (nom<<32)|denom);
 }
 
 /**
@@ -819,21 +821,17 @@ TASK_2(MTBDD, mtbdd_uop_times_uint, MTBDD, a, size_t, k)
 
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
-            uint64_t v = mtbddnode_getvalue(na);
-            v *= k;
-            if (mtbdd_isnegated(a)) return mtbdd_negate(mtbdd_uint64(v));
-            else return mtbdd_uint64(v);
+            int64_t v = mtbdd_getint64(a);
+            return mtbdd_int64(v*k);
         } else if (mtbddnode_gettype(na) == 1) {
             double d = mtbdd_getdouble(a);
             return mtbdd_double(d*k);
         } else if (mtbddnode_gettype(na) == 2) {
-            if (k>0xffffffff) fprintf(stderr, "mtbdd_uop_times_uint: k is too big for fraction multiplication\n");
             uint64_t v = mtbddnode_getvalue(na);
-            uint64_t n = v>>32;
+            int64_t n = (int32_t)(v>>32);
             uint32_t d = v;
             uint32_t c = gcd(d, (uint32_t)k);
-            if (mtbdd_isnegated(a)) return mtbdd_negate(mtbdd_fraction(n*(k/c), d/c));
-            else return mtbdd_fraction(n*(k/c), d/c);
+            return mtbdd_fraction(n*(k/c), d/c);
         }
     }
 
@@ -850,20 +848,14 @@ TASK_2(MTBDD, mtbdd_uop_pow_uint, MTBDD, a, size_t, k)
 
     if (mtbddnode_isleaf(na)) {
         if (mtbddnode_gettype(na) == 0) {
-            uint64_t v = mtbddnode_getvalue(na);
-            v = (uint64_t)pow(v, k);
-            if (mtbdd_isnegated(a) && (k & 1)) return mtbdd_negate(mtbdd_uint64(v));
-            else return mtbdd_uint64(v);
+            int64_t v = mtbdd_getint64(a);
+            return mtbdd_int64(pow(v, k));
         } else if (mtbddnode_gettype(na) == 1) {
             double d = mtbdd_getdouble(a);
             return mtbdd_double(pow(d, k));
         } else if (mtbddnode_gettype(na) == 2) {
             uint64_t v = mtbddnode_getvalue(na);
-            uint64_t n = v>>32;
-            uint32_t d = v;
-            n = (uint64_t)pow(n, k);
-            if (mtbdd_isnegated(a)) return mtbdd_negate(mtbdd_fraction(n, d));
-            else return mtbdd_fraction(n, d);
+            return mtbdd_fraction(pow((int32_t)(v>>32), k), (uint32_t)v);
         }
     }
 
@@ -1003,77 +995,15 @@ TASK_IMPL_2(MTBDD, mtbdd_op_plus, MTBDD*, pa, MTBDD*, pb)
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // both uint64_t
-            if (val_a == 0) return b;
-            else if (val_b == 0) return a;
-            else {
-                int nega = mtbdd_isnegated(a);
-                int negb = mtbdd_isnegated(b);
-                if (nega) {
-                    if (negb) {
-                        // -a + -b = -(a+b)
-                        return mtbdd_negate(mtbdd_uint64(val_a + val_b));
-                    } else {
-                        // b - a
-                        if (val_b >= val_a) {
-                            return mtbdd_uint64(val_b - val_a);
-                        } else {
-                            return mtbdd_negate(mtbdd_uint64(val_a - val_b));
-                        }
-                    }
-                } else {
-                    if (negb) {
-                        // a - b
-                        if (val_a >= val_b) {
-                            return mtbdd_uint64(val_a - val_b);
-                        } else {
-                            return mtbdd_negate(mtbdd_uint64(val_b - val_a));
-                        }
-                    } else {
-                        // a + b
-                        return mtbdd_uint64(val_a + val_b);
-                    }
-                }
-            }
+            // both integer
+            return mtbdd_int64(*(int64_t*)(&val_a) + *(int64_t*)(&val_b));
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // both double
-            double vval_a = *(double*)&val_a;
-            double vval_b = *(double*)&val_b;
-            if (vval_a == 0.0) return b;
-            else if (vval_b == 0.0) return a;
-            else {
-                int nega = mtbdd_isnegated(a);
-                int negb = mtbdd_isnegated(b);
-                if (nega) {
-                    if (negb) {
-                        // -a + -b = -(a+b)
-                        return mtbdd_negate(mtbdd_double(vval_a + vval_b));
-                    } else {
-                        // b - a
-                        if (val_b >= val_a) {
-                            return mtbdd_double(vval_b - vval_a);
-                        } else {
-                            return mtbdd_negate(mtbdd_double(vval_a - vval_b));
-                        }
-                    }
-                } else {
-                    if (negb) {
-                        // a - b
-                        if (val_a >= val_b) {
-                            return mtbdd_double(vval_a - vval_b);
-                        } else {
-                            return mtbdd_negate(mtbdd_double(vval_b - vval_a));
-                        }
-                    } else {
-                        // a + b
-                        return mtbdd_double(vval_a + vval_b);
-                    }
-                }
-            }
+            return mtbdd_double(*(double*)(&val_a) + *(double*)(&val_b));
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // both fraction
-            uint64_t nom_a = val_a>>32;
-            uint64_t nom_b = val_b>>32;
+            int64_t nom_a = (int32_t)(val_a>>32);
+            int64_t nom_b = (int32_t)(val_b>>32);
             uint64_t denom_a = val_a&0xffffffff;
             uint64_t denom_b = val_b&0xffffffff;
             // common cases
@@ -1084,24 +1014,58 @@ TASK_IMPL_2(MTBDD, mtbdd_op_plus, MTBDD*, pa, MTBDD*, pb)
             nom_a *= denom_b/c;
             nom_b *= denom_a/c;
             denom_a *= denom_b/c;
-            // add and/or subtract
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega) {
-                if (negb) return mtbdd_negate(mtbdd_fraction(nom_a+nom_b, denom_a));
-                else if (nom_b>=nom_a) return mtbdd_fraction(nom_b-nom_a, denom_a);
-                else return mtbdd_negate(mtbdd_fraction(nom_a-nom_b, denom_a));
-            } else {
-                if (!negb) return mtbdd_fraction(nom_a+nom_b, denom_a);
-                else if (nom_a>=nom_b) return mtbdd_fraction(nom_a-nom_b, denom_a);
-                else return mtbdd_negate(mtbdd_fraction(nom_b-nom_a, denom_a));
-            }
+            // add
+            return mtbdd_fraction(nom_a + nom_b, denom_a);
         }
     }
 
     if (a < b) {
         *pa = b;
         *pb = a;
+    }
+
+    return mtbdd_invalid;
+}
+
+/**
+ * Binary operation Minus (for MTBDDs of same type)
+ * Only for MTBDDs where either all leaves are Boolean, or Integer, or Double.
+ * For Integer/Double MTBDDs, mtbdd_false is interpreted as "0" or "0.0".
+ */
+TASK_IMPL_2(MTBDD, mtbdd_op_minus, MTBDD*, pa, MTBDD*, pb)
+{
+    MTBDD a = *pa, b = *pb;
+    if (a == mtbdd_false) return mtbdd_negate(b);
+    if (b == mtbdd_false) return a;
+
+    mtbddnode_t na = GETNODE(a);
+    mtbddnode_t nb = GETNODE(b);
+
+    if (mtbddnode_isleaf(na) && mtbddnode_isleaf(nb)) {
+        uint64_t val_a = mtbddnode_getvalue(na);
+        uint64_t val_b = mtbddnode_getvalue(nb);
+        if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
+            // both integer
+            return mtbdd_int64(*(int64_t*)(&val_a) - *(int64_t*)(&val_b));
+        } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
+            // both double
+            return mtbdd_double(*(double*)(&val_a) - *(double*)(&val_b));
+        } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
+            // both fraction
+            int64_t nom_a = (int32_t)(val_a>>32);
+            int64_t nom_b = (int32_t)(val_b>>32);
+            uint64_t denom_a = val_a&0xffffffff;
+            uint64_t denom_b = val_b&0xffffffff;
+            // common cases
+            if (nom_b == 0) return a;
+            // equalize denominators
+            uint32_t c = gcd(denom_a, denom_b);
+            nom_a *= denom_b/c;
+            nom_b *= denom_a/c;
+            denom_a *= denom_b/c;
+            // subtract
+            return mtbdd_fraction(nom_a - nom_b, denom_a);
+        }
     }
 
     return mtbdd_invalid;
@@ -1129,57 +1093,25 @@ TASK_IMPL_2(MTBDD, mtbdd_op_times, MTBDD*, pa, MTBDD*, pb)
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // both uint64_t
-            if (val_a == 0) return a;
-            else if (val_b == 0) return b;
-            else {
-                MTBDD result;
-                if (val_a == 1) result = mtbdd_regular(b);
-                else if (val_b == 1) result = mtbdd_regular(a);
-                else result = mtbdd_uint64(val_a*val_b);
-                int nega = mtbdd_isnegated(a);
-                int negb = mtbdd_isnegated(b);
-                if (nega ^ negb) return mtbdd_negate(result);
-                else return result;
-            }
+            // both integer
+            return mtbdd_int64(*(int64_t*)(&val_a) * *(int64_t*)(&val_b));
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // both double
-            double vval_a = *(double*)&val_a;
-            double vval_b = *(double*)&val_b;
-            if (vval_a == 0.0) return a;
-            else if (vval_b == 0.0) return b;
-            else {
-                MTBDD result;
-                if (vval_a == 1.0) result = mtbdd_regular(b);
-                else if (vval_b == 1.0) result = mtbdd_regular(a);
-                else result = mtbdd_double(vval_a*vval_b);
-                int nega = mtbdd_isnegated(a);
-                int negb = mtbdd_isnegated(b);
-                if (nega ^ negb) {
-                    return mtbdd_negate(result);
-                } else {
-                    return result;
-                }
-            }
+            return mtbdd_double(*(double*)(&val_a) * *(double*)(&val_b));
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // both fraction
-            uint64_t nom_a = val_a>>32;
-            uint64_t nom_b = val_b>>32;
+            int64_t nom_a = (int32_t)(val_a>>32);
+            int64_t nom_b = (int32_t)(val_b>>32);
             uint64_t denom_a = val_a&0xffffffff;
             uint64_t denom_b = val_b&0xffffffff;
             // multiply!
-            uint32_t c = gcd(nom_b, denom_a);
-            uint32_t d = gcd(nom_a, denom_b);
+            uint32_t c = gcd(nom_b < 0 ? -nom_b : nom_b, denom_a);
+            uint32_t d = gcd(nom_a < 0 ? -nom_a : nom_a, denom_b);
             nom_a /= d;
             denom_a /= c;
             nom_a *= (nom_b/c);
             denom_a *= (denom_b/d);
-            // compute result
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            MTBDD result = mtbdd_fraction(nom_a, denom_a);
-            if (nega ^ negb) return mtbdd_negate(result);
-            else return result;
+            return mtbdd_fraction(nom_a, denom_a);
         }
     }
 
@@ -1215,50 +1147,27 @@ TASK_IMPL_2(MTBDD, mtbdd_op_min, MTBDD*, pa, MTBDD*, pb)
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // both uint64_t
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega) {
-                if (negb) return val_a > val_b ? a : b;
-                else return a;
-            } else {
-                if (negb) return b;
-                else return val_a < val_b ? a : b;
-            }
+            // both integer
+            int64_t va = *(int64_t*)(&val_a);
+            int64_t vb = *(int64_t*)(&val_b);
+            return va < vb ? a : b;
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // both double
-            double vval_a = *(double*)&val_a;
-            double vval_b = *(double*)&val_b;
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega) {
-                if (negb) return vval_a > vval_b ? a : b;
-                else return a;
-            } else {
-                if (negb) return b;
-                else return vval_a < vval_b ? a : b;
-            }
+            double va = *(double*)&val_a;
+            double vb = *(double*)&val_b;
+            return va < vb ? a : b;
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // both fraction
-            uint64_t nom_a = val_a>>32;
-            uint64_t nom_b = val_b>>32;
+            int64_t nom_a = (int32_t)(val_a>>32);
+            int64_t nom_b = (int32_t)(val_b>>32);
             uint64_t denom_a = val_a&0xffffffff;
             uint64_t denom_b = val_b&0xffffffff;
             // equalize denominators
             uint32_t c = gcd(denom_a, denom_b);
             nom_a *= denom_b/c;
             nom_b *= denom_a/c;
-            denom_a *= denom_b/c;
             // compute lowest
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega) {
-                if (negb) return nom_a > nom_b ? a : b;
-                else return a;
-            } else {
-                if (negb) return b;
-                else return nom_a < nom_b ? a : b;
-            }
+            return nom_a < nom_b ? a : b;
         }
     }
 
@@ -1292,50 +1201,27 @@ TASK_IMPL_2(MTBDD, mtbdd_op_max, MTBDD*, pa, MTBDD*, pb)
         uint64_t val_a = mtbddnode_getvalue(na);
         uint64_t val_b = mtbddnode_getvalue(nb);
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // both uint64_t
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega) {
-                if (negb) return val_a < val_b ? a : b;
-                else return b;
-            } else {
-                if (negb) return a;
-                else return val_a > val_b ? a : b;
-            }
+            // both integer
+            int64_t va = *(int64_t*)(&val_a);
+            int64_t vb = *(int64_t*)(&val_b);
+            return va > vb ? a : b;
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // both double
             double vval_a = *(double*)&val_a;
             double vval_b = *(double*)&val_b;
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega) {
-                if (negb) return vval_a < vval_b ? a : b;
-                else return b;
-            } else {
-                if (negb) return a;
-                else return vval_a > vval_b ? a : b;
-            }
+            return vval_a > vval_b ? a : b;
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // both fraction
-            uint64_t nom_a = val_a>>32;
-            uint64_t nom_b = val_b>>32;
+            int64_t nom_a = (int32_t)(val_a>>32);
+            int64_t nom_b = (int32_t)(val_b>>32);
             uint64_t denom_a = val_a&0xffffffff;
             uint64_t denom_b = val_b&0xffffffff;
             // equalize denominators
             uint32_t c = gcd(denom_a, denom_b);
             nom_a *= denom_b/c;
             nom_b *= denom_a/c;
-            denom_a *= denom_b/c;
             // compute highest
-            int nega = mtbdd_isnegated(a);
-            int negb = mtbdd_isnegated(b);
-            if (nega) {
-                if (negb) return nom_a < nom_b ? a : b;
-                else return b;
-            } else {
-                if (negb) return a;
-                else return nom_a > nom_b ? a : b;
-            }
+            return nom_a > nom_b ? a : b;
         }
     }
 
@@ -1345,6 +1231,31 @@ TASK_IMPL_2(MTBDD, mtbdd_op_max, MTBDD*, pa, MTBDD*, pb)
     }
 
     return mtbdd_invalid;
+}
+
+TASK_IMPL_2(MTBDD, mtbdd_op_negate, MTBDD, a, size_t, k)
+{
+    // if a is false, then it is a partial function. Keep partial!
+    if (a == mtbdd_false) return mtbdd_false;
+
+    // a != constant
+    mtbddnode_t na = GETNODE(a);
+
+    if (mtbddnode_isleaf(na)) {
+        if (mtbddnode_gettype(na) == 0) {
+            int64_t v = mtbdd_getint64(a);
+            return mtbdd_int64(-v);
+        } else if (mtbddnode_gettype(na) == 1) {
+            double d = mtbdd_getdouble(a);
+            return mtbdd_double(-d);
+        } else if (mtbddnode_gettype(na) == 2) {
+            uint64_t v = mtbddnode_getvalue(na);
+            return mtbdd_fraction(-(int32_t)(v>>32), (uint32_t)v);
+        }
+    }
+
+    return mtbdd_invalid;
+    (void)k; // unused variable
 }
 
 /**
@@ -1417,11 +1328,11 @@ TASK_IMPL_2(MTBDD, mtbdd_op_threshold_double, MTBDD, a, size_t, svalue)
 
     if (mtbddnode_isleaf(na)) {
         double value = *(double*)&svalue;
-        if (mtbddnode_gettype(na) == 1) return mtbdd_getdouble(a) >= value ? mtbdd_true : mtbdd_false;
-        if (mtbddnode_gettype(na) == 2) {
+        if (mtbddnode_gettype(na) == 1) {
+            return mtbdd_getdouble(a) >= value ? mtbdd_true : mtbdd_false;
+        } else if (mtbddnode_gettype(na) == 2) {
             double d = (double)mtbdd_getnumer(a);
             d /= mtbdd_getdenom(a);
-            if (mtbdd_isnegated(a)) d = -d;
             return d >= value ? mtbdd_true : mtbdd_false;
         }
     }
@@ -1443,11 +1354,11 @@ TASK_IMPL_2(MTBDD, mtbdd_op_strict_threshold_double, MTBDD, a, size_t, svalue)
 
     if (mtbddnode_isleaf(na)) {
         double value = *(double*)&svalue;
-        if (mtbddnode_gettype(na) == 1) return mtbdd_getdouble(a) > value ? mtbdd_true : mtbdd_false;
-        if (mtbddnode_gettype(na) == 2) {
+        if (mtbddnode_gettype(na) == 1) {
+            return mtbdd_getdouble(a) > value ? mtbdd_true : mtbdd_false;
+        } else if (mtbddnode_gettype(na) == 2) {
             double d = (double)mtbdd_getnumer(a);
             d /= mtbdd_getdenom(a);
-            if (mtbdd_isnegated(a)) d = -d;
             return d > value ? mtbdd_true : mtbdd_false;
         }
     }
@@ -1486,9 +1397,7 @@ TASK_4(MTBDD, mtbdd_equal_norm_d2, MTBDD, a, MTBDD, b, size_t, svalue, int*, sho
     if (la && lb) {
         // assume Double MTBDD
         double va = mtbdd_getdouble(a);
-        if (mtbdd_isnegated(a)) va = -va;
         double vb = mtbdd_getdouble(b);
-        if (mtbdd_isnegated(b)) vb = -vb;
         va -= vb;
         if (va < 0) va = -va;
         return (va < *(double*)&svalue) ? mtbdd_true : mtbdd_false;
@@ -1532,7 +1441,7 @@ TASK_4(MTBDD, mtbdd_equal_norm_d2, MTBDD, a, MTBDD, b, size_t, svalue, int*, sho
 
 TASK_IMPL_3(MTBDD, mtbdd_equal_norm_d, MTBDD, a, MTBDD, b, double, d)
 {
-    /* the implementation checks shortcircuit in every task and if the wo
+    /* the implementation checks shortcircuit in every task and if the two
        MTBDDs are not equal module epsilon, then the computation tree quickly aborts */
     int shortcircuit = 0;
     return CALL(mtbdd_equal_norm_d2, a, b, *(size_t*)&d, &shortcircuit);
@@ -1540,6 +1449,7 @@ TASK_IMPL_3(MTBDD, mtbdd_equal_norm_d, MTBDD, a, MTBDD, b, double, d)
 
 /**
  * Compare two Double MTBDDs, returns Boolean True if they are equal within some value epsilon
+ * This version computes the relative difference vs the value in a.
  */
 TASK_4(MTBDD, mtbdd_equal_norm_rel_d2, MTBDD, a, MTBDD, b, size_t, svalue, int*, shortcircuit)
 {
@@ -1559,11 +1469,10 @@ TASK_4(MTBDD, mtbdd_equal_norm_rel_d2, MTBDD, a, MTBDD, b, size_t, svalue, int*,
     if (la && lb) {
         // assume Double MTBDD
         double va = mtbdd_getdouble(a);
-        if (mtbdd_isnegated(a)) va = -va;
         double vb = mtbdd_getdouble(b);
-        if (mtbdd_isnegated(b)) vb = -vb;
         if (va == 0) return mtbdd_false;
-        va = fabs((va - vb) / va);
+        va = (va - vb) / va;
+        if (va < 0) va = -va;
         return (va < *(double*)&svalue) ? mtbdd_true : mtbdd_false;
     }
 
@@ -1599,7 +1508,7 @@ TASK_4(MTBDD, mtbdd_equal_norm_rel_d2, MTBDD, a, MTBDD, b, size_t, svalue, int*,
 
 TASK_IMPL_3(MTBDD, mtbdd_equal_norm_rel_d, MTBDD, a, MTBDD, b, double, d)
 {
-    /* the implementation checks shortcircuit in every task and if the wo
+    /* the implementation checks shortcircuit in every task and if the two
        MTBDDs are not equal module epsilon, then the computation tree quickly aborts */
     int shortcircuit = 0;
     return CALL(mtbdd_equal_norm_rel_d2, a, b, *(size_t*)&d, &shortcircuit);
@@ -1634,43 +1543,28 @@ TASK_3(MTBDD, mtbdd_leq_rec, MTBDD, a, MTBDD, b, int*, shortcircuit)
     int lb = mtbddnode_isleaf(nb);
 
     if (la && lb) {
-        int nega = mtbdd_isnegated(a);
-        int negb = mtbdd_isnegated(b);
-
         uint64_t va = mtbddnode_getvalue(na);
         uint64_t vb = mtbddnode_getvalue(nb);
 
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // type 0 = int64
-            if (va == 0 && vb == 0) result = mtbdd_true;
-            else if (nega && !negb) result = mtbdd_true;
-            else if (nega && negb && va > vb) result = mtbdd_true;
-            else if (!nega && !negb && va < vb) result = mtbdd_true;
-            else result = mtbdd_false;
+            // type 0 = integer
+            result = *(int64_t*)(&va) <= *(int64_t*)(&vb) ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // type 1 = double
             double vva = *(double*)&va;
             double vvb = *(double*)&vb;
-            if (vva == 0.0 && vvb == 0.0) result = mtbdd_true;
-            else if (nega && !negb) result = mtbdd_true;
-            else if (nega && negb && vva > vvb) result = mtbdd_true;
-            else if (!nega && !negb && vva < vvb) result = mtbdd_true;
-            else result = mtbdd_false;
+            result = vva <= vvb ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // type 2 = fraction
-            uint64_t nom_a = va>>32;
-            uint64_t nom_b = vb>>32;
+            int64_t nom_a = (int32_t)(va>>32);
+            int64_t nom_b = (int32_t)(vb>>32);
             uint64_t da = va&0xffffffff;
             uint64_t db = vb&0xffffffff;
             // equalize denominators
             uint32_t c = gcd(da, db);
             nom_a *= db/c;
             nom_b *= da/c;
-            if (nom_a == 0 && nom_b == 0) result = mtbdd_true;
-            else if (nega && !negb) result = mtbdd_true;
-            else if (nega && negb && nom_a > nom_b) result = mtbdd_true;
-            else if (!nega && !negb && nom_a < nom_b) result = mtbdd_true;
-            else result = mtbdd_false;
+            result = nom_a <= nom_b ? mtbdd_true : mtbdd_false;
         }
     } else {
         /* Get top variable */
@@ -1699,7 +1593,7 @@ TASK_3(MTBDD, mtbdd_leq_rec, MTBDD, a, MTBDD, b, int*, shortcircuit)
 
 TASK_IMPL_2(MTBDD, mtbdd_leq, MTBDD, a, MTBDD, b)
 {
-    /* the implementation checks shortcircuit in every task and if the wo
+    /* the implementation checks shortcircuit in every task and if the two
        MTBDDs are not equal module epsilon, then the computation tree quickly aborts */
     int shortcircuit = 0;
     return CALL(mtbdd_leq_rec, a, b, &shortcircuit);
@@ -1734,43 +1628,28 @@ TASK_3(MTBDD, mtbdd_less_rec, MTBDD, a, MTBDD, b, int*, shortcircuit)
     int lb = mtbddnode_isleaf(nb);
 
     if (la && lb) {
-        int nega = mtbdd_isnegated(a);
-        int negb = mtbdd_isnegated(b);
-
         uint64_t va = mtbddnode_getvalue(na);
         uint64_t vb = mtbddnode_getvalue(nb);
 
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // type 0 = int64
-            if (va == 0 && vb == 0) result = mtbdd_false;
-            else if (nega && !negb) result = mtbdd_true;
-            else if (nega && negb && va > vb) result = mtbdd_true;
-            else if (!nega && !negb && va < vb) result = mtbdd_true;
-            else result = mtbdd_false;
+            // type 0 = integer
+            result = *(int64_t*)(&va) < *(int64_t*)(&vb) ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // type 1 = double
             double vva = *(double*)&va;
             double vvb = *(double*)&vb;
-            if (vva == 0.0 && vvb == 0.0) result = mtbdd_false;
-            else if (nega && !negb) result = mtbdd_true;
-            else if (nega && negb && vva > vvb) result = mtbdd_true;
-            else if (!nega && !negb && vva < vvb) result = mtbdd_true;
-            else result = mtbdd_false;
+            result = vva < vvb ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // type 2 = fraction
-            uint64_t nom_a = va>>32;
-            uint64_t nom_b = vb>>32;
+            int64_t nom_a = (int32_t)(va>>32);
+            int64_t nom_b = (int32_t)(vb>>32);
             uint64_t da = va&0xffffffff;
             uint64_t db = vb&0xffffffff;
             // equalize denominators
             uint32_t c = gcd(da, db);
             nom_a *= db/c;
             nom_b *= da/c;
-            if (nom_a == 0 && nom_b == 0) result = mtbdd_false;
-            else if (nega && !negb) result = mtbdd_true;
-            else if (nega && negb && nom_a > nom_b) result = mtbdd_true;
-            else if (!nega && !negb && nom_a < nom_b) result = mtbdd_true;
-            else result = mtbdd_false;
+            result = nom_a < nom_b ? mtbdd_true : mtbdd_false;
         }
     } else {
         /* Get top variable */
@@ -1799,7 +1678,7 @@ TASK_3(MTBDD, mtbdd_less_rec, MTBDD, a, MTBDD, b, int*, shortcircuit)
 
 TASK_IMPL_2(MTBDD, mtbdd_less, MTBDD, a, MTBDD, b)
 {
-    /* the implementation checks shortcircuit in every task and if the wo
+    /* the implementation checks shortcircuit in every task and if the two
        MTBDDs are not equal module epsilon, then the computation tree quickly aborts */
     int shortcircuit = 0;
     return CALL(mtbdd_less_rec, a, b, &shortcircuit);
@@ -1834,43 +1713,28 @@ TASK_3(MTBDD, mtbdd_geq_rec, MTBDD, a, MTBDD, b, int*, shortcircuit)
     int lb = mtbddnode_isleaf(nb);
 
     if (la && lb) {
-        int nega = mtbdd_isnegated(a);
-        int negb = mtbdd_isnegated(b);
-
         uint64_t va = mtbddnode_getvalue(na);
         uint64_t vb = mtbddnode_getvalue(nb);
 
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // type 0 = int64
-            if (va == 0 && vb == 0) result = mtbdd_true;
-            else if (nega && !negb) result = mtbdd_false;
-            else if (nega && negb && va > vb) result = mtbdd_false;
-            else if (!nega && !negb && va < vb) result = mtbdd_false;
-            else result = mtbdd_true;
+            // type 0 = integer
+            result = *(int64_t*)(&va) >= *(int64_t*)(&vb) ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // type 1 = double
             double vva = *(double*)&va;
             double vvb = *(double*)&vb;
-            if (vva == 0.0 && vvb == 0.0) result = mtbdd_true;
-            else if (nega && !negb) result = mtbdd_false;
-            else if (nega && negb && vva > vvb) result = mtbdd_false;
-            else if (!nega && !negb && vva < vvb) result = mtbdd_false;
-            else result = mtbdd_true;
+            result = vva >= vvb ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // type 2 = fraction
-            uint64_t nom_a = va>>32;
-            uint64_t nom_b = vb>>32;
+            int64_t nom_a = (int32_t)(va>>32);
+            int64_t nom_b = (int32_t)(vb>>32);
             uint64_t da = va&0xffffffff;
             uint64_t db = vb&0xffffffff;
             // equalize denominators
             uint32_t c = gcd(da, db);
             nom_a *= db/c;
             nom_b *= da/c;
-            if (nom_a == 0 && nom_b == 0) result = mtbdd_true;
-            else if (nega && !negb) result = mtbdd_false;
-            else if (nega && negb && nom_a > nom_b) result = mtbdd_false;
-            else if (!nega && !negb && nom_a < nom_b) result = mtbdd_false;
-            else result = mtbdd_true;
+            result = nom_a >= nom_b ? mtbdd_true : mtbdd_false;
         }
     } else {
         /* Get top variable */
@@ -1899,7 +1763,7 @@ TASK_3(MTBDD, mtbdd_geq_rec, MTBDD, a, MTBDD, b, int*, shortcircuit)
 
 TASK_IMPL_2(MTBDD, mtbdd_geq, MTBDD, a, MTBDD, b)
 {
-    /* the implementation checks shortcircuit in every task and if the wo
+    /* the implementation checks shortcircuit in every task and if the two
        MTBDDs are not equal module epsilon, then the computation tree quickly aborts */
     int shortcircuit = 0;
     return CALL(mtbdd_geq_rec, a, b, &shortcircuit);
@@ -1934,43 +1798,28 @@ TASK_3(MTBDD, mtbdd_greater_rec, MTBDD, a, MTBDD, b, int*, shortcircuit)
     int lb = mtbddnode_isleaf(nb);
 
     if (la && lb) {
-        int nega = mtbdd_isnegated(a);
-        int negb = mtbdd_isnegated(b);
-
         uint64_t va = mtbddnode_getvalue(na);
         uint64_t vb = mtbddnode_getvalue(nb);
 
         if (mtbddnode_gettype(na) == 0 && mtbddnode_gettype(nb) == 0) {
-            // type 0 = int64
-            if (va == 0 && vb == 0) result = mtbdd_false;
-            else if (nega && !negb) result = mtbdd_false;
-            else if (nega && negb && va > vb) result = mtbdd_false;
-            else if (!nega && !negb && va < vb) result = mtbdd_false;
-            else result = mtbdd_true;
+            // type 0 = integer
+            result = *(int64_t*)(&va) > *(int64_t*)(&vb) ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 1 && mtbddnode_gettype(nb) == 1) {
             // type 1 = double
             double vva = *(double*)&va;
             double vvb = *(double*)&vb;
-            if (vva == 0.0 && vvb == 0.0) result = mtbdd_false;
-            else if (nega && !negb) result = mtbdd_false;
-            else if (nega && negb && vva > vvb) result = mtbdd_false;
-            else if (!nega && !negb && vva < vvb) result = mtbdd_false;
-            else result = mtbdd_true;
+            result = vva > vvb ? mtbdd_true : mtbdd_false;
         } else if (mtbddnode_gettype(na) == 2 && mtbddnode_gettype(nb) == 2) {
             // type 2 = fraction
-            uint64_t nom_a = va>>32;
-            uint64_t nom_b = vb>>32;
+            int64_t nom_a = (int32_t)(va>>32);
+            int64_t nom_b = (int32_t)(vb>>32);
             uint64_t da = va&0xffffffff;
             uint64_t db = vb&0xffffffff;
             // equalize denominators
             uint32_t c = gcd(da, db);
             nom_a *= db/c;
             nom_b *= da/c;
-            if (nom_a == 0 && nom_b == 0) result = mtbdd_false;
-            else if (nega && !negb) result = mtbdd_false;
-            else if (nega && negb && nom_a > nom_b) result = mtbdd_false;
-            else if (!nega && !negb && nom_a < nom_b) result = mtbdd_false;
-            else result = mtbdd_true;
+            result = nom_a > nom_b ? mtbdd_true : mtbdd_false;
         }
     } else {
         /* Get top variable */
@@ -1999,7 +1848,7 @@ TASK_3(MTBDD, mtbdd_greater_rec, MTBDD, a, MTBDD, b, int*, shortcircuit)
 
 TASK_IMPL_2(MTBDD, mtbdd_greater, MTBDD, a, MTBDD, b)
 {
-    /* the implementation checks shortcircuit in every task and if the wo
+    /* the implementation checks shortcircuit in every task and if the two
        MTBDDs are not equal module epsilon, then the computation tree quickly aborts */
     int shortcircuit = 0;
     return CALL(mtbdd_greater_rec, a, b, &shortcircuit);
@@ -2173,48 +2022,24 @@ TASK_IMPL_1(MTBDD, mtbdd_minimum, MTBDD, a)
     MTBDD low = SYNC(mtbdd_minimum);
 
     /* Determine lowest */
-    int negl = mtbdd_isnegated(low);
-    int negh = mtbdd_isnegated(high);
-    if (negl && !negh) result = low;
-    else if (negh && !negl) result = high;
-    else {
-        mtbddnode_t nl = GETNODE(low);
-        mtbddnode_t nh = GETNODE(high);
-        uint64_t val_l = mtbddnode_getvalue(nl);
-        uint64_t val_h = mtbddnode_getvalue(nh);
+    mtbddnode_t nl = GETNODE(low);
+    mtbddnode_t nh = GETNODE(high);
 
-        if (mtbddnode_gettype(nl) == 0 && mtbddnode_gettype(nh) == 0) {
-            // type 0 = int64
-            if (negl) {
-                result = val_l < val_h ? high : low; // negative numbers!
-            } else {
-                result = val_l < val_h ? low : high;
-            }
-        } else if (mtbddnode_gettype(nl) == 1 && mtbddnode_gettype(nh) == 1) {
-            // type 1 = double
-            double vval_l = *(double*)&val_l;
-            double vval_h = *(double*)&val_h;
-            if (negl) {
-                result = vval_l < vval_h ? high : low; // negative numbers!
-            } else {
-                result = vval_l < vval_h ? low : high;
-            }
-        } else if (mtbddnode_gettype(nl) == 2 && mtbddnode_gettype(nh) == 2) {
-            // type 2 = fraction
-            uint64_t nom_l = val_l>>32;
-            uint64_t nom_h = val_h>>32;
-            uint64_t denom_l = val_l&0xffffffff;
-            uint64_t denom_h = val_h&0xffffffff;
-            // equalize denominators
-            uint32_t c = gcd(denom_l, denom_h);
-            nom_l *= denom_h/c;
-            nom_h *= denom_l/c;
-            if (negl) {
-                result = nom_l < nom_h ? high : low; // negative numbers!
-            } else {
-                result = nom_l < nom_h ? low : high;
-            }
-        }
+    if (mtbddnode_gettype(nl) == 0 && mtbddnode_gettype(nh) == 0) {
+        result = mtbdd_getint64(low) < mtbdd_getint64(high) ? low : high;
+    } else if (mtbddnode_gettype(nl) == 1 && mtbddnode_gettype(nh) == 1) {
+        result = mtbdd_getdouble(low) < mtbdd_getdouble(high) ? low : high;
+    } else if (mtbddnode_gettype(nl) == 2 && mtbddnode_gettype(nh) == 2) {
+        // type 2 = fraction
+        int64_t nom_l = mtbdd_getnumer(low);
+        int64_t nom_h = mtbdd_getnumer(high);
+        uint64_t denom_l = mtbdd_getdenom(low);
+        uint64_t denom_h = mtbdd_getdenom(high);
+        // equalize denominators
+        uint32_t c = gcd(denom_l, denom_h);
+        nom_l *= denom_h/c;
+        nom_h *= denom_l/c;
+        result = nom_l < nom_h ? low : high;
     }
 
     /* Store in cache */
@@ -2245,48 +2070,24 @@ TASK_IMPL_1(MTBDD, mtbdd_maximum, MTBDD, a)
     MTBDD low = SYNC(mtbdd_maximum);
 
     /* Determine highest */
-    int negl = mtbdd_isnegated(low);
-    int negh = mtbdd_isnegated(high);
-    if (negl && !negh) result = high;
-    else if (negh && !negl) result = low;
-    else {
-        mtbddnode_t nl = GETNODE(low);
-        mtbddnode_t nh = GETNODE(high);
-        uint64_t val_l = mtbddnode_getvalue(nl);
-        uint64_t val_h = mtbddnode_getvalue(nh);
+    mtbddnode_t nl = GETNODE(low);
+    mtbddnode_t nh = GETNODE(high);
 
-        if (mtbddnode_gettype(nl) == 0 && mtbddnode_gettype(nh) == 0) {
-            // type 0 = int64
-            if (negl) {
-                result = val_l < val_h ? low : high; // negative numbers!
-            } else {
-                result = val_l < val_h ? high : low;
-            }
-        } else if (mtbddnode_gettype(nl) == 1 && mtbddnode_gettype(nh) == 1) {
-            // type 1 = double
-            double vval_l = *(double*)&val_l;
-            double vval_h = *(double*)&val_h;
-            if (negl) {
-                result = vval_l < vval_h ? low : high; // negative numbers!
-            } else {
-                result = vval_l < vval_h ? high : low;
-            }
-        } else if (mtbddnode_gettype(nl) == 2 && mtbddnode_gettype(nh) == 2) {
-            // type 2 = fraction
-            uint64_t nom_l = val_l>>32;
-            uint64_t nom_h = val_h>>32;
-            uint64_t denom_l = val_l&0xffffffff;
-            uint64_t denom_h = val_h&0xffffffff;
-            // equalize denominators
-            uint32_t c = gcd(denom_l, denom_h);
-            nom_l *= denom_h/c;
-            nom_h *= denom_l/c;
-            if (negl) {
-                result = nom_l < nom_h ? low : high; // negative numbers!
-            } else {
-                result = nom_l < nom_h ? high : low;
-            }
-        }
+    if (mtbddnode_gettype(nl) == 0 && mtbddnode_gettype(nh) == 0) {
+        result = mtbdd_getint64(low) > mtbdd_getint64(high) ? low : high;
+    } else if (mtbddnode_gettype(nl) == 1 && mtbddnode_gettype(nh) == 1) {
+        result = mtbdd_getdouble(low) > mtbdd_getdouble(high) ? low : high;
+    } else if (mtbddnode_gettype(nl) == 2 && mtbddnode_gettype(nh) == 2) {
+        // type 2 = fraction
+        int64_t nom_l = mtbdd_getnumer(low);
+        int64_t nom_h = mtbdd_getnumer(high);
+        uint64_t denom_l = mtbdd_getdenom(low);
+        uint64_t denom_h = mtbdd_getdenom(high);
+        // equalize denominators
+        uint32_t c = gcd(denom_l, denom_h);
+        nom_l *= denom_h/c;
+        nom_h *= denom_l/c;
+        result = nom_l > nom_h ? low : high;
     }
 
     /* Store in cache */
@@ -2560,7 +2361,7 @@ mtbdd_fprintdot_rec(FILE *out, MTBDD mtbdd, print_terminal_label_cb cb)
     } else if (mtbddnode_isleaf(n)) {
         uint32_t type = mtbddnode_gettype(n);
         uint64_t value = mtbddnode_getvalue(n);
-        fprintf(out, "%" PRIu64 " [shape=box, style=filled, label=\"", mtbdd_regular(mtbdd));
+        fprintf(out, "%" PRIu64 " [shape=box, style=filled, label=\"", MTBDD_STRIPMARK(mtbdd));
         switch (type) {
         case 0:
             fprintf(out, "%" PRIu64, value);
@@ -2578,16 +2379,16 @@ mtbdd_fprintdot_rec(FILE *out, MTBDD mtbdd, print_terminal_label_cb cb)
         fprintf(out, "\"];\n");
     } else {
         fprintf(out, "%" PRIu64 " [label=\"%" PRIu32 "\"];\n",
-                mtbdd_regular(mtbdd), mtbddnode_getvariable(n));
+                MTBDD_STRIPMARK(mtbdd), mtbddnode_getvariable(n));
 
-        mtbdd_fprintdot_rec(out, mtbdd_regular(mtbddnode_getlow(n)), cb);
-        mtbdd_fprintdot_rec(out, mtbdd_regular(mtbddnode_gethigh(n)), cb);
+        mtbdd_fprintdot_rec(out, mtbddnode_getlow(n), cb);
+        mtbdd_fprintdot_rec(out, mtbddnode_gethigh(n), cb);
 
-        fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=dashed dir=both arrowtail=%s];\n",
-                mtbdd, mtbdd_regular(mtbddnode_getlow(n)), mtbdd_isnegated(mtbddnode_getlow(n)) ? "dot" : "none");
+        fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=dashed];\n",
+                MTBDD_STRIPMARK(mtbdd), mtbddnode_getlow(n));
         fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=solid dir=both arrowtail=%s];\n",
-                mtbdd, mtbdd_regular(mtbddnode_gethigh(n)),
-                mtbdd_isnegated(mtbddnode_gethigh(n)) ? "dot" : "none");
+                MTBDD_STRIPMARK(mtbdd), MTBDD_STRIPMARK(mtbddnode_gethigh(n)),
+                mtbddnode_getcomp(n) ? "dot" : "none");
     }
 }
 
@@ -2600,9 +2401,9 @@ mtbdd_fprintdot(FILE *out, MTBDD mtbdd, print_terminal_label_cb cb)
     fprintf(out, "edge [dir = forward];\n");
     fprintf(out, "root [style=invis];\n");
     fprintf(out, "root -> %" PRIu64 " [style=solid dir=both arrowtail=%s];\n",
-            mtbdd_regular(mtbdd), mtbdd_isnegated(mtbdd) ? "dot" : "none");
+            MTBDD_STRIPMARK(mtbdd), MTBDD_HASMARK(mtbdd) ? "dot" : "none");
 
-    mtbdd_fprintdot_rec(out, mtbdd_regular(mtbdd), cb);
+    mtbdd_fprintdot_rec(out, mtbdd, cb);
     mtbdd_unmark_rec(mtbdd);
 
     fprintf(out, "}\n");
@@ -2739,3 +2540,4 @@ mtbdd_map_removeall(MTBDDMAP map, MTBDD variables)
 }
 
 #include "sylvan_mtbdd_storm.c"
+

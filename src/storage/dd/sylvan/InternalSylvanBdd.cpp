@@ -231,7 +231,7 @@ namespace storm {
             if (std::is_same<ValueType, double>::value) {
                 return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toDoubleMtbdd());
             } else if (std::is_same<ValueType, uint_fast64_t>::value) {
-                return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toUint64Mtbdd());
+                return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toInt64Mtbdd());
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Illegal ADD type.");
             }
