@@ -200,6 +200,7 @@ namespace storm {
             }
             
             template class SymbolicMdpPrctlHelper<storm::dd::DdType::CUDD, double>;
+            template class SymbolicMdpPrctlHelper<storm::dd::DdType::Sylvan, double>;
         }
     }
 }

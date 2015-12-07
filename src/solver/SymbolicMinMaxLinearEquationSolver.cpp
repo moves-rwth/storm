@@ -61,7 +61,7 @@ namespace storm {
                 
                 ++iterations;
             }
-                        
+            
             return xCopy;
         }
         
@@ -91,6 +91,7 @@ namespace storm {
         }
         
         template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::CUDD, double>;
+        template class SymbolicMinMaxLinearEquationSolver<storm::dd::DdType::Sylvan, double>;
         
     }
 }
