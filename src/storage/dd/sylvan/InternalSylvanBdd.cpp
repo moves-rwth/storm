@@ -267,7 +267,7 @@ namespace storm {
                 bool thenComplemented = bdd_isnegated(thenDdNode) ^ complement;
                 
                 toVectorRec(bdd_regular(elseDdNode), result, rowOdd.getElseSuccessor(), elseComplemented, currentRowLevel + 1, maxLevel, currentRowOffset, ddRowVariableIndices);
-                toVectorRec(bdd_regular(elseDdNode), result, rowOdd.getThenSuccessor(), thenComplemented, currentRowLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), ddRowVariableIndices);
+                toVectorRec(bdd_regular(thenDdNode), result, rowOdd.getThenSuccessor(), thenComplemented, currentRowLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), ddRowVariableIndices);
             }
         }
         
@@ -354,15 +354,7 @@ namespace storm {
             }
             
             if (currentLevel == maxLevel) {
-                // If the DD is not the zero leaf, then the then-offset is 1.
-                bool selected = false;
-                if (dd != sylvan_false) {
-                    selected = !complement;
-                }
-                
-                if (selected) {
-                    result[currentIndex++] = values[currentOffset];
-                }
+                result[currentIndex++] = values[currentOffset];
             } else if (ddVariableIndices[currentLevel] < sylvan_var(dd)) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.

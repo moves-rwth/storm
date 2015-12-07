@@ -261,6 +261,7 @@ namespace storm {
             }
             
             template class HybridMdpPrctlHelper<storm::dd::DdType::CUDD, double>;
+            template class HybridMdpPrctlHelper<storm::dd::DdType::Sylvan, double>;
         }
     }
 }

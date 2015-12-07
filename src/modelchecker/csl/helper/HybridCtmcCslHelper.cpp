@@ -286,6 +286,7 @@ namespace storm {
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
                 
                 std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeLongRunAverage(explicitProbabilityMatrix, psiStates.toVector(odd), &explicitExitRateVector, qualitative, linearEquationSolverFactory);
+
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
             
@@ -313,6 +314,7 @@ namespace storm {
             }
 
             template class HybridCtmcCslHelper<storm::dd::DdType::CUDD, double>;
+            template class HybridCtmcCslHelper<storm::dd::DdType::Sylvan, double>;
             
         }
     }

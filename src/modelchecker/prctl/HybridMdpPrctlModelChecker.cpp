@@ -89,5 +89,6 @@ namespace storm {
         }
         
         template class HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double>;
+        template class HybridMdpPrctlModelChecker<storm::dd::DdType::Sylvan, double>;
     }
 }

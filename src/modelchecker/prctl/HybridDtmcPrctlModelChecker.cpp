@@ -103,5 +103,6 @@ namespace storm {
         }
         
         template class HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double>;
+        template class HybridDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double>;
     }
 }

@@ -12,6 +12,7 @@ namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType Type, typename ValueType>
         HybridQuantitativeCheckResult<Type, ValueType>::HybridQuantitativeCheckResult(storm::dd::Bdd<Type> const& reachableStates, storm::dd::Bdd<Type> const& symbolicStates, storm::dd::Add<Type, ValueType> const& symbolicValues, storm::dd::Bdd<Type> const& explicitStates, storm::dd::Odd const& odd, std::vector<ValueType> const& explicitValues) : reachableStates(reachableStates), symbolicStates(symbolicStates), symbolicValues(symbolicValues), explicitStates(explicitStates), odd(odd), explicitValues(explicitValues) {
+            
             // Intentionally left empty.
         }
         
@@ -134,6 +135,7 @@ namespace storm {
             
             // Then compute the new vector of explicit values and set the new data fields.
             this->explicitValues = explicitStates.filterExplicitVector(this->odd, explicitValues);
+            
             this->odd = newOdd;
         }
         
@@ -164,5 +166,6 @@ namespace storm {
         
         // Explicitly instantiate the class.
         template class HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>;
+        template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>;
     }
 }

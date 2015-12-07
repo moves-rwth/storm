@@ -51,7 +51,7 @@ namespace storm {
                         // Start by cutting away all rows that do not belong to maybe states. Note that this leaves columns targeting
                         // non-maybe states in the matrix.
                         storm::dd::Add<DdType> submatrix = transitionMatrix * maybeStatesAdd;
-                        
+                                                
                         // Then compute the vector that contains the one-step probabilities to a state with probability 1 for all
                         // maybe states.
                         storm::dd::Add<DdType, ValueType> prob1StatesAsColumn = statesWithProbability01.second.template toAdd<ValueType>();
@@ -241,6 +241,7 @@ namespace storm {
             }
 
             template class HybridDtmcPrctlHelper<storm::dd::DdType::CUDD, double>;
+            template class HybridDtmcPrctlHelper<storm::dd::DdType::Sylvan, double>;
         }
     }
 }

@@ -97,6 +97,7 @@ namespace storm {
         
         // Explicitly instantiate the model checker.
         template class HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double>;
+        template class HybridCtmcCslModelChecker<storm::dd::DdType::Sylvan, double>;
         
     } // namespace modelchecker
 } // namespace storm
