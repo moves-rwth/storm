@@ -66,17 +66,6 @@ namespace storm {
             bool operator!=(Add<LibraryType, ValueType> const& other) const;
             
             /*!
-             * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to a non-zero
-             * function value to the function values specified by the first DD and all others to the function values
-             * specified by the second DD.
-             *
-             * @param thenDd The ADD specifying the 'then' part.
-             * @param elseDd The ADD specifying the 'else' part.
-             * @return The ADD corresponding to the if-then-else of the operands.
-             */
-            Add<LibraryType, ValueType> ite(Add<LibraryType, ValueType> const& thenAdd, Add<LibraryType, ValueType> const& elseAdd) const;
-            
-            /*!
              * Adds the two ADDs.
              *
              * @param other The ADD to add to the current one.

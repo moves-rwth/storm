@@ -11,6 +11,12 @@ Bdd::toInt64Mtbdd() const {
 }
 
 Mtbdd
+Bdd::Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const {
+    LACE_ME;
+    return mtbdd_ite(bdd, thenDd.GetMTBDD(), elseDd.GetMTBDD());
+}
+
+Mtbdd
 Mtbdd::Minus(const Mtbdd &other) const
 {
     LACE_ME;

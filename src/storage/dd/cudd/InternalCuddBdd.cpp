@@ -58,6 +58,11 @@ namespace storm {
             return InternalBdd<DdType::CUDD>(ddManager, this->getCuddBdd().Ite(thenDd.getCuddBdd(), elseDd.getCuddBdd()));
         }
         
+        template<typename ValueType>
+        InternalAdd<DdType::CUDD, ValueType> InternalBdd<DdType::CUDD>::ite(InternalAdd<DdType::CUDD, ValueType> const& thenAdd, InternalAdd<DdType::CUDD, ValueType> const& elseAdd) const {
+            return InternalAdd<DdType::CUDD, ValueType>(ddManager, this->getCuddBdd().Add().Ite(thenAdd.getCuddAdd(), elseAdd.getCuddAdd()));
+        }
+        
         InternalBdd<DdType::CUDD> InternalBdd<DdType::CUDD>::operator||(InternalBdd<DdType::CUDD> const& other) const {
             InternalBdd<DdType::CUDD> result(*this);
             result |= other;
@@ -413,5 +418,8 @@ namespace storm {
 
         template void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<double> const& sourceValues, std::vector<double>& targetValues) const;
         template void InternalBdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& sourceValues, std::vector<uint_fast64_t>& targetValues) const;
+
+        template InternalAdd<DdType::CUDD, double> InternalBdd<DdType::CUDD>::ite(InternalAdd<DdType::CUDD, double> const& thenAdd, InternalAdd<DdType::CUDD, double> const& elseAdd) const;
+        template InternalAdd<DdType::CUDD, uint_fast64_t> InternalBdd<DdType::CUDD>::ite(InternalAdd<DdType::CUDD, uint_fast64_t> const& thenAdd, InternalAdd<DdType::CUDD, uint_fast64_t> const& elseAdd) const;
     }
 }

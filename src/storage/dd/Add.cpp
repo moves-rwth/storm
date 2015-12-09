@@ -30,13 +30,6 @@ namespace storm {
         }
 
         template<DdType LibraryType, typename ValueType>
-        Add<LibraryType, ValueType> Add<LibraryType, ValueType>::ite(Add<LibraryType, ValueType> const& thenAdd, Add<LibraryType, ValueType> const& elseAdd) const {
-            std::set<storm::expressions::Variable> metaVariables = Dd<LibraryType>::joinMetaVariables(thenAdd, elseAdd);
-            metaVariables.insert(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end());
-            return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd.ite(thenAdd.internalAdd, elseAdd.internalAdd), metaVariables);
-        }
-
-        template<DdType LibraryType, typename ValueType>
         Add<LibraryType, ValueType> Add<LibraryType, ValueType>::operator+(Add<LibraryType, ValueType> const& other) const {
             return Add<LibraryType, ValueType>(this->getDdManager(), internalAdd + other.internalAdd, Dd<LibraryType>::joinMetaVariables(*this, other));
         }
@@ -320,7 +313,7 @@ namespace storm {
                 this->addMetaVariable(nameValuePair.first);
             }
             
-            internalAdd = valueEncoding.template toAdd<ValueType>().ite(this->getDdManager().getConstant(targetValue), *this);
+            internalAdd = valueEncoding.ite(this->getDdManager().getConstant(targetValue), *this);
         }
 
         template<DdType LibraryType, typename ValueType>

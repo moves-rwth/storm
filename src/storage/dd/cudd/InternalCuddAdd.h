@@ -42,6 +42,8 @@ namespace storm {
         template<typename ValueType>
         class InternalAdd<DdType::CUDD, ValueType> {
         public:
+            friend class InternalBdd<DdType::CUDD>;
+            
             /*!
              * Creates an ADD that encapsulates the given CUDD ADD.
              *
@@ -72,17 +74,6 @@ namespace storm {
              * @return True if the DDs represent the different functions.
              */
             bool operator!=(InternalAdd<DdType::CUDD, ValueType> const& other) const;
-            
-            /*!
-             * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to a non-zero
-             * function value to the function values specified by the first DD and all others to the function values
-             * specified by the second DD.
-             *
-             * @param thenDd The ADD specifying the 'then' part.
-             * @param elseDd The ADD specifying the 'else' part.
-             * @return The ADD corresponding to the if-then-else of the operands.
-             */
-            InternalAdd<DdType::CUDD, ValueType> ite(InternalAdd<DdType::CUDD, ValueType> const& thenAdd, InternalAdd<DdType::CUDD, ValueType> const& elseAdd) const;
             
             /*!
              * Adds the two ADDs.

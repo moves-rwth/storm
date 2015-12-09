@@ -41,6 +41,7 @@ namespace storm {
         class InternalAdd<DdType::Sylvan, ValueType> {
         public:
             friend class AddIterator<DdType::Sylvan, ValueType>;
+            friend class InternalBdd<DdType::Sylvan>;
             
             /*!
              * Creates an ADD that encapsulates the given Sylvan MTBDD.
@@ -72,17 +73,6 @@ namespace storm {
              * @return True if the DDs represent the different functions.
              */
             bool operator!=(InternalAdd<DdType::Sylvan, ValueType> const& other) const;
-            
-            /*!
-             * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to a non-zero
-             * function value to the function values specified by the first DD and all others to the function values
-             * specified by the second DD.
-             *
-             * @param thenDd The ADD specifying the 'then' part.
-             * @param elseDd The ADD specifying the 'else' part.
-             * @return The ADD corresponding to the if-then-else of the operands.
-             */
-            InternalAdd<DdType::Sylvan, ValueType> ite(InternalAdd<DdType::Sylvan, ValueType> const& thenAdd, InternalAdd<DdType::Sylvan, ValueType> const& elseAdd) const;
                         
             /*!
              * Adds the two ADDs.

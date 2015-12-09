@@ -168,7 +168,7 @@ TEST(SylvanDd, OperatorTest) {
     bdd = dd1.greaterOrEqual(dd2);
     EXPECT_EQ(5ul, bdd.getNonZeroCount());
     
-    dd3 = (manager->getEncoding(x.first, 2).template toAdd<double>()).ite(dd2, dd1);
+    dd3 = manager->getEncoding(x.first, 2).ite(dd2, dd1);
     bdd = dd3.less(dd2);
     EXPECT_EQ(10ul, bdd.getNonZeroCount());
 
@@ -300,7 +300,7 @@ TEST(SylvanDd, AddIteratorTest) {
     EXPECT_EQ(9ul, numberOfValuations);
     
     dd = manager->getRange(x.first).template toAdd<double>();
-    dd = dd.ite(manager->template getAddOne<double>(), manager->template getAddOne<double>());
+    dd = dd.notZero().ite(manager->template getAddOne<double>(), manager->template getAddOne<double>());
     ASSERT_NO_THROW(it = dd.begin());
     ASSERT_NO_THROW(ite = dd.end());
     numberOfValuations = 0;
@@ -358,7 +358,7 @@ TEST(SylvanDd, AddOddTest) {
     EXPECT_EQ(9ul, matrix.getColumnCount());
     EXPECT_EQ(25ul, matrix.getNonzeroEntryCount());
     
-    dd = manager->getRange(x.first).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() * manager->getEncoding(a.first, 0).template toAdd<double>().ite(dd, dd + manager->template getConstant<double>(1));
+    dd = manager->getRange(x.first).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() * manager->getEncoding(a.first, 0).ite(dd, dd + manager->template getConstant<double>(1));
     ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
     EXPECT_EQ(18ul, matrix.getRowCount());
     EXPECT_EQ(9ul, matrix.getRowGroupCount());
@@ -405,7 +405,7 @@ TEST(SylvanDd, BddOddTest) {
     EXPECT_EQ(9ul, matrix.getColumnCount());
     EXPECT_EQ(25ul, matrix.getNonzeroEntryCount());
     
-    dd = manager->getRange(x.first).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() * manager->getEncoding(a.first, 0).template toAdd<double>().ite(dd, dd + manager->template getConstant<double>(1));
+    dd = manager->getRange(x.first).template toAdd<double>() * manager->getRange(x.second).template toAdd<double>() * manager->getEncoding(a.first, 0).ite(dd, dd + manager->template getConstant<double>(1));
     ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
     EXPECT_EQ(18ul, matrix.getRowCount());
     EXPECT_EQ(9ul, matrix.getRowGroupCount());

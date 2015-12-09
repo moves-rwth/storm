@@ -107,6 +107,11 @@ namespace storm {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd.Ite(thenDd.sylvanBdd, elseDd.sylvanBdd));
         }
         
+        template<typename ValueType>
+        InternalAdd<DdType::Sylvan, ValueType> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, ValueType> const& thenAdd, InternalAdd<DdType::Sylvan, ValueType> const& elseAdd) const {
+            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.Ite(thenAdd.getSylvanMtbdd(), elseAdd.getSylvanMtbdd()));
+        }
+        
         InternalBdd<DdType::Sylvan> InternalBdd<DdType::Sylvan>::operator||(InternalBdd<DdType::Sylvan> const& other) const {
             return InternalBdd<DdType::Sylvan>(ddManager, this->sylvanBdd | other.sylvanBdd);
         }
@@ -382,5 +387,9 @@ namespace storm {
                 
         template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<double> const& sourceValues, std::vector<double>& targetValues) const;
         template void InternalBdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<uint_fast64_t> const& sourceValues, std::vector<uint_fast64_t>& targetValues) const;
+        
+        template InternalAdd<DdType::Sylvan, double> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, double> const& thenAdd, InternalAdd<DdType::Sylvan, double> const& elseAdd) const;
+        template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalBdd<DdType::Sylvan>::ite(InternalAdd<DdType::Sylvan, uint_fast64_t> const& thenAdd, InternalAdd<DdType::Sylvan, uint_fast64_t> const& elseAdd) const;
+
     }
 }

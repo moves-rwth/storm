@@ -109,6 +109,17 @@ namespace storm {
             InternalBdd<DdType::Sylvan> ite(InternalBdd<DdType::Sylvan> const& thenBdd, InternalBdd<DdType::Sylvan> const& elseBdd) const;
             
             /*!
+             * Performs an if-then-else with the given operands, i.e. maps all valuations that are mapped to true to the
+             * function values specified by the first DD and all others to the function values specified by the second DD.
+             *
+             * @param thenAdd The ADD defining the 'then' part.
+             * @param elseAdd The ADD defining the 'else' part.
+             * @return The resulting ADD.
+             */
+            template<typename ValueType>
+            InternalAdd<DdType::Sylvan, ValueType> ite(InternalAdd<DdType::Sylvan, ValueType> const& thenAdd, InternalAdd<DdType::Sylvan, ValueType> const& elseAdd) const;
+            
+            /*!
              * Performs a logical or of the current and the given BDD.
              *
              * @param other The second BDD used for the operation.

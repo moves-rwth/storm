@@ -143,7 +143,7 @@ namespace storm {
         ValueType HybridQuantitativeCheckResult<Type, ValueType>::getMin() const {
             // In order to not get false zeros, we need to set the values of all states whose values is not stored
             // symbolically to infinity.
-            storm::dd::Add<Type, ValueType> tmp = symbolicStates.template toAdd<ValueType>().ite(this->symbolicValues, reachableStates.getDdManager().getConstant(storm::utility::infinity<double>()));
+            storm::dd::Add<Type, ValueType> tmp = symbolicStates.ite(this->symbolicValues, reachableStates.getDdManager().getConstant(storm::utility::infinity<double>()));
             ValueType min = tmp.getMin();
             if (!explicitStates.isZero()) {
                 for (auto const& element : explicitValues) {

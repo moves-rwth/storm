@@ -26,12 +26,7 @@ namespace storm {
         bool InternalAdd<DdType::Sylvan, ValueType>::operator!=(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
             return this->sylvanMtbdd != other.sylvanMtbdd;
         }
-        
-        template<typename ValueType>
-        InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::ite(InternalAdd<DdType::Sylvan, ValueType> const& thenDd, InternalAdd<DdType::Sylvan, ValueType> const& elseDd) const {
-            return InternalAdd<DdType::Sylvan, ValueType>(ddManager, sylvan::Mtbdd(static_cast<MTBDD>(this->sylvanMtbdd.NotZero().GetBDD())).Ite(thenDd.sylvanMtbdd, elseDd.sylvanMtbdd));
-        }
-                
+                        
         template<typename ValueType>
         InternalAdd<DdType::Sylvan, ValueType> InternalAdd<DdType::Sylvan, ValueType>::operator+(InternalAdd<DdType::Sylvan, ValueType> const& other) const {
             return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanMtbdd.Plus(other.sylvanMtbdd));

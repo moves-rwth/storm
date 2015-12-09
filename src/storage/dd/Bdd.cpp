@@ -59,6 +59,14 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        template<typename ValueType>
+        Add<LibraryType, ValueType> Bdd<LibraryType>::ite(Add<LibraryType, ValueType> const& thenAdd, Add<LibraryType, ValueType> const& elseAdd) const {
+            std::set<storm::expressions::Variable> metaVariables = Dd<LibraryType>::joinMetaVariables(thenAdd, elseAdd);
+            metaVariables.insert(this->getContainedMetaVariables().begin(), this->getContainedMetaVariables().end());
+            return Add<LibraryType, ValueType>(this->getDdManager(), internalBdd.ite(thenAdd.internalAdd, elseAdd.internalAdd), metaVariables);
+        }
+        
+        template<DdType LibraryType>
         Bdd<LibraryType> Bdd<LibraryType>::operator||(Bdd<LibraryType> const& other) const {
             return Bdd<LibraryType>(this->getDdManager(), internalBdd || other.internalBdd, Dd<LibraryType>::joinMetaVariables(*this, other));
         }
@@ -334,6 +342,9 @@ namespace storm {
         template std::vector<double> Bdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<double> const& values) const;
         template std::vector<uint_fast64_t> Bdd<DdType::CUDD>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& values) const;
         
+        template Add<DdType::CUDD, double> Bdd<DdType::CUDD>::ite(Add<DdType::CUDD, double> const& thenAdd, Add<DdType::CUDD, double> const& elseAdd) const;
+        template Add<DdType::CUDD, uint_fast64_t> Bdd<DdType::CUDD>::ite(Add<DdType::CUDD, uint_fast64_t> const& thenAdd, Add<DdType::CUDD, uint_fast64_t> const& elseAdd) const;
+        
         
         template class Bdd<DdType::Sylvan>;
 
@@ -345,5 +356,8 @@ namespace storm {
         
         template std::vector<double> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<double> const& values) const;
         template std::vector<uint_fast64_t> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& values) const;
+        
+        template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, double> const& thenAdd, Add<DdType::Sylvan, double> const& elseAdd) const;
+        template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, uint_fast64_t> const& thenAdd, Add<DdType::Sylvan, uint_fast64_t> const& elseAdd) const;
     }
 }

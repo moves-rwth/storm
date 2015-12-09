@@ -683,7 +683,7 @@ namespace storm {
                 }
                 
                 // Add a new variable that resolves the nondeterminism between the two choices.
-                storm::dd::Add<Type, ValueType> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables], 1).template toAdd<ValueType>().ite(action2Extended, action1Extended);
+                storm::dd::Add<Type, ValueType> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables], 1).ite(action2Extended, action1Extended);
                 
                 return ActionDecisionDiagram((action1.guardDd.toBdd() || action2.guardDd.toBdd()).template toAdd<ValueType>(), combinedTransitions, assignedGlobalVariables, numberOfUsedNondeterminismVariables + 1);
             } else {

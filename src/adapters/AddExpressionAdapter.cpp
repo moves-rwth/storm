@@ -41,7 +41,7 @@ namespace storm {
             } else {
                 storm::dd::Add<Type, ValueType> elseDd = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getElseExpression()->accept(*this));
                 storm::dd::Add<Type, ValueType> thenDd = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getThenExpression()->accept(*this));
-                storm::dd::Add<Type, ValueType> conditionDd = boost::any_cast<storm::dd::Add<Type, ValueType>>(expression.getCondition()->accept(*this));
+                storm::dd::Bdd<Type> conditionDd = boost::any_cast<storm::dd::Bdd<Type>>(expression.getCondition()->accept(*this));
                 return conditionDd.ite(thenDd, elseDd);
             }
         }
