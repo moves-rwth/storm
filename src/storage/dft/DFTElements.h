@@ -103,6 +103,8 @@ namespace storm {
             virtual std::vector<size_t> independentUnit() const = 0;
         
             virtual void  extendUnit(std::set<size_t>& unit) const;
+
+            void checkForSymmetricChildren() const;
         };
 
 
