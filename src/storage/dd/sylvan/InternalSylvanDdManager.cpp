@@ -9,8 +9,6 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/NotSupportedException.h"
 
-#include <iostream>
-
 namespace storm {
     namespace dd {
         uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
@@ -21,10 +19,11 @@ namespace storm {
         
         uint_fast64_t findLargestPowerOfTwoFitting(uint_fast64_t number) {
             for (uint_fast64_t index = 0; index < 64; ++index) {
-                if ((number & (1ull << 63 - index)) != 0) {
+                if ((number & (1ull << (63 - index))) != 0) {
                     return 63 - index;
                 }
             }
+            return 0;
         }
         
         InternalDdManager<DdType::Sylvan>::InternalDdManager() {

@@ -6,7 +6,7 @@
 #include "src/storage/dd/AddIterator.h"
 #include "src/storage/expressions/SimpleValuation.h"
 
-#include "sylvan_obj.hpp"
+#include "src/utility/sylvan.h"
 
 namespace storm {
     namespace dd {

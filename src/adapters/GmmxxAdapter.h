@@ -11,7 +11,7 @@
 #include <new>
 #include <utility>
 
-#include "gmm/gmm_matrix.h"
+#include "src/utility/gmm.h"
 
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/ConversionHelper.h"

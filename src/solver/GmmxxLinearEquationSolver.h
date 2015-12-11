@@ -1,7 +1,7 @@
 #ifndef STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_GMMXXLINEAREQUATIONSOLVER_H_
 
-#include "gmm/gmm_matrix.h"
+#include "src/utility/gmm.h"
 
 #include "LinearEquationSolver.h"
 

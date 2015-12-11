@@ -8,7 +8,7 @@
 namespace storm {
     namespace dd {
         template<DdType LibraryType>
-        DdManager<LibraryType>::DdManager() : metaVariableMap(), manager(new storm::expressions::ExpressionManager()), internalDdManager() {
+        DdManager<LibraryType>::DdManager() : internalDdManager(), metaVariableMap(), manager(new storm::expressions::ExpressionManager()) {
             // Intentionally left empty.
         }
         

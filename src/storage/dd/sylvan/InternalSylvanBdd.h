@@ -9,7 +9,7 @@
 #include "src/storage/dd/InternalBdd.h"
 #include "src/storage/dd/InternalAdd.h"
 
-#include "sylvan_obj.hpp"
+#include "src/utility/sylvan.h"
 
 namespace storm {
     namespace storage {
