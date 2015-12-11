@@ -2,9 +2,6 @@
 #define STORM_SETTINGS_SETTINGSMANAGER_H_
 
 #include <iostream>
-#include <sstream>
-#include <list>
-#include <set>
 #include <utility>
 #include <functional>
 #include <unordered_map>
@@ -12,31 +9,24 @@
 #include <vector>
 #include <memory>
 
-#include "src/settings/Option.h"
-#include "src/settings/OptionBuilder.h"
-#include "src/settings/ArgumentBase.h"
-#include "src/settings/Argument.h"
-#include "src/settings/ArgumentBuilder.h"
-#include "src/settings/ArgumentType.h"
-#include "src/settings/modules/ModuleSettings.h"
-#include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/DebugSettings.h"
-#include "src/settings/modules/CounterexampleGeneratorSettings.h"
-#include "src/settings/modules/CuddSettings.h"
-#include "src/settings/modules/GmmxxEquationSolverSettings.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
-#include "src/settings/modules/BisimulationSettings.h"
-#include "src/settings/modules/GlpkSettings.h"
-#include "src/settings/modules/GurobiSettings.h"
-#include "src/settings/modules/ParametricSettings.h"
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
-#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
-
-#include "src/utility/macros.h"
-#include "src/exceptions/OptionParserException.h"
-
 namespace storm {
     namespace settings {
+        namespace modules {
+            class GeneralSettings;
+            class DebugSettings;
+            class CounterexampleGeneratorSettings;
+            class CuddSettings;
+            class GmmxxEquationSolverSettings;
+            class NativeEquationSolverSettings;
+            class BisimulationSettings;
+            class GlpkSettings;
+            class GurobiSettings;
+            class TopologicalValueIterationEquationSolverSettings;
+            class ParametricSettings;
+            class SparseDtmcEliminationModelCheckerSettings;
+            class ModuleSettings;
+        }
+        class Option;
         
         /*!
          * Provides the central API for the registration of command line options and parsing the options from the
@@ -199,9 +189,10 @@ namespace storm {
             static void addOptionToMap(std::string const& name, std::shared_ptr<Option> const& option, std::unordered_map<std::string, std::vector<std::shared_ptr<Option>>>& optionMap);
             
             /*!
+             * Prepares some modules for further changes.
              * Checks all modules for consistency by calling their respective check method.
              */
-            void checkAllModules() const;
+            void finalizeAllModules();
             
             /*!
              * Retrieves the (print) length of the longest option of all modules.

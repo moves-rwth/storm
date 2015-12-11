@@ -3,14 +3,16 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include <memory>
 
-#include "src/settings/Option.h"
 
 namespace storm {
     namespace settings {
         // Forward-declare some classes.
         class SettingsManager;
         class SettingMemento;
+        class Option;
         
         namespace modules {
             
@@ -36,7 +38,12 @@ namespace storm {
                  * @return True if the settings are consistent.
                  */
                 virtual bool check() const;
-                
+
+                /*!
+                 * Prepares the modules for further usage, should be called at the end of the initialization, before checks are executed.
+                 */
+                virtual void finalize();
+
                 /*!
                  * Sets the option with the given name to the required status. This requires the option to take no
                  * arguments. As a result, a pointer to an object is returned such that when the object is destroyed

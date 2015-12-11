@@ -6,17 +6,16 @@
 #include <ostream>
 
 #include "src/storage/sparse/StateType.h"
-#include "src/storage/BitVector.h"
-#include "src/exceptions/OutOfRangeException.h"
-#include "src/exceptions/InvalidArgumentException.h"
 
+#include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
 #include "src/utility/OsDetection.h"
 
+            
 namespace storm {
     namespace models {
         namespace sparse {
-            
+
             /*!
              * This class manages the labeling of the state space with a number of (atomic) labels.
              */

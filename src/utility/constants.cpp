@@ -1,7 +1,11 @@
 #include "src/utility/constants.h"
 
-#include "src/storage/SparseMatrix.h"
 #include "src/storage/sparse/StateType.h"
+#include "src/storage/SparseMatrix.h"
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+
+#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace utility {
@@ -21,7 +25,52 @@ namespace storm {
             return std::numeric_limits<ValueType>::infinity();
         }
         
+        template<typename ValueType>
+        bool isOne(ValueType const& a) {
+            return a == one<ValueType>();
+        }
+        
+        template<typename ValueType>
+        bool isZero(ValueType const& a) {
+            return a == zero<ValueType>();
+        }
+        
+        template<typename ValueType>
+        bool isConstant(ValueType const& a) {
+            return true;
+        }
+        
 #ifdef STORM_HAVE_CARL
+        template<>
+        bool isOne(storm::RationalFunction const& a) {
+            return a.isOne();
+        }
+        
+        template<>
+        bool isZero(storm::RationalFunction const& a) {
+            return a.isZero();
+        }
+        
+        template<>
+        bool isConstant(storm::RationalFunction const& a) {
+            return a.isConstant();
+        }
+        
+        template<>
+        bool isOne(storm::Polynomial const& a) {
+            return a.isOne();
+        }
+        
+        template<>
+        bool isZero(storm::Polynomial const& a) {
+            return a.isZero();
+        }
+        
+        template<>
+        bool isConstant(storm::Polynomial const& a) {
+            return a.isConstant();
+        }
+        
         template<>
         storm::RationalFunction infinity() {
             // FIXME: this does not work.
@@ -34,95 +83,20 @@ namespace storm {
             return std::pow(value, exponent);
         }
 
-		template<>
-		double simplify(double value) {
-			// In the general case, we don't to anything here, but merely return the value. If something else is
-			// supposed to happen here, the templated function can be specialized for this particular type.
-			return value;
-		}
-
-		template<>
-		float simplify(float value) {
-			// In the general case, we don't to anything here, but merely return the value. If something else is
-			// supposed to happen here, the templated function can be specialized for this particular type.
-			return value;
-		}
-
-        template<>
-        int simplify(int value) {
+		template<typename ValueType>
+		ValueType simplify(ValueType value) {
             // In the general case, we don't to anything here, but merely return the value. If something else is
             // supposed to happen here, the templated function can be specialized for this particular type.
-            return value;
-        }
-        
-        template<typename ValueType>
-        bool ConstantsComparator<ValueType>::isOne(ValueType const& value) const {
-            return value == one<ValueType>();
-        }
-        
-        template<typename ValueType>
-        bool ConstantsComparator<ValueType>::isZero(ValueType const& value) const {
-            return value == zero<ValueType>();
-        }
-        
-        template<typename ValueType>
-        bool ConstantsComparator<ValueType>::isEqual(ValueType const& value1, ValueType const& value2) const {
-            return value1 == value2;
-        }
-        
-        ConstantsComparator<float>::ConstantsComparator() : precision(static_cast<float>(storm::settings::generalSettings().getPrecision())) {
-            // Intentionally left empty.
-        }
-        
-        ConstantsComparator<float>::ConstantsComparator(float precision) : precision(precision) {
-            // Intentionally left empty.
-        }
-        
-        bool ConstantsComparator<float>::isOne(float const& value) const {
-            return std::abs(value - one<float>()) <= precision;
-        }
-        
-        bool ConstantsComparator<float>::isZero(float const& value) const {
-            return std::abs(value) <= precision;
-        }
-        
-        bool ConstantsComparator<float>::isEqual(float const& value1, float const& value2) const {
-            return std::abs(value1 - value2) <= precision;
-        }
-        
-        bool ConstantsComparator<float>::isConstant(float const& value) const {
-            return true;
-        }
-        
-        ConstantsComparator<double>::ConstantsComparator() : precision(storm::settings::generalSettings().getPrecision()) {
-            // Intentionally left empty.
-        }
-        
-        ConstantsComparator<double>::ConstantsComparator(double precision) : precision(precision) {
-            // Intentionally left empty.
-        }
-        
-        bool ConstantsComparator<double>::isOne(double const& value) const {
-            return std::abs(value - one<double>()) <= precision;
-        }
-        
-        bool ConstantsComparator<double>::isZero(double const& value) const {
-            return std::abs(value) <= precision;
-        }
-        
-        bool ConstantsComparator<double>::isInfinity(double const& value) const {
-            return value == infinity<double>();
-        }
-        
-        bool ConstantsComparator<double>::isEqual(double const& value1, double const& value2) const {
-            return std::abs(value1 - value2) <= precision;
-        }
-        
-        bool ConstantsComparator<double>::isConstant(double const& value) const {
-            return true;
-        }
-        
+			return value;
+		}
+
 #ifdef STORM_HAVE_CARL
+        template<>
+        RationalFunction& simplify(RationalFunction& value);
+        
+        template<>
+        RationalFunction&& simplify(RationalFunction&& value);
+
         template<>
         RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent) {
             return carl::pow(value, exponent);
@@ -145,40 +119,8 @@ namespace storm {
             value.simplify();
             return std::move(value);
         }
-        
-        bool ConstantsComparator<storm::RationalFunction>::isOne(storm::RationalFunction const& value) const {
-            return value.isOne();
-        }
-        
-        bool ConstantsComparator<storm::RationalFunction>::isZero(storm::RationalFunction const& value) const {
-            return value.isZero();
-        }
-        
-        bool ConstantsComparator<storm::RationalFunction>::isEqual(storm::RationalFunction const& value1, storm::RationalFunction const& value2) const {
-            return value1 == value2;
-        }
-        
-        bool ConstantsComparator<storm::RationalFunction>::isConstant(storm::RationalFunction const& value) const {
-            return value.isConstant();
-        }
-        
-        bool ConstantsComparator<storm::Polynomial>::isOne(storm::Polynomial const& value) const {
-            return value.isOne();
-        }
-        
-        bool ConstantsComparator<storm::Polynomial>::isZero(storm::Polynomial const& value) const {
-            return value.isZero();
-        }
-        
-        bool ConstantsComparator<storm::Polynomial>::isEqual(storm::Polynomial const& value1, storm::Polynomial const& value2) const {
-            return value1 == value2;
-        }
-        
-        bool ConstantsComparator<storm::Polynomial>::isConstant(storm::Polynomial const& value) const {
-            return value.isConstant();
-        }
 #endif
-
+        
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType> simplify(storm::storage::MatrixEntry<IndexType, ValueType> matrixEntry) {
             simplify(matrixEntry.getValue());
@@ -197,10 +139,11 @@ namespace storm {
             return std::move(matrixEntry);
         }
         
-		//explicit instantiations
-		//double
-		template class ConstantsComparator<double>;
-
+        // Explicit instantiations.
+        template bool isOne(double const& value);
+        template bool isZero(double const& value);
+        template bool isConstant(double const& value);
+        
 		template double one();
 		template double zero();
 		template double infinity();
@@ -213,9 +156,10 @@ namespace storm {
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
 
-		//float
-		template class ConstantsComparator<float>;
-
+        template bool isOne(float const& value);
+        template bool isZero(float const& value);
+        template bool isConstant(float const& value);
+        
 		template float one();
 		template float zero();
 		template float infinity();
@@ -227,9 +171,10 @@ namespace storm {
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float> matrixEntry);
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>& matrixEntry);
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, float>&& matrixEntry);
-
-		//int
-        template class ConstantsComparator<int>;
+        
+        template bool isOne(int const& value);
+        template bool isZero(int const& value);
+        template bool isConstant(int const& value);
         
         template int one();
         template int zero();
@@ -242,11 +187,28 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, int>&& matrixEntry);
-        
-#ifdef STORM_HAVE_CARL
-        template class ConstantsComparator<RationalFunction>;
-        template class ConstantsComparator<Polynomial>;
 
+        template bool isOne(storm::storage::sparse::state_type const& value);
+        template bool isZero(storm::storage::sparse::state_type const& value);
+        template bool isConstant(storm::storage::sparse::state_type const& value);
+
+        template storm::storage::sparse::state_type one();
+        template storm::storage::sparse::state_type zero();
+        template storm::storage::sparse::state_type infinity();
+
+        template storm::storage::sparse::state_type pow(storm::storage::sparse::state_type const& value, uint_fast64_t exponent);
+
+        template storm::storage::sparse::state_type simplify(storm::storage::sparse::state_type value);
+
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type> matrixEntry);
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& matrixEntry);
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& matrixEntry);
+
+#ifdef STORM_HAVE_CARL
+        template bool isOne(RationalFunction const& value);
+        template bool isZero(RationalFunction const& value);
+        template bool isConstant(RationalFunction const& value);
+        
         template RationalFunction one();
         template RationalFunction zero();
         template storm::RationalFunction infinity();
@@ -258,6 +220,13 @@ namespace storm {
         template RationalFunction simplify(RationalFunction value);
         template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);
+        
+        template bool isOne(Interval const& value);
+        template bool isZero(Interval const& value);
+        template bool isConstant(Interval const& value);
+        
+        template Interval one();
+        template Interval zero();
         
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction> matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, RationalFunction>& matrixEntry);

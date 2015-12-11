@@ -230,9 +230,37 @@ namespace storm {
              *
              * @param variableType The type of the variable to declare.
              * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
+             * @param prefix The prefix which should be used.
              * @return The variable.
              */
-            Variable declareFreshVariable(storm::expressions::Type const& variableType, bool auxiliary = false);
+            Variable declareFreshVariable(storm::expressions::Type const& variableType, bool auxiliary = false, std::string const& prefix = "_x");
+            
+            /*!
+             * Declares a variable with rational type whose name is guaranteed to be unique and not yet in use.
+             *
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
+             * @param prefix The prefix which should be used.
+             * @return The variable.
+             */
+            Variable declareFreshRationalVariable(bool auxiliary = false, std::string const& prefix = "_x");
+            
+            /*!
+             * Declares a variable with Boolean type whose name is guaranteed to be unique and not yet in use.
+             *
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
+             * @param prefix The prefix which should be used.
+             * @return The variable.
+             */
+            Variable declareFreshBooleanVariable(bool auxiliary = false, std::string const& prefix = "_x");
+            
+            /*!
+             * Declares a variable with integer type whose name is guaranteed to be unique and not yet in use.
+             *
+             * @param auxiliary A flag indicating whether the new variable should be tagged as an auxiliary variable.
+             * @param prefix The prefix which should be used.
+             * @return The variable.
+             */
+            Variable declareFreshIntegerVariable(bool auxiliary = false, std::string const& prefix = "_x");
             
             /*!
              * Retrieves the number of variables.

@@ -5,8 +5,15 @@
 
 namespace storm {
 	namespace logic {
-		enum ComparisonType { Less, LessEqual, Greater, GreaterEqual };
-        
+		enum class ComparisonType { Less, LessEqual, Greater, GreaterEqual };
+         
+                inline bool isStrict(ComparisonType t) {
+                    return (t == ComparisonType::Less || t == ComparisonType::Greater);
+                }
+                
+                inline bool isLowerBound(ComparisonType t) {
+                    return (t == ComparisonType::Greater || t == ComparisonType::GreaterEqual);
+                }
         std::ostream& operator<<(std::ostream& out, ComparisonType const& comparisonType);
 	}
 }

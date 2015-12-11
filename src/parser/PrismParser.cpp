@@ -34,6 +34,7 @@ namespace storm {
             PositionIteratorType first(input.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(input.end());
+            assert(first != last);
             
             // Create empty result;
             storm::prism::Program result;
@@ -114,14 +115,18 @@ namespace storm {
             stateRewardDefinition = (expressionParser > qi::lit(":") > expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateReward, phoenix::ref(*this), qi::_1, qi::_2)];
             stateRewardDefinition.name("state reward definition");
             
-            transitionRewardDefinition = (qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]") > expressionParser > qi::lit(":") > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_a, qi::_2, qi::_3, qi::_r1)];
+            stateActionRewardDefinition = (qi::lit("[") >> -identifier >> qi::lit("]") >> expressionParser >> qi::lit(":") >> expressionParser >> qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateActionReward, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_r1)];
+            stateActionRewardDefinition.name("state action reward definition");
+
+            transitionRewardDefinition = (qi::lit("[") > -identifier > qi::lit("]") > expressionParser > qi::lit("->") > expressionParser > qi::lit(":") > expressionParser > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createTransitionReward, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4, qi::_r1)];
             transitionRewardDefinition.name("transition reward definition");
             
             rewardModelDefinition = (qi::lit("rewards") > -(qi::lit("\"") > identifier[qi::_a = qi::_1] > qi::lit("\""))
                                      > +(   stateRewardDefinition[phoenix::push_back(qi::_b, qi::_1)]
-                                         |  transitionRewardDefinition(qi::_r1)[phoenix::push_back(qi::_c, qi::_1)]
+                                         |  stateActionRewardDefinition(qi::_r1)[phoenix::push_back(qi::_c, qi::_1)]
+                                         |  transitionRewardDefinition(qi::_r1)[phoenix::push_back(qi::_d, qi::_1)]
                                          )
-                                     >> qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
+                                     >> qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_a, qi::_b, qi::_c, qi::_d)];
             rewardModelDefinition.name("reward model definition");
             
             initialStatesConstruct = (qi::lit("init") > expressionParser > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
@@ -133,7 +138,7 @@ namespace storm {
             assignmentDefinition = (qi::lit("(") > identifier > qi::lit("'") > qi::lit("=") > expressionParser > qi::lit(")"))[qi::_val = phoenix::bind(&PrismParser::createAssignment, phoenix::ref(*this), qi::_1, qi::_2)];
             assignmentDefinition.name("assignment");
             
-            assignmentDefinitionList %= +assignmentDefinition % "&";
+            assignmentDefinitionList = (assignmentDefinition % "&")[qi::_val = qi::_1] | (qi::lit("true"))[qi::_val = phoenix::construct<std::vector<storm::prism::Assignment>>()];
             assignmentDefinitionList.name("assignment list");
             
             updateDefinition = (((expressionParser > qi::lit(":")) | qi::attr(manager->rational(1))) >> assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)];
@@ -143,11 +148,11 @@ namespace storm {
             updateListDefinition.name("update list");
             
             // This is a dummy command-definition (it ignores the actual contents of the command) that is overwritten when the parser is moved to the second run.
-            commandDefinition = (((qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]"))
+            commandDefinition = (((qi::lit("[") > -identifier > qi::lit("]"))
                                   |
-                                 (qi::lit("<") > -(identifier[qi::_a = qi::_1]) > qi::lit(">")[qi::_b = true]))
+                                 (qi::lit("<") > -identifier > qi::lit(">")[qi::_a = true]))
                                  > +(qi::char_ - qi::lit(";"))
-                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_r1)];
+                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_1, qi::_r1)];
             commandDefinition.name("command definition");
             
             moduleDefinition = ((qi::lit("module") >> identifier >> *(variableDefinition(qi::_a, qi::_b))) > *commandDefinition(qi::_r1) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_2, qi::_r1)];
@@ -199,13 +204,13 @@ namespace storm {
         void PrismParser::moveToSecondRun() {
             // In the second run, we actually need to parse the commands instead of just skipping them,
             // so we adapt the rule for parsing commands.
-            commandDefinition = (((qi::lit("[") > -(identifier[qi::_a = qi::_1]) > qi::lit("]"))
+            commandDefinition = (((qi::lit("[") > -identifier > qi::lit("]"))
                                  |
-                                  (qi::lit("<") > -(identifier[qi::_a = qi::_1]) > qi::lit(">")[qi::_b = true]))
+                                  (qi::lit("<") > -identifier > qi::lit(">")[qi::_a = true]))
                                  > expressionParser
                                  > qi::lit("->")
                                  > updateListDefinition(qi::_r1)
-                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_b, qi::_a, qi::_2, qi::_3, qi::_r1)];
+                                 > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createCommand, phoenix::ref(*this), qi::_a, qi::_1, qi::_2, qi::_3, qi::_r1)];
             
             this->secondRun = true;
             this->expressionParser.setIdentifierMapping(&this->identifiers_);
@@ -346,22 +351,28 @@ namespace storm {
             return storm::prism::Label(labelName, expression, this->getFilename());
         }
         
-        storm::prism::RewardModel PrismParser::createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const {
-            return storm::prism::RewardModel(rewardModelName, stateRewards, transitionRewards, this->getFilename());
+        storm::prism::RewardModel PrismParser::createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::StateActionReward> const& stateActionRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const {
+            return storm::prism::RewardModel(rewardModelName, stateRewards, stateActionRewards, transitionRewards, this->getFilename());
         }
         
         storm::prism::StateReward PrismParser::createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const {
             return storm::prism::StateReward(statePredicateExpression, rewardValueExpression, this->getFilename());
         }
         
-        storm::prism::TransitionReward PrismParser::createTransitionReward(std::string const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
-            auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
-            STORM_LOG_THROW(actionName.empty() || nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << actionName << "'.");
-			if (nameIndexPair == globalProgramInformation.actionIndices.end() && actionName.empty()) {
-				return storm::prism::TransitionReward(0, actionName, statePredicateExpression, rewardValueExpression, this->getFilename());
-			} else {
-				return storm::prism::TransitionReward(nameIndexPair->second, actionName, statePredicateExpression, rewardValueExpression, this->getFilename());
-			}
+        storm::prism::StateActionReward PrismParser::createStateActionReward(boost::optional<std::string> const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
+            std::string realActionName = actionName ? actionName.get() : "";
+            
+            auto const& nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
+            STORM_LOG_THROW(nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << realActionName << "'.");
+            return storm::prism::StateActionReward(nameIndexPair->second, realActionName, statePredicateExpression, rewardValueExpression, this->getFilename());
+        }
+        
+        storm::prism::TransitionReward PrismParser::createTransitionReward(boost::optional<std::string> const& actionName, storm::expressions::Expression sourceStatePredicateExpression, storm::expressions::Expression targetStatePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
+            std::string realActionName = actionName ? actionName.get() : "";
+
+            auto const& nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
+            STORM_LOG_THROW(nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << realActionName << "'.");
+            return storm::prism::TransitionReward(nameIndexPair->second, realActionName, sourceStatePredicateExpression, targetStatePredicateExpression, rewardValueExpression, this->getFilename());
         }
         
         storm::prism::Assignment PrismParser::createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const {
@@ -373,27 +384,33 @@ namespace storm {
             return storm::prism::Update(globalProgramInformation.currentUpdateIndex - 1, likelihoodExpression, assignments, this->getFilename());
         }
         
-        storm::prism::Command PrismParser::createCommand(bool markovian, std::string const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const {
+        storm::prism::Command PrismParser::createCommand(bool markovian, boost::optional<std::string> const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const {
             ++globalProgramInformation.currentCommandIndex;
-            if (!actionName.empty()) {
-                auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
-                if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
-                    globalProgramInformation.actionIndices[actionName] = globalProgramInformation.actionIndices.size();
-                }
-            }
+            std::string realActionName = actionName ? actionName.get() : "";
+
+            uint_fast64_t actionIndex = 0;
             
-            return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, markovian, actionName.empty() ? 0 : globalProgramInformation.actionIndices[actionName], actionName, guardExpression, updates, this->getFilename());
+            // If the action name was not yet seen, record it.
+            auto nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
+            if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                std::size_t nextIndex = globalProgramInformation.actionIndices.size();
+                globalProgramInformation.actionIndices.emplace(realActionName, nextIndex);
+                actionIndex = nextIndex;
+            } else {
+                actionIndex = nameIndexPair->second;
+            }
+            return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, markovian, actionIndex, realActionName, guardExpression, updates, this->getFilename());
         }
         
-        storm::prism::Command PrismParser::createCommand(std::string const& actionName, GlobalProgramInformation& globalProgramInformation) const {
+        storm::prism::Command PrismParser::createCommand(boost::optional<std::string> const& actionName, GlobalProgramInformation& globalProgramInformation) const {
             STORM_LOG_ASSERT(!this->secondRun, "Dummy procedure must not be called in second run.");
-            
-            if (!actionName.empty()) {
-                // Register the action name if it has not appeared earlier.
-                auto const& nameIndexPair = globalProgramInformation.actionIndices.find(actionName);
-                if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
-                    globalProgramInformation.actionIndices[actionName] = globalProgramInformation.actionIndices.size();
-                }
+            std::string realActionName = actionName ? actionName.get() : "";
+
+            // Register the action name if it has not appeared earlier.
+            auto nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
+            if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                std::size_t nextIndex = globalProgramInformation.actionIndices.size();
+                globalProgramInformation.actionIndices.emplace(realActionName, nextIndex);
             }
             
             return storm::prism::Command();
@@ -457,6 +474,21 @@ namespace storm {
                     this->identifiers_.add(renamingPair->second, renamedVariable.getExpression());
                 }
                 
+                for (auto const& command : moduleToRename.getCommands()) {
+                    std::string newActionName = command.getActionName();
+                    auto const& renamingPair = renaming.find(command.getActionName());
+                    if (renamingPair != renaming.end()) {
+                        newActionName = renamingPair->second;
+                    }
+
+                    // Record any newly occurring action names/indices.
+                    auto nameIndexPair = globalProgramInformation.actionIndices.find(newActionName);
+                    if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                        std::size_t nextIndex = globalProgramInformation.actionIndices.size();
+                        globalProgramInformation.actionIndices.emplace(newActionName, nextIndex);
+                    }
+                }
+                
                 // Return a dummy module in the first pass.
                 return storm::prism::Module();
             } else {
@@ -515,14 +547,17 @@ namespace storm {
                         newActionName = renamingPair->second;
                     }
                     
-                    if (!newActionName.empty()) {
-                        auto const& nameIndexPair = globalProgramInformation.actionIndices.find(newActionName);
-                        if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
-                            globalProgramInformation.actionIndices[newActionName] = globalProgramInformation.actionIndices.size();
-                        }
+                    uint_fast64_t actionIndex = 0;
+                    auto nameIndexPair = globalProgramInformation.actionIndices.find(newActionName);
+                    if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
+                        std::size_t nextIndex = globalProgramInformation.actionIndices.size();
+                        globalProgramInformation.actionIndices.emplace(newActionName, nextIndex);
+                        actionIndex = nextIndex;
+                    } else {
+                        actionIndex = nameIndexPair->second;
                     }
                     
-                    commands.emplace_back(globalProgramInformation.currentCommandIndex, command.isMarkovian(), newActionName.empty() ? 0 : globalProgramInformation.actionIndices[newActionName], newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
+                    commands.emplace_back(globalProgramInformation.currentCommandIndex, command.isMarkovian(), actionIndex, newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), get_line(qi::_1));
                     ++globalProgramInformation.currentCommandIndex;
                 }
                 

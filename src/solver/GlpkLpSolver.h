@@ -1,6 +1,7 @@
 #ifndef STORM_SOLVER_GLPKLPSOLVER_H_
 #define STORM_SOLVER_GLPKLPSOLVER_H_
 
+#include <map>
 #include "src/solver/LpSolver.h"
 #include "src/exceptions/NotImplementedException.h"
 
@@ -23,14 +24,14 @@ namespace storm {
              * Constructs a solver with the given name and model sense.
              *
              * @param name The name of the LP problem.
-             * @param modelSense A value indicating whether the value of the objective function is to be minimized or
+             * @param optDir A value indicating whether the value of the objective function is to be minimized or
              * maximized.
              */
-            GlpkLpSolver(std::string const& name, ModelSense const& modelSense);
+            GlpkLpSolver(std::string const& name, OptimizationDirection const& optDir);
             
             /*!
              * Constructs a solver with the given name. By default the objective function is assumed to be minimized,
-             * but this may be altered later using a call to setModelSense.
+             * but this may be altered later using a call to setOptimizationDirection.
              *
              * @param name The name of the LP problem.
              */
@@ -39,14 +40,14 @@ namespace storm {
             /*!
              * Constructs a solver without a name and the given model sense.
              *
-             * @param modelSense A value indicating whether the value of the objective function is to be minimized or
+             * @param optDir A value indicating whether the value of the objective function is to be minimized or
              * maximized.
              */
-            GlpkLpSolver(ModelSense const& modelSense);
+            GlpkLpSolver(OptimizationDirection const& optDir);
 
             /*!
              * Constructs a solver without a name. By default the objective function is assumed to be minimized,
-             * but this may be altered later using a call to setModelSense.
+             * but this may be altered later using a call to setOptimizationDirection.
              */
             GlpkLpSolver();
             
@@ -132,7 +133,7 @@ namespace storm {
         // If glpk is not available, we provide a stub implementation that emits an error if any of its methods is called.
         class GlpkLpSolver : public LpSolver {
         public:
-            GlpkLpSolver(std::string const& name, ModelSense const& modelSense) {
+            GlpkLpSolver(std::string const& name, OptimizationDirection const& modelSense) {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
@@ -140,7 +141,7 @@ namespace storm {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             
-            GlpkLpSolver(ModelSense const& modelSense) : LpSolver(modelSense) {
+            GlpkLpSolver(OptimizationDirection const& modelSense) : LpSolver(modelSense) {
                 throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
             

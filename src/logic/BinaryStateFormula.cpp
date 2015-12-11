@@ -63,5 +63,10 @@ namespace storm {
             this->getLeftSubformula().gatherAtomicLabelFormulas(atomicLabelFormulas);
             this->getRightSubformula().gatherAtomicLabelFormulas(atomicLabelFormulas);
         }
+        
+        void BinaryStateFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+            this->getLeftSubformula().gatherReferencedRewardModels(referencedRewardModels);
+            this->getRightSubformula().gatherReferencedRewardModels(referencedRewardModels);
+        }
     }
 }

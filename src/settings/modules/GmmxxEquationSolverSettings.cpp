@@ -1,13 +1,20 @@
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
+#include "src/settings/Option.h"
+#include "src/settings/OptionBuilder.h"
+#include "src/settings/ArgumentBuilder.h"
+#include "src/settings/Argument.h"
+
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/solver/SolverSelectionOptions.h"
 
 namespace storm {
     namespace settings {
         namespace modules {
             
             const std::string GmmxxEquationSolverSettings::moduleName = "gmm++";
-            const std::string GmmxxEquationSolverSettings::techniqueOptionName = "tech";
+            const std::string GmmxxEquationSolverSettings::techniqueOptionName = "method";
             const std::string GmmxxEquationSolverSettings::preconditionOptionName = "precond";
             const std::string GmmxxEquationSolverSettings::restartOptionName = "restart";
             const std::string GmmxxEquationSolverSettings::maximalIterationsOptionName = "maxiter";
@@ -32,38 +39,38 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").build());
             }
             
-            bool GmmxxEquationSolverSettings::isLinearEquationSystemTechniqueSet() const {
+            bool GmmxxEquationSolverSettings::isLinearEquationSystemMethodSet() const {
                 return this->getOption(techniqueOptionName).getHasOptionBeenSet();
             }
             
-            GmmxxEquationSolverSettings::LinearEquationTechnique GmmxxEquationSolverSettings::getLinearEquationSystemTechnique() const {
+            GmmxxEquationSolverSettings::LinearEquationMethod GmmxxEquationSolverSettings::getLinearEquationSystemMethod() const {
                 std::string linearEquationSystemTechniqueAsString = this->getOption(techniqueOptionName).getArgumentByName("name").getValueAsString();
                 if (linearEquationSystemTechniqueAsString == "bicgstab") {
-                    return GmmxxEquationSolverSettings::LinearEquationTechnique::Bicgstab;
+                    return GmmxxEquationSolverSettings::LinearEquationMethod::Bicgstab;
                 } else if (linearEquationSystemTechniqueAsString == "qmr") {
-                    return GmmxxEquationSolverSettings::LinearEquationTechnique::Qmr;
+                    return GmmxxEquationSolverSettings::LinearEquationMethod::Qmr;
                 } else if (linearEquationSystemTechniqueAsString == "gmres") {
-                    return GmmxxEquationSolverSettings::LinearEquationTechnique::Gmres;
+                    return GmmxxEquationSolverSettings::LinearEquationMethod::Gmres;
                 } else if (linearEquationSystemTechniqueAsString == "jacobi") {
-                    return GmmxxEquationSolverSettings::LinearEquationTechnique::Jacobi;
+                    return GmmxxEquationSolverSettings::LinearEquationMethod::Jacobi;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown solution technique '" << linearEquationSystemTechniqueAsString << "' selected.");
             }
             
-            bool GmmxxEquationSolverSettings::isPreconditioningTechniqueSet() const {
+            bool GmmxxEquationSolverSettings::isPreconditioningMethodSet() const {
                 return this->getOption(preconditionOptionName).getHasOptionBeenSet();
             }
             
-            GmmxxEquationSolverSettings::PreconditioningTechnique GmmxxEquationSolverSettings::getPreconditioningTechnique() const {
-                std::string preconditioningTechniqueAsString = this->getOption(preconditionOptionName).getArgumentByName("name").getValueAsString();
-                if (preconditioningTechniqueAsString == "ilu") {
-                    return GmmxxEquationSolverSettings::PreconditioningTechnique::Ilu;
-                } else if (preconditioningTechniqueAsString == "diagonal") {
-                    return GmmxxEquationSolverSettings::PreconditioningTechnique::Diagonal;
-                } else if (preconditioningTechniqueAsString == "none") {
-                    return GmmxxEquationSolverSettings::PreconditioningTechnique::None;
+            GmmxxEquationSolverSettings::PreconditioningMethod GmmxxEquationSolverSettings::getPreconditioningMethod() const {
+                std::string PreconditioningMethodAsString = this->getOption(preconditionOptionName).getArgumentByName("name").getValueAsString();
+                if (PreconditioningMethodAsString == "ilu") {
+                    return GmmxxEquationSolverSettings::PreconditioningMethod::Ilu;
+                } else if (PreconditioningMethodAsString == "diagonal") {
+                    return GmmxxEquationSolverSettings::PreconditioningMethod::Diagonal;
+                } else if (PreconditioningMethodAsString == "none") {
+                    return GmmxxEquationSolverSettings::PreconditioningMethod::None;
                 }
-                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown preconditioning technique '" << preconditioningTechniqueAsString << "' selected.");
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown preconditioning technique '" << PreconditioningMethodAsString << "' selected.");
             }
             
             bool GmmxxEquationSolverSettings::isRestartIterationCountSet() const {
@@ -99,9 +106,10 @@ namespace storm {
             }
             
             bool GmmxxEquationSolverSettings::check() const {
-                bool optionsSet = isLinearEquationSystemTechniqueSet() || isPreconditioningTechniqueSet() || isRestartIterationCountSet() | isMaximalIterationCountSet() || isPrecisionSet() || isConvergenceCriterionSet();
+                // This list does not include the precision, because this option is shared with other modules.
+                bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isRestartIterationCountSet() | isMaximalIterationCountSet() || isConvergenceCriterionSet();
                 
-                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::settings::modules::GeneralSettings::EquationSolver::Gmmxx || !optionsSet, "gmm++ is not selected as the equation solver, so setting options for gmm++ has no effect.");
+                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::solver::EquationSolverType::Gmmxx || !optionsSet, "gmm++ is not selected as the preferred equation solver, so setting options for gmm++ might have no effect.");
                 
                 return true;
             }

@@ -5,12 +5,13 @@
 #include "src/storage/Decomposition.h"
 #include "src/storage/StronglyConnectedComponent.h"
 #include "src/storage/BitVector.h"
+#include "src/utility/constants.h"
 
 namespace storm {
     namespace models {
         namespace sparse {
             // Forward declare the model class.
-            template <typename ValueType> class Model;
+            template <typename ValueType, typename RewardModelType> class Model;
         }
     }
     
@@ -36,7 +37,8 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType> const& model, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
+            StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
              * Creates an SCC decomposition of the given block in the given model.
@@ -48,7 +50,8 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType> const& model, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
+            StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
             
             /*
              * Creates an SCC decomposition of the given subsystem in the given model.
@@ -60,8 +63,33 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
+            StronglyConnectedComponentDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
 
+            /*
+             * Creates an SCC decomposition of the given subsystem in the given system (whose transition relation is
+             * given by a sparse matrix).
+             *
+             * @param transitionMatrix The transition matrix of the system to decompose.
+             * @param block The block to decompose into SCCs.
+             * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
+             * without a self-loop) are to be kept in the decomposition.
+             * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
+             * leaving the SCC), are kept.
+             */
+            StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, StateBlock const& block, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            
+            /*
+             * Creates an SCC decomposition of the given system (whose transition relation is given by a sparse matrix).
+             *
+             * @param transitionMatrix The transition matrix of the system to decompose.
+             * @param dropNaiveSccs A flag that indicates whether trivial SCCs (i.e. SCCs consisting of just one state
+             * without a self-loop) are to be kept in the decomposition.
+             * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
+             * leaving the SCC), are kept.
+             */
+            StronglyConnectedComponentDecomposition(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, bool dropNaiveSccs = false, bool onlyBottomSccs = false);
+            
             /*
              * Creates an SCC decomposition of the given subsystem in the given system (whose transition relation is 
              * given by a sparse matrix).
@@ -114,7 +142,8 @@ namespace storm {
              * @param onlyBottomSccs If set to true, only bottom SCCs, i.e. SCCs in which all states have no way of
              * leaving the SCC), are kept.
              */
-            void performSccDecomposition(storm::models::sparse::Model<ValueType> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
+            template <typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>>
+            void performSccDecomposition(storm::models::sparse::Model<ValueType, RewardModelType> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
             
             /*
              * Performs the SCC decomposition of the given block in the given model. As a side-effect this fills
@@ -151,9 +180,6 @@ namespace storm {
              * is increased.
              */
             void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint_fast64_t startState, storm::storage::BitVector& statesWithSelfLoop, storm::storage::BitVector const& subsystem, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount);
-            
-            // A comparator that is used to compare values.
-            storm::utility::ConstantsComparator<ValueType> comparator;
         };
     }
 }

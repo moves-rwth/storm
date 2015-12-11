@@ -58,6 +58,12 @@ namespace storm {
                  * @return A reference to this iterator.
                  */
                 const_iterator& operator++();
+
+                /*!
+                 * Increases the position of the iterator to the position of the n'th next bit that is set to true in the
+                 * underlying bit vector.
+                 */
+                const_iterator& operator+=(size_t n);
                 
                 /*!
                  * Returns the index of the current bit to which this iterator points.
@@ -119,6 +125,11 @@ namespace storm {
             BitVector(uint_fast64_t length, InputIterator first, InputIterator last);
             
             /*!
+             * Creates a bit vector that has exactly the bits set that are given by the vector
+             */
+            BitVector(uint_fast64_t length, std::vector<uint_fast64_t> setEntries);
+            
+            /*!
              * Performs a deep copy of the given bit vector.
              *
              * @param other A reference to the bit vector to be copied.
@@ -130,7 +141,7 @@ namespace storm {
              *
              * @param other The bit vector from which to move-construct.
              */
-            BitVector(BitVector&& other);
+            BitVector(BitVector&& other) = default;
             
             /*!
              * Compares the given bit vector with the current one.

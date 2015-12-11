@@ -4,6 +4,7 @@
 #include <cctype>
 #include <mutex>
 #include <iomanip>
+#include <fstream>
 #include <regex>
 #include <set>
 #include <boost/algorithm/string.hpp>
@@ -12,6 +13,21 @@
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/OptionParserException.h"
 #include "src/utility/storm-version.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/DebugSettings.h"
+#include "src/settings/modules/CounterexampleGeneratorSettings.h"
+#include "src/settings/modules/CuddSettings.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/BisimulationSettings.h"
+#include "src/settings/modules/GlpkSettings.h"
+#include "src/settings/modules/GurobiSettings.h"
+#include "src/settings/modules/ParametricSettings.h"
+#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+#include "src/utility/macros.h"
+#include "src/settings/Option.h"
+
 
 namespace storm {
     namespace settings {
@@ -45,7 +61,7 @@ namespace storm {
             // We convert the arguments to a vector of strings and strip off the first element since it refers to the
             // name of the program.
             std::vector<std::string> argumentVector(argc - 1);
-            for (uint_fast64_t i = 1; i < argc; ++i) {
+            for (int i = 1; i < argc; ++i) {
                 argumentVector[i - 1] = std::string(argv[i]);
             }
             
@@ -70,11 +86,10 @@ namespace storm {
             
             // Walk through all arguments.
             for (uint_fast64_t i = 0; i < commandLineArguments.size(); ++i) {
-                bool existsNextArgument = i < commandLineArguments.size() - 1;
                 std::string const& currentArgument = commandLineArguments[i];
                 
                 // Check if the given argument is a new option or belongs to a previously given option.
-                if (currentArgument.at(0) == '-') {
+                if (!currentArgument.empty() && currentArgument.at(0) == '-') {
                     if (optionActive) {
                         // At this point we know that a new option is about to come. Hence, we need to assign the current
                         // cache content to the option that was active until now.
@@ -122,7 +137,7 @@ namespace storm {
             }
             
             // Finally, check whether all modules are okay with the current settings.
-            this->checkAllModules();
+            this->finalizeAllModules();
         }
         
         void SettingsManager::setFromConfigurationFile(std::string const& configFilename) {
@@ -147,6 +162,8 @@ namespace storm {
                     }
                 }
             }
+            // Finally, check whether all modules are okay with the current settings.
+            this->finalizeAllModules();
         }
         
         void SettingsManager::printHelp(std::string const& hint) const {
@@ -364,9 +381,11 @@ namespace storm {
             }
         }
         
-        void SettingsManager::checkAllModules() const {
+        void SettingsManager::finalizeAllModules() {
             for (auto const& nameModulePair : this->modules) {
+                nameModulePair.second->finalize();
                 nameModulePair.second->check();
+
             }
         }
         

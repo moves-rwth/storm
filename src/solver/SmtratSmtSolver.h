@@ -4,6 +4,8 @@
 #include "src/solver/SmtSolver.h"
 
 #ifdef STORM_HAVE_SMTRAT
+#ifdef SMTRATDOESNTWORK // Does not compile with current version of smtrat.
+
 #include "lib/smtrat.h"
 #include "../adapters/carlAdapter.h"
 
@@ -26,7 +28,7 @@ namespace storm {
 			virtual void pop(uint_fast64_t n) override;
 
 			virtual CheckResult check() override;
-#ifdef STORM_HAVE_CARL 
+
                         void add(storm::RawPolynomial const&, storm::CompareRelation);
                         
                         template<typename ReturnType>
@@ -38,13 +40,13 @@ namespace storm {
                         
                         
                         
-#endif
             
             // The last result that was returned by any of the check methods.
 			CheckResult lastResult;
 		};
 	}
 }
+#endif
 #endif
 
 #endif // STORM_SOLVER_SMTRATSMTSOLVER

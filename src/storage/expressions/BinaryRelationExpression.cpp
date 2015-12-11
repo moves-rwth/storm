@@ -5,6 +5,7 @@
 #include "src/storage/expressions/BooleanLiteralExpression.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {
@@ -13,14 +14,16 @@ namespace storm {
         }
         
         storm::expressions::OperatorType BinaryRelationExpression::getOperator() const {
+            storm::expressions::OperatorType result = storm::expressions::OperatorType::Equal;
             switch (this->getRelationType()) {
-                case RelationType::Equal: return storm::expressions::OperatorType::Equal; break;
-                case RelationType::NotEqual: return storm::expressions::OperatorType::NotEqual; break;
-                case RelationType::Less: return storm::expressions::OperatorType::Less; break;
-                case RelationType::LessOrEqual: return storm::expressions::OperatorType::LessOrEqual; break;
-                case RelationType::Greater: return storm::expressions::OperatorType::Greater; break;
-                case RelationType::GreaterOrEqual: return storm::expressions::OperatorType::GreaterOrEqual; break;
+                case RelationType::Equal: result = storm::expressions::OperatorType::Equal; break;
+                case RelationType::NotEqual: result = storm::expressions::OperatorType::NotEqual; break;
+                case RelationType::Less: result = storm::expressions::OperatorType::Less; break;
+                case RelationType::LessOrEqual: result = storm::expressions::OperatorType::LessOrEqual; break;
+                case RelationType::Greater: result = storm::expressions::OperatorType::Greater; break;
+                case RelationType::GreaterOrEqual: result = storm::expressions::OperatorType::GreaterOrEqual; break;
             }
+            return result;
         }
         
         bool BinaryRelationExpression::evaluateAsBool(Valuation const* valuation) const {
@@ -28,14 +31,16 @@ namespace storm {
             
             double firstOperandEvaluated = this->getFirstOperand()->evaluateAsDouble(valuation);
             double secondOperandEvaluated = this->getSecondOperand()->evaluateAsDouble(valuation);
+            bool result = false;
             switch (this->getRelationType()) {
-                case RelationType::Equal: return firstOperandEvaluated == secondOperandEvaluated; break;
-                case RelationType::NotEqual: return firstOperandEvaluated != secondOperandEvaluated; break;
-                case RelationType::Greater: return firstOperandEvaluated > secondOperandEvaluated; break;
-                case RelationType::GreaterOrEqual: return firstOperandEvaluated >= secondOperandEvaluated; break;
-                case RelationType::Less: return firstOperandEvaluated < secondOperandEvaluated; break;
-                case RelationType::LessOrEqual: return firstOperandEvaluated <= secondOperandEvaluated; break;
+                case RelationType::Equal: result = firstOperandEvaluated == secondOperandEvaluated; break;
+                case RelationType::NotEqual: result = firstOperandEvaluated != secondOperandEvaluated; break;
+                case RelationType::Greater: result = firstOperandEvaluated > secondOperandEvaluated; break;
+                case RelationType::GreaterOrEqual: result = firstOperandEvaluated >= secondOperandEvaluated; break;
+                case RelationType::Less: result = firstOperandEvaluated < secondOperandEvaluated; break;
+                case RelationType::LessOrEqual: result = firstOperandEvaluated <= secondOperandEvaluated; break;
             }
+            return result;
         }
         
         std::shared_ptr<BaseExpression const> BinaryRelationExpression::simplify() const {

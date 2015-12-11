@@ -4,11 +4,16 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-
-#include "src/storage/expressions/Expression.h"
-#include "src/storage/expressions/ExpressionManager.h"
+#include <memory>
+#include "OptimizationDirection.h"
 
 namespace storm {
+    namespace expressions {
+        class ExpressionManager;
+        class Variable;
+        class Expression;
+    }
+    
     namespace solver {
         /*!
          * An interface that captures the functionality of an LP solver.
@@ -16,27 +21,19 @@ namespace storm {
         class LpSolver {
         public:
             // An enumeration to represent whether the objective function is to be minimized or maximized.
-            enum class ModelSense {
-                Minimize,
-                Maximize
-            };
+            
             
             /*!
              * Creates an empty LP solver. By default the objective function is assumed to be minimized.
              */
-            LpSolver() : manager(new storm::expressions::ExpressionManager()), currentModelHasBeenOptimized(false), modelSense(ModelSense::Minimize) {
-                // Intentionally left empty.
-            }
-            
+            LpSolver();
             /*!
              * Creates an empty LP solver with the given model sense.
              *
-             * @param modelSense A value indicating whether the objective function of this model is to be minimized or
+             * @param optDir A value indicating whether the objective function of this model is to be minimized or
              * maximized.
              */
-            LpSolver(ModelSense const& modelSense) : manager(new storm::expressions::ExpressionManager()), currentModelHasBeenOptimized(false), modelSense(modelSense) {
-                // Intentionally left empty.
-            }
+            LpSolver(OptimizationDirection const& optDir);
 
             /*!
              * Registers an upper- and lower-bounded continuous variable, i.e. a variable that may take all real values
@@ -139,9 +136,7 @@ namespace storm {
              * @param value The value of the constant.
              * @return The resulting expression.
              */
-            storm::expressions::Expression getConstant(double value) const {
-                return manager->rational(value);
-            }
+            storm::expressions::Expression getConstant(double value) const;
             
             /*!
              * Updates the model to make the variables that have been declared since the last call to <code>update</code>
@@ -236,11 +231,11 @@ namespace storm {
              *
              * @param modelSense The model sense to use.
              */
-            void setModelSense(ModelSense const& modelSense) {
-                if (modelSense != this->modelSense) {
+            void setOptimizationDirection(OptimizationDirection const& optimizationDirection) {
+                if (optimizationDirection != this->optimizationDirection) {
                     currentModelHasBeenOptimized = false;
                 }
-                this->modelSense = modelSense;
+                this->optimizationDirection = optimizationDirection;
             }
             
             /*!
@@ -248,8 +243,8 @@ namespace storm {
              *
              * @return A value indicating whether the objective function of this model is to be minimized or maximized.
              */
-            ModelSense getModelSense() const {
-                return modelSense;
+            OptimizationDirection getOptimizationDirection() const {
+                return optimizationDirection;
             }
             
             /*!
@@ -270,7 +265,7 @@ namespace storm {
             
         private:
             // A flag that indicates the model sense.
-            ModelSense modelSense;
+            OptimizationDirection optimizationDirection;
         };
     }
 }

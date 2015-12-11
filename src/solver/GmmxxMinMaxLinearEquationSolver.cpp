@@ -7,31 +7,31 @@
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/utility/vector.h"
 
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+
 namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), stormMatrix(A), rowGroupIndices(A.getRowGroupIndices()) {
-            // Get the settings object to customize solving.
-            storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
-			storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::generalSettings();
-            
-            // Get appropriate settings.
-			precision = settings.getPrecision();            
-            relative = settings.getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative;
-			maximalNumberOfIterations = settings.getMaximalIterationCount();
-			useValueIteration = (generalSettings.getMinMaxEquationSolvingTechnique() == storm::settings::modules::GeneralSettings::MinMaxTechnique::ValueIteration);
+        GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique, bool trackPolicy) : 
+        MinMaxLinearEquationSolver<ValueType>(A, storm::settings::gmmxxEquationSolverSettings().getPrecision(), \
+                                                storm::settings::gmmxxEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative,\
+                                                storm::settings::gmmxxEquationSolverSettings().getMaximalIterationCount(), trackPolicy, preferredTechnique),
+            gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()) {
+           
+			
         }
         
         template<typename ValueType>
-		GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool useValueIteration, bool relative) : gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), stormMatrix(A), rowGroupIndices(A.getRowGroupIndices()), precision(precision), relative(relative), maximalNumberOfIterations(maximalNumberOfIterations), useValueIteration(useValueIteration) {
+		GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, MinMaxTechniqueSelection tech, bool relative, bool trackPolicy) : MinMaxLinearEquationSolver<ValueType>(A, precision, relative, maximalNumberOfIterations, trackPolicy, tech), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)),  rowGroupIndices(A.getRowGroupIndices())  {
             // Intentionally left empty.
         }
 
         
         template<typename ValueType>
-        void GmmxxMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
-			if (useValueIteration) {
+        void GmmxxMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+			if (this->useValueIteration) {
 				// Set up the environment for the power method. If scratch memory was not provided, we need to create it.
 				bool multiplyResultMemoryProvided = true;
 				if (multiplyResult == nullptr) {
@@ -53,18 +53,14 @@ namespace storm {
 
 				// Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
 				// of iterations.
-				while (!converged && iterations < maximalNumberOfIterations) {
+				while (!converged && iterations < this->maximalNumberOfIterations && !this->earlyTermination->terminateNow(*currentX)) {
 					// Compute x' = A*x + b.
 					gmm::mult(*gmmxxMatrix, *currentX, *multiplyResult);
 					gmm::add(b, *multiplyResult);
 
 					// Reduce the vector x by applying min/max over all nondeterministic choices.
-					if (minimize) {
-						storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, rowGroupIndices);
-					} else {
-						storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, rowGroupIndices);
-					}
-
+					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices);
+					
 					// Determine whether the method converged.
 					converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, this->precision, this->relative);
 
@@ -96,7 +92,7 @@ namespace storm {
 			} else {
 				// We will use Policy Iteration to solve the given system.
 				// We first guess an initial choice resolution which will be refined after each iteration.
-				std::vector<typename storm::storage::SparseMatrix<ValueType>::index_type> choiceVector(rowGroupIndices.size() - 1);
+				this->policy = std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupIndices().size() - 1);
 
 				// Create our own multiplyResult for solving the deterministic sub-instances.
 				std::vector<ValueType> deterministicMultiplyResult(rowGroupIndices.size() - 1);
@@ -123,13 +119,13 @@ namespace storm {
 
 				// Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
 				// of iterations.
-				while (!converged && iterations < maximalNumberOfIterations) {
+				while (!converged && iterations < this->maximalNumberOfIterations && !this->earlyTermination->terminateNow(*currentX)) {
 					// Take the sub-matrix according to the current choices
-					storm::storage::SparseMatrix<ValueType> submatrix = stormMatrix.selectRowsFromRowGroups(choiceVector, true);
+					storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->policy, true);
 					submatrix.convertToEquationSystem();
 					
-					GmmxxLinearEquationSolver<ValueType> gmmLinearEquationSolver(submatrix, storm::solver::GmmxxLinearEquationSolver<double>::SolutionMethod::Gmres, precision, maximalNumberOfIterations, storm::solver::GmmxxLinearEquationSolver<double>::Preconditioner::None, relative, 50);
-					storm::utility::vector::selectVectorValues<ValueType>(subB, choiceVector, rowGroupIndices, b);
+					GmmxxLinearEquationSolver<ValueType> gmmLinearEquationSolver(submatrix, storm::solver::GmmxxLinearEquationSolver<double>::SolutionMethod::Gmres, this->precision, this->maximalNumberOfIterations, storm::solver::GmmxxLinearEquationSolver<double>::Preconditioner::Ilu, this->relative, 50);
+					storm::utility::vector::selectVectorValues<ValueType>(subB, this->policy, rowGroupIndices, b);
 
 					// Copy X since we will overwrite it
 					std::copy(currentX->begin(), currentX->end(), newX->begin());
@@ -143,11 +139,8 @@ namespace storm {
 
 					// Reduce the vector x by applying min/max over all nondeterministic choices.
 					// Here, we capture which choice was taken in each state, thereby refining our initial guess.
-					if (minimize) {
-						storm::utility::vector::reduceVectorMin(*multiplyResult, *newX, rowGroupIndices, &choiceVector);
-					} else {
-						storm::utility::vector::reduceVectorMax(*multiplyResult, *newX, rowGroupIndices, &choiceVector);
-					}
+					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices, &(this->policy));
+					
 
 					// Determine whether the method converged.
 					converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, static_cast<ValueType>(this->precision), this->relative);
@@ -181,7 +174,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxMinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void GmmxxMinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             bool multiplyResultMemoryProvided = true;
             if (multiplyResult == nullptr) {
                 multiplyResult = new std::vector<ValueType>(gmmxxMatrix->nr);
@@ -196,11 +189,8 @@ namespace storm {
                     gmm::add(*b, *multiplyResult);
                 }
                 
-                if (minimize) {
-                    storm::utility::vector::reduceVectorMin(*multiplyResult, x, rowGroupIndices);
-                } else {
-                    storm::utility::vector::reduceVectorMax(*multiplyResult, x, rowGroupIndices);
-                }
+                storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, rowGroupIndices);
+                
             }
             
             if (!multiplyResultMemoryProvided) {

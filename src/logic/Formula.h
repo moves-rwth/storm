@@ -4,8 +4,7 @@
 #include <memory>
 #include <vector>
 #include <iostream>
-
-#include "src/modelchecker/results/CheckResult.h"
+#include <set>
 
 namespace storm {
     namespace logic {
@@ -170,14 +169,17 @@ namespace storm {
             
             std::vector<std::shared_ptr<AtomicExpressionFormula const>> getAtomicExpressionFormulas() const;
             std::vector<std::shared_ptr<AtomicLabelFormula const>> getAtomicLabelFormulas() const;
+            std::set<std::string> getReferencedRewardModels() const;
             
             std::shared_ptr<Formula const> asSharedPointer();
             std::shared_ptr<Formula const> asSharedPointer() const;
             
+            std::string toString() const;
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const;
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicExpressionFormulas) const;
+            virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const;
             
         private:
             // Currently empty.

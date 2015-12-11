@@ -1,22 +1,34 @@
 #ifndef STORM_STORAGE_DD_CUDDBDD_H_
 #define STORM_STORAGE_DD_CUDDBDD_H_
 
-#include "src/logic/ComparisonType.h"
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/CuddDd.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
 // Include the C++-interface of CUDD.
 #include "cuddObj.hh"
 
 namespace storm {
+    namespace logic {
+        enum class ComparisonType;
+    }
+    
+    namespace expressions {
+        class Variable;
+    }
+    
+    namespace storage {
+        class BitVector;
+    }
+    
+    
+    
     namespace dd {
         // Forward-declare some classes.
         template<DdType Type> class DdManager;
         template<DdType Type> class Odd;
         template<DdType Type> class Add;
+        template<DdType Type> class DdForwardIterator;
         
         template<>
         class Bdd<DdType::CUDD> : public Dd<DdType::CUDD> {
@@ -263,6 +275,15 @@ namespace storm {
              */
             Add<DdType::CUDD> toAdd() const;
             
+            /*!
+             * Converts the BDD to a bit vector. The given offset-labeled DD is used to determine the correct row of
+             * each entry.
+             *
+             * @param rowOdd The ODD used for determining the correct row.
+             * @return The bit vector that is represented by this BDD.
+             */
+            storm::storage::BitVector toVector(storm::dd::Odd<DdType::CUDD> const& rowOdd) const;
+            
         private:
             /*!
              * Retrieves the CUDD BDD object associated with this DD.
@@ -314,6 +335,21 @@ namespace storm {
              */
             template<typename ValueType>
             static DdNode* fromVectorRec(::DdManager* manager, uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::function<bool (ValueType const&)> const& filter);
+            
+            /*!
+             * Helper function to convert the DD into a bit vector.
+             *
+             * @param dd The DD to convert.
+             * @param manager The Cudd manager responsible for the DDs.
+             * @param result The vector that will hold the values upon successful completion.
+             * @param rowOdd The ODD used for the row translation.
+             * @param complement A flag indicating whether the result is to be interpreted as a complement.
+             * @param currentRowLevel The currently considered row level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             * @param currentRowOffset The current row offset.
+             * @param ddRowVariableIndices The (sorted) indices of all DD row variables that need to be considered.
+             */
+            void toVectorRec(DdNode const* dd, Cudd const& manager, storm::storage::BitVector& result, Odd<DdType::CUDD> const& rowOdd, bool complement, uint_fast64_t currentRowLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices) const;
             
             // The BDD created by CUDD.
             BDD cuddBdd;

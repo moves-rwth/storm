@@ -4,8 +4,9 @@
 #include "src/exceptions/InvalidStateException.h"
 
 #ifdef STORM_HAVE_SMTRAT
+
+#ifdef SMTRATDOESNTWORK // Does not compile with current version of smtrat.
 #include "lib/smtrat.h"
-#endif 
 
 namespace storm {
 	namespace solver {
@@ -13,9 +14,6 @@ namespace storm {
         
 		SmtratSmtSolver::SmtratSmtSolver(storm::expressions::ExpressionManager& manager) : SmtSolver(manager)
 		{
-#ifndef STORM_HAVE_SMTRAT
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without SMT-RAT support.");
-#else 
                      // Construct the settingsManager.
                     //smtrat::RuntimeSettingsManager settingsManager;
                     
@@ -28,7 +26,6 @@ namespace storm {
                     // Introduce the settingsObjects from the modules to the manager.
                     //settingsManager.addSettingsObject( settingsObjects );
                     //settingsObjects.clear();
-#endif 
                 }  
         
 		SmtratSmtSolver::~SmtratSmtSolver() {
@@ -37,35 +34,23 @@ namespace storm {
 
 		void SmtratSmtSolver::push()
 		{
-#ifndef STORM_HAVE_SMTRAT
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without SMT-RAT support.");
-#else
                     this->solver->push();
-#endif
 		}
 
 		void SmtratSmtSolver::pop()
 		{
-#ifndef STORM_HAVE_SMTRAT
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without SMT-RAT support.");
-#else
                     this->solver->pop();
-#endif		
                 }
 
 		void SmtratSmtSolver::pop(uint_fast64_t n)
 		{
-#ifndef STORM_HAVE_SMTRAT
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without SMT-RAT support.");
-#else
                     this->solver->pop(static_cast<unsigned int>(n));
-#endif
 		}
 
 		
 		SmtSolver::CheckResult SmtratSmtSolver::check()
 		{
-#ifdef STORM_HAVE_SMTRAT
+
                     switch (this->solver->check()) {
                         case smtrat::Answer::True:
                             this->lastResult = SmtSolver::CheckResult::Sat;
@@ -82,11 +67,8 @@ namespace storm {
                             break;
                     }
                     return this->lastResult;
-#else
-			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
-#endif
+
 		}
-                
                 void SmtratSmtSolver::add(const storm::RawPolynomial& pol, storm::CompareRelation cr) {
                     this->solver->add(smtrat::FormulaT(pol, cr));
                 }
@@ -105,3 +87,5 @@ namespace storm {
 
         }
 }
+#endif
+#endif

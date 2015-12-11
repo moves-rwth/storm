@@ -52,3 +52,5 @@ elseif(GMP_FOUND)
       message(FATAL_ERROR "Could not find GMP")
    endif()
 endif()
+
+MARK_AS_ADVANCED(GMP_MPIRXX_LIBRARY GMP_MPIR_LIBRARY GMP_INCLUDE_DIR GMP_LIBRARY)

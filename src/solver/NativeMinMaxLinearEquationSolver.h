@@ -1,6 +1,7 @@
 #ifndef STORM_SOLVER_NATIVEMINMAXLINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_NATIVEMINMAXLINEAREQUATIONSOLVER_H_
 
+#include <cstdint>
 #include "src/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
@@ -18,7 +19,7 @@ namespace storm {
              *
              * @param A The matrix defining the coefficients of the linear equation system.
              */
-            NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
+            NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique = MinMaxTechniqueSelection::FROMSETTINGS, bool trackPolicy = false);
             
             /*!
              * Constructs a min/max linear equation solver with the given parameters.
@@ -29,27 +30,12 @@ namespace storm {
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-			NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool useValueIteration, bool relative = true);
+            NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, MinMaxTechniqueSelection tech, bool relative = true, bool trackPolicy = false);
             
-            virtual void performMatrixVectorMultiplication(bool minimize, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* newX = nullptr) const override;
+            virtual void performMatrixVectorMultiplication(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* newX = nullptr) const override;
             
-            virtual void solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
+            virtual void solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
 
-        protected:
-            // A reference to the matrix the gives the coefficients of the linear equation system.
-            storm::storage::SparseMatrix<ValueType> const& A;
-            
-            // The required precision for the iterative methods.
-            double precision;
-            
-            // Sets whether the relative or absolute error is to be considered for convergence detection.
-            bool relative;
-            
-            // The maximal number of iterations to do before iteration is aborted.
-            uint_fast64_t maximalNumberOfIterations;
-
-			// Whether value iteration or policy iteration is to be used.
-			bool useValueIteration;
         };
     } // namespace solver
 } // namespace storm

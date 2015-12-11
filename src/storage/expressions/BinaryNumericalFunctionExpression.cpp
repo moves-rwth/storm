@@ -4,9 +4,11 @@
 #include "src/storage/expressions/BinaryNumericalFunctionExpression.h"
 #include "src/storage/expressions/IntegerLiteralExpression.h"
 #include "src/storage/expressions/DoubleLiteralExpression.h"
+#include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/InvalidStateException.h"
+
 
 namespace storm {
     namespace expressions {
@@ -19,15 +21,17 @@ namespace storm {
         }
         
         storm::expressions::OperatorType BinaryNumericalFunctionExpression::getOperator() const {
+            storm::expressions::OperatorType result = storm::expressions::OperatorType::Plus;
             switch (this->getOperatorType()) {
-                case OperatorType::Plus: return storm::expressions::OperatorType::Plus; break;
-                case OperatorType::Minus: return storm::expressions::OperatorType::Minus; break;
-                case OperatorType::Times: return storm::expressions::OperatorType::Times; break;
-                case OperatorType::Divide: return storm::expressions::OperatorType::Divide; break;
-                case OperatorType::Min: return storm::expressions::OperatorType::Min; break;
-                case OperatorType::Max: return storm::expressions::OperatorType::Max; break;
-                case OperatorType::Power: return storm::expressions::OperatorType::Power; break;
+                case OperatorType::Plus: result = storm::expressions::OperatorType::Plus; break;
+                case OperatorType::Minus: result = storm::expressions::OperatorType::Minus; break;
+                case OperatorType::Times: result = storm::expressions::OperatorType::Times; break;
+                case OperatorType::Divide: result = storm::expressions::OperatorType::Divide; break;
+                case OperatorType::Min: result = storm::expressions::OperatorType::Min; break;
+                case OperatorType::Max: result = storm::expressions::OperatorType::Max; break;
+                case OperatorType::Power: result = storm::expressions::OperatorType::Power; break;
             }
+            return result;
         }
         
         int_fast64_t BinaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
@@ -35,15 +39,17 @@ namespace storm {
             
             int_fast64_t firstOperandEvaluation = this->getFirstOperand()->evaluateAsInt(valuation);
             int_fast64_t secondOperandEvaluation = this->getSecondOperand()->evaluateAsInt(valuation);
+            int_fast64_t result = 0;
             switch (this->getOperatorType()) {
-                case OperatorType::Plus: return firstOperandEvaluation + secondOperandEvaluation; break;
-                case OperatorType::Minus: return firstOperandEvaluation - secondOperandEvaluation; break;
-                case OperatorType::Times: return firstOperandEvaluation * secondOperandEvaluation; break;
-                case OperatorType::Divide: return firstOperandEvaluation / secondOperandEvaluation; break;
-                case OperatorType::Min: return std::min(firstOperandEvaluation, secondOperandEvaluation); break;
-                case OperatorType::Max: return std::max(firstOperandEvaluation, secondOperandEvaluation); break;
-                case OperatorType::Power: return static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
+                case OperatorType::Plus: result = firstOperandEvaluation + secondOperandEvaluation; break;
+                case OperatorType::Minus: result = firstOperandEvaluation - secondOperandEvaluation; break;
+                case OperatorType::Times: result = firstOperandEvaluation * secondOperandEvaluation; break;
+                case OperatorType::Divide: result = firstOperandEvaluation / secondOperandEvaluation; break;
+                case OperatorType::Min: result = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Max: result = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Power: result = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
             }
+            return result;
         }
         
         double BinaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valuation) const {
@@ -51,15 +57,17 @@ namespace storm {
             
             double firstOperandEvaluation = this->getFirstOperand()->evaluateAsDouble(valuation);
             double secondOperandEvaluation = this->getSecondOperand()->evaluateAsDouble(valuation);
+            double result = 0;
             switch (this->getOperatorType()) {
-                case OperatorType::Plus: return firstOperandEvaluation + secondOperandEvaluation; break;
-                case OperatorType::Minus: return firstOperandEvaluation - secondOperandEvaluation; break;
-                case OperatorType::Times: return firstOperandEvaluation * secondOperandEvaluation; break;
-                case OperatorType::Divide: return firstOperandEvaluation / secondOperandEvaluation; break;
-                case OperatorType::Min: return std::min(firstOperandEvaluation, secondOperandEvaluation); break;
-                case OperatorType::Max: return std::max(firstOperandEvaluation, secondOperandEvaluation); break;
-                case OperatorType::Power: return std::pow(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Plus: result = firstOperandEvaluation + secondOperandEvaluation; break;
+                case OperatorType::Minus: result = firstOperandEvaluation - secondOperandEvaluation; break;
+                case OperatorType::Times: result = firstOperandEvaluation * secondOperandEvaluation; break;
+                case OperatorType::Divide: result = firstOperandEvaluation / secondOperandEvaluation; break;
+                case OperatorType::Min: result = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Max: result = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
+                case OperatorType::Power: result = std::pow(firstOperandEvaluation, secondOperandEvaluation); break;
             }
+            return result;
         }
         
         std::shared_ptr<BaseExpression const> BinaryNumericalFunctionExpression::simplify() const {

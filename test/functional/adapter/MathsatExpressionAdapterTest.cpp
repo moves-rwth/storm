@@ -170,9 +170,7 @@ TEST(MathsatExpressionAdapter, MathsatToStormBasic) {
     msat_env env = msat_create_env(config);
     ASSERT_FALSE(MSAT_ERROR_ENV(env));
     msat_destroy_config(config);
-    
-    unsigned args = 2;
-    
+        
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
     manager->declareBooleanVariable("x");
     manager->declareBooleanVariable("y");

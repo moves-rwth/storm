@@ -2,10 +2,18 @@
 #define STORM_MODELCHECKER_SYMBOLICPROPOSITIONALMODELCHECKER_H_
 
 #include "src/modelchecker/AbstractModelChecker.h"
-#include "src/models/symbolic/Model.h"
+
+#include "src/storage/dd/DdType.h"
 
 namespace storm {
+    namespace models {
+        namespace symbolic {
+            template<storm::dd::DdType Type> class Model;
+        }
+    }
+    
     namespace modelchecker {
+        
         
         template<storm::dd::DdType Type>
         class SymbolicPropositionalModelChecker : public AbstractModelChecker {
@@ -16,7 +24,8 @@ namespace storm {
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
             virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) override;
             virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) override;
-            
+            virtual std::unique_ptr<CheckResult> checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula) override;
+
         protected:
             /*!
              * Retrieves the model associated with this model checker instance.

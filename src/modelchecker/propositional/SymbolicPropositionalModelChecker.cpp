@@ -1,8 +1,12 @@
 #include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
+#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/CuddDdManager.h"
+
 #include "src/models/symbolic/Dtmc.h"
 #include "src/models/symbolic/Ctmc.h"
 #include "src/models/symbolic/Mdp.h"
+#include "src/models/symbolic/StandardRewardModel.h"
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -34,6 +38,11 @@ namespace storm {
         std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<Type>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
             STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
             return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getStates(stateFormula.getLabel())));
+        }
+        
+        template<storm::dd::DdType Type>
+        std::unique_ptr<CheckResult> SymbolicPropositionalModelChecker<Type>::checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula) {
+            return std::unique_ptr<CheckResult>(new SymbolicQualitativeCheckResult<Type>(model.getReachableStates(), model.getStates(stateFormula.getExpression())));
         }
         
         template<storm::dd::DdType Type>

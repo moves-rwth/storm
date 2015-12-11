@@ -49,7 +49,7 @@ namespace storm {
             CompiledExpressionType& compiledExpression = result.first->second;
             compiledExpression.register_symbol_table(symbolTable);
             bool parsingOk = parser.compile(ToExprtkStringVisitor().toString(expression), compiledExpression);
-            STORM_LOG_ASSERT(parsingOk, "Expression was not properly parsed by ExprTk.");
+            STORM_LOG_ASSERT(parsingOk, "Expression was not properly parsed by ExprTk: " << *expression);
             return compiledExpression;
         }
         

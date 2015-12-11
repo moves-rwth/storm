@@ -11,8 +11,8 @@ namespace storm {
             /*!
              * This class represents a Markov automaton.
              */
-            template <typename ValueType>
-            class MarkovAutomaton : public NondeterministicModel<ValueType> {
+            template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
+            class MarkovAutomaton : public NondeterministicModel<ValueType, RewardModelType> {
             public:
                 /*!
                  * Constructs a model from the given data.
@@ -21,17 +21,15 @@ namespace storm {
                  * @param stateLabeling The labeling of the states.
                  * @param markovianStates A bit vector indicating the Markovian states of the automaton.
                  * @param exitRates A vector storing the exit rates of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 MarkovAutomaton(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                 storm::models::sparse::StateLabeling const& stateLabeling,
                                 storm::storage::BitVector const& markovianStates,
                                 std::vector<ValueType> const& exitRates,
-                                boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                                boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                                std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
+                                boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
                  * Constructs a model by moving the given data.
@@ -40,24 +38,22 @@ namespace storm {
                  * @param stateLabeling The labeling of the states.
                  * @param markovianStates A bit vector indicating the Markovian states of the automaton.
                  * @param exitRates A vector storing the exit rates of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                 storm::models::sparse::StateLabeling&& stateLabeling,
                                 storm::storage::BitVector const& markovianStates,
                                 std::vector<ValueType> const& exitRates,
-                                boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                                boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                                boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                                std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
+                                boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                MarkovAutomaton(MarkovAutomaton const& other) = default;
-                MarkovAutomaton& operator=(MarkovAutomaton const& other) = default;
+                MarkovAutomaton(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;
+                MarkovAutomaton& operator=(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;
                 
 #ifndef WINDOWS
-                MarkovAutomaton(MarkovAutomaton&& other) = default;
-                MarkovAutomaton& operator=(MarkovAutomaton&& other) = default;
+                MarkovAutomaton(MarkovAutomaton<ValueType, RewardModelType>&& other) = default;
+                MarkovAutomaton& operator=(MarkovAutomaton<ValueType, RewardModelType>&& other) = default;
 #endif
                 
                 /*!

@@ -6,13 +6,13 @@
 #include <set>
 #include <boost/container/flat_set.hpp>
 
-#include "src/storage/expressions/Expression.h"
 #include "src/storage/prism/Constant.h"
 #include "src/storage/prism/Formula.h"
 #include "src/storage/prism/Label.h"
 #include "src/storage/prism/Module.h"
 #include "src/storage/prism/RewardModel.h"
 #include "src/storage/prism/InitialConstruct.h"
+#include "src/utility/solver.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -23,6 +23,8 @@ namespace storm {
              * An enum for the different model types.
              */
             enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA};
+            
+            enum class ValidityCheckLevel  : unsigned {VALIDINPUT = 0, READYFORPROCESSING = 1};
             
             /*!
              * Creates a program with the given model type, undefined constants, global variables, modules, reward
@@ -45,9 +47,9 @@ namespace storm {
              * @param labels The labels defined for this program.
              * @param filename The filename in which the program is defined.
              * @param lineNumber The line number in which the program is defined.
-             * @param checkValidity If set to true, the program is checked for validity.
+             * @param finalModel If set to true, the program is checked for input-validity, as well as some post-processing.
              */
-            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool checkValidity = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -117,6 +119,22 @@ namespace storm {
              * @return The number of constants defined in the program.
              */
             std::size_t getNumberOfConstants() const;
+            
+            /*!
+             * Retrieves whether a global Boolean variable with the given name exists
+             * 
+             * @param variableName The name of the variable
+             * @return true iff a global variable of type Boolean with the given name exists.
+             */
+            bool globalBooleanVariableExists(std::string const& variableName) const;
+            
+            /**
+             * Retrieves whether a global Integer variable with the given name exists
+             * 
+             * @param variableName The name of the variable
+             * @return true iff a global variable of type Integer with the given name exists.
+             */
+            bool globalIntegerVariableExists(std::string const& variableName) const;
             
             /*!
              * Retrieves the global boolean variables of the program.
@@ -228,11 +246,11 @@ namespace storm {
             std::set<std::string> const& getActions() const;
             
             /*!
-             * Retrieves the set of action indices present in the program.
+             * Retrieves the set of synchronizing action indices present in the program.
              *
-             * @return The set of action indices present in the program.
+             * @return The set of synchronizing action indices present in the program.
              */
-            std::set<uint_fast64_t> const& getActionIndices() const;
+            std::set<uint_fast64_t> const& getSynchronizingActionIndices() const;
             
             /*!
              * Retrieves the action name of the given action index.
@@ -329,6 +347,13 @@ namespace storm {
             std::vector<Label> const& getLabels() const;
             
             /*!
+             * Retrieves the expression associated with the given label, if it exists.
+             *
+             * @param labelName The name of the label to retrieve.
+             */
+            storm::expressions::Expression const& getLabelExpression(std::string const& label) const;
+            
+            /*!
              * Retrieves the number of labels in the program.
              *
              * @return The number of labels in the program.
@@ -383,11 +408,25 @@ namespace storm {
              */
             Program substituteConstants() const;
             
+            /**
+             * Entry point for static analysis for simplify. As we use the same expression manager, we recommend to not use the original program any further. 
+             * @return A simplified, equivalent program.
+             */
+            Program simplify();
+            
             /*!
              * Checks the validity of the program. If the program is not valid, an exception is thrown with a message
              * that indicates the source of the problem.
              */
-            void checkValidity() const;
+            void checkValidity(Program::ValidityCheckLevel lvl = Program::ValidityCheckLevel::READYFORPROCESSING) const;
+            
+            /*!
+             * Creates an equivalent program that contains exactly one module.
+             *
+             * @param smtSolverFactory an SMT solver factory to use. If none is given, the default one is used.
+             * @return The resulting program.
+             */
+            Program flattenModules(std::unique_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::unique_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory())) const;
             
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
             
@@ -404,8 +443,33 @@ namespace storm {
              * @return The manager responsible for the expressions of this program.
              */
             storm::expressions::ExpressionManager& getManager();
+
+            /*!
+             *
+             */
+            std::unordered_map<uint_fast64_t, std::string> buildCommandIndexToActionNameMap() const;
+
+            std::unordered_map<uint_fast64_t, uint_fast64_t> buildCommandIndexToActionIndex() const;
+
+            std::unordered_map<uint_fast64_t, std::string> buildActionIndexToActionNameMap() const;
+
+            uint_fast64_t numberOfActions() const;
+
+            uint_fast64_t largestActionIndex() const;
             
         private:
+            /*!
+             * This function builds a command that corresponds to the synchronization of the given list of commands.
+             *
+             * @param newCommandIndex The index of the command to construct.
+             * @param actionIndex The index of the action of the resulting command.
+             * @param firstUpdateIndex The index of the first update of the resulting command.
+             * @param actionName The name of the action of the resulting command.
+             * @param commands The commands to synchronize.
+             * @return The resulting command.
+             */
+            Command synchronizeCommands(uint_fast64_t newCommandIndex, uint_fast64_t actionIndex, uint_fast64_t firstUpdateIndex, std::string const& actionName, std::vector<std::reference_wrapper<Command const>> const& commands) const;
+            
             // The manager responsible for the variables/expressions of the program.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
             
@@ -415,7 +479,7 @@ namespace storm {
             // The type of the model.
             ModelType modelType;
             
-            // The undefined constants of the program.
+            // The constants of the program.
             std::vector<Constant> constants;
             
             // A mapping from constant names to their corresponding indices.
@@ -457,6 +521,9 @@ namespace storm {
             // The labels that are defined for this model.
             std::vector<Label> labels;
             
+            // A mapping from labels to their indices.
+            std::map<std::string, uint_fast64_t> labelToIndexMap;
+            
             // A mapping from action names to their indices.
             std::map<std::string, uint_fast64_t> actionToIndexMap;
 
@@ -466,15 +533,25 @@ namespace storm {
             // The set of actions present in this program.
             std::set<std::string> actions;
 
-            // The set of actions present in this program.
-            std::set<uint_fast64_t> actionIndices;
+            // The set of synchronizing actions present in this program.
+            std::set<uint_fast64_t> synchronizingActionIndices;
             
             // A map of actions to the set of modules containing commands labelled with this action.
             std::map<uint_fast64_t, std::set<uint_fast64_t>> actionIndicesToModuleIndexMap;
             
             // A mapping from variable names to the modules in which they were declared.
             std::map<std::string, uint_fast64_t> variableToModuleIndexMap;
+            
+            /**
+             * Takes the current program and replaces all modules. As we reuse the expression manager, we recommend to not use the original program any further.
+             * @param newModules the modules which replace the old modules.
+             * @param newConstants the constants which replace the old constants.
+             * @return A program with the new modules and constants.
+             */
+            Program replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants);
         };
+        
+        std::ostream& operator<<(std::ostream& out, Program::ModelType const& type);
         
     } // namespace prism
 } // namespace storm

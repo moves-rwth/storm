@@ -6,23 +6,25 @@
 namespace storm {
     namespace solver {
         
+        // An enumeration specifying the available solution methods.
+        enum class NativeLinearEquationSolverSolutionMethod {
+            Jacobi, GaussSeidel, SOR
+        };
         /*!
          * A class that uses StoRM's native matrix operations to implement the LinearEquationSolver interface.
          */
         template<typename ValueType>
         class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
-            // An enumeration specifying the available solution methods.
-            enum class SolutionMethod {
-                Jacobi
-            };
+            
             
             /*!
              * Constructs a linear equation solver with parameters being set according to the settings object.
              *
              * @param A The matrix defining the coefficients of the linear equation system.
+             * @param method The method to use for solving linear equations.
              */
-            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
+            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSolutionMethod method = NativeLinearEquationSolverSolutionMethod::Jacobi);
 
             /*!
              * Constructs a linear equation solver with the given parameters.
@@ -34,7 +36,7 @@ namespace storm {
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
+            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
                         
             virtual void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
             
@@ -52,7 +54,7 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> const& A;
             
             // The method to use for solving linear equation systems.
-            SolutionMethod method;
+            NativeLinearEquationSolverSolutionMethod method;
             
             // The required precision for the iterative methods.
             double precision;

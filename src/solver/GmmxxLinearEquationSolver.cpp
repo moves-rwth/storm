@@ -8,6 +8,7 @@
 #include "src/utility/vector.h"
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidStateException.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
 #include "gmm/gmm_iter_solvers.h"
 
@@ -31,31 +32,31 @@ namespace storm {
             restart = settings.getRestartIterationCount();
             
             // Determine the method to be used.
-            storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique methodAsSetting = settings.getLinearEquationSystemTechnique();
-            if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Bicgstab) {
+            storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod methodAsSetting = settings.getLinearEquationSystemMethod();
+            if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod::Bicgstab) {
                 method = SolutionMethod::Bicgstab;
-            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Qmr) {
+            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod::Qmr) {
                 method = SolutionMethod::Qmr;
-            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Gmres) {
+            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod::Gmres) {
                 method = SolutionMethod::Gmres;
-            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationTechnique::Jacobi) {
+            } else if (methodAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::LinearEquationMethod::Jacobi) {
                 method = SolutionMethod::Jacobi;
             }
             
             // Check which preconditioner to use.
-            storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique preconditionAsSetting = settings.getPreconditioningTechnique();
-            if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique::Ilu) {
+            storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningMethod preconditionAsSetting = settings.getPreconditioningMethod();
+            if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningMethod::Ilu) {
                 preconditioner = Preconditioner::Ilu;
-            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique::Diagonal) {
+            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningMethod::Diagonal) {
                 preconditioner = Preconditioner::Diagonal;
-            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningTechnique::None) {
+            } else if (preconditionAsSetting == storm::settings::modules::GmmxxEquationSolverSettings::PreconditioningMethod::None) {
                 preconditioner = Preconditioner::None;
             }
         }
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
-            LOG4CPLUS_INFO(logger, "Using method '" << methodToString() << "' with preconditioner " << preconditionerToString() << "'.");
+            LOG4CPLUS_INFO(logger, "Using method '" << methodToString() << "' with preconditioner '" << preconditionerToString() << "' (max. " << maximalNumberOfIterations << " iterations).");
             if (method == SolutionMethod::Jacobi && preconditioner != Preconditioner::None) {
                 LOG4CPLUS_WARN(logger, "Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
             }
@@ -207,6 +208,7 @@ namespace storm {
                 case SolutionMethod::Qmr: return "qmr";
                 case SolutionMethod::Gmres: return "gmres";
                 case SolutionMethod::Jacobi: return "jacobi";
+                default: return "invalid";
             }
         }
         
@@ -216,6 +218,7 @@ namespace storm {
                 case Preconditioner::Ilu: return "ilu";
                 case Preconditioner::Diagonal: return "diagonal";
                 case Preconditioner::None: return "none";
+                default: return "invalid";
             }
         }
         

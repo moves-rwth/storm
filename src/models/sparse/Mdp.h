@@ -1,6 +1,7 @@
 #ifndef STORM_MODELS_SPARSE_MDP_H_
 #define STORM_MODELS_SPARSE_MDP_H_
 
+#include <src/storage/StateActionPair.h>
 #include "src/models/sparse/NondeterministicModel.h"
 #include "src/utility/OsDetection.h"
 
@@ -11,45 +12,41 @@ namespace storm {
             /*!
              * This class represents a (discrete-time) Markov decision process.
              */
-            template <typename ValueType>
-            class Mdp : public NondeterministicModel<ValueType> {
+            template<class ValueType, typename RewardModelType = StandardRewardModel<ValueType>>
+            class Mdp : public NondeterministicModel<ValueType, RewardModelType> {
             public:
                 /*!
                  * Constructs a model from the given data.
                  *
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Mdp(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                     storm::models::sparse::StateLabeling const& stateLabeling,
-                    boost::optional<std::vector<ValueType>> const& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                    boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                    boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
+                    boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
                 /*!
                  * Constructs a model by moving the given data.
                  *
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param stateLabeling The labeling of the states.
-                 * @param optionalStateRewardVector The reward values associated with the states.
-                 * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
+                 * @param rewardModels A mapping of reward model names to reward models.
                  * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
                  */
                 Mdp(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                     storm::models::sparse::StateLabeling&& stateLabeling,
-                    boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::optional<std::vector<ValueType>>(),
-                    boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::optional<storm::storage::SparseMatrix<ValueType>>(),
-                    boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling = boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>());
+                    std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
+                    boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
-                Mdp(Mdp const& other) = default;
-                Mdp& operator=(Mdp const& other) = default;
+                Mdp(Mdp<ValueType, RewardModelType> const& other) = default;
+                Mdp& operator=(Mdp<ValueType, RewardModelType> const& other) = default;
                 
 #ifndef WINDOWS
-                Mdp(Mdp&& other) = default;
-                Mdp& operator=(Mdp&& other) = default;
+                Mdp(Mdp<ValueType, RewardModelType>&& other) = default;
+                Mdp& operator=(Mdp<ValueType, RewardModelType>&& other) = default;
 #endif
                 
                 /*!
@@ -61,15 +58,20 @@ namespace storm {
                  * and which ones need to be ignored.
                  * @return A restricted version of the current MDP that only uses choice labels from the given set.
                  */
-                Mdp<ValueType> restrictChoiceLabels(boost::container::flat_set<uint_fast64_t> const& enabledChoiceLabels) const;
+                Mdp<ValueType, RewardModelType> restrictChoiceLabels(LabelSet const& enabledChoiceLabels) const;
                 
-            private:
                 /*!
-                 * Checks the probability matrix for validity.
-                 *
-                 * @return True iff the probability matrix is valid.
+                 * Constructs an MDP by copying the current MDP and restricting the choices of each state to the ones given by the bitvector.
+                 * 
+                 * @param enabledActions A BitVector of lenght numberOfChoices(), which is one iff the action should be kept.
+                 * @return A subMDP.
                  */
-                bool checkValidityOfProbabilityMatrix() const;
+                Mdp<ValueType, RewardModelType> restrictChoices(storm::storage::BitVector const& enabledActions) const;
+
+                /*!
+                 *  For a state/action pair, get the choice index referring to the state-action pair.
+                 */
+                uint_fast64_t getChoiceIndex(storm::storage::StateActionPair const& stateactPair) const;
             };
             
         } // namespace sparse

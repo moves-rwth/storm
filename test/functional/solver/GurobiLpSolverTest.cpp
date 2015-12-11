@@ -6,9 +6,12 @@
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidAccessException.h"
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/storage/expressions/Variable.h"
+#include "src/storage/expressions/Expressions.h"
 
 TEST(GurobiLpSolver, LPOptimizeMax) {
-    storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GurobiLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -41,7 +44,7 @@ TEST(GurobiLpSolver, LPOptimizeMax) {
 }
 
 TEST(GurobiLpSolver, LPOptimizeMin) {
-    storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Minimize);
+    storm::solver::GurobiLpSolver solver(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -74,7 +77,7 @@ TEST(GurobiLpSolver, LPOptimizeMin) {
 }
 
 TEST(GurobiLpSolver, MILPOptimizeMax) {
-    storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GurobiLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -107,7 +110,7 @@ TEST(GurobiLpSolver, MILPOptimizeMax) {
 }
 
 TEST(GurobiLpSolver, MILPOptimizeMin) {
-    storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Minimize);
+    storm::solver::GurobiLpSolver solver(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -140,7 +143,7 @@ TEST(GurobiLpSolver, MILPOptimizeMin) {
 }
 
 TEST(GurobiLpSolver, LPInfeasible) {
-    storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GurobiLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -170,7 +173,7 @@ TEST(GurobiLpSolver, LPInfeasible) {
 }
 
 TEST(GurobiLpSolver, MILPInfeasible) {
-    storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GurobiLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -200,7 +203,7 @@ TEST(GurobiLpSolver, MILPInfeasible) {
 }
 
 TEST(GurobiLpSolver, LPUnbounded) {
-    storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GurobiLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -228,7 +231,7 @@ TEST(GurobiLpSolver, LPUnbounded) {
 }
 
 TEST(GurobiLpSolver, MILPUnbounded) {
-    storm::solver::GurobiLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GurobiLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;

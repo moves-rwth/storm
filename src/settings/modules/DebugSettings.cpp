@@ -1,6 +1,10 @@
 #include "src/settings/modules/DebugSettings.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/Option.h"
+#include "src/settings/OptionBuilder.h"
+#include "src/settings/Argument.h"
+#include "src/settings/ArgumentBuilder.h"
 
 namespace storm {
     namespace settings {
@@ -11,7 +15,7 @@ namespace storm {
             const std::string DebugSettings::traceOptionName = "trace";
             const std::string DebugSettings::logfileOptionName = "logfile";
             const std::string DebugSettings::logfileOptionShortName = "l";
-
+ 
             DebugSettings::DebugSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, false, "Print debug output.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, traceOptionName, false, "Print even more debug output.").build());

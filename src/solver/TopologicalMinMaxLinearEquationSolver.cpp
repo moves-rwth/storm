@@ -1,14 +1,18 @@
 #include "src/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include <utility>
-#include <chrono>
-
-#include "src/settings/SettingsManager.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/exceptions/IllegalArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
+
+
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+
 
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
@@ -23,19 +27,12 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : NativeMinMaxLinearEquationSolver<ValueType>(A) {
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : 
+        NativeMinMaxLinearEquationSolver<ValueType>(A, storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision(), \
+                storm::settings::topologicalValueIterationEquationSolverSettings().getMaximalIterationCount(), MinMaxTechniqueSelection::ValueIteration, \
+                storm::settings::topologicalValueIterationEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative)
+        {
 			// Get the settings object to customize solving.
-			
-			//storm::settings::Settings* settings = storm::settings::Settings::getInstance();
-			auto settings = storm::settings::topologicalValueIterationEquationSolverSettings();
-			// Get appropriate settings.
-			//this->maximalNumberOfIterations = settings->getOptionByLongName("maxiter").getArgument(0).getValueAsUnsignedInteger();
-			//this->precision = settings->getOptionByLongName("precision").getArgument(0).getValueAsDouble();
-			//this->relative = !settings->isSet("absolute");
-			this->maximalNumberOfIterations = settings.getMaximalIterationCount();
-			this->precision = settings.getPrecision();
-			this->relative = (settings.getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative);
-
 			auto generalSettings = storm::settings::generalSettings();
 			this->enableCuda = generalSettings.isCudaSet();
 #ifdef STORM_HAVE_CUDA
@@ -44,12 +41,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, relative) {
+		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, MinMaxTechniqueSelection::ValueIteration ,relative) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(bool minimize, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
@@ -65,7 +62,7 @@ namespace storm {
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
 				std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
 
-				newSolver.solveEquationSystem(minimize, new_x, new_b, nullptr, nullptr);
+				newSolver.solveEquationSystem(dir, new_x, new_b, nullptr, nullptr);
 
 				for (size_t i = 0, size = new_x.size(); i < size; ++i) {
 					x.at(i) = new_x.at(i);
@@ -103,10 +100,9 @@ namespace storm {
 #ifdef STORM_HAVE_CUDA
                 STORM_LOG_THROW(resetCudaDevice(), storm::exceptions::InvalidStateException, "Could not reset CUDA Device, can not use CUDA Equation Solver.");
 
-				std::chrono::high_resolution_clock::time_point calcStartTime = std::chrono::high_resolution_clock::now();
 				bool result = false;
 				size_t globalIterations = 0;
-				if (minimize) {
+				if (dir == OptimizationDirection::Minimize) {
 					result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				} else {
 					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
@@ -122,11 +118,6 @@ namespace storm {
 					converged = true;
 				}
 
-				std::chrono::high_resolution_clock::time_point calcEndTime = std::chrono::high_resolution_clock::now();
-				//std::cout << "Obtaining the fixpoint solution took " << std::chrono::duration_cast<std::chrono::milliseconds>(calcEndTime - calcStartTime).count() << "ms." << std::endl;
-
-				//std::cout << "Used a total of " << globalIterations << " iterations with a maximum of " << globalIterations << " iterations in a single block." << std::endl;
-
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
 					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << globalIterations << " iterations.");
@@ -138,7 +129,6 @@ namespace storm {
 				throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
 #endif
 			} else {
-				std::chrono::high_resolution_clock::time_point sccStartTime = std::chrono::high_resolution_clock::now();
 				storm::storage::BitVector fullSystem(this->A.getRowGroupCount(), true);
 				storm::storage::StronglyConnectedComponentDecomposition<ValueType> sccDecomposition(this->A, fullSystem, false, false);
 
@@ -151,11 +141,6 @@ namespace storm {
 				std::vector<std::pair<bool, storm::storage::StateBlock>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, this->A);
 				LOG4CPLUS_INFO(logger, "Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
 
-				std::chrono::high_resolution_clock::time_point sccEndTime = std::chrono::high_resolution_clock::now();
-				//std::cout << "Computing the SCC Decomposition took " << std::chrono::duration_cast<std::chrono::milliseconds>(sccEndTime - sccStartTime).count() << "ms." << std::endl;
-
-				std::chrono::high_resolution_clock::time_point calcStartTime = std::chrono::high_resolution_clock::now();
-
 				std::vector<ValueType>* currentX = nullptr;
 				std::vector<ValueType>* swap = nullptr;
 				size_t currentMaxLocalIterations = 0;
@@ -165,8 +150,6 @@ namespace storm {
 
 				// Iterate over all SCCs of the MDP as specified by the topological sort. This guarantees that an SCC is only
 				// solved after all SCCs it depends on have been solved.
-				int counter = 0;
-
 				for (auto sccIndexIt = optimalSccs.cbegin(); sccIndexIt != optimalSccs.cend() && converged; ++sccIndexIt) {
 					bool const useGpu = sccIndexIt->first;
 					storm::storage::StateBlock const& scc = sccIndexIt->second;
@@ -221,7 +204,7 @@ namespace storm {
 
 						bool result = false;
 						localIterations = 0;
-						if (minimize) {
+						if (dir == OptimizationDirection::Minimum) {
 							result = __basicValueIteration_mvReduce_minimize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 						} else {
 							result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
@@ -266,12 +249,8 @@ namespace storm {
 							*/
 
 							// Reduce the vector x' by applying min/max for all non-deterministic choices.
-							if (minimize) {
-								storm::utility::vector::reduceVectorMin<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
-							} else {
-								storm::utility::vector::reduceVectorMax<ValueType>(sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
-							}
-
+							storm::utility::vector::reduceVectorMinOrMax<ValueType>(dir,sccMultiplyResult, *swap, sccSubNondeterministicChoiceIndices);
+							
 							// Determine whether the method converged.
 							// TODO: It seems that the equalModuloPrecision call that compares all values should have a higher
 							// running time. In fact, it is faster. This has to be investigated.
@@ -314,9 +293,6 @@ namespace storm {
 				} else {
 					LOG4CPLUS_WARN(logger, "Iterative solver did not converged after " << currentMaxLocalIterations << " iterations.");
 				}
-
-				std::chrono::high_resolution_clock::time_point calcEndTime = std::chrono::high_resolution_clock::now();
-				//std::cout << "Obtaining the fixpoint solution took " << std::chrono::duration_cast<std::chrono::milliseconds>(calcEndTime - calcStartTime).count() << "ms." << std::endl;
 			}
         }
 

@@ -1,6 +1,10 @@
 #include "src/settings/modules/ParametricSettings.h"
 
-#include "src/settings/SettingsManager.h"
+#include "src/settings/Option.h"
+#include "src/settings/OptionBuilder.h"
+#include "src/settings/ArgumentBuilder.h"
+#include "src/settings/Argument.h"
+
 
 namespace storm {
     namespace settings {

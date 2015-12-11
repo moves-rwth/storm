@@ -1,35 +1,34 @@
 #include "src/models/sparse/DeterministicModel.h"
-
+#include "src/models/sparse/StandardRewardModel.h"
+#include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     namespace models {
         namespace sparse {
-            template <typename ValueType>
-            DeterministicModel<ValueType>::DeterministicModel(storm::models::ModelType const& modelType,
+            template <typename ValueType, typename RewardModelType>
+            DeterministicModel<ValueType, RewardModelType>::DeterministicModel(storm::models::ModelType const& modelType,
                                                               storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                               storm::models::sparse::StateLabeling const& stateLabeling,
-                                                              boost::optional<std::vector<ValueType>> const& optionalStateRewardVector,
-                                                              boost::optional<storm::storage::SparseMatrix<ValueType>> const& optionalTransitionRewardMatrix,
-                                                              boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> const& optionalChoiceLabeling)
-            : Model<ValueType>(modelType, transitionMatrix, stateLabeling, optionalStateRewardVector, optionalTransitionRewardMatrix, optionalChoiceLabeling) {
+                                                              std::unordered_map<std::string, RewardModelType> const& rewardModels,
+                                                              boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
+            : Model<ValueType, RewardModelType>(modelType, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling) {
                 // Intentionally left empty.
             }
             
-            template <typename ValueType>
-            DeterministicModel<ValueType>::DeterministicModel(storm::models::ModelType const& modelType,
+            template <typename ValueType, typename RewardModelType>
+            DeterministicModel<ValueType, RewardModelType>::DeterministicModel(storm::models::ModelType const& modelType,
                                                               storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                                               storm::models::sparse::StateLabeling&& stateLabeling,
-                                                              boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
-                                                              boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix,
-                                                              boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>&& optionalChoiceLabeling)
-            : Model<ValueType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(optionalStateRewardVector), std::move(optionalTransitionRewardMatrix), std::move(optionalChoiceLabeling)) {
+                                                              std::unordered_map<std::string, RewardModelType>&& rewardModels,
+                                                              boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
+            : Model<ValueType, RewardModelType>(modelType, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)) {
                 // Intentionally left empty.
             }
             
-            template <typename ValueType>
-            void DeterministicModel<ValueType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
-                Model<ValueType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
+            template <typename ValueType, typename RewardModelType>
+            void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
+                Model<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
                 
                 // Simply iterate over all transitions and draw the arrows with probability information attached.
                 auto rowIt = this->getTransitionMatrix().begin();
@@ -49,10 +48,19 @@ namespace storm {
                 }
             }
             
+            template<typename ValueType, typename RewardModelType>
+            void DeterministicModel<ValueType, RewardModelType>::reduceToStateBasedRewards() {
+                for (auto& rewardModel : this->getRewardModels()) {
+                    rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), true);
+                }
+            }
+            
             template class DeterministicModel<double>;
             template class DeterministicModel<float>;
             
 #ifdef STORM_HAVE_CARL
+            template class DeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+
             template class DeterministicModel<storm::RationalFunction>;
 #endif
             

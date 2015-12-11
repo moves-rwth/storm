@@ -1,4 +1,5 @@
 #include "src/logic/Formulas.h"
+#include <sstream>
 
 namespace storm {
     namespace logic {
@@ -378,6 +379,12 @@ namespace storm {
             return result;
         }
         
+        std::set<std::string> Formula::getReferencedRewardModels() const {
+            std::set<std::string> referencedRewardModels;
+            this->gatherReferencedRewardModels(referencedRewardModels);
+            return referencedRewardModels;
+        }
+        
         std::shared_ptr<Formula const> Formula::asSharedPointer() {
             return this->shared_from_this();
         }
@@ -392,6 +399,16 @@ namespace storm {
         
         void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicExpressionFormulas) const {
             return;
+        }
+        
+        void Formula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+            return;
+        }
+        
+        std::string Formula::toString() const {
+            std::stringstream str2;
+            writeToStream(str2);
+            return str2.str();
         }
         
         std::ostream& operator<<(std::ostream& out, Formula const& formula) {

@@ -6,6 +6,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/InvalidOperationException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InternalTypeErrorException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -21,7 +23,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeProbabilities(storm::logic::PathFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeProbabilities(storm::logic::PathFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             if (pathFormula.isBoundedUntilFormula()) {
                 return this->computeBoundedUntilProbabilities(pathFormula.asBoundedUntilFormula(), qualitative, optimalityType);
             } else if (pathFormula.isConditionalPathFormula()) {
@@ -38,59 +40,59 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << pathFormula << "' is invalid.");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << pathFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeConditionalProbabilities(storm::logic::ConditionalPathFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeConditionalProbabilities(storm::logic::ConditionalPathFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << pathFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeEventuallyProbabilities(storm::logic::EventuallyFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeEventuallyProbabilities(storm::logic::EventuallyFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             storm::logic::UntilFormula newFormula(storm::logic::Formula::getTrueFormula(), pathFormula.getSubformula().asSharedPointer());
             return this->computeUntilProbabilities(newFormula, qualitative, optimalityType);
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeGloballyProbabilities(storm::logic::GloballyFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeGloballyProbabilities(storm::logic::GloballyFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << pathFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << pathFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << pathFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeRewards(storm::logic::RewardPathFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeRewards(storm::logic::RewardPathFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             if (rewardPathFormula.isCumulativeRewardFormula()) {
-                return this->computeCumulativeRewards(rewardPathFormula.asCumulativeRewardFormula(), qualitative, optimalityType);
+                return this->computeCumulativeRewards(rewardPathFormula.asCumulativeRewardFormula(), rewardModelName, qualitative, optimalityType);
             } else if (rewardPathFormula.isInstantaneousRewardFormula()) {
-                return this->computeInstantaneousRewards(rewardPathFormula.asInstantaneousRewardFormula(), qualitative, optimalityType);
+                return this->computeInstantaneousRewards(rewardPathFormula.asInstantaneousRewardFormula(), rewardModelName, qualitative, optimalityType);
             } else if (rewardPathFormula.isReachabilityRewardFormula()) {
-                return this->computeReachabilityRewards(rewardPathFormula.asReachabilityRewardFormula(), qualitative, optimalityType);
+                return this->computeReachabilityRewards(rewardPathFormula.asReachabilityRewardFormula(), rewardModelName, qualitative, optimalityType);
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << rewardPathFormula << "' is invalid.");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << rewardPathFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << rewardPathFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << rewardPathFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeLongRunAverage(storm::logic::StateFormula const& eventuallyFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeLongRunAverage(storm::logic::StateFormula const& eventuallyFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the computation of long-run averages.");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeExpectedTimes(storm::logic::EventuallyFormula const& eventuallyFormula, bool qualitative, boost::optional<storm::logic::OptimalityType> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeExpectedTimes(storm::logic::EventuallyFormula const& eventuallyFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the computation of expected times.");
         }
         
@@ -158,7 +160,7 @@ namespace storm {
             // If the probability bound is 0 or 1, is suffices to do qualitative model checking.
             bool qualitative = false;
             if (stateFormula.hasBound()) {
-                if (stateFormula.getBound() == storm::utility::zero<double>() || stateFormula.getBound() == storm::utility::one<double>()) {
+                if (storm::utility::isZero(stateFormula.getBound()) || storm::utility::isOne(stateFormula.getBound())) {
                     qualitative = true;
                 }
             }
@@ -168,9 +170,9 @@ namespace storm {
                 result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, stateFormula.getOptimalityType());
             } else if (stateFormula.hasBound()) {
                 if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
-                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, storm::logic::OptimalityType::Maximize);
+                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, OptimizationDirection::Maximize);
                 } else {
-                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, storm::logic::OptimalityType::Minimize);
+                    result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative, OptimizationDirection::Minimize);
                 }
             } else {
                 result = this->computeProbabilities(stateFormula.getSubformula().asPathFormula(), qualitative);
@@ -190,22 +192,22 @@ namespace storm {
             // If the reward bound is 0, is suffices to do qualitative model checking.
             bool qualitative = false;
             if (stateFormula.hasBound()) {
-                if (stateFormula.getBound() == storm::utility::zero<double>()) {
+                if (storm::utility::isZero(stateFormula.getBound())) {
                     qualitative = true;
                 }
             }
             
             std::unique_ptr<CheckResult> result;
             if (stateFormula.hasOptimalityType()) {
-                result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative, stateFormula.getOptimalityType());
+                result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), stateFormula.getOptionalRewardModelName(), qualitative, stateFormula.getOptimalityType());
             } else if (stateFormula.hasBound()) {
                 if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
-                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative, storm::logic::OptimalityType::Maximize);
+                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), stateFormula.getOptionalRewardModelName(), qualitative, OptimizationDirection::Maximize);
                 } else {
-                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative, storm::logic::OptimalityType::Minimize);
+                    result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), stateFormula.getOptionalRewardModelName(), qualitative, OptimizationDirection::Minimize);
                 }
             } else {
-                result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), qualitative);
+                result = this->computeRewards(stateFormula.getSubformula().asRewardPathFormula(), stateFormula.getOptionalRewardModelName(), qualitative);
             }
             
             if (stateFormula.hasBound()) {
@@ -222,7 +224,7 @@ namespace storm {
             // If the reward bound is 0, is suffices to do qualitative model checking.
             bool qualitative = false;
             if (stateFormula.hasBound()) {
-                if (stateFormula.getBound() == storm::utility::zero<double>()) {
+                if (storm::utility::isZero(stateFormula.getBound())) {
                     qualitative = true;
                 }
             }
@@ -232,9 +234,9 @@ namespace storm {
                 result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, stateFormula.getOptimalityType());
             } else if (stateFormula.hasBound()) {
                 if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
-                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, storm::logic::OptimalityType::Maximize);
+                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, OptimizationDirection::Maximize);
                 } else {
-                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, storm::logic::OptimalityType::Minimize);
+                    result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative, OptimizationDirection::Minimize);
                 }
             } else {
                 result = this->computeExpectedTimes(stateFormula.getSubformula().asEventuallyFormula(), qualitative);
@@ -256,9 +258,9 @@ namespace storm {
                 result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, stateFormula.getOptimalityType());
             } else if (stateFormula.hasBound()) {
                 if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
-                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, storm::logic::OptimalityType::Maximize);
+                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, OptimizationDirection::Maximize);
                 } else {
-                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, storm::logic::OptimalityType::Minimize);
+                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, OptimizationDirection::Minimize);
                 }
             } else {
                 result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false);

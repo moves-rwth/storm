@@ -5,12 +5,11 @@
 
 #include "src/models/ModelType.h"
 #include "src/utility/macros.h"
-#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace models {
         
-        class ModelBase: public std::enable_shared_from_this<ModelBase> {
+        class ModelBase : public std::enable_shared_from_this<ModelBase> {
         public:
             /*!
              * Constructs a model of the given type.
@@ -89,6 +88,14 @@ namespace storm {
              * @return True iff the model is a symbolic model.
              */
             virtual bool isSymbolicModel() const;
+            
+            /*!
+             * Checks whether the model is of the given type.
+             *
+             * @param modelType The model type to check for.
+             * @return True iff the model is of the given type.
+             */
+            bool isOfType(storm::models::ModelType const& modelType) const;
             
         private:
             // The type of the model.

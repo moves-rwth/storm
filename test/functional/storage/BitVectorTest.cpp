@@ -28,7 +28,22 @@ TEST(BitVectorTest, InitFromIterator) {
     std::vector<uint_fast64_t> valueVector = {0, 4, 10};
 	storm::storage::BitVector vector(32, valueVector.begin(), valueVector.end());
     
-    ASSERT_EQ(32, vector.size());
+    ASSERT_EQ(32ul, vector.size());
+    
+	for (uint_fast64_t i = 0; i < 32; ++i) {
+        if (i == 0 || i == 4 || i == 10) {
+            ASSERT_TRUE(vector.get(i));
+        } else {
+            ASSERT_FALSE(vector.get(i));
+        }
+	}
+}
+
+TEST(BitVectorTest, InitFromIntVector) {
+    std::vector<uint_fast64_t> valueVector = {0, 4, 10};
+    storm::storage::BitVector vector(32, valueVector);
+    
+    ASSERT_EQ(32ul, vector.size());
     
 	for (uint_fast64_t i = 0; i < 32; ++i) {
         if (i == 0 || i == 4 || i == 10) {
@@ -59,21 +74,21 @@ TEST(BitVectorTest, GetAsInt) {
     vector.set(64);
     vector.set(65);
 
-    EXPECT_EQ(1, vector.getAsInt(62, 1));
-    EXPECT_EQ(3, vector.getAsInt(62, 2));
-    EXPECT_EQ(7, vector.getAsInt(62, 3));
-    EXPECT_EQ(15, vector.getAsInt(62, 4));
+    EXPECT_EQ(1ul, vector.getAsInt(62, 1));
+    EXPECT_EQ(3ul, vector.getAsInt(62, 2));
+    EXPECT_EQ(7ul, vector.getAsInt(62, 3));
+    EXPECT_EQ(15ul, vector.getAsInt(62, 4));
     
     vector.set(64, false);
 
-    EXPECT_EQ(1, vector.getAsInt(62, 1));
-    EXPECT_EQ(3, vector.getAsInt(62, 2));
-    EXPECT_EQ(6, vector.getAsInt(62, 3));
-    EXPECT_EQ(13, vector.getAsInt(62, 4));
+    EXPECT_EQ(1ul, vector.getAsInt(62, 1));
+    EXPECT_EQ(3ul, vector.getAsInt(62, 2));
+    EXPECT_EQ(6ul, vector.getAsInt(62, 3));
+    EXPECT_EQ(13ul, vector.getAsInt(62, 4));
     
     vector.set(61);
     vector.set(62, false);
-    EXPECT_EQ(2, vector.getAsInt(61, 2));
+    EXPECT_EQ(2ul, vector.getAsInt(61, 2));
 }
 
 TEST(BitVectorTest, SetFromInt) {
@@ -113,7 +128,7 @@ TEST(BitVectorTest, GetSetInt) {
     storm::storage::BitVector vector(77);
 
     vector.setFromInt(63, 3, 2);
-    EXPECT_EQ(2, vector.getAsInt(63, 3));
+    EXPECT_EQ(2ul, vector.getAsInt(63, 3));
 }
 
 
@@ -143,8 +158,8 @@ TEST(BitVectorTest, Resize) {
 
 	vector.resize(70);
     
-    ASSERT_EQ(70, vector.size());
-    ASSERT_EQ(32, vector.getNumberOfSetBits());
+    ASSERT_EQ(70ul, vector.size());
+    ASSERT_EQ(32ul, vector.getNumberOfSetBits());
 
 	for (uint_fast64_t i = 0; i < 32; ++i) {
 		ASSERT_TRUE(vector.get(i));
@@ -158,8 +173,8 @@ TEST(BitVectorTest, Resize) {
     
     vector.resize(72, true);
     
-    ASSERT_EQ(72, vector.size());
-    ASSERT_EQ(34, vector.getNumberOfSetBits());
+    ASSERT_EQ(72ul, vector.size());
+    ASSERT_EQ(34ul, vector.getNumberOfSetBits());
     
     for (uint_fast64_t i = 0; i < 32; ++i) {
 		ASSERT_TRUE(vector.get(i));
@@ -174,15 +189,15 @@ TEST(BitVectorTest, Resize) {
     }
 
     vector.resize(16, 0);
-    ASSERT_EQ(16, vector.size());
-    ASSERT_EQ(16, vector.getNumberOfSetBits());
+    ASSERT_EQ(16ul, vector.size());
+    ASSERT_EQ(16ul, vector.getNumberOfSetBits());
     
     for (uint_fast64_t i = 0; i < 16; ++i) {
 		ASSERT_TRUE(vector.get(i));
 	}
     
     vector.resize(65, 1);
-    ASSERT_EQ(65, vector.size());
+    ASSERT_EQ(65ul, vector.size());
     ASSERT_TRUE(vector.full());
 }
 
@@ -296,8 +311,8 @@ TEST(BitVectorTest, OperatorModulo) {
     
     storm::storage::BitVector moduloResult = vector1 % vector2;
     
-    ASSERT_EQ(moduloResult.size(), 8);
-    ASSERT_EQ(moduloResult.getNumberOfSetBits(), 2);
+    ASSERT_EQ(8ul, moduloResult.size());
+    ASSERT_EQ(2ul, moduloResult.getNumberOfSetBits());
     
     for (uint_fast64_t i = 0; i < 8; ++i) {
         if (i == 1 || i == 3) {
@@ -445,7 +460,7 @@ TEST(BitVectorTest, NumberOfSetBits) {
 		vector.set(i, i % 2 == 0);
 	}
 
-    ASSERT_EQ(16, vector.getNumberOfSetBits());
+    ASSERT_EQ(16ul, vector.getNumberOfSetBits());
 }
 
 TEST(BitVectorTest, NumberOfSetBitsBeforeIndex) {
@@ -455,7 +470,7 @@ TEST(BitVectorTest, NumberOfSetBitsBeforeIndex) {
 		vector.set(i, i % 2 == 0);
 	}
     
-    ASSERT_EQ(7, vector.getNumberOfSetBitsBeforeIndex(14));
+    ASSERT_EQ(7ul, vector.getNumberOfSetBitsBeforeIndex(14));
 }
 
 TEST(BitVectorTest, BeginEnd) {
@@ -478,10 +493,10 @@ TEST(BitVectorTest, NextSetIndex) {
     vector.set(14);
     vector.set(17);
     
-    ASSERT_EQ(14, vector.getNextSetIndex(14));
-    ASSERT_EQ(17, vector.getNextSetIndex(15));
-    ASSERT_EQ(17, vector.getNextSetIndex(16));
-    ASSERT_EQ(17, vector.getNextSetIndex(17));
+    ASSERT_EQ(14ul, vector.getNextSetIndex(14));
+    ASSERT_EQ(17ul, vector.getNextSetIndex(15));
+    ASSERT_EQ(17ul, vector.getNextSetIndex(16));
+    ASSERT_EQ(17ul, vector.getNextSetIndex(17));
     ASSERT_EQ(vector.size(), vector.getNextSetIndex(18));
 }
 

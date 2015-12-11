@@ -5,33 +5,36 @@
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddOdd.h"
 #include "src/storage/dd/DdMetaVariable.h"
+#include "src/settings/SettingsManager.h"
+
+#include "src/storage/SparseMatrix.h"
 
 TEST(CuddDdManager, Constants) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     storm::dd::Add<storm::dd::DdType::CUDD> zero;
     ASSERT_NO_THROW(zero = manager->getAddZero());
     
-    EXPECT_EQ(0, zero.getNonZeroCount());
-    EXPECT_EQ(1, zero.getLeafCount());
-    EXPECT_EQ(1, zero.getNodeCount());
+    EXPECT_EQ(0ul, zero.getNonZeroCount());
+    EXPECT_EQ(1ul, zero.getLeafCount());
+    EXPECT_EQ(1ul, zero.getNodeCount());
     EXPECT_EQ(0, zero.getMin());
     EXPECT_EQ(0, zero.getMax());
     
     storm::dd::Add<storm::dd::DdType::CUDD> one;
     ASSERT_NO_THROW(one = manager->getAddOne());
     
-    EXPECT_EQ(1, one.getNonZeroCount());
-    EXPECT_EQ(1, one.getLeafCount());
-    EXPECT_EQ(1, one.getNodeCount());
+    EXPECT_EQ(1ul, one.getNonZeroCount());
+    EXPECT_EQ(1ul, one.getLeafCount());
+    EXPECT_EQ(1ul, one.getNodeCount());
     EXPECT_EQ(1, one.getMin());
     EXPECT_EQ(1, one.getMax());
 
     storm::dd::Add<storm::dd::DdType::CUDD> two;
     ASSERT_NO_THROW(two = manager->getConstant(2));
     
-    EXPECT_EQ(1, two.getNonZeroCount());
-    EXPECT_EQ(1, two.getLeafCount());
-    EXPECT_EQ(1, two.getNodeCount());
+    EXPECT_EQ(1ul, two.getNonZeroCount());
+    EXPECT_EQ(1ul, two.getLeafCount());
+    EXPECT_EQ(1ul, two.getNodeCount());
     EXPECT_EQ(2, two.getMin());
     EXPECT_EQ(2, two.getMax());
 }
@@ -39,12 +42,12 @@ TEST(CuddDdManager, Constants) {
 TEST(CuddDdManager, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::CUDD>> manager(new storm::dd::DdManager<storm::dd::DdType::CUDD>());
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
-    EXPECT_EQ(2, manager->getNumberOfMetaVariables());
+    EXPECT_EQ(2ul, manager->getNumberOfMetaVariables());
     
     ASSERT_THROW(manager->addMetaVariable("x", 0, 3), storm::exceptions::InvalidArgumentException);
 
     ASSERT_NO_THROW(manager->addMetaVariable("y", 0, 3));
-    EXPECT_EQ(4, manager->getNumberOfMetaVariables());
+    EXPECT_EQ(4ul, manager->getNumberOfMetaVariables());
     
     EXPECT_TRUE(manager->hasMetaVariable("x'"));
     EXPECT_TRUE(manager->hasMetaVariable("y'"));
@@ -61,16 +64,16 @@ TEST(CuddDdManager, EncodingTest) {
     ASSERT_THROW(encoding = manager->getEncoding(x.first, 0), storm::exceptions::InvalidArgumentException);
     ASSERT_THROW(encoding = manager->getEncoding(x.first, 10), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(encoding = manager->getEncoding(x.first, 4));
-    EXPECT_EQ(1, encoding.getNonZeroCount());
+    EXPECT_EQ(1ul, encoding.getNonZeroCount());
 
     // As a BDD, this DD has one only leaf, because there does not exist a 0-leaf, and (consequently) one node less
     // than the MTBDD.
-    EXPECT_EQ(5, encoding.getNodeCount());
-    EXPECT_EQ(1, encoding.getLeafCount());
+    EXPECT_EQ(5ul, encoding.getNodeCount());
+    EXPECT_EQ(1ul, encoding.getLeafCount());
     
     // As an MTBDD, the 0-leaf is there, so the count is actually 2 and the node count is 6.
-    EXPECT_EQ(6, encoding.toAdd().getNodeCount());
-    EXPECT_EQ(2, encoding.toAdd().getLeafCount());
+    EXPECT_EQ(6ul, encoding.toAdd().getNodeCount());
+    EXPECT_EQ(2ul, encoding.toAdd().getLeafCount());
 }
 
 TEST(CuddDdManager, RangeTest) {
@@ -81,9 +84,9 @@ TEST(CuddDdManager, RangeTest) {
     storm::dd::Bdd<storm::dd::DdType::CUDD> range;
     ASSERT_NO_THROW(range = manager->getRange(x.first));
     
-    EXPECT_EQ(9, range.getNonZeroCount());
-    EXPECT_EQ(1, range.getLeafCount());
-    EXPECT_EQ(5, range.getNodeCount());
+    EXPECT_EQ(9ul, range.getNonZeroCount());
+    EXPECT_EQ(1ul, range.getLeafCount());
+    EXPECT_EQ(5ul, range.getNodeCount());
 }
 
 TEST(CuddDdManager, IdentityTest) {
@@ -93,9 +96,9 @@ TEST(CuddDdManager, IdentityTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> identity;
     ASSERT_NO_THROW(identity = manager->getIdentity(x.first));
     
-    EXPECT_EQ(9, identity.getNonZeroCount());
-    EXPECT_EQ(10, identity.getLeafCount());
-    EXPECT_EQ(21, identity.getNodeCount());
+    EXPECT_EQ(9ul, identity.getNonZeroCount());
+    EXPECT_EQ(10ul, identity.getLeafCount());
+    EXPECT_EQ(21ul, identity.getNodeCount());
 }
 
 TEST(CuddDd, OperatorTest) {
@@ -143,26 +146,26 @@ TEST(CuddDd, OperatorTest) {
     dd2 = manager->getConstant(5);
 
     dd3 = dd1.equals(dd2);
-    EXPECT_EQ(1, dd3.getNonZeroCount());
+    EXPECT_EQ(1ul, dd3.getNonZeroCount());
     
     storm::dd::Add<storm::dd::DdType::CUDD> dd4 = dd1.notEquals(dd2);
     EXPECT_TRUE(dd4.toBdd() == !dd3.toBdd());
     
     dd3 = dd1.less(dd2);
-    EXPECT_EQ(11, dd3.getNonZeroCount());
+    EXPECT_EQ(11ul, dd3.getNonZeroCount());
     
     dd3 = dd1.lessOrEqual(dd2);
-    EXPECT_EQ(12, dd3.getNonZeroCount());
+    EXPECT_EQ(12ul, dd3.getNonZeroCount());
     
     dd3 = dd1.greater(dd2);
-    EXPECT_EQ(4, dd3.getNonZeroCount());
+    EXPECT_EQ(4ul, dd3.getNonZeroCount());
 
     dd3 = dd1.greaterOrEqual(dd2);
-    EXPECT_EQ(5, dd3.getNonZeroCount());
+    EXPECT_EQ(5ul, dd3.getNonZeroCount());
     
     dd3 = (manager->getEncoding(x.first, 2).toAdd()).ite(dd2, dd1);
     dd4 = dd3.less(dd2);
-    EXPECT_EQ(10, dd4.getNonZeroCount());
+    EXPECT_EQ(10ul, dd4.getNonZeroCount());
     
     dd4 = dd3.minimum(dd1);
     dd4 *= manager->getEncoding(x.first, 2).toAdd();
@@ -191,15 +194,15 @@ TEST(CuddDd, AbstractionTest) {
     dd2 = manager->getConstant(5);
     dd3 = dd1.equals(dd2);
     storm::dd::Bdd<storm::dd::DdType::CUDD> dd3Bdd = dd3.toBdd();
-    EXPECT_EQ(1, dd3Bdd.getNonZeroCount());
+    EXPECT_EQ(1ul, dd3Bdd.getNonZeroCount());
     ASSERT_THROW(dd3Bdd = dd3Bdd.existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3Bdd = dd3Bdd.existsAbstract({x.first}));
-    EXPECT_EQ(1, dd3Bdd.getNonZeroCount());
+    EXPECT_EQ(1ul, dd3Bdd.getNonZeroCount());
     EXPECT_EQ(1, dd3Bdd.toAdd().getMax());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
-    EXPECT_EQ(1, dd3.getNonZeroCount());
+    EXPECT_EQ(1ul, dd3.getNonZeroCount());
     ASSERT_THROW(dd3Bdd = dd3.toBdd().existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3Bdd = dd3.toBdd().existsAbstract({x.first}));
     EXPECT_TRUE(dd3Bdd.isOne());
@@ -208,21 +211,21 @@ TEST(CuddDd, AbstractionTest) {
     dd3 *= manager->getConstant(3);
     ASSERT_THROW(dd3 = dd3.sumAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.sumAbstract({x.first}));
-    EXPECT_EQ(1, dd3.getNonZeroCount());
+    EXPECT_EQ(1ul, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
     ASSERT_THROW(dd3 = dd3.minAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.minAbstract({x.first}));
-    EXPECT_EQ(0, dd3.getNonZeroCount());
+    EXPECT_EQ(0ul, dd3.getNonZeroCount());
     EXPECT_EQ(0, dd3.getMax());
 
     dd3 = dd1.equals(dd2);
     dd3 *= manager->getConstant(3);
     ASSERT_THROW(dd3 = dd3.maxAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.maxAbstract({x.first}));
-    EXPECT_EQ(1, dd3.getNonZeroCount());
+    EXPECT_EQ(1ul, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
 }
 
@@ -260,7 +263,7 @@ TEST(CuddDd, GetSetValueTest) {
     
     storm::dd::Add<storm::dd::DdType::CUDD> dd1 = manager->getAddOne();
     ASSERT_NO_THROW(dd1.setValue(x.first, 4, 2));
-    EXPECT_EQ(2, dd1.getLeafCount());
+    EXPECT_EQ(2ul, dd1.getLeafCount());
     
     std::map<storm::expressions::Variable, int_fast64_t> metaVariableToValueMap;
     metaVariableToValueMap.emplace(x.first, 1);
@@ -289,7 +292,7 @@ TEST(CuddDd, ForwardIteratorTest) {
         ASSERT_NO_THROW(++it);
         ++numberOfValuations;
     }
-    EXPECT_EQ(9, numberOfValuations);
+    EXPECT_EQ(9ul, numberOfValuations);
 
     dd = manager->getRange(x.first).toAdd();
     dd = dd.ite(manager->getAddOne(), manager->getAddOne());
@@ -301,7 +304,7 @@ TEST(CuddDd, ForwardIteratorTest) {
         ASSERT_NO_THROW(++it);
         ++numberOfValuations;
     }
-    EXPECT_EQ(16, numberOfValuations);
+    EXPECT_EQ(16ul, numberOfValuations);
     
     ASSERT_NO_THROW(it = dd.begin(false));
     ASSERT_NO_THROW(ite = dd.end());
@@ -311,7 +314,7 @@ TEST(CuddDd, ForwardIteratorTest) {
         ASSERT_NO_THROW(++it);
         ++numberOfValuations;
     }
-    EXPECT_EQ(1, numberOfValuations);
+    EXPECT_EQ(1ul, numberOfValuations);
 }
 
 TEST(CuddDd, AddOddTest) {
@@ -322,12 +325,12 @@ TEST(CuddDd, AddOddTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> dd = manager->getIdentity(x.first);
     storm::dd::Odd<storm::dd::DdType::CUDD> odd;
     ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
-    EXPECT_EQ(9, odd.getTotalOffset());
-    EXPECT_EQ(12, odd.getNodeCount());
+    EXPECT_EQ(9ul, odd.getTotalOffset());
+    EXPECT_EQ(12ul, odd.getNodeCount());
 
     std::vector<double> ddAsVector;
     ASSERT_NO_THROW(ddAsVector = dd.toVector<double>());
-    EXPECT_EQ(9, ddAsVector.size());
+    EXPECT_EQ(9ul, ddAsVector.size());
     for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
         EXPECT_TRUE(i+1 == ddAsVector[i]);
     }
@@ -346,16 +349,16 @@ TEST(CuddDd, AddOddTest) {
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, rowOdd, columnOdd));
 
-    EXPECT_EQ(9, matrix.getRowCount());
-    EXPECT_EQ(9, matrix.getColumnCount());
-    EXPECT_EQ(25, matrix.getNonzeroEntryCount());
+    EXPECT_EQ(9ul, matrix.getRowCount());
+    EXPECT_EQ(9ul, matrix.getColumnCount());
+    EXPECT_EQ(25ul, matrix.getNonzeroEntryCount());
     
     dd = manager->getRange(x.first).toAdd() * manager->getRange(x.second).toAdd() * manager->getEncoding(a.first, 0).toAdd().ite(dd, dd + manager->getConstant(1));
     ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
-    EXPECT_EQ(18, matrix.getRowCount());
-    EXPECT_EQ(9, matrix.getRowGroupCount());
-    EXPECT_EQ(9, matrix.getColumnCount());
-    EXPECT_EQ(106, matrix.getNonzeroEntryCount());
+    EXPECT_EQ(18ul, matrix.getRowCount());
+    EXPECT_EQ(9ul, matrix.getRowGroupCount());
+    EXPECT_EQ(9ul, matrix.getColumnCount());
+    EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
 }
 
 TEST(CuddDd, BddOddTest) {
@@ -366,12 +369,12 @@ TEST(CuddDd, BddOddTest) {
     storm::dd::Add<storm::dd::DdType::CUDD> dd = manager->getIdentity(x.first);
     storm::dd::Odd<storm::dd::DdType::CUDD> odd;
     ASSERT_NO_THROW(odd = storm::dd::Odd<storm::dd::DdType::CUDD>(dd));
-    EXPECT_EQ(9, odd.getTotalOffset());
-    EXPECT_EQ(12, odd.getNodeCount());
+    EXPECT_EQ(9ul, odd.getTotalOffset());
+    EXPECT_EQ(12ul, odd.getNodeCount());
     
     std::vector<double> ddAsVector;
     ASSERT_NO_THROW(ddAsVector = dd.toVector<double>());
-    EXPECT_EQ(9, ddAsVector.size());
+    EXPECT_EQ(9ul, ddAsVector.size());
     for (uint_fast64_t i = 0; i < ddAsVector.size(); ++i) {
         EXPECT_TRUE(i+1 == ddAsVector[i]);
     }
@@ -393,14 +396,14 @@ TEST(CuddDd, BddOddTest) {
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = dd.toMatrix({x.first}, {x.second}, rowOdd, columnOdd));
     
-    EXPECT_EQ(9, matrix.getRowCount());
-    EXPECT_EQ(9, matrix.getColumnCount());
-    EXPECT_EQ(25, matrix.getNonzeroEntryCount());
+    EXPECT_EQ(9ul, matrix.getRowCount());
+    EXPECT_EQ(9ul, matrix.getColumnCount());
+    EXPECT_EQ(25ul, matrix.getNonzeroEntryCount());
     
     dd = manager->getRange(x.first).toAdd() * manager->getRange(x.second).toAdd() * manager->getEncoding(a.first, 0).toAdd().ite(dd, dd + manager->getConstant(1));
     ASSERT_NO_THROW(matrix = dd.toMatrix({a.first}, rowOdd, columnOdd));
-    EXPECT_EQ(18, matrix.getRowCount());
-    EXPECT_EQ(9, matrix.getRowGroupCount());
-    EXPECT_EQ(9, matrix.getColumnCount());
-    EXPECT_EQ(106, matrix.getNonzeroEntryCount());
+    EXPECT_EQ(18ul, matrix.getRowCount());
+    EXPECT_EQ(9ul, matrix.getRowGroupCount());
+    EXPECT_EQ(9ul, matrix.getColumnCount());
+    EXPECT_EQ(106ul, matrix.getNonzeroEntryCount());
 }

@@ -8,7 +8,7 @@
 
 namespace storm {
     namespace storage {
-
+        
         /*!
          * This class represents a hash-map whose keys are bit vectors. The value type is arbitrary. Currently, only
          * queries and insertions are supported. Also, the keys must be bit vectors with a length that is a multiple of
@@ -17,6 +17,36 @@ namespace storm {
         template<class ValueType, class Hash1 = std::hash<storm::storage::BitVector>, class Hash2 = storm::storage::NonZeroBitVectorHash>
         class BitVectorHashMap {
         public:
+            class BitVectorHashMapIterator {
+            public:
+                /*! Creates an iterator that points to the bucket with the given index in the given map.
+                 *
+                 * @param map The map of the iterator.
+                 * @param indexIt An iterator to the index of the bucket the iterator points to.
+                 */
+                BitVectorHashMapIterator(BitVectorHashMap const& map, BitVector::const_iterator indexIt);
+                
+                // Methods to compare two iterators.
+                bool operator==(BitVectorHashMapIterator const& other);
+                bool operator!=(BitVectorHashMapIterator const& other);
+                
+                // Methods to move iterator forward.
+                BitVectorHashMapIterator& operator++(int);
+                BitVectorHashMapIterator& operator++();
+                
+                // Method to retrieve the currently pointed-to bit vector and its mapped-to value.
+                std::pair<storm::storage::BitVector, ValueType> operator*() const;
+                
+            private:
+                // The map this iterator refers to.
+                BitVectorHashMap const& map;
+                
+                // An iterator to the bucket this iterator points to.
+                BitVector::const_iterator indexIt;
+            };
+            
+            typedef BitVectorHashMapIterator const_iterator;
+            
             /*!
              * Creates a new hash map with the given bucket size and initial size.
              *
@@ -65,6 +95,20 @@ namespace storm {
              */
             ValueType getValue(storm::storage::BitVector const& key) const;
             
+            /*!
+             * Retrieves an iterator to the elements of the map.
+             *
+             * @return The iterator.
+             */
+            const_iterator begin() const;
+
+            /*!
+             * Retrieves an iterator that points one past the elements of the map.
+             *
+             * @return The iterator.
+             */
+            const_iterator end() const;
+
             /*!
              * Retrieves the size of the map in terms of the number of key-value pairs it stores.
              *
@@ -157,6 +201,7 @@ namespace storm {
             // A static table that produces the next possible size of the hash table.
             static const std::vector<std::size_t> sizes;
         };
+
     }
 }
 

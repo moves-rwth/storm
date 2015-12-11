@@ -8,16 +8,16 @@
 
 #include "utility/OsDetection.h"
 #include "src/storage/dd/CuddBdd.h"
-#include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/DdMetaVariable.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
-#include "src/storage/expressions/Expression.h"
+
 
 namespace storm {
     namespace dd {
         // Forward-declare some classes.
         template<DdType Type> class DdManager;
         template<DdType Type> class Odd;
+        template<DdType Type> class Add;
         
         template<>
         class DdMetaVariable<DdType::CUDD> {

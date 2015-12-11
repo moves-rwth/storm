@@ -18,6 +18,7 @@ namespace storm {
             typedef std::map<storm::storage::sparse::state_type, bool> map_type;
             
             ExplicitQualitativeCheckResult();
+            virtual ~ExplicitQualitativeCheckResult() = default;
             ExplicitQualitativeCheckResult(map_type const& map);
             ExplicitQualitativeCheckResult(map_type&& map);
             ExplicitQualitativeCheckResult(storm::storage::sparse::state_type state, bool value);
@@ -51,7 +52,7 @@ namespace storm {
             virtual void filter(QualitativeCheckResult const& filter) override;
 
         private:
-            static void performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, std::function<bool (bool, bool)> const& function);
+            static void performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, bool logicalAnd);
             
             // The values of the quantitative check result.
             boost::variant<vector_type, map_type> truthValues;

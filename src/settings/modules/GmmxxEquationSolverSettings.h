@@ -12,11 +12,11 @@ namespace storm {
              */
             class GmmxxEquationSolverSettings : public ModuleSettings {
             public:
-                // An enumeration of all available techniques for solving linear equations.
-                enum class LinearEquationTechnique { Bicgstab, Qmr, Gmres, Jacobi };
+                // An enumeration of all available methods for solving linear equations.
+                enum class LinearEquationMethod { Bicgstab, Qmr, Gmres, Jacobi };
 
-                // An enumeration of all available preconditioning techniques.
-                enum class PreconditioningTechnique { Ilu, Diagonal, None };
+                // An enumeration of all available preconditioning methods.
+                enum class PreconditioningMethod { Ilu, Diagonal, None };
                 
                 // An enumeration of all available convergence criteria.
                 enum class ConvergenceCriterion { Absolute, Relative };
@@ -29,32 +29,32 @@ namespace storm {
                 GmmxxEquationSolverSettings(storm::settings::SettingsManager& settingsManager);
                 
                 /*!
-                 * Retrieves whether the linear equation system technique has been set.
+                 * Retrieves whether the linear equation system method has been set.
                  *
-                 * @return True iff the linear equation system technique has been set.
+                 * @return True iff the linear equation system method has been set.
                  */
-                bool isLinearEquationSystemTechniqueSet() const;
+                bool isLinearEquationSystemMethodSet() const;
                 
                 /*!
-                 * Retrieves the technique that is to be used for solving systems of linear equations.
+                 * Retrieves the method that is to be used for solving systems of linear equations.
                  *
-                 * @return The technique to use.
+                 * @return The method to use.
                  */
-                LinearEquationTechnique getLinearEquationSystemTechnique() const;
+                LinearEquationMethod getLinearEquationSystemMethod() const;
                 
                 /*!
-                 * Retrieves whether the preconditioning technique has been set.
+                 * Retrieves whether the preconditioning method has been set.
                  *
-                 * @return True iff the preconditioning technique has been set.
+                 * @return True iff the preconditioning method has been set.
                  */
-                bool isPreconditioningTechniqueSet() const;
+                bool isPreconditioningMethodSet() const;
                 
                 /*!
-                 * Retrieves the technique that is to be used for preconditioning solving systems of linear equations.
+                 * Retrieves the method that is to be used for preconditioning solving systems of linear equations.
                  *
-                 * @return The technique to use.
+                 * @return The method to use.
                  */
-                PreconditioningTechnique getPreconditioningTechnique() const;
+                PreconditioningMethod getPreconditioningMethod() const;
                 
                 /*!
                  * Retrieves whether the restart iteration count has been set.
@@ -64,7 +64,7 @@ namespace storm {
                 bool isRestartIterationCountSet() const;
                 
                 /*!
-                 * Retrieves the number of iterations after which restarted techniques are to be restarted.
+                 * Retrieves the number of iterations after which restarted methods are to be restarted.
                  *
                  * @return The number of iterations after which to restart.
                  */

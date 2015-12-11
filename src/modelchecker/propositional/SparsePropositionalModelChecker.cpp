@@ -5,6 +5,8 @@
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/MarkovAutomaton.h"
+#include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
@@ -13,18 +15,18 @@
 
 namespace storm {
     namespace modelchecker {
-        template<typename ValueType>
-        SparsePropositionalModelChecker<ValueType>::SparsePropositionalModelChecker(storm::models::sparse::Model<ValueType> const& model) : model(model) {
+        template<typename SparseModelType>
+        SparsePropositionalModelChecker<SparseModelType>::SparsePropositionalModelChecker(SparseModelType const& model) : model(model) {
             // Intentionally left empty.
         }
         
-        template<typename ValueType>
-        bool SparsePropositionalModelChecker<ValueType>::canHandle(storm::logic::Formula const& formula) const {
+        template<typename SparseModelType>
+        bool SparsePropositionalModelChecker<SparseModelType>::canHandle(storm::logic::Formula const& formula) const {
             return formula.isPropositionalFormula();
         }
         
-        template<typename ValueType>
-        std::unique_ptr<CheckResult> SparsePropositionalModelChecker<ValueType>::checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) {
+        template<typename SparseModelType>
+        std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) {
             if (stateFormula.isTrueFormula()) {
                 return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates(), true)));
             } else {
@@ -32,33 +34,32 @@ namespace storm {
             }
         }
         
-        template<typename ValueType>
-        std::unique_ptr<CheckResult> SparsePropositionalModelChecker<ValueType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
+        template<typename SparseModelType>
+        std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
             STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
             return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getStates(stateFormula.getLabel())));
         }
         
-        template<typename ValueType>
-        storm::models::sparse::Model<ValueType> const& SparsePropositionalModelChecker<ValueType>::getModel() const {
+        template<typename SparseModelType>
+        SparseModelType const& SparsePropositionalModelChecker<SparseModelType>::getModel() const {
             return model;
         }
         
-        template<typename ValueType>
-        template<typename ModelType>
-        ModelType const& SparsePropositionalModelChecker<ValueType>::getModelAs() const {
-            return dynamic_cast<ModelType const&>(model);
-        }
-        
         // Explicitly instantiate the template class.
-        template storm::models::sparse::Dtmc<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
-        template storm::models::sparse::Ctmc<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
-        template storm::models::sparse::Mdp<double> const& SparsePropositionalModelChecker<double>::getModelAs() const;
-        template class SparsePropositionalModelChecker<double>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Model<double>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<double>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Ctmc<double>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<double>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
         
 #ifdef STORM_HAVE_CARL
-        template storm::models::sparse::Dtmc<storm::RationalFunction> const& SparsePropositionalModelChecker<storm::RationalFunction>::getModelAs() const;
-        template storm::models::sparse::Mdp<storm::RationalFunction> const& SparsePropositionalModelChecker<storm::RationalFunction>::getModelAs() const;
-        template class SparsePropositionalModelChecker<storm::RationalFunction>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
+
+        template class SparsePropositionalModelChecker<storm::models::sparse::Model<storm::RationalFunction>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
 #endif
     }
 }

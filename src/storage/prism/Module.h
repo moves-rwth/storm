@@ -11,7 +11,6 @@
 #include "src/storage/prism/BooleanVariable.h"
 #include "src/storage/prism/IntegerVariable.h"
 #include "src/storage/prism/Command.h"
-#include "src/storage/expressions/VariableExpression.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -142,11 +141,11 @@ namespace storm {
             std::string const& getName() const;
             
             /*!
-             * Retrieves the set of action indices present in this module.
+             * Retrieves the set of synchronizing action indices present in this module.
              *
-             * @return the set of action indices present in this module.
+             * @return the set of synchronizing action indices present in this module.
              */
-            std::set<uint_fast64_t> const& getActionIndices() const;
+            std::set<uint_fast64_t> const& getSynchronizingActionIndices() const;
             
             /*!
              * Retrieves whether or not this module contains a command labeled with the given action index.
@@ -238,7 +237,7 @@ namespace storm {
             std::vector<storm::prism::Command> commands;
             
             // The set of action indices present in this module.
-            std::set<uint_fast64_t> actionIndices;
+            std::set<uint_fast64_t> synchronizingActionIndices;
             
             // A map of actions to the set of commands labeled with this action.
             std::map<uint_fast64_t, std::set<uint_fast64_t>> actionIndicesToCommandIndexMap;

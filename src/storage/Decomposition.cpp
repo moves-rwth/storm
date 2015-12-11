@@ -4,6 +4,7 @@
 
 #include "src/storage/StronglyConnectedComponent.h"
 #include "src/storage/MaximalEndComponent.h"
+#include "src/utility/constants.h"
 
 namespace storm {
     namespace storage {

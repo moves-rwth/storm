@@ -1,6 +1,12 @@
 #include "src/storage/dd/CuddOdd.h"
 
+#include <fstream>
 #include <algorithm>
+#include <boost/functional/hash.hpp>
+#include <boost/algorithm/string/join.hpp>
+
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/utility/macros.h"
 
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/storage/dd/CuddDdMetaVariable.h"
@@ -91,6 +97,14 @@ namespace storm {
             }
         }
         
+        uint_fast64_t Odd<DdType::CUDD>::getHeight() const {
+            if (this->isTerminalNode()) {
+                return 1;
+            } else {
+                return 1 + this->getElseSuccessor().getHeight();
+            }
+        }
+        
         bool Odd<DdType::CUDD>::isTerminalNode() const {
             return this->elseNode == nullptr && this->thenNode == nullptr;
         }
@@ -156,6 +170,63 @@ namespace storm {
                 
                 addSelectedValuesToVectorRec(Cudd_Regular(elseDdNode), manager, currentLevel + 1, elseComplemented, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
                 addSelectedValuesToVectorRec(Cudd_Regular(thenDdNode), manager, currentLevel + 1, thenComplemented, maxLevel, ddVariableIndices, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), result, currentIndex, values);
+            }
+        }
+        
+        void Odd<DdType::CUDD>::exportToDot(std::string const& filename) const {
+            std::ofstream dotFile;
+            dotFile.open (filename);
+            
+            // Print header.
+            dotFile << "digraph \"ODD\" {" << std::endl << "center=true;" << std::endl << "edge [dir = none];" << std::endl;
+
+            // Print levels as ranks.
+            dotFile << "{ node [shape = plaintext];" << std::endl << "edge [style = invis];" << std::endl;
+            std::vector<std::string> levelNames;
+            for (uint_fast64_t level = 0; level < this->getHeight(); ++level) {
+                levelNames.push_back("\"" + std::to_string(level) + "\"");
+            }
+            dotFile << boost::join(levelNames, " -> ") << ";";
+            dotFile << "}" << std::endl;
+            
+            std::map<uint_fast64_t, std::vector<std::reference_wrapper<storm::dd::Odd<DdType::CUDD> const>>> levelToOddNodesMap;
+            this->addToLevelToOddNodesMap(levelToOddNodesMap);
+            
+            for (auto const& levelNodes : levelToOddNodesMap) {
+                dotFile << "{ rank = same; \"" << levelNodes.first << "\"" << std::endl;;
+                for (auto const& node : levelNodes.second) {
+                    dotFile << "\"" << &node.get() << "\";" << std::endl;
+                }
+                dotFile << "}" << std::endl;
+            }
+            
+            std::set<storm::dd::Odd<DdType::CUDD> const*> printedNodes;
+            for (auto const& levelNodes : levelToOddNodesMap) {
+                for (auto const& node : levelNodes.second) {
+                    if (printedNodes.find(&node.get()) != printedNodes.end()) {
+                        continue;
+                    } else {
+                        printedNodes.insert(&node.get());
+                    }
+                    
+                    dotFile << "\"" << &node.get() << "\" [label=\"" << levelNodes.first << "\"];" << std::endl;
+                    if (!node.get().isTerminalNode()) {
+                        dotFile << "\"" << &node.get() << "\" -> \"" << &node.get().getElseSuccessor() << "\" [style=dashed, label=\"0\"];" << std::endl;
+                        dotFile << "\"" << &node.get() << "\" -> \"" << &node.get().getThenSuccessor() << "\" [style=solid, label=\"" << node.get().getElseOffset() << "\"];" << std::endl;
+                    }
+                }
+            }
+            
+            dotFile << "}" << std::endl;
+            
+            dotFile.close();
+        }
+        
+        void Odd<DdType::CUDD>::addToLevelToOddNodesMap(std::map<uint_fast64_t, std::vector<std::reference_wrapper<storm::dd::Odd<DdType::CUDD> const>>>& levelToOddNodesMap, uint_fast64_t level) const {
+            levelToOddNodesMap[level].push_back(*this);
+            if (!this->isTerminalNode()) {
+                this->getElseSuccessor().addToLevelToOddNodesMap(levelToOddNodesMap, level + 1);
+                this->getThenSuccessor().addToLevelToOddNodesMap(levelToOddNodesMap, level + 1);
             }
         }
         

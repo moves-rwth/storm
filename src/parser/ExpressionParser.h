@@ -27,6 +27,9 @@ namespace storm {
              */
             ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking = false);
             
+            ExpressionParser(ExpressionParser const& other) = default;
+            ExpressionParser& operator=(ExpressionParser const& other) = default;
+            
             /*!
              * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to
              * expressions will be substituted wherever the key value appears in the parsed expression. After setting
@@ -172,7 +175,7 @@ namespace storm {
             trueFalseOperatorStruct trueFalse_;
             
             // The manager responsible for the expressions.
-            storm::expressions::ExpressionManager const& manager;
+            std::shared_ptr<storm::expressions::ExpressionManager const> manager;
             
             // A flag that indicates whether expressions should actually be generated or just a syntax check shall be
             // performed.
@@ -223,7 +226,7 @@ namespace storm {
             storm::expressions::Expression createIntegerLiteralExpression(int value) const;
             storm::expressions::Expression createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
             storm::expressions::Expression createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1) const;
-            storm::expressions::Expression getIdentifierExpression(std::string const& identifier) const;
+            storm::expressions::Expression getIdentifierExpression(std::string const& identifier, bool allowBacktracking, bool& pass) const;
             
             bool isValidIdentifier(std::string const& identifier);
             

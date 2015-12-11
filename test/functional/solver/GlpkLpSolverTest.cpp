@@ -2,13 +2,19 @@
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_GLPK
+#include "src/storage/expressions/Variable.h"
 #include "src/solver/GlpkLpSolver.h"
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidAccessException.h"
 #include "src/settings/SettingsManager.h"
 
+#include "src/settings/modules/GeneralSettings.h"
+
+#include "src/storage/expressions/Expressions.h"
+#include "src/solver/OptimizationDirection.h"
+
 TEST(GlpkLpSolver, LPOptimizeMax) {
-    storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -41,7 +47,7 @@ TEST(GlpkLpSolver, LPOptimizeMax) {
 }
 
 TEST(GlpkLpSolver, LPOptimizeMin) {
-    storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Minimize);
+    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -74,7 +80,7 @@ TEST(GlpkLpSolver, LPOptimizeMin) {
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMax) {
-    storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -107,7 +113,7 @@ TEST(GlpkLpSolver, MILPOptimizeMax) {
 }
 
 TEST(GlpkLpSolver, MILPOptimizeMin) {
-    storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Minimize);
+    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Minimize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -140,7 +146,7 @@ TEST(GlpkLpSolver, MILPOptimizeMin) {
 }
 
 TEST(GlpkLpSolver, LPInfeasible) {
-    storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -159,18 +165,14 @@ TEST(GlpkLpSolver, LPInfeasible) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
-    double xValue = 0;
-    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
-    double yValue = 0;
-    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
-    double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, MILPInfeasible) {
-    storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -189,18 +191,14 @@ TEST(GlpkLpSolver, MILPInfeasible) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
-    bool xValue = false;
-    ASSERT_THROW(xValue = solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
-    int_fast64_t yValue = 0;
-    ASSERT_THROW(yValue = solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
-    double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, LPUnbounded) {
-    storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -217,18 +215,14 @@ TEST(GlpkLpSolver, LPUnbounded) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
-    double xValue = 0;
-    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
-    double yValue = 0;
-    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
-    double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, MILPUnbounded) {
-    storm::solver::GlpkLpSolver solver(storm::solver::LpSolver::ModelSense::Maximize);
+    storm::solver::GlpkLpSolver solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
     storm::expressions::Variable y;
     storm::expressions::Variable z;
@@ -245,13 +239,9 @@ TEST(GlpkLpSolver, MILPUnbounded) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
-    bool xValue = false;
-    ASSERT_THROW(xValue = solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
-    int_fast64_t yValue = 0;
-    ASSERT_THROW(yValue = solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
-    double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 #endif

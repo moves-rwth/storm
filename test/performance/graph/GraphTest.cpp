@@ -6,9 +6,10 @@
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
 #include "src/models/sparse/Mdp.h"
 #include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/StandardRewardModel.h"
 
 TEST(GraphTest, ExplicitProb01) {
-	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
 
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = abstractModel->as<storm::models::sparse::Dtmc<double>>();
 	storm::storage::BitVector trueStates(dtmc->getNumberOfStates(), true);
@@ -30,7 +31,7 @@ TEST(GraphTest, ExplicitProb01) {
     
     dtmc = nullptr;
     
-    abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.lab", "", "");
+    abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.tra", STORM_CPP_BASE_PATH "/examples/dtmc/synchronous_leader/leader6_8.lab", "", "");
     
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc2 = abstractModel->as<storm::models::sparse::Dtmc<double>>();
     trueStates = storm::storage::BitVector(dtmc2->getNumberOfStates(), true);
@@ -44,7 +45,7 @@ TEST(GraphTest, ExplicitProb01) {
 }
 
 TEST(GraphTest, PerformProb01MinMax) {
-	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", "");
+	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.tra", STORM_CPP_BASE_PATH "/examples/mdp/asynchronous_leader/leader7.lab", "", "");
 	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
 	storm::storage::BitVector trueStates(mdp->getNumberOfStates(), true);
     
@@ -60,7 +61,7 @@ TEST(GraphTest, PerformProb01MinMax) {
     
     mdp = nullptr;
 
-    abstractModel = storm::parser::AutoParser::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", "", "");
+    abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.tra", STORM_CPP_BASE_PATH "/examples/mdp/consensus/coin4_6.lab", "", "");
 	std::shared_ptr<storm::models::sparse::Mdp<double>> mdp2 = abstractModel->as<storm::models::sparse::Mdp<double>>();
 	trueStates = storm::storage::BitVector(mdp2->getNumberOfStates(), true);
 

@@ -1,5 +1,6 @@
 #include <cstring>
 #include <algorithm>
+#include <boost/algorithm/string/join.hpp>
 
 #include "src/storage/dd/CuddAdd.h"
 #include "src/storage/dd/CuddBdd.h"
@@ -7,6 +8,10 @@
 #include "src/storage/dd/CuddDdManager.h"
 #include "src/utility/vector.h"
 #include "src/utility/macros.h"
+
+
+#include "src/storage/SparseMatrix.h"
+
 
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -557,7 +562,7 @@ namespace storm {
             rowIndications[0] = 0;
             
             // Construct matrix and return result.
-            return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(trivialRowGroupIndices));
+            return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(trivialRowGroupIndices), false);
         }
         
         storm::storage::SparseMatrix<double> Add<DdType::CUDD>::toMatrix(std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const {
@@ -680,7 +685,7 @@ namespace storm {
             }
             rowIndications[0] = 0;
             
-            return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices));
+            return storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices), true);
         }
         
         std::pair<storm::storage::SparseMatrix<double>, std::vector<double>> Add<DdType::CUDD>::toMatrixVector(storm::dd::Add<storm::dd::DdType::CUDD> const& vector, std::vector<uint_fast64_t>&& rowGroupSizes, std::set<storm::expressions::Variable> const& groupMetaVariables, storm::dd::Odd<DdType::CUDD> const& rowOdd, storm::dd::Odd<DdType::CUDD> const& columnOdd) const {
@@ -748,8 +753,7 @@ namespace storm {
             // Create the explicit vector we need to fill later.
             std::vector<double> explicitVector(rowGroupIndices.back());
             
-            // Next, we split the matrix into one for each group. This only works if the group variables are at the very
-            // top.
+            // Next, we split the matrix into one for each group. This only works if the group variables are at the very top.
             std::vector<std::pair<Add<DdType::CUDD>, Add<DdType::CUDD>>> groups;
             splitGroupsRec(this->getCuddDdNode(), vector.getCuddDdNode(), groups, ddGroupVariableIndices, 0, ddGroupVariableIndices.size(), rowAndColumnMetaVariables, rowMetaVariables);
             
@@ -804,7 +808,7 @@ namespace storm {
             }
             rowIndications[0] = 0;
             
-            return std::make_pair(storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices)), std::move(explicitVector));
+            return std::make_pair(storm::storage::SparseMatrix<double>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices), true), std::move(explicitVector));
         }
         
         template<typename ValueType>
@@ -1035,10 +1039,10 @@ namespace storm {
                 
                 // Finally, delete the names.
                 for (char* element : ddNames) {
-                    delete element;
+                    delete[] element;
                 }
                 for (char* element : ddVariableNames) {
-                    delete element;
+                    delete[] element;
                 }
             }
         }
@@ -1055,7 +1059,12 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& out, const Add<DdType::CUDD>& add) {
-            add.exportToDot();
+            out << "ADD with " << add.getNonZeroCount() << " nnz, " << add.getNodeCount() << " nodes, " << add.getLeafCount() << " leaves" << std::endl;
+            std::vector<std::string> variableNames;
+            for (auto const& variable : add.getContainedMetaVariables()) {
+                variableNames.push_back(variable.getName());
+            }
+            out << "contained variables: " << boost::algorithm::join(variableNames, ", ") << std::endl;
             return out;
         }
         

@@ -3,14 +3,15 @@
 
 #include <cstdint>
 #include <memory>
+#include <functional>
 
 #include "src/utility/OsDetection.h"
-#include "src/storage/expressions/Type.h"
-#include "src/storage/expressions/Expression.h"
 
 namespace storm {
     namespace expressions {
         class ExpressionManager;
+        class Expression;
+        class Type;
         
         // This class captures a simple variable.
         class Variable {

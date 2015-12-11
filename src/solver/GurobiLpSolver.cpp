@@ -1,19 +1,28 @@
 #include "src/solver/GurobiLpSolver.h"
 
-#ifdef STORM_HAVE_GUROBI
 #include <numeric>
 
 #include "src/storage/expressions/LinearCoefficientVisitor.h"
 
 #include "src/settings/SettingsManager.h"
+#include "src/settings/modules/DebugSettings.h"
+#include "src/settings/modules/GurobiSettings.h"
+
 #include "src/utility/macros.h"
+#include "src/storage/expressions/Expression.h"
+#include "src/storage/expressions/ExpressionManager.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidAccessException.h"
+#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/NotImplementedException.h"
+
 
 namespace storm {
     namespace solver {
         
-        GurobiLpSolver::GurobiLpSolver(std::string const& name, ModelSense const& modelSense) : LpSolver(modelSense), env(nullptr), model(nullptr), nextVariableIndex(0) {
+#ifdef STORM_HAVE_GUROBI
+        GurobiLpSolver::GurobiLpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver(optDir), env(nullptr), model(nullptr), nextVariableIndex(0) {
             // Create the environment.
             int error = GRBloadenv(&env, "");
             if (error || env == nullptr) {
@@ -32,15 +41,15 @@ namespace storm {
             }
         }
         
-        GurobiLpSolver::GurobiLpSolver(std::string const& name) : GurobiLpSolver(name, ModelSense::Minimize) {
+        GurobiLpSolver::GurobiLpSolver(std::string const& name) : GurobiLpSolver(name, OptimizationDirection::Minimize) {
             // Intentionally left empty.
         }
         
-        GurobiLpSolver::GurobiLpSolver(ModelSense const& modelSense) : GurobiLpSolver("", modelSense) {
+        GurobiLpSolver::GurobiLpSolver(OptimizationDirection const& optDir) : GurobiLpSolver("", optDir) {
             // Intentionally left empty.
         }
         
-        GurobiLpSolver::GurobiLpSolver() : GurobiLpSolver("", ModelSense::Minimize) {
+        GurobiLpSolver::GurobiLpSolver() : GurobiLpSolver("", OptimizationDirection::Minimize) {
             // Intentionally left empty.
         }
         
@@ -54,9 +63,7 @@ namespace storm {
 			int error = 0;
 
 			// Enable the following line to only print the output of Gurobi if the debug flag is set.
-            error = GRBsetintparam(env, "OutputFlag", storm::settings::debugSettings().isDebugSet() || storm::settings::gurobiSettings().isOutputSet() ? 1 : 0);
-            STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter OutputFlag (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-            
+            toggleOutput(storm::settings::debugSettings().isDebugSet() || storm::settings::gurobiSettings().isOutputSet());
             // Enable the following line to restrict Gurobi to one thread only.
             error = GRBsetintparam(env, "Threads", storm::settings::gurobiSettings().getNumberOfThreads());
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter Threads (" << GRBgeterrormsg(env) << ", error code " << error << ").");
@@ -186,7 +193,7 @@ namespace storm {
             this->update();
          
             // Set the most recently set model sense.
-            int error = GRBsetintattr(model, "ModelSense", this->getModelSense() == ModelSense::Minimize ? 1 : -1);
+            int error = GRBsetintattr(model, "ModelSense", this->getOptimizationDirection() == OptimizationDirection::Minimize ? 1 : -1);
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi model sense (" << GRBgeterrormsg(env) << ", error code " << error << ").");
             
             // Then we actually optimize the model.
@@ -343,7 +350,114 @@ namespace storm {
 				throw storm::exceptions::InvalidStateException() << "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ") to file.";
             }
         }
+
+        void GurobiLpSolver::toggleOutput(bool set) const {
+            int error = GRBsetintparam(env, "OutputFlag", set);
+            STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter OutputFlag (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+        }
+#else 
+            GurobiLpSolver::GurobiLpSolver(std::string const& name, OptimizationDirection const& ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            GurobiLpSolver::GurobiLpSolver(std::string const& name) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            GurobiLpSolver::GurobiLpSolver(OptimizationDirection const& modelSense) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            GurobiLpSolver::GurobiLpSolver() {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            GurobiLpSolver::~GurobiLpSolver() { 
+            
+            }
+            
+            storm::expressions::Variable GurobiLpSolver::addBoundedContinuousVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            storm::expressions::Variable GurobiLpSolver::addLowerBoundedContinuousVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";            }
+            
+            storm::expressions::Variable GurobiLpSolver::addUpperBoundedContinuousVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            storm::expressions::Variable GurobiLpSolver::addUnboundedContinuousVariable(std::string const& name, double objectiveFunctionCoefficient ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            storm::expressions::Variable GurobiLpSolver::addBoundedIntegerVariable(std::string const& name, double lowerBound, double upperBound, double objectiveFunctionCoefficient ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            storm::expressions::Variable GurobiLpSolver::addLowerBoundedIntegerVariable(std::string const& name, double lowerBound, double objectiveFunctionCoefficient ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            storm::expressions::Variable GurobiLpSolver::addUpperBoundedIntegerVariable(std::string const& name, double upperBound, double objectiveFunctionCoefficient ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            storm::expressions::Variable GurobiLpSolver::addUnboundedIntegerVariable(std::string const& name, double objectiveFunctionCoefficient ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            storm::expressions::Variable GurobiLpSolver::addBinaryVariable(std::string const& name, double objectiveFunctionCoefficient ) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            void GurobiLpSolver::update() const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            void GurobiLpSolver::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            void GurobiLpSolver::optimize() const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            bool GurobiLpSolver::isInfeasible() const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            bool GurobiLpSolver::isUnbounded() const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            bool GurobiLpSolver::isOptimal() const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            double GurobiLpSolver::getContinuousValue(storm::expressions::Variable const& variable) const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            int_fast64_t GurobiLpSolver::getIntegerValue(storm::expressions::Variable const& variable) const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            bool GurobiLpSolver::getBinaryValue(storm::expressions::Variable const& variable) const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            double GurobiLpSolver::getObjectiveValue() const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+            
+            void GurobiLpSolver::writeModelToFile(std::string const& filename) const {
+                throw storm::exceptions::NotImplementedException() << "This version of StoRM was compiled without support for Gurobi. Yet, a method was called that requires this support. Please choose a version of support with Gurobi support.";
+            }
+
+            void GurobiLpSolver::toggleOutput(bool set) const { }
+
+#endif        
     }
 }
 
-#endif

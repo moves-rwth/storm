@@ -30,6 +30,7 @@ namespace storm {
             ExplicitQuantitativeCheckResult(ExplicitQuantitativeCheckResult&& other) = default;
             ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult&& other) = default;
 #endif
+            virtual ~ExplicitQuantitativeCheckResult() = default;
             
             ValueType& operator[](storm::storage::sparse::state_type state);
             ValueType const& operator[](storm::storage::sparse::state_type state) const;

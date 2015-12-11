@@ -1,4 +1,6 @@
 #include "src/storage/expressions/IntegerLiteralExpression.h"
+
+#include "ExpressionVisitor.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
 namespace storm {

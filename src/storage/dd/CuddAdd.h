@@ -2,11 +2,11 @@
 #define STORM_STORAGE_DD_CUDDADD_H_
 
 #include <boost/optional.hpp>
+#include <map>
 
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/CuddDd.h"
 #include "src/storage/dd/CuddDdForwardIterator.h"
-#include "src/storage/SparseMatrix.h"
 #include "src/storage/expressions/Variable.h"
 #include "src/utility/OsDetection.h"
 
@@ -14,6 +14,12 @@
 #include "cuddObj.hh"
 
 namespace storm {
+    namespace storage {
+        template<typename T> class SparseMatrix;
+        class BitVector;
+        template<typename E, typename V> class MatrixEntry;
+    }
+    
     namespace dd {
         // Forward-declare some classes.
         template<DdType Type> class DdManager;
@@ -400,7 +406,7 @@ namespace storm {
              *
              * @return The support represented as a BDD.
              */
-            Bdd<DdType::CUDD> getSupport() const;
+            Bdd<DdType::CUDD> getSupport() const override;
             
             /*!
              * Retrieves the number of encodings that are mapped to a non-zero value.
@@ -604,7 +610,7 @@ namespace storm {
              *
              * @param filename The name of the file to which the DD is to be exported.
              */
-            void exportToDot(std::string const& filename = "") const;
+            void exportToDot(std::string const& filename = "") const override;
             
             /*!
              * Retrieves an iterator that points to the first meta variable assignment with a non-zero function value.
@@ -721,7 +727,7 @@ namespace storm {
             void toMatrixRec(DdNode const* dd, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>>& columnsAndValues, std::vector<uint_fast64_t> const& rowGroupOffsets, Odd<DdType::CUDD> const& rowOdd, Odd<DdType::CUDD> const& columnOdd, uint_fast64_t currentRowLevel, uint_fast64_t currentColumnLevel, uint_fast64_t maxLevel, uint_fast64_t currentRowOffset, uint_fast64_t currentColumnOffset, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool generateValues = true) const;
             
             /*!
-             * Helper function to convert the DD into a (sparse) vector.
+             * Helper function to convert the DD into an (explicit) vector.
              *
              * @param dd The DD to convert.
              * @param result The vector that will hold the values upon successful completion.
@@ -772,7 +778,7 @@ namespace storm {
             void addToVector(Odd<DdType::CUDD> const& odd, std::vector<uint_fast64_t> const& ddVariableIndices, std::vector<ValueType>& targetVector) const;
             
             /*!
-             * Performs a recursive step to perform the given function between the given DD-based vector to the given
+             * Performs a recursive step to perform the given function between the given DD-based vector and the given
              * explicit vector.
              *
              * @param dd The DD to add to the explicit vector.

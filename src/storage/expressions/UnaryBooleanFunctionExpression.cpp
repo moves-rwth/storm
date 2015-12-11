@@ -1,5 +1,6 @@
 #include "src/storage/expressions/UnaryBooleanFunctionExpression.h"
 #include "src/storage/expressions/BooleanLiteralExpression.h"
+#include "ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
 
@@ -14,18 +15,21 @@ namespace storm {
         }
         
         storm::expressions::OperatorType UnaryBooleanFunctionExpression::getOperator() const {
+            storm::expressions::OperatorType result = storm::expressions::OperatorType::Not;
             switch (this->getOperatorType()) {
-                case OperatorType::Not: return storm::expressions::OperatorType::Not;
+                case OperatorType::Not: result = storm::expressions::OperatorType::Not;
             }
+            return result;
         }
         
         bool UnaryBooleanFunctionExpression::evaluateAsBool(Valuation const* valuation) const {
             STORM_LOG_THROW(this->hasBooleanType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as boolean.");
 
-            bool operandEvaluated = this->getOperand()->evaluateAsBool(valuation);
+            bool result = this->getOperand()->evaluateAsBool(valuation);
             switch (this->getOperatorType()) {
-                case OperatorType::Not: return !operandEvaluated; break;
+                case OperatorType::Not: result = !result; break;
             }
+            return result;
         }
         
         std::shared_ptr<BaseExpression const> UnaryBooleanFunctionExpression::simplify() const {

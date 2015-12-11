@@ -1,6 +1,8 @@
 #include "src/settings/ArgumentBase.h"
 
+#include <boost/algorithm/string.hpp>
 #include <iomanip>
+#include <sstream>
 
 namespace storm {
     namespace settings {
@@ -9,7 +11,7 @@ namespace storm {
         }
         
         std::ostream& operator<<(std::ostream& out, ArgumentBase const& argument) {
-            std::streamsize width = out.width();
+            uint_fast64_t width = static_cast<uint_fast64_t>(out.width());
             uint_fast64_t charactersPrinted = 0;
             out << std::setw(0) << std::left << "<" << argument.getName() << "> ";
             charactersPrinted += 2 + argument.getName().length();

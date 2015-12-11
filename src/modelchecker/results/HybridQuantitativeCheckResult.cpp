@@ -4,6 +4,8 @@
 #include "src/storage/dd/CuddDdManager.h"
 
 #include "src/exceptions/InvalidOperationException.h"
+#include "src/utility/macros.h"
+#include "src/utility/constants.h"
 
 namespace storm {
     namespace modelchecker {
