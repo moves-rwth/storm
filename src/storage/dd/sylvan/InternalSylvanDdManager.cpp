@@ -1,8 +1,12 @@
 #include "src/storage/dd/sylvan/InternalSylvanDdManager.h"
 
+#include <cmath>
+
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/SylvanSettings.h"
+
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
-#include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/NotSupportedException.h"
 
 #include <iostream>
@@ -15,13 +19,27 @@ namespace storm {
         // some operations.
         uint_fast64_t InternalDdManager<DdType::Sylvan>::nextFreeVariableIndex = 0;
         
+        uint_fast64_t findLargestPowerOfTwoFitting(uint_fast64_t number) {
+            for (uint_fast64_t index = 0; index < 64; ++index) {
+                if ((number & (1ull << 63 - index)) != 0) {
+                    return 63 - index;
+                }
+            }
+        }
+        
         InternalDdManager<DdType::Sylvan>::InternalDdManager() {
             if (numberOfInstances == 0) {
                 // Initialize lace: auto-detect number of workers.
-                lace_init(0, 1000000);
+                lace_init(storm::settings::sylvanSettings().getNumberOfThreads(), 1000000);
                 lace_startup(0, 0, 0);
                 
-                sylvan::Sylvan::initPackage(1ull << 16, 1ull << 28, 1ul << 16, 1ull << 25);
+                // Each node takes 24 bytes and the maximal memory is specified in megabytes.
+                uint_fast64_t totalNodesToStore = storm::settings::sylvanSettings().getMaximalMemory() * 1024 * 1024 / 24;
+                
+                // Compute the power of two that still fits within the total numbers to store.
+                uint_fast64_t powerOfTwo = findLargestPowerOfTwoFitting(totalNodesToStore);
+                
+                sylvan::Sylvan::initPackage(1ull << std::max(16ull, powerOfTwo > 24 ? powerOfTwo - 8 : 0), 1ull << (powerOfTwo - 1), 1ull << std::max(16ull, powerOfTwo > 24 ? powerOfTwo - 12 : 0), 1ull << (powerOfTwo - 1));
                 sylvan::Sylvan::initBdd(1);
                 sylvan::Sylvan::initMtbdd();
             }

@@ -8,6 +8,8 @@
 #include "src/settings/Argument.h"
 #include "src/solver/SolverSelectionOptions.h"
 
+#include "src/storage/dd/DdType.h"
+
 #include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
@@ -51,6 +53,7 @@ namespace storm {
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
             const std::string GeneralSettings::engineOptionName = "engine";
             const std::string GeneralSettings::engineOptionShortName = "e";
+            const std::string GeneralSettings::ddLibraryOptionName = "ddlib";
             const std::string GeneralSettings::cudaOptionName = "cuda";
             const std::string GeneralSettings::prismCompatibilityOptionName = "prismcompat";
             const std::string GeneralSettings::prismCompatibilityOptionShortName = "pc";
@@ -99,6 +102,10 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, timeoutOptionName, false, "If given, computation will abort after the timeout has been reached.").setShortName(timeoutOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
+                
+                std::vector<std::string> ddLibraries = {"cudd", "sylvan"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the library to prefer. Available are: cudd and sylvan.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(ddLibraries)).setDefaultValueString("cudd").build()).build());
                 
                 std::vector<std::string> lpSolvers = {"gurobi", "glpk"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
@@ -268,6 +275,15 @@ namespace storm {
                     return storm::solver::SmtSolverType::Mathsat;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown SMT solver '" << smtSolverName << "'.");
+            }
+            
+            storm::dd::DdType GeneralSettings::getDdLibraryType() const {
+                std::string ddLibraryAsString = this->getOption(ddLibraryOptionName).getArgumentByName("name").getValueAsString();
+                if (ddLibraryAsString == "sylvan") {
+                    return storm::dd::DdType::Sylvan;
+                } else {
+                    return storm::dd::DdType::CUDD;
+                }
             }
             
             bool GeneralSettings::isConstantsSet() const {

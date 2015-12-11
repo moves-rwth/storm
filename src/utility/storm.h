@@ -82,7 +82,7 @@ namespace storm {
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
             
-    template<typename ValueType>
+    template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
     std::shared_ptr<storm::models::ModelBase> buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         std::shared_ptr<storm::models::ModelBase> result(nullptr);
 
@@ -104,11 +104,11 @@ namespace storm {
 
             result = storm::builder::ExplicitPrismModelBuilder<ValueType>().translateProgram(program, options);
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
-            typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options options;
-            options = typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::Options(formulas);
+            typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
+            options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constants);
 
-            result = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+            result = storm::builder::DdPrismModelBuilder<LibraryType>::translateProgram(program, options);
         }
 
         return result;
