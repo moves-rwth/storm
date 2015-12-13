@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_DD_CUDD_INTERNALSYLVANADD_H_
-#define STORM_STORAGE_DD_CUDD_INTERNALSYLVANADD_H_
+#ifndef STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANADD_H_
+#define STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANADD_H_
 
 #include <set>
 #include <unordered_map>
@@ -610,7 +610,7 @@ namespace storm {
              * @param values The vector that is to be represented by the ADD.
              * @param odd The ODD used for the translation.
              * @param ddVariableIndices The (sorted) list of DD variable indices to use.
-             * @return The resulting (CUDD) ADD node.
+             * @return The resulting (Sylvan) MTBDD node.
              */
             static MTBDD fromVectorRec(uint_fast64_t& currentOffset, uint_fast64_t currentLevel, uint_fast64_t maxLevel, std::vector<ValueType> const& values, Odd const& odd, std::vector<uint_fast64_t> const& ddVariableIndices);
 
@@ -679,4 +679,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_STORAGE_DD_CUDD_INTERNALSYLVANADD_H_ */
+#endif /* STORM_STORAGE_DD_SYLVAN_INTERNALSYLVANADD_H_ */

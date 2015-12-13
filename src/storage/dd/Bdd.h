@@ -335,7 +335,7 @@ namespace storm {
              * @param odd The ODD used for the translation.
              * @param metaVariables The meta variables used for the translation.
              * @param filter The filter that evaluates whether an encoding is to be mapped to 0 or 1.
-             * @return The resulting (CUDD) BDD.
+             * @return The resulting BDD.
              */
             template<typename ValueType>
             static Bdd<LibraryType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (ValueType const&)> const& filter);

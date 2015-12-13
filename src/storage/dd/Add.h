@@ -45,7 +45,7 @@ namespace storm {
              * @param values The vector that is to be represented by the ADD.
              * @param odd The ODD used for the translation.
              * @param metaVariables The meta variables used for the translation.
-             * @return The resulting (CUDD) ADD.
+             * @return The resulting ADD.
              */
             static Add<LibraryType, ValueType> fromVector(DdManager<LibraryType> const& ddManager, std::vector<ValueType> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables);
             
@@ -594,7 +594,7 @@ namespace storm {
             
         private:
             /*!
-             * Creates a DD that encapsulates the given CUDD internal ADD.
+             * Creates an ADD from the given internal ADD.
              *
              * @param ddManager The manager responsible for this DD.
              * @param internalAdd The internal ADD to store.
