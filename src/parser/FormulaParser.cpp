@@ -173,6 +173,13 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        FormulaParser::FormulaParser(storm::prism::Program const& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
+            // Make the formulas of the program available to the parser.
+            for (auto const& formula : program.getFormulas()) {
+                this->addIdentifierExpression(formula.getName(), formula.getExpression());
+            }
+        }
+        
         FormulaParser::FormulaParser(FormulaParser const& other) : FormulaParser(other.manager) {
             other.identifiers_.for_each([=] (std::string const& name, storm::expressions::Expression const& expression) { this->addIdentifierExpression(name, expression); });
         }

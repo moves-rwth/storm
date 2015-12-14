@@ -5,23 +5,30 @@
 
 namespace storm {
     namespace parser {
-        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), powerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), trueFalse_(manager), manager(manager.getSharedPointer()), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
+        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerOperator_(), trueFalse_(manager), manager(manager.getSharedPointer()), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&ExpressionParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
             
             if (allowBacktracking) {
-                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) >> plusExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
+                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) >> iteExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
             } else {
-                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) > plusExpression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
+                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) > iteExpression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
             }
             floorCeilExpression.name("floor/ceil expression");
             
             if (allowBacktracking) {
-                minMaxExpression = ((minMaxOperator_ >> qi::lit("(")) >> plusExpression >> qi::lit(",") >> plusExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> iteExpression[qi::_val = qi::_1] >> +(qi::lit(",") >> iteExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]);
             } else {
-                minMaxExpression = ((minMaxOperator_ >> qi::lit("(")) > plusExpression > qi::lit(",") > plusExpression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] > qi::lit("(")) > iteExpression[qi::_val = qi::_1] > +(qi::lit(",") > iteExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]);
             }
             minMaxExpression.name("min/max expression");
+            
+            if (allowBacktracking) {
+                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) >> iteExpression >> qi::lit(",") >> iteExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
+            } else {
+                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) > iteExpression > qi::lit(",") > iteExpression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
+            }
+            prefixPowerExpression.name("pow expression");
             
 			identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionParser::getIdentifierExpression, phoenix::ref(*this), qi::_1, allowBacktracking, qi::_pass)];
             identifierExpression.name("identifier expression");
@@ -29,23 +36,23 @@ namespace storm {
             literalExpression = trueFalse_[qi::_val = qi::_1] | strict_double[qi::_val = phoenix::bind(&ExpressionParser::createDoubleLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&ExpressionParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1)];
             literalExpression.name("literal expression");
             
-            atomicExpression = floorCeilExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | literalExpression | identifierExpression;
+            atomicExpression = floorCeilExpression | prefixPowerExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | literalExpression | identifierExpression;
             atomicExpression.name("atomic expression");
             
             unaryExpression = (-unaryOperator_ >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionParser::createUnaryExpression, phoenix::ref(*this), qi::_1, qi::_2)];
             unaryExpression.name("unary expression");
             
             if (allowBacktracking) {
-                powerExpression = unaryExpression[qi::_val = qi::_1] > -(powerOperator_ > expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ > expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             } else {
-                powerExpression = unaryExpression[qi::_val = qi::_1] > -(powerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             }
-            powerExpression.name("power expression");
+            infixPowerExpression.name("power expression");
             
             if (allowBacktracking) {
-                multiplicationExpression = powerExpression[qi::_val = qi::_1] >> *(multiplicationOperator_ >> powerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] >> *(multiplicationOperator_ >> infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             } else {
-                multiplicationExpression = powerExpression[qi::_val = qi::_1] > *(multiplicationOperator_ > powerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] > *(multiplicationOperator_ > infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             }
             multiplicationExpression.name("multiplication expression");
             
@@ -92,7 +99,7 @@ namespace storm {
             debug(relativeExpression);
             debug(plusExpression);
             debug(multiplicationExpression);
-            debug(powerExpression);
+            debug(infixPowerExpression);
             debug(unaryExpression);
             debug(atomicExpression);
             debug(literalExpression);

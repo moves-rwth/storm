@@ -120,15 +120,15 @@ namespace storm {
             // A parser used for recognizing the operators at the "multiplication" precedence level.
             multiplicationOperatorStruct multiplicationOperator_;
 
-            struct powerOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
-                powerOperatorStruct() {
+            struct infixPowerOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                infixPowerOperatorStruct() {
                     add
                     ("^", storm::expressions::OperatorType::Power);
                 }
             };
             
             // A parser used for recognizing the operators at the "power" precedence level.
-            powerOperatorStruct powerOperator_;
+            infixPowerOperatorStruct infixPowerOperator_;
             
             struct unaryOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
                 unaryOperatorStruct() {
@@ -162,7 +162,17 @@ namespace storm {
             
             // A parser used for recognizing the operators at the "min/max" precedence level.
             minMaxOperatorStruct minMaxOperator_;
+            
+            struct prefixPowerOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                prefixPowerOperatorStruct() {
+                    add
+                    ("pow", storm::expressions::OperatorType::Power);
+                }
+            };
 
+            // A parser used for recognizing the operators at the "power" precedence level.
+            prefixPowerOperatorStruct prefixPowerOperator_;
+            
             struct trueFalseOperatorStruct : qi::symbols<char, storm::expressions::Expression> {
                 trueFalseOperatorStruct(storm::expressions::ExpressionManager const& manager) {
                     add
@@ -200,13 +210,14 @@ namespace storm {
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> equalityExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> plusExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> multiplicationExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> powerExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> prefixPowerExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> infixPowerExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> unaryExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> atomicExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> literalExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> identifierExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> minMaxExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> floorCeilExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> minMaxExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> floorCeilExpression;
             qi::rule<Iterator, std::string(), Skipper> identifier;
             
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).

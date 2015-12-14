@@ -35,7 +35,7 @@ namespace storm {
     }
 
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program) {
-        storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
+        storm::parser::FormulaParser formulaParser(program);
         return parseFormulas(formulaParser, inputString);
     } 
 }
