@@ -24,6 +24,9 @@ namespace storm {
             
             if(firstQuots == std::string::npos) {
                 return name;
+            } else if (secondQuots ==std::string::npos) {
+                std::cerr << "No ending quotation mark found in " << name <<std::endl;
+                throw storm::exceptions::FileIoException();
             } else {
                 return name.substr(firstQuots+1,secondQuots-1);
             }
@@ -32,11 +35,8 @@ namespace storm {
         bool DFTGalileoParser::readFile(const std::string& filename) {
             // constants
             std::string topleveltoken = "toplevel";
-            
-            
             std::string toplevelId;
-           
-            
+
             std::ifstream file;
             file.exceptions ( std::ifstream::failbit );
             try {
@@ -48,19 +48,25 @@ namespace storm {
             }
             file.exceptions( 0 );
 
-
             std::string line;
+            bool generalSuccess = true;
             while(std::getline(file, line))
             {
+                bool success = true;
                 std::cout << line << std::endl;
                 size_t commentstarts = line.find("//");
                 line = line.substr(0, commentstarts);
                 size_t firstsemicolon = line.find(";");
                 line = line.substr(0, firstsemicolon);
+                if (line.find_first_not_of(' ') == std::string::npos)
+                {
+                    // Only whitespace
+                    continue;
+                }
 
                 // Top level indicator.
                 if(boost::starts_with(line, topleveltoken)) {
-                    toplevelId = stripQuotsFromName(line.substr(topleveltoken.size()+1));
+                    toplevelId = stripQuotsFromName(line.substr(topleveltoken.size() + 1));
                 }
                 else
                 {
@@ -73,30 +79,32 @@ namespace storm {
                         childNames.push_back(stripQuotsFromName(tokens[i]));
                     }
                     if(tokens[1] == "and") {
-                        mBuilder.addAndElement(name, childNames);
+                        success = mBuilder.addAndElement(name, childNames);
                     } else if(tokens[1] == "or") {
-                        mBuilder.addOrElement(name, childNames);
+                        success = mBuilder.addOrElement(name, childNames);
                     } else if(boost::starts_with(tokens[1], "vot")) {
-                        mBuilder.addVotElement(name, boost::lexical_cast<unsigned>(tokens[1].substr(3)), childNames);
+                        success = mBuilder.addVotElement(name, boost::lexical_cast<unsigned>(tokens[1].substr(3)), childNames);
                     } else if(tokens[1] == "pand") {
-                        mBuilder.addPandElement(name, childNames);
+                        success = mBuilder.addPandElement(name, childNames);
                     } else if(tokens[1] == "wsp" || tokens[1] == "csp") {
-                        mBuilder.addSpareElement(name, childNames);
+                        success = mBuilder.addSpareElement(name, childNames);
                     } else if(boost::starts_with(tokens[1], "lambda=")) {
-                        mBuilder.addBasicElement(name, boost::lexical_cast<double>(tokens[1].substr(7)), boost::lexical_cast<double>(tokens[2].substr(5)));
+                        success = mBuilder.addBasicElement(name, boost::lexical_cast<double>(tokens[1].substr(7)), boost::lexical_cast<double>(tokens[2].substr(5)));
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " + tokens[1] + "  not recognized.");
+                        success = false;
                     }
                 }
-
+                if (generalSuccess) {
+                    generalSuccess = success;
+                }
             }
             if(!mBuilder.setTopLevel(toplevelId)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
             }
             file.close();
-            return true;                        
+            return generalSuccess;
         }
-        
         
     }
 }

@@ -43,8 +43,6 @@ namespace storm {
                 return addStandardGate(name, children, DFTElementTypes::SPARE);
             }
             
-            
-            
             bool addVotElement(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
                 assert(children.size() > 0);
                 if(mElements.count(name) != 0) {
@@ -103,8 +101,8 @@ namespace storm {
             enum class topoSortColour {WHITE, BLACK, GREY}; 
             
             void topoVisit(std::shared_ptr<DFTElement> const& n, std::map<std::shared_ptr<DFTElement>, topoSortColour>& visited, std::vector<std::shared_ptr<DFTElement>>& L);
-            std::vector<std::shared_ptr<DFTElement>> topoSort();
 
+            std::vector<std::shared_ptr<DFTElement>> topoSort();
             
         };
     }

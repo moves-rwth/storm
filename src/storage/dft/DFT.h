@@ -16,7 +16,6 @@
 namespace storm {
     namespace storage {
 
-                
         struct DFTElementSort {
             bool operator()(std::shared_ptr<DFTElement> const& a, std::shared_ptr<DFTElement> const& b)  const {
                 if (a->rank() == 0 && b->rank() == 0) {
@@ -28,8 +27,6 @@ namespace storm {
         };
         
         class DFT {
-
-            
 
         private:
             std::vector<std::shared_ptr<DFTElement>> mElements;
@@ -43,7 +40,6 @@ namespace storm {
             std::vector<size_t> mTopModule;
             std::vector<size_t> mIdToFailureIndex;
             std::map<size_t, size_t> mUsageIndex;
-            
             
         public:
             DFT(std::vector<std::shared_ptr<DFTElement>> const& elements, std::shared_ptr<DFTElement> const& tle);

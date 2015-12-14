@@ -1,6 +1,8 @@
 #ifndef DFTUNIT_H
 #define	DFTUNIT_H
 
+#include "../BitVector.h"
+
 namespace storm {
     namespace storage {
         class DFT;

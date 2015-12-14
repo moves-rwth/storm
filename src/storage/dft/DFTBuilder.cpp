@@ -10,7 +10,6 @@
 
 namespace storm {
     namespace storage {
-        
          
         DFT DFTBuilder::build() {
             for(auto& elem : mChildNames) {
@@ -22,8 +21,6 @@ namespace storm {
             }
 
             // Sort elements topologically
-
-
 
             // compute rank
             for (auto& elem : mElements) {
@@ -48,23 +45,22 @@ namespace storm {
             if(elem->rank() == -1) {
                 if(elem->nrChildren() == 0) {
                     elem->setRank(0);
-                    return 0;
-                }
-                std::shared_ptr<DFTGate> gate = std::static_pointer_cast<DFTGate>(elem);
-                unsigned maxrnk = 0;
-                unsigned newrnk = 0;
+                } else {
+                    std::shared_ptr<DFTGate> gate = std::static_pointer_cast<DFTGate>(elem);
+                    unsigned maxrnk = 0;
+                    unsigned newrnk = 0;
 
-                for(std::shared_ptr<DFTElement> const& child : gate->children()) {
-                    newrnk = computeRank(child);
-                    if(newrnk > maxrnk) {
-                        maxrnk = newrnk;
+                    for (std::shared_ptr<DFTElement> const &child : gate->children()) {
+                        newrnk = computeRank(child);
+                        if (newrnk > maxrnk) {
+                            maxrnk = newrnk;
+                        }
                     }
+                    elem->setRank(maxrnk + 1);
                 }
-                elem->setRank(maxrnk+1);
-                return maxrnk + 1;
-            } else {
-                return elem->rank();
             }
+
+            return elem->rank();
         }
         
         bool DFTBuilder::addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementTypes tp) {
@@ -109,7 +105,6 @@ namespace storm {
                 }
                 visited[n] = topoSortColour::BLACK;
                 L.push_back(n);
-               
             }
         }
 

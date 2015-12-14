@@ -6,8 +6,6 @@
 
 #include <map>
 
-
-
 namespace storm {
     namespace parser {
         class DFTGalileoParser {
@@ -22,8 +20,6 @@ namespace storm {
     };
 }
 }
-
-
 
 #endif	/* DFTGALILEOPARSER_H */
 

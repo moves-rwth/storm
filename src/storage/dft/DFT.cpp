@@ -75,7 +75,7 @@ namespace storm {
         }
 
         void DFT::printSpareModules(std::ostream& os) const {
-            std::cout << "[" << mElements[mTopLevelIndex] << "] {";
+            std::cout << "[" << mElements[mTopLevelIndex]->id() << "] {";
             std::vector<size_t>::const_iterator it = mTopModule.begin();
             assert(it != mTopModule.end());
             os << mElements[(*it)]->name();
