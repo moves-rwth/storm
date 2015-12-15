@@ -6,6 +6,9 @@
 #include <iostream>
 #include <set>
 
+#include "src/storage/expressions/Variable.h"
+#include "src/storage/expressions/Expression.h"
+
 namespace storm {
     namespace logic {
         // Forward-declare all formula classes.
@@ -173,6 +176,8 @@ namespace storm {
             
             std::shared_ptr<Formula const> asSharedPointer();
             std::shared_ptr<Formula const> asSharedPointer() const;
+            
+            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const = 0;
             
             std::string toString() const;
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;

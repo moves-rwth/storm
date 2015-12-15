@@ -190,18 +190,18 @@ namespace storm {
             };
             
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), terminalStates(), negatedTerminalStates() {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -240,15 +240,6 @@ namespace storm {
                     labelsToBuild = std::set<std::string>();
                 }
                 labelsToBuild.get().insert(formula.get()->getLabel());
-            }
-            
-            // Extract all the expressions used in the formula.
-            std::vector<std::shared_ptr<storm::logic::AtomicExpressionFormula const>> atomicExpressionFormulas = formula.getAtomicExpressionFormulas();
-            for (auto const& formula : atomicExpressionFormulas) {
-                if (!expressionLabels) {
-                    expressionLabels = std::vector<storm::expressions::Expression>();
-                }
-                expressionLabels.get().push_back(formula.get()->getExpression());
             }
         }
         
@@ -993,17 +984,20 @@ namespace storm {
         }
     
         template <storm::dd::DdType Type, typename ValueType>
+        storm::prism::Program const& DdPrismModelBuilder<Type, ValueType>::getTranslatedProgram() const {
+            return preparedProgram.get();
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::translateProgram(storm::prism::Program const& program, Options const& options) {
-            // There might be nondeterministic variables. In that case the program must be prepared before translating.
-            storm::prism::Program preparedProgram;
             if (options.constantDefinitions) {
                 preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
             } else {
                 preparedProgram = program;
             }
             
-            if (preparedProgram.hasUndefinedConstants()) {
-                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram.getUndefinedConstants();
+            if (preparedProgram->hasUndefinedConstants()) {
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram->getUndefinedConstants();
                 std::stringstream stream;
                 bool printComma = false;
                 for (auto const& constant : undefinedConstants) {
@@ -1018,13 +1012,13 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
             }
             
-            preparedProgram = preparedProgram.substituteConstants();
+            preparedProgram = preparedProgram->substituteConstants();
             
-            STORM_LOG_DEBUG("Building representation of program:" << std::endl << preparedProgram << std::endl);
+            STORM_LOG_DEBUG("Building representation of program:" << std::endl << *preparedProgram << std::endl);
             
             // Start by initializing the structure used for storing all information needed during the model generation.
             // In particular, this creates the meta variables used to encode the model.
-            GenerationInformation generationInfo(preparedProgram);
+            GenerationInformation generationInfo(*preparedProgram);
 
             SystemResult system = createSystemDecisionDiagram(generationInfo);
             storm::dd::Add<Type, ValueType> transitionMatrix = system.allTransitionsDd;
@@ -1034,6 +1028,8 @@ namespace storm {
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
             if (options.terminalStates || options.negatedTerminalStates) {
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preparedProgram->getConstantsSubstitution();
+                
                 storm::dd::Bdd<Type> terminalStatesBdd = generationInfo.manager->getBddZero();
                 if (options.terminalStates) {
                     storm::expressions::Expression terminalExpression;
@@ -1041,23 +1037,29 @@ namespace storm {
                         terminalExpression = boost::get<storm::expressions::Expression>(options.terminalStates.get());
                     } else {
                         std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
-                        terminalExpression = preparedProgram.getLabelExpression(labelName);
+                        terminalExpression = preparedProgram->getLabelExpression(labelName);
                     }
                 
+                    // If the expression refers to constants of the model, we need to substitute them.
+                    terminalExpression = terminalExpression.substitute(constantsSubstitution);
+                    
                     STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
                     terminalStatesBdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
                 }
                 if (options.negatedTerminalStates) {
-                    storm::expressions::Expression nonTerminalExpression;
+                    storm::expressions::Expression negatedTerminalExpression;
                     if (options.negatedTerminalStates.get().type() == typeid(storm::expressions::Expression)) {
-                        nonTerminalExpression = boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
+                        negatedTerminalExpression = boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
                     } else {
                         std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
-                        nonTerminalExpression = preparedProgram.getLabelExpression(labelName);
+                        negatedTerminalExpression = preparedProgram->getLabelExpression(labelName);
                     }
                     
-                    STORM_LOG_TRACE("Making the states *not* satisfying " << nonTerminalExpression << " terminal.");
-                    terminalStatesBdd |= !generationInfo.rowExpressionAdapter->translateExpression(nonTerminalExpression).toBdd();
+                    // If the expression refers to constants of the model, we need to substitute them.
+                    negatedTerminalExpression = negatedTerminalExpression.substitute(constantsSubstitution);
+                    
+                    STORM_LOG_TRACE("Making the states *not* satisfying " << negatedTerminalExpression << " terminal.");
+                    terminalStatesBdd |= !generationInfo.rowExpressionAdapter->translateExpression(negatedTerminalExpression).toBdd();
                 }
                 
                 transitionMatrix *= (!terminalStatesBdd).template toAdd<ValueType>();
@@ -1116,18 +1118,18 @@ namespace storm {
             
             // First, we make sure that all selected reward models actually exist.
             for (auto const& rewardModelName : options.rewardModelsToBuild) {
-                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram.hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
+                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram->hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
             }
             
-            for (auto const& rewardModel : preparedProgram.getRewardModels()) {
+            for (auto const& rewardModel : preparedProgram->getRewardModels()) {
                 if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
                     selectedRewardModels.push_back(rewardModel);
                 }
             }
             // If no reward model was selected until now and a referenced reward model appears to be unique, we build
             // the only existing reward model (given that no explicit name was given for the referenced reward model).
-            if (selectedRewardModels.empty() && preparedProgram.getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
-                selectedRewardModels.push_back(preparedProgram.getRewardModel(0));
+            if (selectedRewardModels.empty() && preparedProgram->getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
+                selectedRewardModels.push_back(preparedProgram->getRewardModel(0));
             }
             
             std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, double>> rewardModels;
@@ -1137,7 +1139,7 @@ namespace storm {
             
             // Build the labels that can be accessed as a shortcut.
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping;
-            for (auto const& label : preparedProgram.getLabels()) {
+            for (auto const& label : preparedProgram->getLabels()) {
                 labelToExpressionMapping.emplace(label.getName(), label.getStatePredicateExpression());
             }
             

@@ -17,7 +17,7 @@
 
 TEST(GraphTest, SymbolicProb01_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     
@@ -38,7 +38,7 @@ TEST(GraphTest, SymbolicProb01_Cudd) {
 
 TEST(GraphTest, SymbolicProb01_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     
@@ -59,7 +59,7 @@ TEST(GraphTest, SymbolicProb01_Sylvan) {
 
 TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
 
@@ -76,7 +76,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
     }
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
 
@@ -101,7 +101,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
     }
         
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
@@ -120,7 +120,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
 
 TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
 
@@ -137,7 +137,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
     }
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
@@ -162,7 +162,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
     }
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     

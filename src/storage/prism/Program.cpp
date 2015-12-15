@@ -184,6 +184,17 @@ namespace storm {
             return this->constants;
         }
         
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getConstantsSubstitution() const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution;
+            for (auto const& constant : this->getConstants()) {
+                if (constant.isDefined()) {
+                    constantsSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression());
+                }
+            }
+            return constantsSubstitution;
+        }
+
+    
         std::size_t Program::getNumberOfConstants() const {
             return this->getConstants().size();
         }

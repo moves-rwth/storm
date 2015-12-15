@@ -31,7 +31,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("num_rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
     EXPECT_EQ(131521ul, model->getNumberOfStates());
     EXPECT_EQ(164288ul, model->getNumberOfTransitions());
     
@@ -83,7 +83,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("num_rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
     EXPECT_EQ(131521ul, model->getNumberOfStates());
     EXPECT_EQ(164288ul, model->getNumberOfTransitions());
     
@@ -127,7 +127,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     EXPECT_EQ(586242ul, model->getNumberOfStates());
     EXPECT_EQ(1753883ul, model->getNumberOfTransitions());
     
@@ -171,7 +171,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
     EXPECT_EQ(586242ul, model->getNumberOfStates());
     EXPECT_EQ(1753883ul, model->getNumberOfTransitions());
     

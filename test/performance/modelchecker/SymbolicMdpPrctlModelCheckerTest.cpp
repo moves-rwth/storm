@@ -31,7 +31,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
     EXPECT_EQ(27299ul, model->getNumberOfStates());
     EXPECT_EQ(74365ul, model->getNumberOfTransitions());
     
@@ -83,7 +83,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
     EXPECT_EQ(27299ul, model->getNumberOfStates());
     EXPECT_EQ(74365ul, model->getNumberOfTransitions());
     
@@ -135,7 +135,11 @@ TEST(SymbolicMdpPrctlModelCheckerTest, CSMA_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("time");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+    
+    storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD> builder;
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.translateProgram(program, options);
+    storm::prism::Program translatedProgram = builder.getTranslatedProgram();
+    
     EXPECT_EQ(1460287ul, model->getNumberOfStates());
     EXPECT_EQ(2396727ul, model->getNumberOfTransitions());
     
@@ -155,19 +159,77 @@ TEST(SymbolicMdpPrctlModelCheckerTest, CSMA_Cudd) {
     EXPECT_NEAR(0.90468935682619855, quantitativeResult1.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Pmin=? [ F (min_backoff_after_success < 4) ]");
+    formula = formula->substitute(translatedProgram.getConstantsSubstitution());
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(0, quantitativeResult3.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0, quantitativeResult3.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.98952073326388401, quantitativeResult3.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.98952073326388401, quantitativeResult3.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Rmin=? [ F \"all_delivered\" ]");
     
     result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult5 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
+    
+    EXPECT_NEAR(5.0348834996352601, quantitativeResult5.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(5.0348834996352601, quantitativeResult5.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
+}
+
+TEST(SymbolicMdpPrctlModelCheckerTest, CSMA_Sylvan) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/performance/builder/csma3_4.nm");
+    
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser formulaParser(program);
+    
+    // Build the die model with its reward model.
+#ifdef WINDOWS
+    storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::Options options;
+#else
+    typename storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::Options options;
+#endif
+    options.buildAllRewardModels = false;
+    options.rewardModelsToBuild.insert("time");
+    
+    storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan> builder;
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.translateProgram(program, options);
+    storm::prism::Program translatedProgram = builder.getTranslatedProgram();
+    
+    EXPECT_EQ(1460287ul, model->getNumberOfStates());
+    EXPECT_EQ(2396727ul, model->getNumberOfTransitions());
+    
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+    
+    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*mdp, std::unique_ptr<storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::utility::solver::SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
+    
+    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [ !\"collision_max_backoff\" U \"all_delivered\" ]");
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
+    
+    EXPECT_NEAR(0.90469132950001963, quantitativeResult1.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.90469132950001963, quantitativeResult1.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
+    
+    formula = formulaParser.parseSingleFormulaFromString("Pmin=? [ F (min_backoff_after_success < 4) ]");
+    formula = formula->substitute(translatedProgram.getConstantsSubstitution());
+
+    result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult3 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
+    
+    EXPECT_NEAR(0.98952073326388401, quantitativeResult3.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(, quantitativeResult3.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());
+    
+    formula = formulaParser.parseSingleFormulaFromString("Rmin=? [ F \"all_delivered\" ]");
+    
+    result = checker.check(*formula);
+    result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
+    storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult5 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
     EXPECT_NEAR(5.0348834996352601, quantitativeResult5.getMin(), storm::settings::nativeEquationSolverSettings().getPrecision());
     EXPECT_NEAR(5.0348834996352601, quantitativeResult5.getMax(), storm::settings::nativeEquationSolverSettings().getPrecision());

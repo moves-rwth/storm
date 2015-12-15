@@ -10,6 +10,10 @@ namespace storm {
             return true;
         }
         
+        std::shared_ptr<Formula> ConditionalPathFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return std::make_shared<ConditionalPathFormula>(this->getLeftSubformula().substitute(substitution), this->getRightSubformula().substitute(substitution));
+        }
+        
         std::ostream& ConditionalPathFormula::writeToStream(std::ostream& out) const {
             this->getLeftSubformula().writeToStream(out);
             out << " || ";

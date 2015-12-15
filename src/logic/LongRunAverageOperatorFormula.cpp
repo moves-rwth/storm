@@ -38,6 +38,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        std::shared_ptr<Formula> LongRunAverageOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return std::make_shared<LongRunAverageOperatorFormula>(this->optimalityType, this->comparisonType, this->bound, this->getSubformula().substitute(substitution));
+        }
+        
         std::ostream& LongRunAverageOperatorFormula::writeToStream(std::ostream& out) const {
             out << "LRA";
             OperatorFormula::writeToStream(out);

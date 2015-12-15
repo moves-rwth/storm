@@ -17,9 +17,9 @@ namespace storm {
             floorCeilExpression.name("floor/ceil expression");
             
             if (allowBacktracking) {
-                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> iteExpression[qi::_val = qi::_1] >> +(qi::lit(",") >> iteExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]);
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> iteExpression[qi::_val = qi::_1] >> +(qi::lit(",") >> iteExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]) >> qi::lit(")");
             } else {
-                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] > qi::lit("(")) > iteExpression[qi::_val = qi::_1] > +(qi::lit(",") > iteExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]);
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] > qi::lit("(")) > iteExpression[qi::_val = qi::_1] > +(qi::lit(",") > iteExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]) > qi::lit(")");
             }
             minMaxExpression.name("min/max expression");
             

@@ -404,7 +404,7 @@ namespace storm {
         void Formula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
             return;
         }
-        
+                
         std::string Formula::toString() const {
             std::stringstream str2;
             writeToStream(str2);

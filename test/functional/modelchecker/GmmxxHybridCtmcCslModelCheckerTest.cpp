@@ -37,7 +37,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("num_repairs");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
     
@@ -134,7 +134,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("num_repairs");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>>();
     
@@ -231,7 +231,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("up");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
     
@@ -310,7 +310,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("up");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>>();
     
@@ -382,7 +382,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Polling_Cudd) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model.
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
     
@@ -418,7 +418,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Polling_Sylvan) {
     std::shared_ptr<storm::logic::Formula> formula(nullptr);
     
     // Build the model.
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>>();
     
@@ -468,7 +468,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("customers");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD>>();
     
@@ -556,7 +556,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("customers");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>> ctmc = model->as<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan>>();
     

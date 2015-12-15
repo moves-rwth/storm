@@ -34,7 +34,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("coinflips");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
     EXPECT_EQ(169ul, model->getNumberOfStates());
     EXPECT_EQ(436ul, model->getNumberOfTransitions());
     
@@ -131,7 +131,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, Dice_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("coinflips");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
     EXPECT_EQ(169ul, model->getNumberOfStates());
     EXPECT_EQ(436ul, model->getNumberOfTransitions());
     
@@ -228,7 +228,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
     EXPECT_EQ(3172ul, model->getNumberOfStates());
     EXPECT_EQ(7144ul, model->getNumberOfTransitions());
     
@@ -307,7 +307,7 @@ TEST(GmmxxHybridMdpPrctlModelCheckerTest, AsynchronousLeader_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>::translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
     EXPECT_EQ(3172ul, model->getNumberOfStates());
     EXPECT_EQ(7144ul, model->getNumberOfTransitions());
     

@@ -4,19 +4,13 @@
 #include <map>
 #include <boost/optional.hpp>
 
+#include "src/storage/prism/Program.h"
+
 #include "src/logic/Formulas.h"
 #include "src/adapters/AddExpressionAdapter.h"
 #include "src/utility/macros.h"
 
 namespace storm {
-    namespace prism {
-        class Program;
-        class Module;
-        class RewardModel;
-        class Update;
-        class Command;
-    }
-    
     namespace dd {
         template<storm::dd::DdType T> class Bdd;
     }
@@ -99,9 +93,6 @@ namespace storm {
                 // An optional set of labels that, if given, restricts the labels that are built.
                 boost::optional<std::set<std::string>> labelsToBuild;
                 
-                // An optional set of expressions for which labels need to be built.
-                boost::optional<std::vector<storm::expressions::Expression>> expressionLabels;
-                
                 // An optional expression or label that (a subset of) characterizes the terminal states of the model.
                 // If this is set, the outgoing transitions of these states are replaced with a self-loop.
                 boost::optional<boost::variant<storm::expressions::Expression, std::string>> terminalStates;
@@ -118,7 +109,15 @@ namespace storm {
              * @param program The program to translate.
              * @return A pointer to the resulting model.
              */
-            static std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> translateProgram(storm::prism::Program const& program, Options const& options = Options());
+            std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> translateProgram(storm::prism::Program const& program, Options const& options = Options());
+            
+            /*!
+             * Retrieves the program that was actually translated (i.e. including constant substitutions etc.). Note
+             * that this function may only be called after a succesful translation.
+             *
+             * @return The translated program.
+             */
+            storm::prism::Program const& getTranslatedProgram() const;
             
         private:
             // This structure can store the decision diagrams representing a particular action.
@@ -246,6 +245,8 @@ namespace storm {
 
             static storm::dd::Bdd<Type> computeReachableStates(GenerationInformation& generationInfo, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitions);
             
+            // This member holds the program that was most recently translated (if any).
+            boost::optional<storm::prism::Program> preparedProgram;
         };
         
     } // namespace adapters

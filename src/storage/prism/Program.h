@@ -107,6 +107,13 @@ namespace storm {
             Constant const& getConstant(std::string const& constantName) const;
             
             /*!
+             * Retrieves a mapping of all defined constants to their defining expressions.
+             *
+             * @return A mapping from constants to their 'values'.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
+            
+            /*!
              * Retrieves all constants defined in the program.
              *
              * @return The constants defined in the program.
