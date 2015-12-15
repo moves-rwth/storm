@@ -4,6 +4,7 @@
 #include "../BitVector.h"
 #include "DFTElementState.h"
 
+#include <iostream>
 
 namespace storm {
     namespace storage {
@@ -18,6 +19,7 @@ namespace storm {
             friend struct std::hash<DFTState>;
         private:
             storm::storage::BitVector mStatus;
+            size_t mId;
             std::vector<size_t> mInactiveSpares;
             std::vector<size_t> mIsCurrentlyFailableBE;
             std::vector<size_t> mUsedRepresentants;
@@ -25,9 +27,15 @@ namespace storm {
             const DFT& mDft;
             
         public:
-            DFTState(DFT const& dft);
+            DFTState(DFT const& dft, size_t id);
             
             DFTElementState getElementState(size_t id) const;
+
+            int getElementStateInt(size_t id) const;
+
+            size_t getId() const;
+
+            void setId(size_t id);
             
             bool isOperational(size_t id) const;
             
@@ -103,7 +111,7 @@ namespace storm {
             
             std::pair<std::shared_ptr<DFTBE<double>>, bool> letNextBEFail(size_t smallestIndex = 0);
             
-            void printCurrentlyFailable(std::ostream& os) {
+            void printCurrentlyFailable(std::ostream& os = std::cout) {
                 auto it = mIsCurrentlyFailableBE.begin();
                 os << "{";
                 if(it != mIsCurrentlyFailableBE.end()) {
@@ -116,7 +124,7 @@ namespace storm {
                 }
                 os << "}" << std::endl;
             }
-            
+
             friend bool operator==(DFTState const& a, DFTState const& b) {
                 return a.mStatus == b.mStatus;
             }

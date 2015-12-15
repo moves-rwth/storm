@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Building CTMC..." << std::endl;
     storm::builder::ExplicitDFTModelBuilder builder(dft);
-    builder.buildCtmc();
+    builder.buildCTMC();
     std::cout << "Built CTMC" << std::endl;
 
     //std::cout << "Model checking..." << std::endl;

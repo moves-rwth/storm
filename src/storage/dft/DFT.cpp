@@ -114,9 +114,22 @@ namespace storm {
                     os << " using " << state.uses(elem->id());
                 } 
                 std::cout << std::endl;
-
-
             }
+        }
+
+        std::string DFT::getStateString(DFTState const& state) const{
+            std::stringstream stream;
+            stream << "(" << state.getId() << ") ";
+            for (auto const& elem : mElements) {
+                stream << state.getElementStateInt(elem->id());
+                /*if(elem->isSpareGate()) {
+                    if(state.isActiveSpare(elem->id())) {
+                        os << " actively";
+                    }
+                    os << " using " << state.uses(elem->id());
+                }*/
+            }
+            return stream.str();
         }
     }
 }

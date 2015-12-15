@@ -151,7 +151,9 @@ namespace storm {
             
             void printSpareModules(std::ostream& os = std::cout) const;
             
-            void printElementsWithState(DFTState const& state, std::ostream& os = std::cout) const; 
+            void printElementsWithState(DFTState const& state, std::ostream& os = std::cout) const;
+
+            std::string getStateString(DFTState const& state) const;
             
         private:
             bool elementIndicesCorrect() const {

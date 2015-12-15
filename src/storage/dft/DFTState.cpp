@@ -5,7 +5,7 @@
 namespace storm {
     namespace storage {
         
-        DFTState::DFTState(DFT const& dft) : mStatus(dft.stateSize()), mDft(dft)  {
+        DFTState::DFTState(DFT const& dft, size_t id) : mStatus(dft.stateSize()), mDft(dft), mId(id)  {
             mInactiveSpares = dft.getSpareIndices();
             dft.initializeUses(*this);
             dft.initializeActivation(*this);
@@ -15,7 +15,19 @@ namespace storm {
         }
         
         DFTElementState DFTState::getElementState(size_t id) const {
-            return static_cast<DFTElementState>(mStatus.getAsInt(mDft.failureIndex(id), 2));
+            return static_cast<DFTElementState>(getElementStateInt(id));
+        }
+
+        int DFTState::getElementStateInt(size_t id) const {
+            return mStatus.getAsInt(mDft.failureIndex(id), 2);
+        }
+
+        size_t DFTState::getId() const {
+            return mId;
+        }
+
+        void DFTState::setId(size_t id) {
+            mId = id;
         }
 
         bool DFTState::isOperational(size_t id) const {
@@ -58,7 +70,7 @@ namespace storm {
         {
             assert(index < mIsCurrentlyFailableBE.size());
             //std::cout << "currently failable: ";
-            //printCurrentlyFailable(std::cout);
+            //printCurrentlyFailable();
             std::pair<std::shared_ptr<DFTBE<double>>,bool> res(mDft.getBasicElement(mIsCurrentlyFailableBE[index]), false);
             mIsCurrentlyFailableBE.erase(mIsCurrentlyFailableBE.begin() + index);
             setFailed(res.first->id());
@@ -98,8 +110,6 @@ namespace storm {
             
         }
         
-        
-        
         void DFTState::setUsesAtPosition(size_t usageIndex, size_t child) {
             mStatus.setFromInt(usageIndex, mDft.usageInfoBits(), child);
             mUsedRepresentants.push_back(child);
@@ -121,5 +131,6 @@ namespace storm {
             }
             return false;
         }
+
     }
 }
