@@ -12,7 +12,7 @@ const int lambda=30; // time to send a message
 
 // actual parameters
 const int N = 3; // number of processes
-const int K = 4; // exponential backoff limit
+const int K = 2; // exponential backoff limit
 const int slot = 2*sigma; // length of slot
 const int M = floor(pow(2, K))-1 ; // max number of slots to wait
 //const int lambda=782;
@@ -96,8 +96,6 @@ module station1
 	// probability depends on which transmission this is (cd1)
 	[] s1=2 & cd1=1 ->  1/2 : (s1'=3) & (bc1'=0) + 1/2 : (s1'=3) & (bc1'=1) ;
 	[] s1=2 & cd1=2 ->  1/4 : (s1'=3) & (bc1'=0) + 1/4 : (s1'=3) & (bc1'=1) + 1/4 : (s1'=3) & (bc1'=2) + 1/4 : (s1'=3) & (bc1'=3) ;
-	[] s1=2 & cd1=3 ->  1/8 : (s1'=3) & (bc1'=0) + 1/8 : (s1'=3) & (bc1'=1) + 1/8 : (s1'=3) & (bc1'=2) + 1/8 : (s1'=3) & (bc1'=3) + 1/8 : (s1'=3) & (bc1'=4) + 1/8 : (s1'=3) & (bc1'=5) + 1/8 : (s1'=3) & (bc1'=6) + 1/8 : (s1'=3) & (bc1'=7) ;
-	[] s1=2 & cd1=4 ->  1/16 : (s1'=3) & (bc1'=0) + 1/16 : (s1'=3) & (bc1'=1) + 1/16 : (s1'=3) & (bc1'=2) + 1/16 : (s1'=3) & (bc1'=3) + 1/16 : (s1'=3) & (bc1'=4) + 1/16 : (s1'=3) & (bc1'=5) + 1/16 : (s1'=3) & (bc1'=6) + 1/16 : (s1'=3) & (bc1'=7) + 1/16 : (s1'=3) & (bc1'=8) + 1/16 : (s1'=3) & (bc1'=9) + 1/16 : (s1'=3) & (bc1'=10) + 1/16 : (s1'=3) & (bc1'=11) + 1/16 : (s1'=3) & (bc1'=12) + 1/16 : (s1'=3) & (bc1'=13) + 1/16 : (s1'=3) & (bc1'=14) + 1/16 : (s1'=3) & (bc1'=15) ;
 	
 	// wait until backoff counter reaches 0 then send again
 	[time] (s1=3) & (x1<slot) -> (x1'=x1+1); // let time pass (in slot)
