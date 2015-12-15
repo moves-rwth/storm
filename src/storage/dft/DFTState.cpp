@@ -5,7 +5,7 @@
 namespace storm {
     namespace storage {
         
-        DFTState::DFTState(DFT const& dft, size_t id) : mStatus(dft.stateSize()), mDft(dft), mId(id)  {
+        DFTState::DFTState(DFT const& dft, size_t id) : mStatus(dft.stateSize()), mId(id), mDft(dft)  {
             mInactiveSpares = dft.getSpareIndices();
             dft.initializeUses(*this);
             dft.initializeActivation(*this);

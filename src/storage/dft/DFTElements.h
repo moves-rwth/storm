@@ -145,7 +145,7 @@ namespace storm {
                 return mChildren.push_back(elem);
             }
 
-            size_t nrChildren() const {
+            size_t nrChildren() const override {
                 return mChildren.size();
             }
             
@@ -153,7 +153,7 @@ namespace storm {
                 return mChildren;
             }
             
-            virtual bool isGate() const {
+            virtual bool isGate() const override {
                 return true;
             }
             
@@ -172,7 +172,7 @@ namespace storm {
                 }
             }
             
-            virtual std::vector<size_t> independentUnit() const {
+            virtual std::vector<size_t> independentUnit() const override {
                 std::set<size_t> unit = {mId};
                 for(auto const& child : mChildren) {
                     child->extendUnit(unit);
@@ -187,7 +187,7 @@ namespace storm {
 
             
             
-            virtual void print(std::ostream& os = std::cout) const {
+            virtual void print(std::ostream& os = std::cout) const override {
                 os << "{" << name() << "} " << typestring() << "( ";
                 std::vector<std::shared_ptr<DFTElement>>::const_iterator it = mChildren.begin();
                 os << (*it)->name();
@@ -199,7 +199,7 @@ namespace storm {
                 os << ")";
             }    
             
-            virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
+            virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const override {
                 if(DFTElement::checkDontCareAnymore(state, queues)) {
                     childrenDontCare(state, queues);
                     return true;
@@ -207,7 +207,7 @@ namespace storm {
                 return false;
             }
             
-            virtual void extendUnit(std::set<size_t>& unit) const {
+            virtual void extendUnit(std::set<size_t>& unit) const override {
                 DFTElement::extendUnit(unit);
                 for(auto const& child : mChildren) {
                     child->extendUnit(unit);

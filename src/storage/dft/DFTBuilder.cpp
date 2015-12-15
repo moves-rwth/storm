@@ -5,6 +5,8 @@
 #include "DFT.h"
 #include <algorithm>
 #include "OrderDFTElementsById.h"
+#include <src/utility/macros.h>
+#include <src/exceptions/NotSupportedException.h>
 #include "../../exceptions/WrongFormatException.h"
 
 
@@ -86,6 +88,16 @@ namespace storm {
                 case DFTElementTypes::SPARE:
                    element = std::make_shared<DFTSpare>(mNextId++, name);
                    break;
+                case DFTElementTypes::BE:
+                case DFTElementTypes::VOT:
+                    // Handled separately
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type handled separately.");
+                case DFTElementTypes::CONSTF:
+                case DFTElementTypes::CONSTS:
+                case DFTElementTypes::FDEP:
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not supported.");
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not known.");
             }
             mElements[name] = element;
             mChildNames[element] = children;
