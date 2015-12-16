@@ -1,10 +1,16 @@
 #include "src/builder/ExplicitDFTModelBuilder.h"
+#include <src/models/sparse/Ctmc.h>
 
 namespace storm {
     namespace builder {
 
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), rewardModels(), choiceLabeling() {
+            // Intentionally left empty.
+        }
+
         template<typename ValueType, typename RewardModelType, typename IndexType>
-        void ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::buildCTMC() {
+        std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::buildCTMC() {
             // Initialize
             storm::storage::DFTState state(mDft, newIndex++);
             mStates.insert(state);
@@ -20,9 +26,29 @@ namespace storm {
             STORM_LOG_DEBUG("Generated " << mStates.size() << " states");
 
             // Build CTMC
-            transitionMatrix = transitionMatrixBuilder.build();
-            STORM_LOG_DEBUG("TransitionMatrix: " << std::endl << transitionMatrix);
-            // TODO Matthias: build CTMC
+            ModelComponents modelComponents;
+            // Build transition matrix
+            modelComponents.transitionMatrix = transitionMatrixBuilder.build();
+            STORM_LOG_DEBUG("TransitionMatrix: " << std::endl << modelComponents.transitionMatrix);
+
+            // Build state labeling
+            modelComponents.stateLabeling = storm::models::sparse::StateLabeling(mStates.size());
+            // Also label the initial state with the special label "init".
+            modelComponents.stateLabeling.addLabel("init");
+            modelComponents.stateLabeling.addLabelToState("init", 0);
+            // TODO Matthias: not fixed
+            modelComponents.stateLabeling.addLabel("failed");
+            modelComponents.stateLabeling.addLabelToState("failed", 7);
+
+            // TODO Matthias: initialize
+            modelComponents.rewardModels;
+            modelComponents.choiceLabeling;
+
+
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> model;
+            model = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Ctmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
+            model->printModelInformationToStream(std::cout);
+            return model;
         }
 
         template<typename ValueType, typename RewardModelType, typename IndexType>
