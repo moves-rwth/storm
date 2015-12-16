@@ -102,11 +102,12 @@ namespace storm {
             // Now it remains to check that the intersection of the variables used in the program with the undefined
             // constants' variables is empty (except for the update probabilities).
             
-            // Start by checking the defining expressions of all defined constants.
+            // Start by checking the defining expressions of all defined constants. If it contains a currently undefined
+            //constant, we need to mark the target constant as undefined as well.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
                     if (constant.getExpression().containsVariable(undefinedConstantVariables)) {
-                        return false;
+                        undefinedConstantVariables.insert(constant.getExpressionVariable());
                     }
                 }
             }

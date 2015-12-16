@@ -4,10 +4,9 @@
 #include <sstream>
 
 #include "src/parser/SpiritParserDefinitions.h"
+#include "src/parser/SpiritErrorHandler.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/ExpressionManager.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace parser {
@@ -21,11 +20,13 @@ namespace storm {
              *
              * @param manager The manager responsible for the expressions.
              * @param invalidIdentifiers_ A symbol table of identifiers that are to be rejected.
+             * @param enableErrorHandling Enables error handling within the parser. Note that this should should be set
+             * to true when using the parser as the top level parser.
              * @param allowBacktracking A flag that indicates whether or not the parser is supposed to backtrack beyond
              * points it would typically allow. This can, for example, be used to prevent errors if the outer grammar
              * also parses boolean conjuncts that are erroneously consumed by the expression parser.
              */
-            ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking = false);
+            ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool enableErrorHandling = true, bool allowBacktracking = false);
             
             ExpressionParser(ExpressionParser const& other) = default;
             ExpressionParser& operator=(ExpressionParser const& other) = default;
@@ -241,21 +242,8 @@ namespace storm {
             
             bool isValidIdentifier(std::string const& identifier);
             
-            // Functor used for displaying error information.
-            struct ErrorHandler {
-                typedef qi::error_handler_result result_type;
-                
-                template<typename T1, typename T2, typename T3, typename T4>
-                qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
-                    std::stringstream whatAsString;
-                    whatAsString << what;
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(where) << ": " << " expecting " << whatAsString.str() << ".");
-                    return qi::fail;
-                }
-            };
-            
             // An error handler function.
-            phoenix::function<ErrorHandler> handler;
+            phoenix::function<SpiritErrorHandler> handler;
         };
     } // namespace parser
 } // namespace storm

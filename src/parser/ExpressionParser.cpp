@@ -5,28 +5,28 @@
 
 namespace storm {
     namespace parser {
-        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerOperator_(), trueFalse_(manager), manager(manager.getSharedPointer()), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
+        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool enableErrorHandling, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerOperator_(), trueFalse_(manager), manager(manager.getSharedPointer()), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&ExpressionParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
             
             if (allowBacktracking) {
-                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) >> iteExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
+                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
             } else {
-                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) > iteExpression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
+                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
             }
             floorCeilExpression.name("floor/ceil expression");
             
             if (allowBacktracking) {
-                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> iteExpression[qi::_val = qi::_1] >> +(qi::lit(",") >> iteExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]) >> qi::lit(")");
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> expression[qi::_val = qi::_1] >> +(qi::lit(",") >> expression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]) >> qi::lit(")");
             } else {
-                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] > qi::lit("(")) > iteExpression[qi::_val = qi::_1] > +(qi::lit(",") > iteExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]) > qi::lit(")");
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) > expression[qi::_val = qi::_1] > +(qi::lit(",") > expression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1)]) > qi::lit(")");
             }
             minMaxExpression.name("min/max expression");
             
             if (allowBacktracking) {
-                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) >> iteExpression >> qi::lit(",") >> iteExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
+                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) >> expression >> qi::lit(",") >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
             } else {
-                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) > iteExpression > qi::lit(",") > iteExpression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
+                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) > expression > qi::lit(",") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
             }
             prefixPowerExpression.name("pow expression");
             
@@ -106,22 +106,23 @@ namespace storm {
             debug(identifierExpression);
              */
             
-            
-            // Enable error reporting.
-            qi::on_error<qi::fail>(expression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(iteExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(orExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(andExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(equalityExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(relativeExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(plusExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(multiplicationExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(unaryExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(atomicExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(literalExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(identifierExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(minMaxExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(floorCeilExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            if (enableErrorHandling) {
+                // Enable error reporting.
+                qi::on_error<qi::fail>(expression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(iteExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(orExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(andExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(equalityExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(relativeExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(plusExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(multiplicationExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(unaryExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(atomicExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(literalExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(identifierExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(minMaxExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(floorCeilExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            }
         }
         
         void ExpressionParser::setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_) {
