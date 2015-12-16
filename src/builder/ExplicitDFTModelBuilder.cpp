@@ -17,12 +17,11 @@ namespace storm {
 
             // Begin model generation
             exploreStates(stateQueue, transitionMatrixBuilder);
-            //std::cout << "Generated " << mStates.size() << " states" << std::endl;
+            STORM_LOG_DEBUG("Generated " << mStates.size() << " states");
 
             // Build CTMC
             transitionMatrix = transitionMatrixBuilder.build();
-            //std::cout << "TransitionMatrix: " << std::endl;
-            //std::cout << transitionMatrix << std::endl;
+            STORM_LOG_DEBUG("TransitionMatrix: " << std::endl << transitionMatrix);
             // TODO Matthias: build CTMC
         }
 
@@ -44,7 +43,7 @@ namespace storm {
 
                 // Let BE fail
                 while (smallest < state.nrFailableBEs()) {
-                    //std::cout << "exploring from: " << mDft.getStateString(state) << std::endl;
+                    STORM_LOG_TRACE("exploring from: " << mDft.getStateString(state));
 
                     storm::storage::DFTState newState(state);
                     std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType>>, bool> nextBE = newState.letNextBEFail(smallest++);
@@ -53,7 +52,7 @@ namespace storm {
                         break;
 
                     }
-                    //std::cout << "with the failure of: " << nextBE.first->name() << " [" << nextBE.first->id() << "]" << std::endl;
+                    STORM_LOG_TRACE("with the failure of: " << nextBE.first->name() << " [" << nextBE.first->id() << "]");
 
                     storm::storage::DFTStateSpaceGenerationQueues queues;
 
@@ -85,22 +84,22 @@ namespace storm {
                         auto itInsert = mStates.insert(newState);
                         assert(itInsert.second);
                         it = itInsert.first;
-                        //std::cout << "New state " << mDft.getStateString(newState) << std::endl;
+                        STORM_LOG_TRACE("New state " << mDft.getStateString(newState));
 
                         // Recursive call
                         if (!mDft.hasFailed(newState) && !mDft.isFailsafe(newState)) {
                             stateQueue.push(newState);
                         } else {
                             if (mDft.hasFailed(newState)) {
-                                //std::cout << "Failed " << mDft.getStateString(newState) << std::endl;
+                                STORM_LOG_TRACE("Failed " << mDft.getStateString(newState));
                             } else {
                                 assert(mDft.isFailsafe(newState));
-                                //std::cout << "Failsafe" << mDft.getStateString(newState) << std::endl;
+                                STORM_LOG_TRACE("Failsafe" << mDft.getStateString(newState));
                             }
                         }
                     } else {
                         // State already exists
-                        //std::cout << "State " << mDft.getStateString(*it) << " already exists" << std::endl;
+                        STORM_LOG_TRACE("State " << mDft.getStateString(*it) << " already exists");
                     }
 
                     // Set transition
@@ -114,7 +113,7 @@ namespace storm {
                 {
                     ValueType rate = it->second / sum;
                     transitionMatrixBuilder.addNextValue(state.getId(), it->first, rate);
-                    //std::cout << "Added transition from " << state.getId() << " to " << it->first << " with " << rate << std::endl;
+                    STORM_LOG_TRACE("Added transition from " << state.getId() << " to " << it->first << " with " << rate);
                 }
 
             } // end while queue

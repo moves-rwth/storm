@@ -69,8 +69,7 @@ namespace storm {
         std::pair<std::shared_ptr<DFTBE<double>>, bool> DFTState::letNextBEFail(size_t index) 
         {
             assert(index < mIsCurrentlyFailableBE.size());
-            //std::cout << "currently failable: ";
-            //printCurrentlyFailable();
+            STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
             std::pair<std::shared_ptr<DFTBE<double>>,bool> res(mDft.getBasicElement(mIsCurrentlyFailableBE[index]), false);
             mIsCurrentlyFailableBE.erase(mIsCurrentlyFailableBE.begin() + index);
             setFailed(res.first->id());

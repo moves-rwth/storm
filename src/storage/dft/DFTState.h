@@ -4,7 +4,7 @@
 #include "../BitVector.h"
 #include "DFTElementState.h"
 
-#include <iostream>
+#include <sstream>
 
 namespace storm {
     namespace storage {
@@ -111,18 +111,20 @@ namespace storm {
             
             std::pair<std::shared_ptr<DFTBE<double>>, bool> letNextBEFail(size_t smallestIndex = 0);
             
-            void printCurrentlyFailable(std::ostream& os = std::cout) {
+            std::string getCurrentlyFailableString() {
+                std::stringstream stream;
                 auto it = mIsCurrentlyFailableBE.begin();
-                os << "{";
+                stream << "{";
                 if(it != mIsCurrentlyFailableBE.end()) {
-                    os << *it;
+                    stream << *it;
                 }
                 ++it;
                 while(it != mIsCurrentlyFailableBE.end()) {
-                    os << ", " << *it;
+                    stream << ", " << *it;
                     ++it;
                 }
-                os << "}" << std::endl;
+                stream << "}";
+                return stream.str();
             }
 
             friend bool operator==(DFTState const& a, DFTState const& b) {

@@ -11,6 +11,7 @@
 #include <map>
 
 #include "../../utility/math.h"
+#include "src/utility/macros.h"
 #include <boost/iterator/counting_iterator.hpp>
 
 namespace storm {
@@ -143,15 +144,14 @@ namespace storm {
             bool isFailsafe(DFTState const& state) const {
                 return state.isFailsafe(mTopLevelIndex);
             }
-                    
             
-            void printElements(std::ostream& os = std::cout) const;
-            
-            void printInfo(std::ostream& os = std::cout) const;
-            
-            void printSpareModules(std::ostream& os = std::cout) const;
-            
-            void printElementsWithState(DFTState const& state, std::ostream& os = std::cout) const;
+            std::string getElementsString() const;
+
+            std::string getInfoString() const;
+
+            std::string getSpareModulesString() const;
+
+            std::string getElementsWithStateString(DFTState const& state) const;
 
             std::string getStateString(DFTState const& state) const;
             
@@ -163,18 +163,7 @@ namespace storm {
                 return true;
             }
 
-
-
-
         };
-        
-        
-        
-       
-
-        
-        
-        
        
     }
 }

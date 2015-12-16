@@ -61,60 +61,63 @@ namespace storm {
 
         }
         
-        void DFT::printElements(std::ostream& os) const {
+        std::string DFT::getElementsString() const {
+            std::stringstream stream;
             for (auto const& elem : mElements) {
-                elem->print(os);
-                os << std::endl;
+                stream << "[" << elem->id() << "]" << elem->toString() << std::endl;
             }
-        }
-        
-        
-
-        void DFT::printInfo(std::ostream& os) const {
-            os << "Top level index: " << mTopLevelIndex << std::endl << "Nr BEs" << mNrOfBEs << std::endl;
+            return stream.str();
         }
 
-        void DFT::printSpareModules(std::ostream& os) const {
-            std::cout << "[" << mElements[mTopLevelIndex]->id() << "] {";
+        std::string DFT::getInfoString() const {
+            std::stringstream stream;
+            stream << "Top level index: " << mTopLevelIndex << ", Nr BEs" << mNrOfBEs;
+            return stream.str();
+        }
+
+        std::string DFT::getSpareModulesString() const {
+            std::stringstream stream;
+            stream << "[" << mElements[mTopLevelIndex]->id() << "] {";
             std::vector<size_t>::const_iterator it = mTopModule.begin();
             assert(it != mTopModule.end());
-            os << mElements[(*it)]->name();
+            stream << mElements[(*it)]->name();
             ++it;
             while(it != mTopModule.end()) {
-                os <<  ", " << mElements[(*it)]->name();
+                stream <<  ", " << mElements[(*it)]->name();
                 ++it;
             }
-            os << "}" << std::endl;
+            stream << "}" << std::endl;
 
             for(auto const& spareModule : mSpareModules) {
-                std::cout << "[" << mElements[spareModule.first]->name() << "] = {";
-                os.flush();
+                stream << "[" << mElements[spareModule.first]->name() << "] = {";
                 std::vector<size_t>::const_iterator it = spareModule.second.begin();
                 assert(it != spareModule.second.end());
-                os << mElements[(*it)]->name();
+                stream << mElements[(*it)]->name();
                 ++it;
                 while(it != spareModule.second.end()) {
-                    os <<  ", " << mElements[(*it)]->name();
-                    os.flush();
+                    stream <<  ", " << mElements[(*it)]->name();
                     ++it;
                 }
-                os << "}" << std::endl;
+                stream << "}" << std::endl;
             }
+            return stream.str();
         }
 
-        void DFT::printElementsWithState(DFTState const& state, std::ostream& os) const{
+        std::string DFT::getElementsWithStateString(DFTState const& state) const{
+            std::stringstream stream;
             for (auto const& elem : mElements) {
-                os << "[" << elem->id() << "]";
-                elem->print(os);
-                os << "\t** " << state.getElementState(elem->id());
+                stream << "[" << elem->id() << "]";
+                stream << elem->toString();
+                stream << "\t** " << state.getElementState(elem->id());
                 if(elem->isSpareGate()) {
                     if(state.isActiveSpare(elem->id())) {
-                        os << " actively";
+                        stream << " actively";
                     }
-                    os << " using " << state.uses(elem->id());
+                    stream << " using " << state.uses(elem->id());
                 } 
-                std::cout << std::endl;
+                stream << std::endl;
             }
+            return stream.str();
         }
 
         std::string DFT::getStateString(DFTState const& state) const{

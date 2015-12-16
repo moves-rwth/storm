@@ -34,13 +34,7 @@ namespace storm {
             for(std::shared_ptr<DFTElement> e : elems) {
                 e->setId(id++);
             }
-            for(auto& e : elems) {
-                std::cout << "[" << e->id() << "] ";
-                e->print();
-                std::cout << std::endl;
-            }
             return DFT(elems, mElements[topLevelIdentifier]);
-
         }
         
         unsigned DFTBuilder::computeRank(std::shared_ptr<DFTElement> const& elem) {

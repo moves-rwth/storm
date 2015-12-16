@@ -96,8 +96,8 @@ namespace storm {
             virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
             
             virtual size_t nrChildren() const = 0;
-            virtual void print(std::ostream& = std::cout) const = 0;
-            
+            virtual std::string toString() const = 0;
+
             virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const;
             
             virtual std::vector<size_t> independentUnit() const = 0;
@@ -187,16 +187,18 @@ namespace storm {
 
             
             
-            virtual void print(std::ostream& os = std::cout) const override {
-                os << "{" << name() << "} " << typestring() << "( ";
+            virtual std::string toString() const override {
+                std::stringstream stream;
+                stream << "{" << name() << "} " << typestring() << "( ";
                 std::vector<std::shared_ptr<DFTElement>>::const_iterator it = mChildren.begin();
-                os << (*it)->name();
+                stream << (*it)->name();
                 ++it;
                 while(it != mChildren.end()) {
-                    os <<  ", " << (*it)->name();
+                    stream <<  ", " << (*it)->name();
                     ++it;
                 }
-                os << ")";
+                stream << ")";
+                return stream.str();
             }    
             
             virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const override {
@@ -287,8 +289,10 @@ namespace storm {
                 return mPassiveFailureRate;
             }
         
-            void print(std::ostream& os = std::cout) const {
-                os << *this;
+            std::string toString() const {
+                std::stringstream stream;
+                stream << *this;
+                return stream.str();
             }
             
             bool isBasicElement() const {
@@ -372,8 +376,7 @@ namespace storm {
         };
         
         inline std::ostream& operator<<(std::ostream& os, DFTAnd const& gate) {
-            gate.print(os);
-            return os;
+            return os << gate.toString();
         }
        
         
@@ -411,8 +414,7 @@ namespace storm {
         };
         
          inline std::ostream& operator<<(std::ostream& os, DFTOr const& gate) {
-            gate.print(os);
-            return os;
+            return os << gate.toString();
         }
 
         class DFTSeqAnd : public DFTGate {
@@ -463,8 +465,7 @@ namespace storm {
         };
         
          inline std::ostream& operator<<(std::ostream& os, DFTSeqAnd const& gate) {
-            gate.print(os);
-            return os;
+             return os << gate.toString();
         }
         
         class DFTPand : public DFTGate {
@@ -510,8 +511,7 @@ namespace storm {
         };
         
          inline std::ostream& operator<<(std::ostream& os, DFTPand const& gate) {
-            gate.print(os);
-            return os;
+             return os << gate.toString();
         }
         
         class DFTPor : public DFTGate {
@@ -534,8 +534,7 @@ namespace storm {
         };
         
          inline std::ostream& operator<<(std::ostream& os, DFTPor const& gate) {
-            gate.print(os);
-            return os;
+             return os << gate.toString();
         }
 
         class DFTVot : public DFTGate {
@@ -594,8 +593,7 @@ namespace storm {
         };
 
         inline std::ostream& operator<<(std::ostream& os, DFTVot const& gate) {
-            gate.print(os);
-            return os;
+            return os << gate.toString();
         }        
         
         class DFTSpare : public DFTGate {

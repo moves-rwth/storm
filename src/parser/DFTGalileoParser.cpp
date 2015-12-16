@@ -12,7 +12,10 @@ namespace storm {
     namespace parser {
         storm::storage::DFT DFTGalileoParser::parseDFT(const std::string& filename) {
             if(readFile(filename)) {
-                return mBuilder.build();
+                storm::storage::DFT dft = mBuilder.build();
+                STORM_LOG_DEBUG("Elements:" << std::endl << dft.getElementsString());
+                STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
+                return dft;
             } else {
                 throw storm::exceptions::FileIoException();
             }
@@ -24,9 +27,8 @@ namespace storm {
             
             if(firstQuots == std::string::npos) {
                 return name;
-            } else if (secondQuots ==std::string::npos) {
-                std::cerr << "No ending quotation mark found in " << name <<std::endl;
-                throw storm::exceptions::FileIoException();
+            } else if (secondQuots == std::string::npos) {
+                STORM_LOG_THROW(false, storm::exceptions::FileIoException, "No ending quotation mark found in " << name);
             } else {
                 return name.substr(firstQuots+1,secondQuots-1);
             }
@@ -43,7 +45,7 @@ namespace storm {
                 file.open(filename);
             }
             catch (std::ifstream::failure e) {
-                std::cerr << "Exception during file opening on " << filename << "." << std::endl;
+                STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Exception during file opening on " << filename << ".");
                 return false;
             }
             file.exceptions( 0 );
@@ -53,7 +55,7 @@ namespace storm {
             while(std::getline(file, line))
             {
                 bool success = true;
-                std::cout << line << std::endl;
+                STORM_LOG_TRACE("Parsing: " << line);
                 size_t commentstarts = line.find("//");
                 line = line.substr(0, commentstarts);
                 size_t firstsemicolon = line.find(";");
@@ -89,6 +91,7 @@ namespace storm {
                     } else if(tokens[1] == "wsp" || tokens[1] == "csp") {
                         success = mBuilder.addSpareElement(name, childNames);
                     } else if(boost::starts_with(tokens[1], "lambda=")) {
+                        //TODO Matthias: Use ValueType instead of fixed double
                         success = mBuilder.addBasicElement(name, boost::lexical_cast<double>(tokens[1].substr(7)), boost::lexical_cast<double>(tokens[2].substr(5)));
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " + tokens[1] + "  not recognized.");

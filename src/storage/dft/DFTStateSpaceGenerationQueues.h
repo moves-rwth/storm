@@ -31,7 +31,7 @@ namespace storm {
             }
 
             std::shared_ptr<DFTGate> nextFailurePropagation() {
-                std::shared_ptr<DFTGate> next= failurePropagation.top();
+                std::shared_ptr<DFTGate> next = failurePropagation.top();
                 failurePropagation.pop();
                 return next;
             }
