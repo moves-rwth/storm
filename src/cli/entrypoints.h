@@ -28,12 +28,8 @@ namespace storm {
 
             for (auto const& formula : formulas) {
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");
-
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
-
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formula));
-
-
                 if (result) {
                     std::cout << " done." << std::endl;
                     std::cout << "Result (initial states): ";

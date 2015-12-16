@@ -216,8 +216,6 @@ namespace storm {
             return this->globalIntegerVariableToIndexMap.count(variableName) > 0;
         }
         
-        
-
         BooleanVariable const& Program::getGlobalBooleanVariable(std::string const& variableName) const {
             auto const& nameIndexPair = this->globalBooleanVariableToIndexMap.find(variableName);
             STORM_LOG_THROW(nameIndexPair != this->globalBooleanVariableToIndexMap.end(), storm::exceptions::OutOfRangeException, "Unknown boolean variable '" << variableName << "'.");
