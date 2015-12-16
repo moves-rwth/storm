@@ -262,14 +262,14 @@ namespace storm {
         
        
 
-        template<typename FailureRateType>
+        template<typename ValueType>
         class DFTBE : public DFTElement {
 
-            
-            FailureRateType mActiveFailureRate;
-            FailureRateType mPassiveFailureRate;
+
+            ValueType mActiveFailureRate;
+            ValueType mPassiveFailureRate;
         public:
-            DFTBE(size_t id, std::string const& name, FailureRateType failureRate, FailureRateType dormancyFactor) :
+            DFTBE(size_t id, std::string const& name, ValueType failureRate, ValueType dormancyFactor) :
             DFTElement(id, name), mActiveFailureRate(failureRate), mPassiveFailureRate(dormancyFactor * failureRate)
             {
                 
@@ -278,12 +278,12 @@ namespace storm {
             virtual size_t nrChildren() const {
                 return 0;
             }
-            
-            FailureRateType const& activeFailureRate() const {
+
+            ValueType const& activeFailureRate() const {
                 return mActiveFailureRate;
             }
-            
-            FailureRateType const& passiveFailureRate() const {
+
+            ValueType const& passiveFailureRate() const {
                 return mPassiveFailureRate;
             }
         

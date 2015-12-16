@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     dft.printSpareModules();
 
     std::cout << "Building CTMC..." << std::endl;
-    storm::builder::ExplicitDFTModelBuilder builder(dft);
+    storm::builder::ExplicitDFTModelBuilder<double> builder(dft);
     builder.buildCTMC();
     std::cout << "Built CTMC" << std::endl;
 
@@ -29,4 +29,3 @@ int main(int argc, char** argv) {
     //TODO check CTMC
     //std::cout << "Checked model" << std::endl;
 }
-
