@@ -105,7 +105,8 @@ namespace storm {
             size_t nrFailableBEs() const {
                 return mIsCurrentlyFailableBE.size();
             }
-            
+
+            // TODO Matthias: template
             std::pair<std::shared_ptr<DFTBE<double>>, bool> letNextBEFail(size_t smallestIndex = 0);
             
             std::string getCurrentlyFailableString() {

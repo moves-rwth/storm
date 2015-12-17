@@ -10,7 +10,8 @@
 namespace storm {
     namespace storage {
         class DFT;
-        
+
+        template<typename ValueType>
         class DFTBuilder {
             
             std::size_t mNextId = 0;
@@ -69,7 +70,7 @@ namespace storm {
                 return true;
             }
             
-            bool addBasicElement(std::string const& name, double failureRate, double dormancyFactor) {
+            bool addBasicElement(std::string const& name, ValueType failureRate, ValueType dormancyFactor) {
                 if(failureRate <= 0.0) {
                     std::cerr << "Failure rate must be positive." << std::endl;
                     return false;
@@ -80,7 +81,7 @@ namespace storm {
                     return false;
                 }
                 
-                mElements[name] = std::make_shared<DFTBE<double>>(mNextId++, name, failureRate, dormancyFactor);
+                mElements[name] = std::make_shared<DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor);
                 return true;
             }
             

@@ -10,7 +10,9 @@
 
 namespace storm {
     namespace parser {
-        storm::storage::DFT DFTGalileoParser::parseDFT(const std::string& filename) {
+
+        template<typename ValueType>
+        storm::storage::DFT DFTGalileoParser<ValueType>::parseDFT(const std::string& filename) {
             if(readFile(filename)) {
                 storm::storage::DFT dft = mBuilder.build();
                 STORM_LOG_DEBUG("Elements:" << std::endl << dft.getElementsString());
@@ -20,8 +22,9 @@ namespace storm {
                 throw storm::exceptions::FileIoException();
             }
         }
-        
-        std::string stripQuotsFromName(std::string const& name) {
+
+        template<typename ValueType>
+        std::string DFTGalileoParser<ValueType>::stripQuotsFromName(std::string const& name) {
             size_t firstQuots = name.find("\"");
             size_t secondQuots = name.find("\"", firstQuots+1);
             
@@ -33,8 +36,9 @@ namespace storm {
                 return name.substr(firstQuots+1,secondQuots-1);
             }
         }
-        
-        bool DFTGalileoParser::readFile(const std::string& filename) {
+
+        template<typename ValueType>
+        bool DFTGalileoParser<ValueType>::readFile(const std::string& filename) {
             // constants
             std::string topleveltoken = "toplevel";
             std::string toplevelId;
@@ -108,6 +112,13 @@ namespace storm {
             file.close();
             return generalSuccess;
         }
+
+        // Explicitly instantiate the class.
+        template class DFTGalileoParser<double>;
+
+#ifdef STORM_HAVE_CARL
+        template class DFTGalileoParser<RationalFunction>;
+#endif
         
     }
 }

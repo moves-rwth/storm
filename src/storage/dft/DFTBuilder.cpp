@@ -12,8 +12,9 @@
 
 namespace storm {
     namespace storage {
-         
-        DFT DFTBuilder::build() {
+
+        template<typename ValueType>
+        DFT DFTBuilder<ValueType>::build() {
             for(auto& elem : mChildNames) {
                 for(auto const& child : elem.second) {
                     std::shared_ptr<DFTGate> gate = std::static_pointer_cast<DFTGate>(elem.first);
@@ -36,8 +37,9 @@ namespace storm {
             }
             return DFT(elems, mElements[topLevelIdentifier]);
         }
-        
-        unsigned DFTBuilder::computeRank(std::shared_ptr<DFTElement> const& elem) {
+
+        template<typename ValueType>
+        unsigned DFTBuilder<ValueType>::computeRank(std::shared_ptr<DFTElement> const& elem) {
             if(elem->rank() == -1) {
                 if(elem->nrChildren() == 0) {
                     elem->setRank(0);
@@ -58,8 +60,9 @@ namespace storm {
 
             return elem->rank();
         }
-        
-        bool DFTBuilder::addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementTypes tp) {
+
+        template<typename ValueType>
+        bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementTypes tp) {
             assert(children.size() > 0);
             if(mElements.count(name) != 0) {
                 // Element with that name already exists.
@@ -97,9 +100,9 @@ namespace storm {
             mChildNames[element] = children;
             return true;
         }
-        
-        
-        void DFTBuilder::topoVisit(std::shared_ptr<DFTElement> const& n, std::map<std::shared_ptr<DFTElement>, topoSortColour>& visited, std::vector<std::shared_ptr<DFTElement>>& L) {
+
+        template<typename ValueType>
+        void DFTBuilder<ValueType>::topoVisit(std::shared_ptr<DFTElement> const& n, std::map<std::shared_ptr<DFTElement>, topoSortColour>& visited, std::vector<std::shared_ptr<DFTElement>>& L) {
             if(visited[n] == topoSortColour::GREY) {
                 throw storm::exceptions::WrongFormatException("DFT is cyclic");
             } else if(visited[n] == topoSortColour::WHITE) {
@@ -114,7 +117,8 @@ namespace storm {
             }
         }
 
-        std::vector<std::shared_ptr<DFTElement>> DFTBuilder::topoSort() {
+        template<typename ValueType>
+        std::vector<std::shared_ptr<DFTElement>> DFTBuilder<ValueType>::topoSort() {
             std::map<std::shared_ptr<DFTElement>, topoSortColour> visited;
             for(auto const& e : mElements) {
                 visited.insert(std::make_pair(e.second, topoSortColour::WHITE)); 
@@ -126,7 +130,14 @@ namespace storm {
             }
             //std::reverse(L.begin(), L.end()); 
             return L;
-       }
+        }
+
+        // Explicitly instantiate the class.
+        template class DFTBuilder<double>;
+
+#ifdef STORM_HAVE_CARL
+        template class DFTBuilder<RationalFunction>;
+#endif
 
     }
 }

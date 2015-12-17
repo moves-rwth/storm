@@ -165,8 +165,7 @@ namespace storm {
         }
 
         // Explicitly instantiate the class.
-        template
-        class ExplicitDFTModelBuilder<double, storm::models::sparse::StandardRewardModel<double>, uint32_t>;
+        template class ExplicitDFTModelBuilder<double, storm::models::sparse::StandardRewardModel<double>, uint32_t>;
 
 #ifdef STORM_HAVE_CARL
         template class ExplicitDFTModelBuilder<double, storm::models::sparse::StandardRewardModel<storm::Interval>, uint32_t>;

@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     logger.getAppender("mainConsoleAppender")->setThreshold(level);
 
     std::cout << "Parsing DFT file..." << std::endl;
-    storm::parser::DFTGalileoParser parser;
+    storm::parser::DFTGalileoParser<double> parser;
     storm::storage::DFT dft = parser.parseDFT(argv[1]);
 
     std::cout << "Built data structure" << std::endl;

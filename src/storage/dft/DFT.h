@@ -131,12 +131,14 @@ namespace storm {
                 assert(index < nrElements());
                 return mElements[index];
             }
-            
+
+            // TODO Matthias: template
             std::shared_ptr<DFTBE<double>> getBasicElement(size_t index) const {
                 assert(mElements[index]->isBasicElement());
                 return std::static_pointer_cast<DFTBE<double>>(mElements[index]);
             }
 
+            // TODO Matthias: template
             std::vector<std::shared_ptr<DFTBE<double>>> getBasicElements() const {
                 std::vector<std::shared_ptr<DFTBE<double>>> elements;
                 for (std::shared_ptr<storm::storage::DFTElement> elem : mElements) {

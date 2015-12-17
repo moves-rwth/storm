@@ -65,8 +65,8 @@ namespace storm {
             }
         }
 
-        
-        std::pair<std::shared_ptr<DFTBE<double>>, bool> DFTState::letNextBEFail(size_t index) 
+        // TODO Matthias: template
+        std::pair<std::shared_ptr<DFTBE<double>>, bool> DFTState::letNextBEFail(size_t index)
         {
             assert(index < mIsCurrentlyFailableBE.size());
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
