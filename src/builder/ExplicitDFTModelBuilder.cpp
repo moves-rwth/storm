@@ -1,5 +1,6 @@
 #include "src/builder/ExplicitDFTModelBuilder.h"
 #include <src/models/sparse/Ctmc.h>
+#include <src/utility/constants.h>
 
 namespace storm {
     namespace builder {
@@ -86,6 +87,14 @@ namespace storm {
 
                 size_t smallest = 0;
 
+                // Add self loop for target states
+                if (mDft.hasFailed(state) || mDft.isFailsafe(state)) {
+                    transitionMatrixBuilder.addNextValue(state.getId(), state.getId(), storm::utility::one<ValueType>());
+                    STORM_LOG_TRACE("Added self loop for " << state.getId());
+                    // No further exploration required
+                    continue;
+                }
+
                 // Let BE fail
                 while (smallest < state.nrFailableBEs()) {
                     STORM_LOG_TRACE("exploring from: " << mDft.getStateString(state));
@@ -131,17 +140,8 @@ namespace storm {
                         it = itInsert.first;
                         STORM_LOG_TRACE("New state " << mDft.getStateString(newState));
 
-                        // Recursive call
-                        if (!mDft.hasFailed(newState) && !mDft.isFailsafe(newState)) {
-                            stateQueue.push(newState);
-                        } else {
-                            if (mDft.hasFailed(newState)) {
-                                STORM_LOG_TRACE("Failed " << mDft.getStateString(newState));
-                            } else {
-                                assert(mDft.isFailsafe(newState));
-                                STORM_LOG_TRACE("Failsafe" << mDft.getStateString(newState));
-                            }
-                        }
+                        // Add state to search
+                        stateQueue.push(newState);
                     } else {
                         // State already exists
                         STORM_LOG_TRACE("State " << mDft.getStateString(*it) << " already exists");
@@ -156,7 +156,8 @@ namespace storm {
                 // Add all transitions
                 for (auto it = outgoingTransitions.begin(); it != outgoingTransitions.end(); ++it)
                 {
-                    ValueType rate = it->second / sum;
+                    // TODO Matthias: correct?
+                    ValueType rate = it->second;// / sum;
                     transitionMatrixBuilder.addNextValue(state.getId(), it->first, rate);
                     STORM_LOG_TRACE("Added transition from " << state.getId() << " to " << it->first << " with " << rate);
                 }
