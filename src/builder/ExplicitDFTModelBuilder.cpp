@@ -33,17 +33,36 @@ namespace storm {
 
             // Build state labeling
             modelComponents.stateLabeling = storm::models::sparse::StateLabeling(mStates.size());
-            // Also label the initial state with the special label "init".
+            // Initial state is always first state without any failure
             modelComponents.stateLabeling.addLabel("init");
             modelComponents.stateLabeling.addLabelToState("init", 0);
-            // TODO Matthias: not fixed
+            // Label all states corresponding to their status (failed, failsafe, failed BE)
             modelComponents.stateLabeling.addLabel("failed");
-            modelComponents.stateLabeling.addLabelToState("failed", 7);
+            modelComponents.stateLabeling.addLabel("failsafe");
+            // Collect labels for all BE
+            std::vector<std::shared_ptr<storage::DFTBE<ValueType>>> basicElements = mDft.getBasicElements();
+            for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
+                modelComponents.stateLabeling.addLabel(elem->name() + "_fail");
+            }
+
+            for (storm::storage::DFTState state : mStates) {
+                if (mDft.hasFailed(state)) {
+                    modelComponents.stateLabeling.addLabelToState("failed", state.getId());
+                }
+                if (mDft.isFailsafe(state)) {
+                    modelComponents.stateLabeling.addLabelToState("failsafe", state.getId());
+                };
+                // Set fail status for each BE
+                for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
+                    if (state.hasFailed(elem->id())) {
+                        modelComponents.stateLabeling.addLabelToState(elem->name() + "_fail", state.getId());
+                    }
+                }
+            }
 
             // TODO Matthias: initialize
             modelComponents.rewardModels;
             modelComponents.choiceLabeling;
-
 
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> model;
             model = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Ctmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));

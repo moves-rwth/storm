@@ -9,7 +9,7 @@
  * Entry point for the DyFTeE backend.
  */
 int main(int argc, char** argv) {
-    if(argc != 2) {
+    if(argc < 2) {
         std::cout <<  "Storm-DyFTeE should be called with a filename as argument." << std::endl;
     }
 
@@ -30,10 +30,19 @@ int main(int argc, char** argv) {
     std::cout << "Built CTMC" << std::endl;
 
     std::cout << "Model checking..." << std::endl;
-    //TODO Matthias: Construct formula, do not fix
-    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = storm::parseFormulasForExplicit("Pmax=?[true U \"failed\"]");
+    // Construct PCTL forumla
+    std::string inputFormula;
+    if (argc < 3) {
+        // Set explicit reachability formula
+        inputFormula = "Pmax=?[true U \"failed\"]";
+    } else {
+        // Read formula from input
+        inputFormula = argv[2];
+    }
+    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = storm::parseFormulasForExplicit(inputFormula);
     assert(formulas.size() == 1);
-    // Verify the model, if a formula was given.
+
+    // Verify the model
     std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formulas[0]));
     assert(result);
     std::cout << "Result (initial states): ";

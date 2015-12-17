@@ -136,7 +136,18 @@ namespace storm {
                 assert(mElements[index]->isBasicElement());
                 return std::static_pointer_cast<DFTBE<double>>(mElements[index]);
             }
-            
+
+            std::vector<std::shared_ptr<DFTBE<double>>> getBasicElements() const {
+                std::vector<std::shared_ptr<DFTBE<double>>> elements;
+                for (std::shared_ptr<storm::storage::DFTElement> elem : mElements) {
+                    if (elem->isBasicElement()) {
+                        elements.push_back(std::static_pointer_cast<DFTBE<double>>(elem));
+                    }
+                }
+                return elements;
+            }
+
+
             bool hasFailed(DFTState const& state) const {
                 return state.hasFailed(mTopLevelIndex);
             }

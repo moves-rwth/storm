@@ -9,12 +9,11 @@
 namespace storm {
     namespace storage {
        
-        class DFT; 
-        template<typename T>
+        class DFT;
+        template<typename ValueType>
         class DFTBE;
-        
-        
-        
+
+
         class DFTState {
             friend struct std::hash<DFTState>;
         private:
@@ -96,8 +95,6 @@ namespace storm {
              * @param child
              */
             void setUsesAtPosition(size_t usageIndex, size_t child);
-            
-            
             
             bool claimNew(size_t spareId, size_t usageIndex, size_t currentlyUses, std::vector<size_t> const& childIds);
             
