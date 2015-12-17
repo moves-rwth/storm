@@ -9,6 +9,7 @@
 
 namespace storm {
     namespace storage {
+        template<typename ValueType>
         class DFT;
 
         template<typename ValueType>
@@ -90,7 +91,7 @@ namespace storm {
                 return mElements.count(tle) > 0;
             }
             
-            DFT build();
+            DFT<ValueType> build();
 
          
         private:

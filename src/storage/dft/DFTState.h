@@ -8,7 +8,8 @@
 
 namespace storm {
     namespace storage {
-       
+
+        template<typename ValueType>
         class DFT;
         template<typename ValueType>
         class DFTBE;
@@ -23,10 +24,12 @@ namespace storm {
             std::vector<size_t> mIsCurrentlyFailableBE;
             std::vector<size_t> mUsedRepresentants;
             bool mValid = true;
-            const DFT& mDft;
+            // TODO Matthias: template
+            const DFT<double>& mDft;
             
         public:
-            DFTState(DFT const& dft, size_t id);
+            // TODO Matthias: template
+            DFTState(DFT<double> const& dft, size_t id);
             
             DFTElementState getElementState(size_t id) const;
 

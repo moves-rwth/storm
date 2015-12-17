@@ -2,8 +2,9 @@
 
 namespace storm {
     namespace storage {
-        
-        DFT::DFT(std::vector<std::shared_ptr<DFTElement>> const& elements, std::shared_ptr<DFTElement> const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0)
+
+        template<typename ValueType>
+        DFT<ValueType>::DFT(std::vector<std::shared_ptr<DFTElement>> const& elements, std::shared_ptr<DFTElement> const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0)
         {
             assert(elementIndicesCorrect());
 
@@ -60,8 +61,9 @@ namespace storm {
             mTopLevelIndex = tle->id();
 
         }
-        
-        std::string DFT::getElementsString() const {
+
+        template<typename ValueType>
+        std::string DFT<ValueType>::getElementsString() const {
             std::stringstream stream;
             for (auto const& elem : mElements) {
                 stream << "[" << elem->id() << "]" << elem->toString() << std::endl;
@@ -69,13 +71,15 @@ namespace storm {
             return stream.str();
         }
 
-        std::string DFT::getInfoString() const {
+        template<typename ValueType>
+        std::string DFT<ValueType>::getInfoString() const {
             std::stringstream stream;
             stream << "Top level index: " << mTopLevelIndex << ", Nr BEs" << mNrOfBEs;
             return stream.str();
         }
 
-        std::string DFT::getSpareModulesString() const {
+        template<typename ValueType>
+        std::string DFT<ValueType>::getSpareModulesString() const {
             std::stringstream stream;
             stream << "[" << mElements[mTopLevelIndex]->id() << "] {";
             std::vector<size_t>::const_iterator it = mTopModule.begin();
@@ -103,7 +107,8 @@ namespace storm {
             return stream.str();
         }
 
-        std::string DFT::getElementsWithStateString(DFTState const& state) const{
+        template<typename ValueType>
+        std::string DFT<ValueType>::getElementsWithStateString(DFTState const& state) const{
             std::stringstream stream;
             for (auto const& elem : mElements) {
                 stream << "[" << elem->id() << "]";
@@ -120,7 +125,8 @@ namespace storm {
             return stream.str();
         }
 
-        std::string DFT::getStateString(DFTState const& state) const{
+        template<typename ValueType>
+        std::string DFT<ValueType>::getStateString(DFTState const& state) const{
             std::stringstream stream;
             stream << "(" << state.getId() << ") ";
             for (auto const& elem : mElements) {
@@ -134,5 +140,13 @@ namespace storm {
             }
             return stream.str();
         }
+
+        // Explicitly instantiate the class.
+        template class DFT<double>;
+
+#ifdef STORM_HAVE_CARL
+        template class DFT<RationalFunction>;
+#endif
+
     }
 }

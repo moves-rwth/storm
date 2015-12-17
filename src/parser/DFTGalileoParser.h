@@ -13,7 +13,7 @@ namespace storm {
         class DFTGalileoParser {
             storm::storage::DFTBuilder<ValueType> mBuilder;
         public:
-            storm::storage::DFT parseDFT(std::string const& filename);
+            storm::storage::DFT<ValueType> parseDFT(std::string const& filename);
             
         private:
             bool readFile(std::string const& filename);

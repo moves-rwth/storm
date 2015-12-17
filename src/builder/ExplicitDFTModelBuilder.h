@@ -35,12 +35,12 @@ namespace storm {
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
             };
 
-            storm::storage::DFT const &mDft;
+            storm::storage::DFT<ValueType> const &mDft;
             std::unordered_set<storm::storage::DFTState> mStates;
             size_t newIndex = 0;
 
         public:
-            ExplicitDFTModelBuilder(storm::storage::DFT const &dft) : mDft(dft) {
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const &dft) : mDft(dft) {
 
             }
 

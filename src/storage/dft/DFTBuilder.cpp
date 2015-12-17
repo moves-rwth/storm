@@ -14,7 +14,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFT DFTBuilder<ValueType>::build() {
+        DFT<ValueType> DFTBuilder<ValueType>::build() {
             for(auto& elem : mChildNames) {
                 for(auto const& child : elem.second) {
                     std::shared_ptr<DFTGate> gate = std::static_pointer_cast<DFTGate>(elem.first);
@@ -35,7 +35,7 @@ namespace storm {
             for(std::shared_ptr<DFTElement> e : elems) {
                 e->setId(id++);
             }
-            return DFT(elems, mElements[topLevelIdentifier]);
+            return DFT<ValueType>(elems, mElements[topLevelIdentifier]);
         }
 
         template<typename ValueType>

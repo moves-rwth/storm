@@ -26,7 +26,8 @@ namespace storm {
                 }
             }
         };
-        
+
+        template<typename ValueType>
         class DFT {
 
         private:
@@ -132,18 +133,16 @@ namespace storm {
                 return mElements[index];
             }
 
-            // TODO Matthias: template
-            std::shared_ptr<DFTBE<double>> getBasicElement(size_t index) const {
+            std::shared_ptr<DFTBE<ValueType>> getBasicElement(size_t index) const {
                 assert(mElements[index]->isBasicElement());
-                return std::static_pointer_cast<DFTBE<double>>(mElements[index]);
+                return std::static_pointer_cast<DFTBE<ValueType>>(mElements[index]);
             }
 
-            // TODO Matthias: template
-            std::vector<std::shared_ptr<DFTBE<double>>> getBasicElements() const {
-                std::vector<std::shared_ptr<DFTBE<double>>> elements;
+            std::vector<std::shared_ptr<DFTBE<ValueType>>> getBasicElements() const {
+                std::vector<std::shared_ptr<DFTBE<ValueType>>> elements;
                 for (std::shared_ptr<storm::storage::DFTElement> elem : mElements) {
                     if (elem->isBasicElement()) {
-                        elements.push_back(std::static_pointer_cast<DFTBE<double>>(elem));
+                        elements.push_back(std::static_pointer_cast<DFTBE<ValueType>>(elem));
                     }
                 }
                 return elements;

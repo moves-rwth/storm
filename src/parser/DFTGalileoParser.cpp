@@ -4,6 +4,7 @@
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <src/exceptions/NotImplementedException.h>
 #include "../exceptions/FileIoException.h"
 #include "../exceptions/NotSupportedException.h"
 #include "src/utility/macros.h"
@@ -12,9 +13,9 @@ namespace storm {
     namespace parser {
 
         template<typename ValueType>
-        storm::storage::DFT DFTGalileoParser<ValueType>::parseDFT(const std::string& filename) {
+        storm::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename) {
             if(readFile(filename)) {
-                storm::storage::DFT dft = mBuilder.build();
+                storm::storage::DFT<ValueType> dft = mBuilder.build();
                 STORM_LOG_DEBUG("Elements:" << std::endl << dft.getElementsString());
                 STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
                 return dft;
@@ -95,8 +96,18 @@ namespace storm {
                     } else if(tokens[1] == "wsp" || tokens[1] == "csp") {
                         success = mBuilder.addSpareElement(name, childNames);
                     } else if(boost::starts_with(tokens[1], "lambda=")) {
-                        //TODO Matthias: Use ValueType instead of fixed double
-                        success = mBuilder.addBasicElement(name, boost::lexical_cast<double>(tokens[1].substr(7)), boost::lexical_cast<double>(tokens[2].substr(5)));
+                        ValueType failureRate = 0;
+                        ValueType dormancyFactor = 0;
+                        if (std::is_same<ValueType, double>::value) {
+                            failureRate = boost::lexical_cast<double>(tokens[1].substr(7));
+                            dormancyFactor = boost::lexical_cast<double>(tokens[2].substr(5));
+                        } else {
+                            // TODO Matthias: Parse RationalFunction
+                            failureRate;
+                            dormancyFactor;
+                            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Parsing into rational function not supported.");
+                        }
+                        success = mBuilder.addBasicElement(name, failureRate, dormancyFactor);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " + tokens[1] + "  not recognized.");
                         success = false;

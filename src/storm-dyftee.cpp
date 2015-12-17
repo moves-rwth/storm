@@ -5,6 +5,8 @@
 #include "modelchecker/results/CheckResult.h"
 #include "utility/storm.h"
 
+#define VALUE_TYPE double
+
 /*
  * Entry point for the DyFTeE backend.
  */
@@ -19,14 +21,14 @@ int main(int argc, char** argv) {
     logger.getAppender("mainConsoleAppender")->setThreshold(level);
 
     std::cout << "Parsing DFT file..." << std::endl;
-    storm::parser::DFTGalileoParser<double> parser;
-    storm::storage::DFT dft = parser.parseDFT(argv[1]);
+    storm::parser::DFTGalileoParser<VALUE_TYPE> parser;
+    storm::storage::DFT<VALUE_TYPE> dft = parser.parseDFT(argv[1]);
 
     std::cout << "Built data structure" << std::endl;
 
     std::cout << "Building CTMC..." << std::endl;
-    storm::builder::ExplicitDFTModelBuilder<double> builder(dft);
-    std::shared_ptr<storm::models::sparse::Model<double>> model = builder.buildCTMC();
+    storm::builder::ExplicitDFTModelBuilder<VALUE_TYPE> builder(dft);
+    std::shared_ptr<storm::models::sparse::Model<VALUE_TYPE>> model = builder.buildCTMC();
     std::cout << "Built CTMC" << std::endl;
 
     std::cout << "Model checking..." << std::endl;
