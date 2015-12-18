@@ -308,8 +308,9 @@ namespace storm {
             }
             virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const;
         };
-        
-        inline std::ostream& operator<<(std::ostream& os, DFTBE<double> const& be) {
+
+        template<typename ValueType>
+        inline std::ostream& operator<<(std::ostream& os, DFTBE<ValueType> const& be) {
             return os << "{" << be.name() << "} BE(" << be.activeFailureRate() << ", " << be.passiveFailureRate() << ")";
         }
 

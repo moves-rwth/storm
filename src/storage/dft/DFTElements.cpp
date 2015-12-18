@@ -38,15 +38,22 @@ namespace storm {
         void DFTElement::checkForSymmetricChildren() const {
             
         }
-        
-        template<>
-        bool DFTBE<double>::checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
+
+        template<typename ValueType>
+        bool DFTBE<ValueType>::checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
             if(DFTElement::checkDontCareAnymore(state, queues)) {
                 state.beNoLongerFailable(mId);
                 return true;
             }
             return false;
         }
+
+        // Explicitly instantiate the class.
+        template class DFTBE<double>;
+
+#ifdef STORM_HAVE_CARL
+        template class DFTBE<RationalFunction>;
+#endif
         
     }
 }
