@@ -60,7 +60,7 @@ namespace storm {
             }
             
             template<typename T>
-            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates) {
+            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem) {
                 std::vector<std::size_t> distances(transitionMatrix.getRowGroupCount());
                 
                 std::vector<std::pair<storm::storage::sparse::state_type, std::size_t>> stateQueue;
@@ -80,8 +80,10 @@ namespace storm {
                     
                     for (auto const& successorEntry : transitionMatrix.getRowGroup(stateDistancePair.first)) {
                         if (!statesInQueue.get(successorEntry.getColumn())) {
-                            stateQueue.emplace_back(successorEntry.getColumn(), stateDistancePair.second + 1);
-                            statesInQueue.set(successorEntry.getColumn());
+                            if (!subsystem || subsystem.get()[successorEntry.getColumn()]) {
+                                stateQueue.emplace_back(successorEntry.getColumn(), stateDistancePair.second + 1);
+                                statesInQueue.set(successorEntry.getColumn());
+                            }
                         }
                     }
                     ++currentPosition;
@@ -927,7 +929,7 @@ namespace storm {
             
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
             
-            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates);
+            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             
             template storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
@@ -993,7 +995,7 @@ namespace storm {
             
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
             
-            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates);
+            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             
             template storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
@@ -1048,7 +1050,7 @@ namespace storm {
             
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
             
-            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates);
+            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             
             template storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);

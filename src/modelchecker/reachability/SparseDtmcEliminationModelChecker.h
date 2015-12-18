@@ -57,15 +57,64 @@ namespace storm {
                 std::vector<row_type> data;
             };
             
-            ValueType computeReachabilityValue(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<ValueType>>& stateRewards, boost::optional<std::vector<std::size_t>> const& statePriorities = {});
+            class StatePriorityQueue {
+            public:
+                virtual bool hasNextState() const = 0;
+                virtual storm::storage::sparse::state_type popNextState() = 0;
+                virtual void update(storm::storage::sparse::state_type, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions);
+                virtual std::size_t size() const = 0;
+            };
             
-            uint_fast64_t treatScc(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, boost::optional<std::vector<ValueType>>& stateRewards, boost::optional<std::vector<std::size_t>> const& statePriorities = {});
+            class StaticStatePriorityQueue : public StatePriorityQueue {
+            public:
+                StaticStatePriorityQueue(std::vector<storm::storage::sparse::state_type> const& sortedStates);
+                
+                virtual bool hasNextState() const override;
+                virtual storm::storage::sparse::state_type popNextState() override;
+                virtual std::size_t size() const override;
+                
+            private:
+                std::vector<uint_fast64_t> sortedStates;
+                uint_fast64_t currentPosition;
+            };
+            
+            struct PriorityComparator {
+                bool operator()(std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& first, std::pair<storm::storage::sparse::state_type, uint_fast64_t> const& second) {
+                    return (first.second < second.second) || (first.second == second.second && first.first < second.first) ;
+                }
+            };
+            
+            class DynamicPenaltyStatePriorityQueue : public StatePriorityQueue {
+            public:
+                DynamicPenaltyStatePriorityQueue(std::vector<std::pair<storm::storage::sparse::state_type, uint_fast64_t>> const& sortedStatePenaltyPairs);
+                
+                virtual bool hasNextState() const override;
+                virtual storm::storage::sparse::state_type popNextState() override;
+                virtual void update(storm::storage::sparse::state_type, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions) override;
+                virtual std::size_t size() const override;
+
+            private:
+                std::set<std::pair<storm::storage::sparse::state_type, uint_fast64_t>, PriorityComparator> priorityQueue;
+            };
+            
+            static ValueType computeReachabilityValue(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<ValueType>>& stateRewards);
+            
+            static std::unique_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& stateDistances, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, std::vector<storm::storage::sparse::state_type> const& states);
+            
+            static void performOrdinaryStateElimination(FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions, uint_fast64_t initialState, std::vector<typename SparseDtmcModelType::ValueType>& oneStepProbabilities, boost::optional<std::vector<ValueType>>& stateRewards, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities);
+            
+            static uint_fast64_t treatScc(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, boost::optional<std::vector<ValueType>>& stateRewards, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities = boost::none);
             
             static FlexibleSparseMatrix getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne = false);
             
-            void eliminateState(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix& backwardTransitions, boost::optional<std::vector<ValueType>>& stateRewards, bool removeForwardTransitions = true, bool constrained = false, storm::storage::BitVector const& predecessorConstraint = storm::storage::BitVector());
+            static void eliminateState(FlexibleSparseMatrix& matrix, std::vector<ValueType>& oneStepProbabilities, uint_fast64_t state, FlexibleSparseMatrix& backwardTransitions, boost::optional<std::vector<ValueType>>& stateRewards, bool removeForwardTransitions = true, bool constrained = false, storm::storage::BitVector const& predecessorConstraint = storm::storage::BitVector());
             
-            std::vector<std::size_t> getStatePriorities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<ValueType> const& oneStepProbabilities);
+            static std::vector<uint_fast64_t> getDistanceBasedPriorities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<ValueType> const& oneStepProbabilities, bool forward, bool reverse);
+            
+            static std::vector<std::size_t> getStateDistances(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<ValueType> const& oneStepProbabilities, bool forward);
+            
+            static uint_fast64_t computeStatePenalty(storm::storage::sparse::state_type const& state, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<typename SparseDtmcModelType::ValueType>& oneStepProbabilities);
+                        
         };
         
     } // namespace modelchecker

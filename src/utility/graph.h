@@ -65,10 +65,11 @@ namespace storm {
              *
              * @param transitionMatrix The transition relation of the graph structure to search.
              * @param initialStates The set of states from which to start the search.
+             * @param subsystem The subsystem to consider.
              * @return The distances of each state to the initial states of the sarch.
              */
             template<typename T>
-            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates);
+            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem = boost::none);
             
             /*!
              * Performs a backward depth-first search trough the underlying graph structure
