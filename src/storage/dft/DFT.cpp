@@ -4,7 +4,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFT<ValueType>::DFT(std::vector<std::shared_ptr<DFTElement>> const& elements, std::shared_ptr<DFTElement> const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0)
+        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0)
         {
             assert(elementIndicesCorrect());
 
@@ -19,7 +19,7 @@ namespace storm {
                 }
                 else if(elem->isSpareGate()) {
                     ++mNrOfSpares;
-                    for(auto const& spareReprs : std::static_pointer_cast<DFTSpare>(elem)->children()) {
+                    for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
                         if(mActivationIndex.count(spareReprs->id()) == 0) {
                             mActivationIndex[spareReprs->id()] =  stateIndex++;
                         }
@@ -34,7 +34,7 @@ namespace storm {
                         mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
 
                     }
-                    std::static_pointer_cast<DFTSpare>(elem)->setUseIndex(stateIndex);
+                    std::static_pointer_cast<DFTSpare<ValueType>>(elem)->setUseIndex(stateIndex);
                     mUsageIndex.insert(std::make_pair(elem->id(), stateIndex));
                     stateIndex += mUsageInfoBits;
 
@@ -108,7 +108,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::string DFT<ValueType>::getElementsWithStateString(DFTState const& state) const{
+        std::string DFT<ValueType>::getElementsWithStateString(DFTState<ValueType> const& state) const{
             std::stringstream stream;
             for (auto const& elem : mElements) {
                 stream << "[" << elem->id() << "]";
@@ -126,7 +126,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::string DFT<ValueType>::getStateString(DFTState const& state) const{
+        std::string DFT<ValueType>::getStateString(DFTState<ValueType> const& state) const{
             std::stringstream stream;
             stream << "(" << state.getId() << ") ";
             for (auto const& elem : mElements) {

@@ -16,21 +16,28 @@ using std::size_t;
 
 namespace storm {
     namespace storage {
+
+        template<typename ValueType>
         class DFTGate;
-        
+
+        template<typename ValueType>
         class DFTElement {
+
+            using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
+            using DFTGateVector = std::vector<DFTGatePointer>;
+
+
         protected:
             size_t mId;
             std::string mName;
             size_t mRank = -1;
-            std::vector<std::shared_ptr<DFTGate>> mParents;
-            
-
-            
+            DFTGateVector mParents;
 
         public:
-            DFTElement(size_t id, std::string const& name) : mId(id), mName(name)
+            DFTElement(size_t id, std::string const& name) :
+                    mId(id), mName(name)
             {}
+
             virtual ~DFTElement() {}
 
             
@@ -74,7 +81,7 @@ namespace storm {
                 return mName;
             }
             
-            bool addParent(std::shared_ptr<DFTGate> const& e) {
+            bool addParent(DFTGatePointer const& e) {
                 if(std::find(mParents.begin(), mParents.end(), e) != mParents.end()) {
                     return false;
                 }
@@ -89,20 +96,21 @@ namespace storm {
                 return !mParents.empty();
             }
             
-            std::vector<std::shared_ptr<DFTGate>> const& parents() const {
+            DFTGateVector const& parents() const {
                 return mParents;
             }
             
             virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
             
             virtual size_t nrChildren() const = 0;
+
             virtual std::string toString() const = 0;
 
-            virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const;
+            virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
             
             virtual std::vector<size_t> independentUnit() const = 0;
         
-            virtual void  extendUnit(std::set<size_t>& unit) const;
+            virtual void extendUnit(std::set<size_t>& unit) const;
 
             void checkForSymmetricChildren() const;
         };
@@ -130,26 +138,34 @@ namespace storm {
                     assert(false);
             }
         }
-        
-        class DFTGate : public DFTElement {
+
+
+
+        template<typename ValueType>
+        class DFTGate : public DFTElement<ValueType> {
+
+            using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
+            using DFTElementVector = std::vector<DFTElementPointer>;
+
         protected:
-            std::vector<std::shared_ptr<DFTElement>> mChildren;
+            DFTElementVector mChildren;
+
         public:
-            DFTGate(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement>> const& children) :
-            DFTElement(id, name), mChildren(children)
+            DFTGate(size_t id, std::string const& name, DFTElementVector const& children) :
+                    DFTElement<ValueType>(id, name), mChildren(children)
             {}
             
             virtual ~DFTGate() {}
             
-            void pushBackChild(std::shared_ptr<DFTElement> elem) {
+            void pushBackChild(DFTElementPointer elem) {
                 return mChildren.push_back(elem);
             }
 
             size_t nrChildren() const override {
                 return mChildren.size();
             }
-            
-            std::vector<std::shared_ptr<DFTElement>> const& children() const {
+
+            DFTElementVector const& children() const {
                 return mChildren;
             }
             
@@ -159,11 +175,13 @@ namespace storm {
             
             
             virtual std::string typestring() const = 0;
-            virtual void checkFails(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const = 0;
-            virtual void checkFailsafe(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const = 0;
+
+            virtual void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
+
+            virtual void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
             
             virtual void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
-                DFTElement::extendSpareModule(elementsInSpareModule);
+                DFTElement<ValueType>::extendSpareModule(elementsInSpareModule);
                 for(auto const& child : mChildren) {
                     if(elementsInSpareModule.count(child->id()) == 0) {
                         elementsInSpareModule.insert(child->id());
@@ -173,24 +191,22 @@ namespace storm {
             }
             
             virtual std::vector<size_t> independentUnit() const override {
-                std::set<size_t> unit = {mId};
+                std::set<size_t> unit = {this->mId};
                 for(auto const& child : mChildren) {
                     child->extendUnit(unit);
                 }
-                for(auto const& parent : mParents) {
+                for(auto const& parent : this->mParents) {
                     if(unit.count(parent->id()) != 0) {
                         return {};
                     } 
                 }
-                return std::vector<size_t>(unit.begin(), unit.end()); 
-           }
-
-            
+                return std::vector<size_t>(unit.begin(), unit.end());
+            }
             
             virtual std::string toString() const override {
                 std::stringstream stream;
-                stream << "{" << name() << "} " << typestring() << "( ";
-                std::vector<std::shared_ptr<DFTElement>>::const_iterator it = mChildren.begin();
+                stream << "{" << this->name() << "} " << typestring() << "( ";
+                typename DFTElementVector::const_iterator it = mChildren.begin();
                 stream << (*it)->name();
                 ++it;
                 while(it != mChildren.end()) {
@@ -199,10 +215,10 @@ namespace storm {
                 }
                 stream << ")";
                 return stream.str();
-            }    
-            
-            virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const override {
-                if(DFTElement::checkDontCareAnymore(state, queues)) {
+            }
+
+            virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+                if(DFTElement<ValueType>::checkDontCareAnymore(state, queues)) {
                     childrenDontCare(state, queues);
                     return true;
                 }
@@ -210,37 +226,37 @@ namespace storm {
             }
             
             virtual void extendUnit(std::set<size_t>& unit) const override {
-                DFTElement::extendUnit(unit);
+                DFTElement<ValueType>::extendUnit(unit);
                 for(auto const& child : mChildren) {
                     child->extendUnit(unit);
                 }
             }
             
         protected:
-            
-            void fail(DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
-                for(std::shared_ptr<DFTGate> parent : mParents) {
+
+            void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                for(std::shared_ptr<DFTGate> parent : this->mParents) {
                     if(state.isOperational(parent->id())) {
                         queues.propagateFailure(parent);
                     }
                 }
-                state.setFailed(mId);        
+                state.setFailed(this->mId);
             }
-            
-            void failsafe(DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
-                for(std::shared_ptr<DFTGate> parent : mParents) {
+
+            void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                for(std::shared_ptr<DFTGate> parent : this->mParents) {
                     if(state.isOperational(parent->id())) {
                         queues.propagateFailsafe(parent);
                     }
                 }
-                state.setFailsafe(mId);
+                state.setFailsafe(this->mId);
             }
-            
-            void childrenDontCare(DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
+
+            void childrenDontCare(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
                 queues.propagateDontCare(mChildren);
             }
-            
-            bool hasFailsafeChild(DFTState& state) const {
+
+            bool hasFailsafeChild(DFTState<ValueType>& state) const {
                 for(auto const& child : mChildren) {
                     if(state.isFailsafe(child->id()))
                     {
@@ -249,9 +265,8 @@ namespace storm {
                 }
                 return false;
             }
-            
-            
-            bool hasFailedChild(DFTState& state) const {
+
+            bool hasFailedChild(DFTState<ValueType>& state) const {
                 for(auto const& child : mChildren) {
                     if(state.hasFailed(child->id())) {
                         return true;
@@ -265,17 +280,15 @@ namespace storm {
        
 
         template<typename ValueType>
-        class DFTBE : public DFTElement {
-
+        class DFTBE : public DFTElement<ValueType> {
 
             ValueType mActiveFailureRate;
             ValueType mPassiveFailureRate;
+
         public:
             DFTBE(size_t id, std::string const& name, ValueType failureRate, ValueType dormancyFactor) :
-            DFTElement(id, name), mActiveFailureRate(failureRate), mPassiveFailureRate(dormancyFactor * failureRate)
-            {
-                
-            }
+                    DFTElement<ValueType>(id, name), mActiveFailureRate(failureRate), mPassiveFailureRate(dormancyFactor * failureRate)
+            {}
                         
             virtual size_t nrChildren() const {
                 return 0;
@@ -304,9 +317,10 @@ namespace storm {
             }
             
             virtual std::vector<size_t> independentUnit() const {
-                return {mId};
+                return {this->mId};
             }
-            virtual bool checkDontCareAnymore(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const;
+
+            virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
         };
 
         template<typename ValueType>
@@ -314,16 +328,17 @@ namespace storm {
             return os << "{" << be.name() << "} BE(" << be.activeFailureRate() << ", " << be.passiveFailureRate() << ")";
         }
 
-        
-        
 
-        class DFTConst : public DFTElement {
+
+        template<typename ValueType>
+        class DFTConst : public DFTElement<ValueType> {
+
             bool mFailed;
+
         public:
-            DFTConst(size_t id, std::string const& name, bool failed) : DFTElement(id, name), mFailed(failed) 
-            {
-                
-            }
+            DFTConst(size_t id, std::string const& name, bool failed) :
+                    DFTElement<ValueType>(id, name), mFailed(failed)
+            {}
             
             bool failed() const {
                 return mFailed;
@@ -339,96 +354,96 @@ namespace storm {
             
         };
 
-        class DFTAnd : public DFTGate {
+
+
+        template<typename ValueType>
+        class DFTAnd : public DFTGate<ValueType> {
             
         public:
-            DFTAnd(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement>> const& children = {}) :
-            DFTGate(id, name, children) 
+            DFTAnd(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
+                    DFTGate<ValueType>(id, name, children)
             {}
-            
-            void checkFails(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
-                
-                if(state.isOperational(mId)) {
-                    for(auto const& child : mChildren)
+
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                if(state.isOperational(this->mId)) {
+                    for(auto const& child : this->mChildren)
                     {
                         if(!state.hasFailed(child->id())) {
-                            return;// false;
+                            return;
                         }
                     }
-                    fail(state, queues);
-                    //return true;
-                } 
-                //return false;
-            }
-            
-            void checkFailsafe(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const{
-                assert(hasFailsafeChild(state));
-                if(state.isOperational(mId)) {
-                    failsafe(state, queues);
-                    childrenDontCare(state, queues);
-                    //return true;
+                    this->fail(state, queues);
                 }
-                //return false;
+            }
+
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
+                assert(this->hasFailsafeChild(state));
+                if(state.isOperational(this->mId)) {
+                    this->failsafe(state, queues);
+                    this->childrenDontCare(state, queues);
+                }
             }
             
             std::string typestring() const {
                 return "AND";
             }
         };
-        
-        inline std::ostream& operator<<(std::ostream& os, DFTAnd const& gate) {
+
+        template<typename ValueType>
+        inline std::ostream& operator<<(std::ostream& os, DFTAnd<ValueType> const& gate) {
             return os << gate.toString();
         }
-       
+
         
 
-        class DFTOr : public DFTGate {
+        template<typename ValueType>
+        class DFTOr : public DFTGate<ValueType> {
+
         public:
-            DFTOr(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement>> const& children = {}) :
-            DFTGate(id, name, children) 
+            DFTOr(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
+                    DFTGate<ValueType>(id, name, children)
             {}
-            
-             void checkFails(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
-                 assert(hasFailedChild(state));
-                if(state.isOperational(mId)) {
-                    fail(state, queues);
-                    //return true;
-                } 
-                // return false;
+
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                assert(this->hasFailedChild(state));
+                if(state.isOperational(this->mId)) {
+                    this->fail(state, queues);
+                }
             }
-             
-            void checkFailsafe(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const{
-                 for(auto const& child : mChildren) {
+
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
+                 for(auto const& child : this->mChildren) {
                      if(!state.isFailsafe(child->id())) {
-                         return;// false;
+                         return;
                      }
                  }
-                 failsafe(state, queues);
-                 //return true;
+                 this->failsafe(state, queues);
             }
             
             std::string typestring() const {
                 return "OR";
             }
-        private:
-            //static const std::string typestring = "or";
         };
-        
-         inline std::ostream& operator<<(std::ostream& os, DFTOr const& gate) {
+
+        template<typename ValueType>
+        inline std::ostream& operator<<(std::ostream& os, DFTOr<ValueType> const& gate) {
             return os << gate.toString();
         }
 
-        class DFTSeqAnd : public DFTGate {
+
+
+        template<typename ValueType>
+        class DFTSeqAnd : public DFTGate<ValueType> {
+
         public:
-            DFTSeqAnd(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement>> const& children = {}) :
-            DFTGate(id, name, children) 
+            DFTSeqAnd(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
+                    DFTGate<ValueType>(id, name, children)
             {}
-            
-            void checkFails(storm::storage::DFTState& state,  DFTStateSpaceGenerationQueues& queues) const {
-                
-                if(!state.hasFailed(mId)) {
+
+            void checkFails(storm::storage::DFTState<ValueType>& state,  DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                if(!state.hasFailed(this->mId)) {
                     bool childOperationalBefore = false;
-                    for(auto const& child : mChildren)
+                    for(auto const& child : this->mChildren)
                     {
                         if(!state.hasFailed(child->id())) {
                             childOperationalBefore = true;
@@ -436,22 +451,20 @@ namespace storm {
                         else {
                             if(childOperationalBefore) {
                                 state.markAsInvalid();
-                                return; //false;
+                                return;
                             }
                         }
                     }
                     if(!childOperationalBefore) {
                        fail(state, queues);
-                       //return true;
                     }
                   
                 } 
-                //return false;
             }
-            
-            void checkFailsafe(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const{
+
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
                 assert(hasFailsafeChild(state));
-                if(state.isOperational(mId)) {
+                if(state.isOperational(this->mId)) {
                     failsafe(state, queues);
                     //return true;
                 }
@@ -461,71 +474,74 @@ namespace storm {
             std::string  typestring() const {
                 return "SEQAND";
             }
-        private:
-            //static const std::string typestring = "seqand"; 
         };
-        
-         inline std::ostream& operator<<(std::ostream& os, DFTSeqAnd const& gate) {
+
+        template<typename ValueType>
+        inline std::ostream& operator<<(std::ostream& os, DFTSeqAnd<ValueType> const& gate) {
              return os << gate.toString();
         }
-        
-        class DFTPand : public DFTGate {
+
+
+
+        template<typename ValueType>
+        class DFTPand : public DFTGate<ValueType> {
+
         public:
-            DFTPand(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement>> const& children = {}) :
-            DFTGate(id, name, children) 
+            DFTPand(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
+                    DFTGate<ValueType>(id, name, children)
             {}
-            
-            void checkFails(storm::storage::DFTState& state,  DFTStateSpaceGenerationQueues& queues) const {
-                if(state.isOperational(mId)) {
+
+            void checkFails(storm::storage::DFTState<ValueType>& state,  DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                if(state.isOperational(this->mId)) {
                     bool childOperationalBefore = false;
-                    for(auto const& child : mChildren)
+                    for(auto const& child : this->mChildren)
                     {
                         if(!state.hasFailed(child->id())) {
                             childOperationalBefore = true;
                         } else if(childOperationalBefore && state.hasFailed(child->id())){
-                            failsafe(state, queues);
-                            childrenDontCare(state, queues);
-                            return; //false;
+                            this->failsafe(state, queues);
+                            this->childrenDontCare(state, queues);
+                            return;
                         }
                     }
                     if(!childOperationalBefore) {
-                        fail(state, queues);
-                        //return true;
+                        this->fail(state, queues);
                     }
                 }
-                // return false;
             }
-             
-            void checkFailsafe(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const{
-                assert(hasFailsafeChild(state));
-                if(state.isOperational(mId)) {
-                    failsafe(state, queues);
-                    childrenDontCare(state, queues);
-                    //return true;
+
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
+                assert(this->hasFailsafeChild(state));
+                if(state.isOperational(this->mId)) {
+                    this->failsafe(state, queues);
+                    this->childrenDontCare(state, queues);
                 }
-                //return false;
-            } 
+            }
             
             std::string typestring() const {
                 return "PAND";
             }
         };
         
-         inline std::ostream& operator<<(std::ostream& os, DFTPand const& gate) {
+        template<typename ValueType>
+        inline std::ostream& operator<<(std::ostream& os, DFTPand<ValueType> const& gate) {
              return os << gate.toString();
         }
-        
-        class DFTPor : public DFTGate {
+
+
+
+        template<typename ValueType>
+        class DFTPor : public DFTGate<ValueType> {
         public:
-            DFTPor(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement>> const& children = {}) :
-            DFTGate(id, name, children) 
+            DFTPor(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
+                    DFTGate<ValueType>(id, name, children)
             {}
-            
-            void checkFails(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
+
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
                  assert(false);
             }
-             
-            void checkFailsafe(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const{
+
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
                 assert(false);
             }
             
@@ -533,58 +549,60 @@ namespace storm {
                 return "POR";
             }
         };
-        
-         inline std::ostream& operator<<(std::ostream& os, DFTPor const& gate) {
+
+        template<typename ValueType>
+        inline std::ostream& operator<<(std::ostream& os, DFTPor<ValueType> const& gate) {
              return os << gate.toString();
         }
 
-        class DFTVot : public DFTGate {
+
+
+        template<typename ValueType>
+        class DFTVot : public DFTGate<ValueType> {
+
         private:
             unsigned mThreshold;
+
         public:
-            DFTVot(size_t id, std::string const& name, unsigned threshold, std::vector<std::shared_ptr<DFTElement>> const& children = {}) :
-            DFTGate(id, name, children), mThreshold(threshold)
+            DFTVot(size_t id, std::string const& name, unsigned threshold, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
+                    DFTGate<ValueType>(id, name, children), mThreshold(threshold)
             {}
-            
-            void checkFails(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
-                
-                if(state.isOperational(mId)) {
+
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                if(state.isOperational(this->mId)) {
                     unsigned nrFailedChildren = 0;
-                    for(auto const& child : mChildren)
+                    for(auto const& child : this->mChildren)
                     {
                         if(state.hasFailed(child->id())) {
                             ++nrFailedChildren;
                             if(nrFailedChildren >= mThreshold) 
                             {
-                                fail(state, queues);
-                                return;// true;
+                                this->fail(state, queues);
+                                return;
                             }
                         }
                     }
                   
                 } 
-                //    return false;
-               
             }
-            
-            void checkFailsafe(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const{
-                assert(hasFailsafeChild(state));
-                if(state.isOperational(mId)) {
+
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
+                assert(this->hasFailsafeChild(state));
+                if(state.isOperational(this->mId)) {
                     unsigned nrFailsafeChildren = 0;
-                    for(auto const& child : mChildren)
+                    for(auto const& child : this->mChildren)
                     {
                         if(state.isFailsafe(child->id())) {
                             ++nrFailsafeChildren;
-                            if(nrFailsafeChildren > nrChildren() - mThreshold) 
+                            if(nrFailsafeChildren > this->nrChildren() - mThreshold)
                             {
-                                failsafe(state, queues);
-                                childrenDontCare(state, queues);
-                                return;// true;
+                                this->failsafe(state, queues);
+                                this->childrenDontCare(state, queues);
+                                return;
                             }
                         }
                     }
                 }
-                //return false;
             }
             
             std::string typestring() const {
@@ -593,21 +611,24 @@ namespace storm {
 
         };
 
-        inline std::ostream& operator<<(std::ostream& os, DFTVot const& gate) {
+        template<typename ValueType>
+        inline std::ostream& operator<<(std::ostream& os, DFTVot<ValueType> const& gate) {
             return os << gate.toString();
-        }        
-        
-        class DFTSpare : public DFTGate {
+        }
+
+
+
+        template<typename ValueType>
+        class DFTSpare : public DFTGate<ValueType> {
+
+        private:
             size_t mUseIndex;
             size_t mActiveIndex;
             
         public:
-            DFTSpare(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement>> const& children = {}) :
-            DFTGate(id, name, children)
-            {
-                
-            }
-            
+            DFTSpare(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
+                    DFTGate<ValueType>(id, name, children)
+            {}
             
             std::string typestring() const {
                 return "SPARE";
@@ -624,39 +645,40 @@ namespace storm {
             void setActiveIndex(size_t activeIndex) {
                 mActiveIndex = activeIndex;
             }
-            
-            void initializeUses(storm::storage::DFTState& state) {
-                assert(mChildren.size() > 0);
-                state.setUsesAtPosition(mUseIndex, mChildren[0]->id());
+
+            void initializeUses(storm::storage::DFTState<ValueType>& state) {
+                assert(this->mChildren.size() > 0);
+                state.setUsesAtPosition(mUseIndex, this->mChildren[0]->id());
             }
-            
-            void checkFails(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
-                if(state.isOperational(mId)) {
+
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                if(state.isOperational(this->mId)) {
                     size_t uses = state.extractUses(mUseIndex);
                     if(!state.isOperational(uses)) {
                         // TODO compute children ids before.
                         std::vector<size_t> childrenIds;
-                        for(auto const& child : mChildren) {
+                        for(auto const& child : this->mChildren) {
                             childrenIds.push_back(child->id());
                         }
                         
-                        bool claimingSuccessful = state.claimNew(mId, mUseIndex, uses, childrenIds);
+                        bool claimingSuccessful = state.claimNew(this->mId, mUseIndex, uses, childrenIds);
                         if(!claimingSuccessful) {
-                            fail(state, queues);
+                            this->fail(state, queues);
                         }
                     }                  
                 } 
             }
-            
-            void checkFailsafe(storm::storage::DFTState& state, DFTStateSpaceGenerationQueues& queues) const {
-                if(state.isOperational(mId)) {
+
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                if(state.isOperational(this->mId)) {
                     if(state.isFailsafe(state.extractUses((mUseIndex)))) {
-                        failsafe(state, queues);
-                        childrenDontCare(state, queues);
+                        this->failsafe(state, queues);
+                        this->childrenDontCare(state, queues);
                     }
                 }
             }
         };
+
     }
 }
 

@@ -10,19 +10,28 @@
 
 namespace storm {
     namespace storage {
+
+        template<typename ValueType>
         class DFTGate;
+        template<typename ValueType>
         class DFTElement;
-        
-    
-        
+
+
+        template<typename ValueType>
         class DFTStateSpaceGenerationQueues {
-            std::priority_queue<std::shared_ptr<DFTGate>, std::vector<std::shared_ptr<DFTGate>>, OrderElementsByRank> failurePropagation;
-            std::vector<std::shared_ptr<DFTGate>> failsafePropagation;
-            std::vector<std::shared_ptr<DFTElement>> dontcarePropagation;
-            std::vector<std::shared_ptr<DFTElement>> activatePropagation;
+
+            using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
+            using DFTElementVector = std::vector<DFTElementPointer>;
+            using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
+            using DFTGateVector = std::vector<DFTGatePointer>;
+
+            std::priority_queue<DFTGatePointer, DFTGateVector, OrderElementsByRank<ValueType>> failurePropagation;
+            DFTGateVector failsafePropagation;
+            DFTElementVector dontcarePropagation;
+            DFTElementVector activatePropagation;
 
         public:
-            void propagateFailure(std::shared_ptr<DFTGate> const& elem) {
+            void propagateFailure(DFTGatePointer const& elem) {
                 failurePropagation.push(elem);
             }
 
@@ -30,8 +39,8 @@ namespace storm {
                 return failurePropagation.empty();
             }
 
-            std::shared_ptr<DFTGate> nextFailurePropagation() {
-                std::shared_ptr<DFTGate> next = failurePropagation.top();
+            DFTGatePointer nextFailurePropagation() {
+                DFTGatePointer next = failurePropagation.top();
                 failurePropagation.pop();
                 return next;
             }
@@ -40,12 +49,12 @@ namespace storm {
                 return failsafePropagation.empty();
             }
             
-            void propagateFailsafe(std::shared_ptr<DFTGate> const& gate) {
+            void propagateFailsafe(DFTGatePointer const& gate) {
                 failsafePropagation.push_back(gate);
             }
-            
-            std::shared_ptr<DFTGate> nextFailsafePropagation() {
-                std::shared_ptr<DFTGate> next = failsafePropagation.back();
+
+            DFTGatePointer nextFailsafePropagation() {
+                DFTGatePointer next = failsafePropagation.back();
                 failsafePropagation.pop_back();
                 return next;
             }
@@ -54,25 +63,23 @@ namespace storm {
                 return dontcarePropagation.empty();
             }
             
-            void propagateDontCare(std::shared_ptr<DFTElement> const& elem) {
+            void propagateDontCare(DFTElementPointer const& elem) {
                 dontcarePropagation.push_back(elem);
             }
             
-            void propagateDontCare(std::vector<std::shared_ptr<DFTElement>> const& elems) {
+            void propagateDontCare(DFTElementVector const& elems) {
                 dontcarePropagation.insert(dontcarePropagation.end(), elems.begin(), elems.end());
             }
             
-            std::shared_ptr<DFTElement> nextDontCarePropagation() {
-                std::shared_ptr<DFTElement> next = dontcarePropagation.back();
+            DFTElementPointer nextDontCarePropagation() {
+                DFTElementPointer next = dontcarePropagation.back();
                 dontcarePropagation.pop_back();
                 return next;
             }
         };
+
     }
-    
 }
-
-
 
 #endif	/* DFTSTATESPACEGENERATIONQUEUES_H */
 

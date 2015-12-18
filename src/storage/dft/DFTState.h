@@ -14,7 +14,7 @@ namespace storm {
         template<typename ValueType>
         class DFTBE;
 
-
+        template<typename ValueType>
         class DFTState {
             friend struct std::hash<DFTState>;
         private:
@@ -24,12 +24,10 @@ namespace storm {
             std::vector<size_t> mIsCurrentlyFailableBE;
             std::vector<size_t> mUsedRepresentants;
             bool mValid = true;
-            // TODO Matthias: template
-            const DFT<double>& mDft;
+            const DFT<ValueType>& mDft;
             
         public:
-            // TODO Matthias: template
-            DFTState(DFT<double> const& dft, size_t id);
+            DFTState(DFT<ValueType> const& dft, size_t id);
             
             DFTElementState getElementState(size_t id) const;
 
@@ -109,8 +107,7 @@ namespace storm {
                 return mIsCurrentlyFailableBE.size();
             }
 
-            // TODO Matthias: template
-            std::pair<std::shared_ptr<DFTBE<double>>, bool> letNextBEFail(size_t smallestIndex = 0);
+            std::pair<std::shared_ptr<DFTBE<ValueType>>, bool> letNextBEFail(size_t smallestIndex = 0);
             
             std::string getCurrentlyFailableString() {
                 std::stringstream stream;
@@ -137,9 +134,9 @@ namespace storm {
 }
 
 namespace std {
-    template<>
-    struct hash<storm::storage::DFTState> {
-        size_t operator()(storm::storage::DFTState const& s) const {
+    template<typename ValueType>
+    struct hash<storm::storage::DFTState<ValueType>> {
+        size_t operator()(storm::storage::DFTState<ValueType> const& s) const {
             return hash<storm::storage::BitVector>()(s.mStatus);
         }
     };

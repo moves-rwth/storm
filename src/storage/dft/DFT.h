@@ -17,8 +17,9 @@
 namespace storm {
     namespace storage {
 
+        template<typename ValueType>
         struct DFTElementSort {
-            bool operator()(std::shared_ptr<DFTElement> const& a, std::shared_ptr<DFTElement> const& b)  const {
+            bool operator()(std::shared_ptr<DFTElement<ValueType>> const& a, std::shared_ptr<DFTElement<ValueType>> const& b)  const {
                 if (a->rank() == 0 && b->rank() == 0) {
                     return a->isConstant();
                 } else {
@@ -27,11 +28,18 @@ namespace storm {
             }
         };
 
+
+
         template<typename ValueType>
         class DFT {
 
+            using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
+            using DFTElementVector = std::vector<DFTElementPointer>;
+            using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
+            using DFTGateVector = std::vector<DFTGatePointer>;
+
         private:
-            std::vector<std::shared_ptr<DFTElement>> mElements;
+            DFTElementVector mElements;
             size_t mNrOfBEs;
             size_t mNrOfSpares;
             size_t mTopLevelIndex;
@@ -44,9 +52,8 @@ namespace storm {
             std::map<size_t, size_t> mUsageIndex;
             
         public:
-            DFT(std::vector<std::shared_ptr<DFTElement>> const& elements, std::shared_ptr<DFTElement> const& tle);
-            
-            
+            DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
+
             size_t stateSize() const {
                 return mStateSize;
             }
@@ -72,15 +79,15 @@ namespace storm {
                 return mIdToFailureIndex[id];
             }
             
-            void initializeUses(DFTState& state) const {
+            void initializeUses(DFTState<ValueType>& state) const {
                 for(auto const& elem : mElements) {
                     if(elem->isSpareGate()) {
-                        std::static_pointer_cast<DFTSpare>(elem)->initializeUses(state);
+                        std::static_pointer_cast<DFTSpare<ValueType>>(elem)->initializeUses(state);
                     }
                 }
             }
             
-            void initializeActivation(DFTState& state) const {
+            void initializeActivation(DFTState<ValueType>& state) const {
                 state.activate(mTopLevelIndex);
                 for(auto const& elem : mTopModule) {
                     if(mElements[elem]->isSpareGate()) {
@@ -108,8 +115,7 @@ namespace storm {
                 }
             }
             
-            
-            void propagateActivation(DFTState& state, size_t representativeId) const {
+            void propagateActivation(DFTState<ValueType>& state, size_t representativeId) const {
                 state.activate(representativeId);
                 for(size_t id : module(representativeId)) {
                     if(mElements[id]->isSpareGate()) {
@@ -120,15 +126,15 @@ namespace storm {
             
             std::vector<size_t> nonColdBEs() const {
                 std::vector<size_t> result;
-                for(std::shared_ptr<DFTElement> elem : mElements) {
+                for(DFTElementPointer elem : mElements) {
                     if(elem->isBasicElement() && !elem->isColdBasicElement()) {
                         result.push_back(elem->id());
                     }
                 }
                 return result;
             }
-            
-            std::shared_ptr<DFTElement> const& getElement(size_t index) const {
+
+            DFTElementPointer const& getElement(size_t index) const {
                 assert(index < nrElements());
                 return mElements[index];
             }
@@ -140,7 +146,7 @@ namespace storm {
 
             std::vector<std::shared_ptr<DFTBE<ValueType>>> getBasicElements() const {
                 std::vector<std::shared_ptr<DFTBE<ValueType>>> elements;
-                for (std::shared_ptr<storm::storage::DFTElement> elem : mElements) {
+                for (DFTElementPointer elem : mElements) {
                     if (elem->isBasicElement()) {
                         elements.push_back(std::static_pointer_cast<DFTBE<ValueType>>(elem));
                     }
@@ -149,11 +155,11 @@ namespace storm {
             }
 
 
-            bool hasFailed(DFTState const& state) const {
+            bool hasFailed(DFTState<ValueType> const& state) const {
                 return state.hasFailed(mTopLevelIndex);
             }
             
-            bool isFailsafe(DFTState const& state) const {
+            bool isFailsafe(DFTState<ValueType> const& state) const {
                 return state.isFailsafe(mTopLevelIndex);
             }
             
@@ -163,9 +169,9 @@ namespace storm {
 
             std::string getSpareModulesString() const;
 
-            std::string getElementsWithStateString(DFTState const& state) const;
+            std::string getElementsWithStateString(DFTState<ValueType> const& state) const;
 
-            std::string getStateString(DFTState const& state) const;
+            std::string getStateString(DFTState<ValueType> const& state) const;
             
         private:
             bool elementIndicesCorrect() const {

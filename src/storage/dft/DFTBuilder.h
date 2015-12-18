@@ -14,11 +14,17 @@ namespace storm {
 
         template<typename ValueType>
         class DFTBuilder {
-            
+
+            using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
+            using DFTElementVector = std::vector<DFTElementPointer>;
+            using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
+            using DFTGateVector = std::vector<DFTGatePointer>;
+
+        private:
             std::size_t mNextId = 0;
             std::string topLevelIdentifier;
-            std::unordered_map<std::string, std::shared_ptr<DFTElement>> mElements;
-            std::unordered_map<std::shared_ptr<DFTElement>, std::vector<std::string>> mChildNames;
+            std::unordered_map<std::string, DFTElementPointer> mElements;
+            std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
             
         public:
             DFTBuilder() {
@@ -64,7 +70,7 @@ namespace storm {
                     std::cerr << "Voting gates with threshold higher than the number of children is not supported." << std::endl;
                     return false;
                 }
-                std::shared_ptr<DFTElement> element = std::make_shared<DFTVot>(mNextId++, name, threshold);
+                DFTElementPointer element = std::make_shared<DFTVot<ValueType>>(mNextId++, name, threshold);
                 
                 mElements[name] = element;
                 mChildNames[element] = children;
@@ -96,15 +102,15 @@ namespace storm {
          
         private:
             
-            unsigned computeRank(std::shared_ptr<DFTElement> const& elem);
+            unsigned computeRank(DFTElementPointer const& elem);
             
             bool addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementTypes tp);
             
             enum class topoSortColour {WHITE, BLACK, GREY}; 
             
-            void topoVisit(std::shared_ptr<DFTElement> const& n, std::map<std::shared_ptr<DFTElement>, topoSortColour>& visited, std::vector<std::shared_ptr<DFTElement>>& L);
+            void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour>& visited, DFTElementVector& L);
 
-            std::vector<std::shared_ptr<DFTElement>> topoSort();
+            DFTElementVector topoSort();
             
         };
     }

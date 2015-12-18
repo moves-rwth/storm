@@ -5,8 +5,8 @@
 namespace storm {
     namespace storage {
 
-        // TODO Matthias: template
-        DFTState::DFTState(DFT<double> const& dft, size_t id) : mStatus(dft.stateSize()), mId(id), mDft(dft)  {
+        template<typename ValueType>
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, size_t id) : mStatus(dft.stateSize()), mId(id), mDft(dft)  {
             mInactiveSpares = dft.getSpareIndices();
             dft.initializeUses(*this);
             dft.initializeActivation(*this);
@@ -14,70 +14,83 @@ namespace storm {
             mIsCurrentlyFailableBE.insert(mIsCurrentlyFailableBE.end(), alwaysActiveBEs.begin(), alwaysActiveBEs.end());
             
         }
-        
-        DFTElementState DFTState::getElementState(size_t id) const {
+
+        template<typename ValueType>
+        DFTElementState DFTState<ValueType>::getElementState(size_t id) const {
             return static_cast<DFTElementState>(getElementStateInt(id));
         }
 
-        int DFTState::getElementStateInt(size_t id) const {
+        template<typename ValueType>
+        int DFTState<ValueType>::getElementStateInt(size_t id) const {
             return mStatus.getAsInt(mDft.failureIndex(id), 2);
         }
 
-        size_t DFTState::getId() const {
+        template<typename ValueType>
+        size_t DFTState<ValueType>::getId() const {
             return mId;
         }
 
-        void DFTState::setId(size_t id) {
+        template<typename ValueType>
+        void DFTState<ValueType>::setId(size_t id) {
             mId = id;
         }
 
-        bool DFTState::isOperational(size_t id) const {
+        template<typename ValueType>
+        bool DFTState<ValueType>::isOperational(size_t id) const {
             return getElementState(id) == DFTElementState::Operational;
         }
 
-        bool DFTState::hasFailed(size_t id) const {
+        template<typename ValueType>
+        bool DFTState<ValueType>::hasFailed(size_t id) const {
             return mStatus[mDft.failureIndex(id)];
         }
 
-        bool DFTState::isFailsafe(size_t id) const {
+        template<typename ValueType>
+        bool DFTState<ValueType>::isFailsafe(size_t id) const {
             return mStatus[mDft.failureIndex(id)+1];
         }
 
-        bool DFTState::dontCare(size_t id) const {
+        template<typename ValueType>
+        bool DFTState<ValueType>::dontCare(size_t id) const {
             return getElementState(id) == DFTElementState::DontCare;
         }
 
-        void DFTState::setFailed(size_t id) {
+        template<typename ValueType>
+        void DFTState<ValueType>::setFailed(size_t id) {
             mStatus.set(mDft.failureIndex(id));
         }
 
-        void DFTState::setFailsafe(size_t id) {
+        template<typename ValueType>
+        void DFTState<ValueType>::setFailsafe(size_t id) {
             mStatus.set(mDft.failureIndex(id)+1);
         }
 
-        void DFTState::setDontCare(size_t id) {
+        template<typename ValueType>
+        void DFTState<ValueType>::setDontCare(size_t id) {
             mStatus.setFromInt(mDft.failureIndex(id), 2, static_cast<uint_fast64_t>(DFTElementState::DontCare) );
         }
-        
-        void DFTState::beNoLongerFailable(size_t id) {
+
+        template<typename ValueType>
+        void DFTState<ValueType>::beNoLongerFailable(size_t id) {
             auto it = std::find(mIsCurrentlyFailableBE.begin(), mIsCurrentlyFailableBE.end(), id);
             if(it != mIsCurrentlyFailableBE.end()) {
                 mIsCurrentlyFailableBE.erase(it);
             }
         }
 
-        // TODO Matthias: template
-        std::pair<std::shared_ptr<DFTBE<double>>, bool> DFTState::letNextBEFail(size_t index)
+        template<typename ValueType>
+        std::pair<std::shared_ptr<DFTBE<ValueType>>, bool> DFTState<ValueType>::letNextBEFail(size_t index)
         {
             assert(index < mIsCurrentlyFailableBE.size());
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
-            std::pair<std::shared_ptr<DFTBE<double>>,bool> res(mDft.getBasicElement(mIsCurrentlyFailableBE[index]), false);
+            std::pair<std::shared_ptr<DFTBE<ValueType>>,bool> res(mDft.getBasicElement(mIsCurrentlyFailableBE[index]), false);
             mIsCurrentlyFailableBE.erase(mIsCurrentlyFailableBE.begin() + index);
             setFailed(res.first->id());
             return res;
         }
-        
-        void DFTState::activate(size_t repr) {
+
+        template<typename ValueType>
+        void DFTState<ValueType>::activate(size_t repr) {
             std::vector<size_t>  const& module = mDft.module(repr);
             for(size_t elem : module) {
                 if(mDft.getElement(elem)->isColdBasicElement() && isOperational(elem)) {
@@ -89,33 +102,37 @@ namespace storm {
                 }
             }
         }
-        
-        
-        bool DFTState::isActiveSpare(size_t id) const {
+
+        template<typename ValueType>
+        bool DFTState<ValueType>::isActiveSpare(size_t id) const {
             assert(mDft.getElement(id)->isSpareGate());
             return (std::find(mInactiveSpares.begin(), mInactiveSpares.end(), id) == mInactiveSpares.end());
         }
-        
-        uint_fast64_t DFTState::uses(size_t id) const {
+
+        template<typename ValueType>
+        uint_fast64_t DFTState<ValueType>::uses(size_t id) const {
             return extractUses(mDft.usageIndex(id));
         }
-        
-        uint_fast64_t DFTState::extractUses(size_t from) const {
+
+        template<typename ValueType>
+        uint_fast64_t DFTState<ValueType>::extractUses(size_t from) const {
             assert(mDft.usageInfoBits() < 64);
             return mStatus.getAsInt(from, mDft.usageInfoBits());
         }
-        
-        bool DFTState::isUsed(size_t child) {
+
+        template<typename ValueType>
+        bool DFTState<ValueType>::isUsed(size_t child) {
             return (std::find(mUsedRepresentants.begin(), mUsedRepresentants.end(), child) != mUsedRepresentants.end());
-            
         }
-        
-        void DFTState::setUsesAtPosition(size_t usageIndex, size_t child) {
+
+        template<typename ValueType>
+        void DFTState<ValueType>::setUsesAtPosition(size_t usageIndex, size_t child) {
             mStatus.setFromInt(usageIndex, mDft.usageInfoBits(), child);
             mUsedRepresentants.push_back(child);
         }
-        
-        bool DFTState::claimNew(size_t spareId, size_t usageIndex, size_t currentlyUses, std::vector<size_t> const& childIds) {
+
+        template<typename ValueType>
+        bool DFTState<ValueType>::claimNew(size_t spareId, size_t usageIndex, size_t currentlyUses, std::vector<size_t> const& childIds) {
             auto it = find(childIds.begin(), childIds.end(), currentlyUses);
             assert(it != childIds.end());
             ++it;
@@ -131,6 +148,13 @@ namespace storm {
             }
             return false;
         }
+
+        // Explicitly instantiate the class.
+        template class DFTState<double>;
+
+#ifdef STORM_HAVE_CARL
+        template class DFTState<RationalFunction>;
+#endif
 
     }
 }

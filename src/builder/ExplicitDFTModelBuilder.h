@@ -18,6 +18,9 @@ namespace storm {
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename IndexType = uint32_t>
         class ExplicitDFTModelBuilder {
 
+            using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
+            using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
+
             // A structure holding the individual components of a model.
             struct ModelComponents {
                 ModelComponents();
@@ -36,7 +39,7 @@ namespace storm {
             };
 
             storm::storage::DFT<ValueType> const &mDft;
-            std::unordered_set<storm::storage::DFTState> mStates;
+            std::unordered_set<storm::storage::DFTState<ValueType>> mStates;
             size_t newIndex = 0;
 
         public:
@@ -47,7 +50,7 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> buildCTMC();
 
         private:
-            void exploreStates(std::queue<storm::storage::DFTState>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder);
+            void exploreStates(std::queue<storm::storage::DFTState<ValueType>>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder);
 
         };
     }

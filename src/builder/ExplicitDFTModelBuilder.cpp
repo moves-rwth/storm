@@ -13,10 +13,10 @@ namespace storm {
         template<typename ValueType, typename RewardModelType, typename IndexType>
         std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::buildCTMC() {
             // Initialize
-            storm::storage::DFTState state(mDft, newIndex++);
+            storm::storage::DFTState<ValueType> state(mDft, newIndex++);
             mStates.insert(state);
 
-            std::queue<storm::storage::DFTState> stateQueue;
+            std::queue<storm::storage::DFTState<ValueType>> stateQueue;
             stateQueue.push(state);
 
             bool deterministicModel = true;
@@ -46,7 +46,7 @@ namespace storm {
                 modelComponents.stateLabeling.addLabel(elem->name() + "_fail");
             }
 
-            for (storm::storage::DFTState state : mStates) {
+            for (storm::storage::DFTState<ValueType> state : mStates) {
                 if (mDft.hasFailed(state)) {
                     modelComponents.stateLabeling.addLabelToState("failed", state.getId());
                 }
@@ -72,7 +72,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename RewardModelType, typename IndexType>
-        void ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::exploreStates(std::queue<storm::storage::DFTState>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder) {
+        void ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::exploreStates(std::queue<storm::storage::DFTState<ValueType>>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder) {
 
             std::vector<std::pair<size_t, ValueType>> outgoingTransitions;
 
@@ -82,7 +82,7 @@ namespace storm {
                 ValueType sum = 0;
 
                 // Consider next state
-                storm::storage::DFTState state = stateQueue.front();
+                storm::storage::DFTState<ValueType> state = stateQueue.front();
                 stateQueue.pop();
 
                 size_t smallest = 0;
@@ -99,7 +99,7 @@ namespace storm {
                 while (smallest < state.nrFailableBEs()) {
                     STORM_LOG_TRACE("exploring from: " << mDft.getStateString(state));
 
-                    storm::storage::DFTState newState(state);
+                    storm::storage::DFTState<ValueType> newState(state);
                     std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType>>, bool> nextBE = newState.letNextBEFail(smallest++);
                     if (nextBE.first == nullptr) {
                         std::cout << "break" << std::endl;
@@ -108,26 +108,26 @@ namespace storm {
                     }
                     STORM_LOG_TRACE("with the failure of: " << nextBE.first->name() << " [" << nextBE.first->id() << "]");
 
-                    storm::storage::DFTStateSpaceGenerationQueues queues;
+                    storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
 
-                    for (std::shared_ptr<storm::storage::DFTGate> parent : nextBE.first->parents()) {
+                    for (DFTGatePointer parent : nextBE.first->parents()) {
                         if (newState.isOperational(parent->id())) {
                             queues.propagateFailure(parent);
                         }
                     }
 
                     while (!queues.failurePropagationDone()) {
-                        std::shared_ptr<storm::storage::DFTGate> next = queues.nextFailurePropagation();
+                        DFTGatePointer next = queues.nextFailurePropagation();
                         next->checkFails(newState, queues);
                     }
 
                     while (!queues.failsafePropagationDone()) {
-                        std::shared_ptr<storm::storage::DFTGate> next = queues.nextFailsafePropagation();
+                        DFTGatePointer next = queues.nextFailsafePropagation();
                         next->checkFailsafe(newState, queues);
                     }
 
                     while (!queues.dontCarePropagationDone()) {
-                        std::shared_ptr<storm::storage::DFTElement> next = queues.nextDontCarePropagation();
+                        DFTElementPointer next = queues.nextDontCarePropagation();
                         next->checkDontCareAnymore(newState, queues);
                     }
 
