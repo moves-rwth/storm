@@ -28,7 +28,7 @@ namespace storm {
         }
                 
         template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
+        bool NativeLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             if (method == NativeLinearEquationSolverSolutionMethod::SOR || method == NativeLinearEquationSolverSolutionMethod::GaussSeidel) {
                 // Define the omega used for SOR.
                 ValueType omega = method == NativeLinearEquationSolverSolutionMethod::SOR ? storm::settings::nativeEquationSolverSettings().getOmega() : storm::utility::one<ValueType>();
@@ -66,6 +66,9 @@ namespace storm {
                 if (!tmpXProvided) {
                     delete tmpX;
                 }
+                
+                return converged;
+                
             } else {
                 // Get a Jacobi decomposition of the matrix A.
                 std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
@@ -113,6 +116,8 @@ namespace storm {
                 if (!multiplyResultProvided) {
                     delete copyX;
                 }
+                
+                return converged;
             }
         }
         

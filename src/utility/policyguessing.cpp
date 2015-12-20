@@ -201,25 +201,30 @@ namespace storm {
                                         ){
                 //Get the submatrix/subvector A,x, and b and invoke linear equation solver
                 storm::storage::SparseMatrix<ValueType> subA = A.getSubmatrix(true, probGreater0States, probGreater0States, true);
-                subA.convertToEquationSystem();
+                storm::storage::SparseMatrix<ValueType> eqSysA(subA);
+                eqSysA.convertToEquationSystem();
                 std::vector<ValueType> subX(probGreater0States.getNumberOfSetBits());
                 storm::utility::vector::selectVectorValues(subX, probGreater0States, x);
                 std::vector<ValueType> subB(probGreater0States.getNumberOfSetBits());
                 storm::utility::vector::selectVectorValues(subB, probGreater0States, b);
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSysSolver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(subA);
-                linEqSysSolver->solveEquationSystem(subX, subB);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSysSolver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(eqSysA);
+                linEqSysSolver->setRelative(relative);
                 
-                //Performing a couple of iterations makes the result "stable" when doing value iteration, i.e.,
-                //if the given equation system is induced by an optimal policy, value iteration will terminate after the first iteration.
-                subA.convertToEquationSystem();
-                linEqSysSolver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(subA);
+                std::size_t iterations = 0;
                 std::vector<ValueType> copyX(subX.size());
-                std::size_t iterations = 100000; //don't run into an endless loop...
+                ValueType newPrecision = precision;
                 do {
-                    linEqSysSolver->performMatrixVectorMultiplication(subX, &subB, 10, &copyX);
-                    --iterations;
-                } while(!storm::utility::vector::equalModuloPrecision(subX, copyX, precision, relative) && iterations>0);
-                STORM_LOG_WARN_COND(iterations>0, "Iterations on result of linear equation solver did not converge.");
+                    linEqSysSolver->setPrecision(newPrecision);
+                    if(!linEqSysSolver->solveEquationSystem(subX, subB)){
+                        break; //Solver did not converge.. so we have to go on with the current solution.
+                    }
+                    subA.multiplyWithVector(subX,copyX);
+                    storm::utility::vector::addVectors(copyX, subB, copyX); // = Ax + b
+                    ++iterations;
+                    newPrecision *= 0.1;
+                } while(!storm::utility::vector::equalModuloPrecision(subX, copyX, precision, relative) && iterations<30);
+                
+                STORM_LOG_DEBUG("Required to increase the precision " << iterations << " times in order to obtain a precise result");
                 //fill in the result
                 storm::utility::vector::setVectorValues(x, probGreater0States, subX);
                 storm::utility::vector::setVectorValues(x, (~probGreater0States), prob0Value);

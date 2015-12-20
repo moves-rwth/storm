@@ -149,12 +149,17 @@ namespace storm {
              * It is not assumed that qualitative properties of the Graph defined by A have been checked, yet.
              * However, actual target states are already filtered out.
              * To ensure a unique solution, we also need to filter out the "prob0"-states.
+             * 
+             * If the result does not satisfy "Ax+b = x (modulo precision)", the solver is executed
+             * again with increased precision.
              *
              * @param A the matrix of the equation system
              * @param x The initial guess of the solution.
              * @param b The vector of the equation system
              * @param targetChoices marks the rows in the matrix that have a positive probability to lead to a target state
              * @param prob0Value the value that is assigned to the states that have probability zero to reach a target
+             * @param const& precision The precision to be used by the solver
+             * @param relative sets whether to consider relative errors
              * @return The solution vector in the form of the vector x.
              */
             template<typename ValueType>

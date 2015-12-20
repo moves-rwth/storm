@@ -46,9 +46,21 @@ namespace storm {
              */
             GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
                         
-            virtual void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
+            virtual bool solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
             
             virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
+            
+            virtual void setPrecision(double precision) override{
+                this->precision = precision;
+            }
+            
+            virtual void setIterations(uint_fast64_t maximalNumberOfIterations) override{
+                this->maximalNumberOfIterations = maximalNumberOfIterations;
+            }
+            
+            virtual void setRelative(bool relative) override{
+                this->relative = relative;
+            }
             
         private:
             /*!

@@ -29,8 +29,10 @@ namespace storm {
              * @param b The right-hand side of the equation system. Its length must be equal to the number of rows of A.
              * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
              * vector must be equal to the number of rows of A.
+             * 
+             * @return true iff solving was successful (e.g. iterative methods converged)
              */
-            virtual void solveEquationSystem(std::vector<Type>& x, std::vector<Type> const& b, std::vector<Type>* multiplyResult = nullptr) const = 0;
+            virtual bool solveEquationSystem(std::vector<Type>& x, std::vector<Type> const& b, std::vector<Type>* multiplyResult = nullptr) const = 0;
             
             /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After
@@ -45,6 +47,12 @@ namespace storm {
              * vector must be equal to the number of rows of A.
              */
             virtual void performMatrixVectorMultiplication(std::vector<Type>& x, std::vector<Type> const* b = nullptr, uint_fast64_t n = 1, std::vector<Type>* multiplyResult = nullptr) const = 0;
+            
+            virtual void setPrecision(double precision) = 0;
+            virtual void setIterations(uint_fast64_t maximalNumberOfIterations) = 0;
+            
+            virtual void setRelative(bool relative) = 0;
+            
         };
         
     } // namespace solver

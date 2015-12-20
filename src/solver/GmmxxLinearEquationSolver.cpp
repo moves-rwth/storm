@@ -55,7 +55,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
+        bool GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             LOG4CPLUS_INFO(logger, "Using method '" << methodToString() << "' with preconditioner '" << preconditionerToString() << "' (max. " << maximalNumberOfIterations << " iterations).");
             if (method == SolutionMethod::Jacobi && preconditioner != Preconditioner::None) {
                 LOG4CPLUS_WARN(logger, "Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
@@ -94,8 +94,10 @@ namespace storm {
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
                     LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    return true;
                 } else {
-                    LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+                    LOG4CPLUS_INFO(logger, "Iterative solver did not converge.");
+                    return false;
                 }
             } else if (method == SolutionMethod::Jacobi) {
                 uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(*originalA, x, b, multiplyResult);
@@ -103,9 +105,14 @@ namespace storm {
                 // Check if the solver converged and issue a warning otherwise.
                 if (iterations < maximalNumberOfIterations) {
                     LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+                    return true;
                 } else {
-                    LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+                    LOG4CPLUS_INFO(logger, "Iterative solver did not converge.");
+                    return false;
                 }
+            } else {
+                STORM_LOG_ERROR("The selected method is not supported.");
+                return false;
             }
         }
         
