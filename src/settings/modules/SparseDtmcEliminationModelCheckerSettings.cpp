@@ -17,11 +17,11 @@ namespace storm {
             const std::string SparseDtmcEliminationModelCheckerSettings::maximalSccSizeOptionName = "sccsize";
             
             SparseDtmcEliminationModelCheckerSettings::SparseDtmcEliminationModelCheckerSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
-                std::vector<std::string> orders = {"fw", "fwrev", "bw", "bwrev", "rand", "spen", "dpen"};
+                std::vector<std::string> orders = {"fw", "fwrev", "bw", "bwrev", "rand", "spen", "dpen", "regex"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eliminationOrderOptionName, true, "The order that is to be used for the elimination techniques. Available are {fw, fwrev, bw, bwrev, rand, spen, dpen}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the order in which states are chosen for elimination.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(orders)).setDefaultValueString("fwrev").build()).build());
                 
                 std::vector<std::string> methods = {"state", "hybrid"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, eliminationMethodOptionName, true, "The elimination technique to use. Available are {state, hybrid}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the elimination technique to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("hybrid").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, eliminationMethodOptionName, true, "The elimination technique to use. Available are {state, hybrid}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the elimination technique to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("state").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, entryStatesLastOptionName, true, "Sets whether the entry states are eliminated last.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalSccSizeOptionName, true, "Sets the maximal size of the SCCs for which state elimination is applied.")
@@ -55,6 +55,8 @@ namespace storm {
                     return EliminationOrder::StaticPenalty;
                 } else if (eliminationOrderAsString == "dpen") {
                     return EliminationOrder::DynamicPenalty;
+                } else if (eliminationOrderAsString == "regex") {
+                    return EliminationOrder::RegularExpression;
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal elimination order selected.");
                 }

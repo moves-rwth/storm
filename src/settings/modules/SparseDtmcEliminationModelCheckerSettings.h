@@ -15,7 +15,7 @@ namespace storm {
                 /*!
                  * An enum that contains all available state elimination orders.
                  */
-                enum class EliminationOrder { Forward, ForwardReversed, Backward, BackwardReversed, Random, StaticPenalty, DynamicPenalty };
+                enum class EliminationOrder { Forward, ForwardReversed, Backward, BackwardReversed, Random, StaticPenalty, DynamicPenalty, RegularExpression };
 				
                 /*!
                  * An enum that contains all available techniques to solve parametric systems.
