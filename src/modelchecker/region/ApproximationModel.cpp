@@ -12,6 +12,7 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/models/ModelType.h"
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/solver/AllowEarlyTerminationCondition.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/solver/GameSolver.h"
 #include "src/utility/macros.h"
@@ -42,7 +43,6 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << formula << ". Approximation model only supports eventually or reachability reward formulae.");
                 }
-                this->solverData.player1Goal = storm::solver::SolveGoal(storm::logic::isLowerBound(formula->getComparisonType()));
                 STORM_LOG_THROW(parametricModel.hasLabel("target"), storm::exceptions::InvalidArgumentException, "The given Model has no \"target\"-statelabel.");
                 this->targetStates = parametricModel.getStateLabeling().getStates("target");
                 STORM_LOG_THROW(parametricModel.hasLabel("sink"), storm::exceptions::InvalidArgumentException, "The given Model has no \"sink\"-statelabel.");
@@ -76,6 +76,15 @@ namespace storm {
                 this->solverData.initialStateIndex = newIndices[initialState];
                 this->solverData.lastMinimizingPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
                 this->solverData.lastMaximizingPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
+                //this->solverData.player1Goal = storm::solver::SolveGoal(storm::logic::isLowerBound(formula->getComparisonType()));
+                storm::storage::BitVector filter(this->solverData.result.size(), false);
+                filter.set(this->solverData.initialStateIndex, true);
+                this->solverData.player1Goal = std::make_unique<storm::solver::BoundedGoal<ConstantType>>(
+                            storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize,
+                            formula->getComparisonType(),
+                            formula->getBound(),
+                            filter
+                        );
             }                
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -398,11 +407,18 @@ namespace storm {
             
                         
             template<typename ParametricSparseModelType, typename ConstantType>
-            void ApproximationModel<ParametricSparseModelType, ConstantType>::invokeSolver(bool computeLowerBounds, Policy& policy){
+            void ApproximationModel<ParametricSparseModelType, ConstantType>::invokeSolver(bool computeLowerBounds, Policy& policy, bool allowEarlyTermination){
                 storm::solver::SolveGoal player2Goal(computeLowerBounds);
                 if(this->typeOfParametricModel == storm::models::ModelType::Dtmc){
                     //Invoke mdp model checking
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ConstantType>> solver = storm::solver::configureMinMaxLinearEquationSolver(player2Goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
+                    if(allowEarlyTermination){
+                        solver->setEarlyTerminationCriterion(std::make_unique<storm::solver::TerminateAfterFilteredExtremumBelowOrAboveThreshold<ConstantType>>(
+                                    this->solverData.player1Goal->relevantColumns(),
+                                    this->solverData.player1Goal->thresholdValue(),
+                                    computeLowerBounds
+                                ));
+                    }
                     storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
                                 this->solverData.result, this->vectorData.vector,
                                 player2Goal.direction(),
@@ -412,9 +428,17 @@ namespace storm {
                 } else if(this->typeOfParametricModel == storm::models::ModelType::Mdp){
                     //Invoke stochastic two player game model checking
                     std::unique_ptr<storm::solver::GameSolver<ConstantType>> solver = storm::utility::solver::GameSolverFactory<ConstantType>().create(this->solverData.player1Matrix, this->matrixData.matrix);
+                    if(allowEarlyTermination && this->solverData.player1Goal->minimize() == computeLowerBounds){
+                        //We play MIN-Min or Max-Max
+                    solver->setEarlyTerminationCriterion(std::make_unique<storm::solver::TerminateAfterFilteredExtremumBelowOrAboveThreshold<ConstantType>>(
+                                this->solverData.player1Goal->relevantColumnVector,
+                                this->solverData.player1Goal->thresholdValue(),
+                                computeLowerBounds
+                            ));
+                    }
                     storm::utility::policyguessing::solveGame(*solver, 
                                 this->solverData.result, this->vectorData.vector,
-                                this->solverData.player1Goal.direction(), player2Goal.direction(), 
+                                this->solverData.player1Goal->direction(), player2Goal.direction(), 
                                 this->solverData.lastPlayer1Policy, policy,
                                 this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>())
                         );

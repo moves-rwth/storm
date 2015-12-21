@@ -76,7 +76,7 @@ namespace storm {
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void initializePlayer1Matrix(ParametricSparseModelType const& parametricModel);
                 void instantiate(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
-                void invokeSolver(bool computeLowerBounds, Policy& policy);
+                void invokeSolver(bool computeLowerBounds, Policy& policy, bool allowEarlyTermination=true);
 
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
@@ -92,7 +92,7 @@ namespace storm {
                     Policy lastMinimizingPolicy, lastMaximizingPolicy;
                     std::size_t initialStateIndex; //The index which represents the result for the initial state in the result vector
                     //Player 1 represents the nondeterminism of the given mdp (so, this is irrelevant if we approximate values of a DTMC)
-                    storm::solver::SolveGoal player1Goal = storm::solver::SolveGoal(true); //No default cunstructor for solve goal...
+                    std::unique_ptr<storm::solver::BoundedGoal<ConstantType>> player1Goal;
                     storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
                     Policy lastPlayer1Policy;
                 } solverData;

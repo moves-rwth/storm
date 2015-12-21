@@ -55,43 +55,7 @@ namespace storm {
                         solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                         //x = std::vector<ValueType>(x.size(), storm::utility::zero<ValueType>());
                     }
-                }
-                /*
-                        std::size_t p2Precount=0;
-                        std::size_t p2Postcount=0;
-                        std::size_t p1diff =0;
-                        std::size_t p2diff =0;
-                        std::size_t p2RelevantCount=0;
-                        storm::storage::BitVector relevantP2Groups(pl2Policy.size(),false);
-                        for(std::size_t i = 0; i<pl1Policy.size(); ++i){
-                            if(pl1Policy[i] != player1Policy[i]){
-                                ++p1diff;
-                            }
-                            std::size_t row = solver.getPlayer1Matrix().getRowGroupIndices()[i] + player1Policy[i];
-                            auto rowObj = solver.getPlayer1Matrix().getRow(row);
-                            relevantP2Groups.set(rowObj.begin()->getColumn());
-                        }
-                        for (std::size_t i : relevantP2Groups){
-                            if(pl2Policy[i] != player2Policy[i]){
-                                ++p2RelevantCount;
-                            }
-                        }
-                        for(std::size_t i = 0; i<pl2Policy.size(); ++i){
-                            if(pl2Policy[i] != player2Policy[i]){
-                                ++p2diff;
-                            }
-                            p2Precount += pl2Policy[i];
-                            p2Postcount += player2Policy[i];
-                        }
-                        std::cout << "P1: " << (player1Goal == OptimizationDirection::Minimize ? "MIN " : "MAX ");
-                        std::cout << "P2: " << (player2Goal == OptimizationDirection::Minimize ? "MIN " : "MAX ");
-                        std::cout << "Changes: P1: " << p1diff;
-                        std::cout << " P2: " << p2diff << " (" << p2RelevantCount << " relevant)";
-                        std::cout << " Counts P2: " << p2Precount << " and " << p2Postcount << ".";
-                        std::cout << std::endl;
-                  */      
-                
-                
+                }                
             }
             
             template <typename ValueType>
@@ -209,20 +173,22 @@ namespace storm {
                 storm::utility::vector::selectVectorValues(subB, probGreater0States, b);
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> linEqSysSolver = storm::utility::solver::LinearEquationSolverFactory<ValueType>().create(eqSysA);
                 linEqSysSolver->setRelative(relative);
-                
+                linEqSysSolver->setIterations(500);
                 std::size_t iterations = 0;
                 std::vector<ValueType> copyX(subX.size());
                 ValueType newPrecision = precision;
                 do {
                     linEqSysSolver->setPrecision(newPrecision);
                     if(!linEqSysSolver->solveEquationSystem(subX, subB)){
-                        break; //Solver did not converge.. so we have to go on with the current solution.
+              //          break; //Solver did not converge.. so we have to go on with the current solution.
                     }
                     subA.multiplyWithVector(subX,copyX);
                     storm::utility::vector::addVectors(copyX, subB, copyX); // = Ax + b
                     ++iterations;
-                    newPrecision *= 0.1;
-                } while(!storm::utility::vector::equalModuloPrecision(subX, copyX, precision, relative) && iterations<30);
+                    newPrecision *= 0.5;
+                } while(!storm::utility::vector::equalModuloPrecision(subX, copyX, precision*0.5, relative) && iterations<50);
+                
+                STORM_LOG_WARN_COND(iterations<50, "Solving linear equation system did not yield a precise result");
                 
                 STORM_LOG_DEBUG("Required to increase the precision " << iterations << " times in order to obtain a precise result");
                 //fill in the result

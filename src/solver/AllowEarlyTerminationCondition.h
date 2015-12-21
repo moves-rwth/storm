@@ -41,6 +41,18 @@ namespace storm {
             storm::storage::BitVector filter;
             bool useMinimumAsExtremum;
         };
+        
+        template<typename ValueType>
+        class TerminateAfterFilteredExtremumBelowOrAboveThreshold :  public AllowEarlyTerminationCondition<ValueType>{
+        public:
+            TerminateAfterFilteredExtremumBelowOrAboveThreshold(storm::storage::BitVector const& filter, ValueType threshold, bool useMinimum);
+            bool terminateNow(std::vector<ValueType> const& currentValue) const;
+            
+        protected:
+            ValueType terminationThreshold;
+            storm::storage::BitVector filter;
+            bool useMinimumAsExtremum;
+        };
     }
 }
 

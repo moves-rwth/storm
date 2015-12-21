@@ -35,13 +35,34 @@ namespace storm {
             ValueType initVal = terminationThreshold - 1;
             ValueType currentThreshold = useMinimumAsExtremum ? storm::utility::vector::max_if(currentValues, filter, initVal) : storm::utility::vector::max_if(currentValues, filter, initVal);
             
-               return currentThreshold >= this->terminationThreshold;
+            return currentThreshold >= this->terminationThreshold;
+        }
+        
+        template<typename ValueType>
+        TerminateAfterFilteredExtremumBelowOrAboveThreshold<ValueType>::TerminateAfterFilteredExtremumBelowOrAboveThreshold(storm::storage::BitVector const& filter, ValueType threshold,  bool useMinimum) :
+        terminationThreshold(threshold), filter(filter), useMinimumAsExtremum(useMinimum)
+        {
+            // Intentionally left empty.
+        }
+
+        template<typename ValueType>
+        bool TerminateAfterFilteredExtremumBelowOrAboveThreshold<ValueType>::terminateNow(const std::vector<ValueType>& currentValues) const {
+            assert(currentValues.size() >= filter.size());
             
-            
+            if(useMinimumAsExtremum){
+                ValueType initVal = terminationThreshold + 1;
+                ValueType currentThreshold = storm::utility::vector::min_if(currentValues, filter, initVal);
+                return currentThreshold < this->terminationThreshold;
+            } else {
+                ValueType initVal = terminationThreshold - 1;
+                ValueType currentThreshold = storm::utility::vector::max_if(currentValues, filter, initVal);
+                return currentThreshold > this->terminationThreshold;
+            }
         }
         
         
         template class TerminateAfterFilteredExtremumPassesThresholdValue<double>;
+        template class TerminateAfterFilteredExtremumBelowOrAboveThreshold<double>;
         template class TerminateAfterFilteredSumPassesThresholdValue<double>;
                 
     }

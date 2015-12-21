@@ -57,7 +57,7 @@ namespace storm {
                 void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void instantiate(std::map<VariableType, CoefficientType>const& point);
-                void invokeSolver();
+                void invokeSolver(bool allowEarlyTermination=true);
                 
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
@@ -72,7 +72,7 @@ namespace storm {
                     std::vector<ConstantType> result; //Note: result.size==maybeStates.numberOfSetBits
                     std::size_t initialStateIndex; //The index which represents the result for the initial state in the result vector
                     //The following is only relevant if we consider mdps:
-                    storm::solver::SolveGoal solveGoal = storm::solver::SolveGoal(true); //No default cunstructor for solve goal...
+                    std::unique_ptr<storm::solver::BoundedGoal<ConstantType>> solveGoal;
                     Policy lastPolicy; //best policy from the previous instantiation. Serves as first guess for the next call.
                 } solverData;
                 

@@ -9,12 +9,12 @@
 namespace storm {
     namespace solver {
         template <typename ValueType>
-        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) : AbstractGameSolver(), player1Matrix(player1Matrix), player2Matrix(player2Matrix) {
+        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) : AbstractGameSolver(), player1Matrix(player1Matrix), player2Matrix(player2Matrix), earlyTermination(new NoEarlyTerminationCondition<ValueType>()) {
             // Intentionally left empty.
         }
 
         template <typename ValueType>
-        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : AbstractGameSolver(precision, maximalNumberOfIterations, relative), player1Matrix(player1Matrix), player2Matrix(player2Matrix) {
+        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : AbstractGameSolver(precision, maximalNumberOfIterations, relative), player1Matrix(player1Matrix), player2Matrix(player2Matrix) , earlyTermination(new NoEarlyTerminationCondition<ValueType>()) {
             // Intentionally left empty.
         }
 
@@ -69,9 +69,9 @@ namespace storm {
                 std::swap(x, tmpResult);
 
                 ++iterations;
-            } while (!converged && iterations < maximalNumberOfIterations);
+            } while (!converged && iterations < maximalNumberOfIterations && !this->earlyTermination->terminateNow(x));
             
-            STORM_LOG_WARN_COND(converged, "Iterative solver for stochastic two player games did not converge after " << iterations << " iterations.");
+            STORM_LOG_WARN_COND(converged || this->earlyTermination->terminateNow(x), "Iterative solver for stochastic two player games did not converge after " << iterations << " iterations.");
             
             if(this->trackPolicies){
                 this->player2Policy = std::vector<storm::storage::sparse::state_type>(player2Matrix.getRowGroupCount());
@@ -108,6 +108,11 @@ namespace storm {
                     }
                 }
             }
+        }
+        
+        template <typename ValueType>
+        void GameSolver<ValueType>::setEarlyTerminationCriterion(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v) {
+                earlyTermination = std::move(v);
         }
 
         template <typename ValueType>

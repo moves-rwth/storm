@@ -20,7 +20,6 @@
 #include "src/utility/policyguessing.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/InvalidArgumentException.h"
-#include "storage/dd/CuddBdd.h"
 
 namespace storm {
     namespace modelchecker {
@@ -41,7 +40,6 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << formula << ". Sampling model only supports eventually or reachability reward formulae.");
                 }
-                this->solverData.solveGoal = storm::solver::SolveGoal(storm::logic::isLowerBound(formula->getComparisonType()));
                 STORM_LOG_THROW(parametricModel.hasLabel("target"), storm::exceptions::InvalidArgumentException, "The given Model has no \"target\"-statelabel.");
                 this->targetStates = parametricModel.getStateLabeling().getStates("target");
                 STORM_LOG_THROW(parametricModel.hasLabel("sink"), storm::exceptions::InvalidArgumentException, "The given Model has no \"sink\"-statelabel.");
@@ -70,6 +68,16 @@ namespace storm {
                 this->solverData.result = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), this->computeRewards ? storm::utility::one<ConstantType>() : ConstantType(0.5));
                 this->solverData.initialStateIndex = newIndices[initialState];
                 this->solverData.lastPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
+                
+                //this->solverData.solveGoal = storm::solver::SolveGoal(storm::logic::isLowerBound(formula->getComparisonType()));
+                storm::storage::BitVector filter(this->solverData.result.size(), false);
+                filter.set(this->solverData.initialStateIndex, true);
+                this->solverData.solveGoal = std::make_unique<storm::solver::BoundedGoal<ConstantType>>(
+                            storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize,
+                            formula->getComparisonType(),
+                            formula->getBound(),
+                            filter
+                        );
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -253,17 +261,25 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SamplingModel<ParametricSparseModelType, ConstantType>::invokeSolver(){
+            void SamplingModel<ParametricSparseModelType, ConstantType>::invokeSolver(bool allowEarlyTermination){
                 if(this->typeOfParametricModel == storm::models::ModelType::Dtmc){
-                    std::unique_ptr<storm::solver::LinearEquationSolver<double>> solver = storm::utility::solver::LinearEquationSolverFactory<double>().create(this->matrixData.matrix);
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ConstantType>> solver = storm::utility::solver::LinearEquationSolverFactory<ConstantType>().create(this->matrixData.matrix);
                     solver->solveEquationSystem(this->solverData.result, this->vectorData.vector);
                 } else if(this->typeOfParametricModel == storm::models::ModelType::Mdp){
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> solver = storm::solver::configureMinMaxLinearEquationSolver(this->solverData.solveGoal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ConstantType>> solver = storm::utility::solver::MinMaxLinearEquationSolverFactory<ConstantType>().create(this->matrixData.matrix);
+                    solver->setOptimizationDirection(this->solverData.solveGoal->direction());
+                    if(allowEarlyTermination){
+                        solver->setEarlyTerminationCriterion(std::make_unique<storm::solver::TerminateAfterFilteredExtremumBelowOrAboveThreshold<ConstantType>>(
+                                    this->solverData.solveGoal->relevantColumns(),
+                                    this->solverData.solveGoal->thresholdValue(),
+                                    this->solverData.solveGoal->minimize()
+                                ));
+                    }
                     storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
                                         this->solverData.result, this->vectorData.vector,
-                                        this->solverData.solveGoal.direction(),
+                                        this->solverData.solveGoal->direction(),
                                         this->solverData.lastPolicy,
-                                        this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<double>() : storm::utility::zero<double>()));
+                                        this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>()));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Type of model");
                 }

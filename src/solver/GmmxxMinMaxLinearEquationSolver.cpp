@@ -74,6 +74,8 @@ namespace storm {
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
 					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+				} else if (this->earlyTermination->terminateNow(*currentX)) {
+					LOG4CPLUS_INFO(logger, "Iterative solver stopped due to early termination. Performed " << iterations << " iterations.");
 				} else {
 					LOG4CPLUS_WARN(logger, "Iterative solver did not converge after " << iterations << " iterations.");
 				}
@@ -85,6 +87,10 @@ namespace storm {
 				}
                                 
                                 if(this->trackPolicy){
+                                    if(iterations==0){ //may happen due to early termination. Then we need to compute x'= A*x+b
+					gmm::mult(*gmmxxMatrix, x, *multiplyResult);
+					gmm::add(b, *multiplyResult);
+                                    }
                                     this->policy = std::vector<storm::storage::sparse::state_type>(x.size());
                                     storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, rowGroupIndices, &(this->policy));
                                 }

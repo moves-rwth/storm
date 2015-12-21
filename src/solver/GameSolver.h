@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "src/solver/AbstractGameSolver.h"
+#include "src/solver/AllowEarlyTerminationCondition.h"
 #include "src/solver/OptimizationDirection.h"
 
 #include "src/storage/sparse/StateType.h"
@@ -53,12 +54,17 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> const& getPlayer2Matrix() const;
             storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& getPlayer1Matrix() const;
 
+            void setEarlyTerminationCriterion(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v);
+            
         private:
             // The matrix defining the choices of player 1.
             storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix;
 
             // The matrix defining the choices of player 2.
             storm::storage::SparseMatrix<ValueType> const& player2Matrix;
+            
+            
+            std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> earlyTermination;
             
         };
     }
