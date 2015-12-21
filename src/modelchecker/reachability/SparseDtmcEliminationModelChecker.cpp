@@ -824,7 +824,7 @@ namespace storm {
                         auto successorEntry = storm::utility::simplify(std::move(*first2 * multiplyFactor));
                         *result = successorEntry;
                         newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, successorEntry.getValue());
-//                        std::cout << "(1) adding " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << std::endl;
+//                        std::cout << "(1) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
                         ++first2;
                         ++successorOffsetInNewBackwardTransitions;
                     } else if (first1->getColumn() < first2->getColumn()) {
@@ -834,18 +834,19 @@ namespace storm {
                         auto probability = storm::utility::simplify(first1->getValue() + storm::utility::simplify(multiplyFactor * first2->getValue()));
                         *result = storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type>(first1->getColumn(), probability);
                         newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, probability);
-//                        std::cout << "(2) adding " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << std::endl;
+//                        std::cout << "(2) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
                         ++first1;
                         ++first2;
                         ++successorOffsetInNewBackwardTransitions;
                     }
                 }
-                for (; first2 != last2; ++first2, ++successorOffsetInNewBackwardTransitions) {
+                for (; first2 != last2; ++first2) {
                     if (first2->getColumn() != state) {
                         auto stateProbability = storm::utility::simplify(std::move(*first2 * multiplyFactor));
                         *result = stateProbability;
                         newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, stateProbability.getValue());
-//                        std::cout << "(3) adding " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << std::endl;
+//                        std::cout << "(3) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
+                        ++successorOffsetInNewBackwardTransitions;
                     }
                 }
                 
@@ -880,6 +881,10 @@ namespace storm {
                 }
                 
                 typename FlexibleSparseMatrix::row_type& successorBackwardTransitions = backwardTransitions.getRow(successorEntry.getColumn());
+//                std::cout << "old backward trans of " << successorEntry.getColumn() << std::endl;
+//                for (auto const& trans : successorBackwardTransitions) {
+//                    std::cout << trans << std::endl;
+//                }
                 
                 // Delete the current state as a predecessor of the successor state only if we are going to remove the
                 // current state's forward transitions.
@@ -893,6 +898,11 @@ namespace storm {
                 typename FlexibleSparseMatrix::row_type::iterator last1 = successorBackwardTransitions.end();
                 typename FlexibleSparseMatrix::row_type::iterator first2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].begin();
                 typename FlexibleSparseMatrix::row_type::iterator last2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].end();
+                
+//                std::cout << "adding backward trans " << successorEntry.getColumn() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
+//                for (auto const& trans : newBackwardProbabilities[successorOffsetInNewBackwardTransitions]) {
+//                    std::cout << trans << std::endl;
+//                }
                 
                 typename FlexibleSparseMatrix::row_type newPredecessors;
                 newPredecessors.reserve((last1 - first1) + (last2 - first2));
@@ -929,6 +939,10 @@ namespace storm {
                 
                 // Now move the new predecessors in place.
                 successorBackwardTransitions = std::move(newPredecessors);
+//                std::cout << "new backward trans of " << successorEntry.getColumn() << std::endl;
+//                for (auto const& trans : successorBackwardTransitions) {
+//                    std::cout << trans << std::endl;
+//                }
                 ++successorOffsetInNewBackwardTransitions;
             }
             STORM_LOG_TRACE("Fixed predecessor lists of successor states.");
@@ -1198,7 +1212,9 @@ namespace storm {
                     }
                     
                     if (!foundCorrespondingElement) {
-                        std::cout << "forward entry: " << forwardEntry << std::endl;
+//                        std::cout << "forward entry: " << forwardIndex << " -> " << forwardEntry << std::endl;
+//                        transitionMatrix.print();
+//                        backwardTransitions.print();
                         return false;
                     }
                 }
