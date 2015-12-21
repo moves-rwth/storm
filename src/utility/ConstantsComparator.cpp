@@ -35,6 +35,11 @@ namespace storm {
             return false;
         }
         
+        template<typename ValueType>
+        bool ConstantsComparator<ValueType>::isLess(ValueType const& value1, ValueType const& value2) const {
+            return value1 < value2;
+        }
+        
         ConstantsComparator<float>::ConstantsComparator() : precision(static_cast<float>(storm::settings::generalSettings().getPrecision())) {
             // Intentionally left empty.
         }
@@ -61,6 +66,10 @@ namespace storm {
         
         bool ConstantsComparator<float>::isInfinity(float const& value) const {
             return value == storm::utility::infinity<float>();
+        }
+        
+        bool ConstantsComparator<float>::isLess(float const& value1, float const& value2) const {
+            return std::abs(value1 - value2) < precision;
         }
         
         ConstantsComparator<double>::ConstantsComparator() : precision(storm::settings::generalSettings().getPrecision()) {
@@ -90,7 +99,11 @@ namespace storm {
         bool ConstantsComparator<double>::isConstant(double const& value) const {
             return true;
         }
-                
+        
+        bool ConstantsComparator<double>::isLess(double const& value1, double const& value2) const {
+            return value1 < value2 - precision;
+        }
+        
         // Explicit instantiations.
         template class ConstantsComparator<double>;
         template class ConstantsComparator<float>;

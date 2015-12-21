@@ -292,6 +292,13 @@ namespace storm {
              */
             boost::any accept(ExpressionVisitor& visitor) const;
             
+            /*!
+             * Converts the expression into a string.
+             *
+             * @return The string representation of the expression.
+             */
+            std::string toString();
+            
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:

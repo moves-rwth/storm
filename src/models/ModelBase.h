@@ -89,6 +89,14 @@ namespace storm {
              */
             virtual bool isSymbolicModel() const;
             
+            /*!
+             * Checks whether the model is of the given type.
+             *
+             * @param modelType The model type to check for.
+             * @return True iff the model is of the given type.
+             */
+            bool isOfType(storm::models::ModelType const& modelType) const;
+            
         private:
             // The type of the model.
             ModelType modelType;
