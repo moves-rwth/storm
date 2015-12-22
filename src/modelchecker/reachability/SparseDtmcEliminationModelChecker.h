@@ -15,7 +15,13 @@ namespace storm {
             typedef typename SparseDtmcModelType::ValueType ValueType;
             typedef typename SparseDtmcModelType::RewardModelType RewardModelType;
             
-            explicit SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model);
+            /*!
+             * Creates an elimination-based model checker for the given model.
+             *
+             * @param model The model to analyze.
+             * @param computeResultsForInitialStatesOnly If set to true, the results are only computed for
+             */
+            explicit SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model, bool computeResultsForInitialStatesOnly = true);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -45,11 +51,10 @@ namespace storm {
                 void print() const;
                 
                 /*!
-                 * Checks whether the given state has a self-loop with an arbitrary probability in the given probability matrix.
+                 * Checks whether the given state has a self-loop with an arbitrary probability in the probability matrix.
                  *
                  * @param state The state for which to check whether it possesses a self-loop.
-                 * @param matrix The matrix in which to look for the loop.
-                 * @return True iff the given state has a self-loop with an arbitrary probability in the given probability matrix.
+                 * @return True iff the given state has a self-loop with an arbitrary probability in the probability matrix.
                  */
                 bool hasSelfLoop(storm::storage::sparse::state_type state);
                 
@@ -101,7 +106,7 @@ namespace storm {
                 PenaltyFunctionType penaltyFunction;
             };
             
-            static ValueType computeReachabilityValue(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<ValueType>>& stateRewards);
+            static std::vector<ValueType> computeReachabilityValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<ValueType>>& stateRewards);
             
             static std::unique_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& stateDistances, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& states);
             
@@ -122,10 +127,13 @@ namespace storm {
             static std::vector<std::size_t> getStateDistances(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<ValueType> const& oneStepProbabilities, bool forward);
             
             static uint_fast64_t computeStatePenalty(storm::storage::sparse::state_type const& state, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities);
-
+            
             static uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities);
             
             static bool checkConsistent(FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions);
+            
+            // A flag that indicates whether this model checker is supposed to produce results for all states or just for the initial states.
+            bool computeResultsForInitialStatesOnly;
             
         };
         

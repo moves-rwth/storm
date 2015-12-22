@@ -75,7 +75,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model) : SparsePropositionalModelChecker<SparseDtmcModelType>(model) {
+        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model, bool computeResultsForInitialStatesOnly) : SparsePropositionalModelChecker<SparseDtmcModelType>(model), computeResultsForInitialStatesOnly(computeResultsForInitialStatesOnly) {
             // Intentionally left empty.
         }
         
@@ -123,40 +123,61 @@ namespace storm {
             storm::storage::BitVector const& phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             storm::storage::BitVector const& psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             
-            // Do some sanity checks to establish some required properties.
-            STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-            storm::storage::sparse::state_type initialState = *this->getModel().getInitialStates().begin();
-            
             // Then, compute the subset of states that has a probability of 0 or 1, respectively.
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel(), phiStates, psiStates);
             storm::storage::BitVector statesWithProbability0 = statesWithProbability01.first;
             storm::storage::BitVector statesWithProbability1 = statesWithProbability01.second;
             storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-            
-            // If the initial state is known to have either probability 0 or 1, we can directly return the result.
-            if (this->getModel().getInitialStates().isDisjointFrom(maybeStates)) {
-                STORM_LOG_DEBUG("The probability of all initial states was found in a preprocessing step.");
-                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, statesWithProbability0.get(*this->getModel().getInitialStates().begin()) ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>()));
+
+            // Determine whether we need to perform some further computation.
+            bool furtherComputationNeeded = true;
+            if (computeResultsForInitialStatesOnly && this->getModel().getInitialStates().isDisjointFrom(maybeStates)) {
+                STORM_LOG_DEBUG("The probability for all initial states was found in a preprocessing step.");
+                furtherComputationNeeded = false;
+            } else if (maybeStates.empty()) {
+                STORM_LOG_DEBUG("The probability for all states was found in a preprocessing step.");
+                furtherComputationNeeded = false;
             }
             
-            // Determine the set of states that is reachable from the initial state without jumping over a target state.
-            storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, statesWithProbability1);
-            
-            // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
-            maybeStates &= reachableStates;
-            
-            // Create a vector for the probabilities to go to a state with probability 1 in one step.
-            std::vector<ValueType> oneStepProbabilities = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
-            
-            // Determine the set of initial states of the sub-model.
-            storm::storage::BitVector newInitialStates = this->getModel().getInitialStates() % maybeStates;
-            
-            // We then build the submatrix that only has the transitions of the maybe states.
-            storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
-            storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
-            
-            boost::optional<std::vector<ValueType>> missingStateRewards;
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, computeReachabilityValue(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, missingStateRewards)));
+            std::vector<ValueType> result(maybeStates.size());
+            if (furtherComputationNeeded) {
+                // If we compute the results for the initial states only, we can cut off all maybe state that are not
+                // reachable from them.
+                if (computeResultsForInitialStatesOnly) {
+                    // Determine the set of states that is reachable from the initial state without jumping over a target state.
+                    storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, statesWithProbability1);
+                
+                    // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
+                    maybeStates &= reachableStates;
+                }
+                
+                // Create a vector for the probabilities to go to a state with probability 1 in one step.
+                std::vector<ValueType> oneStepProbabilities = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, statesWithProbability1);
+                
+                // Determine the set of initial states of the sub-model.
+                storm::storage::BitVector newInitialStates = this->getModel().getInitialStates() % maybeStates;
+                
+                // We then build the submatrix that only has the transitions of the maybe states.
+                storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
+                storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
+                
+                boost::optional<std::vector<ValueType>> missingStateRewards;
+                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, missingStateRewards);
+                storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, subresult);
+            }
+
+            // Construct full result.
+            storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
+            storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
+
+            // Construct check result based on whether we have computed values for all states or just the initial states.
+            std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
+            if (computeResultsForInitialStatesOnly) {
+                // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
+                // result to only communicate these results.
+                checkResult->filter(ExplicitQualitativeCheckResult(~maybeStates | this->getModel().getInitialStates()));
+            }
+            return checkResult;
         }
         
         template<typename SparseDtmcModelType>
@@ -169,8 +190,6 @@ namespace storm {
             // Do some sanity checks to establish some required properties.
             RewardModelType const& rewardModel = this->getModel().getRewardModel(rewardModelName ? rewardModelName.get() : "");
             STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
-            STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-            storm::storage::sparse::state_type initialState = *this->getModel().getInitialStates().begin();
             
             // Then, compute the subset of states that has a reachability reward less than infinity.
             storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
@@ -178,37 +197,60 @@ namespace storm {
             infinityStates.complement();
             storm::storage::BitVector maybeStates = ~psiStates & ~infinityStates;
             
-            // If the initial state is known to have 0 reward or an infinite reward value, we can directly return the result.
-            if (infinityStates.get(initialState)) {
-                STORM_LOG_DEBUG("The reward of all initial states was found in a preprocessing step.");
-                // This is a work around, because not all (e.g. storm::RationalFunction) data types can represent an
-                // infinity value.
-                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<double>(initialState, storm::utility::infinity<double>()));
+            // Determine whether we need to perform some further computation.
+            bool furtherComputationNeeded = true;
+            if (computeResultsForInitialStatesOnly) {
+                if (this->getModel().getInitialStates().isSubsetOf(infinityStates)) {
+                    STORM_LOG_DEBUG("The reward of all initial states was found in a preprocessing step.");
+                    furtherComputationNeeded = false;
+                }
+                if (this->getModel().getInitialStates().isSubsetOf(psiStates)) {
+                    STORM_LOG_DEBUG("The reward of all initial states was found in a preprocessing step.");
+                    furtherComputationNeeded = false;
+                }
             }
-            if (psiStates.get(initialState)) {
-                STORM_LOG_DEBUG("The reward of all initial states was found in a preprocessing step.");
-                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::utility::zero<ValueType>()));
+
+            std::vector<ValueType> result(maybeStates.size());
+            if (furtherComputationNeeded) {
+                // If we compute the results for the initial states only, we can cut off all maybe state that are not
+                // reachable from them.
+                if (computeResultsForInitialStatesOnly) {
+                    // Determine the set of states that is reachable from the initial state without jumping over a target state.
+                    storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, psiStates);
+                    
+                    // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
+                    maybeStates &= reachableStates;
+                }
+                
+                // Create a vector for the probabilities to go to a state with probability 1 in one step.
+                std::vector<ValueType> oneStepProbabilities = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, psiStates);
+
+                // Determine the set of initial states of the sub-model.
+                storm::storage::BitVector newInitialStates = this->getModel().getInitialStates() % maybeStates;
+
+                // We then build the submatrix that only has the transitions of the maybe states.
+                storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
+                storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
+                
+                // Project the state reward vector to all maybe-states.
+                boost::optional<std::vector<ValueType>> optionalStateRewards = rewardModel.getTotalRewardVector(maybeStates.getNumberOfSetBits(), this->getModel().getTransitionMatrix(), maybeStates);
+
+                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, optionalStateRewards);
+                storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, subresult);
             }
             
-            // Determine the set of states that is reachable from the initial state without jumping over a target state.
-            storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, psiStates);
-            
-            // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
-            maybeStates &= reachableStates;
-            
-            // Create a vector for the probabilities to go to a state with probability 1 in one step.
-            std::vector<ValueType> oneStepProbabilities = this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, psiStates);
-            
-            // Determine the set of initial states of the sub-model.
-            storm::storage::BitVector newInitialStates = this->getModel().getInitialStates() % maybeStates;
-            
-            // We then build the submatrix that only has the transitions of the maybe states.
-            storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
-            storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
-            
-            // Project the state reward vector to all maybe-states.
-            boost::optional<std::vector<ValueType>> optionalStateRewards = rewardModel.getTotalRewardVector(maybeStates.getNumberOfSetBits(), this->getModel().getTransitionMatrix(), maybeStates);
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, computeReachabilityValue(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, phiStates, psiStates, optionalStateRewards)));
+            // Construct full result.
+            storm::utility::vector::setVectorValues<ValueType>(result, infinityStates, storm::utility::infinity<ValueType>());
+            storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::zero<ValueType>());
+
+            // Construct check result based on whether we have computed values for all states or just the initial states.
+            std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
+            if (computeResultsForInitialStatesOnly) {
+                // If we computed the results for the initial (and inf) states only, we need to filter the result to
+                // only communicate these results.
+                checkResult->filter(ExplicitQualitativeCheckResult(~maybeStates | this->getModel().getInitialStates()));
+            }
+            return checkResult;
         }
         
         template<typename SparseDtmcModelType>
@@ -534,7 +576,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityValue(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<ValueType>>& stateRewards) {
+        std::vector<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& oneStepProbabilities, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<std::vector<ValueType>>& stateRewards) {
             std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
             
             std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
@@ -622,9 +664,15 @@ namespace storm {
             // Now, we return the value for the only initial state.
             STORM_LOG_DEBUG("Simplifying and returning result.");
             if (stateRewards) {
-                return storm::utility::simplify(stateRewards.get()[*initialStates.begin()]);
+                for (auto& reward : stateRewards.get()) {
+                    reward = storm::utility::simplify(reward);
+                }
+                return stateRewards.get();
             } else {
-                return oneStepProbabilities[*initialStates.begin()];
+                for (auto& probability : oneStepProbabilities) {
+                    probability = storm::utility::simplify(probability);
+                }
+                return oneStepProbabilities;
             }
         }
         
@@ -746,7 +794,7 @@ namespace storm {
                     }
                 }
                 if (!stateRewards) {
-                    oneStepProbabilities[state] = oneStepProbabilities[state] * loopProbability;
+                    oneStepProbabilities[state] = storm::utility::simplify(oneStepProbabilities[state] * loopProbability);
                 }
             }
             
