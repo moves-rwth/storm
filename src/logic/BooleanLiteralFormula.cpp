@@ -30,6 +30,10 @@ namespace storm {
             return true;
         }
         
+        std::shared_ptr<Formula> BooleanLiteralFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return std::make_shared<BooleanLiteralFormula>(*this);
+        }
+        
         std::ostream& BooleanLiteralFormula::writeToStream(std::ostream& out) const {
             if (value) {
                 out << "true";

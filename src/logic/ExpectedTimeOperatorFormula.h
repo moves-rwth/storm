@@ -23,6 +23,8 @@ namespace storm {
             virtual bool containsProbabilityOperator() const override;
             virtual bool containsNestedProbabilityOperators() const override;
             
+            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
         };
     }

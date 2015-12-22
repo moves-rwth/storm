@@ -13,10 +13,18 @@ namespace storm {
         class QualitativeCheckResult;
         class QuantitativeCheckResult;
         class ExplicitQualitativeCheckResult;
-        template <typename ValueType> class ExplicitQuantitativeCheckResult;
-        template <storm::dd::DdType Type> class SymbolicQualitativeCheckResult;
-        template <storm::dd::DdType Type> class SymbolicQuantitativeCheckResult;
-        template <storm::dd::DdType Type> class HybridQuantitativeCheckResult;
+        
+        template <typename ValueType>
+        class ExplicitQuantitativeCheckResult;
+        
+        template <storm::dd::DdType Type>
+        class SymbolicQualitativeCheckResult;
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        class SymbolicQuantitativeCheckResult;
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        class HybridQuantitativeCheckResult;
         
         // The base class of all check results.
         class CheckResult {
@@ -65,17 +73,17 @@ namespace storm {
             template <storm::dd::DdType Type>
             SymbolicQualitativeCheckResult<Type> const& asSymbolicQualitativeCheckResult() const;
 
-            template <storm::dd::DdType Type>
-            SymbolicQuantitativeCheckResult<Type>& asSymbolicQuantitativeCheckResult();
+            template <storm::dd::DdType Type, typename ValueType>
+            SymbolicQuantitativeCheckResult<Type, ValueType>& asSymbolicQuantitativeCheckResult();
 
-            template <storm::dd::DdType Type>
-            SymbolicQuantitativeCheckResult<Type> const& asSymbolicQuantitativeCheckResult() const;
+            template <storm::dd::DdType Type, typename ValueType>
+            SymbolicQuantitativeCheckResult<Type, ValueType> const& asSymbolicQuantitativeCheckResult() const;
 
-            template <storm::dd::DdType Type>
-            HybridQuantitativeCheckResult<Type>& asHybridQuantitativeCheckResult();
+            template <storm::dd::DdType Type, typename ValueType>
+            HybridQuantitativeCheckResult<Type, ValueType>& asHybridQuantitativeCheckResult();
             
-            template <storm::dd::DdType Type>
-            HybridQuantitativeCheckResult<Type> const& asHybridQuantitativeCheckResult() const;
+            template <storm::dd::DdType Type, typename ValueType>
+            HybridQuantitativeCheckResult<Type, ValueType> const& asHybridQuantitativeCheckResult() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
         };

@@ -1,6 +1,8 @@
 #ifndef STORM_LOGIC_BINARYBOOLEANSTATEFORMULA_H_
 #define STORM_LOGIC_BINARYBOOLEANSTATEFORMULA_H_
 
+#include <map>
+
 #include "src/logic/BinaryStateFormula.h"
 
 namespace storm {
@@ -25,6 +27,8 @@ namespace storm {
             virtual bool isOr() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
+            
+            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             
         private:
             OperatorType operatorType;
