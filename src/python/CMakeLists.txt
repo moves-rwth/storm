@@ -24,7 +24,5 @@ if(STORM_PYTHON)
 
     add_custom_target(stormpy DEPENDS stormpy-info stormpy-core)
 
-    add_custom_command(TARGET stormpy PRE_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       ${STORMPY_SOURCE_DIR} ${STORMPY_OUTPUT_DIR})
+
 endif()

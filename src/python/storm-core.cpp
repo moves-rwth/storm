@@ -51,7 +51,9 @@ BOOST_PYTHON_MODULE(_core)
     def("parseProgram", storm::parseProgram);
 
     def("buildModelFromPrismProgram", storm::buildSymbolicModel<double>);
-    
-    
+
+
+    def("exportMatrixFromModel", storm::exportMatrixToFile)
+
     
 }
