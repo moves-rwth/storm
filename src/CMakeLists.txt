@@ -34,7 +34,9 @@ file(GLOB STORM_SETTINGS_MODULES_FILES ${PROJECT_SOURCE_DIR}/src/settings/module
 file(GLOB_RECURSE STORM_SOLVER_FILES ${PROJECT_SOURCE_DIR}/src/solver/*.h ${PROJECT_SOURCE_DIR}/src/solver/*.cpp)
 file(GLOB STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
 file(GLOB STORM_STORAGE_BISIMULATION_FILES ${PROJECT_SOURCE_DIR}/src/storage/bisimulation/*.h ${PROJECT_SOURCE_DIR}/src/storage/bisimulation/*.cpp)
-file(GLOB_RECURSE STORM_STORAGE_DD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/*.cpp)
+file(GLOB STORM_STORAGE_DD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_DD_CUDD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_DD_SYLVAN_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.h ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_PRISM_FILES ${PROJECT_SOURCE_DIR}/src/storage/prism/*.h ${PROJECT_SOURCE_DIR}/src/storage/prism/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_SPARSE_FILES ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.h ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.cpp)
@@ -80,6 +82,8 @@ source_group(solver FILES ${STORM_SOLVER_FILES})
 source_group(storage FILES ${STORM_STORAGE_FILES})
 source_group(storage\\bisimulation FILES ${STORM_STORAGE_BISIMULATION_FILES})
 source_group(storage\\dd FILES ${STORM_STORAGE_DD_FILES})
+source_group(storage\\dd\\cudd FILES ${STORM_STORAGE_DD_CUDD_FILES})
+source_group(storage\\dd\\sylvan FILES ${STORM_STORAGE_DD_SYLVAN_FILES})
 source_group(storage\\expressions FILES ${STORM_STORAGE_EXPRESSIONS_FILES})
 source_group(storage\\prism FILES ${STORM_STORAGE_PRISM_FILES})
 source_group(storage\\sparse FILES ${STORM_STORAGE_SPARSE_FILES})
@@ -104,6 +108,7 @@ endif(ADDITIONAL_LINK_DIRS)
 ###############################################################################
 add_library(storm ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS} ${STORM_GENERATED_SOURCES}) # Adding headers for xcode
 add_dependencies(storm xercesc)
+add_dependencies(storm sylvan)
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
@@ -113,7 +118,7 @@ target_link_libraries(storm ${STORM_LINK_LIBRARIES})
 
 
 
-INSTALL(TARGETS storm-main 
+INSTALL(TARGETS storm-main
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib

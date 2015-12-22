@@ -14,6 +14,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::variant<uint_fast64_t, std::pair<double, double>> const& bounds) : BinaryPathFormula(leftSubformula, rightSubformula), bounds(bounds) {
+            // Intentionally left empty.
+        }
+        
         bool BoundedUntilFormula::isBoundedUntilFormula() const {
             return true;
         }
@@ -40,6 +44,10 @@ namespace storm {
         
         uint_fast64_t BoundedUntilFormula::getDiscreteTimeBound() const {
             return boost::get<uint_fast64_t>(bounds);
+        }
+        
+        std::shared_ptr<Formula> BoundedUntilFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return std::make_shared<BoundedUntilFormula>(this->getLeftSubformula().substitute(substitution), this->getRightSubformula().substitute(substitution), bounds);
         }
         
         std::ostream& BoundedUntilFormula::writeToStream(std::ostream& out) const {

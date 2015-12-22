@@ -543,10 +543,17 @@ Cudd_DumpDot(
 		scan = nodelist[j];
 		while (scan != NULL) {
 		    if (st_is_member(visited,(char *) scan)) {
-            retval = fprintf(fp,
+                if (inames != NULL) {
+                    retval = fprintf(fp,
                     "\"%p\" [label = \"%s\"];\n",
                     (void *) ((mask & (ptrint) scan) /
                     sizeof(DdNode)), inames[dd->invperm[i]]);
+                } else {
+                    retval = fprintf(fp,
+                    "\"%p\" [label = \"%i\"];\n",
+                    (void *) ((mask & (ptrint) scan) /
+                    sizeof(DdNode)), i);
+                }
             if (retval == EOF) goto failure;
             if (cuddT(scan) != Cudd_ReadZero(dd)) {
 			retval = fprintf(fp,

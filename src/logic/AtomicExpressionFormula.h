@@ -2,7 +2,6 @@
 #define STORM_LOGIC_ATOMICEXPRESSIONFORMULA_H_
 
 #include "src/logic/StateFormula.h"
-#include "src/storage/expressions/Expression.h"
 
 namespace storm {
     namespace logic {
@@ -26,6 +25,8 @@ namespace storm {
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
             
+            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
+
         private:
             // The atomic expression represented by this node in the formula tree.
             storm::expressions::Expression expression;

@@ -5,78 +5,85 @@
 
 namespace storm {
     namespace parser {
-        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), powerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), trueFalse_(manager), manager(manager.getSharedPointer()), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
+        ExpressionParser::ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool enableErrorHandling, bool allowBacktracking) : ExpressionParser::base_type(expression), orOperator_(), andOperator_(), equalityOperator_(), relationalOperator_(), plusOperator_(), multiplicationOperator_(), infixPowerOperator_(), unaryOperator_(), floorCeilOperator_(), minMaxOperator_(), prefixPowerOperator_(), trueFalse_(manager), manager(manager.getSharedPointer()), createExpressions(false), acceptDoubleLiterals(true), identifiers_(nullptr), invalidIdentifiers_(invalidIdentifiers_) {
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&ExpressionParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
             
             if (allowBacktracking) {
-                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) >> plusExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
+                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2, qi::_pass)];
             } else {
-                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) > plusExpression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2)];
+                floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createFloorCeilExpression, phoenix::ref(*this), qi::_1, qi::_2, qi::_pass)];
             }
             floorCeilExpression.name("floor/ceil expression");
             
             if (allowBacktracking) {
-                minMaxExpression = ((minMaxOperator_ >> qi::lit("(")) >> plusExpression >> qi::lit(",") >> plusExpression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) >> expression[qi::_val = qi::_1] >> +(qi::lit(",") >> expression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1, qi::_pass)]) >> qi::lit(")");
             } else {
-                minMaxExpression = ((minMaxOperator_ >> qi::lit("(")) > plusExpression > qi::lit(",") > plusExpression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3)];
+                minMaxExpression = ((minMaxOperator_[qi::_a = qi::_1] >> qi::lit("(")) > expression[qi::_val = qi::_1] > +(qi::lit(",") > expression)[qi::_val = phoenix::bind(&ExpressionParser::createMinimumMaximumExpression, phoenix::ref(*this), qi::_val, qi::_a, qi::_1, qi::_pass)]) > qi::lit(")");
             }
             minMaxExpression.name("min/max expression");
+            
+            if (allowBacktracking) {
+                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) >> expression >> qi::lit(",") >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3, qi::_pass)];
+            } else {
+                prefixPowerExpression = ((prefixPowerOperator_ >> qi::lit("(")) > expression > qi::lit(",") > expression > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_2, qi::_1, qi::_3, qi::_pass)];
+            }
+            prefixPowerExpression.name("pow expression");
             
 			identifierExpression = identifier[qi::_val = phoenix::bind(&ExpressionParser::getIdentifierExpression, phoenix::ref(*this), qi::_1, allowBacktracking, qi::_pass)];
             identifierExpression.name("identifier expression");
             
-            literalExpression = trueFalse_[qi::_val = qi::_1] | strict_double[qi::_val = phoenix::bind(&ExpressionParser::createDoubleLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&ExpressionParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1)];
+            literalExpression = trueFalse_[qi::_val = qi::_1] | strict_double[qi::_val = phoenix::bind(&ExpressionParser::createDoubleLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)] | qi::int_[qi::_val = phoenix::bind(&ExpressionParser::createIntegerLiteralExpression, phoenix::ref(*this), qi::_1, qi::_pass)];
             literalExpression.name("literal expression");
             
-            atomicExpression = floorCeilExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | literalExpression | identifierExpression;
+            atomicExpression = floorCeilExpression | prefixPowerExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | literalExpression | identifierExpression;
             atomicExpression.name("atomic expression");
             
-            unaryExpression = (-unaryOperator_ >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionParser::createUnaryExpression, phoenix::ref(*this), qi::_1, qi::_2)];
+            unaryExpression = (-unaryOperator_ >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionParser::createUnaryExpression, phoenix::ref(*this), qi::_1, qi::_2, qi::_pass)];
             unaryExpression.name("unary expression");
             
             if (allowBacktracking) {
-                powerExpression = unaryExpression[qi::_val = qi::_1] > -(powerOperator_ > expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ > expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                powerExpression = unaryExpression[qi::_val = qi::_1] > -(powerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                infixPowerExpression = unaryExpression[qi::_val = qi::_1] > -(infixPowerOperator_ >> expression)[qi::_val = phoenix::bind(&ExpressionParser::createPowerExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
-            powerExpression.name("power expression");
+            infixPowerExpression.name("power expression");
             
             if (allowBacktracking) {
-                multiplicationExpression = powerExpression[qi::_val = qi::_1] >> *(multiplicationOperator_ >> powerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] >> *(multiplicationOperator_ >> infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                multiplicationExpression = powerExpression[qi::_val = qi::_1] > *(multiplicationOperator_ > powerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                multiplicationExpression = infixPowerExpression[qi::_val = qi::_1] > *(multiplicationOperator_ > infixPowerExpression)[qi::_val = phoenix::bind(&ExpressionParser::createMultExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             multiplicationExpression.name("multiplication expression");
             
-            plusExpression = multiplicationExpression[qi::_val = qi::_1] > *(plusOperator_ >> multiplicationExpression)[qi::_val = phoenix::bind(&ExpressionParser::createPlusExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+            plusExpression = multiplicationExpression[qi::_val = qi::_1] > *(plusOperator_ >> multiplicationExpression)[qi::_val = phoenix::bind(&ExpressionParser::createPlusExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             plusExpression.name("plus expression");
             
             if (allowBacktracking) {
-                relativeExpression = plusExpression[qi::_val = qi::_1] >> -(relationalOperator_ >> plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                relativeExpression = plusExpression[qi::_val = qi::_1] >> -(relationalOperator_ >> plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                relativeExpression = plusExpression[qi::_val = qi::_1] > -(relationalOperator_ > plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                relativeExpression = plusExpression[qi::_val = qi::_1] > -(relationalOperator_ > plusExpression)[qi::_val = phoenix::bind(&ExpressionParser::createRelationalExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             relativeExpression.name("relative expression");
                         
-            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *(equalityOperator_ >> relativeExpression)[qi::_val = phoenix::bind(&ExpressionParser::createEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+            equalityExpression = relativeExpression[qi::_val = qi::_1] >> *(equalityOperator_ >> relativeExpression)[qi::_val = phoenix::bind(&ExpressionParser::createEqualsExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             equalityExpression.name("equality expression");
             
             if (allowBacktracking) {
-                andExpression = equalityExpression[qi::_val = qi::_1] >> *(andOperator_ >> equalityExpression)[qi::_val = phoenix::bind(&ExpressionParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                andExpression = equalityExpression[qi::_val = qi::_1] >> *(andOperator_ >> equalityExpression)[qi::_val = phoenix::bind(&ExpressionParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                andExpression = equalityExpression[qi::_val = qi::_1] >> *(andOperator_ > equalityExpression)[qi::_val = phoenix::bind(&ExpressionParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                andExpression = equalityExpression[qi::_val = qi::_1] >> *(andOperator_ > equalityExpression)[qi::_val = phoenix::bind(&ExpressionParser::createAndExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             andExpression.name("and expression");
             
             if (allowBacktracking) {
-                orExpression = andExpression[qi::_val = qi::_1] >> *(orOperator_ >> andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                orExpression = andExpression[qi::_val = qi::_1] >> *(orOperator_ >> andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             } else {
-                orExpression = andExpression[qi::_val = qi::_1] > *(orOperator_ > andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+                orExpression = andExpression[qi::_val = qi::_1] > *(orOperator_ > andExpression)[qi::_val = phoenix::bind(&ExpressionParser::createOrExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             }
             orExpression.name("or expression");
             
-            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&ExpressionParser::createIteExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
+            iteExpression = orExpression[qi::_val = qi::_1] > -(qi::lit("?") > orExpression > qi::lit(":") > orExpression)[qi::_val = phoenix::bind(&ExpressionParser::createIteExpression, phoenix::ref(*this), qi::_val, qi::_1, qi::_2, qi::_pass)];
             iteExpression.name("if-then-else expression");
             
             expression %= iteExpression;
@@ -92,29 +99,30 @@ namespace storm {
             debug(relativeExpression);
             debug(plusExpression);
             debug(multiplicationExpression);
-            debug(powerExpression);
+            debug(infixPowerExpression);
             debug(unaryExpression);
             debug(atomicExpression);
             debug(literalExpression);
             debug(identifierExpression);
              */
             
-            
-            // Enable error reporting.
-            qi::on_error<qi::fail>(expression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(iteExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(orExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(andExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(equalityExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(relativeExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(plusExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(multiplicationExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(unaryExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(atomicExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(literalExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(identifierExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(minMaxExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(floorCeilExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            if (enableErrorHandling) {
+                // Enable error reporting.
+                qi::on_error<qi::fail>(expression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(iteExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(orExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(andExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(equalityExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(relativeExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(plusExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(multiplicationExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(unaryExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(atomicExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(literalExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(identifierExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(minMaxExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+                qi::on_error<qi::fail>(floorCeilExpression, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            }
         }
         
         void ExpressionParser::setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_) {
@@ -136,18 +144,18 @@ namespace storm {
             this->acceptDoubleLiterals = flag;
         }
         
-        storm::expressions::Expression ExpressionParser::createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3) const {
+        storm::expressions::Expression ExpressionParser::createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     return storm::expressions::ite(e1, e2, e3);
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
         }
                 
-        storm::expressions::Expression ExpressionParser::createOrExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
+        storm::expressions::Expression ExpressionParser::createOrExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
@@ -156,27 +164,29 @@ namespace storm {
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
         }
         
-        storm::expressions::Expression ExpressionParser::createAndExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
+        storm::expressions::Expression ExpressionParser::createAndExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
             if (this->createExpressions) {
+                storm::expressions::Expression result;
                 try {
                     switch (operatorType) {
-                        case storm::expressions::OperatorType::And: return e1 && e2; break;
+                        case storm::expressions::OperatorType::And: result = e1 && e2; break;
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
+                return result;
             }
             return manager->boolean(false);
         }
         
-        storm::expressions::Expression ExpressionParser::createRelationalExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
+        storm::expressions::Expression ExpressionParser::createRelationalExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
@@ -187,13 +197,13 @@ namespace storm {
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
         }
         
-        storm::expressions::Expression ExpressionParser::createEqualsExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
+        storm::expressions::Expression ExpressionParser::createEqualsExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
@@ -202,13 +212,13 @@ namespace storm {
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
         }
         
-        storm::expressions::Expression ExpressionParser::createPlusExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
+        storm::expressions::Expression ExpressionParser::createPlusExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
@@ -217,13 +227,13 @@ namespace storm {
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
         }
         
-        storm::expressions::Expression ExpressionParser::createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
+        storm::expressions::Expression ExpressionParser::createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
@@ -232,13 +242,13 @@ namespace storm {
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
         }
         
-        storm::expressions::Expression ExpressionParser::createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
+        storm::expressions::Expression ExpressionParser::createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
@@ -246,13 +256,13 @@ namespace storm {
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
         }
                 
-        storm::expressions::Expression ExpressionParser::createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1) const {
+        storm::expressions::Expression ExpressionParser::createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     if (operatorType) {
@@ -265,7 +275,7 @@ namespace storm {
                         return e1;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
@@ -284,7 +294,7 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionParser::createIntegerLiteralExpression(int value) const {
+        storm::expressions::Expression ExpressionParser::createIntegerLiteralExpression(int value, bool& pass) const {
             if (this->createExpressions) {
                 return manager->integer(value);
             } else {
@@ -292,7 +302,7 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionParser::createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const {
+        storm::expressions::Expression ExpressionParser::createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
@@ -301,13 +311,13 @@ namespace storm {
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
         }
 
-        storm::expressions::Expression ExpressionParser::createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1) const {
+        storm::expressions::Expression ExpressionParser::createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1, bool& pass) const {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
@@ -316,7 +326,7 @@ namespace storm {
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": " << e.what());
+                    pass = false;
                 }
             }
             return manager->boolean(false);
@@ -331,7 +341,7 @@ namespace storm {
                         pass = false;
                         return manager->boolean(false);
                     } else {
-                        STORM_LOG_THROW(expression != nullptr, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(qi::_3) << ": Undeclared identifier '" << identifier << "'.");
+                        pass = false;
                     }
                 }
                 return *expression;

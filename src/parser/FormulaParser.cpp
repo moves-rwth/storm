@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "src/parser/SpiritErrorHandler.h"
+
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
 
@@ -89,22 +91,6 @@ namespace storm {
             // Parser and manager used for recognizing expressions.
             storm::parser::ExpressionParser expressionParser;
             
-            // Functor used for displaying error information.
-            struct ErrorHandler {
-                typedef qi::error_handler_result result_type;
-                
-                template<typename T1, typename T2, typename T3, typename T4>
-                qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
-                    std::stringstream whatAsString;
-                    whatAsString << what;
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(where) << ": " << " expecting " << whatAsString.str() << ".");
-                    return qi::fail;
-                }
-            };
-            
-            // An error handler function.
-            phoenix::function<ErrorHandler> handler;
-            
             // A symbol table that is a mapping from identifiers that can be used in expressions to the expressions
             // they are to be replaced with.
             qi::symbols<char, storm::expressions::Expression> identifiers_;
@@ -167,10 +153,20 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> createProbabilityOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula);
             std::shared_ptr<storm::logic::Formula> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
             std::shared_ptr<storm::logic::Formula> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
+            
+            // An error handler function.
+            phoenix::function<SpiritErrorHandler> handler;
         };
         
         FormulaParser::FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : manager(manager->getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
             // Intentionally left empty.
+        }
+        
+        FormulaParser::FormulaParser(storm::prism::Program const& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
+            // Make the formulas of the program available to the parser.
+            for (auto const& formula : program.getFormulas()) {
+                this->addIdentifierExpression(formula.getName(), formula.getExpression());
+            }
         }
         
         FormulaParser::FormulaParser(FormulaParser const& other) : FormulaParser(other.manager) {
@@ -239,7 +235,7 @@ namespace storm {
             grammar->addIdentifierExpression(identifier, expression);
         }
                 
-        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), expressionParser(*manager, keywords_, true) {
+        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), expressionParser(*manager, keywords_, true, true) {
             // Register all variables so we can parse them in the expressions.
             for (auto variableTypePair : *manager) {
                 identifiers_.add(variableTypePair.first.getName(), variableTypePair.first);
