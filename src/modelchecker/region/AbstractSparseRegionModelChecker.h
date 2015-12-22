@@ -82,13 +82,22 @@ namespace storm {
                 ConstantType getReachabilityValue(std::map<VariableType, CoefficientType>const& point);
                 
                 /*!
-                 * Returns the approximative Value for the given region by instantiating and checking the approximation model. 
+                 * Computes the reachability Value at the specified point by instantiating and checking the sampling model. 
+                 * @param point The point (i.e. parameter evaluation) at which to compute the reachability value.
+                 * @return true iff the specified formula is satisfied
+                 */
+                bool checkFormulaOnSamplingPoint(std::map<VariableType, CoefficientType>const& point);
+                
+                /*!
+                 * Computes the approximative Value for the given region by instantiating and checking the approximation model. 
+                 * returns true iff the provided formula is satisfied w.r.t. the approximative value
                  * 
                  * @param region The region for which to compute the approximative value
-                 * @param proveAllSat if set to true, the returned value can be used to prove that the property is SATISFIED for all parameters in the given region. (false for VIOLATED)
-                 * @return a lower or upper bound of the actual reachability value (depending on the given flag 'proveAllSat' and whether the specified formula has a lower or an upper bound)
+                 * @param proveAllSat if set to true, it is checked whether the property is satisfied for all parameters in the given region. Otherwise, it is checked
+                          whether the property is violated for all parameters.
+                 * @return true iff the objective (given by the proveAllSat flag) was accomplished.
                  */
-                ConstantType getApproximativeReachabilityValue(ParameterRegion<ParametricType> const& region, bool proveAllSat);
+                bool checkRegionWithApproximation(ParameterRegion<ParametricType> const& region, bool proveAllSat);
                 
                 /*!
                  * Returns true iff the given value satisfies the bound given by the specified property

@@ -276,8 +276,8 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             std::vector<ConstantType>  ApproximationModel<ParametricSparseModelType, ConstantType>::computeValues(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
                 instantiate(region, computeLowerBounds);
-                std::vector<std::size_t> policy;
-                invokeSolver(computeLowerBounds, policy);
+                Policy& policy = computeLowerBounds ? this->solverData.lastMinimizingPolicy : this->solverData.lastMaximizingPolicy;
+                invokeSolver(computeLowerBounds, policy, false);
                 
                 std::vector<ConstantType> result(this->maybeStates.size());
                 storm::utility::vector::setVectorValues(result, this->maybeStates, this->solverData.result);
@@ -291,61 +291,16 @@ namespace storm {
             ConstantType  ApproximationModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
                 instantiate(region, computeLowerBounds);
                 Policy& policy = computeLowerBounds ? this->solverData.lastMinimizingPolicy : this->solverData.lastMaximizingPolicy;
-                //TODO: at this point, set policy to the one stored in the region.
-                invokeSolver(computeLowerBounds, policy);
-    /*
-                //TODO: (maybe) when a few parameters are mapped to another value, build a "nicer" scheduler and check whether it induces values that are more optimal.
-                //Get the set of parameters which are (according to the policy) always mapped to the same region boundary.
-                //First, collect all (relevant) parameters, i.e., the ones that are set to the lower or upper boundary.
-                std::map<VariableType, RegionBoundary> fixedVariables;
-                std::map<VariableType, std::pair<std::size_t, std::size_t>> VarCount;
-                std::size_t substitutionCount =0;
-                for(auto const& substitution : this->funcSubData.substitutions){
-                    for( auto const& sub : substitution){
-                        if(sub.second!= RegionBoundary::UNSPECIFIED){
-                            fixedVariables.insert(typename std::map<VariableType, RegionBoundary>::value_type(sub.first, RegionBoundary::UNSPECIFIED));
-                            VarCount.insert(typename std::map<VariableType, std::pair<std::size_t, std::size_t>>::value_type(sub.first, std::pair<std::size_t, std::size_t>(0,0)));
-                        }
-                    }
-                }
-                //Now erase the parameters that are mapped to different boundaries.
-                for(std::size_t rowGroup=0; rowGroup<this->matrixData.matrix.getRowGroupCount(); ++rowGroup){
-                    std::size_t row = this->matrixData.matrix.getRowGroupIndices()[rowGroup] + policy[rowGroup];
-                    for(std::pair<VariableType, RegionBoundary> const& sub : this->funcSubData.substitutions[this->matrixData.rowSubstitutions[row]]){
-                        auto fixedVarIt = fixedVariables.find(sub.first);
-                        if(fixedVarIt != fixedVariables.end() && fixedVarIt->second != sub.second){
-                            if(fixedVarIt->second == RegionBoundary::UNSPECIFIED){
-                                fixedVarIt->second = sub.second;
-                            } else {
-                                // the solution maps  the current variable at least once to lower boundary and at least once to the upper boundary.
-                                fixedVariables.erase(fixedVarIt);
-                            }
-                        }
-                        auto varcountIt = VarCount.find(sub.first);
-                        if(sub.second==RegionBoundary::LOWER){
-                            ++(varcountIt->second.first);
-                        } else if (sub.second==RegionBoundary::UPPER){
-                            ++(varcountIt->second.second);
-                        }
-                        ++substitutionCount;
-                    }
-                    if (fixedVariables.empty()){
-                       // break;
-                    }
-                }
-       //         std::cout << "Used Approximation" << std::endl;
-                for (auto const& varcount : VarCount){
-                    if(varcount.second.first > 0 && varcount.second.second > 0){
-                        std::cout << "  Variable " << varcount.first << " has been set to lower " << varcount.second.first << " times and to upper " << varcount.second.second << " times. (total: " << substitutionCount << ", " << (computeLowerBounds ? "MIN" : "MAX") << ")" << std::endl;
-                    }
-                }
-                for (auto const& fixVar : fixedVariables){
-                    //std::cout << "  APPROXMODEL: variable " << fixVar.first << " is always mapped to " << fixVar.second << std::endl;
-                }
-                    
-        //        std::cout << "    Result is " << this->solverData.result[this->solverData.initialStateIndex] << std::endl;
-     */
+                invokeSolver(computeLowerBounds, policy, false);
                 return this->solverData.result[this->solverData.initialStateIndex];
+            }
+            
+            template<typename ParametricSparseModelType, typename ConstantType>
+            bool  ApproximationModel<ParametricSparseModelType, ConstantType>::checkFormulaOnRegion(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
+                instantiate(region, computeLowerBounds);
+                Policy& policy = computeLowerBounds ? this->solverData.lastMinimizingPolicy : this->solverData.lastMaximizingPolicy;
+                invokeSolver(computeLowerBounds, policy, true); //allow early termination
+                return this->solverData.player1Goal->achieved(this->solverData.result);
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>

@@ -368,12 +368,12 @@ namespace storm {
      * @param upperBoundaries maps every variable to its highest possible value within the region. (corresponds to the top right corner point in the 2D case)
      * @param proveAllSat if set to true, it is checked whether the property is satisfied for all parameters in the given region. Otherwise, it is checked
      *                    whether the property is violated for all parameters.
-     * @return true iff the objective was accomplished.
+     * @return true iff the objective (given by the proveAllSat flag) was accomplished.
      * 
      * So there are the following cases:
      * proveAllSat=true,  return=true  ==> the property is SATISFIED for all parameters in the given region
      * proveAllSat=true,  return=false ==> the approximative value is NOT within the bound of the formula (either the approximation is too bad or there are points in the region that violate the property)
-     * proveAllSat=false, return=true  ==> the property is VIOLATED for all parameters in teh given region
+     * proveAllSat=false, return=true  ==> the property is VIOLATED for all parameters in the given region
      * proveAllSat=false, return=false ==> the approximative value IS within the bound of the formula (either the approximation is too bad or there are points in the region that satisfy the property)
      */
     inline bool checkRegionApproximation(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> regionModelChecker,
@@ -381,14 +381,7 @@ namespace storm {
                                          std::map<storm::Variable, storm::RationalNumber> const& upperBoundaries,
                                          bool proveAllSat){
         storm::modelchecker::region::ParameterRegion<storm::RationalFunction> region(lowerBoundaries, upperBoundaries);
-        double result=regionModelChecker->getApproximativeReachabilityValue(region, proveAllSat);
-        if(proveAllSat && regionModelChecker->valueIsInBoundOfFormula(result)){
-            return true;
-        } else if (!proveAllSat && !regionModelChecker->valueIsInBoundOfFormula(result)){
-            return true;
-        } else {
-            return false;
-        }
+        return regionModelChecker->checkRegionWithApproximation(region, proveAllSat);
     }
     
             

@@ -46,9 +46,14 @@ namespace storm {
                 /*!
                  * Instantiates the underlying model according to the given point
                  * Returns the reachability probability (or the expected rewards) of the initial state.
-                 * Undefined behavior if model has not been instantiated first!
                  */
                 ConstantType computeInitialStateValue(std::map<VariableType, CoefficientType>const& point);
+                
+                /*!
+                 * Instantiates the underlying model according to the given point
+                 * Returns true iff the formula (given upon construction of *this) is true in the initial state of the instantiated model
+                 */
+                bool checkFormulaOnSamplingPoint(std::map<VariableType, CoefficientType>const& point);
 
             private:
                 typedef typename std::unordered_map<ParametricType, ConstantType>::value_type FunctionEntry;
@@ -57,7 +62,7 @@ namespace storm {
                 void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void instantiate(std::map<VariableType, CoefficientType>const& point);
-                void invokeSolver(bool allowEarlyTermination=true);
+                void invokeSolver(bool allowEarlyTermination);
                 
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;

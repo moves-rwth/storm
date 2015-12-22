@@ -56,6 +56,14 @@ namespace storm {
                  */
                 ConstantType computeInitialStateValue(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
 
+                /*!
+                 * Instantiates the approximation model w.r.t. the given region.
+                 * Then computes the approximated reachability probabilities or reward value for the initial state.
+                 * If computeLowerBounds is true, the computed value will be a lower bound for the actual value. Otherwise, we get an upper bound.
+                 * Returns true iff the computed bound satisfies the formula (given upon construction of *this)
+                 */
+                bool checkFormulaOnRegion(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
+
             private:
 
                 typedef std::pair<ParametricType, std::size_t> FunctionSubstitution;
@@ -76,7 +84,7 @@ namespace storm {
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void initializePlayer1Matrix(ParametricSparseModelType const& parametricModel);
                 void instantiate(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
-                void invokeSolver(bool computeLowerBounds, Policy& policy, bool allowEarlyTermination=true);
+                void invokeSolver(bool computeLowerBounds, Policy& policy, bool allowEarlyTermination);
 
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;

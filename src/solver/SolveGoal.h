@@ -54,6 +54,26 @@ namespace storm {
             VT thresholdValue() const { return threshold; }
             storm::storage::BitVector relevantColumns() const { return relevantColumnVector; }
             
+            bool achieved(std::vector<VT> const& result) const{
+                for(std::size_t i : relevantColumnVector){
+                    switch(boundType) {
+                    case storm::logic::ComparisonType::Greater:
+                        if( result[i] <= threshold) return false;
+                        break;
+                    case storm::logic::ComparisonType::GreaterEqual:
+                        if( result[i] < threshold) return false;
+                        break;
+                    case storm::logic::ComparisonType::Less:
+                        if( result[i] >= threshold) return false;
+                        break;
+                    case storm::logic::ComparisonType::LessEqual:
+                        if( result[i] > threshold) return false;
+                        break;
+                    }
+                }
+                return true;
+            }
+            
             storm::logic::ComparisonType boundType;
             VT threshold;
             storm::storage::BitVector relevantColumnVector;

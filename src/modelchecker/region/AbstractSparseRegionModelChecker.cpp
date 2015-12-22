@@ -204,7 +204,7 @@ namespace storm {
 
                 if(this->isResultConstant()){
                     STORM_LOG_DEBUG("Checking a region although the result is constant, i.e., independent of the region. This makes sense none.");
-                    if(this->valueIsInBoundOfFormula(this->getReachabilityValue(region.getSomePoint()))){
+                    if(this->checkFormulaOnSamplingPoint(region.getSomePoint())){
                         region.setCheckResult(RegionCheckResult::ALLSAT);
                     }
                     else{
@@ -308,30 +308,26 @@ namespace storm {
                          proveAllSat=true;
                 }
 
-                bool formulaSatisfied = this->valueIsInBoundOfFormula(this->getApproximativeReachabilityValue(region, proveAllSat));
-
-                //check if approximation was conclusive
-                if(proveAllSat && formulaSatisfied){
-                    region.setCheckResult(RegionCheckResult::ALLSAT);
-                    return true;
-                }
-                if(!proveAllSat && !formulaSatisfied){
-                    region.setCheckResult(RegionCheckResult::ALLVIOLATED);
+                if(this->checkRegionWithApproximation(region, proveAllSat)){
+                    //approximation was conclusive
+                    if(proveAllSat){
+                        region.setCheckResult(RegionCheckResult::ALLSAT);
+                    } else {
+                        region.setCheckResult(RegionCheckResult::ALLVIOLATED);
+                    }
                     return true;
                 }
 
                 if(region.getCheckResult()==RegionCheckResult::UNKNOWN){
                     //In this case, it makes sense to try to prove the contrary statement
                     proveAllSat=!proveAllSat;
-                    formulaSatisfied = this->valueIsInBoundOfFormula(this->getApproximativeReachabilityValue(region, proveAllSat));
-
-                    //check if approximation was conclusive
-                    if(proveAllSat && formulaSatisfied){
-                        region.setCheckResult(RegionCheckResult::ALLSAT);
-                        return true;
-                    }
-                    if(!proveAllSat && !formulaSatisfied){
-                        region.setCheckResult(RegionCheckResult::ALLVIOLATED);
+                    if(this->checkRegionWithApproximation(region, proveAllSat)){
+                        //approximation was conclusive
+                        if(proveAllSat){
+                            region.setCheckResult(RegionCheckResult::ALLSAT);
+                        } else {
+                            region.setCheckResult(RegionCheckResult::ALLVIOLATED);
+                        }
                         return true;
                     }
                 }
@@ -340,11 +336,15 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            ConstantType AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getApproximativeReachabilityValue(ParameterRegion<ParametricType> const& region, bool proveAllSat){
+            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkRegionWithApproximation(ParameterRegion<ParametricType> const& region, bool proveAllSat){
+                if(this->isResultConstant()){
+                    return (proveAllSat==this->checkFormulaOnSamplingPoint(region.getSomePoint()));
+                }
                 bool computeLowerBounds = (this->specifiedFormulaHasLowerBound() && proveAllSat) || (!this->specifiedFormulaHasLowerBound() && !proveAllSat);
-                return this->getApproximationModel()->computeInitialStateValue(region, computeLowerBounds);
+                bool formulaSatisfied = this->getApproximationModel()->checkFormulaOnRegion(region, computeLowerBounds);
+                return (proveAllSat==formulaSatisfied);
             }
-            
+                
             template<typename ParametricSparseModelType, typename ConstantType>
             std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getApproximationModel() {
                 if(this->approximationModel==nullptr){
@@ -371,6 +371,14 @@ namespace storm {
                     return this->constantResult.get();
                 }
                 return this->getSamplingModel()->computeInitialStateValue(point);
+            }
+            
+            template<typename ParametricSparseModelType, typename ConstantType>
+            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkFormulaOnSamplingPoint(std::map<VariableType, CoefficientType> const& point) {
+                if(this->isResultConstant()){
+                    return this->valueIsInBoundOfFormula(this->constantResult.get());
+                }
+                return this->getSamplingModel()->checkFormulaOnSamplingPoint(point);
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>

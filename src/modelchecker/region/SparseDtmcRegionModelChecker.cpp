@@ -429,7 +429,7 @@ namespace storm {
                 }
                 else{
                     //instantiate the sampling model
-                    valueInBoundOfFormula = this->valueIsInBoundOfFormula(this->getReachabilityValue(point));
+                    valueInBoundOfFormula = this->checkFormulaOnSamplingPoint(point);
                 }
 
                 if(valueInBoundOfFormula){

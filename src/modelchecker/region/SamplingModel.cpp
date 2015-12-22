@@ -223,7 +223,7 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             std::vector<ConstantType> SamplingModel<ParametricSparseModelType, ConstantType>::computeValues(std::map<VariableType, CoefficientType>const& point) {
                 instantiate(point);
-                invokeSolver();
+                invokeSolver(false); //no early termination
                 std::vector<ConstantType> result(this->maybeStates.size());
                 storm::utility::vector::setVectorValues(result, this->maybeStates, this->solverData.result);
                 storm::utility::vector::setVectorValues(result, this->targetStates, this->computeRewards ? storm::utility::zero<ConstantType>() : storm::utility::one<ConstantType>());
@@ -235,8 +235,15 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             ConstantType SamplingModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue(std::map<VariableType, CoefficientType>const& point) {
                 instantiate(point);
-                invokeSolver();
+                invokeSolver(false); //no early termination
                 return this->solverData.result[this->solverData.initialStateIndex];
+            }
+            
+            template<typename ParametricSparseModelType, typename ConstantType>
+            bool SamplingModel<ParametricSparseModelType, ConstantType>::checkFormulaOnSamplingPoint(std::map<VariableType, CoefficientType>const& point) {
+                instantiate(point);
+                invokeSolver(true); //allow early termination
+                return this->solverData.solveGoal->achieved(this->solverData.result);
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>

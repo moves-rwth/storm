@@ -27,6 +27,9 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.45<=p1<=0.55,0.45<=p2<=0.55");
     auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.6<=p1<=0.7,0.6<=p2<=0.6");
 
+    EXPECT_TRUE(modelchecker->checkFormulaOnSamplingPoint(allSatRegion.getSomePoint()));
+    EXPECT_FALSE(modelchecker->checkFormulaOnSamplingPoint(allVioRegion.getSomePoint()));
+    
     //Test the methods provided in storm.h
     EXPECT_TRUE(storm::checkSamplingPoint(modelchecker,allSatRegion.getLowerBoundaries()));
     EXPECT_TRUE(storm::checkSamplingPoint(modelchecker,allSatRegion.getUpperBoundaries()));
@@ -82,8 +85,11 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.3<=p1<=0.45,0.2<=p2<=0.54");
     auto exBothRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=p1<=0.65,0.5<=p2<=0.7");
     auto allVioRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.4<=p1<=0.7,0.55<=p2<=0.6");
+    
+    EXPECT_TRUE(modelchecker->checkFormulaOnSamplingPoint(allSatRegion.getSomePoint()));
+    EXPECT_FALSE(modelchecker->checkFormulaOnSamplingPoint(allVioRegion.getSomePoint()));
 
-    EXPECT_NEAR(0.95127874851, modelchecker->getReachabilityValue(allSatRegion.getLowerBoundaries()), storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.95128124239, modelchecker->getReachabilityValue(allSatRegion.getLowerBoundaries()), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.26787251126, modelchecker->getReachabilityValue(allSatRegion.getUpperBoundaries()),  storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.41880006098, modelchecker->getReachabilityValue(exBothRegion.getLowerBoundaries()), storm::settings::generalSettings().getPrecision());
     EXPECT_NEAR(0.01535089684, modelchecker->getReachabilityValue(exBothRegion.getUpperBoundaries()),  storm::settings::generalSettings().getPrecision());

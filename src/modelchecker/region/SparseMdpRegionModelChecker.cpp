@@ -247,7 +247,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             bool SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::checkPoint(ParameterRegion<ParametricType>& region, std::map<VariableType, CoefficientType>const& point, bool favorViaFunction) {
-                if(this->valueIsInBoundOfFormula(this->getReachabilityValue(point))){
+                if(this->checkFormulaOnSamplingPoint(point)){
                     if (region.getCheckResult()!=RegionCheckResult::EXISTSSAT){
                         region.setSatPoint(point);
                         if(region.getCheckResult()==RegionCheckResult::EXISTSVIOLATED){

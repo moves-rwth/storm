@@ -186,9 +186,9 @@ namespace storm {
                     storm::utility::vector::addVectors(copyX, subB, copyX); // = Ax + b
                     ++iterations;
                     newPrecision *= 0.5;
-                } while(!storm::utility::vector::equalModuloPrecision(subX, copyX, precision*0.5, relative) && iterations<50);
+                } while(!storm::utility::vector::equalModuloPrecision(subX, copyX, precision*0.5, relative) && iterations<60);
                 
-                STORM_LOG_WARN_COND(iterations<50, "Solving linear equation system did not yield a precise result");
+                STORM_LOG_WARN_COND(iterations<60, "Solving linear equation system did not yield a precise result");
                 
                 STORM_LOG_DEBUG("Required to increase the precision " << iterations << " times in order to obtain a precise result");
                 //fill in the result
