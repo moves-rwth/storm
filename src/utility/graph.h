@@ -55,9 +55,11 @@ namespace storm {
              * @param initialStates The set of states from which to start the search.
              * @param constraintStates The set of states that must not be left.
              * @param targetStates The target states that may not be passed.
+             * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
+             * @param maximalSteps The maximal number of steps to reach the psi states.
              */
             template<typename T>
-            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
+            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
             
             /*!
              * Performs a breadth-first search through the underlying graph structure to compute the distance from all

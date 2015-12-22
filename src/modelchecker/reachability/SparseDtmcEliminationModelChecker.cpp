@@ -99,6 +99,11 @@ namespace storm {
                         return true;
                     }
                 }
+            } else if (formula.isBoundedUntilFormula()) {
+                storm::logic::BoundedUntilFormula const& boundedUntilFormula = formula.asBoundedUntilFormula();
+                if (boundedUntilFormula.getLeftSubformula().isPropositionalFormula() && boundedUntilFormula.getRightSubformula().isPropositionalFormula()) {
+                    return true;
+                }
             } else if (formula.isReachabilityRewardFormula()) {
                 storm::logic::ReachabilityRewardFormula reachabilityRewardFormula = formula.asReachabilityRewardFormula();
                 if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
@@ -113,6 +118,107 @@ namespace storm {
                 return true;
             }
             return false;
+        }
+        
+        template<typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+            // Retrieve the appropriate bitvectors by model checking the subformulas.
+            std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
+            std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
+            storm::storage::BitVector const& phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+            storm::storage::BitVector const& psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+            
+            // Start by determining the states that have a non-zero probability of reaching the target states within the
+            // time bound.
+            storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(this->getModel().getBackwardTransitions(), phiStates, psiStates, true, pathFormula.getDiscreteTimeBound());
+            statesWithProbabilityGreater0 &= ~psiStates;
+            
+            // Determine whether we need to perform some further computation.
+            bool furtherComputationNeeded = true;
+            if (computeResultsForInitialStatesOnly && this->getModel().getInitialStates().isDisjointFrom(statesWithProbabilityGreater0)) {
+                STORM_LOG_DEBUG("The probability for all initial states was found in a preprocessing step.");
+                furtherComputationNeeded = false;
+            } else if (statesWithProbabilityGreater0.empty()) {
+                STORM_LOG_DEBUG("The probability for all states was found in a preprocessing step.");
+                furtherComputationNeeded = false;
+            }
+            
+            storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
+            storm::storage::BitVector const& initialStates = this->getModel().getInitialStates();
+            
+            std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+
+            if (furtherComputationNeeded) {
+                uint_fast64_t timeBound = pathFormula.getDiscreteTimeBound();
+                
+                if (computeResultsForInitialStatesOnly) {
+                    // Determine the set of states that is reachable from the initial state without jumping over a target state.
+                    storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, phiStates, psiStates, true, timeBound);
+                    
+                    // Subtract from the maybe states the set of states that is not reachable (on a path from the initial to a target state).
+                    statesWithProbabilityGreater0 &= reachableStates;
+                }
+
+                // We then build the submatrix that only has the transitions of the maybe states.
+                storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, statesWithProbabilityGreater0, statesWithProbabilityGreater0, true);
+                
+                std::vector<std::size_t> distancesFromInitialStates;
+                storm::storage::BitVector relevantStates;
+                if (computeResultsForInitialStatesOnly) {
+                    // Determine the set of initial states of the sub-model.
+                    storm::storage::BitVector subInitialStates = this->getModel().getInitialStates() % statesWithProbabilityGreater0;
+
+                    // Precompute the distances of the relevant states to the initial states.
+                    distancesFromInitialStates = storm::utility::graph::getDistances(submatrix, subInitialStates, statesWithProbabilityGreater0);
+                    
+                    // Set all states to be relevant for later use.
+                    relevantStates = storm::storage::BitVector(statesWithProbabilityGreater0.getNumberOfSetBits(), true);
+                }
+                
+                // Create the vector of one-step probabilities to go to target states.
+                std::vector<ValueType> b = transitionMatrix.getConstrainedRowSumVector(statesWithProbabilityGreater0, psiStates);
+                
+                // Create the vector with which to multiply.
+                std::vector<ValueType> subresult(b);
+                std::vector<ValueType> tmp(subresult.size());
+                
+                // Subtract one from the time bound because initializing the sub-result to b already accounts for one step.
+                --timeBound;
+                
+                // Perform matrix-vector multiplications until the time-bound is met.
+                for (uint_fast64_t timeStep = 0; timeStep < timeBound; ++timeStep) {
+                    submatrix.multiplyWithVector(subresult, tmp);
+                    storm::utility::vector::addVectors(tmp, b, subresult);
+                    
+                    // If we are computing the results for the initial states only, we can use the minimal distance from
+                    // each state to the initial states to determine whether we still need to consider the values for
+                    // these states. If not, we can null-out all their probabilities.
+                    if (computeResultsForInitialStatesOnly) {
+                        for (auto state : relevantStates) {
+                            if (distancesFromInitialStates[state] > (timeBound - timeStep)) {
+                                for (auto& element : submatrix.getRow(state)) {
+                                    element.setValue(storm::utility::zero<ValueType>());
+                                }
+                                b[state] = storm::utility::zero<ValueType>();
+                                relevantStates.set(state, false);
+                            }
+                        }
+                    }
+                }
+                
+                // Set the values of the resulting vector accordingly.
+                storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, subresult);
+            }
+            storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
+            
+            // Construct check result based on whether we have computed values for all states or just the initial states.
+            std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
+            if (computeResultsForInitialStatesOnly) {
+                // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
+                // result to only communicate these results.
+                checkResult->filter(ExplicitQualitativeCheckResult(this->getModel().getInitialStates() | psiStates));
+            }
+            return checkResult;
         }
         
         template<typename SparseDtmcModelType>
@@ -763,9 +869,7 @@ namespace storm {
                         entry.setValue(storm::utility::simplify(entry.getValue() * loopProbability));
                     }
                 }
-                if (!computeRewards) {
-                    values[state] = storm::utility::simplify(values[state] * loopProbability);
-                }
+                values[state] = storm::utility::simplify(values[state] * loopProbability);
             }
             
             STORM_LOG_TRACE((hasSelfLoop ? "State has self-loop." : "State does not have a self-loop."));
@@ -871,20 +975,10 @@ namespace storm {
                 // Now move the new transitions in place.
                 predecessorForwardTransitions = std::move(newSuccessors);
                 STORM_LOG_TRACE("Fixed new next-state probabilities of predecessor state " << predecessor << ".");
-                
-                if (!computeRewards) {
-                    // Add the probabilities to go to a target state in just one step if we have to compute probabilities.
-                    values[predecessor] += storm::utility::simplify(multiplyFactor * values[state]);
-                } else {
-                    // If we are computing rewards, we basically scale the state reward of the state to eliminate and
-                    // add the result to the state reward of the predecessor.
-                    if (hasSelfLoop) {
-                        values[predecessor] += storm::utility::simplify(multiplyFactor * loopProbability * values[state]);
-                    } else {
-                        values[predecessor] += storm::utility::simplify(multiplyFactor * values[state]);
-                    }
-                }
-                
+
+                // Compute the new value for the predecessor.
+                values[predecessor] += storm::utility::simplify(multiplyFactor * values[state]);
+
                 if (priorityQueue != nullptr) {
                     STORM_LOG_TRACE("Updating priority of predecessor.");
                     priorityQueue->update(predecessor, matrix, backwardTransitions, values);
