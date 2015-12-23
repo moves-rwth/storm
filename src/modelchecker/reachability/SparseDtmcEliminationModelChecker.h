@@ -7,6 +7,11 @@
 #include "src/utility/constants.h"
 
 namespace storm {
+    namespace storage {
+        template<typename ValueType>
+        class StronglyConnectedComponentDecomposition;
+    }
+    
     namespace modelchecker {
         
         template<typename SparseDtmcModelType>
@@ -53,6 +58,8 @@ namespace storm {
                 void print() const;
                 
                 bool empty() const;
+                
+                void filter(storm::storage::BitVector const& rowFilter, storm::storage::BitVector const& columnFilter);
                 
                 /*!
                  * Checks whether the given state has a self-loop with an arbitrary probability in the probability matrix.
@@ -110,7 +117,7 @@ namespace storm {
                 PenaltyFunctionType penaltyFunction;
             };
             
-            static std::vector<ValueType> computeLongRunValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& statesInBsccs, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& stateValues);
+            static std::vector<ValueType> computeLongRunValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& statesWithProbabilityGreater0, storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& bsccDecomposition, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& stateValues);
             
             static std::vector<ValueType> computeReachabilityValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& values, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& oneStepProbabilitiesToTarget);
             
