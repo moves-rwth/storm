@@ -119,6 +119,8 @@ namespace storm {
                 if (longRunAverageOperatorFormula.getSubformula().isPropositionalFormula()) {
                     return true;
                 }
+            } else if (formula.isLongRunAverageRewardFormula()) {
+                return true;
             }
             
             else if (formula.isPropositionalFormula()) {
@@ -128,7 +130,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageProbabilities(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
             storm::storage::BitVector const& psiStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
 
@@ -162,9 +164,7 @@ namespace storm {
             }
             
             if (furtherComputationNeeded) {
-                // Start by decomposing the DTMC into its BSCCs.
                 storm::storage::BitVector allStates(transitionMatrix.getRowCount(), true);
-                storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(transitionMatrix, allStates, false, true);
                 
                 if (computeResultsForInitialStatesOnly) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.
@@ -176,7 +176,7 @@ namespace storm {
                 
                 std::vector<ValueType> stateValues(maybeStates.size(), storm::utility::zero<ValueType>());
                 storm::utility::vector::setVectorValues(stateValues, psiStates, storm::utility::one<ValueType>());
-                result = computeLongRunValues(transitionMatrix, this->getModel().getBackwardTransitions(), initialStates, maybeStates, bsccDecomposition, computeResultsForInitialStatesOnly, stateValues);
+                result = computeLongRunValues(transitionMatrix, this->getModel().getBackwardTransitions(), initialStates, maybeStates, computeResultsForInitialStatesOnly, stateValues);
             }
             
             // Construct check result based on whether we have computed values for all states or just the initial states.
@@ -190,9 +190,19 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::vector<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& statesWithProbabilityGreater0, storm::storage::StronglyConnectedComponentDecomposition<ValueType> const& bsccDecomposition, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& stateValues) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageRewards(storm::logic::LongRunAverageRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+            // FIXME
+            return nullptr;
+        }
+        
+        template<typename SparseDtmcModelType>
+        std::vector<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& statesWithProbabilityGreater0, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& stateValues) {
             
             std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
+            
+            // Start by decomposing the DTMC into its BSCCs.
+            // FIXME: time this as well.
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(transitionMatrix, storm::storage::BitVector(transitionMatrix.getRowCount(), true), false, true);
             
             std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             
@@ -236,6 +246,10 @@ namespace storm {
             // Compute the average time to stay in each state for all states in BSCCs.
             std::vector<ValueType> averageTimeInStates(stateValues.size(), storm::utility::one<ValueType>());
             
+            for (auto const& el : stateValues) {
+                std::cout << el << std::endl;
+            }
+            
             // First, we eliminate all states in BSCCs (except for the representative states).
             {
                 std::unique_ptr<StatePriorityQueue> priorityQueue = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, stateValues, statesInBsccs);
@@ -255,11 +269,16 @@ namespace storm {
                 });
                 
                 boost::optional<PredecessorFilterCallback> predecessorFilterCallback = boost::none;
+//                PredecessorFilterCallback([&statesInBsccs,&bsccRepresentativesAsBitVector] (storm::storage::sparse::state_type const& state) { return statesInBsccs.get(state) || bsccRepresentativesAsBitVector.get(state); } );
                 
                 while (priorityQueue->hasNextState()) {
                     storm::storage::sparse::state_type state = priorityQueue->popNextState();
                     eliminateState(state, flexibleMatrix, flexibleBackwardTransitions, valueUpdateCallback, predecessorCallback, priorityUpdateCallback, predecessorFilterCallback, true);
                     STORM_LOG_ASSERT(checkConsistent(flexibleMatrix, flexibleBackwardTransitions), "The forward and backward transition matrices became inconsistent.");
+                }
+                flexibleMatrix.print();
+                for (auto const& el : stateValues) {
+                    std::cout << el << std::endl;
                 }
             }
             
