@@ -72,7 +72,7 @@ namespace storm {
                 return this->computeInstantaneousRewards(rewardPathFormula.asInstantaneousRewardFormula(), rewardModelName, qualitative, optimalityType);
             } else if (rewardPathFormula.isReachabilityRewardFormula()) {
                 return this->computeReachabilityRewards(rewardPathFormula.asReachabilityRewardFormula(), rewardModelName, qualitative, optimalityType);
-            } else if (rewardPathFormula.isLongRunAverageOperatorFormula()) {
+            } else if (rewardPathFormula.isLongRunAverageRewardFormula()) {
                 return this->computeLongRunAverageRewards(rewardPathFormula.asLongRunAverageRewardFormula(), rewardModelName, qualitative, optimalityType);
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << rewardPathFormula << "' is invalid.");
