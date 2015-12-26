@@ -412,7 +412,6 @@ namespace storm {
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::updateNonzeroEntryCount() const {
-            //SparseMatrix<ValueType>* self = const_cast<SparseMatrix<ValueType>*>(this);
             this->nonzeroEntryCount = 0;
             for (auto const& element : *this) {
                 if (element.getValue() != storm::utility::zero<ValueType>()) {
@@ -424,6 +423,18 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrix<ValueType>::updateNonzeroEntryCount(std::make_signed<index_type>::type difference) {
             this->nonzeroEntryCount += difference;
+        }
+        
+        template<typename ValueType>
+        void SparseMatrix<ValueType>::updateDimensions() const {
+            this->nonzeroEntryCount = 0;
+            this->columnCount = 0;
+            for (auto const& element : *this) {
+                if (element.getValue() != storm::utility::zero<ValueType>()) {
+                    ++this->nonzeroEntryCount;
+                    this->columnCount = std::max(element.getColumn() + 1, this->columnCount);
+                }
+            }
         }
         
         template<typename ValueType>
@@ -554,34 +565,12 @@ namespace storm {
             
             // Start by creating a temporary vector that stores for each index whose bit is set to true the number of
             // bits that were set before that particular index.
-            std::vector<index_type> columnBitsSetBeforeIndex;
-            columnBitsSetBeforeIndex.reserve(columnCount);
-            
-            // Compute the information to fill this vector.
-            index_type lastIndex = 0;
-            index_type currentNumberOfSetBits = 0;
-            for (auto index : columnConstraint) {
-                while (lastIndex <= index) {
-                    columnBitsSetBeforeIndex.push_back(currentNumberOfSetBits);
-                    ++lastIndex;
-                }
-                ++currentNumberOfSetBits;
-            }
+            std::vector<index_type> columnBitsSetBeforeIndex = columnConstraint.getNumberOfSetBitsBeforeIndices();
             std::vector<index_type>* rowBitsSetBeforeIndex;
             if (&rowGroupConstraint == &columnConstraint) {
                 rowBitsSetBeforeIndex = &columnBitsSetBeforeIndex;
             } else {
-                rowBitsSetBeforeIndex = new std::vector<index_type>(rowCount);
-                
-                lastIndex = 0;
-                currentNumberOfSetBits = 0;
-                for (auto index : rowGroupConstraint) {
-                    while (lastIndex <= index) {
-                        rowBitsSetBeforeIndex->push_back(currentNumberOfSetBits);
-                        ++lastIndex;
-                    }
-                    ++currentNumberOfSetBits;
-                }
+                rowBitsSetBeforeIndex = new std::vector<index_type>(rowGroupConstraint.getNumberOfSetBitsBeforeIndices());
             }
             
             // Then, we need to determine the number of entries and the number of rows of the submatrix.

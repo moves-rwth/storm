@@ -413,6 +413,13 @@ namespace storm {
             uint_fast64_t getNumberOfSetBitsBeforeIndex(uint_fast64_t index) const;
             
             /*!
+             * Retrieves a vector that holds at position i the number of bits set before index i.
+             *
+             * @return The resulting vector of 'offsets'.
+             */
+            std::vector<uint_fast64_t> getNumberOfSetBitsBeforeIndices() const;
+                        
+            /*!
              * Retrieves the number of bits this bit vector can store.
              *
              * @return The number of bits this bit vector can hold.

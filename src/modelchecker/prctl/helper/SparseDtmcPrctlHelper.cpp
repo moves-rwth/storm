@@ -6,8 +6,9 @@
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
 
-
 #include "src/solver/LinearEquationSolver.h"
+
+#include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
@@ -216,6 +217,91 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 return SparseCtmcCslHelper<ValueType>::computeLongRunAverageProbabilities(transitionMatrix, psiStates, nullptr, qualitative, linearEquationSolverFactory);
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeConditionalProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                std::vector<ValueType> probabilitiesToReachConditionStates = computeUntilProbabilities(transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowCount(), true), conditionStates, false, linearEquationSolverFactory);
+                
+                // Start by computing all 'before' states, i.e. the states for which the conditional probability is defined.
+                storm::storage::BitVector beforeStates(targetStates.size(), true);
+                uint_fast64_t state = 0;
+                uint_fast64_t beforeStateIndex = 0;
+                for (auto const& value : probabilitiesToReachConditionStates) {
+                    if (value == storm::utility::zero<ValueType>()) {
+                        beforeStates.set(state, false);
+                    } else {
+                        probabilitiesToReachConditionStates[beforeStateIndex] = value;
+                        ++beforeStateIndex;
+                    }
+                    ++state;
+                }
+                probabilitiesToReachConditionStates.resize(beforeStateIndex);
+                
+                uint_fast64_t normalStatesOffset = beforeStates.getNumberOfSetBits();
+                storm::storage::BitVector allStates(targetStates.size(), true);
+                storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(backwardTransitions, allStates, targetStates);
+                statesWithProbabilityGreater0 &= storm::utility::graph::getReachableStates(transitionMatrix, conditionStates, allStates, targetStates);
+                std::vector<uint_fast64_t> numberOfNormalStatesUpToState = statesWithProbabilityGreater0.getNumberOfSetBitsBeforeIndices();
+
+                // Now, we create the matrix of 'before' and 'normal' states.
+                std::vector<uint_fast64_t> numberOfBeforeStatesUpToState = beforeStates.getNumberOfSetBitsBeforeIndices();
+                storm::storage::SparseMatrixBuilder<ValueType> builder;
+                uint_fast64_t currentRow = 0;
+                
+                // Start by creating the transitions of the 'before' states.
+                for (auto beforeState : beforeStates) {
+                    if (conditionStates.get(beforeState)) {
+                        // For condition states, we move to the 'normal' states.
+                        for (auto const& successorEntry : transitionMatrix.getRow(beforeState)) {
+                            if (statesWithProbabilityGreater0.get(successorEntry.getColumn())) {
+                                builder.addNextValue(currentRow, normalStatesOffset + numberOfNormalStatesUpToState[successorEntry.getColumn()], successorEntry.getValue());
+                            }
+                        }
+                    } else {
+                        // For non-condition states, we scale the probabilities going to other before states.
+                        for (auto const& successorEntry : transitionMatrix.getRow(beforeState)) {
+                            if (beforeStates.get(successorEntry.getColumn())) {
+                                builder.addNextValue(currentRow, numberOfBeforeStatesUpToState[successorEntry.getColumn()], successorEntry.getValue() * probabilitiesToReachConditionStates[numberOfBeforeStatesUpToState[successorEntry.getColumn()]] / probabilitiesToReachConditionStates[currentRow]);
+                            }
+                        }
+                    }
+                    ++currentRow;
+                }
+                
+                // Then, create the transitions of the 'normal' states.
+                uint_fast64_t deadlockState = normalStatesOffset + statesWithProbabilityGreater0.getNumberOfSetBits();
+                for (auto state : statesWithProbabilityGreater0) {
+                    ValueType zeroProbability = storm::utility::zero<ValueType>();
+                    for (auto const& successorEntry : transitionMatrix.getRow(state)) {
+                        if (statesWithProbabilityGreater0.get(successorEntry.getColumn())) {
+                            builder.addNextValue(currentRow, normalStatesOffset + numberOfNormalStatesUpToState[successorEntry.getColumn()], successorEntry.getValue());
+                        } else {
+                            zeroProbability += successorEntry.getValue();
+                        }
+                    }
+                    if (!storm::utility::isZero(zeroProbability)) {
+                        builder.addNextValue(currentRow, deadlockState, zeroProbability);
+                    }
+                    ++currentRow;
+                }
+                builder.addNextValue(deadlockState, deadlockState, storm::utility::one<ValueType>());
+
+                // Build the new transition matrix and the new targets.
+                storm::storage::SparseMatrix<ValueType> newTransitionMatrix = builder.build();
+                storm::storage::BitVector newTargetStates = targetStates % beforeStates;
+                newTargetStates.resize(newTransitionMatrix.getRowCount());
+                for (auto state : targetStates % statesWithProbabilityGreater0) {
+                    newTargetStates.set(normalStatesOffset + state, true);
+                }
+                
+                // Finally, compute the conditional probabiltities by a reachability query.
+                std::vector<ValueType> conditionalProbabilities = computeUntilProbabilities(newTransitionMatrix, newTransitionMatrix.transpose(), storm::storage::BitVector(newTransitionMatrix.getRowCount(), true), newTargetStates, qualitative, linearEquationSolverFactory);
+
+                // Unpack and return result.
+                std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::infinity<ValueType>());
+                storm::utility::vector::setVectorValues(result, beforeStates, conditionalProbabilities);
+                return result;
             }
 
             template class SparseDtmcPrctlHelper<double>;
