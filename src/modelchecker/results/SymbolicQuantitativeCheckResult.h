@@ -38,6 +38,8 @@ namespace storm {
             
             virtual ValueType getMax() const;
             
+            virtual void oneMinus() override;
+            
         private:
             // The set of all reachable states.
             storm::dd::Bdd<Type> reachableStates;

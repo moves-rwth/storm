@@ -31,7 +31,16 @@ namespace storm {
         
         template<storm::dd::DdType DdType, typename ValueType>
         bool SymbolicDtmcPrctlModelChecker<DdType, ValueType>::canHandle(storm::logic::Formula const& formula) const {
-            return formula.isPctlStateFormula() || formula.isPctlPathFormula() || formula.isRewardPathFormula();
+            if (formula.isPctlStateFormula() || formula.isPctlPathFormula() || formula.isRewardPathFormula()) {
+                return true;
+            }
+            if (formula.isProbabilityOperatorFormula()) {
+                return this->canHandle(formula.asProbabilityOperatorFormula().getSubformula());
+            }
+            if (formula.isGloballyFormula()) {
+                return true;
+            }
+            return false;
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
@@ -41,6 +50,14 @@ namespace storm {
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             storm::dd::Add<DdType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
+            return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<DdType, ValueType>::computeGloballyProbabilities(storm::logic::GloballyFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+            std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
+            SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            storm::dd::Add<DdType> numericResult = storm::modelchecker::helper::SymbolicDtmcPrctlHelper<DdType, ValueType>::computeGloballyProbabilities(this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
             return std::unique_ptr<SymbolicQuantitativeCheckResult<DdType>>(new SymbolicQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), numericResult));
         }
         

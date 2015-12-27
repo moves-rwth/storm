@@ -105,6 +105,15 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeGloballyProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                std::vector<ValueType> result = computeUntilProbabilities(transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowCount(), true), ~psiStates, qualitative, linearEquationSolverFactory);
+                for (auto& entry : result) {
+                    entry = storm::utility::one<ValueType>() - entry;
+                }
+                return result;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeNextProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Create the vector with which to multiply and initialize it correctly.
                 std::vector<ValueType> result(transitionMatrix.getRowCount());
