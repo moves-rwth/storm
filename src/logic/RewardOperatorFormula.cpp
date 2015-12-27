@@ -59,6 +59,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        std::shared_ptr<Formula> RewardOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return std::make_shared<RewardOperatorFormula>(this->rewardModelName, this->optimalityType, this->comparisonType, this->bound, this->getSubformula().substitute(substitution));
+        }
+        
         std::ostream& RewardOperatorFormula::writeToStream(std::ostream& out) const {
             out << "R";
             if (this->hasRewardModelName()) {

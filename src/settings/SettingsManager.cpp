@@ -17,6 +17,7 @@
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/CounterexampleGeneratorSettings.h"
 #include "src/settings/modules/CuddSettings.h"
+#include "src/settings/modules/SylvanSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/modules/BisimulationSettings.h"
@@ -40,6 +41,7 @@ namespace storm {
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::DebugSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::CounterexampleGeneratorSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::CuddSettings(*this)));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SylvanSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GmmxxEquationSolverSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::NativeEquationSolverSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::BisimulationSettings(*this)));
@@ -512,6 +514,10 @@ namespace storm {
         
         storm::settings::modules::CuddSettings const& cuddSettings() {
             return dynamic_cast<storm::settings::modules::CuddSettings const&>(manager().getModule(storm::settings::modules::CuddSettings::moduleName));
+        }
+
+        storm::settings::modules::SylvanSettings const& sylvanSettings() {
+            return dynamic_cast<storm::settings::modules::SylvanSettings const&>(manager().getModule(storm::settings::modules::SylvanSettings::moduleName));
         }
         
         storm::settings::modules::GmmxxEquationSolverSettings const& gmmxxEquationSolverSettings() {

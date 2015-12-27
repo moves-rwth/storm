@@ -11,10 +11,10 @@ namespace storm {
     namespace modelchecker {
         
         template<storm::dd::DdType DdType, typename ValueType>
-        class HybridDtmcPrctlModelChecker : public SymbolicPropositionalModelChecker<DdType> {
+        class HybridDtmcPrctlModelChecker : public SymbolicPropositionalModelChecker<DdType, ValueType> {
         public:
-            explicit HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType> const& model);
-            explicit HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            explicit HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model);
+            explicit HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -27,7 +27,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
 
         protected:
-            storm::models::symbolic::Dtmc<DdType> const& getModel() const override;
+            storm::models::symbolic::Dtmc<DdType, ValueType> const& getModel() const override;
             
         private:
             // An object that is used for retrieving linear equation solvers.

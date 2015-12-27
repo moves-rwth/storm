@@ -2,8 +2,6 @@
 
 #include "src/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 
-#include "src/storage/dd/CuddOdd.h"
-
 #include "src/models/symbolic/Mdp.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 
@@ -20,12 +18,12 @@
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, typename ValueType>
-        HybridMdpPrctlModelChecker<DdType, ValueType>::HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType> const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        HybridMdpPrctlModelChecker<DdType, ValueType>::HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        HybridMdpPrctlModelChecker<DdType, ValueType>::HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType> const& model) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(new storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>()) {
+        HybridMdpPrctlModelChecker<DdType, ValueType>::HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(new storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>()) {
             // Intentionally left empty.
         }
         
@@ -86,10 +84,11 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::models::symbolic::Mdp<DdType> const& HybridMdpPrctlModelChecker<DdType, ValueType>::getModel() const {
-            return this->template getModelAs<storm::models::symbolic::Mdp<DdType>>();
+        storm::models::symbolic::Mdp<DdType, ValueType> const& HybridMdpPrctlModelChecker<DdType, ValueType>::getModel() const {
+            return this->template getModelAs<storm::models::symbolic::Mdp<DdType, ValueType>>();
         }
         
         template class HybridMdpPrctlModelChecker<storm::dd::DdType::CUDD, double>;
+        template class HybridMdpPrctlModelChecker<storm::dd::DdType::Sylvan, double>;
     }
 }

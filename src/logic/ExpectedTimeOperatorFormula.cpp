@@ -38,6 +38,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        std::shared_ptr<Formula> ExpectedTimeOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return std::make_shared<ExpectedTimeOperatorFormula>(this->optimalityType, this->comparisonType, this->bound, this->getSubformula().substitute(substitution));
+        }
+        
         std::ostream& ExpectedTimeOperatorFormula::writeToStream(std::ostream& out) const {
             out << "ET";
             OperatorFormula::writeToStream(out);

@@ -11,6 +11,7 @@ namespace storm {
         public:
             BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, double lowerBound, double upperBound);
             BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, uint_fast64_t upperBound);
+            BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, boost::variant<uint_fast64_t, std::pair<double, double>> const& bounds);
             
             virtual bool isBoundedUntilFormula() const override;
 
@@ -25,6 +26,8 @@ namespace storm {
             virtual bool isCslPathFormula() const override;
 
             virtual std::ostream& writeToStream(std::ostream& out) const override;
+            
+            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             
         private:
             boost::variant<uint_fast64_t, std::pair<double, double>> bounds;

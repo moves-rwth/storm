@@ -11,17 +11,17 @@ namespace storm {
             /*!
              * Base class for all deterministic symbolic models.
              */
-            template<storm::dd::DdType Type>
-            class DeterministicModel : public Model<Type> {
+            template<storm::dd::DdType Type, typename ValueType = double>
+            class DeterministicModel : public Model<Type, ValueType> {
             public:
-                typedef typename Model<Type>::RewardModelType RewardModelType;
+                typedef typename Model<Type, ValueType>::RewardModelType RewardModelType;
 
-                DeterministicModel(DeterministicModel<Type> const& other) = default;
-                DeterministicModel& operator=(DeterministicModel<Type> const& other) = default;
+                DeterministicModel(DeterministicModel<Type, ValueType> const& other) = default;
+                DeterministicModel& operator=(DeterministicModel<Type, ValueType> const& other) = default;
                 
 #ifndef WINDOWS
-                DeterministicModel(DeterministicModel<Type>&& other) = default;
-                DeterministicModel& operator=(DeterministicModel<Type>&& other) = default;
+                DeterministicModel(DeterministicModel<Type, ValueType>&& other) = default;
+                DeterministicModel& operator=(DeterministicModel<Type, ValueType>&& other) = default;
 #endif
                 
                 /*!
@@ -46,11 +46,11 @@ namespace storm {
                                    std::shared_ptr<storm::dd::DdManager<Type>> manager,
                                    storm::dd::Bdd<Type> reachableStates,
                                    storm::dd::Bdd<Type> initialStates,
-                                   storm::dd::Add<Type> transitionMatrix,
+                                   storm::dd::Add<Type, ValueType> transitionMatrix,
                                    std::set<storm::expressions::Variable> const& rowVariables,
-                                   std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter,
+                                   std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
                                    std::set<storm::expressions::Variable> const& columnVariables,
-                                   std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
+                                   std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter,
                                    std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                    std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
                                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());

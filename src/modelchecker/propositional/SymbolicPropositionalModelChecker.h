@@ -8,17 +8,17 @@
 namespace storm {
     namespace models {
         namespace symbolic {
-            template<storm::dd::DdType Type> class Model;
+            template<storm::dd::DdType Type, typename ValueType>
+            class Model;
         }
     }
     
     namespace modelchecker {
         
-        
-        template<storm::dd::DdType Type>
+        template<storm::dd::DdType Type, typename ValueType>
         class SymbolicPropositionalModelChecker : public AbstractModelChecker {
         public:
-            explicit SymbolicPropositionalModelChecker(storm::models::symbolic::Model<Type> const& model);
+            explicit SymbolicPropositionalModelChecker(storm::models::symbolic::Model<Type, ValueType> const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
@@ -32,7 +32,7 @@ namespace storm {
              *
              * @return The model associated with this model checker instance.
              */
-            virtual storm::models::symbolic::Model<Type> const& getModel() const;
+            virtual storm::models::symbolic::Model<Type, ValueType> const& getModel() const;
             
             /*!
              * Retrieves the model associated with this model checker instance as the given template parameter type.
@@ -44,8 +44,9 @@ namespace storm {
             
         private:
             // The model that is to be analyzed by the model checker.
-            storm::models::symbolic::Model<Type> const& model;
+            storm::models::symbolic::Model<Type, ValueType> const& model;
         };
+        
     }
 }
 

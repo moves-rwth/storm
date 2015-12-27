@@ -16,6 +16,7 @@ namespace storm {
             class DebugSettings;
             class CounterexampleGeneratorSettings;
             class CuddSettings;
+            class SylvanSettings;
             class GmmxxEquationSolverSettings;
             class NativeEquationSolverSettings;
             class BisimulationSettings;
@@ -269,6 +270,13 @@ namespace storm {
          * @return An object that allows accessing the CUDD settings.
          */
         storm::settings::modules::CuddSettings const& cuddSettings();
+
+        /*!
+         * Retrieves the Sylvan settings.
+         *
+         * @return An object that allows accessing the Sylvan settings.
+         */
+        storm::settings::modules::SylvanSettings const& sylvanSettings();
         
         /*!
          * Retrieves the settings of the gmm++-based equation solver.
