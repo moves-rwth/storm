@@ -23,7 +23,7 @@ namespace storm {
 
             template<typename ValueType>
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
-                std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 
                 // Determine the states that have 0 probability of reaching the target states.
                 storm::storage::BitVector maybeStates;
@@ -60,7 +60,7 @@ namespace storm {
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeNextProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
 
                 // Create the vector with which to multiply and initialize it correctly.
-                std::vector<ValueType> result(transitionMatrix.getRowCount());
+                std::vector<ValueType> result(transitionMatrix.getRowGroupCount());
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
@@ -73,8 +73,6 @@ namespace storm {
             template<typename ValueType>
             MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool getPolicy, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                      
-                uint_fast64_t numberOfStates = transitionMatrix.getRowCount();
-                
                 // We need to identify the states which have to be taken out of the matrix, i.e.
                 // all states that have probability 0 and 1 of satisfying the until-formula.
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01;
@@ -91,7 +89,7 @@ namespace storm {
                 LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
                 // Create resulting vector.
-                std::vector<ValueType> result(numberOfStates);
+                std::vector<ValueType> result(transitionMatrix.getRowGroupCount());
                 
                 // Set values of resulting vector that are known exactly.
                 storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
@@ -136,6 +134,27 @@ namespace storm {
                 return std::move(computeUntilProbabilities(goal, transitionMatrix, backwardTransitions, phiStates, psiStates, qualitative, getPolicy, minMaxLinearEquationSolverFactory));
             }
            
+            template<typename ValueType>
+            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeGloballyProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory, bool useMecBasedTechnique) {
+
+                if (useMecBasedTechnique) {
+                    storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(transitionMatrix, backwardTransitions, psiStates);
+                    storm::storage::BitVector statesInPsiMecs(transitionMatrix.getRowGroupCount());
+                    for (auto const& mec : mecDecomposition) {
+                        for (auto const& stateActionsPair : mec) {
+                            statesInPsiMecs.set(stateActionsPair.first, true);
+                        }
+                    }
+                    
+                    return std::move(computeUntilProbabilities(dir, transitionMatrix, backwardTransitions, psiStates, statesInPsiMecs, qualitative, false, minMaxLinearEquationSolverFactory).result);
+                } else {
+                    std::vector<ValueType> result = computeUntilProbabilities(dir == OptimizationDirection::Minimize ? OptimizationDirection::Maximize : OptimizationDirection::Minimize, transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), ~psiStates, qualitative, false, minMaxLinearEquationSolverFactory).result;
+                    for (auto& element : result) {
+                        element = storm::utility::one<ValueType>() - element;
+                    }
+                    return std::move(result);
+                }
+            }
             
             template<typename ValueType>
             template<typename RewardModelType>
@@ -168,7 +187,7 @@ namespace storm {
                 if (rewardModel.hasStateRewards()) {
                     result = rewardModel.getStateRewardVector();
                 } else {
-                    result.resize(transitionMatrix.getRowCount());
+                    result.resize(transitionMatrix.getRowGroupCount());
                 }
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
@@ -216,7 +235,7 @@ namespace storm {
                 
                 // Determine which states have a reward of infinity by definition.
                 storm::storage::BitVector infinityStates;
-                storm::storage::BitVector trueStates(transitionMatrix.getRowCount(), true);
+                storm::storage::BitVector trueStates(transitionMatrix.getRowGroupCount(), true);
                 if (dir == OptimizationDirection::Minimize) {
                     infinityStates = storm::utility::graph::performProb1E(transitionMatrix, nondeterminsticChoiceIndices, backwardTransitions, trueStates, targetStates);
                 } else {
@@ -229,7 +248,7 @@ namespace storm {
                 LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
                 // Create resulting vector.
-                std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 
                 // Check whether we need to compute exact rewards for some states.
                 if (qualitative) {
