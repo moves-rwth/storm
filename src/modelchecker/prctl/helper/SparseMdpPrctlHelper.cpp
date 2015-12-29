@@ -499,14 +499,34 @@ namespace storm {
             template<typename ValueType>
             std::unique_ptr<CheckResult> SparseMdpPrctlHelper<ValueType>::computeConditionalProbabilities(OptimizationDirection dir, storm::storage::sparse::state_type initialState, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, bool qualitative, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 
+                // For the max-case, we can simply take the given target states. For the min-case, however, we need to
+                // find the MECs of non-target states and make them the new target states.
+                storm::storage::BitVector fixedTargetStates;
+                if (dir == OptimizationDirection::Maximize) {
+                    fixedTargetStates = targetStates;
+                } else {
+                    fixedTargetStates = storm::storage::BitVector(targetStates.size());
+                    storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(transitionMatrix, backwardTransitions, ~targetStates);
+                    for (auto const& mec : mecDecomposition) {
+                        for (auto const& stateActionsPair : mec) {
+                            fixedTargetStates.set(stateActionsPair.first);
+                        }
+                    }
+                }
+                
                 // We solve the max-case and later adjust the result if the optimization direction was to minimize.
-                // FIXME: actually do this.
                 storm::storage::BitVector initialStatesBitVector(transitionMatrix.getRowGroupCount());
                 initialStatesBitVector.set(initialState);
                 
                 storm::storage::BitVector allStates(initialStatesBitVector.size(), true);
                 std::vector<ValueType> conditionProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, conditionStates, false, false, minMaxLinearEquationSolverFactory).result);
-                std::vector<ValueType> targetProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, targetStates, false, false, minMaxLinearEquationSolverFactory).result);
+                
+                // If the conditional probability is undefined for the initial state, we return directly.
+                if (storm::utility::isZero(conditionProbabilities[initialState])) {
+                    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::utility::infinity<ValueType>()));
+                }
+                
+                std::vector<ValueType> targetProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, transitionMatrix, backwardTransitions, allStates, fixedTargetStates, false, false, minMaxLinearEquationSolverFactory).result);
 
                 storm::storage::BitVector statesWithProbabilityGreater0E(transitionMatrix.getRowGroupCount(), true);
                 storm::storage::sparse::state_type state = 0;
@@ -517,16 +537,11 @@ namespace storm {
                     ++state;
                 }
 
-                // If the conditional probability is undefined for the initial state, we return directly.
-                if (!statesWithProbabilityGreater0E.get(initialState)) {
-                    return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, storm::utility::infinity<ValueType>()));
-                }
-                
                 // Determine those states that need to be equipped with a restart mechanism.
-                storm::storage::BitVector problematicStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, conditionStates | targetStates);
+                storm::storage::BitVector problematicStates = storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, allStates, conditionStates | fixedTargetStates);
 
                 // Otherwise, we build the transformed MDP.
-                storm::storage::BitVector relevantStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStatesBitVector, allStates, conditionStates | targetStates);
+                storm::storage::BitVector relevantStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStatesBitVector, allStates, conditionStates | fixedTargetStates);
                 std::vector<uint_fast64_t> numberOfStatesBeforeRelevantStates = relevantStates.getNumberOfSetBitsBeforeIndices();
                 storm::storage::sparse::state_type newGoalState = relevantStates.getNumberOfSetBits();
                 storm::storage::sparse::state_type newStopState = newGoalState + 1;
@@ -537,7 +552,7 @@ namespace storm {
                 uint_fast64_t currentRow = 0;
                 for (auto state : relevantStates) {
                     builder.newRowGroup(currentRow);
-                    if (targetStates.get(state)) {
+                    if (fixedTargetStates.get(state)) {
                         builder.addNextValue(currentRow, newGoalState, conditionProbabilities[state]);
                         if (!storm::utility::isZero(conditionProbabilities[state])) {
                             builder.addNextValue(currentRow, newFailState, 1 - conditionProbabilities[state]);
@@ -581,7 +596,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> newBackwardTransitions = newTransitionMatrix.transpose(true);
                 std::vector<ValueType> goalProbabilities = std::move(computeUntilProbabilities(OptimizationDirection::Maximize, newTransitionMatrix, newBackwardTransitions, storm::storage::BitVector(newFailState + 1, true), newGoalStates, false, false, minMaxLinearEquationSolverFactory).result);
                 
-                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, goalProbabilities[numberOfStatesBeforeRelevantStates[initialState]]));
+                return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, dir == OptimizationDirection::Maximize ? goalProbabilities[numberOfStatesBeforeRelevantStates[initialState]] : storm::utility::one<ValueType>() - goalProbabilities[numberOfStatesBeforeRelevantStates[initialState]]));
             }
             
             template class SparseMdpPrctlHelper<double>;
