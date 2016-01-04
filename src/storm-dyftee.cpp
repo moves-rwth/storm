@@ -13,6 +13,7 @@
 int main(int argc, char** argv) {
     if(argc < 2) {
         std::cout <<  "Storm-DyFTeE should be called with a filename as argument." << std::endl;
+        return 1;
     }
 
     storm::utility::setUp();

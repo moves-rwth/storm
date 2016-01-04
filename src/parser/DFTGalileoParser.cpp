@@ -41,7 +41,7 @@ namespace storm {
         template<typename ValueType>
         bool DFTGalileoParser<ValueType>::readFile(const std::string& filename) {
             // constants
-            std::string topleveltoken = "toplevel";
+            std::string toplevelToken = "toplevel";
             std::string toplevelId;
 
             std::ifstream file;
@@ -57,23 +57,21 @@ namespace storm {
 
             std::string line;
             bool generalSuccess = true;
-            while(std::getline(file, line))
-            {
+            while(std::getline(file, line)) {
                 bool success = true;
                 STORM_LOG_TRACE("Parsing: " << line);
                 size_t commentstarts = line.find("//");
                 line = line.substr(0, commentstarts);
                 size_t firstsemicolon = line.find(";");
                 line = line.substr(0, firstsemicolon);
-                if (line.find_first_not_of(' ') == std::string::npos)
-                {
+                if (line.find_first_not_of(' ') == std::string::npos) {
                     // Only whitespace
                     continue;
                 }
 
                 // Top level indicator.
-                if(boost::starts_with(line, topleveltoken)) {
-                    toplevelId = stripQuotsFromName(line.substr(topleveltoken.size() + 1));
+                if(boost::starts_with(line, toplevelToken)) {
+                    toplevelId = stripQuotsFromName(line.substr(toplevelToken.size() + 1));
                 }
                 else
                 {
