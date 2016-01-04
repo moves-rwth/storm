@@ -652,8 +652,14 @@ namespace storm {
                 // If a terminal expression was given, we check whether the current state needs to be explored further.
                 std::vector<Choice<ValueType>> allUnlabeledChoices;
                 std::vector<Choice<ValueType>> allLabeledChoices;
+                bool deadlockOnPurpose = false;
                 if (terminalExpression && evaluator.asBool(terminalExpression.get())) {
-                    // Nothing to do in this case.
+                    //std::cout << unpackStateIntoValuation(currentState, variableInformation).toString(true) << std::endl;
+                    //allUnlabeledChoices = getUnlabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
+                    //allLabeledChoices = getLabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
+
+                        // Nothing to do in this case.
+                    deadlockOnPurpose = true;
                 } else {
                     // Retrieve all choices for the current state.
                     allUnlabeledChoices = getUnlabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
@@ -665,7 +671,7 @@ namespace storm {
                 // If the current state does not have a single choice, we equip it with a self-loop if that was
                 // requested and issue an error otherwise.
                 if (totalNumberOfChoices == 0) {
-                    if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
+                    if (!storm::settings::generalSettings().isDontFixDeadlocksSet() || deadlockOnPurpose) {
                         if (commandLabels) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.get().push_back(boost::container::flat_set<uint_fast64_t>());
@@ -689,7 +695,10 @@ namespace storm {
                         
                         ++currentRow;
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
+                        std::cout << unpackStateIntoValuation(currentState, variableInformation).toString(true) << std::endl;
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                        "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
+
                     }
                 } else if (totalNumberOfChoices == 1) {
                     if (!deterministicModel) {

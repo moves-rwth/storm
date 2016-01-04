@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include <memory>
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/dd/InternalBdd.h"

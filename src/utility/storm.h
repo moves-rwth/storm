@@ -354,7 +354,15 @@ namespace storm {
         }
         return result;
     }
-            
+
+    template<typename ValueType>
+    void exportMatrixToFile(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::string const& filepath) {
+        STORM_LOG_THROW(model->getType() != storm::models::ModelType::Ctmc, storm::exceptions::NotImplementedException, "This functionality is not yet implemented." );
+        std::ofstream ofs;
+        ofs.open (filepath, std::ofstream::out);
+        model->getTransitionMatrix().printAsMatlabMatrix(ofs);
+        ofs.close();
+    }
         
 }
 

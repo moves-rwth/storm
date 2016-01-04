@@ -766,7 +766,15 @@ namespace storm {
             
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
-            
+
+            /*!
+             * Prints the matrix in a dense format, as also used by e.g. Matlab.
+             * Notice that the format does not support multiple rows in a rowgroup.
+             *
+             * @out The stream to output to.
+             */
+            void printAsMatlabMatrix(std::ostream& out) const;
+
             /*!
              * Returns the size of the matrix in memory measured in bytes.
              *
