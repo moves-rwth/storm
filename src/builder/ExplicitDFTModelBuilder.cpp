@@ -1,6 +1,7 @@
 #include "src/builder/ExplicitDFTModelBuilder.h"
 #include <src/models/sparse/Ctmc.h>
 #include <src/utility/constants.h>
+#include <map>
 
 namespace storm {
     namespace builder {
@@ -74,7 +75,7 @@ namespace storm {
         template<typename ValueType, typename RewardModelType, typename IndexType>
         void ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::exploreStates(std::queue<storm::storage::DFTState<ValueType>>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder) {
 
-            std::vector<std::pair<size_t, ValueType>> outgoingTransitions;
+            std::map<size_t, ValueType> outgoingTransitions;
 
             while (!stateQueue.empty()) {
                 // Initialization
@@ -149,7 +150,8 @@ namespace storm {
 
                     // Set transition
                     ValueType prob = nextBE.first->activeFailureRate();
-                    outgoingTransitions.push_back(std::make_pair(it->getId(), prob));
+                    auto resultInsert = outgoingTransitions.insert(std::make_pair(it->getId(), prob));
+                    assert(resultInsert.second);
                     sum += prob;
                 } // end while failing BE
 
