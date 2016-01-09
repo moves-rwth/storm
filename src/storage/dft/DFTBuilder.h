@@ -78,16 +78,10 @@ namespace storm {
             }
             
             bool addBasicElement(std::string const& name, ValueType failureRate, ValueType dormancyFactor) {
-                if(failureRate <= 0.0) {
-                    std::cerr << "Failure rate must be positive." << std::endl;
-                    return false;
-                }
-                
-                if(dormancyFactor < 0.0 || dormancyFactor > 1.0) {
-                    std::cerr << "Dormancy factor must be between 0 and 1." << std::endl;
-                    return false;
-                }
-                
+                //TODO Matthias: collect constraints for SMT solving
+                //failureRate > 0
+                //0 <= dormancyFactor <= 1
+
                 mElements[name] = std::make_shared<DFTBE<ValueType>>(mNextId++, name, failureRate, dormancyFactor);
                 return true;
             }
