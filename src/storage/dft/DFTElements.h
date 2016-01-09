@@ -11,6 +11,8 @@
 
 #include "DFTState.h"
 #include "DFTStateSpaceGenerationQueues.h"
+#include "src/utility/constants.h"
+#include "src/adapters/CarlAdapter.h"
 
 using std::size_t;
 
@@ -313,9 +315,9 @@ namespace storm {
             }
             
             bool isColdBasicElement() const {
-                return mPassiveFailureRate == 0;
+                return storm::utility::isZero(mPassiveFailureRate);
             }
-            
+
             virtual std::vector<size_t> independentUnit() const {
                 return {this->mId};
             }

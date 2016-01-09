@@ -4,9 +4,10 @@
 #include <fstream>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-#include <src/exceptions/NotImplementedException.h>
-#include "../exceptions/FileIoException.h"
-#include "../exceptions/NotSupportedException.h"
+#include "src/storage/expressions/ExpressionManager.h"
+#include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/FileIoException.h"
+#include "src/exceptions/NotSupportedException.h"
 #include "src/utility/macros.h"
 
 namespace storm {
@@ -15,7 +16,7 @@ namespace storm {
         template<typename ValueType>
         storm::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename) {
             if(readFile(filename)) {
-                storm::storage::DFT<ValueType> dft = mBuilder.build();
+                storm::storage::DFT<ValueType> dft = builder.build();
                 STORM_LOG_DEBUG("Elements:" << std::endl << dft.getElementsString());
                 STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
                 return dft;
@@ -43,6 +44,7 @@ namespace storm {
             // constants
             std::string toplevelToken = "toplevel";
             std::string toplevelId;
+            std::string parametricToken = "param";
 
             std::ifstream file;
             file.exceptions ( std::ifstream::failbit );
@@ -73,8 +75,16 @@ namespace storm {
                 if(boost::starts_with(line, toplevelToken)) {
                     toplevelId = stripQuotsFromName(line.substr(toplevelToken.size() + 1));
                 }
-                else
-                {
+                else if (boost::starts_with(line, parametricToken)) {
+                    if (!std::is_same<ValueType, storm::RationalFunction>::value) {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
+                    }
+                    std::string parameter = stripQuotsFromName(line.substr(parametricToken.size() + 1));
+                    storm::expressions::Variable var = manager->declareRationalVariable(parameter);
+                    identifierMapping.emplace(var.getName(), var);
+                    parser.setIdentifierMapping(identifierMapping);
+                    STORM_LOG_TRACE("Added parameter: " << var.getName());
+                } else {
                     std::vector<std::string> tokens;
                     boost::split(tokens, line, boost::is_any_of(" "));
                     std::string name(stripQuotsFromName(tokens[0]));
@@ -84,28 +94,19 @@ namespace storm {
                         childNames.push_back(stripQuotsFromName(tokens[i]));
                     }
                     if(tokens[1] == "and") {
-                        success = mBuilder.addAndElement(name, childNames);
+                        success = builder.addAndElement(name, childNames);
                     } else if(tokens[1] == "or") {
-                        success = mBuilder.addOrElement(name, childNames);
+                        success = builder.addOrElement(name, childNames);
                     } else if(boost::starts_with(tokens[1], "vot")) {
-                        success = mBuilder.addVotElement(name, boost::lexical_cast<unsigned>(tokens[1].substr(3)), childNames);
+                        success = builder.addVotElement(name, boost::lexical_cast<unsigned>(tokens[1].substr(3)), childNames);
                     } else if(tokens[1] == "pand") {
-                        success = mBuilder.addPandElement(name, childNames);
+                        success = builder.addPandElement(name, childNames);
                     } else if(tokens[1] == "wsp" || tokens[1] == "csp") {
-                        success = mBuilder.addSpareElement(name, childNames);
+                        success = builder.addSpareElement(name, childNames);
                     } else if(boost::starts_with(tokens[1], "lambda=")) {
-                        ValueType failureRate = 0;
-                        ValueType dormancyFactor = 0;
-                        if (std::is_same<ValueType, double>::value) {
-                            failureRate = boost::lexical_cast<double>(tokens[1].substr(7));
-                            dormancyFactor = boost::lexical_cast<double>(tokens[2].substr(5));
-                        } else {
-                            // TODO Matthias: Parse RationalFunction
-                            failureRate;
-                            dormancyFactor;
-                            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Parsing into rational function not supported.");
-                        }
-                        success = mBuilder.addBasicElement(name, failureRate, dormancyFactor);
+                        ValueType failureRate = parseRationalExpression(tokens[1].substr(7));
+                        ValueType dormancyFactor = parseRationalExpression(tokens[2].substr(5));
+                        success = builder.addBasicElement(name, failureRate, dormancyFactor);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " + tokens[1] + "  not recognized.");
                         success = false;
@@ -115,17 +116,37 @@ namespace storm {
                     generalSuccess = success;
                 }
             }
-            if(!mBuilder.setTopLevel(toplevelId)) {
+            if(!builder.setTopLevel(toplevelId)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
             }
             file.close();
             return generalSuccess;
         }
 
+        template<typename ValueType>
+        ValueType DFTGalileoParser<ValueType>::parseRationalExpression(std::string const& expr) {
+            assert(false);
+        }
+
+        template<>
+        double DFTGalileoParser<double>::parseRationalExpression(std::string const& expr) {
+            return boost::lexical_cast<double>(expr);
+        }
+
         // Explicitly instantiate the class.
         template class DFTGalileoParser<double>;
 
 #ifdef STORM_HAVE_CARL
+        template<>
+        storm::RationalFunction DFTGalileoParser<storm::RationalFunction>::parseRationalExpression(std::string const& expr) {
+            STORM_LOG_TRACE("Translating expression: " << expr);
+            storm::expressions::Expression expression = parser.parseFromString(expr);
+            STORM_LOG_TRACE("Expression: " << expression);
+            storm::RationalFunction rationalFunction = evaluator.asRational(expression);
+            STORM_LOG_TRACE("Parsed expression: " << rationalFunction);
+            return rationalFunction;
+        }
+
         template class DFTGalileoParser<RationalFunction>;
 #endif
         

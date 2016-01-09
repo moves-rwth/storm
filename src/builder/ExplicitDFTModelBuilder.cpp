@@ -79,7 +79,7 @@ namespace storm {
             while (!stateQueue.empty()) {
                 // Initialization
                 outgoingTransitions.clear();
-                ValueType sum = 0;
+                ValueType sum = storm::utility::zero<ValueType>();
 
                 // Consider next state
                 storm::storage::DFTState<ValueType> state = stateQueue.front();

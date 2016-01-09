@@ -25,7 +25,7 @@ namespace storm {
              * points it would typically allow. This can, for example, be used to prevent errors if the outer grammar
              * also parses boolean conjuncts that are erroneously consumed by the expression parser.
              */
-            ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking = false);
+            ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_ = qi::symbols<char, uint_fast64_t>(), bool allowBacktracking = false);
             
             ExpressionParser(ExpressionParser const& other) = default;
             ExpressionParser& operator=(ExpressionParser const& other) = default;
@@ -38,6 +38,15 @@ namespace storm {
              * @param identifiers_ A pointer to a mapping from identifiers to expressions.
              */
             void setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_);
+
+            /*!
+             * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to
+             * expressions will be substituted wherever the key value appears in the parsed expression. After setting
+             * this, the parser will generate expressions.
+             *
+             * @param identifierMapping A mapping from identifiers to expressions.
+             */
+            void setIdentifierMapping(std::unordered_map<std::string, storm::expressions::Expression> const& identifierMapping);
             
             /*!
              * Unsets a previously set identifier mapping. This will make the parser not generate expressions any more
@@ -51,7 +60,9 @@ namespace storm {
              * @param flag If set to true, double literals are accepted.
              */
             void setAcceptDoubleLiterals(bool flag);
-            
+
+            storm::expressions::Expression parseFromString(std::string const& expressionString) const;
+
         private:
             struct orOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
                 orOperatorStruct() {
@@ -183,6 +194,9 @@ namespace storm {
             
             // A flag that indicates whether double literals are accepted.
             bool acceptDoubleLiterals;
+            
+            // A flag that indicates whether the mapping must be deleted on unsetting.
+            bool deleteIdentifierMapping;
             
             // The currently used mapping of identifiers to expressions. This is used if the parser is set to create
             // expressions.
