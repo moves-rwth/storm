@@ -166,6 +166,12 @@ namespace storm {
             return this->getBaseExpression().accept(visitor);
         }
         
+        std::string Expression::toString() {
+            std::stringstream stream;
+            stream << *this;
+            return stream.str();
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Expression const& expression) {
             stream << expression.getBaseExpression();
             return stream;
@@ -283,5 +289,33 @@ namespace storm {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'ceil' requires numerical operand.");
             return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().floorCeil(), first.getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Ceil)));
         }
+        
+        Expression disjunction(std::vector<storm::expressions::Expression> const& expressions) {
+            return apply(expressions, [] (Expression const& e1, Expression const& e2) { return e1 || e2; });
+        }
+
+        Expression conjunction(std::vector<storm::expressions::Expression> const& expressions) {
+            return apply(expressions, [] (Expression const& e1, Expression const& e2) { return e1 && e2; });
+        }
+        
+        Expression sum(std::vector<storm::expressions::Expression> const& expressions) {
+            return apply(expressions, [] (Expression const& e1, Expression const& e2) { return e1 + e2; });
+        }
+        
+        Expression apply(std::vector<storm::expressions::Expression> const& expressions, std::function<Expression (Expression const&, Expression const&)> const& function) {
+            STORM_LOG_THROW(!expressions.empty(), storm::exceptions::InvalidArgumentException, "Cannot build disjunction of empty expression list.");
+            auto it = expressions.begin();
+            auto ite = expressions.end();
+            Expression result = *it;
+            ++it;
+            
+            for (; it != ite; ++it) {
+                result = function(result, *it);
+            }
+            
+            return result;
+        }
+        
+
     }
 }

@@ -109,30 +109,58 @@ namespace storm {
             }
             return "[" + boost::join(assignments, ", ") + "]";
         }
+
+
+        std::string SimpleValuation::toString(bool pretty) const {
+
+
+            std::stringstream sstr;
+            if(pretty) {
+                sstr << "valuation {" << std::endl;
+                for(auto const& e : getManager()) {
+                    sstr << e.first.getName() << "=";
+                    if (e.first.hasBooleanType()) {
+                        sstr << std::boolalpha << this->getBooleanValue(e.first) << std::noboolalpha;
+                    } else if (e.first.hasIntegerType()) {
+                        sstr << this->getIntegerValue(e.first);
+                    } else if (e.first.hasRationalType()) {
+                        sstr << this->getRationalValue(e.first);
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unexpected variable type.");
+                    }
+                    sstr << std::endl;
+                }
+                sstr << "}";
+            } else {
+                sstr << "valuation {" << std::endl;
+                sstr << getManager() << std::endl;
+                if (!booleanValues.empty()) {
+                    for (auto const& element : booleanValues) {
+                        sstr << element << " ";
+                    }
+                    sstr << std::endl;
+                }
+                if (!integerValues.empty()) {
+                    for (auto const& element : integerValues) {
+                        sstr << element << " ";
+                    }
+                    sstr << std::endl;
+                }
+                if (!rationalValues.empty()) {
+                    for (auto const& element : rationalValues) {
+                        sstr << element << " ";
+                    }
+                    sstr << std::endl;
+                }
+                sstr << "}";
+            }
+
+
+            return sstr.str();
+        }
         
         std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation) {
-            out << "valuation {" << std::endl;
-            out << valuation.getManager() << std::endl;
-            if (!valuation.booleanValues.empty()) {
-                for (auto const& element : valuation.booleanValues) {
-                    out << element << " ";
-                }
-                out << std::endl;
-            }
-            if (!valuation.integerValues.empty()) {
-                for (auto const& element : valuation.integerValues) {
-                    out << element << " ";
-                }
-                out << std::endl;
-            }
-            if (!valuation.rationalValues.empty()) {
-                for (auto const& element : valuation.rationalValues) {
-                    out << element << " ";
-                }
-                out << std::endl;
-            }
-            out << "}" << std::endl;
-            
+            out << valuation.toString(false) << std::endl;
             return out;
         }
         

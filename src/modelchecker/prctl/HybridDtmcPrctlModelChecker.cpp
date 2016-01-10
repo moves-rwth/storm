@@ -3,8 +3,8 @@
 #include "src/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 
-#include "src/storage/dd/CuddOdd.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/Odd.h"
+#include "src/storage/dd/DdManager.h"
 
 #include "src/utility/macros.h"
 #include "src/utility/graph.h"
@@ -24,12 +24,12 @@
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, typename ValueType>
-        HybridDtmcPrctlModelChecker<DdType, ValueType>::HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        HybridDtmcPrctlModelChecker<DdType, ValueType>::HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        HybridDtmcPrctlModelChecker<DdType, ValueType>::HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType> const& model) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
+        HybridDtmcPrctlModelChecker<DdType, ValueType>::HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
             // Intentionally left empty.
         }
         
@@ -45,6 +45,13 @@ namespace storm {
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             return storm::modelchecker::helper::HybridDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
+        }
+        
+        template<storm::dd::DdType DdType, typename ValueType>
+        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeGloballyProbabilities(storm::logic::GloballyFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+            std::unique_ptr<CheckResult> subResultPointer = this->check(pathFormula.getSubformula());
+            SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            return storm::modelchecker::helper::HybridDtmcPrctlHelper<DdType, ValueType>::computeGloballyProbabilities(this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), qualitative, *this->linearEquationSolverFactory);
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
@@ -84,24 +91,25 @@ namespace storm {
         }
                 
         template<storm::dd::DdType DdType, typename ValueType>
-        storm::models::symbolic::Dtmc<DdType> const& HybridDtmcPrctlModelChecker<DdType, ValueType>::getModel() const {
-            return this->template getModelAs<storm::models::symbolic::Dtmc<DdType>>();
+        storm::models::symbolic::Dtmc<DdType, ValueType> const& HybridDtmcPrctlModelChecker<DdType, ValueType>::getModel() const {
+            return this->template getModelAs<storm::models::symbolic::Dtmc<DdType, ValueType>>();
         }
         
         template<storm::dd::DdType DdType, class ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeLongRunAverageProbabilities(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
             // Create ODD for the translation.
-            storm::dd::Odd<DdType> odd(this->getModel().getReachableStates());
+            storm::dd::Odd odd = this->getModel().getReachableStates().createOdd();
             
             storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = this->getModel().getTransitionMatrix().toMatrix(odd, odd);
             
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverage(explicitProbabilityMatrix, subResult.getTruthValuesVector().toVector(odd), qualitative, *this->linearEquationSolverFactory);
-            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getBddZero(), this->getModel().getManager().getAddZero(), this->getModel().getReachableStates(), std::move(odd), std::move(result)));
+            std::vector<ValueType> result = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeLongRunAverageProbabilities(explicitProbabilityMatrix, subResult.getTruthValuesVector().toVector(odd), qualitative, *this->linearEquationSolverFactory);
+            return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(this->getModel().getReachableStates(), this->getModel().getManager().getBddZero(), this->getModel().getManager().template getAddZero<ValueType>(), this->getModel().getReachableStates(), std::move(odd), std::move(result)));
         }
         
         template class HybridDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double>;
+        template class HybridDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double>;
     }
 }

@@ -21,6 +21,8 @@ namespace storm {
             bool isConstant(ValueType const& value) const;
             
             bool isInfinity(ValueType const& value) const;
+            
+            bool isLess(ValueType const& value1, ValueType const& value2) const;
         };
         
         // For floats we specialize this class and consider the comparison modulo some predefined precision.
@@ -41,6 +43,8 @@ namespace storm {
             
             bool isInfinity(float const& value) const;
 
+            bool isLess(float const& value1, float const& value2) const;
+            
         private:
             // The precision used for comparisons.
             float precision;
@@ -63,6 +67,8 @@ namespace storm {
             bool isEqual(double const& value1, double const& value2) const;
             
             bool isConstant(double const& value) const;
+            
+            bool isLess(double const& value1, double const& value2) const;
             
         private:
             // The precision used for comparisons.

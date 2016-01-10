@@ -72,6 +72,7 @@ static char rcsid[] UNUSED = "$Id: cuddObj.cc,v 1.15 2012/02/05 01:06:40 fabio E
 // Members of class DD
 // ---------------------------------------------------------------------------
 
+namespace cudd {
 
 DD::DD() : p(0), node(0) {}
 
@@ -5864,3 +5865,5 @@ Cudd::DumpDot(
     checkReturnValue(result);
 
 } // vector<ZDD>::DumpDot
+    
+} // end namespace cudd

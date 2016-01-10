@@ -24,7 +24,7 @@ namespace storm {
         template <storm::dd::DdType DdType>
         class Bdd;
         
-        template <storm::dd::DdType DdType>
+        template <storm::dd::DdType DdType, typename ValueType>
         class Add;
     }
     

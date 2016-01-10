@@ -65,7 +65,7 @@ namespace storm {
             if (variablePair != variableToVariableMap.end()) {
                 return convertVariableToPolynomial(variablePair->second);
             } else {
-                carl::Variable carlVariable = carl::VariablePool::getInstance().getFreshVariable(expression.getVariableName());
+                carl::Variable carlVariable = carl::freshRealVariable(expression.getVariableName());
                 variableToVariableMap.emplace(expression.getVariable(), carlVariable);
                 return convertVariableToPolynomial(carlVariable);
             }

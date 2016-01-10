@@ -80,7 +80,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
     if (STORM_USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
     endif(STORM_USE_POPCNT)
-	
+
 	# Set the no-strict-aliasing target for GCC
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing")
 elseif(MSVC)
@@ -95,10 +95,10 @@ elseif(MSVC)
 	add_definitions(/DNOMINMAX)
 	# Boost Defs, required for using boost's transform iterator
 	add_definitions(/DBOOST_RESULT_OF_USE_DECLTYPE)
-	
+
 	# since nobody cares at the moment
 	add_definitions(/wd4250)
-	
+
 	# MSVC does not do strict-aliasing, so no option needed
 else(CLANG)
     set(STORM_COMPILED_BY "Clang (LLVM)")
@@ -118,7 +118,7 @@ else(CLANG)
 		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LANGUAGE_STANDARD "c++11")
 		set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
     endif()
-    
+
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -Wno-unused-local-typedefs -ftemplate-depth=1024")
 
@@ -129,8 +129,8 @@ else(CLANG)
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
-    endif(STORM_USE_POPCNT)    
-	
+    endif(STORM_USE_POPCNT)
+
 	# Set the no-strict-aliasing target for Clang
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
 endif()
@@ -185,7 +185,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 
 include_directories(${Boost_INCLUDE_DIRS})
-list(APPEND STORM_LINK_LIBRARIES ${Boost_LIBRARIES})   
+list(APPEND STORM_LINK_LIBRARIES ${Boost_LIBRARIES})
 #message(STATUS "BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
 #message(STATUS "BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
 
@@ -351,13 +351,13 @@ if(ENABLE_CUDA)
 
 	file(GLOB_RECURSE STORM_CUDA_KERNEL_FILES ${PROJECT_SOURCE_DIR}/cuda/kernels/*.cu)
 	file(GLOB_RECURSE STORM_CUDA_HEADER_FILES ${PROJECT_SOURCE_DIR}/cuda/kernels/*.h)
-	
+
 	source_group(kernels FILES ${STORM_CUDA_KERNEL_FILES} ${STORM_CUDA_HEADER_FILES})
 	include_directories(${PROJECT_SOURCE_DIR}/cuda/kernels/)
 
 	#set(CUDA_PROPAGATE_HOST_FLAGS OFF)
 	set(CUDA_NVCC_FLAGS "-arch=sm_30")
-	
+
 	#############################################################
 	##
 	##	CUSP
@@ -370,7 +370,7 @@ if(ENABLE_CUDA)
 	else()
 		message(FATAL_ERROR "StoRM (CudaPlugin) - Could not find CUSP!")
 	endif()
-	
+
 	#############################################################
 	##
 	##	Thrust
@@ -383,10 +383,10 @@ if(ENABLE_CUDA)
 	else()
 		message(FATAL_ERROR "StoRM (CudaPlugin) - Could not find Thrust! Check your CUDA installation.")
 	endif()
-	
+
 	include_directories(${CUDA_INCLUDE_DIRS})
 	include_directories(${ADDITIONAL_INCLUDE_DIRS})
-	
+
 	cuda_add_library(${STORM_CUDA_LIB_NAME}
 	    ${STORM_CUDA_KERNEL_FILES} ${STORM_CUDA_HEADER_FILES}
 	)
@@ -444,6 +444,7 @@ endif()
 
 if(STORM_HAVE_CARL)
     message(STATUS "StoRM - Linking with carl.")
+	message("${carl_INCLUDE_DIR}")
     include_directories("${carl_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
 endif()
@@ -491,6 +492,50 @@ if (ENABLE_MSAT)
         message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
     endif(GMP_FOUND)
 endif(ENABLE_MSAT)
+
+#############################################################
+##
+##	Xerces
+##
+#############################################################
+
+find_package(Xerces)
+if(NOT XERCES_FOUND)
+	message("Use shipped version of xerces")
+	set(XERCES_ROOT ${CMAKE_BINARY_DIR}/resources/3rdparty/xercesc-3.1.2)
+	set(XERCESC_INCLUDE ${XERCES_ROOT}/include)
+	set(XERCES_LIBRARY_PATH ${XERCES_ROOT}/lib)
+	set(XERCESC_LIBRARIES ${XERCES_LIBRARY_PATH}/libxerces-c.a)
+endif()
+
+set(STORM_HAVE_XERCES TRUE)
+if(STORM_HAVE_XERCES)
+	include_directories(${XERCESC_INCLUDE})
+	list(APPEND STORM_LINK_LIBRARIES ${XERCESC_LIBRARIES})
+endif()
+
+#############################################################
+##
+##	Sylvan
+##
+#############################################################
+include(ExternalProject)
+set(STORM_SYLVAN_ROOT "${PROJECT_SOURCE_DIR}/resources/3rdparty/sylvan")
+ExternalProject_Add(
+    sylvan
+    DOWNLOAD_COMMAND ""
+    PREFIX "sylvan"
+    SOURCE_DIR "${STORM_SYLVAN_ROOT}"
+    CMAKE_ARGS -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
+    BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
+    INSTALL_COMMAND ""
+    INSTALL_DIR "${PROJECT_BINARY_DIR}/sylvan"
+)
+ExternalProject_Get_Property(sylvan binary_dir)
+set(Sylvan_INCLUDE_DIR "${STORM_SYLVAN_ROOT}/src")
+message(STATUS "Linking with shipped version of sylvan (in directory ${STORM_SYLVAN_ROOT}).")
+include_directories("${Sylvan_INCLUDE_DIR}")
+list(APPEND STORM_LINK_LIBRARIES "${binary_dir}/src/libsylvan.a")
 
 #############################################################
 ##
@@ -563,7 +608,7 @@ endif(STORM_USE_COTIRE)
 if (MSVC)
 	# Add the DebugHelper DLL
 	set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} Dbghelp.lib")
-	target_link_libraries(storm "Dbghelp.lib")   
+	target_link_libraries(storm "Dbghelp.lib")
 endif(MSVC)
 
 
@@ -653,11 +698,12 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp"
 )
 
-set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp") 
+set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp")
 
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
+add_subdirectory(resources/3rdparty)
 add_subdirectory(src)
 add_subdirectory(test)
 

@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#include "src/storage/dd/CuddDd.h"
 #include "src/parser/PrismParser.h"
 #include "src/models/symbolic/Dtmc.h"
 #include "src/models/symbolic/Mdp.h"
@@ -12,13 +11,13 @@
 #include "src/builder/DdPrismModelBuilder.h"
 #include "src/builder/ExplicitPrismModelBuilder.h"
 #include "src/utility/graph.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/Bdd.h"
+#include "src/storage/dd/DdManager.h"
 
-TEST(GraphTest, SymbolicProb01) {
+TEST(GraphTest, SymbolicProb01_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     
@@ -40,12 +39,36 @@ TEST(GraphTest, SymbolicProb01) {
     }
 }
 
-TEST(GraphTest, SymbolicProb01MinMax) {
+TEST(GraphTest, SymbolicProb01_Sylvan) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    
+    ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
+    
+    {
+        // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
+        std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> statesWithProbability01;
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("observe0Greater1")));
+        EXPECT_EQ(4409ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(1316ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("observeIGreater1")));
+        EXPECT_EQ(1091ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(4802ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01(*model->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("observeOnlyTrueSender")));
+        EXPECT_EQ(5829ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(1032ul, statesWithProbability01.second.getNonZeroCount());
+    }
+}
+
+TEST(GraphTest, SymbolicProb01MinMax_Cudd) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
-    
+
     {
         // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
         std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
@@ -60,10 +83,10 @@ TEST(GraphTest, SymbolicProb01MinMax) {
     }
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
-    
+
     {
         // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
         std::pair<storm::dd::Bdd<storm::dd::DdType::CUDD>, storm::dd::Bdd<storm::dd::DdType::CUDD>> statesWithProbability01;
@@ -84,9 +107,9 @@ TEST(GraphTest, SymbolicProb01MinMax) {
         EXPECT_EQ(83ul, statesWithProbability01.first.getNonZeroCount());
         EXPECT_EQ(35ul, statesWithProbability01.second.getNonZeroCount());
     }
-    
+        
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>::translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
@@ -99,6 +122,70 @@ TEST(GraphTest, SymbolicProb01MinMax) {
         EXPECT_EQ(16ul, statesWithProbability01.second.getNonZeroCount());
         
         ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>(), model->getReachableStates(), model->getStates("collision_max_backoff")));
+        EXPECT_EQ(993ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(16ul, statesWithProbability01.second.getNonZeroCount());
+    }
+}
+
+TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    
+    ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+
+    {
+        // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
+        std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> statesWithProbability01;
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("elected")));
+        EXPECT_EQ(0ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(364ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("elected")));
+        EXPECT_EQ(0ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(364ul, statesWithProbability01.second.getNonZeroCount());
+    }
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    
+    ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    
+    {
+        // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
+        std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> statesWithProbability01;
+
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("all_coins_equal_0")));
+        EXPECT_EQ(77ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(149ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("all_coins_equal_0")));
+        EXPECT_EQ(74ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(198ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
+        EXPECT_EQ(94ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(33ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("all_coins_equal_1")));
+        EXPECT_EQ(83ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(35ul, statesWithProbability01.second.getNonZeroCount());
+    }
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    
+    ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    
+    {
+        // This block is necessary, so the BDDs get disposed before the manager (contained in the model).
+        std::pair<storm::dd::Bdd<storm::dd::DdType::Sylvan>, storm::dd::Bdd<storm::dd::DdType::Sylvan>> statesWithProbability01;
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Min(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("collision_max_backoff")));
+        EXPECT_EQ(993ul, statesWithProbability01.first.getNonZeroCount());
+        EXPECT_EQ(16ul, statesWithProbability01.second.getNonZeroCount());
+        
+        ASSERT_NO_THROW(statesWithProbability01 = storm::utility::graph::performProb01Max(*model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>(), model->getReachableStates(), model->getStates("collision_max_backoff")));
         EXPECT_EQ(993ul, statesWithProbability01.first.getNonZeroCount());
         EXPECT_EQ(16ul, statesWithProbability01.second.getNonZeroCount());
     }
@@ -122,7 +209,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
     // The target states are those states where !(s < 3).
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[0], true);
@@ -171,7 +258,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
     
     // Proceed by checking whether they select exactly one action in each state.
-    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());;
+    storm::dd::Add<storm::dd::DdType::CUDD, double> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>()).sumAbstract(game.getColumnVariables());;
     EXPECT_EQ(0, stateDistributionsUnderStrategies.getNonZeroCount());
     
     // Check that the number of distributions per state is one (or zero in the case where there are no prob0 states).
@@ -206,7 +293,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameDieSmall) {
     EXPECT_TRUE(nonProb1StatesWithStrategy.isZero());
     
     // Proceed by checking whether they select exactly one action in each state.
-    stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());
+    stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>()).sumAbstract(game.getColumnVariables());
     EXPECT_EQ(3, stateDistributionsUnderStrategies.getNonZeroCount());
     
     // Check that the number of distributions per state is one (or zero in the case where there are no prob1 states).
@@ -258,7 +345,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
     // The target states are those states where s1 == 7 & s2 == 7 & d1 + d2 == 1.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[7], false) && game.getStates(initialPredicates[22], false) && game.getStates(initialPredicates[9], false) && game.getStates(initialPredicates[24], false);
@@ -273,7 +360,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
     
     // Proceed by checking whether they select exactly one exaction in each state.
-    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());
+    storm::dd::Add<storm::dd::DdType::CUDD, double> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>()).sumAbstract(game.getColumnVariables());
     EXPECT_EQ(153, stateDistributionsUnderStrategies.getNonZeroCount());
     
     storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionCount = stateDistributionsUnderStrategies.sumAbstract(game.getNondeterminismVariables());
@@ -307,7 +394,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameTwoDice) {
     EXPECT_TRUE(nonProb1StatesWithStrategy.isZero());
     
     // Proceed by checking whether they select exactly one action in each state.
-    stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());
+    stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>()).sumAbstract(game.getColumnVariables());
     EXPECT_EQ(1, stateDistributionsUnderStrategies.getNonZeroCount());
     
     // Check that the number of distributions per state is one (or zero in the case where there are no prob1 states).
@@ -427,7 +514,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
     
     storm::prism::menu_games::AbstractProgram<storm::dd::DdType::CUDD, double> abstractProgram(program.getManager(), program, initialPredicates, std::make_unique<storm::utility::solver::MathsatSmtSolverFactory>(), false);
     
-    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD> game = abstractProgram.getAbstractGame();
+    storm::prism::menu_games::MenuGame<storm::dd::DdType::CUDD, double> game = abstractProgram.getAbstractGame();
     
     // The target states are those states where col == 2.
     storm::dd::Bdd<storm::dd::DdType::CUDD> targetStates = game.getStates(initialPredicates[2], false);
@@ -442,7 +529,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
     EXPECT_TRUE(nonProb0StatesWithStrategy.isZero());
     
     // Proceed by checking whether they select exactly one action in each state.
-    storm::dd::Add<storm::dd::DdType::CUDD> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());;
+    storm::dd::Add<storm::dd::DdType::CUDD, double> stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>()).sumAbstract(game.getColumnVariables());;
     EXPECT_EQ(2831, stateDistributionsUnderStrategies.getNonZeroCount());
     
     // Check that the number of distributions per state is one (or zero in the case where there are no prob0 states).
@@ -477,7 +564,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
     EXPECT_TRUE(nonProb1StatesWithStrategy.isZero());
     
     // Proceed by checking whether they select exactly one action in each state.
-    stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().toAdd() * result.player2Strategy.get().toAdd()).sumAbstract(game.getColumnVariables());
+    stateDistributionsUnderStrategies = (game.getTransitionMatrix() * result.player1Strategy.get().template toAdd<double>() * result.player2Strategy.get().template toAdd<double>()).sumAbstract(game.getColumnVariables());
     EXPECT_EQ(2884, stateDistributionsUnderStrategies.getNonZeroCount());
     
     // Check that the number of distributions per state is one (or zero in the case where there are no prob1 states).
@@ -489,7 +576,7 @@ TEST(GraphTest, SymbolicProb01StochasticGameWlan) {
 
 TEST(GraphTest, ExplicitProb01) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     
@@ -510,7 +597,7 @@ TEST(GraphTest, ExplicitProb01) {
 
 TEST(GraphTest, ExplicitProb01MinMax) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
@@ -525,7 +612,7 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     EXPECT_EQ(364ul, statesWithProbability01.second.getNumberOfSetBits());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
-    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
@@ -546,7 +633,7 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     EXPECT_EQ(35ul, statesWithProbability01.second.getNumberOfSetBits());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
-    model = storm::builder::ExplicitPrismModelBuilder<double>::translateProgram(program);
+    model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     

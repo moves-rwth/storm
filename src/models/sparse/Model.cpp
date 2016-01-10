@@ -88,7 +88,13 @@ namespace storm {
             bool Model<ValueType, RewardModelType>::hasRewardModel(std::string const& rewardModelName) const {
                 return this->rewardModels.find(rewardModelName) != this->rewardModels.end();
             }
-            
+
+            template<typename ValueType, typename RewardModelType>
+            RewardModelType& Model<ValueType, RewardModelType>::rewardModel(std::string const& rewardModelName) {
+                assert(this->hasRewardModel(rewardModelName));
+                return this->rewardModels.find(rewardModelName)->second;
+            }
+
             template<typename ValueType, typename RewardModelType>
             RewardModelType const& Model<ValueType, RewardModelType>::getRewardModel(std::string const& rewardModelName) const {
                 auto it = this->rewardModels.find(rewardModelName);
@@ -104,6 +110,25 @@ namespace storm {
                     }
                 }
                 return it->second;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::addRewardModel(std::string const& rewardModelName, RewardModelType const& newRewardModel) {
+                if(this->hasRewardModel(rewardModelName)) {
+                    STORM_LOG_THROW(!(this->hasRewardModel(rewardModelName)), storm::exceptions::IllegalArgumentException, "A reward model with the given name '" << rewardModelName << "' already exists.");
+                }
+                assert(newRewardModel.isCompatible(this->getNumberOfStates(), this->getTransitionMatrix().getRowCount()));
+                this->rewardModels.emplace(rewardModelName, newRewardModel);
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::removeRewardModel(std::string const& rewardModelName) {
+                auto it = this->rewardModels.find(rewardModelName);
+                bool res = (it != this->rewardModels.end());
+                if(res) {
+                    this->rewardModels.erase(it->first);
+                }
+                return res;
             }
             
             template<typename ValueType, typename RewardModelType>

@@ -21,7 +21,9 @@ std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector
 namespace storm {
     namespace utility {
         namespace vector {
-            
+
+
+
             /*!
              * Sets the provided values at the provided positions in the given vector.
              *
@@ -50,6 +52,33 @@ namespace storm {
                     vector[position] = value;
                 }
             }
+
+            /*!
+             * Iota function as a helper for efficient creating a range in a vector.
+             * See also http://stackoverflow.com/questions/11965732/set-stdvectorint-to-a-range
+             * @see buildVectorForRange
+             */
+            template<class OutputIterator, class Size, class Assignable>
+            void iota_n(OutputIterator first, Size n, Assignable value)
+            {
+                std::generate_n(first, n, [&value]() {
+                    return value++;
+                });
+            }
+
+            /*!
+             * Constructs a vector [min, min+1, ...., max]
+             */
+            inline std::vector<uint_fast64_t> buildVectorForRange(uint_fast64_t min, uint_fast64_t max) {
+                assert(min < max);
+                uint_fast64_t diff = max - min;
+                std::vector<uint_fast64_t> v;
+                v.reserve(diff);
+                iota_n(std::back_inserter(v), diff, min);
+                return v;
+            }
+
+
                         
             /*!
              * Selects the elements from a vector at the specified positions and writes them consecutively into another vector.
@@ -654,6 +683,17 @@ namespace storm {
 
 				return resultVector;
 			}
+
+            template<typename Type>
+            std::vector<Type> filterVector(std::vector<Type> const& in, storm::storage::BitVector const& filter) {
+                std::vector<Type> result;
+                result.reserve(filter.getNumberOfSetBits());
+                for(auto index : filter) {
+                    result.push_back(in[index]);
+                }
+                assert(result.size() == filter.getNumberOfSetBits());
+                return result;
+            }
         } // namespace vector
     } // namespace utility
 } // namespace storm

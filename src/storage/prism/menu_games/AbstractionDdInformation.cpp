@@ -5,9 +5,9 @@
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/expressions/Expression.h"
 
-#include "src/storage/dd/CuddDdManager.h"
-#include "src/storage/dd/CuddBdd.h"
-#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/DdManager.h"
+#include "src/storage/dd/Bdd.h"
+#include "src/storage/dd/Add.h"
 
 #include "src/utility/macros.h"
 
@@ -53,7 +53,7 @@ namespace storm {
                 
                 predicateDdVariables.push_back(newMetaVariable);
                 predicateBdds.emplace_back(manager->getEncoding(newMetaVariable.first, 1), manager->getEncoding(newMetaVariable.second, 1));
-                predicateIdentities.push_back(manager->getIdentity(newMetaVariable.first).equals(manager->getIdentity(newMetaVariable.second)).toBdd());
+                predicateIdentities.push_back(manager->template getIdentity<ValueType>(newMetaVariable.first).equals(manager->template getIdentity<ValueType>(newMetaVariable.second)));
                 allPredicateIdentities &= predicateIdentities.back();
                 sourceVariables.insert(newMetaVariable.first);
                 successorVariables.insert(newMetaVariable.second);

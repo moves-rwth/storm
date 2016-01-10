@@ -3,8 +3,8 @@
 #include "src/storage/prism/menu_games/AbstractionExpressionInformation.h"
 #include "src/storage/prism/menu_games/AbstractionDdInformation.h"
 
-#include "src/storage/dd/CuddDdManager.h"
-#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/DdManager.h"
+#include "src/storage/dd/Add.h"
 
 #include "src/storage/prism/Module.h"
 
@@ -48,8 +48,8 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType> AbstractModule<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
-                storm::dd::Add<DdType> result = ddInformation.manager->getAddZero();
+            storm::dd::Add<DdType, ValueType> AbstractModule<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
+                storm::dd::Add<DdType, ValueType> result = ddInformation.manager->template getAddZero<ValueType>();
                 for (auto const& command : commands) {
                     result += command.getCommandUpdateProbabilitiesAdd();
                 }

@@ -10,29 +10,31 @@
 namespace storm {
     namespace models {
         namespace symbolic {
-            template<storm::dd::DdType T> class Mdp;
+            template<storm::dd::DdType Type, typename ValueType>
+            class Mdp;
         }
     }
     
     
     namespace modelchecker {
         template<storm::dd::DdType DdType, typename ValueType>
-        class HybridMdpPrctlModelChecker : public SymbolicPropositionalModelChecker<DdType> {
+        class HybridMdpPrctlModelChecker : public SymbolicPropositionalModelChecker<DdType, ValueType> {
         public:
-            explicit HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType> const& model);
-            explicit HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType> const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            explicit HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model);
+            explicit HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(storm::logic::Formula const& formula) const override;
             virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
             virtual std::unique_ptr<CheckResult> computeNextProbabilities(storm::logic::NextFormula const& pathFormula, bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
+            virtual std::unique_ptr<CheckResult> computeGloballyProbabilities(storm::logic::GloballyFormula const& pathFormula, bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName = boost::optional<std::string>(), bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName = boost::optional<std::string>(), bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName = boost::optional<std::string>(), bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
             
         protected:
-            storm::models::symbolic::Mdp<DdType> const& getModel() const override;
+            storm::models::symbolic::Mdp<DdType, ValueType> const& getModel() const override;
             
         private:
             // An object that is used for retrieving linear equation solvers.

@@ -1,14 +1,14 @@
 #include "src/models/symbolic/StandardRewardModel.h"
 
-#include "src/storage/dd/CuddDdManager.h"
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
+#include "src/storage/dd/DdManager.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/Bdd.h"
 
 namespace storm {
     namespace models {
         namespace symbolic {
             template <storm::dd::DdType Type, typename ValueType>
-            StandardRewardModel<Type, ValueType>::StandardRewardModel(boost::optional<storm::dd::Add<Type>> const& stateRewardVector, boost::optional<storm::dd::Add<Type>> const& stateActionRewardVector, boost::optional<storm::dd::Add<Type>> const& transitionRewardMatrix) : optionalStateRewardVector(stateRewardVector), optionalStateActionRewardVector(stateActionRewardVector), optionalTransitionRewardMatrix(transitionRewardMatrix) {
+            StandardRewardModel<Type, ValueType>::StandardRewardModel(boost::optional<storm::dd::Add<Type, ValueType>> const& stateRewardVector, boost::optional<storm::dd::Add<Type, ValueType>> const& stateActionRewardVector, boost::optional<storm::dd::Add<Type, ValueType>> const& transitionRewardMatrix) : optionalStateRewardVector(stateRewardVector), optionalStateActionRewardVector(stateActionRewardVector), optionalTransitionRewardMatrix(transitionRewardMatrix) {
                 // Intentionally left empty.
             }
             
@@ -28,17 +28,17 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Add<Type> const& StandardRewardModel<Type, ValueType>::getStateRewardVector() const {
+            storm::dd::Add<Type, ValueType> const& StandardRewardModel<Type, ValueType>::getStateRewardVector() const {
                 return this->optionalStateRewardVector.get();
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Add<Type>& StandardRewardModel<Type, ValueType>::getStateRewardVector() {
+            storm::dd::Add<Type, ValueType>& StandardRewardModel<Type, ValueType>::getStateRewardVector() {
                 return this->optionalStateRewardVector.get();
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            boost::optional<storm::dd::Add<Type>> const& StandardRewardModel<Type, ValueType>::getOptionalStateRewardVector() const {
+            boost::optional<storm::dd::Add<Type, ValueType>> const& StandardRewardModel<Type, ValueType>::getOptionalStateRewardVector() const {
                 return this->optionalStateRewardVector;
             }
             
@@ -48,17 +48,17 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Add<Type> const& StandardRewardModel<Type, ValueType>::getStateActionRewardVector() const {
+            storm::dd::Add<Type, ValueType> const& StandardRewardModel<Type, ValueType>::getStateActionRewardVector() const {
                 return this->optionalStateActionRewardVector.get();
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Add<Type>& StandardRewardModel<Type, ValueType>::getStateActionRewardVector() {
+            storm::dd::Add<Type, ValueType>& StandardRewardModel<Type, ValueType>::getStateActionRewardVector() {
                 return this->optionalStateActionRewardVector.get();
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            boost::optional<storm::dd::Add<Type>> const& StandardRewardModel<Type, ValueType>::getOptionalStateActionRewardVector() const {
+            boost::optional<storm::dd::Add<Type, ValueType>> const& StandardRewardModel<Type, ValueType>::getOptionalStateActionRewardVector() const {
                 return this->optionalStateActionRewardVector;
             }
             
@@ -68,23 +68,23 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Add<Type> const& StandardRewardModel<Type, ValueType>::getTransitionRewardMatrix() const {
+            storm::dd::Add<Type, ValueType> const& StandardRewardModel<Type, ValueType>::getTransitionRewardMatrix() const {
                 return this->optionalTransitionRewardMatrix.get();
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Add<Type>& StandardRewardModel<Type, ValueType>::getTransitionRewardMatrix() {
+            storm::dd::Add<Type, ValueType>& StandardRewardModel<Type, ValueType>::getTransitionRewardMatrix() {
                 return this->optionalTransitionRewardMatrix.get();
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            boost::optional<storm::dd::Add<Type>> const& StandardRewardModel<Type, ValueType>::getOptionalTransitionRewardMatrix() const {
+            boost::optional<storm::dd::Add<Type, ValueType>> const& StandardRewardModel<Type, ValueType>::getOptionalTransitionRewardMatrix() const {
                 return this->optionalTransitionRewardMatrix;
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Add<Type> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type> const& filterAdd, storm::dd::Add<Type> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const {
-                storm::dd::Add<Type> result = transitionMatrix.getDdManager()->getAddZero();
+            storm::dd::Add<Type, ValueType> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type, ValueType> const& filterAdd, storm::dd::Add<Type, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const {
+                storm::dd::Add<Type, ValueType> result = transitionMatrix.getDdManager().template getAddZero<ValueType>();
                 if (this->hasStateRewards()) {
                     result += filterAdd * optionalStateRewardVector.get();
                 }
@@ -98,8 +98,8 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Add<Type> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const {
-                storm::dd::Add<Type> result = transitionMatrix.getDdManager()->getAddZero();
+            storm::dd::Add<Type, ValueType> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables) const {
+                storm::dd::Add<Type, ValueType> result = transitionMatrix.getDdManager().template getAddZero<ValueType>();
                 if (this->hasStateRewards()) {
                     result += optionalStateRewardVector.get();
                 }
@@ -113,8 +113,8 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            storm::dd::Add<Type> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, storm::dd::Add<Type> const& weights) const {
-                storm::dd::Add<Type> result = transitionMatrix.getDdManager()->getAddZero();
+            storm::dd::Add<Type, ValueType> StandardRewardModel<Type, ValueType>::getTotalRewardVector(storm::dd::Add<Type, ValueType> const& transitionMatrix, std::set<storm::expressions::Variable> const& columnVariables, storm::dd::Add<Type, ValueType> const& weights) const {
+                storm::dd::Add<Type, ValueType> result = transitionMatrix.getDdManager().template getAddZero<ValueType>();
                 if (this->hasStateRewards()) {
                     result += optionalStateRewardVector.get();
                 }
@@ -128,7 +128,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            StandardRewardModel<Type, ValueType>& StandardRewardModel<Type, ValueType>::operator*=(storm::dd::Add<Type> const& filter) {
+            StandardRewardModel<Type, ValueType>& StandardRewardModel<Type, ValueType>::operator*=(storm::dd::Add<Type, ValueType> const& filter) {
                 if (this->hasStateRewards()) {
                     this->optionalStateRewardVector.get() *= filter;
                 }
@@ -143,8 +143,8 @@ namespace storm {
             }
             
             template <storm::dd::DdType Type, typename ValueType>
-            StandardRewardModel<Type, ValueType> StandardRewardModel<Type, ValueType>::divideStateRewardVector(storm::dd::Add<Type> const& divisor) const {
-                boost::optional<storm::dd::Add<Type>> modifiedStateRewardVector;
+            StandardRewardModel<Type, ValueType> StandardRewardModel<Type, ValueType>::divideStateRewardVector(storm::dd::Add<Type, ValueType> const& divisor) const {
+                boost::optional<storm::dd::Add<Type, ValueType>> modifiedStateRewardVector;
                 if (this->hasStateRewards()) {
                     modifiedStateRewardVector = this->optionalStateRewardVector.get() / divisor;
                 }
@@ -152,6 +152,7 @@ namespace storm {
             }
             
             template class StandardRewardModel<storm::dd::DdType::CUDD, double>;
+            template class StandardRewardModel<storm::dd::DdType::Sylvan, double>;
         }
     }
 }

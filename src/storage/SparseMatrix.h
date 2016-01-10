@@ -514,6 +514,11 @@ namespace storm {
             * Recompute the nonzero entry count
             */
             void updateNonzeroEntryCount() const;
+            
+            /*!
+             * Recomputes the number of columns and the number of non-zero entries.
+             */
+            void updateDimensions() const;
 
             /*!
             * Change the nonzero entry count by the provided value.
@@ -603,6 +608,9 @@ namespace storm {
              * set to one in the given bit vector.
              *
              * @param useGroups If set to true, the constraint for the rows is interpreted as selecting whole row groups.
+             * If it is not set, the row constraint is interpreted over the actual rows. Note that empty row groups will
+             * be dropped altogether. That is, if no row of a row group is selected *or* the row group is alread empty,
+             * the submatrix will not have this row group.
              * @param constraint A bit vector indicating which rows to keep.
              * @param columnConstraint A bit vector indicating which columns to keep.
              * @param insertDiagonalEntries If set to true, the resulting matrix will have zero entries in column i for
@@ -758,7 +766,15 @@ namespace storm {
             
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
-            
+
+            /*!
+             * Prints the matrix in a dense format, as also used by e.g. Matlab.
+             * Notice that the format does not support multiple rows in a rowgroup.
+             *
+             * @out The stream to output to.
+             */
+            void printAsMatlabMatrix(std::ostream& out) const;
+
             /*!
              * Returns the size of the matrix in memory measured in bytes.
              *
@@ -928,7 +944,7 @@ namespace storm {
             index_type rowCount;
             
             // The number of columns of the matrix.
-            index_type columnCount;
+            mutable index_type columnCount;
             
             // The number of entries in the matrix.
             index_type entryCount;

@@ -22,6 +22,10 @@ namespace storm {
             this->getSubformula().gatherAtomicLabelFormulas(atomicLabelFormulas);
         }
         
+        std::shared_ptr<Formula> ReachabilityRewardFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return std::make_shared<ReachabilityRewardFormula>(this->getSubformula().substitute(substitution));
+        }
+        
         std::ostream& ReachabilityRewardFormula::writeToStream(std::ostream& out) const {
             out << "F ";
             this->getSubformula().writeToStream(out);

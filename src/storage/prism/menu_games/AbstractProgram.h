@@ -20,7 +20,7 @@ namespace storm {
     
     namespace models {
         namespace symbolic {
-            template<storm::dd::DdType Type>
+            template<storm::dd::DdType Type, typename ValueType>
             class StochasticTwoPlayerGame;
         }
     }
@@ -50,7 +50,7 @@ namespace storm {
                  *
                  * @return The abstract stochastic two player game.
                  */
-                MenuGame<DdType> getAbstractGame();
+                MenuGame<DdType, ValueType> getAbstractGame();
                 
                 /*!
                  * Retrieves the set of states (represented by a BDD) satisfying the given predicate, assuming that it
@@ -84,7 +84,7 @@ namespace storm {
                  *
                  * @return The stochastic game.
                  */
-                std::unique_ptr<MenuGame<DdType>> buildGame();
+                std::unique_ptr<MenuGame<DdType, ValueType>> buildGame();
                 
                 // A factory that can be used to create new SMT solvers.
                 std::unique_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;
@@ -111,10 +111,10 @@ namespace storm {
                 StateSetAbstractor<DdType, ValueType> bottomStateAbstractor;
                 
                 // An ADD characterizing the probabilities of commands and their updates.
-                storm::dd::Add<DdType> commandUpdateProbabilitiesAdd;
+                storm::dd::Add<DdType, ValueType> commandUpdateProbabilitiesAdd;
                 
                 // The current game-based abstraction.
-                std::unique_ptr<MenuGame<DdType>> currentGame;
+                std::unique_ptr<MenuGame<DdType, ValueType>> currentGame;
             };
         }
     }

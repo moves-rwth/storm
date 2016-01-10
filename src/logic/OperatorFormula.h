@@ -25,7 +25,7 @@ namespace storm {
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
-        private:
+        protected:
             std::string operatorSymbol;
             boost::optional<ComparisonType> comparisonType;
             boost::optional<double> bound;

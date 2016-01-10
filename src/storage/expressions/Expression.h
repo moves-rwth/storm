@@ -4,6 +4,7 @@
 #include <memory>
 #include <map>
 #include <unordered_map>
+#include <vector>
 
 #include "src/storage/expressions/BaseExpression.h"
 #include "src/utility/OsDetection.h"
@@ -299,6 +300,13 @@ namespace storm {
              */
             boost::any accept(ExpressionVisitor& visitor) const;
             
+            /*!
+             * Converts the expression into a string.
+             *
+             * @return The string representation of the expression.
+             */
+            std::string toString();
+            
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:
@@ -336,6 +344,10 @@ namespace storm {
         Expression ceil(Expression const& first);
         Expression minimum(Expression const& first, Expression const& second);
         Expression maximum(Expression const& first, Expression const& second);
+        Expression disjunction(std::vector<storm::expressions::Expression> const& expressions);
+        Expression conjunction(std::vector<storm::expressions::Expression> const& expressions);
+        Expression sum(std::vector<storm::expressions::Expression> const& expressions);
+        Expression apply(std::vector<storm::expressions::Expression> const& expressions, std::function<Expression (Expression const&, Expression const&)> const& function);
 
     }
 }

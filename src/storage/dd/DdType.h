@@ -4,7 +4,8 @@
 namespace storm {
     namespace dd {
         enum class DdType {
-            CUDD
+            CUDD,
+            Sylvan
         };
     }
 }

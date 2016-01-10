@@ -72,6 +72,8 @@
 #include <vector>
 #include "cudd.h"
 
+namespace cudd {
+
 /*---------------------------------------------------------------------------*/
 /* Type definitions                                                          */
 /*---------------------------------------------------------------------------*/
@@ -773,7 +775,8 @@ public:
 
 }; // Cudd
 
-
 extern void defaultError(std::string message);
+
+} // end namespace cudd
 
 #endif

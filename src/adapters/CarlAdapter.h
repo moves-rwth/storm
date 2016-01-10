@@ -42,7 +42,7 @@ namespace carl {
 }
 
 namespace storm {
-    typedef mpq_class RationalNumber;
+    typedef cln::cl_RA RationalNumber;
     typedef carl::Variable Variable;
     typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;

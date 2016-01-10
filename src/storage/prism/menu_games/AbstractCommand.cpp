@@ -5,8 +5,8 @@
 #include "src/storage/prism/menu_games/AbstractionExpressionInformation.h"
 #include "src/storage/prism/menu_games/AbstractionDdInformation.h"
 
-#include "src/storage/dd/CuddDdManager.h"
-#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/DdManager.h"
+#include "src/storage/dd/Add.h"
 
 #include "src/storage/prism/Command.h"
 #include "src/storage/prism/Update.h"
@@ -293,12 +293,12 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            storm::dd::Add<DdType> AbstractCommand<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
-                storm::dd::Add<DdType> result = ddInformation.manager->getAddZero();
+            storm::dd::Add<DdType, ValueType> AbstractCommand<DdType, ValueType>::getCommandUpdateProbabilitiesAdd() const {
+                storm::dd::Add<DdType, ValueType> result = ddInformation.manager->template getAddZero<ValueType>();
                 for (uint_fast64_t updateIndex = 0; updateIndex < command.get().getNumberOfUpdates(); ++updateIndex) {
-                    result += ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex).toAdd() * ddInformation.manager->getConstant(command.get().getUpdate(updateIndex).getLikelihoodExpression().evaluateAsDouble());
+                    result += ddInformation.manager->getEncoding(ddInformation.updateDdVariable, updateIndex).template toAdd<ValueType>() * ddInformation.manager->getConstant(command.get().getUpdate(updateIndex).getLikelihoodExpression().evaluateAsDouble());
                 }
-                result *= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex()).toAdd();
+                result *= ddInformation.manager->getEncoding(ddInformation.commandDdVariable, command.get().getGlobalIndex()).template toAdd<ValueType>();
                 return result;
             }
             

@@ -81,7 +81,13 @@ namespace storm {
                  * @param modifications A mapping from state-action pairs to the their new reward values.
                  */
                 void modifyStateActionRewards(RewardModelType& rewardModel, std::map<std::pair<uint_fast64_t, LabelSet>, typename RewardModelType::ValueType> const& modifications) const;
-                
+
+                template<typename T>
+                void modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications);
+                template<typename T>
+                void modifyStateRewards(std::string const& modelName, std::map<uint_fast64_t, T> const& modifications);
+
+
                 virtual void reduceToStateBasedRewards() override;
                 
                 virtual void printModelInformationToStream(std::ostream& out) const override;

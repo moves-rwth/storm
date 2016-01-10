@@ -4,6 +4,7 @@
 
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
@@ -65,7 +66,7 @@ namespace storm {
             return result;
         }
         
-        PrismParser::PrismParser(std::string const& filename, Iterator first) : PrismParser::base_type(start), secondRun(false), filename(filename), annotate(first), manager(new storm::expressions::ExpressionManager()), expressionParser(*manager, keywords_) {
+        PrismParser::PrismParser(std::string const& filename, Iterator first) : PrismParser::base_type(start), secondRun(false), filename(filename), annotate(first), manager(new storm::expressions::ExpressionManager()), expressionParser(*manager, keywords_, false, false) {
             // Parse simple identifier.
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&PrismParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
@@ -199,6 +200,9 @@ namespace storm {
             qi::on_success(commandDefinition, setLocationInfoFunction);
             qi::on_success(updateDefinition, setLocationInfoFunction);
             qi::on_success(assignmentDefinition, setLocationInfoFunction);
+            
+            // Enable error reporting.
+            qi::on_error<qi::fail>(start, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         }
         
         void PrismParser::moveToSecondRun() {

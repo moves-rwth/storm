@@ -14,17 +14,17 @@ namespace storm {
             /*!
              * This class represents a discrete-time stochastic two-player game.
              */
-            template<storm::dd::DdType Type>
-            class MenuGame : public storm::models::symbolic::StochasticTwoPlayerGame<Type> {
+            template<storm::dd::DdType Type, typename ValueType>
+            class MenuGame : public storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType> {
             public:
-                typedef typename storm::models::symbolic::StochasticTwoPlayerGame<Type>::RewardModelType RewardModelType;
+                typedef typename storm::models::symbolic::StochasticTwoPlayerGame<Type, ValueType>::RewardModelType RewardModelType;
                 
-                MenuGame(MenuGame<Type> const& other) = default;
-                MenuGame& operator=(MenuGame<Type> const& other) = default;
+                MenuGame(MenuGame<Type, ValueType> const& other) = default;
+                MenuGame& operator=(MenuGame<Type, ValueType> const& other) = default;
                 
 #ifndef WINDOWS
-                MenuGame(MenuGame<Type>&& other) = default;
-                MenuGame& operator=(MenuGame<Type>&& other) = default;
+                MenuGame(MenuGame<Type, ValueType>&& other) = default;
+                MenuGame& operator=(MenuGame<Type, ValueType>&& other) = default;
 #endif
                 
                 /*!
@@ -48,7 +48,7 @@ namespace storm {
                 MenuGame(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                          storm::dd::Bdd<Type> reachableStates,
                          storm::dd::Bdd<Type> initialStates,
-                         storm::dd::Add<Type> transitionMatrix,
+                         storm::dd::Add<Type, ValueType> transitionMatrix,
                          storm::dd::Bdd<Type> bottomStates,
                          std::set<storm::expressions::Variable> const& rowVariables,
                          std::set<storm::expressions::Variable> const& columnVariables,

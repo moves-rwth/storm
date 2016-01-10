@@ -58,6 +58,12 @@ namespace storm {
                  * @return A reference to this iterator.
                  */
                 const_iterator& operator++();
+
+                /*!
+                 * Increases the position of the iterator to the position of the n'th next bit that is set to true in the
+                 * underlying bit vector.
+                 */
+                const_iterator& operator+=(size_t n);
                 
                 /*!
                  * Returns the index of the current bit to which this iterator points.
@@ -406,6 +412,13 @@ namespace storm {
              */
             uint_fast64_t getNumberOfSetBitsBeforeIndex(uint_fast64_t index) const;
             
+            /*!
+             * Retrieves a vector that holds at position i the number of bits set before index i.
+             *
+             * @return The resulting vector of 'offsets'.
+             */
+            std::vector<uint_fast64_t> getNumberOfSetBitsBeforeIndices() const;
+                        
             /*!
              * Retrieves the number of bits this bit vector can store.
              *

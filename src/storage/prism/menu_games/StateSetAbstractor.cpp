@@ -3,7 +3,7 @@
 #include "src/storage/prism/menu_games/AbstractionExpressionInformation.h"
 #include "src/storage/prism/menu_games/AbstractionDdInformation.h"
 
-#include "src/storage/dd/CuddDdManager.h"
+#include "src/storage/dd/DdManager.h"
 
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"

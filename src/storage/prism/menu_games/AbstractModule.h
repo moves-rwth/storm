@@ -52,7 +52,7 @@ namespace storm {
                  *
                  * @return The command-update probability ADD.
                  */
-                storm::dd::Add<DdType> getCommandUpdateProbabilitiesAdd() const;
+                storm::dd::Add<DdType, ValueType> getCommandUpdateProbabilitiesAdd() const;
                 
             private:
                 // A factory that can be used to create new SMT solvers.

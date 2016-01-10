@@ -7,18 +7,18 @@
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
-#include "src/storage/dd/CuddAdd.h"
-#include "src/storage/dd/CuddBdd.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/Bdd.h"
 
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, class ValueType>
-        HybridCtmcCslModelChecker<DdType, ValueType>::HybridCtmcCslModelChecker(storm::models::symbolic::Ctmc<DdType> const& model) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
+        HybridCtmcCslModelChecker<DdType, ValueType>::HybridCtmcCslModelChecker(storm::models::symbolic::Ctmc<DdType, ValueType> const& model) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
             // Intentionally left empty.
         }
         
         template<storm::dd::DdType DdType, class ValueType>
-        HybridCtmcCslModelChecker<DdType, ValueType>::HybridCtmcCslModelChecker(storm::models::symbolic::Ctmc<DdType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
+        HybridCtmcCslModelChecker<DdType, ValueType>::HybridCtmcCslModelChecker(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(std::move(linearEquationSolverFactory)) {
             // Intentionally left empty.
         }
         
@@ -46,8 +46,8 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType, class ValueType>
-        storm::models::symbolic::Ctmc<DdType> const& HybridCtmcCslModelChecker<DdType, ValueType>::getModel() const {
-            return this->template getModelAs<storm::models::symbolic::Ctmc<DdType>>();
+        storm::models::symbolic::Ctmc<DdType, ValueType> const& HybridCtmcCslModelChecker<DdType, ValueType>::getModel() const {
+            return this->template getModelAs<storm::models::symbolic::Ctmc<DdType, ValueType>>();
         }
         
         template<storm::dd::DdType DdType, class ValueType>
@@ -88,15 +88,16 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, class ValueType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeLongRunAverage(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeLongRunAverageProbabilities(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            return storm::modelchecker::helper::HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverage(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory);
+            return storm::modelchecker::helper::HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverageProbabilities(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector(), qualitative, *linearEquationSolverFactory);
         }
         
         // Explicitly instantiate the model checker.
         template class HybridCtmcCslModelChecker<storm::dd::DdType::CUDD, double>;
+        template class HybridCtmcCslModelChecker<storm::dd::DdType::Sylvan, double>;
         
     } // namespace modelchecker
 } // namespace storm

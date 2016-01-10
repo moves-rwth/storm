@@ -103,6 +103,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isLongRunAverageRewardFormula() const {
+            return false;
+        }
+        
         bool Formula::isProbabilityOperatorFormula() const {
             return false;
         }
@@ -351,6 +355,14 @@ namespace storm {
             return dynamic_cast<ReachabilityRewardFormula const&>(*this);
         }
         
+        LongRunAverageRewardFormula& Formula::asLongRunAverageRewardFormula() {
+            return dynamic_cast<LongRunAverageRewardFormula&>(*this);
+        }
+        
+        LongRunAverageRewardFormula const& Formula::asLongRunAverageRewardFormula() const {
+            return dynamic_cast<LongRunAverageRewardFormula const&>(*this);
+        }
+        
         ProbabilityOperatorFormula& Formula::asProbabilityOperatorFormula() {
             return dynamic_cast<ProbabilityOperatorFormula&>(*this);
         }
@@ -404,7 +416,7 @@ namespace storm {
         void Formula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
             return;
         }
-        
+                
         std::string Formula::toString() const {
             std::stringstream str2;
             writeToStream(str2);

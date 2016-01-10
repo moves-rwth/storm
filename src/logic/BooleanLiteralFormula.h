@@ -21,8 +21,10 @@ namespace storm {
             virtual bool isLtlFormula() const override;
             virtual bool isPropositionalFormula() const override;
             
-            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             
+            virtual std::ostream& writeToStream(std::ostream& out) const override;
+                        
         private:
             bool value;
         };

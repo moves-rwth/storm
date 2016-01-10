@@ -95,6 +95,8 @@ namespace storm {
             
             // Methods to print the LP problem to a file.
             virtual void writeModelToFile(std::string const& filename) const override;
+
+            virtual void toggleOutput(bool set) const;
             
         private:
             /*!

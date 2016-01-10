@@ -2,8 +2,8 @@
 
 #include "src/storage/prism/Program.h"
 
-#include "src/storage/dd/CuddDdManager.h"
-#include "src/storage/dd/CuddAdd.h"
+#include "src/storage/dd/DdManager.h"
+#include "src/storage/dd/Add.h"
 
 #include "src/models/symbolic/StandardRewardModel.h"
 
@@ -50,7 +50,7 @@ namespace storm {
                 // that it's impossible to treat such models in any event.
                 for (uint_fast64_t index = 0; index < 100; ++index) {
                     storm::expressions::Variable newOptionVar = ddInformation.manager->addMetaVariable("opt" + std::to_string(index), std::make_pair(storm::dd::MetaVariablePosition::Above, ddInformation.predicateDdVariables.front().first)).first;
-                    ddInformation.optionDdVariables.push_back(std::make_pair(newOptionVar, ddInformation.manager->getIdentity(newOptionVar).toBdd()));
+                    ddInformation.optionDdVariables.push_back(std::make_pair(newOptionVar, ddInformation.manager->template getIdentity<ValueType>(newOptionVar).toBdd()));
                 }
                 
                 // For each module of the concrete program, we create an abstract counterpart.
@@ -101,7 +101,7 @@ namespace storm {
             }
             
             template <storm::dd::DdType DdType, typename ValueType>
-            MenuGame<DdType> AbstractProgram<DdType, ValueType>::getAbstractGame() {
+            MenuGame<DdType, ValueType> AbstractProgram<DdType, ValueType>::getAbstractGame() {
                 STORM_LOG_ASSERT(currentGame != nullptr, "Game was not properly created.");
                 return *currentGame;
             }
@@ -120,7 +120,7 @@ namespace storm {
             }
                         
             template <storm::dd::DdType DdType, typename ValueType>
-            std::unique_ptr<MenuGame<DdType>> AbstractProgram<DdType, ValueType>::buildGame() {
+            std::unique_ptr<MenuGame<DdType, ValueType>> AbstractProgram<DdType, ValueType>::buildGame() {
                 // As long as there is only one module, we only build its game representation.
                 std::pair<storm::dd::Bdd<DdType>, uint_fast64_t> gameBdd = modules.front().getAbstractBdd();
 
@@ -149,13 +149,13 @@ namespace storm {
                 deadlockStates = reachableStates && !deadlockStates;
                 
                 // If there are deadlock states, we fix them now.
-                storm::dd::Add<DdType> deadlockTransitions = ddInformation.manager->getAddZero();
+                storm::dd::Add<DdType, ValueType> deadlockTransitions = ddInformation.manager->template getAddZero<ValueType>();
                 if (!deadlockStates.isZero()) {
-                    deadlockTransitions = (deadlockStates && ddInformation.allPredicateIdentities && ddInformation.manager->getEncoding(ddInformation.commandDdVariable, 0)  && ddInformation.manager->getEncoding(ddInformation.updateDdVariable, 0) && ddInformation.getMissingOptionVariableCube(0, gameBdd.second)).toAdd();
+                    deadlockTransitions = (deadlockStates && ddInformation.allPredicateIdentities && ddInformation.manager->getEncoding(ddInformation.commandDdVariable, 0)  && ddInformation.manager->getEncoding(ddInformation.updateDdVariable, 0) && ddInformation.getMissingOptionVariableCube(0, gameBdd.second)).template toAdd<ValueType>();
                 }
                 
                 // Construct the transition matrix by cutting away the transitions of unreachable states.
-                storm::dd::Add<DdType> transitionMatrix = (gameBdd.first && reachableStates).toAdd() * commandUpdateProbabilitiesAdd + deadlockTransitions;
+                storm::dd::Add<DdType> transitionMatrix = (gameBdd.first && reachableStates).template toAdd<ValueType>() * commandUpdateProbabilitiesAdd + deadlockTransitions;
             
                 std::set<storm::expressions::Variable> usedPlayer2Variables;
                 for (uint_fast64_t index = 0; index < gameBdd.second; ++index) {
@@ -165,7 +165,7 @@ namespace storm {
                 std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
                 allNondeterminismVariables.insert(ddInformation.commandDdVariable);
                 
-                return std::unique_ptr<MenuGame<DdType>>(new MenuGame<DdType>(ddInformation.manager, reachableStates, initialStates, transitionMatrix, bottomStates, ddInformation.sourceVariables, ddInformation.successorVariables, ddInformation.predicateDdVariables, {ddInformation.commandDdVariable}, usedPlayer2Variables, allNondeterminismVariables, ddInformation.updateDdVariable, ddInformation.expressionToBddMap));
+                return std::unique_ptr<MenuGame<DdType, ValueType>>(new MenuGame<DdType, ValueType>(ddInformation.manager, reachableStates, initialStates, transitionMatrix, bottomStates, ddInformation.sourceVariables, ddInformation.successorVariables, ddInformation.predicateDdVariables, {ddInformation.commandDdVariable}, usedPlayer2Variables, allNondeterminismVariables, ddInformation.updateDdVariable, ddInformation.expressionToBddMap));
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

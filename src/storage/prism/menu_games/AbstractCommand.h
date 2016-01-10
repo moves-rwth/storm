@@ -24,7 +24,7 @@ namespace storm {
         template <storm::dd::DdType DdType>
         class Bdd;
 
-        template <storm::dd::DdType DdType>
+        template <storm::dd::DdType DdType, typename ValueType>
         class Add;
     }
     
@@ -72,7 +72,7 @@ namespace storm {
                  *
                  * @return The command-update probability ADD.
                  */
-                storm::dd::Add<DdType> getCommandUpdateProbabilitiesAdd() const;
+                storm::dd::Add<DdType, ValueType> getCommandUpdateProbabilitiesAdd() const;
                 
             private:
                 /*!

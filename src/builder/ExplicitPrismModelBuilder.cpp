@@ -7,6 +7,8 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/models/sparse/StandardRewardModel.h"
 
+#include "src/storage/expressions/ExpressionManager.h"
+
 #include "src/settings/modules/GeneralSettings.h"
 
 #include "src/utility/prism.h"
@@ -15,6 +17,7 @@
 #include "src/exceptions/WrongFormatException.h"
 
 #include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace builder {
@@ -63,23 +66,33 @@ namespace storm {
             storm::storage::SparseMatrixBuilder<ValueType> transitionRewardMatrixBuilder;
         };
         
-        template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::StateInformation::StateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 10000000), bitsPerState(bitsPerState), reachableStates() {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::StateInformation::StateInformation(uint_fast64_t numberOfStates) : valuations(numberOfStates) {
             // Intentionally left empty.
         }
         
-        template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::VariableInformation::BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, bool initialValue, uint_fast64_t bitOffset) : variable(variable), initialValue(initialValue), bitOffset(bitOffset) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::InternalStateInformation::InternalStateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 10000000), bitsPerState(bitsPerState), reachableStates() {
             // Intentionally left empty.
         }
         
-        template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::VariableInformation::IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t initialValue, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : variable(variable), initialValue(initialValue), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, bool initialValue, uint_fast64_t bitOffset) : variable(variable), initialValue(initialValue), bitOffset(bitOffset) {
             // Intentionally left empty.
         }
         
-        template <typename ValueType, typename IndexType>
-        uint_fast64_t ExplicitPrismModelBuilder<ValueType, IndexType>::VariableInformation::getBitOffset(storm::expressions::Variable const& variable) const {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t initialValue, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : variable(variable), initialValue(initialValue), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth) {
+            // Intentionally left empty.
+        }
+        
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::VariableInformation(storm::expressions::ExpressionManager const& manager) : manager(manager) {
+            // Intentionally left empty.
+        }
+        
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        uint_fast64_t ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::getBitOffset(storm::expressions::Variable const& variable) const {
             auto const& booleanIndex = booleanVariableToIndexMap.find(variable);
             if (booleanIndex != booleanVariableToIndexMap.end()) {
                 return booleanVariables[booleanIndex->second].bitOffset;
@@ -91,8 +104,8 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot look-up bit index of unknown variable.");
         }
 
-        template <typename ValueType, typename IndexType>
-        uint_fast64_t ExplicitPrismModelBuilder<ValueType, IndexType>::VariableInformation::getBitWidth(storm::expressions::Variable const& variable) const {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        uint_fast64_t ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::getBitWidth(storm::expressions::Variable const& variable) const {
             auto const& integerIndex = integerVariableToIndexMap.find(variable);
             if (integerIndex != integerVariableToIndexMap.end()) {
                 return integerVariables[integerIndex->second].bitWidth;
@@ -100,24 +113,24 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot look-up bit width of unknown variable.");
         }
         
-        template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), rewardModels(), choiceLabeling() {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), rewardModels(), choiceLabeling() {
             // Intentionally left empty.
         }
 
-        template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options() : buildCommandLabels(false), buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::Options::Options() : buildCommandLabels(false), buildAllRewardModels(true), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
         
-        template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
         }
         
-        template <typename ValueType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, IndexType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildCommandLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -131,13 +144,12 @@ namespace storm {
             }
         }
         
-        template <typename ValueType, typename IndexType>
-        void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        void ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::Options::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
             // If cutting the model was disabled, we do not set anything.
             if (storm::settings::generalSettings().isNoCutsSet()) {
                 return;
             }
-            
             if (formula.isAtomicExpressionFormula()) {
                 terminalStates = formula.asAtomicExpressionFormula().getExpression();
             } else if (formula.isAtomicLabelFormula()) {
@@ -166,8 +178,8 @@ namespace storm {
             }
         }
 
-        template <typename ValueType, typename IndexType>
-        void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::preserveFormula(storm::logic::Formula const& formula) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        void ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::Options::preserveFormula(storm::logic::Formula const& formula) {
             // If we already had terminal states, we need to erase them.
             if (terminalStates) {
                 terminalStates.reset();
@@ -206,26 +218,25 @@ namespace storm {
             }
         }
         
-        template <typename ValueType, typename IndexType>
-        void ExplicitPrismModelBuilder<ValueType, IndexType>::Options::addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
-            std::map<storm::expressions::Variable, storm::expressions::Expression> newConstantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
-            
-            // If there is at least one constant that is defined, and the constant definition map does not yet exist,
-            // we need to create it.
-            if (!constantDefinitions && !newConstantDefinitions.empty()) {
-                constantDefinitions = std::map<storm::expressions::Variable, storm::expressions::Expression>();
-            }
-            
-            // Now insert all the entries that need to be defined.
-            for (auto const& entry : newConstantDefinitions) {
-                constantDefinitions.get().insert(entry);
-            }
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        void ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::Options::addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
+            constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
         }
         
-        template <typename ValueType, typename IndexType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::translateProgram(storm::prism::Program program, Options const& options) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        typename ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::StateInformation const& ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::getStateInformation() const {
+            STORM_LOG_THROW(static_cast<bool>(stateInformation), storm::exceptions::InvalidOperationException, "The state information was not properly build.");
+            return stateInformation.get();
+        }
+        
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        storm::prism::Program const& ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::getTranslatedProgram() const {
+            return preparedProgram.get();
+        }
+        
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::translateProgram(storm::prism::Program program, Options const& options) {
             // Start by defining the undefined constants in the model.
-            storm::prism::Program preparedProgram;
             if (options.constantDefinitions) {
                 preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
             } else {
@@ -236,11 +247,11 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             // If the program either has undefined constants or we are building a parametric model, but the parameters
             // not only appear in the probabilities, we re
-            if (!std::is_same<ValueType, storm::RationalFunction>::value && preparedProgram.hasUndefinedConstants()) {
+            if (!std::is_same<ValueType, storm::RationalFunction>::value && preparedProgram->hasUndefinedConstants()) {
 #else
             if (preparedProgram.hasUndefinedConstants()) {
 #endif
-                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram.getUndefinedConstants();
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram->getUndefinedConstants();
                 std::stringstream stream;
                 bool printComma = false;
                 for (auto const& constant : undefinedConstants) {
@@ -254,7 +265,7 @@ namespace storm {
                 stream << ".";
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
 #ifdef STORM_HAVE_CARL
-            } else if (std::is_same<ValueType, storm::RationalFunction>::value && !preparedProgram.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
+            } else if (std::is_same<ValueType, storm::RationalFunction>::value && !preparedProgram->hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
 #endif
             }
@@ -262,59 +273,61 @@ namespace storm {
             // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
             if (options.labelsToBuild) {
                 if (!options.buildAllLabels) {
-                    preparedProgram.filterLabels(options.labelsToBuild.get());
+                    preparedProgram->filterLabels(options.labelsToBuild.get());
                 }
             }
             
             // If we need to build labels for expressions that may appear in some formula, we need to add appropriate
             // labels to the program.
             if (options.expressionLabels) {
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preparedProgram->getConstantsSubstitution();
+
                 for (auto const& expression : options.expressionLabels.get()) {
                     std::stringstream stream;
-                    stream << expression;
+                    stream << expression.substitute(constantsSubstitution);
                     std::string name = stream.str();
-                    if (!preparedProgram.hasLabel(name)) {
-                        preparedProgram.addLabel(name, expression);
+                    if (!preparedProgram->hasLabel(name)) {
+                        preparedProgram->addLabel(name, expression);
                     }
                 }
             }
             
             // Now that the program is fixed, we we need to substitute all constants with their concrete value.
-            preparedProgram = preparedProgram.substituteConstants();
+            preparedProgram = preparedProgram->substituteConstants();
             
-            STORM_LOG_DEBUG("Building representation of program :" << std::endl << preparedProgram << std::endl);
+            STORM_LOG_DEBUG("Building representation of program:" << std::endl << *preparedProgram << std::endl);
                 
             // Select the appropriate reward models (after the constants have been substituted).
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
                 
             // First, we make sure that all selected reward models actually exist.
             for (auto const& rewardModelName : options.rewardModelsToBuild) {
-                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram.hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
+                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram->hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
             }
                 
-            for (auto const& rewardModel : preparedProgram.getRewardModels()) {
+            for (auto const& rewardModel : preparedProgram->getRewardModels()) {
                 if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
                     selectedRewardModels.push_back(rewardModel);
                 }
             }
             // If no reward model was selected until now and a referenced reward model appears to be unique, we build
             // the only existing reward model (given that no explicit name was given for the referenced reward model).
-            if (selectedRewardModels.empty() && preparedProgram.getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
-                selectedRewardModels.push_back(preparedProgram.getRewardModel(0));
+            if (selectedRewardModels.empty() && preparedProgram->getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
+                selectedRewardModels.push_back(preparedProgram->getRewardModel(0));
             }
                 
-            ModelComponents modelComponents = buildModelComponents(preparedProgram, selectedRewardModels, options);
+            ModelComponents modelComponents = buildModelComponents(*preparedProgram, selectedRewardModels, options);
             
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> result;
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> result;
             switch (program.getModelType()) {
                 case storm::prism::Program::ModelType::DTMC:
-                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Dtmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Dtmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 case storm::prism::Program::ModelType::CTMC:
-                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Ctmc<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Ctmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 case storm::prism::Program::ModelType::MDP:
-                    result = std::shared_ptr<storm::models::sparse::Model<ValueType>>(new storm::models::sparse::Mdp<ValueType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Mdp<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating model from probabilistic program: cannot handle this model type.");
@@ -324,8 +337,8 @@ namespace storm {
             return result;
         }
         
-        template <typename ValueType, typename IndexType>
-        void ExplicitPrismModelBuilder<ValueType, IndexType>::unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        void ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) {
             for (auto const& booleanVariable : variableInformation.booleanVariables) {
                 evaluator.setBooleanValue(booleanVariable.variable, currentState.get(booleanVariable.bitOffset));
             }
@@ -333,14 +346,26 @@ namespace storm {
                 evaluator.setIntegerValue(integerVariable.variable, currentState.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
             }
         }
+            
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        storm::expressions::SimpleValuation ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::unpackStateIntoValuation(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation) {
+            storm::expressions::SimpleValuation result(variableInformation.manager.getSharedPointer());
+            for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                result.setBooleanValue(booleanVariable.variable, currentState.get(booleanVariable.bitOffset));
+            }
+            for (auto const& integerVariable : variableInformation.integerVariables) {
+                result.setIntegerValue(integerVariable.variable, currentState.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
+            }
+            return result;
+        }
         
-        template <typename ValueType, typename IndexType>
-        typename ExplicitPrismModelBuilder<ValueType, IndexType>::CompressedState ExplicitPrismModelBuilder<ValueType, IndexType>::applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        typename ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::CompressedState ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator) {
             return applyUpdate(variableInformation, state, state, update, evaluator);
         }
         
-        template <typename ValueType, typename IndexType>
-        typename ExplicitPrismModelBuilder<ValueType, IndexType>::CompressedState ExplicitPrismModelBuilder<ValueType, IndexType>::applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, CompressedState const& baseState, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        typename ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::CompressedState ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, CompressedState const& baseState, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator) {
             CompressedState newState(state);
             
             auto assignmentIt = update.getAssignments().begin();
@@ -373,23 +398,23 @@ namespace storm {
             return newState;
         }
         
-        template <typename ValueType, typename IndexType>
-        IndexType ExplicitPrismModelBuilder<ValueType, IndexType>::getOrAddStateIndex(CompressedState const& state, StateInformation& stateInformation, std::queue<storm::storage::BitVector>& stateQueue) {
-            uint32_t newIndex = stateInformation.reachableStates.size();
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        IndexType ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::getOrAddStateIndex(CompressedState const& state, InternalStateInformation& internalStateInformation, std::queue<storm::storage::BitVector>& stateQueue) {
+            uint32_t newIndex = internalStateInformation.reachableStates.size();
             
             // Check, if the state was already registered.
-            std::pair<uint32_t, std::size_t> actualIndexBucketPair = stateInformation.stateStorage.findOrAddAndGetBucket(state, newIndex);
+            std::pair<uint32_t, std::size_t> actualIndexBucketPair = internalStateInformation.stateStorage.findOrAddAndGetBucket(state, newIndex);
             
             if (actualIndexBucketPair.first == newIndex) {
                 stateQueue.push(state);
-                stateInformation.reachableStates.push_back(state);
+                internalStateInformation.reachableStates.push_back(state);
             }
             
             return actualIndexBucketPair.first;
         }
         
-        template <typename ValueType, typename IndexType>
-        boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> ExplicitPrismModelBuilder<ValueType, IndexType>::getActiveCommandsByActionIndex(storm::prism::Program const& program,storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, uint_fast64_t const& actionIndex) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::getActiveCommandsByActionIndex(storm::prism::Program const& program,storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, uint_fast64_t const& actionIndex) {
             boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>()));
             
             // Iterate over all modules.
@@ -431,8 +456,8 @@ namespace storm {
             return result;
         }
         
-        template <typename ValueType, typename IndexType>
-        std::vector<Choice<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::getUnlabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        std::vector<Choice<ValueType>> ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::getUnlabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, InternalStateInformation& internalStateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::vector<Choice<ValueType>> result;
             
             // Iterate over all modules.
@@ -466,7 +491,7 @@ namespace storm {
                         
                         // Obtain target state index and add it to the list of known states. If it has not yet been
                         // seen, we also add it to the set of states that have yet to be explored.
-                        uint32_t stateIndex = getOrAddStateIndex(applyUpdate(variableInformation, currentState, update, evaluator), stateInformation, stateQueue);
+                        uint32_t stateIndex = getOrAddStateIndex(applyUpdate(variableInformation, currentState, update, evaluator), internalStateInformation, stateQueue);
                         
                         // Update the choice by adding the probability/target state to it.
                         ValueType probability = evaluator.asRational(update.getLikelihoodExpression());
@@ -482,8 +507,8 @@ namespace storm {
             return result;
         }
         
-        template <typename ValueType, typename IndexType>
-        std::vector<Choice<ValueType>> ExplicitPrismModelBuilder<ValueType, IndexType>::getLabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, StateInformation& stateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        std::vector<Choice<ValueType>> ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::getLabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, InternalStateInformation& internalStateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             std::vector<Choice<ValueType>> result;
             
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
@@ -545,13 +570,13 @@ namespace storm {
                         
                         ValueType probabilitySum = storm::utility::zero<ValueType>();
                         for (auto const& stateProbabilityPair : *newTargetStates) {
-                            uint32_t actualIndex = getOrAddStateIndex(stateProbabilityPair.first, stateInformation, stateQueue);
+                            uint32_t actualIndex = getOrAddStateIndex(stateProbabilityPair.first, internalStateInformation, stateQueue);
                             choice.addProbability(actualIndex, stateProbabilityPair.second);
                             probabilitySum += stateProbabilityPair.second;
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        STORM_LOG_THROW(!discreteTimeModel || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        STORM_LOG_THROW(!discreteTimeModel || !comparator.isConstant(probabilitySum) || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
                         
                         // Dispose of the temporary maps.
                         delete currentTargetStates;
@@ -577,8 +602,8 @@ namespace storm {
             return result;
         }
 
-        template <typename ValueType, typename IndexType>
-        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> ExplicitPrismModelBuilder<ValueType, IndexType>::buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, StateInformation& stateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, InternalStateInformation& internalStateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression) {
             // Create choice labels, if requested,
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabels;
             if (commandLabels) {
@@ -590,7 +615,7 @@ namespace storm {
             
             // Initialize a queue and insert the initial state.
             std::queue<storm::storage::BitVector> stateQueue;
-            CompressedState initialState(stateInformation.bitsPerState);
+            CompressedState initialState(internalStateInformation.bitsPerState);
             
             // We need to initialize the values of the variables to their initial value.
             for (auto const& booleanVariable : variableInformation.booleanVariables) {
@@ -611,8 +636,8 @@ namespace storm {
             }
             
             // Insert the initial state in the global state to index mapping and state queue.
-            uint32_t stateIndex = getOrAddStateIndex(initialState, stateInformation, stateQueue);
-            stateInformation.initialStateIndices.push_back(stateIndex);
+            uint32_t stateIndex = getOrAddStateIndex(initialState, internalStateInformation, stateQueue);
+            internalStateInformation.initialStateIndices.push_back(stateIndex);
             
             // Now explore the current state until there is no more reachable state.
             uint_fast64_t currentRow = 0;
@@ -625,19 +650,25 @@ namespace storm {
                 // Get the current state and unpack it.
                 storm::storage::BitVector currentState = stateQueue.front();
                 stateQueue.pop();
-                IndexType stateIndex = stateInformation.stateStorage.getValue(currentState);
+                IndexType stateIndex = internalStateInformation.stateStorage.getValue(currentState);
                 STORM_LOG_TRACE("Exploring state with id " << stateIndex << ".");
                 unpackStateIntoEvaluator(currentState, variableInformation, evaluator);
                 
                 // If a terminal expression was given, we check whether the current state needs to be explored further.
                 std::vector<Choice<ValueType>> allUnlabeledChoices;
                 std::vector<Choice<ValueType>> allLabeledChoices;
+                bool deadlockOnPurpose = false;
                 if (terminalExpression && evaluator.asBool(terminalExpression.get())) {
-                    // Nothing to do in this case.
+                    //std::cout << unpackStateIntoValuation(currentState, variableInformation).toString(true) << std::endl;
+                    //allUnlabeledChoices = getUnlabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
+                    //allLabeledChoices = getLabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
+
+                        // Nothing to do in this case.
+                    deadlockOnPurpose = true;
                 } else {
                     // Retrieve all choices for the current state.
-                    allUnlabeledChoices = getUnlabeledTransitions(program, discreteTimeModel, stateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
-                    allLabeledChoices = getLabeledTransitions(program, discreteTimeModel, stateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
+                    allUnlabeledChoices = getUnlabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
+                    allLabeledChoices = getLabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
                 }
                 
                 uint_fast64_t totalNumberOfChoices = allUnlabeledChoices.size() + allLabeledChoices.size();
@@ -645,7 +676,7 @@ namespace storm {
                 // If the current state does not have a single choice, we equip it with a self-loop if that was
                 // requested and issue an error otherwise.
                 if (totalNumberOfChoices == 0) {
-                    if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
+                    if (!storm::settings::generalSettings().isDontFixDeadlocksSet() || deadlockOnPurpose) {
                         if (commandLabels) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.get().push_back(boost::container::flat_set<uint_fast64_t>());
@@ -669,7 +700,10 @@ namespace storm {
                         
                         ++currentRow;
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
+                        std::cout << unpackStateIntoValuation(currentState, variableInformation).toString(true) << std::endl;
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                        "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
+
                     }
                 } else if (totalNumberOfChoices == 1) {
                     if (!deterministicModel) {
@@ -896,12 +930,12 @@ namespace storm {
             return choiceLabels;
         }
         
-        template <typename ValueType, typename IndexType>
-        typename ExplicitPrismModelBuilder<ValueType, IndexType>::ModelComponents ExplicitPrismModelBuilder<ValueType, IndexType>::buildModelComponents(storm::prism::Program const& program, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, Options const& options) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        typename ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::ModelComponents ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::buildModelComponents(storm::prism::Program const& program, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, Options const& options) {
             ModelComponents modelComponents;
             
             uint_fast64_t bitOffset = 0;
-            VariableInformation variableInformation;
+            VariableInformation variableInformation(program.getManager());
             for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
                 variableInformation.booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), booleanVariable.getInitialValueExpression().evaluateAsBool(), bitOffset);
                 ++bitOffset;
@@ -933,7 +967,7 @@ namespace storm {
             
             // Create the structure for storing the reachable state space.
             uint64_t bitsPerState = ((bitOffset / 64) + 1) * 64;
-            StateInformation stateInformation(bitsPerState);
+            InternalStateInformation internalStateInformation(bitsPerState);
             
             // Determine whether we have to combine different choices to one or whether this model can have more than
             // one choice per state.
@@ -942,7 +976,7 @@ namespace storm {
             
             // Prepare the transition matrix builder and the reward model builders.
             storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
-            std::vector<RewardModelBuilder<ValueType>> rewardModelBuilders;
+            std::vector<RewardModelBuilder<typename RewardModelType::ValueType>> rewardModelBuilders;
             for (auto const& rewardModel : selectedRewardModels) {
                 rewardModelBuilders.emplace_back(deterministicModel, rewardModel.get().hasStateRewards(), rewardModel.get().hasStateActionRewards(), rewardModel.get().hasTransitionRewards());
             }
@@ -978,7 +1012,7 @@ namespace storm {
                 STORM_LOG_TRACE("Making the states satisfying " << terminalExpression.get() << " terminal.");
             }
             
-            modelComponents.choiceLabeling = buildMatrices(program, variableInformation, selectedRewardModels, stateInformation, options.buildCommandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, rewardModelBuilders, terminalExpression);
+            modelComponents.choiceLabeling = buildMatrices(program, variableInformation, selectedRewardModels, internalStateInformation, options.buildCommandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, rewardModelBuilders, terminalExpression);
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();
             
             // Now finalize all reward models.
@@ -987,26 +1021,34 @@ namespace storm {
                 modelComponents.rewardModels.emplace(rewardModelIt->get().getName(), builderIt->build(modelComponents.transitionMatrix.getRowCount(), modelComponents.transitionMatrix.getColumnCount(), modelComponents.transitionMatrix.getRowGroupCount()));
             }
             
-            // Finally, build the state labeling.
-            modelComponents.stateLabeling = buildStateLabeling(program, variableInformation, stateInformation);
+            // Build the state labeling.
+            modelComponents.stateLabeling = buildStateLabeling(program, variableInformation, internalStateInformation);
+            
+            // Finally -- if requested -- build the state information that can be retrieved from the outside.
+            if (options.buildStateInformation) {
+                stateInformation = StateInformation(internalStateInformation.reachableStates.size());
+                for (auto const& bitVectorIndexPair : internalStateInformation.stateStorage) {
+                    stateInformation.get().valuations[bitVectorIndexPair.second] = unpackStateIntoValuation(bitVectorIndexPair.first, variableInformation);
+                }
+            }
             
             return modelComponents;
         }
         
-        template <typename ValueType, typename IndexType>
-        storm::models::sparse::StateLabeling ExplicitPrismModelBuilder<ValueType, IndexType>::buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, StateInformation const& stateInformation) {
+        template <typename ValueType, typename RewardModelType, typename IndexType>
+        storm::models::sparse::StateLabeling ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, InternalStateInformation const& internalStateInformation) {
             storm::expressions::ExpressionEvaluator<ValueType> evaluator(program.getManager());
             
             std::vector<storm::prism::Label> const& labels = program.getLabels();
             
-            storm::models::sparse::StateLabeling result(stateInformation.reachableStates.size());
+            storm::models::sparse::StateLabeling result(internalStateInformation.reachableStates.size());
             
             // Initialize labeling.
             for (auto const& label : labels) {
                 result.addLabel(label.getName());
             }
-            for (uint_fast64_t index = 0; index < stateInformation.reachableStates.size(); index++) {
-                unpackStateIntoEvaluator(stateInformation.reachableStates[index], variableInformation, evaluator);
+            for (uint_fast64_t index = 0; index < internalStateInformation.reachableStates.size(); index++) {
+                unpackStateIntoEvaluator(internalStateInformation.reachableStates[index], variableInformation, evaluator);
                 for (auto const& label : labels) {
                     // Add label to state, if the corresponding expression is true.
                     if (evaluator.asBool(label.getStatePredicateExpression())) {
@@ -1017,7 +1059,7 @@ namespace storm {
             
             // Also label the initial state with the special label "init".
             result.addLabel("init");
-            for (auto index : stateInformation.initialStateIndices) {
+            for (auto index : internalStateInformation.initialStateIndices) {
                 result.addLabelToState("init", index);
             }
             
@@ -1025,10 +1067,11 @@ namespace storm {
         }
         
         // Explicitly instantiate the class.
-        template class ExplicitPrismModelBuilder<double, uint32_t>;
+        template class ExplicitPrismModelBuilder<double, storm::models::sparse::StandardRewardModel<double>, uint32_t>;
         
 #ifdef STORM_HAVE_CARL
-        template class ExplicitPrismModelBuilder<RationalFunction, uint32_t>;
+        template class ExplicitPrismModelBuilder<double, storm::models::sparse::StandardRewardModel<storm::Interval>, uint32_t>;
+        template class ExplicitPrismModelBuilder<RationalFunction, storm::models::sparse::StandardRewardModel<RationalFunction>, uint32_t>;
 #endif
     }
 }

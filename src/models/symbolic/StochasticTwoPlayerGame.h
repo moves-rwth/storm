@@ -11,17 +11,17 @@ namespace storm {
             /*!
              * This class represents a discrete-time stochastic two-player game.
              */
-            template<storm::dd::DdType Type>
-            class StochasticTwoPlayerGame : public NondeterministicModel<Type> {
+            template<storm::dd::DdType Type, typename ValueType = double>
+            class StochasticTwoPlayerGame : public NondeterministicModel<Type, ValueType> {
             public:
-                typedef typename NondeterministicModel<Type>::RewardModelType RewardModelType;
-
-                StochasticTwoPlayerGame(StochasticTwoPlayerGame<Type> const& other) = default;
-                StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame<Type> const& other) = default;
+                typedef typename NondeterministicModel<Type, ValueType>::RewardModelType RewardModelType;
+                
+                StochasticTwoPlayerGame(StochasticTwoPlayerGame<Type, ValueType> const& other) = default;
+                StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame<Type, ValueType> const& other) = default;
                 
 #ifndef WINDOWS
-                StochasticTwoPlayerGame(StochasticTwoPlayerGame<Type>&& other) = default;
-                StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame<Type>&& other) = default;
+                StochasticTwoPlayerGame(StochasticTwoPlayerGame<Type, ValueType>&& other) = default;
+                StochasticTwoPlayerGame& operator=(StochasticTwoPlayerGame<Type, ValueType>&& other) = default;
 #endif
                 
                 /*!
@@ -47,18 +47,18 @@ namespace storm {
                 StochasticTwoPlayerGame(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                                         storm::dd::Bdd<Type> reachableStates,
                                         storm::dd::Bdd<Type> initialStates,
-                                        storm::dd::Add<Type> transitionMatrix,
+                                        storm::dd::Add<Type, ValueType> transitionMatrix,
                                         std::set<storm::expressions::Variable> const& rowVariables,
-                                        std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter,
+                                        std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
                                         std::set<storm::expressions::Variable> const& columnVariables,
-                                        std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
+                                        std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter,
                                         std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                         std::set<storm::expressions::Variable> const& player1Variables,
                                         std::set<storm::expressions::Variable> const& player2Variables,
                                         std::set<storm::expressions::Variable> const& allNondeterminismVariables,
                                         std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
                                         std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
-
+                
                 /*!
                  * Retrieeves the set of meta variables used to encode the nondeterministic choices of player 1.
                  *

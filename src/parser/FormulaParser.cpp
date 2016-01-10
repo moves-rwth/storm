@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "src/parser/SpiritErrorHandler.h"
+
 // If the parser fails due to ill-formed data, this exception is thrown.
 #include "src/exceptions/WrongFormatException.h"
 
@@ -89,22 +91,6 @@ namespace storm {
             // Parser and manager used for recognizing expressions.
             storm::parser::ExpressionParser expressionParser;
             
-            // Functor used for displaying error information.
-            struct ErrorHandler {
-                typedef qi::error_handler_result result_type;
-                
-                template<typename T1, typename T2, typename T3, typename T4>
-                qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
-                    std::stringstream whatAsString;
-                    whatAsString << what;
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(where) << ": " << " expecting " << whatAsString.str() << ".");
-                    return qi::fail;
-                }
-            };
-            
-            // An error handler function.
-            phoenix::function<ErrorHandler> handler;
-            
             // A symbol table that is a mapping from identifiers that can be used in expressions to the expressions
             // they are to be replaced with.
             qi::symbols<char, storm::expressions::Expression> identifiers_;
@@ -115,7 +101,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> probabilityOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> rewardOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> expectedTimeOperator;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> steadyStateOperator;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> longRunAverageOperator;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> simpleFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> stateFormula;
@@ -145,6 +131,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> cumulativeRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> reachabilityRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> instantaneousRewardFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> longRunAverageRewardFormula;
             
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
@@ -153,6 +140,7 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
             std::shared_ptr<storm::logic::Formula> createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
             std::shared_ptr<storm::logic::Formula> createReachabilityRewardFormula(std::shared_ptr<storm::logic::Formula> const& stateFormula) const;
+            std::shared_ptr<storm::logic::Formula> createLongRunAverageRewardFormula() const;
             std::shared_ptr<storm::logic::Formula> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
             std::shared_ptr<storm::logic::Formula> createBooleanLiteralFormula(bool literal) const;
             std::shared_ptr<storm::logic::Formula> createAtomicLabelFormula(std::string const& label) const;
@@ -167,10 +155,20 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> createProbabilityOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula);
             std::shared_ptr<storm::logic::Formula> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
             std::shared_ptr<storm::logic::Formula> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
+            
+            // An error handler function.
+            phoenix::function<SpiritErrorHandler> handler;
         };
         
         FormulaParser::FormulaParser(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : manager(manager->getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
             // Intentionally left empty.
+        }
+        
+        FormulaParser::FormulaParser(storm::prism::Program const& program) : manager(program.getManager().getSharedPointer()), grammar(new FormulaParserGrammar(manager)) {
+            // Make the formulas of the program available to the parser.
+            for (auto const& formula : program.getFormulas()) {
+                this->addIdentifierExpression(formula.getName(), formula.getExpression());
+            }
         }
         
         FormulaParser::FormulaParser(FormulaParser const& other) : FormulaParser(other.manager) {
@@ -239,13 +237,16 @@ namespace storm {
             grammar->addIdentifierExpression(identifier, expression);
         }
                 
-        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), expressionParser(*manager, keywords_, true) {
+        FormulaParserGrammar::FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager) : FormulaParserGrammar::base_type(start), expressionParser(*manager, keywords_, true, true) {
             // Register all variables so we can parse them in the expressions.
             for (auto variableTypePair : *manager) {
                 identifiers_.add(variableTypePair.first.getName(), variableTypePair.first);
             }
             // Set the identifier mapping to actually generate expressions.
             expressionParser.setIdentifierMapping(&identifiers_);
+            
+            longRunAverageRewardFormula = (qi::lit("LRA") | qi::lit("S"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageRewardFormula, phoenix::ref(*this))];
+            longRunAverageRewardFormula.name("long run average reward formula");
             
             instantaneousRewardFormula = (qi::lit("I=") >> strict_double)[qi::_val = phoenix::bind(&FormulaParserGrammar::createInstantaneousRewardFormula, phoenix::ref(*this), qi::_1)] | (qi::lit("I=") > qi::uint_)[qi::_val = phoenix::bind(&FormulaParserGrammar::createInstantaneousRewardFormula, phoenix::ref(*this), qi::_1)];
             instantaneousRewardFormula.name("instantaneous reward formula");
@@ -256,7 +257,7 @@ namespace storm {
             reachabilityRewardFormula = (qi::lit("F") > stateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createReachabilityRewardFormula, phoenix::ref(*this), qi::_1)];
             reachabilityRewardFormula.name("reachability reward formula");
             
-            rewardPathFormula = reachabilityRewardFormula | cumulativeRewardFormula | instantaneousRewardFormula;
+            rewardPathFormula = reachabilityRewardFormula | cumulativeRewardFormula | instantaneousRewardFormula | longRunAverageRewardFormula;
             rewardPathFormula.name("reward path formula");
             
             expressionFormula = expressionParser[qi::_val = phoenix::bind(&FormulaParserGrammar::createAtomicExpressionFormula, phoenix::ref(*this), qi::_1)];
@@ -271,7 +272,7 @@ namespace storm {
             booleanLiteralFormula = (qi::lit("true")[qi::_a = true] | qi::lit("false")[qi::_a = false])[qi::_val = phoenix::bind(&FormulaParserGrammar::createBooleanLiteralFormula, phoenix::ref(*this), qi::_a)];
             booleanLiteralFormula.name("boolean literal formula");
             
-            operatorFormula = probabilityOperator | rewardOperator | steadyStateOperator;
+            operatorFormula = probabilityOperator | rewardOperator | longRunAverageOperator;
             operatorFormula.name("operator formulas");
             
             atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | (qi::lit("(") > stateFormula > qi::lit(")")) | operatorFormula;
@@ -307,8 +308,8 @@ namespace storm {
             operatorInformation = (-optimalityOperator_[qi::_a = qi::_1] >> ((relationalOperator_[qi::_b = qi::_1] > qi::double_[qi::_c = qi::_1]) | (qi::lit("=") > qi::lit("?"))))[qi::_val = phoenix::construct<std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>>(qi::_a, qi::_b, qi::_c)];
             operatorInformation.name("operator information");
             
-            steadyStateOperator = (qi::lit("LRA") > operatorInformation > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
-            steadyStateOperator.name("long-run average operator");
+            longRunAverageOperator = ((qi::lit("LRA") | qi::lit("S")) > operatorInformation > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            longRunAverageOperator.name("long-run average operator");
             
             rewardModelName = qi::lit("{\"") > label > qi::lit("\"}");
             rewardModelName.name("reward model name");
@@ -342,7 +343,7 @@ namespace storm {
             debug(andStateFormula);
             debug(probabilityOperator);
             debug(rewardOperator);
-            debug(steadyStateOperator);
+            debug(longRunAverageOperator);
             debug(pathFormulaWithoutUntil);
             debug(pathFormula);
             debug(conditionalFormula);
@@ -366,7 +367,7 @@ namespace storm {
             qi::on_error<qi::fail>(andStateFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(probabilityOperator, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(rewardOperator, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(steadyStateOperator, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(longRunAverageOperator, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(operatorInformation, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(pathFormulaWithoutUntil, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(pathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -411,6 +412,10 @@ namespace storm {
         
         std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createReachabilityRewardFormula(std::shared_ptr<storm::logic::Formula> const& stateFormula) const {
             return std::shared_ptr<storm::logic::Formula>(new storm::logic::ReachabilityRewardFormula(stateFormula));
+        }
+        
+        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createLongRunAverageRewardFormula() const {
+            return std::shared_ptr<storm::logic::Formula>(new storm::logic::LongRunAverageRewardFormula());
         }
         
         std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createAtomicExpressionFormula(storm::expressions::Expression const& expression) const {
