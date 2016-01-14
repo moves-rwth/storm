@@ -276,7 +276,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverage(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverageProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(model, rateMatrix, exitRateVector);
                 
                 // Create ODD for the translation.
@@ -285,7 +285,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
                 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeLongRunAverage(explicitProbabilityMatrix, psiStates.toVector(odd), &explicitExitRateVector, qualitative, linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeLongRunAverageProbabilities(explicitProbabilityMatrix, psiStates.toVector(odd), &explicitExitRateVector, qualitative, linearEquationSolverFactory);
 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }

@@ -72,6 +72,8 @@ namespace storm {
                 return this->computeInstantaneousRewards(rewardPathFormula.asInstantaneousRewardFormula(), rewardModelName, qualitative, optimalityType);
             } else if (rewardPathFormula.isReachabilityRewardFormula()) {
                 return this->computeReachabilityRewards(rewardPathFormula.asReachabilityRewardFormula(), rewardModelName, qualitative, optimalityType);
+            } else if (rewardPathFormula.isLongRunAverageRewardFormula()) {
+                return this->computeLongRunAverageRewards(rewardPathFormula.asLongRunAverageRewardFormula(), rewardModelName, qualitative, optimalityType);
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << rewardPathFormula << "' is invalid.");
         }
@@ -88,7 +90,11 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << rewardPathFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeLongRunAverage(storm::logic::StateFormula const& eventuallyFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeLongRunAverageRewards(storm::logic::LongRunAverageRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << rewardPathFormula << ".");
+        }
+        
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeLongRunAverageProbabilities(storm::logic::StateFormula const& eventuallyFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the computation of long-run averages.");
         }
         
@@ -255,15 +261,15 @@ namespace storm {
             
             std::unique_ptr<CheckResult> result;
             if (stateFormula.hasOptimalityType()) {
-                result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, stateFormula.getOptimalityType());
+                result = this->computeLongRunAverageProbabilities(stateFormula.getSubformula().asStateFormula(), false, stateFormula.getOptimalityType());
             } else if (stateFormula.hasBound()) {
                 if (stateFormula.getComparisonType() == storm::logic::ComparisonType::Less || stateFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual) {
-                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, OptimizationDirection::Maximize);
+                    result = this->computeLongRunAverageProbabilities(stateFormula.getSubformula().asStateFormula(), false, OptimizationDirection::Maximize);
                 } else {
-                    result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false, OptimizationDirection::Minimize);
+                    result = this->computeLongRunAverageProbabilities(stateFormula.getSubformula().asStateFormula(), false, OptimizationDirection::Minimize);
                 }
             } else {
-                result = this->computeLongRunAverage(stateFormula.getSubformula().asStateFormula(), false);
+                result = this->computeLongRunAverageProbabilities(stateFormula.getSubformula().asStateFormula(), false);
             }
             
             if (stateFormula.hasBound()) {

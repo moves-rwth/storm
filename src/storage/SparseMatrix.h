@@ -514,6 +514,11 @@ namespace storm {
             * Recompute the nonzero entry count
             */
             void updateNonzeroEntryCount() const;
+            
+            /*!
+             * Recomputes the number of columns and the number of non-zero entries.
+             */
+            void updateDimensions() const;
 
             /*!
             * Change the nonzero entry count by the provided value.
@@ -959,7 +964,7 @@ namespace storm {
             index_type rowCount;
             
             // The number of columns of the matrix.
-            index_type columnCount;
+            mutable index_type columnCount;
             
             // The number of entries in the matrix.
             index_type entryCount;

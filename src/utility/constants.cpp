@@ -4,7 +4,6 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
-#include "src/utility/macros.h"
 
 #include "src/adapters/CarlAdapter.h"
 
@@ -74,16 +73,14 @@ namespace storm {
         
         template<>
         storm::RationalFunction infinity() {
-            // FIXME: this does not work.
-            STORM_LOG_ERROR("Tried to get infinity as a rational function, which does not seem to work");
-            return storm::RationalFunction(carl::rationalize<storm::RationalNumber>(std::numeric_limits<double>::infinity()));
+            // FIXME: this should be treated more properly.
+            return storm::RationalFunction(-1.0);
         }
         
         template<>
         storm::RationalNumber infinity() {
-            // FIXME: this does not work.
-            STORM_LOG_ERROR("Tried to get infinity as a rational number, which does not seem to work");
-            return carl::rationalize<storm::RationalNumber>(std::numeric_limits<double>::infinity());
+        	// FIXME: this should be treated more properly.
+        	return storm::RationalNumber(-1);
         }
 #endif
         
