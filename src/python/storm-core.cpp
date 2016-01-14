@@ -53,5 +53,4 @@ BOOST_PYTHON_MODULE(_core)
     def("buildModelFromPrismProgram", storm::buildSymbolicModel<double>);
 
 
-
 }
