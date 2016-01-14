@@ -46,6 +46,7 @@
 // Headers for model processing.
 #include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "src/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
+#include "src/storage/ModelProgramPair.h"
 
 // Headers for model checking.
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -83,8 +84,8 @@ namespace storm {
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
             
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
-    std::pair<std::shared_ptr<storm::models::ModelBase>, storm::prism::Program> buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
-        std::pair<std::shared_ptr<storm::models::ModelBase>, storm::prism::Program> result;
+    storm::storage::ModelProgramPair buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+        storm::storage::ModelProgramPair result;
 
         storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
 
@@ -103,16 +104,16 @@ namespace storm {
             }
 
             storm::builder::ExplicitPrismModelBuilder<ValueType> builder;
-            result.first = builder.translateProgram(program, options);
-            result.second = builder.getTranslatedProgram();
+            result.model = builder.translateProgram(program, options);
+            result.program = builder.getTranslatedProgram();
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constants);
 
             storm::builder::DdPrismModelBuilder<LibraryType> builder;
-            result.first = builder.translateProgram(program, options);
-            result.second = builder.getTranslatedProgram();
+            result.model = builder.translateProgram(program, options);
+            result.program = builder.getTranslatedProgram();
         }
 
         return result;
