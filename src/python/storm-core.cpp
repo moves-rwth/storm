@@ -51,6 +51,12 @@ BOOST_PYTHON_MODULE(_core)
     def("parseProgram", storm::parseProgram);
 
     def("buildModelFromPrismProgram", storm::buildSymbolicModel<double>);
+    def("buildParametricModelFromPrismProgram", storm::buildSymbolicModel<storm::RationalFunction>);
+
+    //////////////////////////////////////////////
+    // Model Checking
+    //////////////////////////////////////////////
 
 
+    def("performStateElimination", storm::verifySparseModel<storm::RationalFunction>);
 }
