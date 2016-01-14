@@ -103,6 +103,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isLongRunAverageRewardFormula() const {
+            return false;
+        }
+        
         bool Formula::isProbabilityOperatorFormula() const {
             return false;
         }
@@ -349,6 +353,14 @@ namespace storm {
         
         ReachabilityRewardFormula const& Formula::asReachabilityRewardFormula() const {
             return dynamic_cast<ReachabilityRewardFormula const&>(*this);
+        }
+        
+        LongRunAverageRewardFormula& Formula::asLongRunAverageRewardFormula() {
+            return dynamic_cast<LongRunAverageRewardFormula&>(*this);
+        }
+        
+        LongRunAverageRewardFormula const& Formula::asLongRunAverageRewardFormula() const {
+            return dynamic_cast<LongRunAverageRewardFormula const&>(*this);
         }
         
         ProbabilityOperatorFormula& Formula::asProbabilityOperatorFormula() {

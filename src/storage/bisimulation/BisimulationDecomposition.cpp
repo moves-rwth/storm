@@ -96,7 +96,16 @@ namespace storm {
                 }
                 newFormula = formula.asProbabilityOperatorFormula().getSubformula().asSharedPointer();
             } else if (formula.isRewardOperatorFormula()) {
-                optimalityType = formula.asRewardOperatorFormula().getOptimalityType();
+                if (formula.asRewardOperatorFormula().hasOptimalityType()) {
+                    optimalityType = formula.asRewardOperatorFormula().getOptimalityType();
+                } else if (formula.asRewardOperatorFormula().hasBound()) {
+                    storm::logic::ComparisonType comparisonType = formula.asRewardOperatorFormula().getComparisonType();
+                    if (comparisonType == storm::logic::ComparisonType::Less || comparisonType == storm::logic::ComparisonType::LessEqual) {
+                        optimalityType = OptimizationDirection::Maximize;
+                    } else {
+                        optimalityType = OptimizationDirection::Minimize;
+                    }
+                }
                 newFormula = formula.asRewardOperatorFormula().getSubformula().asSharedPointer();
             }
             

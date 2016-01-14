@@ -164,6 +164,17 @@ namespace storm {
             return max;
         }
         
+        template<storm::dd::DdType Type, typename ValueType>
+        void HybridQuantitativeCheckResult<Type, ValueType>::oneMinus() {
+            storm::dd::Add<Type> one = symbolicValues.getDdManager().template getAddOne<ValueType>();
+            storm::dd::Add<Type> zero = symbolicValues.getDdManager().template getAddZero<ValueType>();
+            symbolicValues = symbolicStates.ite(one - symbolicValues, zero);
+
+            for (auto& element : explicitValues) {
+                element = storm::utility::one<ValueType>() - element;
+            }
+        }
+        
         // Explicitly instantiate the class.
         template class HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>;
         template class HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>;

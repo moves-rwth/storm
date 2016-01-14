@@ -1025,9 +1025,6 @@ namespace storm {
                 for (auto const& bitVectorIndexPair : internalStateInformation.stateStorage) {
                     stateInformation.get().valuations[bitVectorIndexPair.second] = unpackStateIntoValuation(bitVectorIndexPair.first, variableInformation);
                 }
-                for (auto const& el : stateInformation.get().valuations) {
-                    std::cout << "state: " << el << std::endl;
-                }
             }
             
             return modelComponents;

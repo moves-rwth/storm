@@ -35,6 +35,7 @@ namespace storm {
         class CumulativeRewardFormula;
         class InstantaneousRewardFormula;
         class ReachabilityRewardFormula;
+        class LongRunAverageRewardFormula;
         class ProbabilityOperatorFormula;
         class RewardOperatorFormula;
 
@@ -76,6 +77,7 @@ namespace storm {
             virtual bool isCumulativeRewardFormula() const;
             virtual bool isInstantaneousRewardFormula() const;
             virtual bool isReachabilityRewardFormula() const;
+            virtual bool isLongRunAverageRewardFormula() const;
             virtual bool isProbabilityOperatorFormula() const;
             virtual bool isRewardOperatorFormula() const;
 
@@ -163,6 +165,9 @@ namespace storm {
             
             ReachabilityRewardFormula& asReachabilityRewardFormula();
             ReachabilityRewardFormula const& asReachabilityRewardFormula() const;
+
+            LongRunAverageRewardFormula& asLongRunAverageRewardFormula();
+            LongRunAverageRewardFormula const& asLongRunAverageRewardFormula() const;
             
             ProbabilityOperatorFormula& asProbabilityOperatorFormula();
             ProbabilityOperatorFormula const& asProbabilityOperatorFormula() const;

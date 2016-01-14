@@ -27,28 +27,55 @@ namespace storm {
         namespace graph {
             
             template<typename T>
-            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates) {
+            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps) {
                 storm::storage::BitVector reachableStates(initialStates);
+                
+                uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
                 
                 // Initialize the stack used for the DFS with the states.
                 std::vector<uint_fast64_t> stack(initialStates.begin(), initialStates.end());
                 
+                // Initialize the stack for the step bound, if the number of steps is bounded.
+                std::vector<uint_fast64_t> stepStack;
+                std::vector<uint_fast64_t> remainingSteps;
+                if (useStepBound) {
+                    stepStack.reserve(numberOfStates);
+                    stepStack.insert(stepStack.begin(), targetStates.getNumberOfSetBits(), maximalSteps);
+                    remainingSteps.resize(numberOfStates);
+                    for (auto state : targetStates) {
+                        remainingSteps[state] = maximalSteps;
+                    }
+                }
+                
                 // Perform the actual DFS.
-                uint_fast64_t currentState = 0;
+                uint_fast64_t currentState = 0, currentStepBound = 0;
                 while (!stack.empty()) {
                     currentState = stack.back();
                     stack.pop_back();
                     
+                    if (useStepBound) {
+                        currentStepBound = stepStack.back();
+                        stepStack.pop_back();
+                    }
+                
                     for (auto const& successor : transitionMatrix.getRowGroup(currentState)) {
                         // Only explore the state if the transition was actually there and the successor has not yet
                         // been visited.
-                        if (successor.getValue() != storm::utility::zero<T>() && !reachableStates.get(successor.getColumn())) {
+                        if (successor.getValue() != storm::utility::zero<T>() && !reachableStates.get(successor.getColumn()) && (!useStepBound || remainingSteps[successor.getColumn()] < currentStepBound - 1)) {
                             // If the successor is one of the target states, we need to include it, but must not explore
                             // it further.
                             if (targetStates.get(successor.getColumn())) {
                                 reachableStates.set(successor.getColumn());
                             } else if (constraintStates.get(successor.getColumn())) {
-                                // However, if the state is in the constrained set of states, we need to follow it.
+                                // However, if the state is in the constrained set of states, we potentially need to follow it.
+                                if (useStepBound) {
+                                    remainingSteps[successor.getColumn()] = currentStepBound - 1;
+                                    stepStack.push_back(currentStepBound - 1);
+                                    
+                                    if (currentStepBound == 0) {
+                                        continue;
+                                    }
+                                }
                                 reachableStates.set(successor.getColumn());
                                 stack.push_back(successor.getColumn());
                             }
@@ -60,7 +87,7 @@ namespace storm {
             }
             
             template<typename T>
-            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates) {
+            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem) {
                 std::vector<std::size_t> distances(transitionMatrix.getRowGroupCount());
                 
                 std::vector<std::pair<storm::storage::sparse::state_type, std::size_t>> stateQueue;
@@ -80,8 +107,10 @@ namespace storm {
                     
                     for (auto const& successorEntry : transitionMatrix.getRowGroup(stateDistancePair.first)) {
                         if (!statesInQueue.get(successorEntry.getColumn())) {
-                            stateQueue.emplace_back(successorEntry.getColumn(), stateDistancePair.second + 1);
-                            statesInQueue.set(successorEntry.getColumn());
+                            if (!subsystem || subsystem.get()[successorEntry.getColumn()]) {
+                                stateQueue.emplace_back(successorEntry.getColumn(), stateDistancePair.second + 1);
+                                statesInQueue.set(successorEntry.getColumn());
+                            }
                         }
                     }
                     ++currentPosition;
@@ -126,18 +155,18 @@ namespace storm {
                     }
                     
                     for (typename storm::storage::SparseMatrix<T>::const_iterator entryIt = backwardTransitions.begin(currentState), entryIte = backwardTransitions.end(currentState); entryIt != entryIte; ++entryIt) {
-                        if (phiStates[entryIt->getColumn()] && (!statesWithProbabilityGreater0.get(entryIt->getColumn()) || (useStepBound && remainingSteps[entryIt->getColumn()] < currentStepBound - 1))) {
+                        if (phiStates[entryIt->getColumn()] && (!statesWithProbabilityGreater0.get(entryIt->getColumn()) && (!useStepBound || remainingSteps[entryIt->getColumn()] < currentStepBound - 1))) {
                             // If we don't have a bound on the number of steps to take, just add the state to the stack.
-                            if (!useStepBound) {
-                                statesWithProbabilityGreater0.set(entryIt->getColumn(), true);
-                                stack.push_back(entryIt->getColumn());
-                            } else if (currentStepBound > 0) {
+                            if (useStepBound) {
                                 // If there is at least one more step to go, we need to push the state and the new number of steps.
                                 remainingSteps[entryIt->getColumn()] = currentStepBound - 1;
-                                statesWithProbabilityGreater0.set(entryIt->getColumn(), true);
-                                stack.push_back(entryIt->getColumn());
                                 stepStack.push_back(currentStepBound - 1);
+                                if (currentStepBound == 0) {
+                                    continue;
+                                }
                             }
+                            statesWithProbabilityGreater0.set(entryIt->getColumn(), true);
+                            stack.push_back(entryIt->getColumn());
                         }
                     }
                 }
@@ -377,18 +406,19 @@ namespace storm {
                     }
                     
                     for (typename storm::storage::SparseMatrix<T>::const_iterator entryIt = backwardTransitions.begin(currentState), entryIte = backwardTransitions.end(currentState); entryIt != entryIte; ++entryIt) {
-                        if (phiStates.get(entryIt->getColumn()) && (!statesWithProbabilityGreater0.get(entryIt->getColumn()) || (useStepBound && remainingSteps[entryIt->getColumn()] < currentStepBound - 1))) {
+                        if (phiStates.get(entryIt->getColumn()) && (!statesWithProbabilityGreater0.get(entryIt->getColumn()) && (!useStepBound || remainingSteps[entryIt->getColumn()] < currentStepBound - 1))) {
                             // If we don't have a bound on the number of steps to take, just add the state to the stack.
-                            if (!useStepBound) {
-                                statesWithProbabilityGreater0.set(entryIt->getColumn(), true);
-                                stack.push_back(entryIt->getColumn());
-                            } else if (currentStepBound > 0) {
+                            if (useStepBound) {
                                 // If there is at least one more step to go, we need to push the state and the new number of steps.
                                 remainingSteps[entryIt->getColumn()] = currentStepBound - 1;
-                                statesWithProbabilityGreater0.set(entryIt->getColumn(), true);
-                                stack.push_back(entryIt->getColumn());
                                 stepStack.push_back(currentStepBound - 1);
+                                
+                                if (currentStepBound == 0) {
+                                    continue;
+                                }
                             }
+                            statesWithProbabilityGreater0.set(entryIt->getColumn(), true);
+                            stack.push_back(entryIt->getColumn());
                         }
                     }
                 }
@@ -525,7 +555,7 @@ namespace storm {
                     }
                     
                     for(typename storm::storage::SparseMatrix<T>::const_iterator predecessorEntryIt = backwardTransitions.begin(currentState), predecessorEntryIte = backwardTransitions.end(currentState); predecessorEntryIt != predecessorEntryIte; ++predecessorEntryIt) {
-                        if (phiStates.get(predecessorEntryIt->getColumn()) && (!statesWithProbabilityGreater0.get(predecessorEntryIt->getColumn()) || (useStepBound && remainingSteps[predecessorEntryIt->getColumn()] < currentStepBound - 1))) {
+                        if (phiStates.get(predecessorEntryIt->getColumn()) && (!statesWithProbabilityGreater0.get(predecessorEntryIt->getColumn()) && (!useStepBound || remainingSteps[predecessorEntryIt->getColumn()] < currentStepBound - 1))) {
                             // Check whether the predecessor has at least one successor in the current state set for every
                             // nondeterministic choice.
                             bool addToStatesWithProbabilityGreater0 = true;
@@ -547,16 +577,17 @@ namespace storm {
                             // If we need to add the state, then actually add it and perform further search from the state.
                             if (addToStatesWithProbabilityGreater0) {
                                 // If we don't have a bound on the number of steps to take, just add the state to the stack.
-                                if (!useStepBound) {
-                                    statesWithProbabilityGreater0.set(predecessorEntryIt->getColumn(), true);
-                                    stack.push_back(predecessorEntryIt->getColumn());
-                                } else if (currentStepBound > 0) {
+                                if (useStepBound) {
                                     // If there is at least one more step to go, we need to push the state and the new number of steps.
                                     remainingSteps[predecessorEntryIt->getColumn()] = currentStepBound - 1;
-                                    statesWithProbabilityGreater0.set(predecessorEntryIt->getColumn(), true);
-                                    stack.push_back(predecessorEntryIt->getColumn());
                                     stepStack.push_back(currentStepBound - 1);
+                                    
+                                    if (currentStepBound == 0) {
+                                        continue;
+                                    }
                                 }
+                                statesWithProbabilityGreater0.set(predecessorEntryIt->getColumn(), true);
+                                stack.push_back(predecessorEntryIt->getColumn());
                             }
                         }
                     }
@@ -925,9 +956,9 @@ namespace storm {
             
             
             
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
+            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
-            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates);
+            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             
             template storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
@@ -991,9 +1022,9 @@ namespace storm {
             
             
             
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
+            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
-            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates);
+            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             
             template storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<float> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
@@ -1046,9 +1077,9 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             
-            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
+            template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
-            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates);
+            template std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             
             template storm::storage::BitVector performProbGreater0(storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);

@@ -15,6 +15,7 @@
 #include "src/logic/RewardPathFormula.h"
 #include "src/logic/ProbabilityOperatorFormula.h"
 #include "src/logic/ReachabilityRewardFormula.h"
+#include "src/logic/LongRunAverageRewardFormula.h"
 #include "src/logic/RewardOperatorFormula.h"
 #include "src/logic/StateFormula.h"
 #include "src/logic/LongRunAverageOperatorFormula.h"

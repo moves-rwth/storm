@@ -22,7 +22,7 @@ namespace storm {
                 stream << "Parsing error at " << get_line(where) << ":" << boost::spirit::get_column(lineStart, where) << ": " << " expecting " << what << ", here:" << std::endl;
                 stream << "\t" << line << std::endl << "\t";
                 auto caretColumn = boost::spirit::get_column(lineStart, where);
-                stream << std::string(caretColumn - 1, ' ') << "^" << std::endl;
+                stream << "\t" << std::string(caretColumn - 1, ' ') << "^" << std::endl;
                 
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, stream.str());
                 return qi::fail;

@@ -89,6 +89,12 @@ namespace storm {
             return this->values.getMax();
         }
         
+        template<storm::dd::DdType Type, typename ValueType>
+        void SymbolicQuantitativeCheckResult<Type, ValueType>::oneMinus() {
+            storm::dd::Add<Type> one = values.getDdManager().template getAddOne<ValueType>();
+            values = one - values;
+        }
+        
         // Explicitly instantiate the class.
         template class SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>;
         template class SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>;

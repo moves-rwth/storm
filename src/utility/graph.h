@@ -55,9 +55,11 @@ namespace storm {
              * @param initialStates The set of states from which to start the search.
              * @param constraintStates The set of states that must not be left.
              * @param targetStates The target states that may not be passed.
+             * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
+             * @param maximalSteps The maximal number of steps to reach the psi states.
              */
             template<typename T>
-            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates);
+            storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
             
             /*!
              * Performs a breadth-first search through the underlying graph structure to compute the distance from all
@@ -65,10 +67,11 @@ namespace storm {
              *
              * @param transitionMatrix The transition relation of the graph structure to search.
              * @param initialStates The set of states from which to start the search.
+             * @param subsystem The subsystem to consider.
              * @return The distances of each state to the initial states of the sarch.
              */
             template<typename T>
-            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates);
+            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem = boost::none);
             
             /*!
              * Performs a backward depth-first search trough the underlying graph structure
