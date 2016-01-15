@@ -51,14 +51,22 @@ class MyEggInfo(egg_info):
 
 class MyInstall(install):
     def run(self):
-        call(["cmake", "-DSTORM_PYTHON=ON",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
-        call(["make", "stormpy"], cwd=d)
+        ret = call(["cmake", "-DSTORM_PYTHON=ON",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
+        if ret != 0:
+            raise RuntimeError("Cmake exited with return code {}".format(ret))
+        ret = call(["make", "stormpy"], cwd=d)
+        if ret != 0:
+            raise RuntimeError("Make exited with return code {}".format(ret))
         install.run(self)
 class MyDevelop(develop):
     def run(self):
-        call(["cmake", "-DSTORM_PYTHON=ON",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
-        call(["make", "stormpy"], cwd=d)
-        develop.run(self)
+       ret = call(["cmake", "-DSTORM_PYTHON=ON",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
+       if ret != 0:
+           raise RuntimeError("Cmake exited with return code {}".format(ret))
+       ret = call(["make", "stormpy"], cwd=d)
+       if ret != 0:
+           raise RuntimeError("Make exited with return code {}".format(ret))
+       develop.run(self)
 
 
 setup(cmdclass={'install': MyInstall, 'develop': MyDevelop, 'egg_info': MyEggInfo},
