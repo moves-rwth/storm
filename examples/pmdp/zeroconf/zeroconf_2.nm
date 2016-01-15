@@ -55,7 +55,7 @@ const bool reset=false;
 //-------------------------------------------------------------
 // VARIABLES
 //const int N; // number of abstract hosts
-const int K; // number of probes to send
+const int K=2; // number of probes to send
 const double loss; // probability of message loss
 
 // PROBABILITIES

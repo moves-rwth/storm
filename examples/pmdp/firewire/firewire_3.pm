@@ -15,7 +15,7 @@ const int rc_fast_min = 76;
 const int rc_slow_max = 167;
 const int rc_slow_min = 159;
 // delay caused by the wire length
-const int delay;
+const int delay=3;
 // probability of choosing fast
 const double fast1; // = 0.5;
 const double slow1=1-fast1;
