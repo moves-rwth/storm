@@ -1,0 +1,4 @@
+Pmin=?[ F (s1=8 & s2=7) ]
+//R{"time"}min=? [ F "done" ]
+//R{"time"}max=? [ F "done" ]
+//R{"time_sending"}max=? [ F "done" ]

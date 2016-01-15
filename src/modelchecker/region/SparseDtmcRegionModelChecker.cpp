@@ -402,16 +402,18 @@ namespace storm {
                 //now compute the functions using methods from elimination model checker
                 storm::storage::BitVector newInitialStates = simpleModel.getInitialStates() % maybeStates;
                 storm::storage::BitVector phiStates(simpleModel.getNumberOfStates(), true);
-                boost::optional<std::vector<ParametricType>> stateRewards;
+                std::vector<ParametricType> values;
                 if(this->isComputeRewards()){
-                    stateRewards = simpleModel.getUniqueRewardModel()->second.getTotalRewardVector(maybeStates.getNumberOfSetBits(), simpleModel.getTransitionMatrix(), maybeStates);
+                    values = simpleModel.getUniqueRewardModel()->second.getTotalRewardVector(maybeStates.getNumberOfSetBits(), simpleModel.getTransitionMatrix(), maybeStates);
+                } else {
+                    values = oneStepProbabilities;
                 }
 //                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ParametricType>> eliminationModelChecker(simpleModel);
 //                std::vector<std::size_t> statePriorities = eliminationModelChecker.getStatePriorities(forwardTransitions,backwardTransitions,newInitialStates,oneStepProbabilities);
 //                this->reachabilityFunction=std::make_shared<ParametricType>(eliminationModelChecker.computeReachabilityValue(forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , true, phiStates, simpleModel.getStates("target"), stateRewards, statePriorities));
-	    //      std::vector<ParametricType> reachFuncVector = storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ParametricType>>::computeReachabilityValues(
-	 //                   forwardTransitions, oneStepProbabilities, backwardTransitions, newInitialStates , true, phiStates, simpleModel.getStates("target"), oneStepProbabilities);
-		//  this->reachabilityFunction=std::make_shared<ParametricType>(std::move(reachFuncVector[*newInitialStates.begin()]));
+	          std::vector<ParametricType> reachFuncVector = storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ParametricType>>::computeReachabilityValues(
+	                    forwardTransitions, values, backwardTransitions, newInitialStates , true, phiStates, simpleModel.getStates("target"), oneStepProbabilities);
+		  this->reachabilityFunction=std::make_shared<ParametricType>(std::move(reachFuncVector[*simpleModel.getInitialStates().begin()]));
                    /* std::string funcStr = " (/ " +
                                     this->reachabilityFunction->nominator().toString(false, true) + " " +
                                     this->reachabilityFunction->denominator().toString(false, true) +
