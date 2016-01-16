@@ -171,6 +171,21 @@ namespace storm {
             }
             return result;
         }
+
+        std::string Program::getUndefinedConstantsAsString() const {
+            std::stringstream stream;
+            bool printComma = false;
+            for (auto const& constant : getUndefinedConstants()) {
+                if (printComma) {
+                    stream << ", ";
+                } else {
+                    printComma = true;
+                }
+                stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+            }
+            stream << ".";
+            return stream.str();
+        }
         
         bool Program::hasConstant(std::string const& constantName) const {
             return this->constantToIndexMap.find(constantName) != this->constantToIndexMap.end();
