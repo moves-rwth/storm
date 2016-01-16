@@ -78,6 +78,14 @@ namespace storm {
                             formula->getBound(),
                             filter
                         );
+          /*      std::cout << "occurring functions:" << std::endl;
+                for(auto const& funcVal : this->functions){
+                    std::string funcStr = "     (" +
+                                    funcVal.first.nominator().toString() + ") / (" +
+                                    funcVal.first.denominator().toString() +
+                                " )";
+                    std::cout << funcStr << std::endl;
+                }*/
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -123,7 +131,8 @@ namespace storm {
                         ++curRow;
                     }
                 }
-                this->matrixData.matrix=matrixBuilder.build();
+                //Build the matrix. Override the row count (required e.g. when there are only transitions to target for the last matrixrow)
+                this->matrixData.matrix=matrixBuilder.build(curRow);
                 
                 //Now run again through both matrices to get the remaining ingredients of the matrixData and vectorData.
                 //Note that we need the matrix (I-P) in case of a dtmc.

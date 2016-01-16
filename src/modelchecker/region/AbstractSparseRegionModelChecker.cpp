@@ -124,6 +124,14 @@ namespace storm {
                 std::chrono::high_resolution_clock::time_point timePreprocessingStart = std::chrono::high_resolution_clock::now();
                 this->preprocess(this->simpleModel, this->simpleFormula, isApproximationApplicable, constantResult);
                 std::chrono::high_resolution_clock::time_point timePreprocessingEnd = std::chrono::high_resolution_clock::now();
+                
+                //TODO: Currently we are not able to detect functions of the form p*q correctly as these functions are not linear but approximation is still applicable.
+                //This is just a quick fix to work with such models anyway.
+                if(!this->isApproximationApplicable){
+                    STORM_LOG_ERROR("There are non-linear functions that occur in the given model. Approximation is still correct for functions that are linear w.r.t. a single parameter (assuming the remaining parameters are constants), e.g., p*q is okay. Currently, the implementation is not able to validate this..");
+                    this->isApproximationApplicable=true;
+                }
+                
                 //Check if the approximation and the sampling model needs to be computed
                 if(!this->isResultConstant()){
                     if(this->isApproximationApplicable && storm::settings::regionSettings().doApprox()){
@@ -197,7 +205,7 @@ namespace storm {
 
                 //switches for the different steps.
                 bool done=false;
-                STORM_LOG_WARN_COND( (!storm::settings::regionSettings().doApprox() || this->isApproximationApplicable), "the approximation is only correct if the model has only linear functions. As this is not the case, approximation is deactivated");
+                STORM_LOG_WARN_COND( (!storm::settings::regionSettings().doApprox() || this->isApproximationApplicable), "the approximation is only correct if the model has only linear functions (more precisely: linear in a single parameter, i.e., functions like p*q are okay). As this is not the case, approximation is deactivated");
                 bool doApproximation=storm::settings::regionSettings().doApprox() && this->isApproximationApplicable;
                 bool doSampling=storm::settings::regionSettings().doSample();
                 bool doSmt=storm::settings::regionSettings().doSmt();

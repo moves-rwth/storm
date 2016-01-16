@@ -145,7 +145,7 @@ namespace storm {
                     }
                 }
                 //Build the matrix. Override the row count (required e.g. when there are only transitions to target for the last matrixrow)
-                this->matrixData.matrix=matrixBuilder.build(this->matrixData.rowSubstitutions.size());               
+                this->matrixData.matrix=matrixBuilder.build(curRow);               
                 
                 //Now run again through both matrices to get the remaining ingredients of the matrixData and vectorData
                 this->matrixData.assignment.reserve(this->matrixData.matrix.getEntryCount());

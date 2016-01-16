@@ -257,6 +257,7 @@ namespace storm {
                 //maybeStates: Compute the subset of states that have a probability of 0 or 1, respectively and reduce the considered states accordingly.
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->getModel()->getBackwardTransitions(), storm::storage::BitVector(this->getModel()->getNumberOfStates(),true), targetStates);
                 maybeStates = ~(statesWithProbability01.first | statesWithProbability01.second);
+                STORM_LOG_DEBUG("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states. Total number of states is " << maybeStates.size() << ".");
                 // If the initial state is known to have either probability 0 or 1, we can directly set the reachProbFunction.
                 storm::storage::sparse::state_type initialState = *(this->getModel()->getInitialStates().begin());
                 if (!maybeStates.get(initialState)) {

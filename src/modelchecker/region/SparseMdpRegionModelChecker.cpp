@@ -215,6 +215,7 @@ namespace storm {
                     statesWithProbability01 = storm::utility::graph::performProb01Max(this->getModel()->getTransitionMatrix(), this->getModel()->getTransitionMatrix().getRowGroupIndices(), this->getModel()->getBackwardTransitions(), storm::storage::BitVector(this->getModel()->getNumberOfStates(),true), targetStates);
                 }
                 maybeStates = ~(statesWithProbability01.first | statesWithProbability01.second);
+                STORM_LOG_DEBUG("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states. Total number of states is " << maybeStates.size() << ".");
                 // If the initial state is known to have either probability 0 or 1, we can directly set the reachProbFunction.
                 storm::storage::sparse::state_type initialState = *(this->getModel()->getInitialStates().begin());
                 if (!maybeStates.get(initialState)) {
@@ -234,7 +235,7 @@ namespace storm {
                             isResultConstant=false;
                             if(!storm::utility::region::functionIsLinear(entry.getValue())){
                                 isApproximationApplicable=false;
-                                break;
+                                //break;
                             }
                         }
                     }
