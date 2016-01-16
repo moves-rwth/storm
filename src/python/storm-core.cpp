@@ -44,10 +44,10 @@ BOOST_PYTHON_MODULE(_core)
     ////////////////////////////////////////////
     class_<storm::models::ModelBase, std::shared_ptr<storm::models::ModelBase>, boost::noncopyable>("ModelBase", no_init)
             .add_property("nrStates", &storm::models::ModelBase::getNumberOfStates)
-            .add_property("nrTransitions", &storm::models::ModelBase::getNumberOfTransitions)
-    class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricModel", no_init);
+            .add_property("nrTransitions", &storm::models::ModelBase::getNumberOfTransitions);
+    class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction> >, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricModel", no_init);
     class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseModel", no_init);
-
+    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::sparse::Model<storm::RationalFunction>>>("SparseParamtricMc", no_init);
 
     def("parseFormulae", storm::parseFormulasForProgram);
     def("parseProgram", storm::parseProgram);
@@ -58,9 +58,9 @@ BOOST_PYTHON_MODULE(_core)
     //////////////////////////////////////////////
     // Model Checking
     //////////////////////////////////////////////
-    class_<storm::storage::ModelProgramPair>("ModelProgramPair", no_init)
-            .add_property("model", &storm::storage::ModelProgramPair::model)
-            .add_property("program", &storm::storage::ModelProgramPair::program)
+    class_<storm::storage::ModelFormulasPair>("ModelProgramPair", no_init)
+            .add_property("model", &storm::storage::ModelFormulasPair::model)
+            .add_property("program", &storm::storage::ModelFormulasPair::formulas)
     ;
 
 
