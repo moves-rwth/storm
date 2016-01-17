@@ -1,0 +1,5 @@
+coin2.pm -const K=2 
+coin2.pm -const K=8
+coin2.pm -const K=32
+coin2.pm -const K=64
+coin2.pm -const K=128

@@ -1,0 +1,3 @@
+coin4.pm -const K=2 
+coin4.pm -const K=4
+coin4.pm -const K=8

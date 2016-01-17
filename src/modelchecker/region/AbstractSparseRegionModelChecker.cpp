@@ -482,6 +482,7 @@ namespace storm {
                 outstream << "    " << timeSmtInMilliseconds.count() << "ms Smt solving" << std::endl;
                 outstream << "-----------------------------------------------" << std::endl;
 
+                outstream << "CSV format;" << timeOverallInMilliseconds.count() << ";" << this->numOfRegionsAllSat << ";" << this->numOfRegionsAllViolated << ";" << this->numOfRegionsExistsBoth << ";" << (this->numOfCheckedRegions-numOfSolvedRegions) << std::endl;
             }
         
         

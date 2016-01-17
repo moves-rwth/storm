@@ -1,0 +1,3 @@
+reporter4.pm -const Xsize=6,Ysize=6,MAXTRIES=2,B=2 
+reporter4.pm -const Xsize=25,Ysize=25,MAXTRIES=5,B=5
+reporter4.pm -const Xsize=50,Ysize=50,MAXTRIES=8,B=8

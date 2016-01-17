@@ -1,0 +1,3 @@
+nand.pm -const N=10,K=5
+nand.pm -const N=20,K=5
+nand.pm -const N=40,K=5
