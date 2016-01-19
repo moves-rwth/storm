@@ -196,6 +196,42 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
+            void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::refineAndCheckRegion(std::vector<ParameterRegion<ParametricType>>& regions, double const& refinementThreshold) {
+                STORM_LOG_DEBUG("Applying refinement on region: " << regions.front().toString() << ".");
+                std::cout << "Applying refinement on region: " << regions.front().toString();
+                std::cout.flush();
+                CoefficientType areaOfParameterSpace = regions.front().area();
+                uint_fast64_t indexOfCurrentRegion=0;
+                CoefficientType fractionOfUndiscoveredArea = storm::utility::one<CoefficientType>();
+                CoefficientType fractionOfAllSatArea = storm::utility::zero<CoefficientType>();
+                CoefficientType fractionOfAllViolatedArea = storm::utility::zero<CoefficientType>();
+                while(fractionOfUndiscoveredArea > storm::utility::region::convertNumber<CoefficientType>(refinementThreshold)){
+                    STORM_LOG_THROW(indexOfCurrentRegion < regions.size(), storm::exceptions::InvalidStateException, "Threshold for undiscovered area not reached but no unprocessed regions left.");
+                    ParameterRegion<ParametricType>& currentRegion = regions[indexOfCurrentRegion];
+                    this->checkRegion(currentRegion);
+                    switch(currentRegion.getCheckResult()){
+                        case RegionCheckResult::ALLSAT:
+                            fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
+                            fractionOfAllSatArea += currentRegion.area() / areaOfParameterSpace;
+                            break;
+                        case RegionCheckResult::ALLVIOLATED:
+                            fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
+                            fractionOfAllViolatedArea += currentRegion.area() / areaOfParameterSpace;
+                            break;
+                        default:
+                            std::vector<ParameterRegion<ParametricType>> newRegions;
+                            currentRegion.split(currentRegion.getCenterPoint(), newRegions);
+                            regions.insert(regions.end(), newRegions.begin(), newRegions.end());
+                            break;
+                    }
+                    ++indexOfCurrentRegion;
+                }
+                std::cout << " done! " << std::endl << "Fraction of ALLSAT;ALLVIOLATED;UNDISCOVERED area:" << std::endl;
+                std::cout << "REFINEMENTRESULT;" <<storm::utility::region::convertNumber<double>(fractionOfAllSatArea) << ";" << storm::utility::region::convertNumber<double>(fractionOfAllViolatedArea) << ";" << storm::utility::region::convertNumber<double>(fractionOfUndiscoveredArea) << std::endl;
+                
+            }
+            
+            template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkRegion(ParameterRegion<ParametricType>& region) {
                 std::chrono::high_resolution_clock::time_point timeCheckRegionStart = std::chrono::high_resolution_clock::now();
                 ++this->numOfCheckedRegions;

@@ -14,6 +14,7 @@
 #include "src/settings/modules/RegionSettings.h"
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/InvalidArgumentException.h"
+#include "utility/constants.h"
 
 namespace storm {
     namespace modelchecker {
@@ -56,14 +57,14 @@ namespace storm {
             template<typename ParametricType>
             typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getLowerBoundary(VariableType const& variable) const {
                 auto const& result = lowerBoundaries.find(variable);
-                STORM_LOG_THROW(result != lowerBoundaries.end(), storm::exceptions::InvalidArgumentException, "tried to find a lower boundary of a variable that is not specified by this region");
+                STORM_LOG_THROW(result != lowerBoundaries.end(), storm::exceptions::InvalidArgumentException, "tried to find a lower boundary for variable " << variable << " which is not specified by this region");
                 return (*result).second;
             }
 
             template<typename ParametricType>
             typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getUpperBoundary(VariableType const& variable) const {
                 auto const& result = upperBoundaries.find(variable);
-                STORM_LOG_THROW(result != upperBoundaries.end(), storm::exceptions::InvalidArgumentException, "tried to find an upper boundary of a variable that is not specified by this region");
+                STORM_LOG_THROW(result != upperBoundaries.end(), storm::exceptions::InvalidArgumentException, "tried to find an upper boundary for variable " << variable << " which is not specified by this region");
                 return (*result).second;
             }
 
@@ -108,7 +109,55 @@ namespace storm {
             typename ParameterRegion<ParametricType>::VariableSubstitutionType ParameterRegion<ParametricType>::getSomePoint() const {
                 return this->getLowerBoundaries();
             }
+            
+            template<typename ParametricType>
+            typename ParameterRegion<ParametricType>::VariableSubstitutionType ParameterRegion<ParametricType>::getCenterPoint() const {
+                VariableSubstitutionType result;
+                for (auto const& variable : this->variables) {
+                    result.insert(typename VariableSubstitutionType::value_type(variable, (this->getLowerBoundary(variable) + this->getUpperBoundary(variable))/2));
+                }
+                return result;
+            }
+            
+            template<typename ParametricType>
+            typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::area() const{
+                CoefficientType result = storm::utility::one<CoefficientType>();
+                for( auto const& variable : this->variables){
+                    result *= (this->getUpperBoundary(variable) - this->getLowerBoundary(variable));
+                }
+                return result;
+            }
 
+            template<typename ParametricType>
+            void ParameterRegion<ParametricType>::split(VariableSubstitutionType const& splittingPoint, std::vector<ParameterRegion<ParametricType> >& regionVector) const{
+                //Check if splittingPoint is valid.
+                STORM_LOG_THROW(splittingPoint.size() == this->variables.size(), storm::exceptions::InvalidArgumentException, "Tried to split a region w.r.t. a point, but the point considers a different number of variables.");
+                for(auto const& variable : this->variables){
+                    auto splittingPointEntry=splittingPoint.find(variable);
+                    STORM_LOG_THROW(splittingPointEntry != splittingPoint.end(), storm::exceptions::InvalidArgumentException, "tried to split a region but a variable of this region is not defined by the splitting point.");
+                    STORM_LOG_THROW(this->getLowerBoundary(variable) <=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "tried to split a region but the splitting point is not contained in the region.");
+                    STORM_LOG_THROW(this->getUpperBoundary(variable) >=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "tried to split a region but the splitting point is not contained in the region.");
+                }
+                
+                //Now compute the subregions.
+                std::vector<VariableSubstitutionType> vertices(this->getVerticesOfRegion(this->variables));
+                for(auto const& vertex : vertices){
+                    //The resulting subregion is the smallest region containing vertex and splittingPoint.
+                    VariableSubstitutionType subLower, subUpper;
+                    for(auto variableBound : this->lowerBoundaries){
+                        Variable variable = variableBound.first;
+                        auto vertexEntry=vertex.find(variable);
+                        auto splittingPointEntry=splittingPoint.find(variable);
+                        subLower.insert(typename VariableSubstitutionType::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
+                        subUpper.insert(typename VariableSubstitutionType::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
+                    }
+                    ParameterRegion<ParametricType> subRegion((subLower), (subUpper));
+                    if(subRegion.area() != storm::utility::zero<CoefficientType>()){
+                        regionVector.push_back((subRegion));
+                    }
+                }
+            }
+            
             template<typename ParametricType>
             RegionCheckResult ParameterRegion<ParametricType>::getCheckResult() const {
                 return checkResult;

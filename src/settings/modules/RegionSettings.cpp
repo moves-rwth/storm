@@ -17,6 +17,7 @@ namespace storm {
             const std::string RegionSettings::approxmodeOptionName = "approxmode";
             const std::string RegionSettings::samplemodeOptionName = "samplemode";
             const std::string RegionSettings::smtmodeOptionName = "smtmode";
+            const std::string RegionSettings::refinementOptionName = "refinement";
             
             RegionSettings::RegionSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName), modesModified(false) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, regionfileOptionName, true, "Specifies the regions via a file. Format: 0.3<=p<=0.4,0.2<=q<=0.5; 0.6<=p<=0.7,0.8<=q<=0.9")
@@ -36,6 +37,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, smtmodeOptionName, true, "Sets whether SMT solving should be done and whether to encode it via a function or the model.")
                             .addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "The mode, (off, function (default), model)")
                                 .addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(smtModes)).setDefaultValueString("off").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, refinementOptionName, true, "Sets whether refinement (iteratively split regions) should be done. Only works if exactly one region (the parameter spaces) is specified.")
+                            .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("threshold", "Number between zero and one. Sets the fraction of undiscovered area at which refinement stops.").build()).build());
             }
             
             bool RegionSettings::isRegionFileSet() const{
@@ -136,10 +139,23 @@ namespace storm {
             void RegionSettings::resetModes() {
                 this->modesModified=false;
             }
+            
+            bool RegionSettings::doRefinement() const{
+                return this->getOption(refinementOptionName).getHasOptionBeenSet();
+            }
+            
+            double RegionSettings::getRefinementThreshold() const{
+                return this->getOption(refinementOptionName).getArgumentByName("threshold").getValueAsDouble();
+            }
+            
 
             bool RegionSettings::check() const{
                 if(isRegionsSet() && isRegionFileSet()){
                     STORM_LOG_ERROR("Regions specified twice: via command line AND via file.");
+                    return false;
+                }
+                if(doRefinement() && (getRefinementThreshold()<0.0 || getRefinementThreshold()>1.0)){
+                    STORM_LOG_ERROR("Refinement Threshold should be between zero and one.");
                     return false;
                 }
                 return true;

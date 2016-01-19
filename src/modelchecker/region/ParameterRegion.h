@@ -27,6 +27,8 @@ namespace storm {
 
                 ParameterRegion(VariableSubstitutionType const& lowerBounds, VariableSubstitutionType const& upperBounds);
                 ParameterRegion(VariableSubstitutionType&& lowerBounds, VariableSubstitutionType&& upperBounds);
+                ParameterRegion(ParameterRegion const& pr) = default;
+                
                 virtual ~ParameterRegion();
 
                 std::set<VariableType> getVariables() const;
@@ -50,6 +52,23 @@ namespace storm {
                  * Returns some point that lies within this region
                  */
                 VariableSubstitutionType getSomePoint() const;
+                
+                /*!
+                 * Returns the center point of this region
+                 */
+                VariableSubstitutionType getCenterPoint() const;
+                
+                /*!
+                 * Returns the area of this region
+                 */
+                CoefficientType area() const;
+                
+                /*!
+                 * Splits the region at the given point and inserts the resulting subregions at the end of the given vector.
+                 * It is assumed that the point lies within this region.
+                 * Subregions with area()==0 are not inserted in the vector.
+                 */
+                void split(VariableSubstitutionType const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const;
 
                 RegionCheckResult getCheckResult() const;
                 void setCheckResult(RegionCheckResult checkResult);
@@ -128,8 +147,8 @@ namespace storm {
 
                 void init();
 
-                VariableSubstitutionType const lowerBoundaries;
-                VariableSubstitutionType const upperBoundaries;
+                VariableSubstitutionType lowerBoundaries;
+                VariableSubstitutionType upperBoundaries;
                 std::set<VariableType> variables;
                 RegionCheckResult checkResult;
                 VariableSubstitutionType satPoint;

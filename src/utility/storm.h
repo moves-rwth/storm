@@ -21,7 +21,7 @@
 
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
-
+#include "src/settings/modules/RegionSettings.h"
 
 // Formula headers.
 #include "src/logic/Formulas.h"

@@ -24,7 +24,7 @@ then
 	dobisim="-bisim"
 else
 	declare -a models=("brp" "coin2" "coin4" "zeroconf" "reporter2" "reporter4")
-#	declare -a models=( "zeroconf" "reporter2" "reporter4")
+	#declare -a models=( "zeroconf" "reporter2" "reporter4")
 	dobisim=""
 fi
 	for model in "${models[@]}"
@@ -38,7 +38,7 @@ fi
 		echo "-------------------------------------------------------------" >> $1
 		echo "---- WORKING ON: $modelfolder/$instance ----" >>$1
 		echo "-------------------------------------------------------------" >> $1
-		$timeout "$executable" -s $modelfolder/$instance $dobisim --prop $modelfolder/$model.prctl --parametric --parametricRegion --region:regionfile $modelfolder/$model"_regions.txt" >> $1
+		$timeout "$executable" -s $modelfolder/$instance $dobisim --prop $modelfolder/$model.prctl --parametric --parametricRegion --region:regionfile $modelfolder/$model"_space.txt" --region:refinement 0.05 --region:samplemode off >> $1
 		done < "$modelfolder/models"
 
 	done

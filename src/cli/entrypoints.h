@@ -36,10 +36,14 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Currently parametric region verification is only available for DTMCs and Mdps.");
                 }
                 for (auto const& formula : formulas) {
-                    std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given regions." << std::endl;
+                    std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given region(s)." << std::endl;
                     STORM_LOG_THROW(modelchecker->canHandle(*formula.get()), storm::exceptions::InvalidSettingsException, "The parametric region check engine does not support this property.");
                     modelchecker->specifyFormula(formula);
-                    modelchecker->checkRegions(regions);
+                    if(storm::settings::regionSettings().doRefinement()){
+                        modelchecker->refineAndCheckRegion(regions, storm::settings::regionSettings().getRefinementThreshold());
+                    } else {
+                        modelchecker->checkRegions(regions);
+                    }
                     modelchecker->printStatisticsToStream(std::cout);
                     std::cout << std::endl;
                 }

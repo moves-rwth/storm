@@ -64,6 +64,19 @@ namespace storm {
                 void checkRegions(std::vector<ParameterRegion<ParametricType>>& regions);
                 
                 /*!
+                 * Refines a given region and checks whether the specified formula holds for all parameters in the subregion.
+                 * The procedure stops as soon as the fraction of the area of regions where the result is neither "ALLSAT" nor "ALLVIOLATED" is less then the given threshold.
+                 * 
+                 * It is required that the given vector of regions contains exactly one region (the parameter space). All the analyzed regions are appended to that vector.
+                 * 
+                 * @note A formula has to be specified first.
+                 * 
+                 * @param regions The considered region
+                 * @param refinementThreshold The considered threshold.
+                 */
+                void refineAndCheckRegion(std::vector<ParameterRegion<ParametricType>>& regions, double const& refinementThreshold);
+                
+                /*!
                  * Checks whether the given formula holds for all parameters that lie in the given region.
                  * Sets the region checkresult accordingly.
                  * 
