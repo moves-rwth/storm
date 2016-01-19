@@ -73,12 +73,12 @@ BOOST_PYTHON_MODULE(_core)
     // Formula
     ////////////////////////////////////////////
     class_<storm::logic::Formula, std::shared_ptr<storm::logic::Formula>, boost::noncopyable>("Formula", no_init)
-        .def("toString", &storm::logic::Formula::toString);
+        .def("__str__", &storm::logic::Formula::toString);
 	class_<std::vector<std::shared_ptr<storm::logic::Formula>>>("FormulaVec")
 			.def(vector_indexing_suite<std::vector<std::shared_ptr<storm::logic::Formula>>, true>())
 			;
     class_<storm::logic::ProbabilityOperatorFormula, std::shared_ptr<storm::logic::ProbabilityOperatorFormula>, bases<storm::logic::Formula>>("ProbabilityOperatorFormula", no_init)
-        .def("toString", &storm::logic::ProbabilityOperatorFormula::toString);
+        .def("__str__", &storm::logic::ProbabilityOperatorFormula::toString);
 
     register_ptr_to_python<std::shared_ptr<storm::logic::Formula>>();
 
@@ -87,7 +87,7 @@ BOOST_PYTHON_MODULE(_core)
     ////////////////////////////////////////////
 
     class_<storm::prism::Program>("Program")
-        .add_property("nrModules", &storm::prism::Program::getNumberOfModules)
+        .add_property("nr_modules", &storm::prism::Program::getNumberOfModules)
     ;
 
 
@@ -98,7 +98,7 @@ BOOST_PYTHON_MODULE(_core)
     ;
     register_ptr_to_python<std::shared_ptr<storm::modelchecker::CheckResult>>();
 
-    def("printResult", printResult);
+    def("print_result", printResult);
 
 
     ////////////////////////////////////////////
@@ -113,8 +113,8 @@ BOOST_PYTHON_MODULE(_core)
             ;
 
     class_<storm::models::ModelBase, std::shared_ptr<storm::models::ModelBase>, boost::noncopyable>("ModelBase", no_init)
-            .add_property("nrStates", &storm::models::ModelBase::getNumberOfStates)
-            .add_property("nrTransitions", &storm::models::ModelBase::getNumberOfTransitions)
+            .add_property("nr_states", &storm::models::ModelBase::getNumberOfStates)
+            .add_property("nr_transitions", &storm::models::ModelBase::getNumberOfTransitions)
             .add_property("model_type", &storm::models::ModelBase::getType)
             .def("asPdtmc", &storm::models::ModelBase::as<storm::models::sparse::Dtmc<storm::RationalFunction>>)
     ;
@@ -130,12 +130,12 @@ BOOST_PYTHON_MODULE(_core)
     shared_ptr_implicitely_convertible<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Model<storm::RationalFunction>>();
 
 
-    def("parseFormulae", storm::parseFormulasForProgram);
-    def("parseProgram", storm::parseProgram);
+    def("parse_formulae", storm::parseFormulasForProgram);
+    def("parse_program", storm::parseProgram);
 
-    def("buildModel", buildModel);
+    def("build_model", buildModel);
 
-    def("buildModelFromPrismProgram", storm::buildSymbolicModel<double>);
+    def("buildodelFromPrismProgram", storm::buildSymbolicModel<double>);
     def("buildParametricModelFromPrismProgram", storm::buildSymbolicModel<storm::RationalFunction>);
 
     //////////////////////////////////////////////
@@ -147,5 +147,5 @@ BOOST_PYTHON_MODULE(_core)
     ;
 
 
-    def("performStateElimination", boost::python::converter::adapt_unique(storm::verifySparseModel<storm::RationalFunction>));
+    def("perform_state_elimination", boost::python::converter::adapt_unique(storm::verifySparseModel<storm::RationalFunction>));
 }
