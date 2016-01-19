@@ -53,7 +53,7 @@ namespace storm {
                 
                 predicateDdVariables.push_back(newMetaVariable);
                 predicateBdds.emplace_back(manager->getEncoding(newMetaVariable.first, 1), manager->getEncoding(newMetaVariable.second, 1));
-                predicateIdentities.push_back(manager->template getIdentity<ValueType>(newMetaVariable.first).equals(manager->template getIdentity<ValueType>(newMetaVariable.second)));
+                predicateIdentities.push_back(manager->getEncoding(newMetaVariable.first, 1).iff(manager->getEncoding(newMetaVariable.second, 1)));
                 allPredicateIdentities &= predicateIdentities.back();
                 sourceVariables.insert(newMetaVariable.first);
                 successorVariables.insert(newMetaVariable.second);

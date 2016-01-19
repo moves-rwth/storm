@@ -13,10 +13,10 @@ namespace storm {
         namespace menu_games {
             
             template <storm::dd::DdType DdType, typename ValueType>
-            StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.manager)), expressionInformation(expressionInformation), ddInformation(ddInformation), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(ddInformation.manager->getBddZero()), constraint(ddInformation.manager->getBddOne()) {
+            StateSetAbstractor<DdType, ValueType>::StateSetAbstractor(AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.getManager())), expressionInformation(expressionInformation), ddInformation(ddInformation), variablePartition(expressionInformation.getVariables()), relevantPredicatesAndVariables(), concretePredicateVariables(), needsRecomputation(false), cachedBdd(ddInformation.manager->getBddZero()), constraint(ddInformation.manager->getBddOne()) {
                 
                 // Assert all range expressions to enforce legal variable values.
-                for (auto const& rangeExpression : expressionInformation.rangeExpressions) {
+                for (auto const& rangeExpression : expressionInformation.getRangeExpressions()) {
                     smtSolver->add(rangeExpression);
                 }
                 
@@ -31,8 +31,8 @@ namespace storm {
                 }
                 
                 // Refine the command based on all initial predicates.
-                std::vector<uint_fast64_t> allPredicateIndices(expressionInformation.predicates.size());
-                for (auto index = 0; index < expressionInformation.predicates.size(); ++index) {
+                std::vector<uint_fast64_t> allPredicateIndices(expressionInformation.getPredicates().size());
+                for (auto index = 0; index < expressionInformation.getPredicates().size(); ++index) {
                     allPredicateIndices[index] = index;
                 }
                 this->refine(allPredicateIndices);
@@ -40,10 +40,10 @@ namespace storm {
             
             template <storm::dd::DdType DdType, typename ValueType>
             void StateSetAbstractor<DdType, ValueType>::addMissingPredicates(std::set<uint_fast64_t> const& newRelevantPredicateIndices) {
-                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newPredicateVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.manager, relevantPredicatesAndVariables, newRelevantPredicateIndices);
+                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newPredicateVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.getManager(), relevantPredicatesAndVariables, newRelevantPredicateIndices);
                 
                 for (auto const& element : newPredicateVariables) {
-                    smtSolver->add(storm::expressions::iff(element.first, expressionInformation.predicates[element.second]));
+                    smtSolver->add(storm::expressions::iff(element.first, expressionInformation.getPredicates()[element.second]));
                     decisionVariables.push_back(element.first);
                 }
                 
@@ -55,7 +55,7 @@ namespace storm {
             void StateSetAbstractor<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& newPredicates) {
                 // Make the partition aware of the new predicates, which may make more predicates relevant to the abstraction.
                 for (auto const& predicateIndex : newPredicates) {
-                    variablePartition.addExpression(expressionInformation.predicates[predicateIndex]);
+                    variablePartition.addExpression(expressionInformation.getPredicates()[predicateIndex]);
                 }
                 needsRecomputation = true;
             }
@@ -135,7 +135,7 @@ namespace storm {
                 smtSolver->push();
                 
                 // Then add the constraint.
-                std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> result = constraint.toExpression(expressionInformation.manager, ddInformation.bddVariableIndexToPredicateMap);
+                std::pair<std::vector<storm::expressions::Expression>, std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable>> result = constraint.toExpression(expressionInformation.getManager(), ddInformation.bddVariableIndexToPredicateMap);
                 
                 for (auto const& expression : result.first) {
                     smtSolver->add(expression);

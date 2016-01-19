@@ -50,7 +50,7 @@ namespace storm {
                  * @param ddInformation The DD-related information including the manager.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  */
-                AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+                AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
                 /*!
                  * Refines the abstract command with the given predicates.
@@ -156,7 +156,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;
 
                 // The expression-related information.
-                AbstractionExpressionInformation const& expressionInformation;
+                AbstractionExpressionInformation& expressionInformation;
                 
                 // The DD-related information.
                 AbstractionDdInformation<DdType, ValueType> const& ddInformation;

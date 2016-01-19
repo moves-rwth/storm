@@ -40,6 +40,63 @@ namespace storm {
                  */
                 void addPredicates(std::vector<storm::expressions::Expression> const& predicates);
                 
+                /*!
+                 * Retrieves the expression manager.
+                 *
+                 * @return The manager.
+                 */
+                storm::expressions::ExpressionManager& getManager();
+
+                /*!
+                 * Retrieves the expression manager.
+                 *
+                 * @return The manager.
+                 */
+                storm::expressions::ExpressionManager const& getManager() const;
+                
+                /*!
+                 * Retrieves all currently known predicates.
+                 *
+                 * @return The list of known predicates.
+                 */
+                std::vector<storm::expressions::Expression>& getPredicates();
+
+                /*!
+                 * Retrieves all currently known predicates.
+                 *
+                 * @return The list of known predicates.
+                 */
+                std::vector<storm::expressions::Expression> const& getPredicates() const;
+
+                /*!
+                 * Retrieves all currently known variables.
+                 *
+                 * @return The set of known variables.
+                 */
+                std::set<storm::expressions::Variable>& getVariables();
+                
+                /*!
+                 * Retrieves all currently known variables.
+                 *
+                 * @return The set of known variables.
+                 */
+                std::set<storm::expressions::Variable> const& getVariables() const;
+                
+                /*!
+                 * Retrieves a list of expressions that ensure the ranges of the variables.
+                 *
+                 * @return The range expressions.
+                 */
+                std::vector<storm::expressions::Expression>& getRangeExpressions();
+                
+                /*!
+                 * Retrieves a list of expressions that ensure the ranges of the variables.
+                 *
+                 * @return The range expressions.
+                 */
+                std::vector<storm::expressions::Expression> const& getRangeExpressions() const;
+                
+            private:
                 // The manager responsible for the expressions of the program and the SMT solvers.
                 storm::expressions::ExpressionManager& manager;
                 

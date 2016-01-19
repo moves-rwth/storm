@@ -102,13 +102,21 @@ namespace storm {
             
             /*!
              * Retrieves the ADD representing the identity of the meta variable, i.e., a function that maps all legal
-             * values of the range of the meta variable to themselves.
+             * values of the range of the meta variable to the values themselves.
              *
              * @param variable The expression variable associated with the meta variable.
              * @return The identity of the meta variable.
              */
             template<typename ValueType>
             Add<LibraryType, ValueType> getIdentity(storm::expressions::Variable const& variable) const;
+            
+            /*!
+             * Retrieves a BDD that is the cube of the variables representing the given meta variable.
+             *
+             * @param variable The expression variable associated with the meta variable.
+             * @return The cube of the meta variable.
+             */
+            Bdd<LibraryType> getCube(storm::expressions::Variable const& variable) const;
             
             /*!
              * Adds an integer meta variable with the given range.

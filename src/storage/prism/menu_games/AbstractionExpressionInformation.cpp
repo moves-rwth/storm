@@ -20,6 +20,38 @@ namespace storm {
                     this->addPredicate(predicate);
                 }
             }
+         
+            storm::expressions::ExpressionManager& AbstractionExpressionInformation::getManager() {
+                return manager;
+            }
+            
+            storm::expressions::ExpressionManager const& AbstractionExpressionInformation::getManager() const {
+                return manager;
+            }
+ 
+            std::vector<storm::expressions::Expression>& AbstractionExpressionInformation::getPredicates() {
+                return predicates;
+            }
+            
+            std::vector<storm::expressions::Expression> const& AbstractionExpressionInformation::getPredicates() const {
+                return predicates;
+            }
+            
+            std::set<storm::expressions::Variable>& AbstractionExpressionInformation::getVariables() {
+                return variables;
+            }
+            
+            std::set<storm::expressions::Variable> const& AbstractionExpressionInformation::getVariables() const {
+                return variables;
+            }
+            
+            std::vector<storm::expressions::Expression>& AbstractionExpressionInformation::getRangeExpressions() {
+                return rangeExpressions;
+            }
+            
+            std::vector<storm::expressions::Expression> const& AbstractionExpressionInformation::getRangeExpressions() const {
+                return rangeExpressions;
+            }
             
         }
     }

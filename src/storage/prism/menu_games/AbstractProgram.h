@@ -62,7 +62,7 @@ namespace storm {
                 storm::dd::Bdd<DdType> getStates(storm::expressions::Expression const& predicate);
                 
                 /*!
-                 * Refines the abstract module with the given predicates.
+                 * Refines the abstract program with the given predicates.
                  *
                  * @param predicates The new predicates.
                  */

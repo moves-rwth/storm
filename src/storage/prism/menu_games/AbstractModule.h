@@ -31,7 +31,7 @@ namespace storm {
                  * @param ddInformation The DD-related information including the manager.
                  * @param smtSolverFactory A factory that is to be used for creating new SMT solvers.
                  */
-                AbstractModule(storm::prism::Module const& module, AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+                AbstractModule(storm::prism::Module const& module, AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
                 /*!
                  * Refines the abstract module with the given predicates.

@@ -74,7 +74,7 @@ namespace storm {
                 uint_fast64_t getBlockIndexOfVariable(storm::expressions::Variable const& variable) const;
                 
                 /*!
-                 * Retrieves the number of blocks of the varible partition.
+                 * Retrieves the number of blocks of the variable partition.
                  *
                  * @return The number of blocks in this partition.
                  */

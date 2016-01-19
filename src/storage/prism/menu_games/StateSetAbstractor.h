@@ -58,7 +58,7 @@ namespace storm {
                  * supposed to abstract.
                  * @param smtSolverFactory A factory that can create new SMT solvers.
                  */
-                StateSetAbstractor(AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
+                StateSetAbstractor(AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, std::vector<storm::expressions::Expression> const& statePredicates, storm::utility::solver::SmtSolverFactory const& smtSolverFactory);
                 
                 /*!
                  * Refines the abstractor by making the given predicates new abstract predicates.
@@ -116,7 +116,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;
                 
                 // The expression-related information.
-                AbstractionExpressionInformation const& expressionInformation;
+                AbstractionExpressionInformation& expressionInformation;
                 
                 // The DD-related information.
                 AbstractionDdInformation<DdType, ValueType> const& ddInformation;

@@ -18,13 +18,13 @@ namespace storm {
     namespace prism {
         namespace menu_games {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation const& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.manager)), expressionInformation(expressionInformation), ddInformation(ddInformation), command(command), variablePartition(expressionInformation.variables), relevantPredicatesAndVariables(), cachedDd(std::make_pair(ddInformation.manager->getBddZero(), 0)), decisionVariables() {
+            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.getManager())), expressionInformation(expressionInformation), ddInformation(ddInformation), command(command), variablePartition(expressionInformation.getVariables()), relevantPredicatesAndVariables(), cachedDd(std::make_pair(ddInformation.manager->getBddZero(), 0)), decisionVariables() {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
                 
                 // Assert all range expressions to enforce legal variable values.
-                for (auto const& rangeExpression : expressionInformation.rangeExpressions) {
+                for (auto const& rangeExpression : expressionInformation.getRangeExpressions()) {
                     smtSolver->add(rangeExpression);
                 }
                 
@@ -32,8 +32,8 @@ namespace storm {
                 smtSolver->add(command.getGuardExpression());
 
                 // Refine the command based on all initial predicates.
-                std::vector<uint_fast64_t> allPredicateIndices(expressionInformation.predicates.size());
-                for (auto index = 0; index < expressionInformation.predicates.size(); ++index) {
+                std::vector<uint_fast64_t> allPredicateIndices(expressionInformation.getPredicates().size());
+                for (auto index = 0; index < expressionInformation.getPredicates().size(); ++index) {
                     allPredicateIndices[index] = index;
                 }
                 this->refine(allPredicateIndices);
@@ -43,7 +43,7 @@ namespace storm {
             void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
                 // Add all predicates to the variable partition.
                 for (auto predicateIndex : predicates) {
-                    variablePartition.addExpression(expressionInformation.predicates[predicateIndex]);
+                    variablePartition.addExpression(expressionInformation.getPredicates()[predicateIndex]);
                 }
                 
                 STORM_LOG_TRACE("Current variable partition is: " << variablePartition);
@@ -173,9 +173,9 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::addMissingPredicates(std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> const& newRelevantPredicates) {
                 // Determine and add new relevant source predicates.
-                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.manager, relevantPredicatesAndVariables.first, newRelevantPredicates.first);
+                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.getManager(), relevantPredicatesAndVariables.first, newRelevantPredicates.first);
                 for (auto const& element : newSourceVariables) {
-                    smtSolver->add(storm::expressions::iff(element.first, expressionInformation.predicates[element.second]));
+                    smtSolver->add(storm::expressions::iff(element.first, expressionInformation.getPredicates()[element.second]));
                     decisionVariables.push_back(element.first);
                 }
                 
@@ -185,9 +185,9 @@ namespace storm {
                 
                 // Do the same for every update.
                 for (uint_fast64_t index = 0; index < command.get().getNumberOfUpdates(); ++index) {
-                    std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSuccessorVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.manager, relevantPredicatesAndVariables.second[index], newRelevantPredicates.second[index]);
+                    std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSuccessorVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.getManager(), relevantPredicatesAndVariables.second[index], newRelevantPredicates.second[index]);
                     for (auto const& element : newSuccessorVariables) {
-                        smtSolver->add(storm::expressions::iff(element.first, expressionInformation.predicates[element.second].substitute(command.get().getUpdate(index).getAsVariableToExpressionMap())));
+                        smtSolver->add(storm::expressions::iff(element.first, expressionInformation.getPredicates()[element.second].substitute(command.get().getUpdate(index).getAsVariableToExpressionMap())));
                         decisionVariables.push_back(element.first);
                     }
                     
@@ -277,7 +277,7 @@ namespace storm {
                 auto relevantIte = relevantPredicatesAndVariables.first.end();
                 
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
-                for (uint_fast64_t predicateIndex = 0; predicateIndex < expressionInformation.predicates.size(); ++predicateIndex) {
+                for (uint_fast64_t predicateIndex = 0; predicateIndex < expressionInformation.getPredicates().size(); ++predicateIndex) {
                     if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
                         result &= ddInformation.predicateIdentities[predicateIndex];
                     } else {

@@ -96,6 +96,12 @@ namespace storm {
         }
         
         template<DdType LibraryType>
+        Bdd<LibraryType> DdManager<LibraryType>::getCube(storm::expressions::Variable const& variable) const {
+            storm::dd::DdMetaVariable<LibraryType> const& metaVariable = this->getMetaVariable(variable);
+            return metaVariable.getCube();
+        }
+        
+        template<DdType LibraryType>
         std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high, boost::optional<std::pair<MetaVariablePosition, storm::expressions::Variable>> const& position) {
             // Check whether the variable name is legal.
             STORM_LOG_THROW(name != "" && name.back() != '\'', storm::exceptions::InvalidArgumentException, "Illegal name of meta variable: '" << name << "'.");
