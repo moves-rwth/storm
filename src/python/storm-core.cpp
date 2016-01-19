@@ -82,7 +82,7 @@ BOOST_PYTHON_MODULE(_core)
     ;
     class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction> >, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricModel", no_init);
     class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseModel", no_init);
-    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParamtricMc", no_init);
+    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricMc", no_init);
 
     register_ptr_to_python<std::shared_ptr<storm::models::ModelBase>>();
     register_ptr_to_python<std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>();
