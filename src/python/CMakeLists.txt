@@ -4,12 +4,12 @@
 ##
 #############################################################
 
-function (add_python_module _libname _modulename, _sources)
+function (add_python_module _libname _modulename _sources)
     add_library(${_libname} SHARED ${_sources})
     target_link_libraries(${_libname} storm ${BOOST_PYTHON_LIB} ${PYTHON_LIBRARIES})
     set_target_properties(${_libname} PROPERTIES
             OUTPUT_NAME "_${_modulename}"
-            LIBRARY_OUTPUT_DIRECTORY ${STORMPY_OUTPUT_DIR}/${_modulename}
+            LIBRARY_OUTPUT_DIRECTORY "${STORMPY_OUTPUT_DIR}/${_modulename}"
             PREFIX ""
             SUFFIX ".so"
             )
