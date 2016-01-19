@@ -3,6 +3,7 @@
 #include "../utility/storm.h"
 #include "../logic/Formulas.h"
 
+#include <type_traits>
 
 namespace boost {
     template<class T> T* get_pointer(std::shared_ptr<T> p) { return p.get(); }
@@ -49,14 +50,21 @@ namespace boost { namespace python { namespace converter {
 
         }}} // namespace boost::python::converter
 
+
 template<typename Source, typename Target>
-void shared_ptr_implicitely_convertible() {
+void shared_ptr_implicitly_convertible() {
     boost::python::implicitly_convertible<std::shared_ptr<Source>, std::shared_ptr<Target>>();
-};
+}
+
+
+template<typename T>
+void register_shared_ptr() {
+    boost::python::register_ptr_to_python<std::shared_ptr<T>>();
+}
+
 
 
 std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula> const& formula) {
-    storm::settings::SettingsManager::manager().setFromString("");
     return storm::buildSymbolicModel<storm::RationalFunction>(program, std::vector<std::shared_ptr<storm::logic::Formula>>(1,formula)).model;
 }
 
@@ -64,10 +72,57 @@ void printResult(std::shared_ptr<storm::modelchecker::CheckResult> result) {
     result->writeToStream(std::cout);
 }
 
+void setupStormLib(std::string const& args) {
+    storm::utility::setUp();
+    storm::settings::SettingsManager::manager().setFromString(args);
+}
+
+// primary class template
+template<typename S, typename T, typename Enable = void>
+struct ImplConversionSharedPtr
+{
+    void c() { shared_ptr_implicitly_convertible<S,T>(); }
+};
+
+// specialized class template
+template<typename S, typename T>
+struct ImplConversionSharedPtr<S, T, typename std::enable_if<std::is_same<T, void>::value>::type>
+{
+    void c() { }
+};
+
+template<typename B>
+struct bases_holder {
+    typedef boost::python::bases<B> Type;
+};
+
+template<>
+struct bases_holder<void> {
+    typedef boost::python::bases<> Type;
+};
+
+
+template<typename C, typename B=void, typename NC=void>
+boost::python::class_<C, std::shared_ptr<C>, typename bases_holder<B>::Type, NC> defineClass(char const* name, char const* docstring, typename  std::enable_if_t<std::is_default_constructible<C>::value>::type* = 0) {
+    auto inst = boost::python::class_<C, std::shared_ptr<C>, typename bases_holder<B>::Type, NC>(name, docstring);
+    register_shared_ptr<C>();
+    ImplConversionSharedPtr<C,B>().c();
+    return inst;
+};
+
+template<typename C, typename B=void, typename NC=void>
+boost::python::class_<C, std::shared_ptr<C>, typename bases_holder<B>::Type, NC> defineClass(char const* name, char const* docstring) {
+    auto inst = boost::python::class_<C, std::shared_ptr<C>, typename bases_holder<B>::Type, NC>(name, docstring, boost::python::no_init);
+    register_shared_ptr<C>();
+    ImplConversionSharedPtr<C,B>().c();
+    return inst;
+};
+
+
 BOOST_PYTHON_MODULE(_core)
 {
     using namespace boost::python;
-    def("setUp", storm::utility::setUp);
+    def("setUp", setupStormLib);
 
     ////////////////////////////////////////////
     // Formula
@@ -86,7 +141,8 @@ BOOST_PYTHON_MODULE(_core)
     // Program
     ////////////////////////////////////////////
 
-    class_<storm::prism::Program>("Program")
+    defineClass<storm::prism::Program>("Program", "")
+    //class_<storm::prism::Program>("Program")
         .add_property("nr_modules", &storm::prism::Program::getNumberOfModules)
     ;
 
@@ -112,28 +168,37 @@ BOOST_PYTHON_MODULE(_core)
             .value("ma", storm::models::ModelType::MarkovAutomaton)
             ;
 
-    class_<storm::models::ModelBase, std::shared_ptr<storm::models::ModelBase>, boost::noncopyable>("ModelBase", no_init)
-            .add_property("nr_states", &storm::models::ModelBase::getNumberOfStates)
+    defineClass<storm::models::ModelBase, void, boost::noncopyable>("ModelBase", "")
+         .add_property("nr_states", &storm::models::ModelBase::getNumberOfStates)
             .add_property("nr_transitions", &storm::models::ModelBase::getNumberOfTransitions)
             .add_property("model_type", &storm::models::ModelBase::getType)
             .def("asPdtmc", &storm::models::ModelBase::as<storm::models::sparse::Dtmc<storm::RationalFunction>>)
+            .def("asPmdp", &storm::models::ModelBase::as<storm::models::sparse::Mdp<storm::RationalFunction>>)
     ;
-    register_ptr_to_python<std::shared_ptr<storm::models::ModelBase>>();
-    class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction> >, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricModel", no_init);
-    register_ptr_to_python<std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>();
-    class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseModel", no_init);
-    register_ptr_to_python<std::shared_ptr<storm::models::sparse::Model<double>>>();
-    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::sparse::Model<storm::RationalFunction>>>("SparseParametricMc", no_init);
-    register_ptr_to_python<std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>>();
 
-//  implicitly_convertible<std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>();
-    shared_ptr_implicitely_convertible<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Model<storm::RationalFunction>>();
+    defineClass<storm::models::sparse::Model<storm::RationalFunction>, storm::models::ModelBase, boost::noncopyable>("SparseParametricModel", "");
+    //class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction> >, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricModel", no_init);
+    //register_shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>();
+    //shared_ptr_implicitly_convertible<storm::models::sparse::Model<storm::RationalFunction>, storm::models::ModelBase>();
+
+    class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseModel", no_init);
+    register_shared_ptr<storm::models::sparse::Model<double>>();
+    shared_ptr_implicitly_convertible<storm::models::sparse::Dtmc<double>, storm::models::sparse::Model<double>>();
+
+    defineClass<storm::models::sparse::Dtmc<storm::RationalFunction>,  storm::models::sparse::Model<storm::RationalFunction>>("SparseParametricMc", "");
+    //class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::sparse::Model<storm::RationalFunction>>>("SparseParametricMc", no_init);
+    //register_shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    //shared_ptr_implicitly_convertible<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Model<storm::RationalFunction>>();
+
+    class_<storm::models::sparse::Mdp<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::sparse::Model<storm::RationalFunction>>>("SparseParametricMdp", no_init);
+    register_shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>>();
+
 
 
     def("parse_formulae", storm::parseFormulasForProgram);
     def("parse_program", storm::parseProgram);
 
-    def("build_model", buildModel);
+    def("build_model", buildModel, return_value_policy<return_by_value>());
 
     def("buildodelFromPrismProgram", storm::buildSymbolicModel<double>);
     def("buildParametricModelFromPrismProgram", storm::buildSymbolicModel<storm::RationalFunction>);
