@@ -4,9 +4,31 @@
 #include "../logic/Formulas.h"
 
 
-namespace boost {
-    template<class T> T* get_pointer(std::shared_ptr<T> p) { return p.get(); }
+//namespace boost {
+//    template<class T> T* get_pointer(std::shared_ptr<T> p) { return p.get(); }
+//}
+
+namespace boost { namespace python { namespace converter {
+
+            template <class T>
+            PyObject* shared_ptr_to_python(std::shared_ptr<T> const& x)
+            {
+                if (!x)
+                    return python::detail::none();
+                else if (shared_ptr_deleter* d = std::get_deleter<shared_ptr_deleter>(x))
+                    return incref( d->owner.get() );
+                else
+                    return converter::registered<std::shared_ptr<T> const&>::converters.to_python(&x);
+            }
+
+        }}} // namespace boost::python::converter
+
+
+
+std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula> const& formula) {
+    return storm::buildSymbolicModel<storm::RationalFunction>(program, std::vector<std::shared_ptr<storm::logic::Formula>>(1,formula)).model;
 }
+
 BOOST_PYTHON_MODULE(_core)
 {
     using namespace boost::python;
@@ -42,15 +64,30 @@ BOOST_PYTHON_MODULE(_core)
     ////////////////////////////////////////////
     // Models
     ////////////////////////////////////////////
+
+    enum_<storm::models::ModelType>("ModelType")
+            .value("dtmc", storm::models::ModelType::Dtmc)
+            .value("mdp", storm::models::ModelType::Mdp)
+            .value("ctmc", storm::models::ModelType::Ctmc)
+            .value("ma", storm::models::ModelType::MarkovAutomaton)
+            ;
+
     class_<storm::models::ModelBase, std::shared_ptr<storm::models::ModelBase>, boost::noncopyable>("ModelBase", no_init)
             .add_property("nrStates", &storm::models::ModelBase::getNumberOfStates)
-            .add_property("nrTransitions", &storm::models::ModelBase::getNumberOfTransitions);
+            .add_property("nrTransitions", &storm::models::ModelBase::getNumberOfTransitions)
+            .add_property("model_type", &storm::models::ModelBase::getType)
+            .def("asPdtmc", &storm::models::ModelBase::as<storm::models::sparse::Dtmc<storm::RationalFunction>>)
+    ;
     class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction> >, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricModel", no_init);
     class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseModel", no_init);
-    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::sparse::Model<storm::RationalFunction>>>("SparseParamtricMc", no_init);
+    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParamtricMc", no_init);
+
+
 
     def("parseFormulae", storm::parseFormulasForProgram);
     def("parseProgram", storm::parseProgram);
+
+    def("buildModel", buildModel);
 
     def("buildModelFromPrismProgram", storm::buildSymbolicModel<double>);
     def("buildParametricModelFromPrismProgram", storm::buildSymbolicModel<storm::RationalFunction>);
