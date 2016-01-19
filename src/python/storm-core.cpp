@@ -21,6 +21,32 @@ namespace boost { namespace python { namespace converter {
                     return converter::registered<std::shared_ptr<T> const&>::converters.to_python(&x);
             }
 
+    /// @brief Adapter a non-member function that returns a unique_ptr to
+    ///        a python function object that returns a raw pointer but
+    ///        explicitly passes ownership to Python.
+    template<typename T, typename ...Args>
+    object adapt_unique(std::unique_ptr<T> (*fn)(Args...))
+    {
+        return make_function(
+            [fn](Args... args) { return fn(args...).release(); },
+            return_value_policy<manage_new_object>(),
+            boost::mpl::vector<T*, Args...>()
+        );
+    }
+
+    /// @brief Adapter a member function that returns a unique_ptr to
+    ///        a python function object that returns a raw pointer but
+    ///        explicitly passes ownership to Python.
+    template<typename T, typename C, typename ...Args>
+    object adapt_unique(std::unique_ptr<T> (C::*fn)(Args...))
+    {
+        return make_function(
+            [fn](C& self, Args... args) { return (self.*fn)(args...).release(); },
+            python::return_value_policy<manage_new_object>(),
+            boost::mpl::vector<T*, C&, Args...>()
+        );
+    }
+
         }}} // namespace boost::python::converter
 
 
@@ -28,6 +54,10 @@ namespace boost { namespace python { namespace converter {
 std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula> const& formula) {
     storm::settings::SettingsManager::manager().setFromString("");
     return storm::buildSymbolicModel<storm::RationalFunction>(program, std::vector<std::shared_ptr<storm::logic::Formula>>(1,formula)).model;
+}
+
+void printResult(std::shared_ptr<storm::modelchecker::CheckResult> result) {
+    result->writeToStream(std::cout);
 }
 
 BOOST_PYTHON_MODULE(_core)
@@ -60,7 +90,11 @@ BOOST_PYTHON_MODULE(_core)
     ////////////////////////////////////////////
     // Checkresult
     ////////////////////////////////////////////
-    class_<std::unique_ptr<storm::modelchecker::CheckResult>, boost::noncopyable>("CheckResult", no_init);
+    class_<storm::modelchecker::CheckResult, std::unique_ptr<storm::modelchecker::CheckResult>, boost::noncopyable>("CheckResult", no_init)
+    ;
+    register_ptr_to_python<std::shared_ptr<storm::modelchecker::CheckResult>>();
+
+    def("printResult", printResult);
 
 
     ////////////////////////////////////////////
@@ -82,10 +116,11 @@ BOOST_PYTHON_MODULE(_core)
     ;
     class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction> >, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricModel", no_init);
     class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseModel", no_init);
-    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricMc", no_init);
+    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::sparse::Model<storm::RationalFunction>>>("SparseParametricMc", no_init);
 
     register_ptr_to_python<std::shared_ptr<storm::models::ModelBase>>();
     register_ptr_to_python<std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>();
+    implicitly_convertible<std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>();
     register_ptr_to_python<std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>>();
 
     def("parseFormulae", storm::parseFormulasForProgram);
@@ -105,5 +140,5 @@ BOOST_PYTHON_MODULE(_core)
     ;
 
 
-    def("performStateElimination", storm::verifySparseModel<storm::RationalFunction>);
+    def("performStateElimination", boost::python::converter::adapt_unique(storm::verifySparseModel<storm::RationalFunction>));
 }
