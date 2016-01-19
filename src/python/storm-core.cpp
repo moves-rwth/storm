@@ -4,9 +4,9 @@
 #include "../logic/Formulas.h"
 
 
-//namespace boost {
-//    template<class T> T* get_pointer(std::shared_ptr<T> p) { return p.get(); }
-//}
+namespace boost {
+    template<class T> T* get_pointer(std::shared_ptr<T> p) { return p.get(); }
+}
 
 namespace boost { namespace python { namespace converter {
 
@@ -49,6 +49,10 @@ namespace boost { namespace python { namespace converter {
 
         }}} // namespace boost::python::converter
 
+template<typename Source, typename Target>
+void shared_ptr_implicitely_convertible() {
+    boost::python::implicitly_convertible<std::shared_ptr<Source>, std::shared_ptr<Target>>();
+};
 
 
 std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula> const& formula) {
@@ -114,14 +118,17 @@ BOOST_PYTHON_MODULE(_core)
             .add_property("model_type", &storm::models::ModelBase::getType)
             .def("asPdtmc", &storm::models::ModelBase::as<storm::models::sparse::Dtmc<storm::RationalFunction>>)
     ;
-    class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction> >, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricModel", no_init);
-    class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseModel", no_init);
-    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::sparse::Model<storm::RationalFunction>>>("SparseParametricMc", no_init);
-
     register_ptr_to_python<std::shared_ptr<storm::models::ModelBase>>();
+    class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction> >, boost::noncopyable, bases<storm::models::ModelBase>>("SparseParametricModel", no_init);
     register_ptr_to_python<std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>();
-    implicitly_convertible<std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>();
+    class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>, boost::noncopyable, bases<storm::models::ModelBase>>("SparseModel", no_init);
+    register_ptr_to_python<std::shared_ptr<storm::models::sparse::Model<double>>>();
+    class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, boost::noncopyable, bases<storm::models::sparse::Model<storm::RationalFunction>>>("SparseParametricMc", no_init);
     register_ptr_to_python<std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>>();
+
+//  implicitly_convertible<std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>();
+    shared_ptr_implicitely_convertible<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Model<storm::RationalFunction>>();
+
 
     def("parseFormulae", storm::parseFormulasForProgram);
     def("parseProgram", storm::parseProgram);
