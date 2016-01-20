@@ -58,6 +58,18 @@ endif()
 # Base path for test files
 set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
 
+# Auto-detect operating system.
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	# Mac OS
+	set(OPERATING_SYSTEM "Mac OS")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    # Linux
+	set(OPERATING_SYSTEM "Linux")
+else()
+    # Assuming Windows.
+    set(OPERATING_SYSTEM "Windows")
+ENDIF()
+message(STATUS "Detected operating system: ${OPERATING_SYSTEM}")
 
 #############################################################
 ##
@@ -536,6 +548,14 @@ set(Sylvan_INCLUDE_DIR "${STORM_SYLVAN_ROOT}/src")
 message(STATUS "Linking with shipped version of sylvan (in directory ${STORM_SYLVAN_ROOT}).")
 include_directories("${Sylvan_INCLUDE_DIR}")
 list(APPEND STORM_LINK_LIBRARIES "${binary_dir}/src/libsylvan.a")
+if(${OPERATING_SYSTEM} MATCHES "Linux")
+	find_package(Hwloc QUIET)
+	if(NOT Hwloc_FOUND)
+		message(SEND_ERROR "HWLOC is required but was not found.")
+	else()
+		list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})	
+	endif()
+endif()
 
 #############################################################
 ##
