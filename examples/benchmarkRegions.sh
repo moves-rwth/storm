@@ -34,10 +34,9 @@ fi
 		do
 			suffix="1$suffix"
 			echo "Working on $modelfolder/$instance"
-			echo "___WORKING ON: $modelfolder/$instance""____________" >>$1$suffix
+			echo "___WORKING ON $modeltype: $instance""____________" >>$1$suffix
 			echo "_________________________________________________________________________________" >> $1$suffix
 			$timeout "$executable" -s $modelfolder/$instance $dobisim --prop $modelfolder/$model.prctl --parametric --parametricRegion --region:regionfile $modelfolder/$model"_regions.txt" >> $1$suffix &
-		done < "$modelfolder/models"
 		done < "$modelfolder/models"
 		wait
 		# write logs into result file
