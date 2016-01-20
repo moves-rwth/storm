@@ -74,10 +74,11 @@ setup(cmdclass={'install': MyInstall, 'develop': MyDevelop, 'egg_info': MyEggInf
       version="0.2",
       description="Stormpy - Python Bindings for Storm",
       package_dir={'':d},
-      packages=['stormpy', 'stormpy.core', 'stormpy.info', 'stormpy.logic'],
+      packages=['stormpy', 'stormpy.core', 'stormpy.info', 'stormpy.logic', 'stormpy.expressions'],
       package_data={'stormpy.core': ['_core.so'],
                     'stormpy.logic': ['_logic.so'],
                     'stormpy.info' : ['_info.so'] ,
+                    'stormpy.expressions' : ['_expressions.so'],
                      'stormpy': ['*.so', '*.dylib', '*.a']},
 
       include_package_data=True)
