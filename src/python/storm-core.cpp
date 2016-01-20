@@ -14,8 +14,12 @@ std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const
     return storm::buildSymbolicModel<storm::RationalFunction>(program, std::vector<std::shared_ptr<storm::logic::Formula>>(1,formula)).model;
 }
 
-void printResult(std::shared_ptr<storm::modelchecker::CheckResult> result) {
-    result->writeToStream(std::cout);
+std::unique_ptr<storm::modelchecker::CheckResult> performStateElimination(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+    std::cout << "Perform state elimination" << std::endl;
+    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::verifySparseModel<storm::RationalFunction>(model, formula);
+    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+    std::cout << "Result: " << *result << std::endl;
+    return result;
 }
 
 void setupStormLib(std::string const& args) {
@@ -58,9 +62,6 @@ BOOST_PYTHON_MODULE(_core)
     ////////////////////////////////////////////
     class_<storm::modelchecker::CheckResult, std::unique_ptr<storm::modelchecker::CheckResult>, boost::noncopyable>("CheckResult", no_init)
     ;
-    register_ptr_to_python<std::shared_ptr<storm::modelchecker::CheckResult>>();
-
-    def("print_result", printResult);
 
 
     ////////////////////////////////////////////
@@ -110,5 +111,5 @@ BOOST_PYTHON_MODULE(_core)
     ;
 
 
-    def("perform_state_elimination", boost::python::converter::adapt_unique(storm::verifySparseModel<storm::RationalFunction>));
+    def("perform_state_elimination", boost::python::converter::adapt_unique(performStateElimination));
 }
