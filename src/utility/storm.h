@@ -163,7 +163,8 @@ namespace storm {
     template<typename ModelType, typename ValueType = typename ModelType::ValueType, typename std::enable_if<std::is_base_of<storm::models::sparse::Model<ValueType>, ModelType>::value, bool>::type = 0>
     std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         if (storm::settings::generalSettings().isBisimulationSet()) {
-            
+            std::cout << "Model before preprocessing: " << std::endl;
+            model->printModelInformationToStream(std::cout);
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
             STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
 
