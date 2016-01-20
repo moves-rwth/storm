@@ -198,7 +198,7 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::refineAndCheckRegion(std::vector<ParameterRegion<ParametricType>>& regions, double const& refinementThreshold) {
                 STORM_LOG_DEBUG("Applying refinement on region: " << regions.front().toString() << ".");
-                std::cout << "Applying refinement on region: " << regions.front().toString();
+                std::cout << "Applying refinement on region: " << regions.front().toString() << std::endl;
                 std::cout.flush();
                 CoefficientType areaOfParameterSpace = regions.front().area();
                 uint_fast64_t indexOfCurrentRegion=0;
