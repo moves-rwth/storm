@@ -41,18 +41,8 @@ BOOST_PYTHON_MODULE(_core)
     using namespace boost::python;
     def("setUp", setupStormLib);
 
-    ////////////////////////////////////////////
-    // Formula
-    ////////////////////////////////////////////
-    class_<storm::logic::Formula, std::shared_ptr<storm::logic::Formula>, boost::noncopyable>("Formula", no_init)
-        .def("__str__", &storm::logic::Formula::toString);
-	class_<std::vector<std::shared_ptr<storm::logic::Formula>>>("FormulaVec")
-			.def(vector_indexing_suite<std::vector<std::shared_ptr<storm::logic::Formula>>, true>())
-			;
-    class_<storm::logic::ProbabilityOperatorFormula, std::shared_ptr<storm::logic::ProbabilityOperatorFormula>, bases<storm::logic::Formula>>("ProbabilityOperatorFormula", no_init)
-        .def("__str__", &storm::logic::ProbabilityOperatorFormula::toString);
 
-    register_ptr_to_python<std::shared_ptr<storm::logic::Formula>>();
+
 
     ////////////////////////////////////////////
     // Program
@@ -104,6 +94,9 @@ BOOST_PYTHON_MODULE(_core)
     defineClass<storm::models::sparse::Dtmc<storm::RationalFunction>,  storm::models::sparse::Model<storm::RationalFunction>>("SparseParametricMc", "");
     defineClass<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Model<storm::RationalFunction>>("SparseParametricMdp", "");
 
+    defineClass<std::vector<std::shared_ptr<storm::logic::Formula>>, void, void>("FormulaVec", "Vector of formulas")
+            .def(vector_indexing_suite<std::vector<std::shared_ptr<storm::logic::Formula>>, true>())
+            ;
 
     def("parse_formulae", storm::parseFormulasForProgram);
     def("parse_program", storm::parseProgram);

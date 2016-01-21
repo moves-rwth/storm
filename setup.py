@@ -51,7 +51,7 @@ class MyEggInfo(egg_info):
 
 class MyInstall(install):
     def run(self):
-        ret = call(["cmake", "-DSTORM_PYTHON=ON",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
+        ret = call(["cmake", "-DSTORM_PYTHON=ON", "-DUSE_BOOST_STATIC_LIBRARIES=OFF",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
         if ret != 0:
             raise RuntimeError("Cmake exited with return code {}".format(ret))
         ret = call(["make", "stormpy"], cwd=d)
@@ -60,7 +60,7 @@ class MyInstall(install):
         install.run(self)
 class MyDevelop(develop):
     def run(self):
-       ret = call(["cmake", "-DSTORM_PYTHON=ON",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
+       ret = call(["cmake", "-DSTORM_PYTHON=ON","-DUSE_BOOST_STATIC_LIBRARIES=OFF",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
        if ret != 0:
            raise RuntimeError("Cmake exited with return code {}".format(ret))
        ret = call(["make", "stormpy"], cwd=d)
@@ -74,7 +74,11 @@ setup(cmdclass={'install': MyInstall, 'develop': MyDevelop, 'egg_info': MyEggInf
       version="0.2",
       description="Stormpy - Python Bindings for Storm",
       package_dir={'':d},
-      packages=['stormpy', 'stormpy.core', 'stormpy.info'],
-      package_data={'stormpy.core': ['_core.so'], 'stormpy.info' : ['_info.so'] , 'stormpy': ['*.so', '*.dylib', '*.a']},
+      packages=['stormpy', 'stormpy.core', 'stormpy.info', 'stormpy.logic', 'stormpy.expressions'],
+      package_data={'stormpy.core': ['_core.so'],
+                    'stormpy.logic': ['_logic.so'],
+                    'stormpy.info' : ['_info.so'] ,
+                    'stormpy.expressions' : ['_expressions.so'],
+                     'stormpy': ['*.so', '*.dylib', '*.a']},
 
       include_package_data=True)

@@ -169,7 +169,7 @@ find_package(GMP)
 #############################################################
 
 # Boost Option variables
-set(Boost_USE_STATIC_LIBS        ON)
+set(Boost_USE_STATIC_LIBS        ${USE_BOOST_STATIC_LIBRARIES})
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
