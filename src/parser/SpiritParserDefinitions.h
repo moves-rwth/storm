@@ -2,7 +2,7 @@
 #define	STORM_PARSER_SPIRITPARSERDEFINITIONS_H_
 
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wno-#pragma-messages"
+#pragma clang diagnostic ignored "-W#pragma-messages"
 
 // Include boost spirit.
 #define BOOST_SPIRIT_USE_PHOENIX_V3
