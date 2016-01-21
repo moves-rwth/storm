@@ -142,8 +142,8 @@ namespace storm {
             std::cout << "INPUTMODEL_INFO;" << 
                     storm::settings::generalSettings().getSymbolicModelFilename() << ";" <<
                     storm::settings::generalSettings().getConstantDefinitionString() << ";" <<
-                    model->getNumberOfStates() << ";" <<
-                    model->getNumberOfTransitions() << ";" << std::endl;
+                    modelProgramPair.model->getNumberOfStates() << ";" <<
+                    modelProgramPair.model->getNumberOfTransitions() << ";" << std::endl;
             
             // Preprocess the model if needed.
             BRANCH_ON_MODELTYPE(modelProgramPair.model, modelProgramPair.model, ValueType, LibraryType, preprocessModel, formulas);
@@ -192,8 +192,8 @@ namespace storm {
             std::cout << "DONE_MODEL_INFO;" << 
                     storm::settings::generalSettings().getSymbolicModelFilename() << ";" <<
                     storm::settings::generalSettings().getConstantDefinitionString() << ";" <<
-                    model->getNumberOfStates() << ";" <<
-                    model->getNumberOfTransitions() << ";" << std::endl;
+                    modelProgramPair.model->getNumberOfStates() << ";" <<
+                    modelProgramPair.model->getNumberOfTransitions() << ";" << std::endl;
         }
         
         template<typename ValueType>
