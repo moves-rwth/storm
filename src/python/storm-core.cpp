@@ -8,17 +8,26 @@
 #include "helpers.h"
 #include "boostPyExtension.h"
 
-
+class PmcResult {
+public:
+    storm::RationalFunction resultFunction;
+    std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> constraintsWellFormed;
+    std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> constraintsGraphPreserving;
+};
 
 std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula> const& formula) {
     return storm::buildSymbolicModel<storm::RationalFunction>(program, std::vector<std::shared_ptr<storm::logic::Formula>>(1,formula)).model;
 }
 
-std::unique_ptr<storm::modelchecker::CheckResult> performStateElimination(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+std::shared_ptr<PmcResult> performStateElimination(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
     std::cout << "Perform state elimination" << std::endl;
-    std::unique_ptr<storm::modelchecker::CheckResult> result = storm::verifySparseModel<storm::RationalFunction>(model, formula);
-    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-    std::cout << "Result: " << *result << std::endl;
+    std::unique_ptr<storm::modelchecker::CheckResult> checkResult = storm::verifySparseModel<storm::RationalFunction>(model, formula);
+    std::shared_ptr<PmcResult> result = std::make_shared<PmcResult>();
+    result->resultFunction = (checkResult->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*model->getInitialStates().begin()]);
+    std::cout << "Result: " << result->resultFunction << std::endl;
+    storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector constraintCollector(*(model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>()));
+    result->constraintsWellFormed = constraintCollector.getWellformedConstraints();
+    result->constraintsGraphPreserving = constraintCollector.getGraphPreservingConstraints();
     return result;
 }
 
@@ -26,8 +35,6 @@ void setupStormLib(std::string const& args) {
     storm::utility::setUp();
     storm::settings::SettingsManager::manager().setFromString(args);
 }
-
-
 
 BOOST_PYTHON_MODULE(_core)
 {
@@ -58,10 +65,14 @@ BOOST_PYTHON_MODULE(_core)
 
 
     ////////////////////////////////////////////
-    // Checkresult
+    // PmcResult
     ////////////////////////////////////////////
-    class_<storm::modelchecker::CheckResult, std::unique_ptr<storm::modelchecker::CheckResult>, boost::noncopyable>("CheckResult", no_init)
+    class_<PmcResult, std::shared_ptr<PmcResult>, boost::noncopyable>("PmcResult", "")
+        .add_property("result_function", &PmcResult::resultFunction)
+        .add_property("constraints_well_formed", &PmcResult::constraintsWellFormed)
+        .add_property("constraints_graph_preserving", &PmcResult::constraintsGraphPreserving)
     ;
+    register_ptr_to_python<std::shared_ptr<PmcResult>>();
 
 
     ////////////////////////////////////////////
@@ -111,5 +122,5 @@ BOOST_PYTHON_MODULE(_core)
     ;
 
 
-    def("perform_state_elimination", boost::python::converter::adapt_unique(performStateElimination));
+    def("perform_state_elimination", performStateElimination);
 }
