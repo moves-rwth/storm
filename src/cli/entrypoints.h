@@ -198,7 +198,7 @@ namespace storm {
 
             STORM_LOG_THROW(settings.isExplicitSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
             std::shared_ptr<storm::models::ModelBase> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? settings.getStateRewardsFilename() : boost::optional<std::string>(), settings.isTransitionRewardsSet() ? settings.getTransitionRewardsFilename() : boost::optional<std::string>(), settings.isChoiceLabelingSet() ? settings.getChoiceLabelingFilename() : boost::optional<std::string>());
-                    std::cout << "PrintingInfo;Filename;Constants;NumStates;NumTransitions"; << std::endl;
+                    std::cout << "PrintingInfo;Filename;Constants;NumStates;NumTransitions" << std::endl;
         std::cout << "INPUTMODEL_INFO;" << 
                 storm::settings::generalSettings().getSymbolicModelFilename() << ";" <<
                 storm::settings::generalSettings().getConstantDefinitionString() << ";" <<
@@ -215,7 +215,7 @@ namespace storm {
                 STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidStateException, "Expected sparse model.");
                 verifySparseModel<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), formulas);
             }
-        std::cout << "PrintingInfo;Filename;Constants;NumStates;NumTransitions"; << std::endl;
+        std::cout << "PrintingInfo;Filename;Constants;NumStates;NumTransitions" << std::endl;
         std::cout << "DONE_MODEL_INFO;" << 
                 storm::settings::generalSettings().getSymbolicModelFilename() << ";" <<
                 storm::settings::generalSettings().getConstantDefinitionString() << ";" <<
