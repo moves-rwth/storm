@@ -1,5 +1,2 @@
 zeroconf.pm -const K=2
-zeroconf.pm -const K=4
-zeroconf.pm -const K=6
-zeroconf.pm -const K=7
-zeroconf.pm -const K=8
+zeroconf.pm -const K=5

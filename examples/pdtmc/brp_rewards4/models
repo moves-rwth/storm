@@ -1,3 +1,2 @@
-brp_rewards4.pm -const N=512,MAX=5
-brp_rewards4.pm -const N=1024,MAX=5
-brp_rewards4.pm -const N=2048,MAX=5
+brp_rewards4.pm -const N=256,MAX=5
+brp_rewards4.pm -const N=5012,MAX=5
