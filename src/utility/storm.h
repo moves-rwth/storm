@@ -232,6 +232,9 @@ namespace storm {
                 STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Dd engine requires a dd input model");
                 return verifySymbolicModelWithDdEngine(ddModel, formula);
             }
+            case storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement: {
+                STORM_LOG_ASSERT(false, "This position should not be reached, as at this point no model has been built.");
+            }
         }
     }
 
