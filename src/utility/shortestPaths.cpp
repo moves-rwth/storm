@@ -332,6 +332,9 @@ namespace storm {
                     std::cout << " ]" << std::endl;
                 }
             }
+
+
+            template class ShortestPathsGenerator<double>;
         }
     }
 }
