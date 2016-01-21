@@ -6,7 +6,7 @@
 #include <set>
 #include <map>
 
-#include "src/storage/prism/menu_games/VariablePartition.h"
+#include "src/storage/prism/menu_games/LocalExpressionInformation.h"
 
 #include "src/storage/dd/DdType.h"
 #include "src/storage/expressions/Expression.h"
@@ -155,8 +155,8 @@ namespace storm {
                 // An SMT responsible for this abstract command.
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;
 
-                // The expression-related information.
-                AbstractionExpressionInformation& expressionInformation;
+                // The global expression-related information.
+                AbstractionExpressionInformation& globalExpressionInformation;
                 
                 // The DD-related information.
                 AbstractionDdInformation<DdType, ValueType> const& ddInformation;
@@ -164,8 +164,8 @@ namespace storm {
                 // The concrete command this abstract command refers to.
                 std::reference_wrapper<Command const> command;
                 
-                // The partition of variables and expressions.
-                VariablePartition variablePartition;
+                // The local expression-related information.
+                LocalExpressionInformation localExpressionInformation;
                 
                 // The currently relevant source/successor predicates and the corresponding variables.
                 std::pair<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>, std::vector<std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>>>> relevantPredicatesAndVariables;

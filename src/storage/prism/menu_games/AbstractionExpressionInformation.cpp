@@ -37,6 +37,14 @@ namespace storm {
                 return predicates;
             }
             
+            storm::expressions::Expression const& AbstractionExpressionInformation::getPredicateByIndex(uint_fast64_t index) const {
+                return predicates[index];
+            }
+            
+            std::size_t AbstractionExpressionInformation::getNumberOfPredicates() const {
+                return predicates.size();
+            }
+            
             std::set<storm::expressions::Variable>& AbstractionExpressionInformation::getVariables() {
                 return variables;
             }

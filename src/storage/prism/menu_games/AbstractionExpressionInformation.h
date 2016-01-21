@@ -67,7 +67,21 @@ namespace storm {
                  * @return The list of known predicates.
                  */
                 std::vector<storm::expressions::Expression> const& getPredicates() const;
+                
+                /*!
+                 * Retrieves the predicate with the given index.
+                 *
+                 * @param index The index of the predicate.
+                 */
+                storm::expressions::Expression const& getPredicateByIndex(uint_fast64_t index) const;
 
+                /*!
+                 * Retrieves the number of predicates.
+                 *
+                 * @return The number of predicates.
+                 */
+                std::size_t getNumberOfPredicates() const;
+                
                 /*!
                  * Retrieves all currently known variables.
                  *

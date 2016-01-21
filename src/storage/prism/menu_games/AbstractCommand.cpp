@@ -18,13 +18,13 @@ namespace storm {
     namespace prism {
         namespace menu_games {
             template <storm::dd::DdType DdType, typename ValueType>
-            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation& expressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(expressionInformation.getManager())), expressionInformation(expressionInformation), ddInformation(ddInformation), command(command), variablePartition(expressionInformation.getVariables()), relevantPredicatesAndVariables(), cachedDd(std::make_pair(ddInformation.manager->getBddZero(), 0)), decisionVariables() {
+            AbstractCommand<DdType, ValueType>::AbstractCommand(storm::prism::Command const& command, AbstractionExpressionInformation& globalExpressionInformation, AbstractionDdInformation<DdType, ValueType> const& ddInformation, storm::utility::solver::SmtSolverFactory const& smtSolverFactory) : smtSolver(smtSolverFactory.create(globalExpressionInformation.getManager())), globalExpressionInformation(globalExpressionInformation), ddInformation(ddInformation), command(command), localExpressionInformation(globalExpressionInformation.getVariables()), relevantPredicatesAndVariables(), cachedDd(std::make_pair(ddInformation.manager->getBddZero(), 0)), decisionVariables() {
 
                 // Make the second component of relevant predicates have the right size.
                 relevantPredicatesAndVariables.second.resize(command.getNumberOfUpdates());
                 
                 // Assert all range expressions to enforce legal variable values.
-                for (auto const& rangeExpression : expressionInformation.getRangeExpressions()) {
+                for (auto const& rangeExpression : globalExpressionInformation.getRangeExpressions()) {
                     smtSolver->add(rangeExpression);
                 }
                 
@@ -32,8 +32,8 @@ namespace storm {
                 smtSolver->add(command.getGuardExpression());
 
                 // Refine the command based on all initial predicates.
-                std::vector<uint_fast64_t> allPredicateIndices(expressionInformation.getPredicates().size());
-                for (auto index = 0; index < expressionInformation.getPredicates().size(); ++index) {
+                std::vector<uint_fast64_t> allPredicateIndices(globalExpressionInformation.getNumberOfPredicates());
+                for (auto index = 0; index < globalExpressionInformation.getNumberOfPredicates(); ++index) {
                     allPredicateIndices[index] = index;
                 }
                 this->refine(allPredicateIndices);
@@ -43,10 +43,10 @@ namespace storm {
             void AbstractCommand<DdType, ValueType>::refine(std::vector<uint_fast64_t> const& predicates) {
                 // Add all predicates to the variable partition.
                 for (auto predicateIndex : predicates) {
-                    variablePartition.addExpression(expressionInformation.getPredicates()[predicateIndex]);
+                    localExpressionInformation.addExpression(globalExpressionInformation.getPredicateByIndex(predicateIndex), predicateIndex);
                 }
                 
-                STORM_LOG_TRACE("Current variable partition is: " << variablePartition);
+                STORM_LOG_TRACE("Current variable partition is: " << localExpressionInformation);
                 
                 // Next, we check whether there is work to be done by recomputing the relevant predicates and checking
                 // whether they changed.
@@ -119,19 +119,19 @@ namespace storm {
                 std::set<storm::expressions::Variable> assignedVariables;
                 for (auto const& assignment : assignments) {
                     // Also, variables appearing on the right-hand side of an assignment are relevant for source state.
-                    auto const& rightHandSidePredicates = variablePartition.getExpressionsUsingVariables(assignment.getExpression().getVariables());
+                    auto const& rightHandSidePredicates = localExpressionInformation.getExpressionsUsingVariables(assignment.getExpression().getVariables());
                     result.first.insert(rightHandSidePredicates.begin(), rightHandSidePredicates.end());
                     
                     // Variables that are being assigned are relevant for the successor state.
                     storm::expressions::Variable const& assignedVariable = assignment.getVariable();
-                    auto const& leftHandSidePredicates = variablePartition.getExpressionsUsingVariable(assignedVariable);
+                    auto const& leftHandSidePredicates = localExpressionInformation.getExpressionsUsingVariable(assignedVariable);
                     result.second.insert(leftHandSidePredicates.begin(), leftHandSidePredicates.end());
                     
                     // Keep track of all assigned variables, so we can find the related predicates later.
                     assignedVariables.insert(assignedVariable);
                 }
                 
-                auto const& predicatesRelatedToAssignedVariable = variablePartition.getRelatedExpressions(assignedVariables);
+                auto const& predicatesRelatedToAssignedVariable = localExpressionInformation.getRelatedExpressions(assignedVariables);
                 
                 result.first.insert(predicatesRelatedToAssignedVariable.begin(), predicatesRelatedToAssignedVariable.end());
                 
@@ -143,7 +143,7 @@ namespace storm {
                 std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> result;
 
                 // To start with, all predicates related to the guard are relevant source predicates.
-                result.first = variablePartition.getExpressionsUsingVariables(command.get().getGuardExpression().getVariables());
+                result.first = localExpressionInformation.getExpressionsUsingVariables(command.get().getGuardExpression().getVariables());
                 
                 // Then, we add the predicates that become relevant, because of some update.
                 for (auto const& update : command.get().getUpdates()) {
@@ -173,9 +173,9 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType>
             void AbstractCommand<DdType, ValueType>::addMissingPredicates(std::pair<std::set<uint_fast64_t>, std::vector<std::set<uint_fast64_t>>> const& newRelevantPredicates) {
                 // Determine and add new relevant source predicates.
-                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.getManager(), relevantPredicatesAndVariables.first, newRelevantPredicates.first);
+                std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSourceVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(globalExpressionInformation.getManager(), relevantPredicatesAndVariables.first, newRelevantPredicates.first);
                 for (auto const& element : newSourceVariables) {
-                    smtSolver->add(storm::expressions::iff(element.first, expressionInformation.getPredicates()[element.second]));
+                    smtSolver->add(storm::expressions::iff(element.first, globalExpressionInformation.getPredicateByIndex(element.second)));
                     decisionVariables.push_back(element.first);
                 }
                 
@@ -185,9 +185,9 @@ namespace storm {
                 
                 // Do the same for every update.
                 for (uint_fast64_t index = 0; index < command.get().getNumberOfUpdates(); ++index) {
-                    std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSuccessorVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(expressionInformation.getManager(), relevantPredicatesAndVariables.second[index], newRelevantPredicates.second[index]);
+                    std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> newSuccessorVariables = AbstractionDdInformation<DdType, ValueType>::declareNewVariables(globalExpressionInformation.getManager(), relevantPredicatesAndVariables.second[index], newRelevantPredicates.second[index]);
                     for (auto const& element : newSuccessorVariables) {
-                        smtSolver->add(storm::expressions::iff(element.first, expressionInformation.getPredicates()[element.second].substitute(command.get().getUpdate(index).getAsVariableToExpressionMap())));
+                        smtSolver->add(storm::expressions::iff(element.first, globalExpressionInformation.getPredicateByIndex(element.second).substitute(command.get().getUpdate(index).getAsVariableToExpressionMap())));
                         decisionVariables.push_back(element.first);
                     }
                     
@@ -277,7 +277,7 @@ namespace storm {
                 auto relevantIte = relevantPredicatesAndVariables.first.end();
                 
                 storm::dd::Bdd<DdType> result = ddInformation.manager->getBddOne();
-                for (uint_fast64_t predicateIndex = 0; predicateIndex < expressionInformation.getPredicates().size(); ++predicateIndex) {
+                for (uint_fast64_t predicateIndex = 0; predicateIndex < globalExpressionInformation.getNumberOfPredicates(); ++predicateIndex) {
                     if (relevantIt == relevantIte || relevantIt->second != predicateIndex) {
                         result &= ddInformation.predicateIdentities[predicateIndex];
                     } else {

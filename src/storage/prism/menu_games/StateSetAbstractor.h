@@ -11,7 +11,7 @@
 
 #include "src/solver/SmtSolver.h"
 
-#include "src/storage/prism/menu_games/VariablePartition.h"
+#include "src/storage/prism/menu_games/LocalExpressionInformation.h"
 
 namespace storm {
     namespace utility {
@@ -115,14 +115,14 @@ namespace storm {
                 // The SMT solver used for abstracting the set of states.
                 std::unique_ptr<storm::solver::SmtSolver> smtSolver;
                 
-                // The expression-related information.
-                AbstractionExpressionInformation& expressionInformation;
+                // The global expression-related information.
+                AbstractionExpressionInformation& globalExpressionInformation;
                 
                 // The DD-related information.
                 AbstractionDdInformation<DdType, ValueType> const& ddInformation;
                 
-                // The partition of the variables.
-                VariablePartition variablePartition;
+                // The local expression-related information.
+                LocalExpressionInformation localExpressionInformation;
                 
                 // The set of relevant predicates and the corresponding decision variables.
                 std::vector<std::pair<storm::expressions::Variable, uint_fast64_t>> relevantPredicatesAndVariables;

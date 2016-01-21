@@ -1,4 +1,4 @@
-#include "src/storage/prism/menu_games/VariablePartition.h"
+#include "src/storage/prism/menu_games/LocalExpressionInformation.h"
 
 #include <boost/algorithm/string/join.hpp>
 
@@ -7,7 +7,7 @@
 namespace storm {
     namespace prism {
         namespace menu_games {
-            VariablePartition::VariablePartition(std::set<storm::expressions::Variable> const& relevantVariables, std::vector<storm::expressions::Expression> const& expressions) : relevantVariables(relevantVariables), expressionBlocks(relevantVariables.size()) {
+            LocalExpressionInformation::LocalExpressionInformation(std::set<storm::expressions::Variable> const& relevantVariables, std::vector<std::pair<storm::expressions::Expression, uint_fast64_t>> const& expressionIndexPairs) : relevantVariables(relevantVariables), expressionBlocks(relevantVariables.size()) {
                 // Assign each variable to a new block.
                 uint_fast64_t currentBlock = 0;
                 variableBlocks.resize(relevantVariables.size());
@@ -19,12 +19,12 @@ namespace storm {
                 }
                 
                 // Add all expressions, which might relate some variables.
-                for (auto const& expression : expressions) {
-                    this->addExpression(expression);
+                for (auto const& expressionIndexPair : expressionIndexPairs) {
+                    this->addExpression(expressionIndexPair.first, expressionIndexPair.second);
                 }
             }
             
-            bool VariablePartition::addExpression(storm::expressions::Expression const& expression) {
+            bool LocalExpressionInformation::addExpression(storm::expressions::Expression const& expression, uint_fast64_t globalExpressionIndex) {
                 // Register the expression for all variables that appear in it.
                 std::set<storm::expressions::Variable> expressionVariables = expression.getVariables();
                 for (auto const& variable : expressionVariables) {
@@ -37,19 +37,20 @@ namespace storm {
                 expressionBlocks[getBlockIndexOfVariable(*expressionVariables.begin())].insert(this->expressions.size());
 
                 // Add expression and relate all the appearing variables.
+                this->globalToLocalIndexMapping[globalExpressionIndex] = this->expressions.size();
                 this->expressions.push_back(expression);
                 return this->relate(expressionVariables);
             }
             
-            bool VariablePartition::areRelated(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
+            bool LocalExpressionInformation::areRelated(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
                 return getBlockIndexOfVariable(firstVariable) == getBlockIndexOfVariable(secondVariable);
             }
             
-            bool VariablePartition::relate(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
+            bool LocalExpressionInformation::relate(storm::expressions::Variable const& firstVariable, storm::expressions::Variable const& secondVariable) {
                 return this->relate({firstVariable, secondVariable});
             }
             
-            bool VariablePartition::relate(std::set<storm::expressions::Variable> const& variables) {
+            bool LocalExpressionInformation::relate(std::set<storm::expressions::Variable> const& variables) {
                 // Determine all blocks that need to be merged.
                 std::set<uint_fast64_t> blocksToMerge;
                 for (auto const& variable : variables) {
@@ -67,7 +68,7 @@ namespace storm {
                 return true;
             }
             
-            void VariablePartition::mergeBlocks(std::set<uint_fast64_t> const& blocksToMerge) {
+            void LocalExpressionInformation::mergeBlocks(std::set<uint_fast64_t> const& blocksToMerge) {
                 // Merge all blocks into the block to keep.
                 std::vector<std::set<storm::expressions::Variable>> newVariableBlocks;
                 std::vector<std::set<uint_fast64_t>> newExpressionBlocks;
@@ -107,28 +108,28 @@ namespace storm {
                 expressionBlocks = std::move(newExpressionBlocks);
             }
             
-            std::set<storm::expressions::Variable> const& VariablePartition::getBlockOfVariable(storm::expressions::Variable const& variable) const {
+            std::set<storm::expressions::Variable> const& LocalExpressionInformation::getBlockOfVariable(storm::expressions::Variable const& variable) const {
                 return variableBlocks[getBlockIndexOfVariable(variable)];
             }
             
-            uint_fast64_t VariablePartition::getNumberOfBlocks() const {
+            uint_fast64_t LocalExpressionInformation::getNumberOfBlocks() const {
                 return this->variableBlocks.size();
             }
             
-            std::set<storm::expressions::Variable> const& VariablePartition::getVariableBlockWithIndex(uint_fast64_t blockIndex) const {
+            std::set<storm::expressions::Variable> const& LocalExpressionInformation::getVariableBlockWithIndex(uint_fast64_t blockIndex) const {
                 return this->variableBlocks[blockIndex];
             }
             
-            uint_fast64_t VariablePartition::getBlockIndexOfVariable(storm::expressions::Variable const& variable) const {
+            uint_fast64_t LocalExpressionInformation::getBlockIndexOfVariable(storm::expressions::Variable const& variable) const {
                 STORM_LOG_ASSERT(this->relevantVariables.find(variable) != this->relevantVariables.end(), "Illegal variable '" << variable.getName() << "' for partition.");
                 return this->variableToBlockMapping.find(variable)->second;
             }
             
-            std::set<uint_fast64_t> const& VariablePartition::getRelatedExpressions(storm::expressions::Variable const& variable) const {
+            std::set<uint_fast64_t> const& LocalExpressionInformation::getRelatedExpressions(storm::expressions::Variable const& variable) const {
                 return this->expressionBlocks[getBlockIndexOfVariable(variable)];
             }
             
-            std::set<uint_fast64_t> VariablePartition::getRelatedExpressions(std::set<storm::expressions::Variable> const& variables) const {
+            std::set<uint_fast64_t> LocalExpressionInformation::getRelatedExpressions(std::set<storm::expressions::Variable> const& variables) const {
                 // Start by determining the indices of all expression blocks that are related to any of the variables.
                 std::set<uint_fast64_t> relatedExpressionBlockIndices;
                 for (auto const& variable : variables) {
@@ -143,12 +144,12 @@ namespace storm {
                 return result;
             }
             
-            std::set<uint_fast64_t> const& VariablePartition::getExpressionsUsingVariable(storm::expressions::Variable const& variable) const {
+            std::set<uint_fast64_t> const& LocalExpressionInformation::getExpressionsUsingVariable(storm::expressions::Variable const& variable) const {
                 STORM_LOG_ASSERT(this->relevantVariables.find(variable) != this->relevantVariables.end(), "Illegal variable '" << variable.getName() << "' for partition.");
                 return this->variableToExpressionsMapping.find(variable)->second;
             }
             
-            std::set<uint_fast64_t> VariablePartition::getExpressionsUsingVariables(std::set<storm::expressions::Variable> const& variables) const {
+            std::set<uint_fast64_t> LocalExpressionInformation::getExpressionsUsingVariables(std::set<storm::expressions::Variable> const& variables) const {
                 std::set<uint_fast64_t> result;
                 
                 for (auto const& variable : variables) {
@@ -160,11 +161,11 @@ namespace storm {
                 return result;
             }
             
-            storm::expressions::Expression const& VariablePartition::getExpression(uint_fast64_t expressionIndex) const {
+            storm::expressions::Expression const& LocalExpressionInformation::getExpression(uint_fast64_t expressionIndex) const {
                 return this->expressions[expressionIndex];
             }
 
-            std::ostream& operator<<(std::ostream& out, VariablePartition const& partition) {
+            std::ostream& operator<<(std::ostream& out, LocalExpressionInformation const& partition) {
                 std::vector<std::string> blocks;
                 for (uint_fast64_t index = 0; index < partition.variableBlocks.size(); ++index) {
                     auto const& variableBlock = partition.variableBlocks[index];

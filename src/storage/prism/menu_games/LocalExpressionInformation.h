@@ -1,5 +1,5 @@
-#ifndef STORM_STORAGE_PRISM_MENU_GAMES_VARIABLEPARTITION_H_
-#define STORM_STORAGE_PRISM_MENU_GAMES_VARIABLEPARTITION_H_
+#ifndef STORM_STORAGE_PRISM_MENU_GAMES_LOCALEXPRESSIONINFORMATION_H_
+#define STORM_STORAGE_PRISM_MENU_GAMES_LOCALEXPRESSIONINFORMATION_H_
 
 #include <unordered_map>
 #include <set>
@@ -13,23 +13,24 @@ namespace storm {
     namespace prism {
         namespace menu_games {
             
-            class VariablePartition{
+            class LocalExpressionInformation {
             public:
                 /*!
                  * Constructs a new variable partition.
                  *
                  * @param relevantVariables The variables of this partition.
-                 * @param expressions The (initial) expressions that define the partition.
+                 * @param expressionIndexPairs The (initial) pairs of expressions and their global indices.
                  */
-                VariablePartition(std::set<storm::expressions::Variable> const& relevantVariables, std::vector<storm::expressions::Expression> const& expressions = std::vector<storm::expressions::Expression>());
+                LocalExpressionInformation(std::set<storm::expressions::Variable> const& relevantVariables, std::vector<std::pair<storm::expressions::Expression, uint_fast64_t>> const& expressionIndexPairs = {});
                 
                 /*!
                  * Adds the expression and therefore indirectly may cause blocks of variables to be merged.
                  *
                  * @param expression The expression to add.
+                 * @param globalExpressionIndex The global index of the expression.
                  * @return True iff the partition changed.
                  */
-                bool addExpression(storm::expressions::Expression const& expression);
+                bool addExpression(storm::expressions::Expression const& expression, uint_fast64_t globalExpressionIndex);
                 
                 /*!
                  * Retrieves whether the two given variables are in the same block of the partition.
@@ -128,7 +129,7 @@ namespace storm {
                  */
                 storm::expressions::Expression const& getExpression(uint_fast64_t expressionIndex) const;
                 
-                friend std::ostream& operator<<(std::ostream& out, VariablePartition const& partition);
+                friend std::ostream& operator<<(std::ostream& out, LocalExpressionInformation const& partition);
                 
             private:
                 /*!
@@ -153,14 +154,17 @@ namespace storm {
                 // A mapping from variables to the indices of all expressions they appear in.
                 std::unordered_map<storm::expressions::Variable, std::set<uint_fast64_t>> variableToExpressionsMapping;
                 
+                // A mapping from global expression indices to local ones.
+                std::unordered_map<uint_fast64_t, uint_fast64_t> globalToLocalIndexMapping;
+                
                 // The vector of all expressions.
                 std::vector<storm::expressions::Expression> expressions;
             };
             
-            std::ostream& operator<<(std::ostream& out, VariablePartition const& partition);
+            std::ostream& operator<<(std::ostream& out, LocalExpressionInformation const& partition);
             
         }
     }
 }
 
-#endif /* STORM_STORAGE_PRISM_MENU_GAMES_VARIABLEPARTITION_H_ */
+#endif /* STORM_STORAGE_PRISM_MENU_GAMES_LOCALEXPRESSIONINFORMATION_H_ */
