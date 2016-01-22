@@ -56,6 +56,7 @@
 #include "src/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "src/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -337,7 +338,6 @@ namespace storm {
         return result;
     }
 
-
     template<storm::dd::DdType DdType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
@@ -357,6 +357,15 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
         }
         return result;
+    }
+    
+    template<storm::dd::DdType DdType, typename ValueType>
+    std::unique_ptr<storm::modelchecker::CheckResult> verifyProgramWithAbstractionRefinementEngine(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula> const& formula) {
+        STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Cannot treat non-MDP model using the abstraction refinement engine.");
+        
+        // FIXME: Cudd -> ValueType, double -> ValueType
+        storm::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::CUDD, double> modelchecker(program);
+        return modelchecker.check(*formula);
     }
 
     template<typename ValueType>

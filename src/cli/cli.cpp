@@ -7,7 +7,7 @@
 #include "src/exceptions/OptionParserException.h"
 
 #include "src/utility/storm-version.h"
-
+#include "src/utility/resources.h"
 
 // Includes for the linked libraries and versions header.
 #ifdef STORM_HAVE_INTELTBB
@@ -209,8 +209,14 @@ namespace storm {
                 if (storm::settings::debugSettings().isLogfileSet()) {
                     storm::utility::initializeFileLogging();
                 }
-                
+
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+
+                // If we were given a time or memory limit, we put it in place now.
+                // FIXME: insert actual option.
+                if (false) {
+                    
+                }
                 
                 // If we have to build the model from a symbolic representation, we need to parse the representation first.
                 boost::optional<storm::prism::Program> program;

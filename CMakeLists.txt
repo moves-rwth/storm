@@ -456,7 +456,6 @@ endif()
 
 if(STORM_HAVE_CARL)
     message(STATUS "StoRM - Linking with carl.")
-	message("${carl_INCLUDE_DIR}")
     include_directories("${carl_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
 endif()
