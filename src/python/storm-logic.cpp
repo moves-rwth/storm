@@ -86,10 +86,4 @@ BOOST_PYTHON_MODULE(_logic)
     defineClass<storm::logic::BinaryBooleanStateFormula, storm::logic::BinaryStateFormula>("BooleanBinaryStateFormula",
     "");
 
-
-
-
-
-
-
 }
