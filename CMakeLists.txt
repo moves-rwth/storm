@@ -62,6 +62,20 @@ set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
 set(STORMPY_OUTPUT_DIR "${PROJECT_BINARY_DIR}/stormpy")
 set(STORMPY_SOURCE_DIR "${PROJECT_SOURCE_DIR}/stormpy")
 
+# Auto-detect operating system.
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	# Mac OS
+	set(OPERATING_SYSTEM "Mac OS")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    # Linux
+	set(OPERATING_SYSTEM "Linux")
+else()
+    # Assuming Windows.
+    set(OPERATING_SYSTEM "Windows")
+ENDIF()
+message(STATUS "Detected operating system: ${OPERATING_SYSTEM}")
+
+
 #############################################################
 ##
 ##	Compiler specific settings and definitions
@@ -76,7 +90,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -funroll-loops")
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -pedantic -Wno-deprecated-declarations -Wno-unused-local-typedefs")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -pedantic -Wno-deprecated-declarations -Wno-unused-local-typedefs -Wno-unknown-pragmas")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wno-deprecated-declarations")
 
     # Turn on popcnt instruction if desired (yes by default)
@@ -543,6 +557,14 @@ set(Sylvan_INCLUDE_DIR "${STORM_SYLVAN_ROOT}/src")
 message(STATUS "Linking with shipped version of sylvan (in directory ${STORM_SYLVAN_ROOT}).")
 include_directories("${Sylvan_INCLUDE_DIR}")
 list(APPEND STORM_LINK_LIBRARIES "${binary_dir}/src/libsylvan.a")
+if(${OPERATING_SYSTEM} MATCHES "Linux")
+	find_package(Hwloc QUIET)
+	if(NOT Hwloc_FOUND)
+		message(SEND_ERROR "HWLOC is required but was not found.")
+	else()
+		list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})	
+	endif()
+endif()
 
 #############################################################
 ##

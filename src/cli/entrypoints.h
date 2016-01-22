@@ -3,6 +3,8 @@
 
 #include "src/utility/storm.h"
 
+#include "src/exceptions/NotImplementedException.h"
+
 namespace storm {
     namespace cli {
 
@@ -46,6 +48,11 @@ namespace storm {
             }
         }
 #endif
+
+        template<storm::dd::DdType DdType>
+        void verifySymbolicModelWithAbstractionRefinementEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Abstraction Refinement is not yet implemented.");
+        }
 
         template<storm::dd::DdType DdType>
         void verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
@@ -108,35 +115,45 @@ namespace storm {
     
         template<typename ValueType, storm::dd::DdType LibraryType>
         void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
-            storm::storage::ModelFormulasPair modelFormulasPair = buildSymbolicModel<ValueType, LibraryType>(program, formulas);
-            STORM_LOG_THROW(modelFormulasPair.model != nullptr, storm::exceptions::InvalidStateException, "Model could not be constructed for an unknown reason.");
-            
-            // Preprocess the model if needed.
-            BRANCH_ON_MODELTYPE(modelFormulasPair.model, modelFormulasPair.model, ValueType, LibraryType, preprocessModel, formulas);
-            
-            // Print some information about the model.
-            modelFormulasPair.model->printModelInformationToStream(std::cout);
-            
-            // Verify the model, if a formula was given.
-            if (!formulas.empty()) {
 
-                if (modelFormulasPair.model->isSparseModel()) {
-                    if(storm::settings::generalSettings().isCounterexampleSet()) {
-                        // If we were requested to generate a counterexample, we now do so for each formula.
-                        for(auto const& formula : modelFormulasPair.formulas) {
-                            generateCounterexample<ValueType>(program, modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), formula);
+            storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+
+            if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement) {
+                verifySymbolicModelWithAbstractionRefinementEngine<LibraryType>(program, formulas);
+            } else {
+                storm::storage::ModelFormulasPair modelFormulasPair = buildSymbolicModel<ValueType, LibraryType>(program, formulas);
+                STORM_LOG_THROW(modelFormulasPair.model != nullptr, storm::exceptions::InvalidStateException,
+                                "Model could not be constructed for an unknown reason.");
+
+                // Preprocess the model if needed.
+                BRANCH_ON_MODELTYPE(modelFormulasPair.model, modelFormulasPair.model, ValueType, LibraryType, preprocessModel, formulas);
+
+                // Print some information about the model.
+                modelFormulasPair.model->printModelInformationToStream(std::cout);
+
+                // Verify the model, if a formula was given.
+                if (!formulas.empty()) {
+
+                    if (modelFormulasPair.model->isSparseModel()) {
+                        if (storm::settings::generalSettings().isCounterexampleSet()) {
+                            // If we were requested to generate a counterexample, we now do so for each formula.
+                            for (auto const &formula : modelFormulasPair.formulas) {
+                                generateCounterexample<ValueType>(program, modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), formula);
+                            }
+                        } else {
+                            verifySparseModel<ValueType>(modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), modelFormulasPair.formulas);
+                        }
+                    } else if (modelFormulasPair.model->isSymbolicModel()) {
+                        if (storm::settings::generalSettings().getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
+                            verifySymbolicModelWithHybridEngine(modelFormulasPair.model->as<storm::models::symbolic::Model<LibraryType>>(),
+                                                                modelFormulasPair.formulas);
+                        } else {
+                            verifySymbolicModelWithSymbolicEngine(modelFormulasPair.model->as<storm::models::symbolic::Model<LibraryType>>(),
+                                                                  modelFormulasPair.formulas);
                         }
                     } else {
-                        verifySparseModel<ValueType>(modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), modelFormulasPair.formulas);
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Invalid input model type.");
                     }
-                } else if (modelFormulasPair.model->isSymbolicModel()) {
-                    if (storm::settings::generalSettings().getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
-                        verifySymbolicModelWithHybridEngine(modelFormulasPair.model->as<storm::models::symbolic::Model<LibraryType>>(), modelFormulasPair.formulas);
-                    } else {
-                        verifySymbolicModelWithSymbolicEngine(modelFormulasPair.model->as<storm::models::symbolic::Model<LibraryType>>(), modelFormulasPair.formulas);
-                    }
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Invalid input model type.");
                 }
             }
         }

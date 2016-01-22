@@ -7,7 +7,7 @@
 namespace storm {
     namespace storage {
         template<class ValueType, class Hash1, class Hash2>
-        const std::vector<std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::sizes = {5, 13, 31, 79, 163, 277, 499, 1021, 2029, 3989, 8059, 16001, 32099, 64301, 127921, 256499, 511111, 1024901, 2048003, 4096891, 8192411, 15485863, 32142191};
+        const std::vector<std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::sizes = {5, 13, 31, 79, 163, 277, 499, 1021, 2029, 3989, 8059, 16001, 32099, 64301, 127921, 256499, 511111, 1024901, 2048003, 4096891, 8192411, 15485863, 32142191, 64285127, 128572517, 257148523, 514299959, 102863003};
         
         template<class ValueType, class Hash1, class Hash2>
         BitVectorHashMap<ValueType, Hash1, Hash2>::BitVectorHashMapIterator::BitVectorHashMapIterator(BitVectorHashMap const& map, BitVector::const_iterator indexIt) : map(map), indexIt(indexIt) {
