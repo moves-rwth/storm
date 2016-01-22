@@ -145,7 +145,7 @@ namespace storm {
             storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
             
             if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement) {
-                verifySymbolicModelWithAbstractionRefinementEngine(program, formulas);
+                verifySymbolicModelWithAbstractionRefinementEngine<LibraryType>(program, formulas);
             } else {
                 storm::storage::ModelProgramPair modelProgramPair = buildSymbolicModel<ValueType, LibraryType>(program, formulas);
                 STORM_LOG_THROW(modelProgramPair.model != nullptr, storm::exceptions::InvalidStateException, "Model could not be constructed for an unknown reason.");
