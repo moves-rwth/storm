@@ -7,5 +7,6 @@ BOOST_PYTHON_MODULE(_info)
     class_<storm::utility::StormVersion>("Version")
             .def("short", &storm::utility::StormVersion::shortVersionString)
             .def("long", &storm::utility::StormVersion::longVersionString)
+            .def("build_info", &storm::utility::StormVersion::buildInfo)
     ;
 }
