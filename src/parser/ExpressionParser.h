@@ -203,7 +203,7 @@ namespace storm {
             qi::symbols<char, storm::expressions::Expression> const* identifiers_;
             
             // The symbol table of invalid identifiers.
-            qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_;
+            qi::symbols<char, uint_fast64_t> invalidIdentifiers_;
             
             // Rules for parsing a composed expression.
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> expression;
