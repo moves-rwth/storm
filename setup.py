@@ -10,6 +10,7 @@ import tempfile
 import glob
 import shutil
 import distutils
+import multiprocessing
 print(os.getcwd())
 
 
@@ -20,7 +21,7 @@ PYTHONLIBS = glob.glob(os.path.join(PYTHONLIBDIR, "*.dylib"))
 PYTHONLIBS.extend(glob.glob(os.path.join(PYTHONLIBDIR, "*.so")))
 PYTHONLIB = PYTHONLIBS[0]
 
-
+NO_COMPILE_CORES = multiprocessing.cpu_count()
 #print(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)))
 #print(PYTHONINC)
 #print(PYTHONLIB)
@@ -54,7 +55,7 @@ class MyInstall(install):
         ret = call(["cmake", "-DSTORM_PYTHON=ON", "-DUSE_BOOST_STATIC_LIBRARIES=OFF",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
         if ret != 0:
             raise RuntimeError("Cmake exited with return code {}".format(ret))
-        ret = call(["make", "stormpy"], cwd=d)
+        ret = call(["make", "stormpy", "-j"+str(NO_COMPILE_CORES)], cwd=d)
         if ret != 0:
             raise RuntimeError("Make exited with return code {}".format(ret))
         install.run(self)
@@ -63,7 +64,7 @@ class MyDevelop(develop):
        ret = call(["cmake", "-DSTORM_PYTHON=ON","-DUSE_BOOST_STATIC_LIBRARIES=OFF",  "-DPYTHON_LIBRARY="+PYTHONLIB, "-DPYTHON_INCLUDE_DIR="+PYTHONINC, os.path.abspath(os.path.dirname(os.path.realpath(__file__)))], cwd=d)
        if ret != 0:
            raise RuntimeError("Cmake exited with return code {}".format(ret))
-       ret = call(["make", "stormpy"], cwd=d)
+       ret = call(["make", "stormpy", "-j"+str(NO_COMPILE_CORES)], cwd=d)
        if ret != 0:
            raise RuntimeError("Make exited with return code {}".format(ret))
        develop.run(self)
