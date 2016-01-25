@@ -85,11 +85,14 @@ BOOST_PYTHON_MODULE(_core)
     ;
 
 
-    defineClass<storm::models::sparse::Model<double>, storm::models::ModelBase, boost::noncopyable>("SparseModel", "");
+    defineClass<storm::models::sparse::Model<double>, storm::models::ModelBase, boost::noncopyable>("SparseModel",
+    "A probabilistic model where transitions are represented by doubles and saved in a sparse matrix");
     defineClass<storm::models::sparse::Dtmc<double>, storm::models::sparse::Model<double>, boost::noncopyable>("SparseDtmc", "");
     defineClass<storm::models::sparse::Mdp<double>, storm::models::sparse::Model<double>>("SparseMdp", "");
 
-    defineClass<storm::models::sparse::Model<storm::RationalFunction>, storm::models::ModelBase, boost::noncopyable>("SparseParametricModel", "");
+    defineClass<storm::models::sparse::Model<storm::RationalFunction>, storm::models::ModelBase, boost::noncopyable>("SparseParametricModel", "")
+        .def("collect_probability_parameters", &storm::models::sparse::getProbabilityParameters)
+    ;
     defineClass<storm::models::sparse::Dtmc<storm::RationalFunction>,  storm::models::sparse::Model<storm::RationalFunction>>("SparseParametricDtmc", "");
     defineClass<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Model<storm::RationalFunction>>("SparseParametricMdp", "");
 
