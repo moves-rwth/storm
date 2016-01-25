@@ -8,8 +8,7 @@
 #include "log4cplus/loggingmacros.h"
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
-extern log4cplus::Logger logger;
-extern log4cplus::Logger printer;
+#include "macros.h"
 
 #include "src/settings/SettingsManager.h"
 
