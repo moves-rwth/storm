@@ -969,6 +969,14 @@ namespace storm {
             std::vector<index_type> rowGroupIndices;
             
         };
+        
+        std::set<storm::Variable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix) {
+            std::set<storm::Variable> result;
+            for(auto const& entry : matrix) {
+                entry.probability.gatherVariables(result);
+            }
+            return result;
+        }
 
     } // namespace storage
 } // namespace storm
