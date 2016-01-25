@@ -43,7 +43,9 @@ namespace storm {
             const std::string GeneralSettings::dontFixDeadlockOptionName = "no-fixdl";
             const std::string GeneralSettings::dontFixDeadlockOptionShortName = "ndl";
             const std::string GeneralSettings::timeoutOptionName = "timeout";
-            const std::string GeneralSettings::timeoutOptionShortName = "t";
+            const std::string GeneralSettings::timeoutOptionShortName = "to";
+            const std::string GeneralSettings::memoutOptionName = "memout";
+            const std::string GeneralSettings::memoutOptionShortName = "mo";
             const std::string GeneralSettings::eqSolverOptionName = "eqsolver";
             const std::string GeneralSettings::lpSolverOptionName = "lpsolver";
             const std::string GeneralSettings::smtSolverOptionName = "smtsolver";
@@ -106,7 +108,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, timeoutOptionName, false, "If given, computation will abort after the timeout has been reached.").setShortName(timeoutOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "The number of seconds after which to timeout. Note that this is measures in CPU time, not in wallclock time.").setDefaultValueUnsignedInteger(0).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, memoutOptionName, false, "If given, the computation will abort if the given memory is exceeded.").setShortName(memoutOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memory", "The amount of megabytes available.").setDefaultValueUnsignedInteger(0).build()).build());
                 
                 std::vector<std::string> ddLibraries = {"cudd", "sylvan"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
@@ -250,6 +254,14 @@ namespace storm {
             
             uint_fast64_t GeneralSettings::getTimeoutInSeconds() const {
                 return this->getOption(timeoutOptionName).getArgumentByName("time").getValueAsUnsignedInteger();
+            }
+
+            bool GeneralSettings::isMemoutSet() const {
+                return this->getOption(memoutOptionName).getHasOptionBeenSet();
+            }
+            
+            uint_fast64_t GeneralSettings::getMemoutInMegabytes() const {
+                return this->getOption(memoutOptionName).getArgumentByName("memory").getValueAsUnsignedInteger();
             }
             
             storm::solver::EquationSolverType  GeneralSettings::getEquationSolver() const {

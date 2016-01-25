@@ -213,9 +213,11 @@ namespace storm {
                 storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
 
                 // If we were given a time or memory limit, we put it in place now.
-                // FIXME: insert actual option.
-                if (false) {
-                    
+                if (settings.isTimeoutSet()) {
+                    storm::utility::resources::setCPULimit(settings.getTimeoutInSeconds());
+                }
+                if (settings.isMemoutSet()) {
+                    storm::utility::resources::setMemoryLimit(settings.getMemoutInMegabytes());
                 }
                 
                 // If we have to build the model from a symbolic representation, we need to parse the representation first.

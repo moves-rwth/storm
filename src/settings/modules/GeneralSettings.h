@@ -260,6 +260,20 @@ namespace storm {
                 uint_fast64_t getTimeoutInSeconds() const;
 
                 /*!
+                 * Retrieves whether the memout option was set.
+                 *
+                 * @return True if the memout option was set.
+                 */
+                bool isMemoutSet() const;
+                
+                /*!
+                 * Retrieves the amount of megabytes available.
+                 *
+                 * @return The avail memory given in megabytes.
+                 */
+                uint_fast64_t getMemoutInMegabytes() const;
+                
+                /*!
                  * Retrieves the selected equation solver.
                  *
                  * @return The selected convergence criterion.
@@ -408,6 +422,8 @@ namespace storm {
                 static const std::string dontFixDeadlockOptionShortName;
                 static const std::string timeoutOptionName;
                 static const std::string timeoutOptionShortName;
+                static const std::string memoutOptionName;
+                static const std::string memoutOptionShortName;
                 static const std::string eqSolverOptionName;
                 static const std::string lpSolverOptionName;
                 static const std::string smtSolverOptionName;

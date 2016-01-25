@@ -11,6 +11,8 @@
 
 #include "src/utility/OsDetection.h"
 
+#include "src/utility/macros.h"
+
 namespace storm {
     namespace utility {
         namespace resources {
@@ -19,6 +21,12 @@ namespace storm {
             static const int STORM_EXIT_TIMEOUT = -2;
             static const int STORM_EXIT_MEMOUT = -3;
             
+            inline std::size_t getCPULimit() {
+                rlimit rl;
+                getrlimit(RLIMIT_CPU, &rl);
+                return rl.rlim_cur;
+            }
+
             inline void setCPULimit(std::size_t seconds) {
                 rlimit rl;
                 getrlimit(RLIMIT_CPU, &rl);
@@ -26,33 +34,36 @@ namespace storm {
                 setrlimit(RLIMIT_CPU, &rl);
             }
             
-            inline std::size_t getCPULimit() {
-                rlimit rl;
-                getrlimit(RLIMIT_CPU, &rl);
-                return rl.rlim_cur;
-            }
-            
             inline std::size_t usedCPU() {
                 return std::size_t(clock()) / CLOCKS_PER_SEC;
             }
             
+            inline std::size_t getMemoryLimit() {
+#if defined LINUX
+                rlimit rl;
+                getrlimit(RLIMIT_AS, &rl);
+                return rl.rlim_cur;
+#else
+                STORM_LOG_WARN("Retrieving the memory limit is not supported for your operating system.");
+                return 0;
+#endif
+            }
+            
             inline void setMemoryLimit(std::size_t megabytes) {
+#if defined LINUX
                 rlimit rl;
                 getrlimit(RLIMIT_AS, &rl);
                 rl.rlim_cur = megabytes * 1024 * 1024;
                 setrlimit(RLIMIT_AS, &rl);
+#else
+                STORM_LOG_WARN("Setting a memory limit is not supported for your operating system.");
+#endif
             }
             
-            inline std::size_t getMemoryLimit() {
-                rlimit rl;
-                getrlimit(RLIMIT_AS, &rl);
-                return rl.rlim_cur;
-            }
-            
-            inline void quick_exit_if_available(int errorCode) {
-#ifdef LINUX
+            inline void quickest_exit(int errorCode) {
+#if defined LINUX
                 std::quick_exit(errorCode);
-#elseif MACOS
+#elif defined MACOS
                 std::_Exit(errorCode);
 #else
                 std::abort();
@@ -62,13 +73,13 @@ namespace storm {
             inline void signalHandler(int signal) {
                 if (signal == SIGXCPU) {
                     std::cerr << "Timeout." << std::endl;
-                    quick_exit_if_available(STORM_EXIT_TIMEOUT);
+                    quickest_exit(STORM_EXIT_TIMEOUT);
                 } else if (signal == ENOMEM) {
                     std::cerr << "Out of memory" << std::endl;
-                    quick_exit_if_available(STORM_EXIT_MEMOUT);
+                    quickest_exit(STORM_EXIT_MEMOUT);
                 } else {
                     std::cerr << "Unknown abort in resource limitation module." << std::endl;
-                    quick_exit_if_available(STORM_EXIT_GENERALERROR);
+                    quickest_exit(STORM_EXIT_GENERALERROR);
                 }
             }
             
