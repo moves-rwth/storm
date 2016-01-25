@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <sstream>
 #include <memory>
+#include <src/storage/ModelFormulasPair.h>
 
 #include "initialize.h"
 
@@ -46,7 +47,7 @@
 // Headers for model processing.
 #include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "src/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
-#include "src/storage/ModelProgramPair.h"
+#include "src/storage/ModelFormulasPair.h"
 
 // Headers for model checking.
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -83,10 +84,13 @@ namespace storm {
     storm::prism::Program parseProgram(std::string const& path);
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
+
+
             
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
-    storm::storage::ModelProgramPair buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
-        storm::storage::ModelProgramPair result;
+    storm::storage::ModelFormulasPair buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+        storm::storage::ModelFormulasPair result;
+        storm::prism::Program translatedProgram;
 
         storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
 
@@ -106,7 +110,7 @@ namespace storm {
 
             storm::builder::ExplicitPrismModelBuilder<ValueType> builder;
             result.model = builder.translateProgram(program, options);
-            result.program = builder.getTranslatedProgram();
+            translatedProgram = builder.getTranslatedProgram();
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
@@ -114,9 +118,22 @@ namespace storm {
 
             storm::builder::DdPrismModelBuilder<LibraryType> builder;
             result.model = builder.translateProgram(program, options);
-            result.program = builder.getTranslatedProgram();
+            translatedProgram = builder.getTranslatedProgram();
+        }
+        // There may be constants of the model appearing in the formulas, so we replace all their occurrences
+        // by their definitions in the translated program.
+
+        // Start by building a mapping from constants of the (translated) model to their defining expressions.
+        std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
+        for (auto const& constant : translatedProgram.getConstants()) {
+            if (constant.isDefined()) {
+                constantSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression());
+            }
         }
 
+        for (auto const& formula : formulas) {
+            result.formulas.emplace_back(formula->substitute(constantSubstitution));
+        }
         return result;
     }
     
