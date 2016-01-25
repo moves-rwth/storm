@@ -244,7 +244,7 @@ namespace storm {
             // not only appear in the probabilities, we re
             if (!std::is_same<ValueType, storm::RationalFunction>::value && preparedProgram->hasUndefinedConstants()) {
 #else
-            if (preparedProgram.hasUndefinedConstants()) {
+            if (preparedProgram->hasUndefinedConstants()) {
 #endif
                 std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram->getUndefinedConstants();
                 std::stringstream stream;
