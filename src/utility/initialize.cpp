@@ -1,5 +1,6 @@
 #include "initialize.h"
 
+#include "macros.h"
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/DebugSettings.h"
 
