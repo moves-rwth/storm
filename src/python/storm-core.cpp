@@ -107,7 +107,7 @@ BOOST_PYTHON_MODULE(_core)
         .value("STRONG", storm::storage::BisimulationType::Strong)
         .value("WEAK", storm::storage::BisimulationType::Weak)
     ;
-    def("perform_bisimulation_parametric", static_cast<std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> (*)(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>, std::vector<std::shared_ptr<storm::logic::Formula>> const&, storm::storage::BisimulationType)>(&storm::performBisimulationMinimization<storm::models::sparse::Model<storm::RationalFunction>>));
+    def("perform_bisimulation_parametric", static_cast<std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> (*)(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&, std::shared_ptr<storm::logic::Formula> const&, storm::storage::BisimulationType)>(&storm::performBisimulationMinimization<storm::models::sparse::Model<storm::RationalFunction>>));
     
     
 
