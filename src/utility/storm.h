@@ -169,7 +169,7 @@ namespace storm {
     }
     
     template<typename ModelType>
-    std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
+    std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> const& model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
         using ValueType = typename ModelType::ValueType;
         
         STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
@@ -185,8 +185,8 @@ namespace storm {
     }
     
     template<typename ModelType>
-    std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> model, std::shared_ptr<storm::logic::Formula> const& formula, storm::storage::BisimulationType type) {
-        return performBisimulationMinimization(model, {formula}, type);
+    std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> const& model, std::shared_ptr<storm::logic::Formula> const& formula, storm::storage::BisimulationType type) {
+        return performBisimulationMinimization<ModelType>(model, {formula}, type);
     }
     
     
