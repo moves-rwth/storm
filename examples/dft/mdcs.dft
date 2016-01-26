@@ -1,0 +1,26 @@
+toplevel "System";
+
+"System" or "S" "N";
+
+"N" lambda=2e-5 dorm=0;
+
+"S" and "CMA" "CMB";
+
+"CMA" or "DiskA" "PA" "MemA";
+"DiskA" wsp "DAA" "DAB";
+"PA" lambda=500e-5 dorm=0;
+"MemA" wsp "MA" "MC";
+"DAA" lambda=80000e-5 dorm=0.5;
+"DAB" lambda=80000e-5 dorm=0.5;
+"MA" lambda=30e-5 dorm=0;
+
+"CMB" or "DiskB" "PB" "MemB";
+"DiskB" wsp "DBA" "DBB";
+"PB" lambda=500e-5 dorm=0;
+"MemB" wsp "MB" "MC";
+"DBA" lambda=80000e-5 dorm=0.5;
+"DBB" lambda=80000e-5 dorm=0.5;
+"MB" lambda=30e-5 dorm=0;
+
+"MC" lambda=30e-5 dorm=0.5;
+
