@@ -85,7 +85,6 @@ namespace storm {
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
 
 
-            
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
     storm::storage::ModelFormulasPair buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         storm::storage::ModelFormulasPair result;
@@ -169,8 +168,10 @@ namespace storm {
         return model;
     }
     
-    template<typename ModelType, typename ValueType = typename ModelType::ValueType, typename std::enable_if<std::is_base_of<storm::models::sparse::Model<ValueType>, ModelType>::value, bool>::type = 0>
-    std::shared_ptr<storm::models::ModelBase> performBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
+    template<typename ModelType>
+    std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
+        using ValueType = typename ModelType::ValueType;
+        
         STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
         model->reduceToStateBasedRewards();
 
@@ -183,25 +184,27 @@ namespace storm {
         }       
     }
     
-    template<typename ModelType, typename ValueType = typename ModelType::ValueType, typename std::enable_if<std::is_base_of<storm::models::sparse::Model<ValueType>, ModelType>::value, bool>::type = 0>
-    std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
-        if (storm::settings::generalSettings().isBisimulationSet()) {
+    template<typename ModelType>
+    std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> model, std::shared_ptr<storm::logic::Formula> const& formula, storm::storage::BisimulationType type) {
+        return performBisimulationMinimization(model, {formula}, type);
+    }
+    
+    
+    
+    template<typename ModelType>
+    std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+        if (model->isSparseModel() && storm::settings::generalSettings().isBisimulationSet()) {
             storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
             if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
                 bisimType = storm::storage::BisimulationType::Weak;
             }
             
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
-            return performBisimulationMinimization(model, formulas, bisimType);
+            return performBisimulationMinimization<ModelType>(model->template as<storm::models::sparse::Model<typename ModelType::ValueType>>(), formulas, bisimType);
         }
         return model;
     }
     
-    template<typename ModelType, storm::dd::DdType DdType = ModelType::DdType, typename std::enable_if< std::is_base_of< storm::models::symbolic::Model<DdType>, ModelType >::value, bool>::type = 0>
-    std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
-        // No preprocessing available yet.
-        return model;
-    }
     
     template<typename ValueType>
     void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
