@@ -99,6 +99,17 @@ BOOST_PYTHON_MODULE(_core)
     defineClass<std::vector<std::shared_ptr<storm::logic::Formula>>, void, void>("FormulaVec", "Vector of formulas")
         .def(vector_indexing_suite<std::vector<std::shared_ptr<storm::logic::Formula>>, true>())
     ;
+    
+    ////////////////////////////////////////////
+    // Bisimulation
+    ////////////////////////////////////////////  
+    enum_<storm::storage::BisimulationType>("BisimulationType")
+        .value("STRONG", storm::storage::BisimulationType::Strong)
+        .value("WEAK", storm::storage::BisimulationType::Weak)
+    ;
+    def("perform_bisimulation_parametric", static_cast<std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> (*)(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>, std::vector<std::shared_ptr<storm::logic::Formula>> const&, storm::storage::BisimulationType)>(&storm::performBisimulationMinimization<storm::models::sparse::Model<storm::RationalFunction>>));
+    
+    
 
     def("parse_formulae", storm::parseFormulasForProgram);
     def("parse_program", storm::parseProgram);
