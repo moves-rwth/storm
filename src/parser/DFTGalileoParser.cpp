@@ -113,7 +113,7 @@ namespace storm {
                         ValueType dormancyFactor = parseRationalExpression(tokens[2].substr(5));
                         success = builder.addBasicElement(name, failureRate, dormancyFactor);
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " + tokens[1] + "  not recognized.");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << tokens[1] << "  not recognized.");
                         success = false;
                     }
                 }

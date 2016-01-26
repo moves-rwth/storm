@@ -70,6 +70,7 @@
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/NotSupportedException.h"
 
 namespace storm {
 
@@ -289,13 +290,22 @@ namespace storm {
     template<>
     inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
-        std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-
-        storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
-        if (modelchecker.canHandle(*formula)) {
-            result = modelchecker.check(*formula);
+        if (model->getType() == storm::models::ModelType::Dtmc) {
+            std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+            storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
+            if (modelchecker.canHandle(*formula)) {
+                result = modelchecker.check(*formula);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support this property on DTMCs.");
+            }
+        } else if (model->getType() == storm::models::ModelType::Mdp) {
+            std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = model->template as<storm::models::sparse::Mdp<storm::RationalFunction>>();
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support MDPs.");
+        } else if (model->getType() == storm::models::ModelType::Ctmc) {
+            std::shared_ptr<storm::models::sparse::Ctmc<storm::RationalFunction>> ctmc = model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support CTMCs.");
         } else {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric engine currently does not support this property.");
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support " << model->getType());
         }
         return result;
     }
