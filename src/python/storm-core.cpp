@@ -79,8 +79,10 @@ BOOST_PYTHON_MODULE(_core)
         .add_property("nr_states", &storm::models::ModelBase::getNumberOfStates)
         .add_property("nr_transitions", &storm::models::ModelBase::getNumberOfTransitions)
         .add_property("model_type", &storm::models::ModelBase::getType)
+        .add_property("parametric", &storm::models::ModelBase::isParametric)
         .def("as_dtmc", &storm::models::ModelBase::as<storm::models::sparse::Dtmc<double>>)
         .def("as_pdtmc", &storm::models::ModelBase::as<storm::models::sparse::Dtmc<storm::RationalFunction>>)
+        .def("as_mdp", &storm::models::ModelBase::as<storm::models::sparse::Mdp<double>>)
         .def("as_pmdp", &storm::models::ModelBase::as<storm::models::sparse::Mdp<storm::RationalFunction>>)
     ;
 
