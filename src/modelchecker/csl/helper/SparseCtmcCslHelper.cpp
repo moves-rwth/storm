@@ -262,10 +262,6 @@ namespace storm {
                 if (startingIteration == 0) {
                     result = values;
                     storm::utility::vector::scaleVectorInPlace(result, std::get<3>(foxGlynnResult)[0]);
-                    std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&foxGlynnResult] (ValueType const& a, ValueType const& b) { return a + std::get<3>(foxGlynnResult)[0] * b; };
-                    if (addVector != nullptr) {
-                        storm::utility::vector::applyPointwise(result, *addVector, result, addAndScale);
-                    }
                     ++startingIteration;
                 } else {
                     if (computeCumulativeReward) {
@@ -427,7 +423,7 @@ namespace storm {
             }
 
             template <typename ValueType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeLongRunAverage(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // If there are no goal states, we avoid the computation and directly return zero.
                 uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
                 if (psiStates.empty()) {

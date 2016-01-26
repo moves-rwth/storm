@@ -218,6 +218,19 @@ namespace storm {
             return true;
         }
         
+        template<typename ValueType>
+        void ExplicitQuantitativeCheckResult<ValueType>::oneMinus() {
+            if (this->isResultForAllStates()) {
+                for (auto& element : boost::get<vector_type>(values)) {
+                    element = storm::utility::one<ValueType>() - element;
+                }
+            } else {
+                for (auto& element : boost::get<map_type>(values)) {
+                    element.second = storm::utility::one<ValueType>() - element.second;
+                }
+            }
+        }
+        
         template class ExplicitQuantitativeCheckResult<double>;
         
 #ifdef STORM_HAVE_CARL

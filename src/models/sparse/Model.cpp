@@ -320,6 +320,9 @@ namespace storm {
                 return this->rewardModels;
             }
 
+            std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
+                return storm::storage::getVariables(model.getTransitionMatrix());
+            }
             
             template class Model<double>;
             template class Model<float>;

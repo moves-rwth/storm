@@ -17,13 +17,13 @@ namespace storm {
         
         template<typename ModelType>
         NondeterministicModelBisimulationDecomposition<ModelType>::NondeterministicModelBisimulationDecomposition(ModelType const& model, typename BisimulationDecomposition<ModelType, NondeterministicModelBisimulationDecomposition::BlockDataType>::Options const& options) : BisimulationDecomposition<ModelType, NondeterministicModelBisimulationDecomposition::BlockDataType>(model, model.getTransitionMatrix().transpose(false), options), choiceToStateMapping(model.getNumberOfChoices()), quotientDistributions(model.getNumberOfChoices()), orderedQuotientDistributions(model.getNumberOfChoices()) {
-            STORM_LOG_THROW(options.type == BisimulationType::Strong, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation is currently not supported for nondeterministic models.");
+            STORM_LOG_THROW(options.getType() == BisimulationType::Strong, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation is currently not supported for nondeterministic models.");
         }
         
         template<typename ModelType>
         std::pair<storm::storage::BitVector, storm::storage::BitVector> NondeterministicModelBisimulationDecomposition<ModelType>::getStatesWithProbability01() {
-            STORM_LOG_THROW(static_cast<bool>(this->options.optimalityType), storm::exceptions::IllegalFunctionCallException, "Can only compute states with probability 0/1 with an optimization direction (min/max).");
-            if (this->options.optimalityType.get() == OptimizationDirection::Minimize) {
+            STORM_LOG_THROW(this->options.isOptimizationDirectionSet(), storm::exceptions::IllegalFunctionCallException, "Can only compute states with probability 0/1 with an optimization direction (min/max).");
+            if (this->options.getOptimizationDirection() == OptimizationDirection::Minimize) {
                 return storm::utility::graph::performProb01Min(this->model.getTransitionMatrix(), this->model.getTransitionMatrix().getRowGroupIndices(), this->model.getBackwardTransitions(), this->options.phiStates.get(), this->options.psiStates.get());
             } else {
                 return storm::utility::graph::performProb01Max(this->model.getTransitionMatrix(), this->model.getTransitionMatrix().getRowGroupIndices(), this->model.getBackwardTransitions(), this->options.phiStates.get(), this->options.psiStates.get());
@@ -109,7 +109,7 @@ namespace storm {
             
             // If the model had state rewards, we need to build the state rewards for the quotient as well.
             boost::optional<std::vector<ValueType>> stateRewards;
-            if (this->options.keepRewards && this->model.hasRewardModel()) {
+            if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
                 stateRewards = std::vector<ValueType>(this->blocks.size());
             }
             
@@ -169,7 +169,7 @@ namespace storm {
                 
                 // If the model has state rewards, we simply copy the state reward of the representative state, because
                 // all states in a block are guaranteed to have the same state reward.
-                if (this->options.keepRewards && this->model.hasRewardModel()) {
+                if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
                     typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getUniqueRewardModel();
                     stateRewards.get()[blockIndex] = nameRewardModelPair->second.getStateRewardVector()[representativeState];
                 }
@@ -183,7 +183,7 @@ namespace storm {
             
             // Construct the reward model mapping.
             std::unordered_map<std::string, typename ModelType::RewardModelType> rewardModels;
-            if (this->options.keepRewards && this->model.hasRewardModel()) {
+            if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
                 typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getUniqueRewardModel();
                 rewardModels.insert(std::make_pair(nameRewardModelPair->first, typename ModelType::RewardModelType(stateRewards)));
             }

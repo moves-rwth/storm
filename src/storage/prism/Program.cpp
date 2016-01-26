@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <boost/algorithm/string/join.hpp>
 
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/settings/SettingsManager.h"
@@ -101,11 +102,12 @@ namespace storm {
             // Now it remains to check that the intersection of the variables used in the program with the undefined
             // constants' variables is empty (except for the update probabilities).
             
-            // Start by checking the defining expressions of all defined constants.
+            // Start by checking the defining expressions of all defined constants. If it contains a currently undefined
+            //constant, we need to mark the target constant as undefined as well.
             for (auto const& constant : this->getConstants()) {
                 if (constant.isDefined()) {
                     if (constant.getExpression().containsVariable(undefinedConstantVariables)) {
-                        return false;
+                        undefinedConstantVariables.insert(constant.getExpressionVariable());
                     }
                 }
             }
@@ -169,6 +171,21 @@ namespace storm {
             }
             return result;
         }
+
+        std::string Program::getUndefinedConstantsAsString() const {
+            std::stringstream stream;
+            bool printComma = false;
+            for (auto const& constant : getUndefinedConstants()) {
+                if (printComma) {
+                    stream << ", ";
+                } else {
+                    printComma = true;
+                }
+                stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+            }
+            stream << ".";
+            return stream.str();
+        }
         
         bool Program::hasConstant(std::string const& constantName) const {
             return this->constantToIndexMap.find(constantName) != this->constantToIndexMap.end();
@@ -183,6 +200,17 @@ namespace storm {
             return this->constants;
         }
         
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Program::getConstantsSubstitution() const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution;
+            for (auto const& constant : this->getConstants()) {
+                if (constant.isDefined()) {
+                    constantsSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression());
+                }
+            }
+            return constantsSubstitution;
+        }
+
+    
         std::size_t Program::getNumberOfConstants() const {
             return this->getConstants().size();
         }
@@ -203,8 +231,6 @@ namespace storm {
             return this->globalIntegerVariableToIndexMap.count(variableName) > 0;
         }
         
-        
-
         BooleanVariable const& Program::getGlobalBooleanVariable(std::string const& variableName) const {
             auto const& nameIndexPair = this->globalBooleanVariableToIndexMap.find(variableName);
             STORM_LOG_THROW(nameIndexPair != this->globalBooleanVariableToIndexMap.end(), storm::exceptions::OutOfRangeException, "Unknown boolean variable '" << variableName << "'.");
@@ -548,8 +574,17 @@ namespace storm {
                 // Check defining expressions of defined constants.
                 if (constant.isDefined()) {
                     std::set<storm::expressions::Variable> containedVariables = constant.getExpression().getVariables();
-                    bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << constant.getFilename() << ", line " << constant.getLineNumber() << ": defining expression refers to unknown identifiers.");
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
+                    
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << constant.getFilename() << ", line " << constant.getLineNumber() << ": defining expression refers to unknown identifiers: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                    }
                 }
                 
                 // Record the new identifier for future checks.
@@ -563,8 +598,17 @@ namespace storm {
             for (auto const& variable : this->getGlobalBooleanVariables()) {
                 // Check the initial value of the variable.
                 std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
-                bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
-                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
+                std::set<storm::expressions::Variable> illegalVariables;
+                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                bool isValid = illegalVariables.empty();
+
+                if (!isValid) {
+                    std::vector<std::string> illegalVariableNames;
+                    for (auto const& var : illegalVariables) {
+                        illegalVariableNames.push_back(var.getName());
+                    }
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                }
 
                 // Record the new identifier for future checks.
                 variables.insert(variable.getExpressionVariable());
@@ -575,17 +619,40 @@ namespace storm {
             for (auto const& variable : this->getGlobalIntegerVariables()) {
                 // Check that bound expressions of the range.
                 std::set<storm::expressions::Variable> containedVariables = variable.getLowerBoundExpression().getVariables();
-                bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
-                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants.");
+                std::set<storm::expressions::Variable> illegalVariables;
+                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                bool isValid = illegalVariables.empty();
+
+                if (!isValid) {
+                    std::vector<std::string> illegalVariableNames;
+                    for (auto const& var : illegalVariables) {
+                        illegalVariableNames.push_back(var.getName());
+                    }
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                }
 
                 containedVariables = variable.getLowerBoundExpression().getVariables();
-                isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
-                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants.");
+                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                isValid = illegalVariables.empty();
+                if (!isValid) {
+                    std::vector<std::string> illegalVariableNames;
+                    for (auto const& var : illegalVariables) {
+                        illegalVariableNames.push_back(var.getName());
+                    }
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                }
                 
                 // Check the initial value of the variable.
                 containedVariables = variable.getInitialValueExpression().getVariables();
-                isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
-                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
+                std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                isValid = illegalVariables.empty();
+                if (!isValid) {
+                    std::vector<std::string> illegalVariableNames;
+                    for (auto const& var : illegalVariables) {
+                        illegalVariableNames.push_back(var.getName());
+                    }
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                }
                 
                 // Record the new identifier for future checks.
                 variables.insert(variable.getExpressionVariable());
@@ -599,8 +666,16 @@ namespace storm {
                 for (auto const& variable : module.getBooleanVariables()) {
                     // Check the initial value of the variable.
                     std::set<storm::expressions::Variable> containedVariables = variable.getInitialValueExpression().getVariables();
-                    bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                    }
                     
                     // Record the new identifier for future checks.
                     variables.insert(variable.getExpressionVariable());
@@ -609,17 +684,41 @@ namespace storm {
                 for (auto const& variable : module.getIntegerVariables()) {
                     // Check that bound expressions of the range.
                     std::set<storm::expressions::Variable> containedVariables = variable.getLowerBoundExpression().getVariables();
-                    bool isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants.");
-
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": lower bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                    }
+                    
                     containedVariables = variable.getLowerBoundExpression().getVariables();
-                    isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants.");
+                    illegalVariables.clear();
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": upper bound expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                    }
                     
                     // Check the initial value of the variable.
                     containedVariables = variable.getInitialValueExpression().getVariables();
-                    isValid = std::includes(constants.begin(), constants.end(), containedVariables.begin(), containedVariables.end());
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants.");
+                    illegalVariables.clear();
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), constants.begin(), constants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << variable.getFilename() << ", line " << variable.getLineNumber() << ": initial value expression refers to unknown constants: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                    }
                     
                     // Record the new identifier for future checks.
                     variables.insert(variable.getExpressionVariable());
@@ -648,8 +747,16 @@ namespace storm {
                 for (auto& command : module.getCommands()) {
                     // Check the guard.
                     std::set<storm::expressions::Variable> containedVariables = command.getGuardExpression().getVariables();
-                    bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": guard " << command.getGuardExpression()  << " refers to unknown identifiers.");
+                    std::set<storm::expressions::Variable> illegalVariables;
+                    std::set_difference(containedVariables.begin(), containedVariables.end(), variablesAndConstants.begin(), variablesAndConstants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                    bool isValid = illegalVariables.empty();
+                    if (!isValid) {
+                        std::vector<std::string> illegalVariableNames;
+                        for (auto const& var : illegalVariables) {
+                            illegalVariableNames.push_back(var.getName());
+                        }
+                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": guard " << command.getGuardExpression()  << " refers to unknown identifiers: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                    }
                     STORM_LOG_THROW(command.getGuardExpression().hasBooleanType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": expression for guard must evaluate to type 'bool'.");
                     
                     // Record which types of commands were seen.
@@ -668,8 +775,16 @@ namespace storm {
                     // Check all updates.
                     for (auto const& update : command.getUpdates()) {
                         containedVariables = update.getLikelihoodExpression().getVariables();
-                        isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                        STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": likelihood expression refers to unknown identifiers.");
+                        illegalVariables.clear();
+                        std::set_difference(containedVariables.begin(), containedVariables.end(), variablesAndConstants.begin(), variablesAndConstants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                        isValid = illegalVariables.empty();
+                        if (!isValid) {
+                            std::vector<std::string> illegalVariableNames;
+                            for (auto const& var : illegalVariables) {
+                                illegalVariableNames.push_back(var.getName());
+                            }
+                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": likelihood expression refers to unknown identifiers: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                        }
                         
                         // Check all assignments.
                         std::set<storm::expressions::Variable> alreadyAssignedVariables;
@@ -687,8 +802,16 @@ namespace storm {
                             STORM_LOG_THROW(assignedVariable.getType() == assignment.getExpression().getType(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getType() << "' to variable '" << assignment.getVariableName() << "' of type '" << assignedVariable.getType() << "'.");
                             
                             containedVariables = assignment.getExpression().getVariables();
-                            isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                            STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assigned expression refers to unknown identifiers.");
+                            illegalVariables.clear();
+                            std::set_difference(containedVariables.begin(), containedVariables.end(), variablesAndConstants.begin(), variablesAndConstants.end(), std::inserter(illegalVariables, illegalVariables.begin()));
+                            isValid = illegalVariables.empty();
+                            if (!isValid) {
+                                std::vector<std::string> illegalVariableNames;
+                                for (auto const& var : illegalVariables) {
+                                    illegalVariableNames.push_back(var.getName());
+                                }
+                                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": assigned expression refers to unknown identifiers: " << boost::algorithm::join(illegalVariableNames, ",") << ".");
+                            }
                             
                             // Add the current variable to the set of assigned variables (of this update).
                             alreadyAssignedVariables.insert(assignedVariable);

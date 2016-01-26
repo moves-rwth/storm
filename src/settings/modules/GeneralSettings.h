@@ -11,6 +11,10 @@ namespace storm {
         enum class MinMaxTechnique;
         enum class SmtSolverType;
     }
+    
+    namespace dd {
+        enum class DdType;
+    }
 
     namespace settings {
         namespace modules {
@@ -23,7 +27,7 @@ namespace storm {
                 // An enumeration of all engines.
 
                 enum class Engine {
-                    Sparse, Hybrid, Dd
+                    Sparse, Hybrid, Dd, AbstractionRefinement
                 };
 
                 /*!
@@ -277,6 +281,13 @@ namespace storm {
                 storm::solver::SmtSolverType getSmtSolver() const;
                 
                 /*!
+                 * Retrieves the selected library for DD-related operations.
+                 *
+                 * @return The selected library.
+                 */
+                storm::dd::DdType getDdLibraryType() const;
+                
+                /*!
                  * Retrieves whether the export-to-dot option was set.
                  *
                  * @return True if the export-to-dot option was set.
@@ -371,6 +382,7 @@ namespace storm {
                 static const std::string precisionOptionName;
                 static const std::string precisionOptionShortName;
                 static const std::string exportDotOptionName;
+                static const std::string exportMatOptionName;
                 static const std::string configOptionName;
                 static const std::string configOptionShortName;
                 static const std::string explicitOptionName;
@@ -399,6 +411,7 @@ namespace storm {
                 static const std::string bisimulationOptionShortName;
                 static const std::string engineOptionName;
                 static const std::string engineOptionShortName;
+                static const std::string ddLibraryOptionName;
                 static const std::string cudaOptionName;
                 static const std::string prismCompatibilityOptionName;
                 static const std::string prismCompatibilityOptionShortName;

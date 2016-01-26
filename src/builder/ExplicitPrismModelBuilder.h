@@ -248,6 +248,14 @@ namespace storm {
              */
             StateInformation const& getStateInformation() const;
             
+            /*!
+             * Retrieves the program that was actually translated (i.e. including constant substitutions etc.). Note
+             * that this function may only be called after a succesful translation.
+             *
+             * @return The translated program.
+             */
+            storm::prism::Program const& getTranslatedProgram() const;
+            
         private:
             static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
 
@@ -350,6 +358,9 @@ namespace storm {
             // This member holds information about reachable states that can be retrieved from the outside after a
             // successful build.
             boost::optional<StateInformation> stateInformation;
+            
+            // This member holds the program that was most recently translated (if any).
+            boost::optional<storm::prism::Program> preparedProgram;
         };
         
     } // namespace adapters

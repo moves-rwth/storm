@@ -89,7 +89,14 @@ namespace storm {
              * @return The undefined constants in the program.
              */
             std::vector<std::reference_wrapper<storm::prism::Constant const>> getUndefinedConstants() const;
-            
+
+            /*!
+             * Retrieves the undefined constants in the program as a comma-separated string.
+             *
+             * @return A string with the undefined constants in the program, separated by a comma
+             */
+            std::string getUndefinedConstantsAsString() const;
+
             /*!
              * Retrieves whether the given constant exists in the program.
              *
@@ -105,6 +112,13 @@ namespace storm {
              * @return The constant with the given name if it exists.
              */
             Constant const& getConstant(std::string const& constantName) const;
+            
+            /*!
+             * Retrieves a mapping of all defined constants to their defining expressions.
+             *
+             * @return A mapping from constants to their 'values'.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
              * Retrieves all constants defined in the program.

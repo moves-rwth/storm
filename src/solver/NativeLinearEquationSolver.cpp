@@ -102,7 +102,7 @@ namespace storm {
                     // Increase iteration count so we can abort if convergence is too slow.
                     ++iterationCount;
                 }
-                
+                                
                 // If the last iteration did not write to the original x we have to swap the contents, because the
                 // output has to be written to the input parameter x.
                 if (currentX == copyX) {

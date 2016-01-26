@@ -589,6 +589,21 @@ namespace storm {
 
             return result;
         }
+        
+        std::vector<uint_fast64_t> BitVector::getNumberOfSetBitsBeforeIndices() const {
+            std::vector<uint_fast64_t> bitsSetBeforeIndices;
+            bitsSetBeforeIndices.reserve(this->size());
+            uint_fast64_t lastIndex = 0;
+            uint_fast64_t currentNumberOfSetBits = 0;
+            for (auto index : *this) {
+                while (lastIndex <= index) {
+                    bitsSetBeforeIndices.push_back(currentNumberOfSetBits);
+                    ++lastIndex;
+                }
+                ++currentNumberOfSetBits;
+            }
+            return bitsSetBeforeIndices;
+        }
 
         size_t BitVector::size() const {
             return static_cast<size_t> (bitCount);

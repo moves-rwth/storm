@@ -50,6 +50,8 @@ namespace storm {
              */
             std::string const& getRewardModelName() const;
             
+            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
+            
         private:
             // The (optional) name of the reward model this property refers to.
             boost::optional<std::string> rewardModelName;

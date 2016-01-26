@@ -131,7 +131,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"elected\"]");
 
     result = checker.check(*formula);
-    storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
+    storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(1.0448979, quantitativeResult3[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.0448979, quantitativeResult2[0], storm::settings::generalSettings().getPrecision());
 }

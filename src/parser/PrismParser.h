@@ -11,8 +11,6 @@
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/Expressions.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace expressions {
@@ -251,6 +249,9 @@ namespace storm {
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
+            
+            // An error handler function.
+            phoenix::function<SpiritErrorHandler> handler;
         };
     } // namespace parser
 } // namespace storm

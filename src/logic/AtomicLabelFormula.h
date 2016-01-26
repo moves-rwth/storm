@@ -25,8 +25,10 @@ namespace storm {
             
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
             
-            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             
+            virtual std::ostream& writeToStream(std::ostream& out) const override;
+                        
         private:
             std::string label;
         };

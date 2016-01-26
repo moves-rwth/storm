@@ -8,7 +8,7 @@
 #include <iterator>
 
 #include "src/utility/OsDetection.h"
-
+#include "src/adapters/CarlAdapter.h"
 #include <boost/functional/hash.hpp>
 
 // Forward declaration for adapter classes.
@@ -514,6 +514,11 @@ namespace storm {
             * Recompute the nonzero entry count
             */
             void updateNonzeroEntryCount() const;
+            
+            /*!
+             * Recomputes the number of columns and the number of non-zero entries.
+             */
+            void updateDimensions() const;
 
             /*!
             * Change the nonzero entry count by the provided value.
@@ -761,7 +766,15 @@ namespace storm {
             
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
-            
+
+            /*!
+             * Prints the matrix in a dense format, as also used by e.g. Matlab.
+             * Notice that the format does not support multiple rows in a rowgroup.
+             *
+             * @out The stream to output to.
+             */
+            void printAsMatlabMatrix(std::ostream& out) const;
+
             /*!
              * Returns the size of the matrix in memory measured in bytes.
              *
@@ -931,7 +944,7 @@ namespace storm {
             index_type rowCount;
             
             // The number of columns of the matrix.
-            index_type columnCount;
+            mutable index_type columnCount;
             
             // The number of entries in the matrix.
             index_type entryCount;
@@ -956,7 +969,11 @@ namespace storm {
             std::vector<index_type> rowGroupIndices;
             
         };
-
+        
+#ifdef STORM_HAVE_CARL
+        std::set<storm::Variable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix);
+#endif
+        
     } // namespace storage
 } // namespace storm
 

@@ -8,6 +8,8 @@
 #include "src/settings/Argument.h"
 #include "src/solver/SolverSelectionOptions.h"
 
+#include "src/storage/dd/DdType.h"
+
 #include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
@@ -23,6 +25,7 @@ namespace storm {
             const std::string GeneralSettings::precisionOptionName = "precision";
             const std::string GeneralSettings::precisionOptionShortName = "eps";
             const std::string GeneralSettings::exportDotOptionName = "exportdot";
+            const std::string GeneralSettings::exportMatOptionName = "exportmat";
             const std::string GeneralSettings::configOptionName = "config";
             const std::string GeneralSettings::configOptionShortName = "c";
             const std::string GeneralSettings::explicitOptionName = "explicit";
@@ -51,6 +54,7 @@ namespace storm {
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
             const std::string GeneralSettings::engineOptionName = "engine";
             const std::string GeneralSettings::engineOptionShortName = "e";
+            const std::string GeneralSettings::ddLibraryOptionName = "ddlib";
             const std::string GeneralSettings::cudaOptionName = "cuda";
             const std::string GeneralSettings::prismCompatibilityOptionName = "prismcompat";
             const std::string GeneralSettings::prismCompatibilityOptionShortName = "pc";
@@ -70,6 +74,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, "", "If given, the loaded model will be written to the specified file in the dot format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportMatOptionName, "", "If given, the loaded model will be written to the specified file in the mat format.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, configOptionName, false, "If given, this file will be read and parsed for additional configuration settings.").setShortName(configOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the configuration.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
@@ -90,15 +96,19 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
                 
-                std::vector<std::string> engines = {"sparse", "hybrid", "dd"};
+                std::vector<std::string> engines = {"sparse", "hybrid", "dd", "abs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, hybrid, dd}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, hybrid, dd, ar}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer. Available are: gmm++ and native.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, timeoutOptionName, false, "If given, computation will abort after the timeout has been reached.").setShortName(timeoutOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
+                
+                std::vector<std::string> ddLibraries = {"cudd", "sylvan"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the library to prefer. Available are: cudd and sylvan.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(ddLibraries)).setDefaultValueString("cudd").build()).build());
                 
                 std::vector<std::string> lpSolvers = {"gurobi", "glpk"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")
@@ -270,6 +280,15 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown SMT solver '" << smtSolverName << "'.");
             }
             
+            storm::dd::DdType GeneralSettings::getDdLibraryType() const {
+                std::string ddLibraryAsString = this->getOption(ddLibraryOptionName).getArgumentByName("name").getValueAsString();
+                if (ddLibraryAsString == "sylvan") {
+                    return storm::dd::DdType::Sylvan;
+                } else {
+                    return storm::dd::DdType::CUDD;
+                }
+            }
+            
             bool GeneralSettings::isConstantsSet() const {
                 return this->getOption(constantsOptionName).getHasOptionBeenSet();
             }
@@ -327,10 +346,11 @@ namespace storm {
                     engine = GeneralSettings::Engine::Hybrid;
                 } else if (engineStr == "dd") {
                     engine = GeneralSettings::Engine::Dd;
+                } else if (engineStr == "abs") {
+                    engine = GeneralSettings::Engine::AbstractionRefinement;
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown engine '" << engineStr << "'.");
                 }
-
             }
 
             bool GeneralSettings::check() const {

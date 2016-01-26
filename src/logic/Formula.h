@@ -6,6 +6,9 @@
 #include <iostream>
 #include <set>
 
+#include "src/storage/expressions/Variable.h"
+#include "src/storage/expressions/Expression.h"
+
 namespace storm {
     namespace logic {
         // Forward-declare all formula classes.
@@ -32,6 +35,7 @@ namespace storm {
         class CumulativeRewardFormula;
         class InstantaneousRewardFormula;
         class ReachabilityRewardFormula;
+        class LongRunAverageRewardFormula;
         class ProbabilityOperatorFormula;
         class RewardOperatorFormula;
 
@@ -73,6 +77,7 @@ namespace storm {
             virtual bool isCumulativeRewardFormula() const;
             virtual bool isInstantaneousRewardFormula() const;
             virtual bool isReachabilityRewardFormula() const;
+            virtual bool isLongRunAverageRewardFormula() const;
             virtual bool isProbabilityOperatorFormula() const;
             virtual bool isRewardOperatorFormula() const;
 
@@ -160,6 +165,9 @@ namespace storm {
             
             ReachabilityRewardFormula& asReachabilityRewardFormula();
             ReachabilityRewardFormula const& asReachabilityRewardFormula() const;
+
+            LongRunAverageRewardFormula& asLongRunAverageRewardFormula();
+            LongRunAverageRewardFormula const& asLongRunAverageRewardFormula() const;
             
             ProbabilityOperatorFormula& asProbabilityOperatorFormula();
             ProbabilityOperatorFormula const& asProbabilityOperatorFormula() const;
@@ -173,6 +181,8 @@ namespace storm {
             
             std::shared_ptr<Formula const> asSharedPointer();
             std::shared_ptr<Formula const> asSharedPointer() const;
+            
+            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const = 0;
             
             std::string toString() const;
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;

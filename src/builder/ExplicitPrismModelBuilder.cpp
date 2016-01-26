@@ -215,18 +215,7 @@ namespace storm {
         
         template <typename ValueType, typename RewardModelType, typename IndexType>
         void ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::Options::addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
-            std::map<storm::expressions::Variable, storm::expressions::Expression> newConstantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
-            
-            // If there is at least one constant that is defined, and the constant definition map does not yet exist,
-            // we need to create it.
-            if (!constantDefinitions && !newConstantDefinitions.empty()) {
-                constantDefinitions = std::map<storm::expressions::Variable, storm::expressions::Expression>();
-            }
-            
-            // Now insert all the entries that need to be defined.
-            for (auto const& entry : newConstantDefinitions) {
-                constantDefinitions.get().insert(entry);
-            }
+            constantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
         }
         
         template <typename ValueType, typename RewardModelType, typename IndexType>
@@ -236,9 +225,13 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename IndexType>
+        storm::prism::Program const& ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::getTranslatedProgram() const {
+            return preparedProgram.get();
+        }
+        
+        template <typename ValueType, typename RewardModelType, typename IndexType>
         std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::translateProgram(storm::prism::Program program, Options const& options) {
             // Start by defining the undefined constants in the model.
-            storm::prism::Program preparedProgram;
             if (options.constantDefinitions) {
                 preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
             } else {
@@ -249,11 +242,11 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             // If the program either has undefined constants or we are building a parametric model, but the parameters
             // not only appear in the probabilities, we re
-            if (!std::is_same<ValueType, storm::RationalFunction>::value && preparedProgram.hasUndefinedConstants()) {
+            if (!std::is_same<ValueType, storm::RationalFunction>::value && preparedProgram->hasUndefinedConstants()) {
 #else
-            if (preparedProgram.hasUndefinedConstants()) {
+            if (preparedProgram->hasUndefinedConstants()) {
 #endif
-                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram.getUndefinedConstants();
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram->getUndefinedConstants();
                 std::stringstream stream;
                 bool printComma = false;
                 for (auto const& constant : undefinedConstants) {
@@ -267,7 +260,7 @@ namespace storm {
                 stream << ".";
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
 #ifdef STORM_HAVE_CARL
-            } else if (std::is_same<ValueType, storm::RationalFunction>::value && !preparedProgram.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
+            } else if (std::is_same<ValueType, storm::RationalFunction>::value && !preparedProgram->hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
 #endif
             }
@@ -275,48 +268,50 @@ namespace storm {
             // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
             if (options.labelsToBuild) {
                 if (!options.buildAllLabels) {
-                    preparedProgram.filterLabels(options.labelsToBuild.get());
+                    preparedProgram->filterLabels(options.labelsToBuild.get());
                 }
             }
             
             // If we need to build labels for expressions that may appear in some formula, we need to add appropriate
             // labels to the program.
             if (options.expressionLabels) {
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preparedProgram->getConstantsSubstitution();
+
                 for (auto const& expression : options.expressionLabels.get()) {
                     std::stringstream stream;
-                    stream << expression;
+                    stream << expression.substitute(constantsSubstitution);
                     std::string name = stream.str();
-                    if (!preparedProgram.hasLabel(name)) {
-                        preparedProgram.addLabel(name, expression);
+                    if (!preparedProgram->hasLabel(name)) {
+                        preparedProgram->addLabel(name, expression);
                     }
                 }
             }
             
             // Now that the program is fixed, we we need to substitute all constants with their concrete value.
-            preparedProgram = preparedProgram.substituteConstants();
+            preparedProgram = preparedProgram->substituteConstants();
             
-            STORM_LOG_DEBUG("Building representation of program:" << std::endl << preparedProgram << std::endl);
+            STORM_LOG_DEBUG("Building representation of program:" << std::endl << *preparedProgram << std::endl);
                 
             // Select the appropriate reward models (after the constants have been substituted).
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
                 
             // First, we make sure that all selected reward models actually exist.
             for (auto const& rewardModelName : options.rewardModelsToBuild) {
-                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram.hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
+                STORM_LOG_THROW(rewardModelName.empty() || preparedProgram->hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
             }
                 
-            for (auto const& rewardModel : preparedProgram.getRewardModels()) {
+            for (auto const& rewardModel : preparedProgram->getRewardModels()) {
                 if (options.buildAllRewardModels || options.rewardModelsToBuild.find(rewardModel.getName()) != options.rewardModelsToBuild.end()) {
                     selectedRewardModels.push_back(rewardModel);
                 }
             }
             // If no reward model was selected until now and a referenced reward model appears to be unique, we build
             // the only existing reward model (given that no explicit name was given for the referenced reward model).
-            if (selectedRewardModels.empty() && preparedProgram.getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
-                selectedRewardModels.push_back(preparedProgram.getRewardModel(0));
+            if (selectedRewardModels.empty() && preparedProgram->getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
+                selectedRewardModels.push_back(preparedProgram->getRewardModel(0));
             }
                 
-            ModelComponents modelComponents = buildModelComponents(preparedProgram, selectedRewardModels, options);
+            ModelComponents modelComponents = buildModelComponents(*preparedProgram, selectedRewardModels, options);
             
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> result;
             switch (program.getModelType()) {
@@ -576,7 +571,7 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        STORM_LOG_THROW(!discreteTimeModel || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        STORM_LOG_THROW(!discreteTimeModel || !comparator.isConstant(probabilitySum) || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
                         
                         // Dispose of the temporary maps.
                         delete currentTargetStates;
@@ -657,8 +652,14 @@ namespace storm {
                 // If a terminal expression was given, we check whether the current state needs to be explored further.
                 std::vector<Choice<ValueType>> allUnlabeledChoices;
                 std::vector<Choice<ValueType>> allLabeledChoices;
+                bool deadlockOnPurpose = false;
                 if (terminalExpression && evaluator.asBool(terminalExpression.get())) {
-                    // Nothing to do in this case.
+                    //std::cout << unpackStateIntoValuation(currentState, variableInformation).toString(true) << std::endl;
+                    //allUnlabeledChoices = getUnlabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
+                    //allLabeledChoices = getLabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
+
+                        // Nothing to do in this case.
+                    deadlockOnPurpose = true;
                 } else {
                     // Retrieve all choices for the current state.
                     allUnlabeledChoices = getUnlabeledTransitions(program, discreteTimeModel, internalStateInformation, variableInformation, currentState, commandLabels, evaluator, stateQueue, comparator);
@@ -670,7 +671,7 @@ namespace storm {
                 // If the current state does not have a single choice, we equip it with a self-loop if that was
                 // requested and issue an error otherwise.
                 if (totalNumberOfChoices == 0) {
-                    if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
+                    if (!storm::settings::generalSettings().isDontFixDeadlocksSet() || deadlockOnPurpose) {
                         if (commandLabels) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.get().push_back(boost::container::flat_set<uint_fast64_t>());
@@ -694,7 +695,10 @@ namespace storm {
                         
                         ++currentRow;
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
+                        std::cout << unpackStateIntoValuation(currentState, variableInformation).toString(true) << std::endl;
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
+                                        "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
+
                     }
                 } else if (totalNumberOfChoices == 1) {
                     if (!deterministicModel) {
@@ -1020,9 +1024,6 @@ namespace storm {
                 stateInformation = StateInformation(internalStateInformation.reachableStates.size());
                 for (auto const& bitVectorIndexPair : internalStateInformation.stateStorage) {
                     stateInformation.get().valuations[bitVectorIndexPair.second] = unpackStateIntoValuation(bitVectorIndexPair.first, variableInformation);
-                }
-                for (auto const& el : stateInformation.get().valuations) {
-                    std::cout << "state: " << el << std::endl;
                 }
             }
             

@@ -412,7 +412,6 @@ namespace storm {
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::updateNonzeroEntryCount() const {
-            //SparseMatrix<ValueType>* self = const_cast<SparseMatrix<ValueType>*>(this);
             this->nonzeroEntryCount = 0;
             for (auto const& element : *this) {
                 if (element.getValue() != storm::utility::zero<ValueType>()) {
@@ -424,6 +423,18 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrix<ValueType>::updateNonzeroEntryCount(std::make_signed<index_type>::type difference) {
             this->nonzeroEntryCount += difference;
+        }
+        
+        template<typename ValueType>
+        void SparseMatrix<ValueType>::updateDimensions() const {
+            this->nonzeroEntryCount = 0;
+            this->columnCount = 0;
+            for (auto const& element : *this) {
+                if (element.getValue() != storm::utility::zero<ValueType>()) {
+                    ++this->nonzeroEntryCount;
+                    this->columnCount = std::max(element.getColumn() + 1, this->columnCount);
+                }
+            }
         }
         
         template<typename ValueType>
@@ -554,34 +565,12 @@ namespace storm {
             
             // Start by creating a temporary vector that stores for each index whose bit is set to true the number of
             // bits that were set before that particular index.
-            std::vector<index_type> columnBitsSetBeforeIndex;
-            columnBitsSetBeforeIndex.reserve(columnCount);
-            
-            // Compute the information to fill this vector.
-            index_type lastIndex = 0;
-            index_type currentNumberOfSetBits = 0;
-            for (auto index : columnConstraint) {
-                while (lastIndex <= index) {
-                    columnBitsSetBeforeIndex.push_back(currentNumberOfSetBits);
-                    ++lastIndex;
-                }
-                ++currentNumberOfSetBits;
-            }
+            std::vector<index_type> columnBitsSetBeforeIndex = columnConstraint.getNumberOfSetBitsBeforeIndices();
             std::vector<index_type>* rowBitsSetBeforeIndex;
             if (&rowGroupConstraint == &columnConstraint) {
                 rowBitsSetBeforeIndex = &columnBitsSetBeforeIndex;
             } else {
-                rowBitsSetBeforeIndex = new std::vector<index_type>(rowCount);
-                
-                lastIndex = 0;
-                currentNumberOfSetBits = 0;
-                for (auto index : rowGroupConstraint) {
-                    while (lastIndex <= index) {
-                        rowBitsSetBeforeIndex->push_back(currentNumberOfSetBits);
-                        ++lastIndex;
-                    }
-                    ++currentNumberOfSetBits;
-                }
+                rowBitsSetBeforeIndex = new std::vector<index_type>(rowGroupConstraint.getNumberOfSetBitsBeforeIndices());
             }
             
             // Then, we need to determine the number of entries and the number of rows of the submatrix.
@@ -1181,6 +1170,31 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void SparseMatrix<ValueType>::printAsMatlabMatrix(std::ostream& out) const {
+            // Iterate over all row groups.
+            for (typename SparseMatrix<ValueType>::index_type group = 0; group < this->getRowGroupCount(); ++group) {
+                assert(this->getRowGroupSize(group) == 1);
+                for (typename SparseMatrix<ValueType>::index_type i = this->getRowGroupIndices()[group]; i < this->getRowGroupIndices()[group + 1]; ++i) {
+                    typename SparseMatrix<ValueType>::index_type nextIndex = this->rowIndications[i];
+
+                    // Print the actual row.
+                    out << i << "\t(";
+                    typename SparseMatrix<ValueType>::index_type currentRealIndex = 0;
+                    while (currentRealIndex < this->columnCount) {
+                        if (nextIndex < this->rowIndications[i + 1] && currentRealIndex == this->columnsAndValues[nextIndex].getColumn()) {
+                            out << this->columnsAndValues[nextIndex].getValue() << " ";
+                            ++nextIndex;
+                        } else {
+                            out << "0 ";
+                        }
+                        ++currentRealIndex;
+                    }
+                    out << ";" << std::endl;
+                }
+            }
+        }
+        
+        template<typename ValueType>
         std::size_t SparseMatrix<ValueType>::hash() const {
             std::size_t result = 0;
             
@@ -1193,6 +1207,19 @@ namespace storm {
             
             return result;
         }
+        
+        
+#ifdef STORM_HAVE_CARL
+        std::set<storm::Variable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix)
+        {
+            std::set<storm::Variable> result;
+            for(auto const& entry : matrix) {
+                entry.getValue().gatherVariables(result);
+            }
+            return result;
+        }
+        
+#endif
         
         // Explicitly instantiate the entry, builder and the matrix.
         // double

@@ -49,6 +49,8 @@ namespace storm {
 
             virtual void filter(QualitativeCheckResult const& filter) override;
 
+            virtual void oneMinus() override;
+            
         private:
             // The values of the quantitative check result.
             boost::variant<vector_type, map_type> values;

@@ -73,8 +73,8 @@ namespace storm {
         
         template<>
         storm::RationalFunction infinity() {
-            // FIXME: this does not work.
-            return storm::RationalFunction(carl::rationalize<storm::RationalNumber>(std::numeric_limits<double>::infinity()));
+            // FIXME: this should be treated more properly.
+            return storm::RationalFunction(-1.0);
         }
 #endif
         
