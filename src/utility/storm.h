@@ -183,12 +183,12 @@ namespace storm {
             return performNondeterministicSparseBisimulationMinimization<storm::models::sparse::Mdp<ValueType>>(model->template as<storm::models::sparse::Mdp<ValueType>>(), formulas, type);
         }       
     }
-    
+        
     template<typename ModelType>
     std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> const& model, std::shared_ptr<storm::logic::Formula> const& formula, storm::storage::BisimulationType type) {
-        return performBisimulationMinimization<ModelType>(model, {formula}, type);
+        std::vector<std::shared_ptr<storm::logic::Formula>> formulas = { formula };
+        return performBisimulationMinimization<ModelType>(model, formulas , type);
     }
-    
     
     
     template<typename ModelType>
