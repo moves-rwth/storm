@@ -35,8 +35,7 @@ TEST(DeterministicModelBisimulationDecomposition, Die) {
     EXPECT_EQ(5ul, result->getNumberOfStates());
     EXPECT_EQ(8ul, result->getNumberOfTransitions());
 
-    options.bounded = false;
-    options.type = storm::storage::BisimulationType::Weak;
+    options.setType(storm::storage::BisimulationType::Weak);
 
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim3(*dtmc, options);
     ASSERT_NO_THROW(bisim3.computeBisimulationDecomposition());
@@ -93,8 +92,7 @@ TEST(DeterministicModelBisimulationDecomposition, Crowds) {
     EXPECT_EQ(65ul, result->getNumberOfStates());
     EXPECT_EQ(105ul, result->getNumberOfTransitions());
 
-    options.bounded = false;
-    options.type = storm::storage::BisimulationType::Weak;
+    options.setType(storm::storage::BisimulationType::Weak);
 
     storm::storage::DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>> bisim3(*dtmc, options);
     ASSERT_NO_THROW(bisim3.computeBisimulationDecomposition());

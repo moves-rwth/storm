@@ -10,6 +10,9 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
+
+#ifdef STORM_HAVE_MSAT
+
 TEST(SmtPermissiveSchedulerTest, DieSelection) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die_c1.nm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
@@ -58,3 +61,5 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
     //
     
 }
+
+#endif // STORM_HAVE_MSAT

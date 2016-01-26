@@ -1208,6 +1208,19 @@ namespace storm {
             return result;
         }
         
+        
+#ifdef STORM_HAVE_CARL
+        std::set<storm::Variable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix)
+        {
+            std::set<storm::Variable> result;
+            for(auto const& entry : matrix) {
+                entry.getValue().gatherVariables(result);
+            }
+            return result;
+        }
+        
+#endif
+        
         // Explicitly instantiate the entry, builder and the matrix.
         // double
         template class MatrixEntry<typename SparseMatrix<double>::index_type, double>;

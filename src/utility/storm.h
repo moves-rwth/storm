@@ -138,16 +138,13 @@ namespace storm {
     }
     
     template<typename ModelType>
-    std::shared_ptr<ModelType> performDeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+    std::shared_ptr<ModelType> performDeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
         std::cout << "Performing bisimulation minimization... ";
         typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options options;
         if (!formulas.empty()) {
             options = typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
         }
-        if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
-            options.type = storm::storage::BisimulationType::Weak;
-            options.bounded = false;
-        }
+        options.setType(type);
         
         storm::storage::DeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
@@ -157,16 +154,14 @@ namespace storm {
     }
     
     template<typename ModelType>
-    std::shared_ptr<ModelType> performNondeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+    std::shared_ptr<ModelType> performNondeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
         std::cout << "Performing bisimulation minimization... ";
         typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options options;
         if (!formulas.empty()) {
             options = typename storm::storage::NondeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
         }
-        if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
-            options.type = storm::storage::BisimulationType::Weak;
-            options.bounded = false;
-        }
+        options.setType(type);
+        
         
         storm::storage::NondeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
@@ -176,22 +171,29 @@ namespace storm {
     }
     
     template<typename ModelType, typename ValueType = typename ModelType::ValueType, typename std::enable_if<std::is_base_of<storm::models::sparse::Model<ValueType>, ModelType>::value, bool>::type = 0>
+    std::shared_ptr<storm::models::ModelBase> performBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
+        STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
+        model->reduceToStateBasedRewards();
+
+        if (model->isOfType(storm::models::ModelType::Dtmc)) {
+            return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Dtmc<ValueType>>(model->template as<storm::models::sparse::Dtmc<ValueType>>(), formulas, type);
+        } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
+            return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, type);
+        } else {
+            return performNondeterministicSparseBisimulationMinimization<storm::models::sparse::Mdp<ValueType>>(model->template as<storm::models::sparse::Mdp<ValueType>>(), formulas, type);
+        }       
+    }
+    
+    template<typename ModelType, typename ValueType = typename ModelType::ValueType, typename std::enable_if<std::is_base_of<storm::models::sparse::Model<ValueType>, ModelType>::value, bool>::type = 0>
     std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
         if (storm::settings::generalSettings().isBisimulationSet()) {
-            
-            STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
-            STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
-
-            model->reduceToStateBasedRewards();
-
-            if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Dtmc<ValueType>>(model->template as<storm::models::sparse::Dtmc<ValueType>>(), formulas);
-            } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
-                return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas);
-            } else {
-                return performNondeterministicSparseBisimulationMinimization<storm::models::sparse::Mdp<ValueType>>(model->template as<storm::models::sparse::Mdp<ValueType>>(), formulas);
+            storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
+            if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
+                bisimType = storm::storage::BisimulationType::Weak;
             }
             
+            STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
+            return performBisimulationMinimization(model, formulas, bisimType);
         }
         return model;
     }

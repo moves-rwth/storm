@@ -122,7 +122,7 @@ namespace storm {
         void DeterministicModelBisimulationDecomposition<ModelType>::initializeMeasureDrivenPartition() {
             BisimulationDecomposition<ModelType, BlockDataType>::initializeMeasureDrivenPartition();
             
-            if (this->options.type == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
+            if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
                 this->initializeWeakDtmcBisimulation();
             }
         }
@@ -131,7 +131,7 @@ namespace storm {
         void DeterministicModelBisimulationDecomposition<ModelType>::initializeLabelBasedPartition() {
             BisimulationDecomposition<ModelType, BlockDataType>::initializeLabelBasedPartition();
             
-            if (this->options.type == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
+            if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
                 this->initializeWeakDtmcBisimulation();
             }
         }
@@ -494,7 +494,7 @@ namespace storm {
             }
             
             // Finally, we split the block based on the precomputed probabilities and the chosen bisimulation type.
-            if (this->options.type == BisimulationType::Strong || this->model.getType() == storm::models::ModelType::Ctmc) {
+            if (this->options.getType() == BisimulationType::Strong || this->model.getType() == storm::models::ModelType::Ctmc) {
                 refinePredecessorBlocksOfSplitterStrong(predecessorBlocks, splitterQueue);
             } else {
                 // If the splitter is a predecessor of we can use the computed probabilities to update the silent
@@ -528,7 +528,7 @@ namespace storm {
             
             // If the model had state rewards, we need to build the state rewards for the quotient as well.
             boost::optional<std::vector<ValueType>> stateRewards;
-            if (this->options.keepRewards && this->model.hasRewardModel()) {
+            if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
                 stateRewards = std::vector<ValueType>(this->blocks.size());
             }
             
@@ -542,7 +542,7 @@ namespace storm {
                 
                 // However, for weak bisimulation, we need to make sure the representative state is a non-silent one (if
                 // there is any such state).
-                if (this->options.type == BisimulationType::Weak) {
+                if (this->options.getType() == BisimulationType::Weak) {
                     for (auto const& state : block) {
                         if (!isSilent(state)) {
                             representativeState = state;
@@ -576,7 +576,7 @@ namespace storm {
                         storm::storage::sparse::state_type targetBlock = this->partition.getBlock(entry.getColumn()).getId();
                         
                         // If we are computing a weak bisimulation quotient, there is no need to add self-loops.
-                        if ((this->options.type == BisimulationType::Weak) && targetBlock == blockIndex) {
+                        if ((this->options.getType() == BisimulationType::Weak) && targetBlock == blockIndex) {
                             continue;
                         }
                         
@@ -590,7 +590,7 @@ namespace storm {
                     
                     // Now add them to the actual matrix.
                     for (auto const& probabilityEntry : blockProbability) {
-                        if (this->options.type == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
+                        if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
                             builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second / (storm::utility::one<ValueType>() - getSilentProbability(representativeState)));
                         } else {
                             builder.addNextValue(blockIndex, probabilityEntry.first, probabilityEntry.second);
@@ -608,7 +608,7 @@ namespace storm {
                 
                 // If the model has state rewards, we simply copy the state reward of the representative state, because
                 // all states in a block are guaranteed to have the same state reward.
-                if (this->options.keepRewards && this->model.hasRewardModel()) {
+                if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
                     typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getUniqueRewardModel();
                     stateRewards.get()[blockIndex] = nameRewardModelPair->second.getStateRewardVector()[representativeState];
                 }
@@ -622,7 +622,7 @@ namespace storm {
             
             // Construct the reward model mapping.
             std::unordered_map<std::string, typename ModelType::RewardModelType> rewardModels;
-            if (this->options.keepRewards && this->model.hasRewardModel()) {
+            if (this->options.getKeepRewards() && this->model.hasRewardModel()) {
                 typename std::unordered_map<std::string, typename ModelType::RewardModelType>::const_iterator nameRewardModelPair = this->model.getUniqueRewardModel();
                 rewardModels.insert(std::make_pair(nameRewardModelPair->first, typename ModelType::RewardModelType(stateRewards)));
             }

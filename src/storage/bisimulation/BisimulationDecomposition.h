@@ -3,6 +3,8 @@
 
 #include <deque>
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/BisimulationSettings.h"
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/Decomposition.h"
 #include "src/storage/StateBlock.h"
@@ -25,6 +27,23 @@ namespace storm {
     namespace storage {
 
         enum class BisimulationType { Strong, Weak };
+        enum class BisimulationTypeChoice { Strong, Weak, FromSettings };
+        
+        inline BisimulationType resolveBisimulationTypeChoice(BisimulationTypeChoice c) {
+            switch(c) {
+                case BisimulationTypeChoice::Strong:
+                    return BisimulationType::Strong;
+                case BisimulationTypeChoice::Weak:
+                    return BisimulationType::Weak;
+                case BisimulationTypeChoice::FromSettings:
+                    if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
+                        return BisimulationType::Weak;
+                    } else {
+                        return BisimulationType::Strong;
+                    }
+                    
+            }
+        }
         
         /*!
          * This class is the superclass of all decompositions of a sparse model into its bisimulation quotient.
@@ -37,6 +56,8 @@ namespace storm {
             
             // A class that offers the possibility to customize the bisimulation.
             struct Options {
+                
+                
                 // Creates an object representing the default values for all options.
                 Options();
                 
@@ -68,33 +89,74 @@ namespace storm {
                  */
                 void preserveFormula(ModelType const& model, storm::logic::Formula const& formula);
                 
+                
+                /**
+                 * Sets the bisimulation type. If the bisimulation type is set to weak,
+                 * we also change the bounded flag (as bounded properties are not preserved under 
+                 * weak bisimulation).
+                 */
+                void setType(BisimulationType t) {
+                    if(t == BisimulationType::Weak) {
+                        bounded = false;
+                    }
+                    type = t;
+                }
+                
+                BisimulationType getType() const {
+                    return this->type;
+                }
+                
+                bool getBounded() const {
+                    return this->bounded;
+                }
+                
+                bool getKeepRewards() const {
+                    return this->keepRewards;
+                }
+                
+                bool isOptimizationDirectionSet() const {
+                    return static_cast<bool>(optimalityType);
+                }
+                
+                OptimizationDirection getOptimizationDirection() const {
+                    assert(optimalityType);
+                    return optimalityType.get();
+                }
                 // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set
                 // to true, the two optional pairs phiStatesAndLabel and psiStatesAndLabel must be set. Then, the
                 // measure driven initial partition wrt. to the states phi and psi is taken.
                 bool measureDrivenInitialPartition;
                 boost::optional<storm::storage::BitVector> phiStates;
                 boost::optional<storm::storage::BitVector> psiStates;
-                boost::optional<OptimizationDirection> optimalityType;
                 
-                // An optional set of strings that indicate which of the atomic propositions of the model are to be
-                // respected and which may be ignored. If not given, all atomic propositions of the model are respected.
+                /// An optional set of strings that indicate which of the atomic propositions of the model are to be
+                /// respected and which may be ignored. If not given, all atomic propositions of the model are respected.
                 boost::optional<std::set<std::string>> respectedAtomicPropositions;
                 
-                // A flag that indicates whether or not the state-rewards of the model are to be respected (and should
-                // be kept in the quotient model, if one is built).
-                bool keepRewards;
-                
-                // A flag that indicates whether a strong or a weak bisimulation is to be computed.
-                BisimulationType type;
-                
-                // A flag that indicates whether step-bounded properties are to be preserved. This may only be set to tru
-                // when computing strong bisimulation equivalence.
-                bool bounded;
-                
-                // A flag that governs whether the quotient model is actually built or only the decomposition is computed.
+                /// A flag that governs whether the quotient model is actually built or only the decomposition is computed.
                 bool buildQuotient;
                 
             private:
+                
+                boost::optional<OptimizationDirection> optimalityType;
+                
+                
+                
+                
+                /// A flag that indicates whether or not the state-rewards of the model are to be respected (and should
+                /// be kept in the quotient model, if one is built).
+                bool keepRewards;
+                
+                /// A flag that indicates whether a strong or a weak bisimulation is to be computed.
+                BisimulationType type;
+                
+                /// A flag that indicates whether step-bounded properties are to be preserved. This may only be set to tru
+                /// when computing strong bisimulation equivalence.
+                bool bounded;
+                
+                
+                
+                
                 /*!
                  * Sets the options under the assumption that the given formula is the only one that is to be checked.
                  *

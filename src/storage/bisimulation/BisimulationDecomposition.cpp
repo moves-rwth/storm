@@ -44,7 +44,7 @@ namespace storm {
         }
         
         template<typename ModelType, typename BlockDataType>
-        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), keepRewards(false), type(BisimulationType::Strong), bounded(false), buildQuotient(true) {
+        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), buildQuotient(true), keepRewards(false), type(BisimulationType::Strong), bounded(false) {
             // Intentionally left empty.
         }
         
@@ -163,9 +163,9 @@ namespace storm {
 
         template<typename ModelType, typename BlockDataType>
         BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options) : model(model), backwardTransitions(backwardTransitions), options(options), partition(), comparator(), quotient(nullptr) {
-            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
-            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
-            STORM_LOG_THROW(options.type != BisimulationType::Weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
+            STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
+            STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(options.getType() != BisimulationType::Weak || !options.getBounded(), storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             
             // Fix the respected atomic propositions if they were not explicitly given.
             if (!this->options.respectedAtomicPropositions) {
@@ -270,7 +270,7 @@ namespace storm {
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (options.keepRewards && model.hasRewardModel()) {
+            if (options.getKeepRewards() && model.hasRewardModel()) {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
         }
@@ -284,11 +284,11 @@ namespace storm {
                 representativePsiState = *options.psiStates.get().begin();
             }
             
-            partition = storm::storage::bisimulation::Partition<BlockDataType>(model.getNumberOfStates(), statesWithProbability01.first, options.bounded || options.keepRewards ? options.psiStates.get() : statesWithProbability01.second, representativePsiState);
+            partition = storm::storage::bisimulation::Partition<BlockDataType>(model.getNumberOfStates(), statesWithProbability01.first, options.getBounded() || options.getKeepRewards() ? options.psiStates.get() : statesWithProbability01.second, representativePsiState);
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (options.keepRewards && model.hasRewardModel()) {
+            if (options.getKeepRewards() && model.hasRewardModel()) {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
         }
