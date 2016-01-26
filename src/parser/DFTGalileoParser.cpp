@@ -75,7 +75,7 @@ namespace storm {
                     toplevelId = stripQuotsFromName(line.substr(toplevelToken.size() + 1));
                 }
                 else if (boost::starts_with(line, parametricToken)) {
-                    STORM_LOG_THROW((!std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
+                    STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
                     std::string parameter = stripQuotsFromName(line.substr(parametricToken.size() + 1));
                     storm::expressions::Variable var = manager->declareRationalVariable(parameter);
                     identifierMapping.emplace(var.getName(), var);
