@@ -97,6 +97,11 @@ namespace storm {
              */
             bool isOfType(storm::models::ModelType const& modelType) const;
             
+            /*!
+             * Checks whether the model is parametric
+             */
+            virtual bool isParametric() const;
+            
         private:
             // The type of the model.
             ModelType modelType;
