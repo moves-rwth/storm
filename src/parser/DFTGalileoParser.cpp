@@ -32,9 +32,8 @@ namespace storm {
             
             if(firstQuots == std::string::npos) {
                 return name;
-            } else if (secondQuots == std::string::npos) {
-                STORM_LOG_THROW(false, storm::exceptions::FileIoException, "No ending quotation mark found in " << name);
             } else {
+                STORM_LOG_THROW(secondQuots != std::string::npos, storm::exceptions::FileIoException, "No ending quotation mark found in " << name);
                 return name.substr(firstQuots+1,secondQuots-1);
             }
         }
@@ -76,9 +75,7 @@ namespace storm {
                     toplevelId = stripQuotsFromName(line.substr(toplevelToken.size() + 1));
                 }
                 else if (boost::starts_with(line, parametricToken)) {
-                    if (!std::is_same<ValueType, storm::RationalFunction>::value) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
-                    }
+                    STORM_LOG_THROW((!std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
                     std::string parameter = stripQuotsFromName(line.substr(parametricToken.size() + 1));
                     storm::expressions::Variable var = manager->declareRationalVariable(parameter);
                     identifierMapping.emplace(var.getName(), var);
@@ -95,15 +92,23 @@ namespace storm {
                     }
                     if(tokens[1] == "and") {
                         success = builder.addAndElement(name, childNames);
-                    } else if(tokens[1] == "or") {
+                    } else if (tokens[1] == "or") {
                         success = builder.addOrElement(name, childNames);
-                    } else if(boost::starts_with(tokens[1], "vot")) {
+                    } else if (boost::starts_with(tokens[1], "vot")) {
                         success = builder.addVotElement(name, boost::lexical_cast<unsigned>(tokens[1].substr(3)), childNames);
-                    } else if(tokens[1] == "pand") {
+                    } else if (tokens[1].find("of") != std::string::npos) {
+                        size_t pos = tokens[1].find("of");
+                        unsigned threshold = boost::lexical_cast<unsigned>(tokens[1].substr(0, pos));
+                        unsigned count = boost::lexical_cast<unsigned>(tokens[1].substr(pos + 2));
+                        STORM_LOG_THROW(count == childNames.size(), storm::exceptions::FileIoException, "Voting gate does not correspond to number of children.");
+                        success = builder.addVotElement(name, threshold, childNames);
+                    } else if (tokens[1] == "pand") {
                         success = builder.addPandElement(name, childNames);
-                    } else if(tokens[1] == "wsp" || tokens[1] == "csp") {
+                    } else if (tokens[1] == "wsp" || tokens[1] == "csp") {
                         success = builder.addSpareElement(name, childNames);
-                    } else if(boost::starts_with(tokens[1], "lambda=")) {
+                    } else if (boost::starts_with(tokens[1], "fdep")) {
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Functional dependencies currently not supported");
+                    } else if (boost::starts_with(tokens[1], "lambda=")) {
                         ValueType failureRate = parseRationalExpression(tokens[1].substr(7));
                         ValueType dormancyFactor = parseRationalExpression(tokens[2].substr(5));
                         success = builder.addBasicElement(name, failureRate, dormancyFactor);
