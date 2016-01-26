@@ -262,10 +262,6 @@ namespace storm {
                 if (startingIteration == 0) {
                     result = values;
                     storm::utility::vector::scaleVectorInPlace(result, std::get<3>(foxGlynnResult)[0]);
-                    std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&foxGlynnResult] (ValueType const& a, ValueType const& b) { return a + std::get<3>(foxGlynnResult)[0] * b; };
-                    if (addVector != nullptr) {
-                        storm::utility::vector::applyPointwise(result, *addVector, result, addAndScale);
-                    }
                     ++startingIteration;
                 } else {
                     if (computeCumulativeReward) {
