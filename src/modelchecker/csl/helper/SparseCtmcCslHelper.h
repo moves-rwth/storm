@@ -28,6 +28,8 @@ namespace storm {
                 
                 static std::vector<ValueType> computeLongRunAverage(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
+                static std::vector<ValueType> computeExpectedTimes(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory);
+
                 /*!
                  * Computes the matrix representing the transitions of the uniformized CTMC.
                  *

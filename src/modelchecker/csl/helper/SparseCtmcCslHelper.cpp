@@ -650,11 +650,21 @@ namespace storm {
                 return result;
             }
             
+            template <typename ValueType>
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeExpectedTimes(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                // Compute expected time on CTMC by reduction to DTMC with rewards
+                storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
+                std::vector<ValueType> totalRewardVector;
+                for (auto exitRate : exitRateVector) {
+                    totalRewardVector.push_back(1 / exitRate);
+                }
+                return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative, linearEquationSolverFactory);
+            }
+
             template class SparseCtmcCslHelper<double>;
             template std::vector<double> SparseCtmcCslHelper<double>::computeInstantaneousRewards(storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
             template std::vector<double> SparseCtmcCslHelper<double>::computeCumulativeRewards(storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
             template std::vector<double> SparseCtmcCslHelper<double>::computeReachabilityRewards(storm::storage::SparseMatrix<double> const& rateMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
-
         }
     }
 }
