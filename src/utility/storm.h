@@ -81,8 +81,8 @@ namespace storm {
     }
             
     storm::prism::Program parseProgram(std::string const& path);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> parseFormulasForExplicit(std::string const& inputString);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
+    std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForExplicit(std::string const& inputString);
+    std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
 
 
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
