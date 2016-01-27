@@ -72,7 +72,9 @@ BOOST_PYTHON_MODULE(_logic)
     defineClass<storm::logic::UnaryBooleanStateFormula, storm::logic::UnaryStateFormula>("UnaryBooleanStateFormula",
     "");
     defineClass<storm::logic::OperatorFormula, storm::logic::UnaryStateFormula, boost::noncopyable>("OperatorFormula",
-    "");
+    "")
+        .add_property("has_bound", &storm::logic::OperatorFormula::hasBound)
+        .add_property("bound", &storm::logic::OperatorFormula::getBound)
     defineClass<storm::logic::ExpectedTimeOperatorFormula, storm::logic::OperatorFormula>("ExpectedTimeOperator",
     "The expected time between two events");
     defineClass<storm::logic::LongRunAverageOperatorFormula, storm::logic::OperatorFormula>("LongRunAvarageOperator",
