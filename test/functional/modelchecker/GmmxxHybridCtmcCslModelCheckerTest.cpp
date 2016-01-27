@@ -27,7 +27,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     
     // Build the model.
 #ifdef WINDOWS
@@ -124,7 +124,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Cluster_Sylvan) {
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     
     // Build the model.
 #ifdef WINDOWS
@@ -221,7 +221,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded_Cudd) {
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     
     // Build the model.
 #ifdef WINDOWS
@@ -300,7 +300,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Embedded_Sylvan) {
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     
     // Build the model.
 #ifdef WINDOWS
@@ -379,7 +379,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Polling_Cudd) {
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     
     // Build the model.
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
@@ -415,7 +415,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Polling_Sylvan) {
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     
     // Build the model.
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
@@ -458,7 +458,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem_Cudd) {
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     
     // Build the model with the customers reward structure.
 #ifdef WINDOWS
@@ -546,7 +546,7 @@ TEST(GmmxxHybridCtmcCslModelCheckerTest, Tandem_Sylvan) {
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     
     // Build the model with the customers reward structure.
 #ifdef WINDOWS

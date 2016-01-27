@@ -10,7 +10,7 @@
 namespace storm {
     namespace parser {
         
-        class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<std::shared_ptr<storm::logic::Formula>>(), Skipper> {
+        class FormulaParserGrammar : public qi::grammar<Iterator, std::vector<std::shared_ptr<const storm::logic::Formula>>(), Skipper> {
         public:
             FormulaParserGrammar(std::shared_ptr<storm::expressions::ExpressionManager const> const& manager = std::shared_ptr<storm::expressions::ExpressionManager>(new storm::expressions::ExpressionManager()));
             
@@ -95,66 +95,66 @@ namespace storm {
             // they are to be replaced with.
             qi::symbols<char, storm::expressions::Expression> identifiers_;
             
-            qi::rule<Iterator, std::vector<std::shared_ptr<storm::logic::Formula>>(), Skipper> start;
+            qi::rule<Iterator, std::vector<std::shared_ptr<const storm::logic::Formula>>(), Skipper> start;
             
             qi::rule<Iterator, std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>(), qi::locals<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>, Skipper> operatorInformation;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> probabilityOperator;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> rewardOperator;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> expectedTimeOperator;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> longRunAverageOperator;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> probabilityOperator;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> rewardOperator;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> expectedTimeOperator;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> longRunAverageOperator;
             
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> simpleFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> stateFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> pathFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> pathFormulaWithoutUntil;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> simplePathFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> atomicStateFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> operatorFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> simpleFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> stateFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> pathFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> pathFormulaWithoutUntil;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> simplePathFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> atomicStateFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> operatorFormula;
             qi::rule<Iterator, std::string(), Skipper> label;
             qi::rule<Iterator, std::string(), Skipper> rewardModelName;
             
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> andStateFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> orStateFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> notStateFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> labelFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> expressionFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), qi::locals<bool>, Skipper> booleanLiteralFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> andStateFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> orStateFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> notStateFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> labelFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> expressionFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), qi::locals<bool>, Skipper> booleanLiteralFormula;
             
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> conditionalFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> eventuallyFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> nextFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> globallyFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> untilFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> conditionalFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> eventuallyFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> nextFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> globallyFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> untilFormula;
             qi::rule<Iterator, boost::variant<std::pair<double, double>, uint_fast64_t>(), Skipper> timeBound;
             
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> rewardPathFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> cumulativeRewardFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> reachabilityRewardFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> instantaneousRewardFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> longRunAverageRewardFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> rewardPathFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> cumulativeRewardFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> reachabilityRewardFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> instantaneousRewardFormula;
+            qi::rule<Iterator, std::shared_ptr<const storm::logic::Formula>(), Skipper> longRunAverageRewardFormula;
             
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
             
             // Methods that actually create the expression objects.
-            std::shared_ptr<storm::logic::Formula> createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
-            std::shared_ptr<storm::logic::Formula> createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
-            std::shared_ptr<storm::logic::Formula> createReachabilityRewardFormula(std::shared_ptr<storm::logic::Formula> const& stateFormula) const;
-            std::shared_ptr<storm::logic::Formula> createLongRunAverageRewardFormula() const;
-            std::shared_ptr<storm::logic::Formula> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
-            std::shared_ptr<storm::logic::Formula> createBooleanLiteralFormula(bool literal) const;
-            std::shared_ptr<storm::logic::Formula> createAtomicLabelFormula(std::string const& label) const;
-            std::shared_ptr<storm::logic::Formula> createEventuallyFormula(boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createGloballyFormula(std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createNextFormula(std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& rightSubformula);
-            std::shared_ptr<storm::logic::Formula> createConditionalFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula) const;
-            std::shared_ptr<storm::logic::Formula> createLongRunAverageOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createExpectedTimeOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createProbabilityOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula);
-            std::shared_ptr<storm::logic::Formula> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
-            std::shared_ptr<storm::logic::Formula> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
+            std::shared_ptr<const storm::logic::Formula> createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
+            std::shared_ptr<const storm::logic::Formula> createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
+            std::shared_ptr<const storm::logic::Formula> createReachabilityRewardFormula(std::shared_ptr<const storm::logic::Formula> const& stateFormula) const;
+            std::shared_ptr<const storm::logic::Formula> createLongRunAverageRewardFormula() const;
+            std::shared_ptr<const storm::logic::Formula> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
+            std::shared_ptr<const storm::logic::Formula> createBooleanLiteralFormula(bool literal) const;
+            std::shared_ptr<const storm::logic::Formula> createAtomicLabelFormula(std::string const& label) const;
+            std::shared_ptr<const storm::logic::Formula> createEventuallyFormula(boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<const storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<const storm::logic::Formula> createGloballyFormula(std::shared_ptr<const storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<const storm::logic::Formula> createNextFormula(std::shared_ptr<const storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<const storm::logic::Formula> createUntilFormula(std::shared_ptr<const storm::logic::Formula> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<const storm::logic::Formula> const& rightSubformula);
+            std::shared_ptr<const storm::logic::Formula> createConditionalFormula(std::shared_ptr<const storm::logic::Formula> const& leftSubformula, std::shared_ptr<const storm::logic::Formula> const& rightSubformula) const;
+            std::shared_ptr<const storm::logic::Formula> createLongRunAverageOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<const storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<const storm::logic::Formula> createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<const storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<const storm::logic::Formula> createExpectedTimeOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<const storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<const storm::logic::Formula> createProbabilityOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<const storm::logic::Formula> const& subformula);
+            std::shared_ptr<const storm::logic::Formula> createBinaryBooleanStateFormula(std::shared_ptr<const storm::logic::Formula> const& leftSubformula, std::shared_ptr<const storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
+            std::shared_ptr<const storm::logic::Formula> createUnaryBooleanStateFormula(std::shared_ptr<const storm::logic::Formula> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
             
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;
@@ -182,18 +182,18 @@ namespace storm {
             return *this;
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParser::parseSingleFormulaFromString(std::string const& formulaString) const {
-            std::vector<std::shared_ptr<storm::logic::Formula>> formulas = parseFromString(formulaString);
+        std::shared_ptr<const storm::logic::Formula> FormulaParser::parseSingleFormulaFromString(std::string const& formulaString) const {
+            std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = parseFromString(formulaString);
             STORM_LOG_THROW(formulas.size() == 1, storm::exceptions::WrongFormatException, "Expected exactly one formula, but found " << formulas.size() << " instead.");
             return formulas.front();
         }
         
-        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromFile(std::string const& filename) const {
+        std::vector<std::shared_ptr<const storm::logic::Formula>> FormulaParser::parseFromFile(std::string const& filename) const {
             // Open file and initialize result.
             std::ifstream inputFileStream(filename, std::ios::in);
             STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
             
-            std::vector<std::shared_ptr<storm::logic::Formula>> formulas;
+            std::vector<std::shared_ptr<const storm::logic::Formula>> formulas;
             
             // Now try to parse the contents of the file.
             try {
@@ -210,13 +210,13 @@ namespace storm {
             return formulas;
         }
         
-        std::vector<std::shared_ptr<storm::logic::Formula>> FormulaParser::parseFromString(std::string const& formulaString) const {
+        std::vector<std::shared_ptr<const storm::logic::Formula>> FormulaParser::parseFromString(std::string const& formulaString) const {
             PositionIteratorType first(formulaString.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(formulaString.end());
             
             // Create empty result;
-            std::vector<std::shared_ptr<storm::logic::Formula>> result;
+            std::vector<std::shared_ptr<const storm::logic::Formula>> result;
             
             // Create grammar.
             try {
@@ -390,108 +390,108 @@ namespace storm {
             this->identifiers_.add(identifier, expression);
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const {
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const {
             if (timeBound.which() == 0) {
-                return std::shared_ptr<storm::logic::Formula>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(boost::get<unsigned>(timeBound))));
+                return std::shared_ptr<const storm::logic::Formula>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(boost::get<unsigned>(timeBound))));
             } else {
                 double timeBoundAsDouble = boost::get<double>(timeBound);
                 STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Cumulative reward property must have non-negative bound.");
-                return std::shared_ptr<storm::logic::Formula>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
+                return std::shared_ptr<const storm::logic::Formula>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
             }
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const {
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const {
             if (timeBound.which() == 0) {
-                return std::shared_ptr<storm::logic::Formula>(new storm::logic::CumulativeRewardFormula(static_cast<uint_fast64_t>(boost::get<unsigned>(timeBound))));
+                return std::shared_ptr<const storm::logic::Formula>(new storm::logic::CumulativeRewardFormula(static_cast<uint_fast64_t>(boost::get<unsigned>(timeBound))));
             } else {
                 double timeBoundAsDouble = boost::get<double>(timeBound);
                 STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Cumulative reward property must have non-negative bound.");
-                return std::shared_ptr<storm::logic::Formula>(new storm::logic::CumulativeRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
+                return std::shared_ptr<const storm::logic::Formula>(new storm::logic::CumulativeRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
             }
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createReachabilityRewardFormula(std::shared_ptr<storm::logic::Formula> const& stateFormula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ReachabilityRewardFormula(stateFormula));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createReachabilityRewardFormula(std::shared_ptr<const storm::logic::Formula> const& stateFormula) const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::ReachabilityRewardFormula(stateFormula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createLongRunAverageRewardFormula() const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::LongRunAverageRewardFormula());
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createLongRunAverageRewardFormula() const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::LongRunAverageRewardFormula());
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createAtomicExpressionFormula(storm::expressions::Expression const& expression) const {
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createAtomicExpressionFormula(storm::expressions::Expression const& expression) const {
             STORM_LOG_THROW(expression.hasBooleanType(), storm::exceptions::WrongFormatException, "Expected expression of boolean type.");
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::AtomicExpressionFormula(expression));
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::AtomicExpressionFormula(expression));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createBooleanLiteralFormula(bool literal) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::BooleanLiteralFormula(literal));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createBooleanLiteralFormula(bool literal) const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::BooleanLiteralFormula(literal));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createAtomicLabelFormula(std::string const& label) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::AtomicLabelFormula(label));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createAtomicLabelFormula(std::string const& label) const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::AtomicLabelFormula(label));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createEventuallyFormula(boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& subformula) const {
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createEventuallyFormula(boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<const storm::logic::Formula> const& subformula) const {
             if (timeBound) {
                 if (timeBound.get().which() == 0) {
                     std::pair<double, double> const& bounds = boost::get<std::pair<double, double>>(timeBound.get());
-                    return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, bounds.first, bounds.second));
+                    return std::shared_ptr<const storm::logic::Formula>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, bounds.first, bounds.second));
                 } else {
-                    return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, static_cast<uint_fast64_t>(boost::get<uint_fast64_t>(timeBound.get()))));
+                    return std::shared_ptr<const storm::logic::Formula>(new storm::logic::BoundedUntilFormula(createBooleanLiteralFormula(true), subformula, static_cast<uint_fast64_t>(boost::get<uint_fast64_t>(timeBound.get()))));
                 }
             } else {
-                return std::shared_ptr<storm::logic::Formula>(new storm::logic::EventuallyFormula(subformula));
+                return std::shared_ptr<const storm::logic::Formula>(new storm::logic::EventuallyFormula(subformula));
             }
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createGloballyFormula(std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::GloballyFormula(subformula));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createGloballyFormula(std::shared_ptr<const storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::GloballyFormula(subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createNextFormula(std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::NextFormula(subformula));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createNextFormula(std::shared_ptr<const storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::NextFormula(subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& rightSubformula) {
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createUntilFormula(std::shared_ptr<const storm::logic::Formula> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<const storm::logic::Formula> const& rightSubformula) {
             if (timeBound) {
                 if (timeBound.get().which() == 0) {
                     std::pair<double, double> const& bounds = boost::get<std::pair<double, double>>(timeBound.get());
-                    return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, bounds.first, bounds.second));
+                    return std::shared_ptr<const storm::logic::Formula>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, bounds.first, bounds.second));
                 } else {
-                    return std::shared_ptr<storm::logic::Formula>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, static_cast<uint_fast64_t>(boost::get<uint_fast64_t>(timeBound.get()))));
+                    return std::shared_ptr<const storm::logic::Formula>(new storm::logic::BoundedUntilFormula(leftSubformula, rightSubformula, static_cast<uint_fast64_t>(boost::get<uint_fast64_t>(timeBound.get()))));
                 }
             } else {
-                return std::shared_ptr<storm::logic::Formula>(new storm::logic::UntilFormula(leftSubformula, rightSubformula));
+                return std::shared_ptr<const storm::logic::Formula>(new storm::logic::UntilFormula(leftSubformula, rightSubformula));
             }
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createConditionalFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ConditionalPathFormula(leftSubformula, rightSubformula));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createConditionalFormula(std::shared_ptr<const storm::logic::Formula> const& leftSubformula, std::shared_ptr<const storm::logic::Formula> const& rightSubformula) const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::ConditionalPathFormula(leftSubformula, rightSubformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createLongRunAverageOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::LongRunAverageOperatorFormula(std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createLongRunAverageOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<const storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::LongRunAverageOperatorFormula(std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::RewardOperatorFormula(rewardModelName, std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<const storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::RewardOperatorFormula(rewardModelName, std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createExpectedTimeOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ExpectedTimeOperatorFormula(std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createExpectedTimeOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<const storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::ExpectedTimeOperatorFormula(std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createProbabilityOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ProbabilityOperatorFormula(std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createProbabilityOperatorFormula(std::tuple<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>> const& operatorInformation, std::shared_ptr<const storm::logic::Formula> const& subformula) {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::ProbabilityOperatorFormula(std::get<0>(operatorInformation), std::get<1>(operatorInformation), std::get<2>(operatorInformation), subformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType) {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::BinaryBooleanStateFormula(operatorType, leftSubformula, rightSubformula));
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createBinaryBooleanStateFormula(std::shared_ptr<const storm::logic::Formula> const& leftSubformula, std::shared_ptr<const storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType) {
+            return std::shared_ptr<const storm::logic::Formula>(new storm::logic::BinaryBooleanStateFormula(operatorType, leftSubformula, rightSubformula));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType) {
+        std::shared_ptr<const storm::logic::Formula> FormulaParserGrammar::createUnaryBooleanStateFormula(std::shared_ptr<const storm::logic::Formula> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType) {
             if (operatorType) {
-                return std::shared_ptr<storm::logic::Formula>(new storm::logic::UnaryBooleanStateFormula(operatorType.get(), subformula));
+                return std::shared_ptr<const storm::logic::Formula>(new storm::logic::UnaryBooleanStateFormula(operatorType.get(), subformula));
             } else {
                 return subformula;
             }
