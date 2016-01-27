@@ -17,12 +17,12 @@ public:
 };
 
 // Thin wrapper for model building
-std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<const storm::logic::Formula> const& formula) {
+std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula> const& formula) {
     return storm::buildSymbolicModel<storm::RationalFunction>(program, std::vector<std::shared_ptr<const storm::logic::Formula>>(1,formula)).model;
 }
 
 // Thin wrapper for parametric state elimination
-std::shared_ptr<PmcResult> performStateElimination(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<const storm::logic::Formula> const& formula) {
+std::shared_ptr<PmcResult> performStateElimination(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
     std::unique_ptr<storm::modelchecker::CheckResult> checkResult = storm::verifySparseModel<storm::RationalFunction>(model, formula);
     std::shared_ptr<PmcResult> result = std::make_shared<PmcResult>();
     result->resultFunction = (checkResult->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*model->getInitialStates().begin()]);
@@ -98,9 +98,6 @@ BOOST_PYTHON_MODULE(_core)
     defineClass<storm::models::sparse::Dtmc<storm::RationalFunction>,  storm::models::sparse::Model<storm::RationalFunction>>("SparseParametricDtmc", "");
     defineClass<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Model<storm::RationalFunction>>("SparseParametricMdp", "");
 
-    defineClass<std::vector<std::shared_ptr<const storm::logic::Formula>>, void, void>("FormulaVec", "Vector of formulas")
-        .def(vector_indexing_suite<std::vector<std::shared_ptr<const storm::logic::Formula>>, true>())
-    ;
     
     ////////////////////////////////////////////
     // Bisimulation
