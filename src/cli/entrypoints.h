@@ -156,7 +156,8 @@ namespace storm {
                     storm::settings::generalSettings().getConstantDefinitionString() << ";" <<
                     modelProgramPair.model->getNumberOfStates() << ";" <<
                     modelProgramPair.model->getNumberOfTransitions() << ";" << std::endl;
-                
+                std::cout << "Num of states with nonconstant transitions; Num of nonconstant transitions" << std::endl;
+                std::cout << "NUM_PARS" << modelProgramPair.model->as<storm::models::sparse::Model<ValueType>>().getTransitionMatrix().getNonconstantRowGroupCont() << ";" << modelProgramPair.model->as<storm::models::sparse::Model<ValueType>>().getTransitionMatrix().getNonconstantRowGroupCont() << std::endl;
                 // Preprocess the model if needed.
                 BRANCH_ON_MODELTYPE(modelProgramPair.model, modelProgramPair.model, ValueType, LibraryType, preprocessModel, formulas);
                 

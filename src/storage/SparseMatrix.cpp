@@ -1144,6 +1144,31 @@ namespace storm {
         }
         
         template<typename ValueType>
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonconstantEntryCount() const {
+            index_type nonConstEntries = 0;
+            for( auto const& entry : *this){
+                if(!storm::utility::isConstant(entry.getValue())){
+                    ++nonConstEntries;
+                }
+            }
+            return nonConstEntries;
+        }
+        
+        template<typename ValueType>
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonconstantRowGroupCount() const {
+            index_type nonConstRowGroups = 0;
+            for (index_type rowGroup=0; rowGroup < this->getRowGroupIndices().size(); ++rowGroup) {
+                for( auto const& entry : this->getRowGroup(rowGroup)){
+                    if(!storm::utility::isConstant(entry.getValue())){
+                        ++nonConstRowGroups;
+                        break;
+                    }
+                }
+            }
+            return nonConstRowGroups;
+        }
+        
+        template<typename ValueType>
         bool SparseMatrix<ValueType>::isProbabilistic() const {
             storm::utility::ConstantsComparator<ValueType> comparator;
             for(index_type row = 0; row < this->rowCount; ++row) {

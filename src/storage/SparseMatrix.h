@@ -771,6 +771,16 @@ namespace storm {
             value_type getRowSum(index_type row) const;
             
             /*!
+             * Returns the number of non-constant entries
+             */
+            index_type getNonconstantEntryCount() const;
+            
+            /*!
+             * Returns the number of rowGroups that contain a non-constant value
+             */
+            index_type getNonconstantRowGroupCount() const;
+            
+            /*!
              * Checks for each row whether it sums to one.
              */
             bool isProbabilistic() const;            
