@@ -220,7 +220,7 @@ namespace storm {
                 }
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
-                std::vector<std::shared_ptr<storm::logic::Formula>> formulas;
+                std::vector<std::shared_ptr<const storm::logic::Formula>> formulas;
                 if (settings.isPropertySet()) {
                     std::string properties = settings.getProperty();
                     
