@@ -1157,7 +1157,7 @@ namespace storm {
         template<typename ValueType>
         typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNonconstantRowGroupCount() const {
             index_type nonConstRowGroups = 0;
-            for (index_type rowGroup=0; rowGroup < this->getRowGroupIndices().size(); ++rowGroup) {
+            for (index_type rowGroup=0; rowGroup < this->getRowGroupCount(); ++rowGroup) {
                 for( auto const& entry : this->getRowGroup(rowGroup)){
                     if(!storm::utility::isConstant(entry.getValue())){
                         ++nonConstRowGroups;

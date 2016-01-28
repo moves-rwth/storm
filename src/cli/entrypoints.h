@@ -28,8 +28,8 @@ namespace storm {
         template<>
         inline void verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
             if (storm::settings::generalSettings().isParametricRegionSet()){
-                std::cout << "Num of states with nonconstant transitions; Num of nonconstant transitions" << std::endl;
-                std::cout << "NUM_PARS" << model->getTransitionMatrix().getNonconstantRowGroupCount() << ";" << model->getTransitionMatrix().getNonconstantEntryCount() << std::endl;
+     //           std::cout << "Num of states with nonconstant transitions; Num of nonconstant transitions" << std::endl;
+     //           std::cout << "NUM_PARS;" << model->getTransitionMatrix().getNonconstantRowGroupCount() << ";" << model->getTransitionMatrix().getNonconstantEntryCount() << std::endl;
                 auto regions=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::getRegionsFromSettings();
                 std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
                 if(model->isOfType(storm::models::ModelType::Dtmc)){
