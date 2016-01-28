@@ -58,6 +58,7 @@
 #include "src/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
+#include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -329,8 +330,22 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = model->template as<storm::models::sparse::Mdp<storm::RationalFunction>>();
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support MDPs.");
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
-            std::shared_ptr<storm::models::sparse::Ctmc<storm::RationalFunction>> ctmc = model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support CTMCs.");
+            // Hack to avoid instantiating the CTMC Model Checker which currently does not work for rational functions
+            if (formula->isExpectedTimeOperatorFormula()) {
+                // We can only solve expected time for pCTMCs at the moment
+                std::shared_ptr<storm::models::sparse::Ctmc<storm::RationalFunction>> ctmc = model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
+
+                // Compute goal states
+                storm::logic::EventuallyFormula eventuallyFormula = formula->asExpectedTimeOperatorFormula().getSubformula().asEventuallyFormula();
+                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>> propositionalModelchecker(*ctmc);
+                std::unique_ptr<storm::modelchecker::CheckResult> subResultPointer = propositionalModelchecker.check(eventuallyFormula.getSubformula());
+                storm::modelchecker::ExplicitQualitativeCheckResult& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+
+                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeExpectedTimes(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), subResult.getTruthValuesVector(), false);
+                result = std::unique_ptr<storm::modelchecker::CheckResult>(new storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>(std::move(numericResult)));
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support this property on CTMCs.");
+            }
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support " << model->getType());
         }
