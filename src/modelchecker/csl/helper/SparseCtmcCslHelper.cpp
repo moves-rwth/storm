@@ -651,15 +651,24 @@ namespace storm {
             
             template <typename ValueType>
             std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeExpectedTimes(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, bool qualitative/*, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory*/) {
-                // Compute expected time on CTMC by reduction to DTMC with rewards
+                // Compute expected time on CTMC by reduction to DTMC with rewards.
                 storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
+
+                // Initialize rewards.
                 std::vector<ValueType> totalRewardVector;
-                for (auto exitRate : exitRateVector) {
-                    totalRewardVector.push_back(storm::utility::one<ValueType>() / exitRate);
+                for (size_t i = 0; i < exitRateVector.size(); ++i) {
+                    std::cout << i << std::endl;
+                    if (targetStates[i]) {
+                        // Set reward for target states to 0.
+                        totalRewardVector.push_back(storm::utility::zero<ValueType>());
+                    } else {
+                        // Reward is (1 / exitRate).
+                        totalRewardVector.push_back(storm::utility::one<ValueType>() / exitRateVector[i]);
+                    }
                 }
 
                 return storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>>::computeReachabilityRewards(probabilityMatrix, backwardTransitions, initialStates, targetStates, totalRewardVector, false, qualitative);
-                // Enable again, if RationalFunction finally is supported
+                // Enable again, if RationalFunction finally is supported.
                 //return storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(probabilityMatrix, backwardTransitions, totalRewardVector, targetStates, qualitative, linearEquationSolverFactory);
             }
 
