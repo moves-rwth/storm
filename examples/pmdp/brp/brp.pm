@@ -14,8 +14,6 @@ const int MAX;
 const double pL;
 const double pK;
 
-global T : bool;
-
 module sender
 
 	s : [0..6];
@@ -104,6 +102,8 @@ module receiver
 endmodule
 	
 module checker
+
+	T : bool init false;
 	
 	[NewFile] (T=false) -> (T'=false);
 	[NewFile] (T=false) -> (T'=true);
