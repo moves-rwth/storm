@@ -97,16 +97,16 @@ namespace storm {
                     STORM_LOG_TRACE("exploring from: " << mDft.getStateString(state));
 
                     storm::storage::DFTState<ValueType> newState(state);
-                    std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType>>, bool> nextBE = newState.letNextBEFail(smallest++);
-                    if (nextBE.first == nullptr) {
+                    std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType>>, bool> nextBEPair = newState.letNextBEFail(smallest++);
+                    std::shared_ptr<storm::storage::DFTBE<ValueType>> nextBE = nextBEPair.first;
+                    if (nextBE == nullptr) {
                         break;
-
                     }
-                    STORM_LOG_TRACE("with the failure of: " << nextBE.first->name() << " [" << nextBE.first->id() << "]");
+                    STORM_LOG_TRACE("with the failure of: " << nextBE->name() << " [" << nextBE->id() << "]");
 
                     storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
 
-                    for (DFTGatePointer parent : nextBE.first->parents()) {
+                    for (DFTGatePointer parent : nextBE->parents()) {
                         if (newState.isOperational(parent->id())) {
                             queues.propagateFailure(parent);
                         }
@@ -144,7 +144,7 @@ namespace storm {
                     }
 
                     // Set transition
-                    ValueType rate = nextBE.first->activeFailureRate();
+                    ValueType rate = nextBE->activeFailureRate();
                     auto resultFind = outgoingTransitions.find(it->getId());
                     if (resultFind != outgoingTransitions.end()) {
                         // Add to existing transition
