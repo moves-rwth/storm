@@ -657,7 +657,6 @@ namespace storm {
                 // Initialize rewards.
                 std::vector<ValueType> totalRewardVector;
                 for (size_t i = 0; i < exitRateVector.size(); ++i) {
-                    std::cout << i << std::endl;
                     if (targetStates[i]) {
                         // Set reward for target states to 0.
                         totalRewardVector.push_back(storm::utility::zero<ValueType>());
