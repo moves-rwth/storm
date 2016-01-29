@@ -62,12 +62,8 @@ namespace storm {
                 }
             }
 
-            // TODO Matthias: initialize
-            modelComponents.rewardModels;
-            modelComponents.choiceLabeling;
-
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> model;
-            model = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Ctmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
+            model = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Ctmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling)));
             model->printModelInformationToStream(std::cout);
             return model;
         }
@@ -149,10 +145,16 @@ namespace storm {
                     }
 
                     // Set transition
-                    ValueType prob = nextBE.first->activeFailureRate();
-                    auto resultInsert = outgoingTransitions.insert(std::make_pair(it->getId(), prob));
-                    assert(resultInsert.second);
-                    sum += prob;
+                    ValueType rate = nextBE.first->activeFailureRate();
+                    auto resultFind = outgoingTransitions.find(it->getId());
+                    if (resultFind != outgoingTransitions.end()) {
+                        // Add to existing transition
+                        resultFind->second += rate;
+                    } else {
+                        // Insert new transition
+                        outgoingTransitions.insert(std::make_pair(it->getId(), rate));
+                    }
+                    sum += rate;
                 } // end while failing BE
 
                 // Add all transitions
