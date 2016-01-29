@@ -107,6 +107,11 @@ namespace storm {
                 return mIsCurrentlyFailableBE.size();
             }
 
+            /**
+             * Sets the next BE as failed
+             * @param smallestIndex Index in currentlyFailableBE of BE to fail
+             * @return Pair of BE which fails and flag indicating if the failure was due to functional dependencies
+             */
             std::pair<std::shared_ptr<DFTBE<ValueType>>, bool> letNextBEFail(size_t smallestIndex = 0);
             
             std::string getCurrentlyFailableString() {

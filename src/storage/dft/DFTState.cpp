@@ -83,7 +83,9 @@ namespace storm {
         {
             assert(index < mIsCurrentlyFailableBE.size());
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
-            std::pair<std::shared_ptr<DFTBE<ValueType>>,bool> res(mDft.getBasicElement(mIsCurrentlyFailableBE[index]), false);
+            // TODO set when implementing functional dependencies
+            bool dueToFdep = false;
+            std::pair<std::shared_ptr<DFTBE<ValueType>>,bool> res(mDft.getBasicElement(mIsCurrentlyFailableBE[index]), dueToFdep);
             mIsCurrentlyFailableBE.erase(mIsCurrentlyFailableBE.begin() + index);
             setFailed(res.first->id());
             return res;
