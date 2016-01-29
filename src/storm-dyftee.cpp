@@ -31,10 +31,9 @@ void analyzeDFT(std::string filename, std::string property) {
     assert(formulas.size() == 1);
     std::unique_ptr<storm::modelchecker::CheckResult> resultCtmc(storm::verifySparseModel(model, formulas[0]));
     assert(resultCtmc);
-    std::cout << "Result (initial states): ";
+    std::cout << "Result: ";
     resultCtmc->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
     std::cout << *resultCtmc << std::endl;
-    std::cout << "Checked CTMC" << std::endl;
 }
 
 /*!
@@ -65,7 +64,7 @@ int main(int argc, char** argv) {
     }
 
     storm::utility::setUp();
-    log4cplus::LogLevel level = log4cplus::TRACE_LOG_LEVEL;
+    log4cplus::LogLevel level = log4cplus::WARN_LOG_LEVEL;
     logger.setLogLevel(level);
     logger.getAppender("mainConsoleAppender")->setThreshold(level);
 

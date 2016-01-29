@@ -99,7 +99,6 @@ namespace storm {
                     storm::storage::DFTState<ValueType> newState(state);
                     std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType>>, bool> nextBE = newState.letNextBEFail(smallest++);
                     if (nextBE.first == nullptr) {
-                        std::cout << "break" << std::endl;
                         break;
 
                     }
