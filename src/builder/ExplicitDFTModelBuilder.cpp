@@ -127,31 +127,36 @@ namespace storm {
                         next->checkDontCareAnymore(newState, queues);
                     }
 
-                    auto it = mStates.find(newState);
-                    if (it == mStates.end()) {
+                    auto itState = mStates.find(newState);
+                    if (itState == mStates.end()) {
                         // New state
                         newState.setId(newIndex++);
                         auto itInsert = mStates.insert(newState);
                         assert(itInsert.second);
-                        it = itInsert.first;
+                        itState = itInsert.first;
                         STORM_LOG_TRACE("New state " << mDft.getStateString(newState));
 
                         // Add state to search
                         stateQueue.push(newState);
                     } else {
                         // State already exists
-                        STORM_LOG_TRACE("State " << mDft.getStateString(*it) << " already exists");
+                        STORM_LOG_TRACE("State " << mDft.getStateString(*itState) << " already exists");
                     }
 
-                    // Set transition
-                    ValueType rate = nextBE->activeFailureRate();
-                    auto resultFind = outgoingTransitions.find(it->getId());
+                    // Set failure rate according to usage
+                    bool isUsed = true;
+                    if (mDft.hasRepresentant(nextBE->id())) {
+                        isUsed = newState.isUsed(nextBE->id());
+                    }
+                    STORM_LOG_TRACE("BE " << nextBE->name() << " is " << (isUsed ? "used" : "not used"));
+                    ValueType rate = isUsed ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
+                    auto resultFind = outgoingTransitions.find(itState->getId());
                     if (resultFind != outgoingTransitions.end()) {
                         // Add to existing transition
                         resultFind->second += rate;
                     } else {
                         // Insert new transition
-                        outgoingTransitions.insert(std::make_pair(it->getId(), rate));
+                        outgoingTransitions.insert(std::make_pair(itState->getId(), rate));
                     }
                     sum += rate;
                 } // end while failing BE

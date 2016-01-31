@@ -50,6 +50,7 @@ namespace storm {
             std::vector<size_t> mTopModule;
             std::vector<size_t> mIdToFailureIndex;
             std::map<size_t, size_t> mUsageIndex;
+            std::map<size_t, size_t> mRepresentants;
             
         public:
             DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
@@ -154,6 +155,14 @@ namespace storm {
                 return elements;
             }
 
+            bool hasRepresentant(size_t id) const {
+                return mRepresentants.find(id) != mRepresentants.end();
+            }
+
+            DFTElementPointer getRepresentant(size_t id) const {
+                assert(hasRepresentant(id));
+                return getElement(mRepresentants.find(id)->second);
+            }
 
             bool hasFailed(DFTState<ValueType> const& state) const {
                 return state.hasFailed(mTopLevelIndex);

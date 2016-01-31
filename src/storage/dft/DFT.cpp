@@ -29,6 +29,7 @@ namespace storm {
                         for(auto const& modelem : module) {
                             if(mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
                                 sparesAndBes.push_back(modelem);
+                                mRepresentants.insert(std::make_pair(modelem, spareReprs->id()));
                             }
                         }
                         mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
@@ -131,12 +132,12 @@ namespace storm {
             stream << "(" << state.getId() << ") ";
             for (auto const& elem : mElements) {
                 stream << state.getElementStateInt(elem->id());
-                /*if(elem->isSpareGate()) {
+                if(elem->isSpareGate()) {
                     if(state.isActiveSpare(elem->id())) {
-                        os << " actively";
+                        stream << " actively";
                     }
-                    os << " using " << state.uses(elem->id());
-                }*/
+                    stream << " using " << state.uses(elem->id());
+                }
             }
             return stream.str();
         }
