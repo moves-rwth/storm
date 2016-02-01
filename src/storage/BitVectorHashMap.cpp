@@ -169,6 +169,11 @@ namespace storm {
         }
         
         template<class ValueType, class Hash1, class Hash2>
+        bool BitVectorHashMap<ValueType, Hash1, Hash2>::contains(storm::storage::BitVector const& key) const {
+            return findBucket(key).first;
+        }
+
+        template<class ValueType, class Hash1, class Hash2>
         typename BitVectorHashMap<ValueType, Hash1, Hash2>::const_iterator BitVectorHashMap<ValueType, Hash1, Hash2>::begin() const {
             return const_iterator(*this, occupied.begin());
         }

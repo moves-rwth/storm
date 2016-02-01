@@ -61,7 +61,7 @@ namespace storm {
                 mValid = false;
             }
            
-            bool isInvalid() {
+            bool isInvalid() const {
                 return !mValid;
             }
             
@@ -88,7 +88,7 @@ namespace storm {
              * @param child The id of the child for which we want to know whether it is currently used.
              * @return true iff it is currently used by any of the spares.
              */
-            bool isUsed(size_t child);
+            bool isUsed(size_t child) const;
             
             /**
              * Sets to to the usageIndex which child is now used.
@@ -114,7 +114,7 @@ namespace storm {
              */
             std::pair<std::shared_ptr<DFTBE<ValueType>>, bool> letNextBEFail(size_t smallestIndex = 0);
             
-            std::string getCurrentlyFailableString() {
+            std::string getCurrentlyFailableString() const {
                 std::stringstream stream;
                 auto it = mIsCurrentlyFailableBE.begin();
                 stream << "{";

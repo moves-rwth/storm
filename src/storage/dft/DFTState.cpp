@@ -123,7 +123,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTState<ValueType>::isUsed(size_t child) {
+        bool DFTState<ValueType>::isUsed(size_t child) const {
             return (std::find(mUsedRepresentants.begin(), mUsedRepresentants.end(), child) != mUsedRepresentants.end());
         }
 

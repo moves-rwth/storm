@@ -96,6 +96,14 @@ namespace storm {
             ValueType getValue(storm::storage::BitVector const& key) const;
             
             /*!
+             * Checks if the given key is already contained in the map.
+             *
+             * @param key The key to search
+             * @return True if the key is already contained in the map
+             */
+            bool contains(storm::storage::BitVector const& key) const;
+
+            /*!
              * Retrieves an iterator to the elements of the map.
              *
              * @return The iterator.
