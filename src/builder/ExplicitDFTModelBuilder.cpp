@@ -146,7 +146,8 @@ namespace storm {
                     // Set failure rate according to usage
                     bool isUsed = true;
                     if (mDft.hasRepresentant(nextBE->id())) {
-                        isUsed = newState.isUsed(nextBE->id());
+                        DFTElementPointer representant = mDft.getRepresentant(nextBE->id());
+                        isUsed = newState.isUsed(representant->id());
                     }
                     STORM_LOG_TRACE("BE " << nextBE->name() << " is " << (isUsed ? "used" : "not used"));
                     ValueType rate = isUsed ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
