@@ -269,7 +269,7 @@ namespace storm {
              * @param target The target vector.
              */
             template<class InValueType1, class InValueType2, class OutValueType>
-            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&)> function) {
+            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&)> const& function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
