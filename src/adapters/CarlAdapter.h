@@ -45,7 +45,7 @@ namespace carl {
 
 namespace storm {
 //    typedef boost::multiprecision::gmp_rational RationalNumber;
-    typedef mpq_class RationalNumber;
+    typedef boost::multiprecision::number<boost::multiprecision::gmp_rational> RationalNumber;
     
     typedef cln::cl_RA CarlRationalNumber;
     typedef carl::Variable Variable;
