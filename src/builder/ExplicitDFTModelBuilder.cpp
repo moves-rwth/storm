@@ -14,10 +14,10 @@ namespace storm {
         template<typename ValueType, typename RewardModelType, typename IndexType>
         std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::buildCTMC() {
             // Initialize
-            storm::storage::DFTState<ValueType> state(mDft, newIndex++);
-            mStates.insert(state);
+            DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, newIndex++);
+            mStates.findOrAdd(state->status(), state);
 
-            std::queue<storm::storage::DFTState<ValueType>> stateQueue;
+            std::queue<DFTStatePointer> stateQueue;
             stateQueue.push(state);
 
             bool deterministicModel = true;
@@ -47,17 +47,18 @@ namespace storm {
                 modelComponents.stateLabeling.addLabel(elem->name() + "_fail");
             }
 
-            for (storm::storage::DFTState<ValueType> state : mStates) {
+            for (auto const& stateVectorPair : mStates) {
+                DFTStatePointer state = stateVectorPair.second;
                 if (mDft.hasFailed(state)) {
-                    modelComponents.stateLabeling.addLabelToState("failed", state.getId());
+                    modelComponents.stateLabeling.addLabelToState("failed", state->getId());
                 }
                 if (mDft.isFailsafe(state)) {
-                    modelComponents.stateLabeling.addLabelToState("failsafe", state.getId());
+                    modelComponents.stateLabeling.addLabelToState("failsafe", state->getId());
                 };
                 // Set fail status for each BE
                 for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
-                    if (state.hasFailed(elem->id())) {
-                        modelComponents.stateLabeling.addLabelToState(elem->name() + "_fail", state.getId());
+                    if (state->hasFailed(elem->id())) {
+                        modelComponents.stateLabeling.addLabelToState(elem->name() + "_fail", state->getId());
                     }
                 }
             }
@@ -69,7 +70,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename RewardModelType, typename IndexType>
-        void ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::exploreStates(std::queue<storm::storage::DFTState<ValueType>>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder) {
+        void ExplicitDFTModelBuilder<ValueType, RewardModelType, IndexType>::exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder) {
 
             std::map<size_t, ValueType> outgoingTransitions;
 
@@ -79,25 +80,26 @@ namespace storm {
                 ValueType sum = storm::utility::zero<ValueType>();
 
                 // Consider next state
-                storm::storage::DFTState<ValueType> state = stateQueue.front();
+                DFTStatePointer state = stateQueue.front();
                 stateQueue.pop();
 
                 size_t smallest = 0;
 
                 // Add self loop for target states
                 if (mDft.hasFailed(state) || mDft.isFailsafe(state)) {
-                    transitionMatrixBuilder.addNextValue(state.getId(), state.getId(), storm::utility::one<ValueType>());
-                    STORM_LOG_TRACE("Added self loop for " << state.getId());
+                    transitionMatrixBuilder.addNextValue(state->getId(), state->getId(), storm::utility::one<ValueType>());
+                    STORM_LOG_TRACE("Added self loop for " << state->getId());
                     // No further exploration required
                     continue;
                 }
 
                 // Let BE fail
-                while (smallest < state.nrFailableBEs()) {
+                while (smallest < state->nrFailableBEs()) {
                     STORM_LOG_TRACE("exploring from: " << mDft.getStateString(state));
 
-                    storm::storage::DFTState<ValueType> newState(state);
-                    std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType>>, bool> nextBEPair = newState.letNextBEFail(smallest++);
+                    // Construct new state as copy from original one
+                    DFTStatePointer newState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
+                    std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType>>, bool> nextBEPair = newState->letNextBEFail(smallest++);
                     std::shared_ptr<storm::storage::DFTBE<ValueType>> nextBE = nextBEPair.first;
                     if (nextBE == nullptr) {
                         break;
@@ -107,57 +109,55 @@ namespace storm {
                     storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
 
                     for (DFTGatePointer parent : nextBE->parents()) {
-                        if (newState.isOperational(parent->id())) {
+                        if (newState->isOperational(parent->id())) {
                             queues.propagateFailure(parent);
                         }
                     }
 
                     while (!queues.failurePropagationDone()) {
                         DFTGatePointer next = queues.nextFailurePropagation();
-                        next->checkFails(newState, queues);
+                        next->checkFails(*newState, queues);
                     }
 
                     while (!queues.failsafePropagationDone()) {
                         DFTGatePointer next = queues.nextFailsafePropagation();
-                        next->checkFailsafe(newState, queues);
+                        next->checkFailsafe(*newState, queues);
                     }
 
                     while (!queues.dontCarePropagationDone()) {
                         DFTElementPointer next = queues.nextDontCarePropagation();
-                        next->checkDontCareAnymore(newState, queues);
+                        next->checkDontCareAnymore(*newState, queues);
                     }
 
-                    auto itState = mStates.find(newState);
-                    if (itState == mStates.end()) {
+                    if (mStates.contains(newState->status())) {
+                        // State already exists
+                        newState = mStates.findOrAdd(newState->status(), newState);
+                        STORM_LOG_TRACE("State " << mDft.getStateString(newState) << " already exists");
+                    } else {
                         // New state
-                        newState.setId(newIndex++);
-                        auto itInsert = mStates.insert(newState);
-                        assert(itInsert.second);
-                        itState = itInsert.first;
+                        newState->setId(newIndex++);
+                        mStates.findOrAdd(newState->status(), newState);
                         STORM_LOG_TRACE("New state " << mDft.getStateString(newState));
 
                         // Add state to search
                         stateQueue.push(newState);
-                    } else {
-                        // State already exists
-                        STORM_LOG_TRACE("State " << mDft.getStateString(*itState) << " already exists");
                     }
 
                     // Set failure rate according to usage
                     bool isUsed = true;
                     if (mDft.hasRepresentant(nextBE->id())) {
                         DFTElementPointer representant = mDft.getRepresentant(nextBE->id());
-                        isUsed = newState.isUsed(representant->id());
+                        isUsed = newState->isUsed(representant->id());
                     }
                     STORM_LOG_TRACE("BE " << nextBE->name() << " is " << (isUsed ? "used" : "not used"));
                     ValueType rate = isUsed ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
-                    auto resultFind = outgoingTransitions.find(itState->getId());
+                    auto resultFind = outgoingTransitions.find(newState->getId());
                     if (resultFind != outgoingTransitions.end()) {
                         // Add to existing transition
                         resultFind->second += rate;
                     } else {
                         // Insert new transition
-                        outgoingTransitions.insert(std::make_pair(itState->getId(), rate));
+                        outgoingTransitions.insert(std::make_pair(newState->getId(), rate));
                     }
                     sum += rate;
                 } // end while failing BE
@@ -167,8 +167,8 @@ namespace storm {
                 {
                     // TODO Matthias: correct?
                     ValueType rate = it->second;// / sum;
-                    transitionMatrixBuilder.addNextValue(state.getId(), it->first, rate);
-                    STORM_LOG_TRACE("Added transition from " << state.getId() << " to " << it->first << " with " << rate);
+                    transitionMatrixBuilder.addNextValue(state->getId(), it->first, rate);
+                    STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << it->first << " with " << rate);
                 }
 
             } // end while queue

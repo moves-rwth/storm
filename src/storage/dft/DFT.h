@@ -37,6 +37,7 @@ namespace storm {
             using DFTElementVector = std::vector<DFTElementPointer>;
             using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
             using DFTGateVector = std::vector<DFTGatePointer>;
+            using DFTStatePointer = std::shared_ptr<DFTState<ValueType>>;
 
         private:
             DFTElementVector mElements;
@@ -164,12 +165,12 @@ namespace storm {
                 return getElement(mRepresentants.find(id)->second);
             }
 
-            bool hasFailed(DFTState<ValueType> const& state) const {
-                return state.hasFailed(mTopLevelIndex);
+            bool hasFailed(DFTStatePointer const& state) const {
+                return state->hasFailed(mTopLevelIndex);
             }
             
-            bool isFailsafe(DFTState<ValueType> const& state) const {
-                return state.isFailsafe(mTopLevelIndex);
+            bool isFailsafe(DFTStatePointer const& state) const {
+                return state->isFailsafe(mTopLevelIndex);
             }
             
             std::string getElementsString() const;
@@ -178,9 +179,9 @@ namespace storm {
 
             std::string getSpareModulesString() const;
 
-            std::string getElementsWithStateString(DFTState<ValueType> const& state) const;
+            std::string getElementsWithStateString(DFTStatePointer const& state) const;
 
-            std::string getStateString(DFTState<ValueType> const& state) const;
+            std::string getStateString(DFTStatePointer const& state) const;
             
         private:
             bool elementIndicesCorrect() const {

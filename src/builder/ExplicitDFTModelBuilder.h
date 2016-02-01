@@ -7,6 +7,7 @@
 #include <src/models/sparse/StandardRewardModel.h>
 #include <src/models/sparse/Model.h>
 #include <src/storage/SparseMatrix.h>
+#include <src/storage/BitVectorHashMap.h>
 #include <boost/container/flat_set.hpp>
 #include <boost/optional/optional.hpp>
 #include <stack>
@@ -20,6 +21,7 @@ namespace storm {
 
             using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
             using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
+            using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
 
             // A structure holding the individual components of a model.
             struct ModelComponents {
@@ -39,18 +41,19 @@ namespace storm {
             };
 
             storm::storage::DFT<ValueType> const &mDft;
-            std::unordered_set<storm::storage::DFTState<ValueType>> mStates;
+            storm::storage::BitVectorHashMap<DFTStatePointer> mStates;
             size_t newIndex = 0;
 
         public:
-            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const &dft) : mDft(dft) {
-
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const &dft) : mDft(dft), mStates(((mDft.stateSize() / 64) + 1) * 64, std::pow(2, mDft.nrBasicElements())) {
+                // stateSize is bound for size of bitvector
+                // 2^nrBE is upper bound for state space
             }
 
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> buildCTMC();
 
         private:
-            void exploreStates(std::queue<storm::storage::DFTState<ValueType>>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder);
+            void exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder);
 
         };
     }

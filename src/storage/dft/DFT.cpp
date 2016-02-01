@@ -109,17 +109,17 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::string DFT<ValueType>::getElementsWithStateString(DFTState<ValueType> const& state) const{
+        std::string DFT<ValueType>::getElementsWithStateString(DFTStatePointer const& state) const{
             std::stringstream stream;
             for (auto const& elem : mElements) {
                 stream << "[" << elem->id() << "]";
                 stream << elem->toString();
-                stream << "\t** " << state.getElementState(elem->id());
+                stream << "\t** " << state->getElementState(elem->id());
                 if(elem->isSpareGate()) {
-                    if(state.isActiveSpare(elem->id())) {
+                    if(state->isActiveSpare(elem->id())) {
                         stream << " actively";
                     }
-                    stream << " using " << state.uses(elem->id());
+                    stream << " using " << state->uses(elem->id());
                 } 
                 stream << std::endl;
             }
@@ -127,16 +127,16 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::string DFT<ValueType>::getStateString(DFTState<ValueType> const& state) const{
+        std::string DFT<ValueType>::getStateString(DFTStatePointer const& state) const{
             std::stringstream stream;
-            stream << "(" << state.getId() << ") ";
+            stream << "(" << state->getId() << ") ";
             for (auto const& elem : mElements) {
-                stream << state.getElementStateInt(elem->id());
+                stream << state->getElementStateInt(elem->id());
                 if(elem->isSpareGate()) {
-                    if(state.isActiveSpare(elem->id())) {
+                    if(state->isActiveSpare(elem->id())) {
                         stream << " actively";
                     }
-                    stream << " using " << state.uses(elem->id());
+                    stream << " using " << state->uses(elem->id());
                 }
             }
             return stream.str();
