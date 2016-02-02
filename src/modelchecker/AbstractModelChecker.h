@@ -3,6 +3,7 @@
 
 #include <boost/optional.hpp>
 
+#include "src/modelchecker/CheckSettings.h"
 #include "src/logic/Formulas.h"
 #include "src/solver/OptimizationDirection.h"
 
@@ -29,9 +30,10 @@ namespace storm {
              * Checks the provided formula.
              *
              * @param formula The formula to check.
+             * @param checkSettings If provided, this object is used to customize the checking process.
              * @return The verification result.
              */
-            virtual std::unique_ptr<CheckResult> check(storm::logic::Formula const& formula);
+            virtual std::unique_ptr<CheckResult> check(storm::logic::Formula const& formula, boost::optional<CheckSettings<double>> const& checkSettings = boost::none);
                         
             // The methods to compute probabilities for path formulas.
             virtual std::unique_ptr<CheckResult> computeProbabilities(storm::logic::PathFormula const& pathFormula, bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>());

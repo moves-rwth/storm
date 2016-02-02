@@ -11,7 +11,7 @@
 
 namespace storm {
     namespace modelchecker {
-        std::unique_ptr<CheckResult> AbstractModelChecker::check(storm::logic::Formula const& formula) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::check(storm::logic::Formula const& formula, boost::optional<CheckSettings<double>> const& checkSettings) {
             STORM_LOG_THROW(this->canHandle(formula), storm::exceptions::InvalidArgumentException, "The model checker is not able to check the formula '" << formula << "'.");
             if (formula.isStateFormula()) {
                 return this->checkStateFormula(formula.asStateFormula());
