@@ -8,12 +8,12 @@ namespace storm {
     namespace modelchecker {
 
         template<typename ValueType>
-        CheckSettings<ValueType>::CheckSettings() : CheckSettings(boost::none, false, boost::none, false, false) {
+        CheckSettings<ValueType>::CheckSettings() : CheckSettings(boost::none, boost::none, false, boost::none, false, false) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        CheckSettings<ValueType>::CheckSettings(boost::optional<storm::OptimizationDirection> const& optimizationDirection, bool onlyInitialStatesRelevant, boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> const& initialStatesBound, bool qualitative, bool produceStrategies) : optimizationDirection(optimizationDirection), onlyInitialStatesRelevant(onlyInitialStatesRelevant), initialStatesBound(initialStatesBound), qualitative(qualitative), produceStrategies(produceStrategies) {
+        CheckSettings<ValueType>::CheckSettings(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> const& initialStatesBound, bool qualitative, bool produceStrategies) : optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), initialStatesBound(initialStatesBound), qualitative(qualitative), produceStrategies(produceStrategies) {
             // Intentionally left empty.
         }
         
@@ -30,6 +30,7 @@ namespace storm {
         template<typename ValueType>
         CheckSettings<ValueType> CheckSettings<ValueType>::fromFormula(storm::logic::Formula const& formula, bool toplevel) {
             boost::optional<storm::OptimizationDirection> optimizationDirection;
+            boost::optional<std::string> rewardModel;
             boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> initialStatesBound;
             bool qualitative = false;
             bool onlyInitialStatesRelevant = !toplevel;
@@ -51,6 +52,8 @@ namespace storm {
                 }
             } else if (formula.isRewardOperatorFormula()) {
                 storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
+                rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
+
                 if (rewardOperatorFormula.hasOptimalityType()) {
                     optimizationDirection = rewardOperatorFormula.getOptimalityType();
                 }
@@ -64,7 +67,7 @@ namespace storm {
                     }
                 }
             }
-            return CheckSettings<ValueType>(optimizationDirection, onlyInitialStatesRelevant, initialStatesBound, qualitative, produceStrategies);
+            return CheckSettings<ValueType>(optimizationDirection, rewardModel, onlyInitialStatesRelevant, initialStatesBound, qualitative, produceStrategies);
         }
         
         template<typename ValueType>
@@ -75,6 +78,16 @@ namespace storm {
         template<typename ValueType>
         storm::OptimizationDirection const& CheckSettings<ValueType>::getOptimizationDirection() const {
             return optimizationDirection.get();
+        }
+        
+        template<typename ValueType>
+        bool CheckSettings<ValueType>::isRewardModelSet() const {
+            return static_cast<bool>(rewardModel);
+        }
+        
+        template<typename ValueType>
+        std::string const& CheckSettings<ValueType>::getRewardModel() const {
+            return rewardModel.get();
         }
         
         template<typename ValueType>
