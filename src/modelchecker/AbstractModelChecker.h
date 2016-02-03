@@ -56,16 +56,16 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeExpectedTimes(storm::logic::EventuallyFormula const& eventuallyFormula, CheckSettings<double> const& checkSettings);
             
             // The methods to check state formulas.
-            virtual std::unique_ptr<CheckResult> checkStateFormula(storm::logic::StateFormula const& stateFormula);
-            virtual std::unique_ptr<CheckResult> checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula);
-            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula);
-            virtual std::unique_ptr<CheckResult> checkBinaryBooleanStateFormula(storm::logic::BinaryBooleanStateFormula const& stateFormula);
-            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula);
-            virtual std::unique_ptr<CheckResult> checkProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& stateFormula);
-            virtual std::unique_ptr<CheckResult> checkRewardOperatorFormula(storm::logic::RewardOperatorFormula const& stateFormula);
-            virtual std::unique_ptr<CheckResult> checkExpectedTimeOperatorFormula(storm::logic::ExpectedTimeOperatorFormula const& stateFormula);
-            virtual std::unique_ptr<CheckResult> checkLongRunAverageOperatorFormula(storm::logic::LongRunAverageOperatorFormula const& stateFormula);
-            virtual std::unique_ptr<CheckResult> checkUnaryBooleanStateFormula(storm::logic::UnaryBooleanStateFormula const& stateFormula);
+            virtual std::unique_ptr<CheckResult> checkStateFormula(storm::logic::StateFormula const& stateFormula, CheckSettings<double> const& checkSettings);
+            virtual std::unique_ptr<CheckResult> checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula, CheckSettings<double> const& checkSettings);
+            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula, CheckSettings<double> const& checkSettings);
+            virtual std::unique_ptr<CheckResult> checkBinaryBooleanStateFormula(storm::logic::BinaryBooleanStateFormula const& stateFormula, CheckSettings<double> const& checkSettings);
+            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula, CheckSettings<double> const& checkSettings);
+            virtual std::unique_ptr<CheckResult> checkProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& stateFormula, CheckSettings<double> const& checkSettings);
+            virtual std::unique_ptr<CheckResult> checkRewardOperatorFormula(storm::logic::RewardOperatorFormula const& stateFormula, CheckSettings<double> const& checkSettings);
+            virtual std::unique_ptr<CheckResult> checkExpectedTimeOperatorFormula(storm::logic::ExpectedTimeOperatorFormula const& stateFormula, CheckSettings<double> const& checkSettings);
+            virtual std::unique_ptr<CheckResult> checkLongRunAverageOperatorFormula(storm::logic::LongRunAverageOperatorFormula const& stateFormula, CheckSettings<double> const& checkSettings);
+            virtual std::unique_ptr<CheckResult> checkUnaryBooleanStateFormula(storm::logic::UnaryBooleanStateFormula const& stateFormula, CheckSettings<double> const& checkSettings);
         };
     }
 }
