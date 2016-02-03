@@ -332,17 +332,51 @@ namespace storm {
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             // Hack to avoid instantiating the CTMC Model Checker which currently does not work for rational functions
             if (formula->isExpectedTimeOperatorFormula()) {
-                // We can only solve expected time for pCTMCs at the moment
-                std::shared_ptr<storm::models::sparse::Ctmc<storm::RationalFunction>> ctmc = model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
+                // Compute expected time for pCTMCs
+                STORM_LOG_THROW(formula->asExpectedTimeOperatorFormula().getSubformula().isEventuallyFormula(), storm::exceptions::NotSupportedException, "The parametric engine only supports Eventually formulas for this property");
+                storm::logic::EventuallyFormula eventuallyFormula = formula->asExpectedTimeOperatorFormula().getSubformula().asEventuallyFormula();
+                STORM_LOG_THROW(eventuallyFormula.getSubformula().isPropositionalFormula(), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
 
                 // Compute goal states
-                storm::logic::EventuallyFormula eventuallyFormula = formula->asExpectedTimeOperatorFormula().getSubformula().asEventuallyFormula();
+                std::shared_ptr<storm::models::sparse::Ctmc<storm::RationalFunction>> ctmc = model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
                 storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>> propositionalModelchecker(*ctmc);
                 std::unique_ptr<storm::modelchecker::CheckResult> subResultPointer = propositionalModelchecker.check(eventuallyFormula.getSubformula());
-                storm::modelchecker::ExplicitQualitativeCheckResult& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+                storm::storage::BitVector const& targetStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
 
-                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeExpectedTimes(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), subResult.getTruthValuesVector(), false);
+                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeExpectedTimesElimination(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), targetStates, false);
                 result = std::unique_ptr<storm::modelchecker::CheckResult>(new storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>(std::move(numericResult)));
+
+            } else if (formula->isProbabilityOperatorFormula()) {
+                // Compute reachability probability for pCTMCs
+                storm::logic::ProbabilityOperatorFormula probOpFormula = formula->asProbabilityOperatorFormula();
+                STORM_LOG_THROW(probOpFormula.getSubformula().isUntilFormula() || probOpFormula.getSubformula().isEventuallyFormula(), storm::exceptions::NotSupportedException, "The parametric engine only supports Until formulas for this property");
+
+                // Compute phi and psi states
+                std::shared_ptr<storm::models::sparse::Ctmc<storm::RationalFunction>> ctmc = model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
+                storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>> propositionalModelchecker(*ctmc);
+                storm::storage::BitVector phiStates(model->getNumberOfStates(), true);
+                storm::storage::BitVector psiStates;
+                if (probOpFormula.getSubformula().isUntilFormula()) {
+                    // Until formula
+                    storm::logic::UntilFormula untilFormula = formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula();
+                    STORM_LOG_THROW(untilFormula.getLeftSubformula().isPropositionalFormula(), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
+                    STORM_LOG_THROW(untilFormula.getRightSubformula().isPropositionalFormula(), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
+                    std::unique_ptr<storm::modelchecker::CheckResult> leftResultPointer = propositionalModelchecker.check(untilFormula.getLeftSubformula());
+                    std::unique_ptr<storm::modelchecker::CheckResult> rightResultPointer = propositionalModelchecker.check(untilFormula.getRightSubformula());
+                    phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                    psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                } else {
+                    // Eventually formula
+                    assert(probOpFormula.getSubformula().isEventuallyFormula());
+                    storm::logic::EventuallyFormula eventuallyFormula = probOpFormula.getSubformula().asEventuallyFormula();
+                    STORM_LOG_THROW(eventuallyFormula.getSubformula().isPropositionalFormula(), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
+                    std::unique_ptr<storm::modelchecker::CheckResult> resultPointer = propositionalModelchecker.check(eventuallyFormula.getSubformula());
+                    psiStates = resultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                }
+
+                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeUntilProbabilitiesElimination(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), phiStates, psiStates, false);
+                result = std::unique_ptr<storm::modelchecker::CheckResult>(new storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>(std::move(numericResult)));
+
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support this property on CTMCs.");
             }
