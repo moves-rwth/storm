@@ -49,6 +49,9 @@ namespace storm {
                     if (probabilityOperatorFormula.getBound() == storm::utility::zero<ValueType>() || probabilityOperatorFormula.getBound() == storm::utility::one<ValueType>()) {
                         qualitative = true;
                     }
+                    if (!optimizationDirection) {
+                        optimizationDirection = probabilityOperatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || probabilityOperatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
+                    }
                 }
             } else if (formula.isRewardOperatorFormula()) {
                 storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
@@ -64,6 +67,9 @@ namespace storm {
                     }
                     if (rewardOperatorFormula.getBound() == storm::utility::zero<ValueType>()) {
                         qualitative = true;
+                    }
+                    if (!optimizationDirection) {
+                        optimizationDirection = rewardOperatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || rewardOperatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
                     }
                 }
             }

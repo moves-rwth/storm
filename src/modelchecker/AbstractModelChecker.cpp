@@ -103,42 +103,42 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the computation of expected times.");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkStateFormula(storm::logic::StateFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::checkStateFormula(storm::logic::StateFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
             if (stateFormula.isBinaryBooleanStateFormula()) {
-                return this->checkBinaryBooleanStateFormula(stateFormula.asBinaryBooleanStateFormula());
+                return this->checkBinaryBooleanStateFormula(stateFormula.asBinaryBooleanStateFormula(), checkSettings);
             } else if (stateFormula.isUnaryBooleanStateFormula()) {
-                return this->checkUnaryBooleanStateFormula(stateFormula.asUnaryBooleanStateFormula());
+                return this->checkUnaryBooleanStateFormula(stateFormula.asUnaryBooleanStateFormula(), checkSettings);
             } else if (stateFormula.isBooleanLiteralFormula()) {
-                return this->checkBooleanLiteralFormula(stateFormula.asBooleanLiteralFormula());
+                return this->checkBooleanLiteralFormula(stateFormula.asBooleanLiteralFormula(), checkSettings);
             } else if (stateFormula.isProbabilityOperatorFormula()) {
-                return this->checkProbabilityOperatorFormula(stateFormula.asProbabilityOperatorFormula());
+                return this->checkProbabilityOperatorFormula(stateFormula.asProbabilityOperatorFormula(), checkSettings);
             } else if (stateFormula.isRewardOperatorFormula()) {
-                return this->checkRewardOperatorFormula(stateFormula.asRewardOperatorFormula());
+                return this->checkRewardOperatorFormula(stateFormula.asRewardOperatorFormula(), checkSettings);
             } else if (stateFormula.isExpectedTimeOperatorFormula()) {
-                return this->checkExpectedTimeOperatorFormula(stateFormula.asExpectedTimeOperatorFormula());
+                return this->checkExpectedTimeOperatorFormula(stateFormula.asExpectedTimeOperatorFormula(), checkSettings);
             } else if (stateFormula.isLongRunAverageOperatorFormula()) {
-                return this->checkLongRunAverageOperatorFormula(stateFormula.asLongRunAverageOperatorFormula());
+                return this->checkLongRunAverageOperatorFormula(stateFormula.asLongRunAverageOperatorFormula(), checkSettings);
             } else if (stateFormula.isAtomicExpressionFormula()) {
-                return this->checkAtomicExpressionFormula(stateFormula.asAtomicExpressionFormula());
+                return this->checkAtomicExpressionFormula(stateFormula.asAtomicExpressionFormula(), checkSettings);
             } else if (stateFormula.isAtomicLabelFormula()) {
-                return this->checkAtomicLabelFormula(stateFormula.asAtomicLabelFormula());
+                return this->checkAtomicLabelFormula(stateFormula.asAtomicLabelFormula(), checkSettings);
             } else if (stateFormula.isBooleanLiteralFormula()) {
-                return this->checkBooleanLiteralFormula(stateFormula.asBooleanLiteralFormula());
+                return this->checkBooleanLiteralFormula(stateFormula.asBooleanLiteralFormula(), checkSettings);
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << stateFormula << "' is invalid.");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
             std::stringstream stream;
             stream << stateFormula.getExpression();
-            return this->checkAtomicLabelFormula(storm::logic::AtomicLabelFormula(stream.str()));
+            return this->checkAtomicLabelFormula(storm::logic::AtomicLabelFormula(stream.str()), checkSettings);
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << stateFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkBinaryBooleanStateFormula(storm::logic::BinaryBooleanStateFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::checkBinaryBooleanStateFormula(storm::logic::BinaryBooleanStateFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
             STORM_LOG_THROW(stateFormula.getLeftSubformula().isStateFormula() && stateFormula.getRightSubformula().isStateFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
             std::unique_ptr<CheckResult> leftResult = this->check(stateFormula.getLeftSubformula().asStateFormula());
@@ -157,12 +157,14 @@ namespace storm {
             return leftResult;
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << stateFormula << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::checkProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
             STORM_LOG_THROW(stateFormula.getSubformula().isPathFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
+            
+            CheckSettings<double> newCheckSettings =
             
             // If the probability bound is 0 or 1, is suffices to do qualitative model checking.
             bool qualitative = false;
@@ -193,7 +195,7 @@ namespace storm {
             }
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkRewardOperatorFormula(storm::logic::RewardOperatorFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::checkRewardOperatorFormula(storm::logic::RewardOperatorFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
             STORM_LOG_THROW(stateFormula.getSubformula().isRewardPathFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
             // If the reward bound is 0, is suffices to do qualitative model checking.
@@ -225,7 +227,7 @@ namespace storm {
             }
         }
         
-		std::unique_ptr<CheckResult> AbstractModelChecker::checkExpectedTimeOperatorFormula(storm::logic::ExpectedTimeOperatorFormula const& stateFormula) {
+		std::unique_ptr<CheckResult> AbstractModelChecker::checkExpectedTimeOperatorFormula(storm::logic::ExpectedTimeOperatorFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
 			STORM_LOG_THROW(stateFormula.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
             // If the reward bound is 0, is suffices to do qualitative model checking.
@@ -257,7 +259,7 @@ namespace storm {
             }
         }
         
-		std::unique_ptr<CheckResult> AbstractModelChecker::checkLongRunAverageOperatorFormula(storm::logic::LongRunAverageOperatorFormula const& stateFormula) {
+		std::unique_ptr<CheckResult> AbstractModelChecker::checkLongRunAverageOperatorFormula(storm::logic::LongRunAverageOperatorFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
 			STORM_LOG_THROW(stateFormula.getSubformula().isStateFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
             std::unique_ptr<CheckResult> result;
@@ -280,7 +282,7 @@ namespace storm {
             }
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::checkUnaryBooleanStateFormula(storm::logic::UnaryBooleanStateFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::checkUnaryBooleanStateFormula(storm::logic::UnaryBooleanStateFormula const& stateFormula, CheckSettings<double> const& checkSettings) {
             std::unique_ptr<CheckResult> subResult = this->check(stateFormula.getSubformula());
             STORM_LOG_THROW(subResult->isQualitative(), storm::exceptions::InternalTypeErrorException, "Expected qualitative result.");
             if (stateFormula.isNot()) {
