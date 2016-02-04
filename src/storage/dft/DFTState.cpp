@@ -134,15 +134,19 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTState<ValueType>::claimNew(size_t spareId, size_t usageIndex, size_t currentlyUses, std::vector<size_t> const& childIds) {
-            auto it = find(childIds.begin(), childIds.end(), currentlyUses);
-            assert(it != childIds.end());
+        bool DFTState<ValueType>::claimNew(size_t spareId, size_t usageIndex, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children) {
+            auto it = children.begin();
+            while ((*it)->id() != currentlyUses) {
+                assert(it != children.end());
+                ++it;
+            }
             ++it;
-            while(it != childIds.end()) {
-                if(!hasFailed(*it) && !isUsed(*it)) {
-                    setUsesAtPosition(usageIndex, *it);
+            while(it != children.end()) {
+                size_t childId = (*it)->id();
+                if(!hasFailed(childId) && !isUsed(childId)) {
+                    setUsesAtPosition(usageIndex, childId);
                     if(isActiveSpare(spareId)) {
-                        mDft.propagateActivation(*this,*it);
+                        mDft.propagateActivation(*this, childId);
                     }
                     return true;
                 }

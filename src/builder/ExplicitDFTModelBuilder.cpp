@@ -77,7 +77,6 @@ namespace storm {
             while (!stateQueue.empty()) {
                 // Initialization
                 outgoingTransitions.clear();
-                ValueType sum = storm::utility::zero<ValueType>();
 
                 // Consider next state
                 DFTStatePointer state = stateQueue.front();
@@ -147,7 +146,9 @@ namespace storm {
                     bool isUsed = true;
                     if (mDft.hasRepresentant(nextBE->id())) {
                         DFTElementPointer representant = mDft.getRepresentant(nextBE->id());
-                        isUsed = newState->isUsed(representant->id());
+                        // Used must be checked for the state we are coming from as this state is responsible for the
+                        // rate and not the new state we are going to
+                        isUsed = state->isUsed(representant->id());
                     }
                     STORM_LOG_TRACE("BE " << nextBE->name() << " is " << (isUsed ? "used" : "not used"));
                     ValueType rate = isUsed ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
@@ -155,20 +156,18 @@ namespace storm {
                     if (resultFind != outgoingTransitions.end()) {
                         // Add to existing transition
                         resultFind->second += rate;
+                        STORM_LOG_TRACE("Updated transition from " << state->getId() << " to " << resultFind->first << " with " << rate << " to " << resultFind->second);
                     } else {
                         // Insert new transition
                         outgoingTransitions.insert(std::make_pair(newState->getId(), rate));
+                        STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newState->getId() << " with " << rate);
                     }
-                    sum += rate;
                 } // end while failing BE
 
                 // Add all transitions
                 for (auto it = outgoingTransitions.begin(); it != outgoingTransitions.end(); ++it)
                 {
-                    // TODO Matthias: correct?
-                    ValueType rate = it->second;// / sum;
-                    transitionMatrixBuilder.addNextValue(state->getId(), it->first, rate);
-                    STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << it->first << " with " << rate);
+                    transitionMatrixBuilder.addNextValue(state->getId(), it->first, it->second);
                 }
 
             } // end while queue

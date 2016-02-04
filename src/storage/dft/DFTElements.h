@@ -657,13 +657,7 @@ namespace storm {
                 if(state.isOperational(this->mId)) {
                     size_t uses = state.extractUses(mUseIndex);
                     if(!state.isOperational(uses)) {
-                        // TODO compute children ids before.
-                        std::vector<size_t> childrenIds;
-                        for(auto const& child : this->mChildren) {
-                            childrenIds.push_back(child->id());
-                        }
-                        
-                        bool claimingSuccessful = state.claimNew(this->mId, mUseIndex, uses, childrenIds);
+                        bool claimingSuccessful = state.claimNew(this->mId, mUseIndex, uses, this->mChildren);
                         if(!claimingSuccessful) {
                             this->fail(state, queues);
                         }

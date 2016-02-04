@@ -16,15 +16,14 @@ namespace storm {
         template<typename ValueType>
         DFT<ValueType> DFTBuilder<ValueType>::build() {
             for(auto& elem : mChildNames) {
+                DFTGatePointer gate = std::static_pointer_cast<DFTGate<ValueType>>(elem.first);
                 for(auto const& child : elem.second) {
-                    DFTGatePointer gate = std::static_pointer_cast<DFTGate<ValueType>>(elem.first);
                     gate->pushBackChild(mElements[child]);
                     mElements[child]->addParent(gate);
                 }
             }
 
             // Sort elements topologically
-
             // compute rank
             for (auto& elem : mElements) {
                 computeRank(elem.second);

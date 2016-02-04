@@ -13,6 +13,8 @@ namespace storm {
         class DFT;
         template<typename ValueType>
         class DFTBE;
+        template<typename ValueType>
+        class DFTElement;
 
         template<typename ValueType>
         class DFTState {
@@ -97,7 +99,7 @@ namespace storm {
              */
             void setUsesAtPosition(size_t usageIndex, size_t child);
             
-            bool claimNew(size_t spareId, size_t usageIndex, size_t currentlyUses, std::vector<size_t> const& childIds);
+            bool claimNew(size_t spareId, size_t usageIndex, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children);
             
             bool hasOutgoingEdges() const {
                 return !mIsCurrentlyFailableBE.empty();
