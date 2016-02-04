@@ -52,19 +52,23 @@ int main(int argc, char** argv) {
 
     // Parse cli arguments
     bool parametric = false;
+    log4cplus::LogLevel level = log4cplus::WARN_LOG_LEVEL;
     std::string filename = argv[1];
     std::string pctlFormula = "Pmax=?[true U \"failed\"]";
     for (int i = 2; i < argc; ++i) {
         std::string option = argv[i];
         if (option == "--parametric") {
             parametric = true;
+        } else if (option == "--trace") {
+            level = log4cplus::TRACE_LOG_LEVEL;
+        } else if (option == "--debug") {
+            level = log4cplus::DEBUG_LOG_LEVEL;
         } else {
             pctlFormula = option;
         }
     }
 
     storm::utility::setUp();
-    log4cplus::LogLevel level = log4cplus::WARN_LOG_LEVEL;
     logger.setLogLevel(level);
     logger.getAppender("mainConsoleAppender")->setThreshold(level);
 
