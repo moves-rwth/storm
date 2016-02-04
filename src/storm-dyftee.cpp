@@ -54,19 +54,27 @@ int main(int argc, char** argv) {
     bool parametric = false;
     log4cplus::LogLevel level = log4cplus::WARN_LOG_LEVEL;
     std::string filename = argv[1];
-    std::string pctlFormula = "Pmax=?[true U \"failed\"]";
+    std::string pctlFormula = "";
     for (int i = 2; i < argc; ++i) {
         std::string option = argv[i];
         if (option == "--parametric") {
             parametric = true;
+        } else if (option == "--expectedtime") {
+            assert(pctlFormula.empty());
+            pctlFormula = "ET=?[F \"failed\"]";
+        } else if (option == "--probability") {
+            assert(pctlFormula.empty());
+            pctlFormula = "P=? [F \"failed\"]";
         } else if (option == "--trace") {
             level = log4cplus::TRACE_LOG_LEVEL;
         } else if (option == "--debug") {
             level = log4cplus::DEBUG_LOG_LEVEL;
         } else {
+            assert(pctlFormula.empty());
             pctlFormula = option;
         }
     }
+    assert(!pctlFormula.empty());
 
     storm::utility::setUp();
     logger.setLogLevel(level);
