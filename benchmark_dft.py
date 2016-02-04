@@ -26,7 +26,7 @@ benchmarks = [
     ("spare2", False, [1.86957, 1]),
     ("spare3", False, [1.27273, 1]),
     ("spare4", False, [4.8459, 1]),
-    ("spare5", False, [2.16667, 1]),
+    ("spare5", False, [2.66667, 1]), # We discard the result 2.16667 from DFTCalc
     ("spare6", False, [1.4, 1]),
     ("tripple_and1", False, [4.16667, 1]),
     ("tripple_and2", False, [3.66667, 1]),
