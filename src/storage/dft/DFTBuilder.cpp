@@ -119,12 +119,12 @@ namespace storm {
         // TODO Matthias: use typedefs
         template<typename ValueType>
         std::vector<std::shared_ptr<DFTElement<ValueType>>> DFTBuilder<ValueType>::topoSort() {
-            std::map<std::shared_ptr<DFTElement<ValueType>>, topoSortColour> visited;
+            std::map<DFTElementPointer, topoSortColour> visited;
             for(auto const& e : mElements) {
                 visited.insert(std::make_pair(e.second, topoSortColour::WHITE)); 
             }
 
-            std::vector<std::shared_ptr<DFTElement<ValueType>>> L;
+            DFTElementVector L;
             for(auto const& e : visited) {
                 topoVisit(e.first, visited, L);
             }
