@@ -4,6 +4,7 @@ import subprocess
 import re
 import time
 import math
+import argparse
 
 STORM_PATH= "/Users/mvolk/develop/storm/build/src/storm-dft"
 EXAMPLE_DIR= "/Users/mvolk/develop/storm/examples/dft/"
@@ -28,6 +29,7 @@ benchmarks = [
     ("spare4", False, [4.8459, 1]),
     ("spare5", False, [2.66667, 1]), # We discard the result 2.16667 from DFTCalc
     ("spare6", False, [1.4, 1]),
+    ("spare7", False, [3.67333, 1]),
     ("tripple_and1", False, [4.16667, 1]),
     ("tripple_and2", False, [3.66667, 1]),
     ("tripple_and2_c", False, [3.6667, 1]),
@@ -81,6 +83,9 @@ def run_tool(args, quiet=False):
     return result
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Benchmarking DFTs via Storm')
+    parser.add_argument('--debuglevel', type=int, default=0, help='the debug level (0=silent, 1=print benchmarks, 2=print output from storm')
+    args = parser.parse_args()
     count = 0
     correct = 0
     properties = ["ET=? [F \"failed\"]", "P=? [F \"failed\"]"]
@@ -90,19 +95,20 @@ if __name__ == "__main__":
             expected_result = result_original[index]
             # Run benchmark and check result
             count += 1;
-            print("Running '{}' with property '{}'".format(benchmark, prop))
-            result = run_storm_dft(benchmark, prop, parametric, True)
+            if args.debuglevel > 0:
+                print("Running '{}' with property '{}'".format(benchmark, prop))
+            result = run_storm_dft(benchmark, prop, parametric, args.debuglevel<2)
             if not parametric:
                 # Float
                 result = float(result)
                 if not math.isclose(result, float(expected_result), rel_tol=1e-05):
-                    print("!!! File '{}': result: {}, Expected: {}".format(benchmark, result, expected_result))
+                    print("Wrong result on example '{}' with property '{}': result: {}, Expected: {}".format(benchmark, prop, result, expected_result))
                 else:
                     correct += 1
             else:
                 # Parametric
                 if result != expected_result:
-                    print("!!! File {}: result: {}, Expected: {}".format(benchmark, result, expected_result))
+                    print("Wrong result on example '{}' with property '{}': result: {}, Expected: {}".format(benchmark, prop, result, expected_result))
                 else:
                     correct += 1
     end = time.time()
