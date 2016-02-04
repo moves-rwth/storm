@@ -33,39 +33,39 @@ namespace storm {
              * @param checkSettings If provided, this object is used to customize the checking process.
              * @return The verification result.
              */
-            virtual std::unique_ptr<CheckResult> check(CheckTask<> storm::logic::Formula const& formula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
+            virtual std::unique_ptr<CheckResult> check(CheckTask<storm::logic::Formula> const& checkTask);
                         
             // The methods to compute probabilities for path formulas.
-            virtual std::unique_ptr<CheckResult> computeProbabilities(storm::logic::PathFormula const& pathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeConditionalProbabilities(storm::logic::ConditionalPathFormula const& pathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeEventuallyProbabilities(storm::logic::EventuallyFormula const& pathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeGloballyProbabilities(storm::logic::GloballyFormula const& pathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeNextProbabilities(storm::logic::NextFormula const& pathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
+            virtual std::unique_ptr<CheckResult> computeProbabilities(CheckTask<storm::logic::PathFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeConditionalProbabilities(CheckTask<storm::logic::ConditionalPathFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeEventuallyProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeGloballyProbabilities(CheckTask<storm::logic::GloballyFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeNextProbabilities(CheckTask<storm::logic::NextFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask);
             
             // The methods to compute the rewards for path formulas.
-            virtual std::unique_ptr<CheckResult> computeRewards(storm::logic::RewardPathFormula const& rewardPathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::CumulativeRewardFormula const& rewardPathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::InstantaneousRewardFormula const& rewardPathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(storm::logic::LongRunAverageRewardFormula const& rewardPathFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
+            virtual std::unique_ptr<CheckResult> computeRewards(CheckTask<storm::logic::RewardPathFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeCumulativeRewards(CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(CheckTask<storm::logic::LongRunAverageRewardFormula> const& checkTask);
             
             // The methods to compute the long-run average and expected time.
-            virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(storm::logic::StateFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> computeExpectedTimes(storm::logic::EventuallyFormula const& eventuallyFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
+            virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeExpectedTimes(CheckTask<storm::logic::EventuallyFormula> const& checkTask);
             
             // The methods to check state formulas.
-            virtual std::unique_ptr<CheckResult> checkStateFormula(storm::logic::StateFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings);
-            virtual std::unique_ptr<CheckResult> checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> checkBinaryBooleanStateFormula(storm::logic::BinaryBooleanStateFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> checkProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> checkRewardOperatorFormula(storm::logic::RewardOperatorFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> checkExpectedTimeOperatorFormula(storm::logic::ExpectedTimeOperatorFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> checkLongRunAverageOperatorFormula(storm::logic::LongRunAverageOperatorFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
-            virtual std::unique_ptr<CheckResult> checkUnaryBooleanStateFormula(storm::logic::UnaryBooleanStateFormula const& stateFormula, boost::optional<CheckSettings<double>> checkSettings = boost::none);
+            virtual std::unique_ptr<CheckResult> checkStateFormula(CheckTask<storm::logic::StateFormula> const& stateFormula);
+            virtual std::unique_ptr<CheckResult> checkAtomicExpressionFormula(CheckTask<storm::logic::AtomicExpressionFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> checkBinaryBooleanStateFormula(CheckTask<storm::logic::BinaryBooleanStateFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> checkProbabilityOperatorFormula(CheckTask<storm::logic::ProbabilityOperatorFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> checkRewardOperatorFormula(CheckTask<storm::logic::RewardOperatorFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> checkExpectedTimeOperatorFormula(CheckTask<storm::logic::ExpectedTimeOperatorFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> checkLongRunAverageOperatorFormula(CheckTask<storm::logic::LongRunAverageOperatorFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> checkUnaryBooleanStateFormula(CheckTask<storm::logic::UnaryBooleanStateFormula> const& checkTask);
         };
     }
 }

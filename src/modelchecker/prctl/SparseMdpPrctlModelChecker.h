@@ -8,25 +8,12 @@
 #include "src/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
-    namespace counterexamples {
-        template<typename ValueType>
-        class SMTMinimalCommandSetGenerator;
-        
-        template<typename ValueType>
-        class MILPMinimalLabelSetGenerator;
-    }
-    
-    
-    
     namespace modelchecker {
         template<class SparseMdpModelType>
         class SparseMdpPrctlModelChecker : public SparsePropositionalModelChecker<SparseMdpModelType> {
         public:
             typedef typename SparseMdpModelType::ValueType ValueType;
             typedef typename SparseMdpModelType::RewardModelType RewardModelType;
-            
-            friend class storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>;
-            friend class storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>;
             
             explicit SparseMdpPrctlModelChecker(SparseMdpModelType const& model);
             explicit SparseMdpPrctlModelChecker(SparseMdpModelType const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& MinMaxLinearEquationSolverFactory);
