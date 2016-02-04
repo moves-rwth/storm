@@ -22,55 +22,49 @@ namespace storm {
         template<typename FormulaType, typename ValueType = double>
         class CheckTask {
         public:
-            /*!
-             * Creates an empty task object with the default options.
-             */
-            CheckTask() : CheckTask(boost::none, boost::none, boost::none, false, boost::none, false, false) {
-                // Intentionally left empty.
-            }
+            template<typename OtherFormulaType, typename OtherValueType>
+            friend class CheckTask;
             
             /*!
              * Creates a task object with the default options for the given formula.
              */
-            CheckTask(FormulaType const& formula)  {
+            CheckTask(FormulaType const& formula) : formula(formula) {
                 this->onlyInitialStatesRelevant = false;
                 this->produceStrategies = true;
                 this->qualitative = false;
                 
-                if (formula.isProbabilityOperatorFormula()) {
-                    storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
-                    if (probabilityOperatorFormula.hasOptimalityType()) {
-                        this->optimizationDirection = probabilityOperatorFormula.getOptimalityType();
+                if (formula.isOperatorFormula()) {
+                    storm::logic::OperatorFormula const& operatorFormula = formula.asOperatorFormula();
+                    if (operatorFormula.hasOptimalityType()) {
+                        this->optimizationDirection = operatorFormula.getOptimalityType();
                     }
                     
-                    if (probabilityOperatorFormula.hasBound()) {
+                    if (operatorFormula.hasBound()) {
                         if (onlyInitialStatesRelevant) {
-                            this->initialStatesBound = std::make_pair(probabilityOperatorFormula.getComparisonType(), static_cast<ValueType>(probabilityOperatorFormula.getBound()));
+                            this->bound = std::make_pair(operatorFormula.getComparisonType(), static_cast<ValueType>(operatorFormula.getBound()));
                         }
+
+                        if (!optimizationDirection) {
+                            this->optimizationDirection = operatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || operatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
+                        }
+                    }
+                }
+                
+                if (formula.isProbabilityOperatorFormula()) {
+                    storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
+                    
+                    if (probabilityOperatorFormula.hasBound()) {
                         if (probabilityOperatorFormula.getBound() == storm::utility::zero<ValueType>() || probabilityOperatorFormula.getBound() == storm::utility::one<ValueType>()) {
                             this->qualitative = true;
-                        }
-                        if (!optimizationDirection) {
-                            this->optimizationDirection = probabilityOperatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || probabilityOperatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
                         }
                     }
                 } else if (formula.isRewardOperatorFormula()) {
                     storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
                     this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
                     
-                    if (rewardOperatorFormula.hasOptimalityType()) {
-                        this->optimizationDirection = rewardOperatorFormula.getOptimalityType();
-                    }
-                    
                     if (rewardOperatorFormula.hasBound()) {
-                        if (onlyInitialStatesRelevant) {
-                            this->initialStatesBound = std::make_pair(rewardOperatorFormula.getComparisonType(), static_cast<ValueType>(rewardOperatorFormula.getBound()));
-                        }
                         if (rewardOperatorFormula.getBound() == storm::utility::zero<ValueType>()) {
                             this->qualitative = true;
-                        }
-                        if (!optimizationDirection) {
-                            this->optimizationDirection = rewardOperatorFormula.getComparisonType() == storm::logic::ComparisonType::Less || rewardOperatorFormula.getComparisonType() == storm::logic::ComparisonType::LessEqual ? OptimizationDirection::Maximize : OptimizationDirection::Minimize;
                         }
                     }
                 }
@@ -82,21 +76,14 @@ namespace storm {
              */
             template<typename NewFormulaType>
             CheckTask<NewFormulaType, ValueType> replaceFormula(NewFormulaType const& newFormula) const {
-                return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->initialStatesBound, this->qualitative, this->produceStrategies);
-            }
-            
-            /*!
-             * Retrieves whether this task is associated with a formula.
-             */
-            bool hasFormula() const {
-                return static_cast<bool>(formula);
+                return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceStrategies);
             }
             
             /*!
              * Retrieves the formula from this task.
              */
             FormulaType const& getFormula() const {
-                return formula.get().get();
+                return formula.get();
             }
             
             /*!
@@ -132,6 +119,14 @@ namespace storm {
              */
             bool isOnlyInitialStatesRelevantSet() const {
                 return onlyInitialStatesRelevant;
+            }
+            
+            /*!
+             * Sets whether only initial states are relevant.
+             */
+            CheckTask<FormulaType, ValueType>& setOnlyInitialStatesRelevant(bool value = true) {
+                this->onlyInitialStatesRelevant = value;
+                return *this;
             }
             
             /*!
@@ -193,12 +188,12 @@ namespace storm {
              * @param produceStrategies If supported by the model checker and the model formalism, strategies to achieve
              * a value will be produced if this flag is set.
              */
-            CheckTask(boost::optional<std::reference_wrapper<FormulaType>> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> const& bound, bool qualitative, bool produceStrategies) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceStrategies(produceStrategies) {
+            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> const& bound, bool qualitative, bool produceStrategies) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceStrategies(produceStrategies) {
                 // Intentionally left empty.
             }
             
             // The formula that is to be checked.
-            boost::optional<std::reference_wrapper<FormulaType>> formula;
+            std::reference_wrapper<FormulaType const> formula;
             
             // If set, the probabilities will be minimized/maximized.
             boost::optional<storm::OptimizationDirection> optimizationDirection;

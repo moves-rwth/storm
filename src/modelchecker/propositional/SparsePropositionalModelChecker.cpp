@@ -27,6 +27,7 @@ namespace storm {
         
         template<typename SparseModelType>
         std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula> const& checkTask) {
+            storm::logic::BooleanLiteralFormula const& stateFormula = checkTask.getFormula();
             if (stateFormula.isTrueFormula()) {
                 return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates(), true)));
             } else {
@@ -36,6 +37,7 @@ namespace storm {
         
         template<typename SparseModelType>
         std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula> const& checkTask) {
+            storm::logic::AtomicLabelFormula const& stateFormula = checkTask.getFormula();
             STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
             return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getStates(stateFormula.getLabel())));
         }
