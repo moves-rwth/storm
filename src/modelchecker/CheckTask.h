@@ -1,5 +1,5 @@
-#ifndef STORM_MODELCHECKER_CHECKSETTINGS_H_
-#define STORM_MODELCHECKER_CHECKSETTINGS_H_
+#ifndef STORM_MODELCHECKER_CHECKTASK_H_
+#define STORM_MODELCHECKER_CHECKTASK_H_
 
 #include <boost/optional.hpp>
 
@@ -16,27 +16,34 @@ namespace storm {
         /*
          * This class is used to customize the checking process of a formula.
          */
-        template<typename ValueType>
-        class CheckSettings {
+        template<typename FormulaType, typename ValueType = double>
+        class CheckTask {
         public:
             /*!
-             * Creates a settings object with the default options.
+             * Creates an empty task object with the default options.
              */
-            CheckSettings();
+            CheckTask();
             
             /*!
-             * Creates a settings object for the given top-level formula.
-             *
-             * @param formula The formula for which to create the settings.
+             * Creates a task object with the default options for the given formula.
              */
-            static CheckSettings fromToplevelFormula(storm::logic::Formula const& formula);
+            CheckTask(FormulaType const& formula);
             
             /*!
-             * Creates a settings object for the given formula that is nested within another formula.
-             *
-             * @param formula The formula for which to create the settings.
+             * Converts the check task object to one with the given new formula type.
              */
-            static CheckSettings fromNestedFormula(storm::logic::Formula const& formula);
+            template<typename NewFormulaType>
+            CheckTask<NewFormulaType, ValueType> convert();
+            
+            /*!
+             * Retrieves whether this task is associated with a formula.
+             */
+            bool hasFormula() const;
+            
+            /*!
+             * Retrieves the formula from this task.
+             */
+            FormulaType const& getFormula() const;
             
             /*!
              * Retrieves whether an optimization direction was set.
@@ -86,8 +93,9 @@ namespace storm {
             
         private:
             /*!
-             * Creates a settings object with the given options.
+             * Creates a task object with the given options.
              *
+             * @param formula The formula to attach to the task.
              * @param optimizationDirection If set, the probabilities will be minimized/maximized.
              * @param rewardModelName If given, the checking has to be done wrt. to this reward model.
              * @param onlyInitialStatesRelevant If set to true, the model checker may decide to only compute the values
@@ -99,15 +107,10 @@ namespace storm {
              * @param produceStrategies If supported by the model checker and the model formalism, strategies to achieve
              * a value will be produced if this flag is set.
              */
-            CheckSettings(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> const& initialStatesBound, bool qualitative, bool produceStrategies);
+            CheckTask(boost::optional<std::reference_wrapper<FormulaType>> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> const& initialStatesBound, bool qualitative, bool produceStrategies);
             
-            /*!
-             * Creates a settings object for the given formula.
-             *
-             * @param formula The formula for which to create the settings.
-             * @param toplevel Indicates whether this formula is the top-level formula.
-             */
-            static CheckSettings fromFormula(storm::logic::Formula const& formula, bool toplevel);
+            // The formula that is to be checked.
+            boost::optional<std::reference_wrapper<FormulaType>> formula;
             
             // If set, the probabilities will be minimized/maximized.
             boost::optional<storm::OptimizationDirection> optimizationDirection;
@@ -132,4 +135,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_MODELCHECKER_CHECKSETTINGS_H_ */
+#endif /* STORM_MODELCHECKER_CHECKTASK_H_ */
