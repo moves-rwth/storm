@@ -30,7 +30,7 @@ namespace storm {
              * Checks the provided formula.
              *
              * @param formula The formula to check.
-             * @param checkSettings If provided, this object is used to customize the checking process.
+             * @param checkTask If provided, this object is used to customize the checking process.
              * @return The verification result.
              */
             virtual std::unique_ptr<CheckResult> check(CheckTask<storm::logic::Formula> const& checkTask);
