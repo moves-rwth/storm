@@ -25,7 +25,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula> const& checkTask) override;
-            virtual std::unique_ptr<CheckResult> computeExpectedTimes(storm::logic::EventuallyFormula const& eventuallyFormula, CheckSettings<double> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeExpectedTimes(CheckTask<storm::logic::EventuallyFormula> const& const& checkTask) override;
             
         private:
             // An object that is used for retrieving solvers for systems of linear equations that are the result of nondeterministic choices.

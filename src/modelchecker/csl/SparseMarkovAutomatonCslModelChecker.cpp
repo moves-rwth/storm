@@ -79,7 +79,7 @@ namespace storm {
         }
                 
         template<typename SparseMarkovAutomatonModelType>
-        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeExpectedTimes(storm::logic::EventuallyFormula const& eventuallyFormula, CheckSettings<double> const& checkTask) {
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeExpectedTimes(CheckTask<storm::logic::EventuallyFormula> const& const& checkTask) {
             STORM_LOG_THROW(optimalityType, storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException, "Unable to compute expected times in non-closed Markov automaton.");
             std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
