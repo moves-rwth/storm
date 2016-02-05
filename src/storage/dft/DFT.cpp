@@ -1,3 +1,5 @@
+#include <boost/container/flat_set.hpp>
+
 #include "DFT.h"
 
 namespace storm {
@@ -142,7 +144,13 @@ namespace storm {
             return stream.str();
         }
 
+        template <typename ValueType>
+        bool DFT<ValueType>::rootOfClosedSubDFT(size_t index) const {
+            //boost::container::flat_set<size_t> marked;
+            //DFTElementPointer elem = getElement(index);
 
+
+        }
 
         // Explicitly instantiate the class.
         template class DFT<double>;

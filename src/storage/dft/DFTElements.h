@@ -42,11 +42,13 @@ namespace storm {
 
             virtual ~DFTElement() {}
 
-            
+            /**
+             * Returns the id
+             */
             virtual size_t id() const {
                 return mId;
             }
-            
+
             virtual void setRank(size_t rank) {
                 mRank = rank;
             }
@@ -62,7 +64,10 @@ namespace storm {
             virtual bool isGate() const {
                 return false;
             }
-            
+
+            /**
+             *  Returns true if the element is a BE
+             */
             virtual bool isBasicElement() const {
                 return false;
             }
@@ -70,7 +75,10 @@ namespace storm {
             virtual bool isColdBasicElement() const {
                 return false;
             }
-            
+
+            /**
+             * Returns true if the element is a spare gate
+             */
             virtual bool isSpareGate() const {
                 return false;
             }
@@ -78,7 +86,10 @@ namespace storm {
             virtual void setId(size_t newId) {
                 mId = newId;
             }
-            
+
+            /**
+             * Returns the name
+             */
             virtual std::string const& name() const {
                 return mName;
             }
@@ -101,7 +112,15 @@ namespace storm {
             DFTGateVector const& parents() const {
                 return mParents;
             }
-            
+
+            std::vector<size_t> parentIds() const {
+                std::vector<size_t> res;
+                for(auto parent : parents()) {
+                    res.push_back(parent->id());
+                }
+                return res;
+            }
+
             virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
             
             virtual size_t nrChildren() const = 0;
@@ -109,12 +128,33 @@ namespace storm {
             virtual std::string toString() const = 0;
 
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
-            
+
+            /**
+             *  Computes the independent unit of this element, that is, all elements which are direct or indirect successors of an element.
+             */
             virtual std::vector<size_t> independentUnit() const = 0;
-        
+
+            /**
+             *  Helper to independent unit computation
+             *  @see independentUnit
+             */
             virtual void extendUnit(std::set<size_t>& unit) const;
 
+            /**
+             *  Computes independent subtrees starting with this element (this), that is, all elements (x) which are connected to either
+             *  - one of the children of the element,
+             *  - a propabilisistic dependency
+             *  such that there exists a  path from x to a child of this does not go through this.
+             */
+            virtual std::vector<size_t> independentSubDft() const;
+            /**
+             * Helper to the independent subtree computation
+             * @see independentSubDft
+             */
+            virtual void extendSubDft(std::set<size_t> elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const;
+
             void checkForSymmetricChildren() const;
+
         };
 
 
@@ -197,13 +237,50 @@ namespace storm {
                 for(auto const& child : mChildren) {
                     child->extendUnit(unit);
                 }
-                for(auto const& parent : this->mParents) {
-                    if(unit.count(parent->id()) != 0) {
-                        return {};
-                    } 
+                return std::vector<size_t>(unit.begin(), unit.end());
+            }
+
+            virtual void extendUnit(std::set<size_t>& unit) const override {
+                DFTElement<ValueType>::extendUnit(unit);
+                for(auto const& child : mChildren) {
+                    child->extendUnit(unit);
+                }
+            }
+
+            virtual std::vector<size_t> independentSubDft() const override {
+                auto prelRes = DFTElement<ValueType>::independentSubDft();
+                if(prelRes.empty()) {
+                    // No elements (especially not this->id) in the prelimanry result, so we know already that it is not a subdft.
+                    return prelRes;
+                }
+                std::set<size_t> unit(prelRes.begin(), prelRes.end());
+                std::vector<size_t> pids = this->parentIds();
+                for(auto const& child : mChildren) {
+                    child->extendSubDft(unit, pids);
+                    if(unit.empty()) {
+                        // Parent in the subdft, ie it is *not* a subdft
+                        break;
+                    }
                 }
                 return std::vector<size_t>(unit.begin(), unit.end());
             }
+
+            virtual void extendSubDft(std::set<size_t> elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const override {
+                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                if(!elemsInSubtree.empty()) {
+                    // Parent in the subdft, ie it is *not* a subdft
+                    return;
+                }
+                for(auto const& child : mChildren) {
+                    child->extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                    if(elemsInSubtree.empty()) {
+                        // Parent in the subdft, ie it is *not* a subdft
+                        break;
+                    }
+                }
+            }
+
+
             
             virtual std::string toString() const override {
                 std::stringstream stream;
@@ -226,13 +303,7 @@ namespace storm {
                 }
                 return false;
             }
-            
-            virtual void extendUnit(std::set<size_t>& unit) const override {
-                DFTElement<ValueType>::extendUnit(unit);
-                for(auto const& child : mChildren) {
-                    child->extendUnit(unit);
-                }
-            }
+
             
         protected:
 
@@ -318,9 +389,10 @@ namespace storm {
                 return storm::utility::isZero(mPassiveFailureRate);
             }
 
-            virtual std::vector<size_t> independentUnit() const {
+            virtual std::vector<size_t> independentUnit() const override {
                 return {this->mId};
             }
+
 
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
         };

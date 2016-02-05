@@ -191,7 +191,7 @@ namespace storm {
 
             std::string getStateString(DFTStatePointer const& state) const;
 
-            DFTIsomorphisms detectIsomorphicChildren() const;
+            bool rootOfClosedSubDFT(size_t id) const;
         private:
             bool elementIndicesCorrect() const {
                 for(size_t i = 0; i < mElements.size(); ++i) {
