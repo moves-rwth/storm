@@ -13,6 +13,7 @@
 #include "src/logic/NextFormula.h"
 #include "src/logic/PathFormula.h"
 #include "src/logic/RewardPathFormula.h"
+#include "src/logic/OperatorFormula.h"
 #include "src/logic/ProbabilityOperatorFormula.h"
 #include "src/logic/ReachabilityRewardFormula.h"
 #include "src/logic/LongRunAverageRewardFormula.h"

@@ -30,7 +30,7 @@ namespace storm {
         }
         
         template<typename ModelType, typename BlockDataType>
-        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : Options() {
+        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType const& model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : Options() {
             if (formulas.empty()) {
                 this->respectedAtomicPropositions = model.getStateLabeling().getLabels();
                 this->keepRewards = true;

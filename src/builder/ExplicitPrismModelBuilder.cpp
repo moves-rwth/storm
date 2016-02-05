@@ -130,7 +130,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::Options::Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -269,7 +269,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
 #endif
             }
-            
+                            
             // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
             if (options.labelsToBuild) {
                 if (!options.buildAllLabels) {

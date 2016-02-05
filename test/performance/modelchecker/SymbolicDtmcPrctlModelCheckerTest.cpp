@@ -41,7 +41,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
     
     storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
     
-    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -93,7 +93,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
     
     storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
     
-    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
@@ -137,7 +137,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     
     storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::dd::DdType::CUDD, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>()));
     
-    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
@@ -181,7 +181,7 @@ TEST(SymbolicDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     
     storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::dd::DdType::Sylvan, double> checker(*dtmc, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>>(new storm::utility::solver::SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>()));
     
-    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));

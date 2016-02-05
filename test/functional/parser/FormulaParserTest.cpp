@@ -7,7 +7,7 @@ TEST(FormulaParserTest, LabelTest) {
     storm::parser::FormulaParser formulaParser;
 
     std::string input = "\"label\"";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
 	ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
 
     EXPECT_TRUE(formula->isAtomicLabelFormula());
@@ -17,7 +17,7 @@ TEST(FormulaParserTest, ComplexLabelTest) {
     storm::parser::FormulaParser formulaParser;
 
     std::string input = "!(\"a\" & \"b\") | \"a\" & !\"c\"";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
 	ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
 
     EXPECT_TRUE(formula->isPropositionalFormula());
@@ -32,7 +32,7 @@ TEST(FormulaParserTest, ExpressionTest) {
     storm::parser::FormulaParser formulaParser(manager);
     
     std::string input = "!(x | y > 3)";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     
     EXPECT_TRUE(formula->isPropositionalFormula());
@@ -47,7 +47,7 @@ TEST(FormulaParserTest, LabelAndExpressionTest) {
     storm::parser::FormulaParser formulaParser(manager);
     
     std::string input = "!\"a\" | x | y > 3";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     
     EXPECT_TRUE(formula->isPropositionalFormula());
@@ -61,7 +61,7 @@ TEST(FormulaParserTest, ProbabilityOperatorTest) {
     storm::parser::FormulaParser formulaParser;
 
     std::string input = "P<0.9 [\"a\" U \"b\"]";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
 	ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
 
     EXPECT_TRUE(formula->isProbabilityOperatorFormula());
@@ -73,7 +73,7 @@ TEST(FormulaParserTest, RewardOperatorTest) {
     storm::parser::FormulaParser formulaParser;
     
     std::string input = "Rmin<0.9 [F \"a\"]";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     
     EXPECT_TRUE(formula->isRewardOperatorFormula());
@@ -93,7 +93,7 @@ TEST(FormulaParserTest, ConditionalProbabilityTest) {
     storm::parser::FormulaParser formulaParser;
     
     std::string input = "P<0.9 [F \"a\" || F \"b\"]";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     
     EXPECT_TRUE(formula->isProbabilityOperatorFormula());
@@ -105,7 +105,7 @@ TEST(FormulaParserTest, NestedPathFormulaTest) {
     storm::parser::FormulaParser formulaParser;
     
     std::string input = "P<0.9 [F X \"a\"]";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     
     EXPECT_TRUE(formula->isProbabilityOperatorFormula());
@@ -117,7 +117,7 @@ TEST(FormulaParserTest, CommentTest) {
     storm::parser::FormulaParser formulaParser;
 
     std::string input = "// This is a comment. And this is a commented out formula: P<=0.5 [ F \"a\" ] The next line contains the actual formula. \n P<=0.5 [ X \"b\" ] // Another comment \n // And again: another comment.";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
 	ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     EXPECT_TRUE(formula->isProbabilityOperatorFormula());
     ASSERT_TRUE(formula->asProbabilityOperatorFormula().getSubformula().isNextFormula());
@@ -132,7 +132,7 @@ TEST(FormulaParserTest, WrongFormatTest) {
     
     storm::parser::FormulaParser formulaParser(manager);
     std::string input = "P>0.5 [ a ]";
-    std::shared_ptr<storm::logic::Formula> formula(nullptr);
+    std::shared_ptr<const storm::logic::Formula> formula(nullptr);
 	EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
     
     input = "P=0.5 [F \"a\"]";

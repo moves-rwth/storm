@@ -38,6 +38,7 @@ namespace storm {
         class LongRunAverageRewardFormula;
         class ProbabilityOperatorFormula;
         class RewardOperatorFormula;
+        class OperatorFormula;
 
         // Also foward-declare base model checker class.
         class ModelChecker;
@@ -80,6 +81,7 @@ namespace storm {
             virtual bool isLongRunAverageRewardFormula() const;
             virtual bool isProbabilityOperatorFormula() const;
             virtual bool isRewardOperatorFormula() const;
+            virtual bool isOperatorFormula() const;
 
             virtual bool isPctlPathFormula() const;
             virtual bool isPctlStateFormula() const;
@@ -174,6 +176,9 @@ namespace storm {
             
             RewardOperatorFormula& asRewardOperatorFormula();
             RewardOperatorFormula const& asRewardOperatorFormula() const;
+            
+            OperatorFormula& asOperatorFormula();
+            OperatorFormula const& asOperatorFormula() const;
             
             std::vector<std::shared_ptr<AtomicExpressionFormula const>> getAtomicExpressionFormulas() const;
             std::vector<std::shared_ptr<AtomicLabelFormula const>> getAtomicLabelFormulas() const;

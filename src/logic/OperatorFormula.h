@@ -18,10 +18,13 @@ namespace storm {
             }
             
             bool hasBound() const;
-            ComparisonType const& getComparisonType() const;
+            ComparisonType getComparisonType() const;
+            void setComparisonType(ComparisonType);
             double getBound() const;
+            void setBound(double);
             bool hasOptimalityType() const;
             OptimizationDirection const& getOptimalityType() const;
+            virtual bool isOperatorFormula() const override;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             

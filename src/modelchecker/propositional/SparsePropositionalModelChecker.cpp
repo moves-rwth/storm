@@ -21,12 +21,14 @@ namespace storm {
         }
         
         template<typename SparseModelType>
-        bool SparsePropositionalModelChecker<SparseModelType>::canHandle(storm::logic::Formula const& formula) const {
+        bool SparsePropositionalModelChecker<SparseModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isPropositionalFormula();
         }
         
         template<typename SparseModelType>
-        std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula> const& checkTask) {
+            storm::logic::BooleanLiteralFormula const& stateFormula = checkTask.getFormula();
             if (stateFormula.isTrueFormula()) {
                 return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(storm::storage::BitVector(model.getNumberOfStates(), true)));
             } else {
@@ -35,7 +37,8 @@ namespace storm {
         }
         
         template<typename SparseModelType>
-        std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) {
+        std::unique_ptr<CheckResult> SparsePropositionalModelChecker<SparseModelType>::checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula> const& checkTask) {
+            storm::logic::AtomicLabelFormula const& stateFormula = checkTask.getFormula();
             STORM_LOG_THROW(model.hasLabel(stateFormula.getLabel()), storm::exceptions::InvalidPropertyException, "The property refers to unknown label '" << stateFormula.getLabel() << "'.");
             return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult(model.getStates(stateFormula.getLabel())));
         }
