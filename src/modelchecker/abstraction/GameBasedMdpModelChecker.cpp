@@ -1,5 +1,7 @@
 #include "src/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 
+#include "src/storage/expressions/ExpressionManager.h"
+
 #include "src/utility/macros.h"
 
 #include "src/exceptions/NotSupportedException.h"
@@ -30,8 +32,7 @@ namespace storm {
         bool GameBasedMdpModelChecker<Type, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isProbabilityOperatorFormula()) {
-                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
-                return this->canHandle(checkTask.replaceFormula(probabilityOperatorFormula.getSubformula()));
+                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
             } else if (formula.isUntilFormula() || formula.isEventuallyFormula()) {
                 if (formula.isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = formula.asUntilFormula();
@@ -47,39 +48,34 @@ namespace storm {
             }
             return false;
         }
-        
-        template<storm::dd::DdType Type, typename ValueType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::checkProbabilityOperatorFormula(CheckTask<storm::logic::ProbabilityOperatorFormula> const& checkTask) {
-            // Depending on whether or not there is a bound, we do something slightly different here.
-            return nullptr;
-        }
-        
+                
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
-            // TODO
-            return nullptr;
+            storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
+            return performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula>(pathFormula), getExpression(pathFormula.getLeftSubformula()), getExpression(pathFormula.getRightSubformula()));
         }
         
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::computeEventuallyProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
             storm::logic::EventuallyFormula const& pathFormula = checkTask.getFormula();
-            storm::logic::Formula const& subformula = pathFormula.getSubformula();
-            STORM_LOG_THROW(subformula.isAtomicExpressionFormula() || subformula.isAtomicLabelFormula(), storm::exceptions::InvalidPropertyException, "The target states have to be given as label or an expression.");
-            storm::expressions::Expression targetStateExpression;
-            if (subformula.isAtomicLabelFormula()) {
-                targetStateExpression = preprocessedProgram.getLabelExpression(subformula.asAtomicLabelFormula().getLabel());
-            } else {
-                targetStateExpression = subformula.asAtomicExpressionFormula().getExpression();
-            }
-            
-            performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula>(pathFormula), targetStateExpression);
-
+            return performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula>(pathFormula), originalProgram.getManager().boolean(true), getExpression(pathFormula.getSubformula()));
+        }
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
             return nullptr;
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        void GameBasedMdpModelChecker<Type, ValueType>::performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& targetStateExpression) {
-            std::cout << "hello world" << std::endl;
+        storm::expressions::Expression GameBasedMdpModelChecker<Type, ValueType>::getExpression(storm::logic::Formula const& formula) {
+            STORM_LOG_THROW(formula.isAtomicExpressionFormula() || formula.isAtomicLabelFormula(), storm::exceptions::InvalidPropertyException, "The target states have to be given as label or an expression.");
+            storm::expressions::Expression result;
+            if (formula.isAtomicLabelFormula()) {
+                result = preprocessedProgram.getLabelExpression(formula.asAtomicLabelFormula().getLabel());
+            } else {
+                result = formula.asAtomicExpressionFormula().getExpression();
+            }
+            return result;
         }
         
         template class GameBasedMdpModelChecker<storm::dd::DdType::CUDD, double>;
