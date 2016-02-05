@@ -14,7 +14,7 @@ namespace storm {
             explicit SymbolicDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::SymbolicLinearEquationSolverFactory<DdType, ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
-            virtual bool canHandle(storm::logic::Formula const& formula) const override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
             virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeNextProbabilities(CheckTask<storm::logic::NextFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) override;

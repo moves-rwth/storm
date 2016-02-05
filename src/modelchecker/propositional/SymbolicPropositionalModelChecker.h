@@ -21,7 +21,7 @@ namespace storm {
             explicit SymbolicPropositionalModelChecker(storm::models::symbolic::Model<Type, ValueType> const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
-            virtual bool canHandle(storm::logic::Formula const& formula) const override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
             virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> checkAtomicExpressionFormula(CheckTask<storm::logic::AtomicExpressionFormula> const& checkTask) override;

@@ -80,13 +80,12 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(storm::logic::Formula const& formula) const {
+        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isProbabilityOperatorFormula()) {
-                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
-                return this->canHandle(probabilityOperatorFormula.getSubformula());
+                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
             } else if (formula.isRewardOperatorFormula()) {
-                storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
-                return this->canHandle(rewardOperatorFormula.getSubformula());
+                return this->canHandle(checkTask.replaceFormula(formula.asRewardOperatorFormula().getSubformula()));
             } else if (formula.isUntilFormula() || formula.isEventuallyFormula()) {
                 if (formula.isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = formula.asUntilFormula();

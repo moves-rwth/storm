@@ -34,7 +34,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        bool HybridDtmcPrctlModelChecker<DdType, ValueType>::canHandle(storm::logic::Formula const& formula) const {
+        bool HybridDtmcPrctlModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isPctlStateFormula() || formula.isPctlPathFormula() || formula.isRewardPathFormula();
         }
                 

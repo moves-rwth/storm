@@ -21,7 +21,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        bool SymbolicPropositionalModelChecker<Type, ValueType>::canHandle(storm::logic::Formula const& formula) const {
+        bool SymbolicPropositionalModelChecker<Type, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isPropositionalFormula();
         }
         

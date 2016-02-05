@@ -20,7 +20,7 @@ namespace storm {
             explicit SparseMarkovAutomatonCslModelChecker(SparseMarkovAutomatonModelType const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
-            virtual bool canHandle(storm::logic::Formula const& formula) const override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
             virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) override;

@@ -32,7 +32,8 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandle(storm::logic::Formula const& formula) const {
+        bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isPctlStateFormula() || formula.isPctlPathFormula() || formula.isRewardPathFormula()) {
                 return true;
             }
@@ -40,7 +41,7 @@ namespace storm {
                 return true;
             }
             if (formula.isProbabilityOperatorFormula()) {
-                return this->canHandle(formula.asProbabilityOperatorFormula().getSubformula());
+                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
             }
             if (formula.isConditionalPathFormula()) {
                 storm::logic::ConditionalPathFormula const& conditionalPathFormula = formula.asConditionalPathFormula();

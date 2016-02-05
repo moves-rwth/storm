@@ -18,19 +18,18 @@ namespace storm {
             }
             
             /*!
-             * Determines whether the model checker can handle the formula. If this method returns false, the formula
-             * must not be checked using the model checker.
+             * Determines whether the model checker can handle the given verification task. If this method returns
+             * false, the task must not be checked using this model checker.
              *
-             * @param formula The formula for which to check whether the model checker can handle it.
-             * @return True iff the model checker can check the given formula.
+             * @param checkTask The task for which to check whether the model checker can handle it.
+             * @return True iff the model checker can check the given task.
              */
-            virtual bool canHandle(storm::logic::Formula const& formula) const = 0;
+            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const = 0;
             
             /*!
              * Checks the provided formula.
              *
-             * @param formula The formula to check.
-             * @param checkTask If provided, this object is used to customize the checking process.
+             * @param checkTask The verification task to pursue.
              * @return The verification result.
              */
             virtual std::unique_ptr<CheckResult> check(CheckTask<storm::logic::Formula> const& checkTask);

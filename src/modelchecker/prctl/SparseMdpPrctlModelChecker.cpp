@@ -37,12 +37,13 @@ namespace storm {
         }
         
         template<typename SparseMdpModelType>
-        bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandle(storm::logic::Formula const& formula) const {
+        bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isPctlStateFormula() || formula.isPctlPathFormula() || formula.isRewardPathFormula()) {
                 return true;
             }
             if (formula.isProbabilityOperatorFormula()) {
-                return this->canHandle(formula.asProbabilityOperatorFormula().getSubformula());
+                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
             }
             if (formula.isGloballyFormula()) {
                 return true;

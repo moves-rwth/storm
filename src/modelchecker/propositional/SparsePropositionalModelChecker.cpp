@@ -21,7 +21,8 @@ namespace storm {
         }
         
         template<typename SparseModelType>
-        bool SparsePropositionalModelChecker<SparseModelType>::canHandle(storm::logic::Formula const& formula) const {
+        bool SparsePropositionalModelChecker<SparseModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isPropositionalFormula();
         }
         

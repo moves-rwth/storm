@@ -30,7 +30,8 @@ namespace storm {
         }
         
         template <typename SparseCtmcModelType>
-        bool SparseCtmcCslModelChecker<SparseCtmcModelType>::canHandle(storm::logic::Formula const& formula) const {
+        bool SparseCtmcCslModelChecker<SparseCtmcModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isCslStateFormula() || formula.isCslPathFormula() || formula.isRewardPathFormula();
         }
         

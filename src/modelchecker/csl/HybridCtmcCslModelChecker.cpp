@@ -23,7 +23,8 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, class ValueType>
-        bool HybridCtmcCslModelChecker<DdType, ValueType>::canHandle(storm::logic::Formula const& formula) const {
+        bool HybridCtmcCslModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isCslStateFormula() || formula.isCslPathFormula() || formula.isRewardPathFormula();
         }
                 
