@@ -63,6 +63,19 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& constraintExpression, storm::expressions::Expression const& targetStateExpression) {
+            
+            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidPropertyException, "The game-based abstraction refinement model checker can only compute the result for the initial states.");
+            
+            // 1. build initial abstraction based on the the constraint expression (if not 'true') and the target state expression.
+            
+            // 2. solve the game wrt. to min/max as given by checkTask and min/max for the abstraction player to obtain two bounds.
+            // Note that we have to deal with bottom states if not all guards were added in the beginning.
+            // Also note that it might be the case that not both bounds need to be computed if there is a bound given in checkTask.
+            
+            // 3. if the bounds suffice to complete checkTask, return result now.
+            
+            // 4. if the bounds do not suffice
+            
             return nullptr;
         }
         
