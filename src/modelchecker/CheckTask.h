@@ -28,8 +28,8 @@ namespace storm {
             /*!
              * Creates a task object with the default options for the given formula.
              */
-            CheckTask(FormulaType const& formula) : formula(formula) {
-                this->onlyInitialStatesRelevant = false;
+            CheckTask(FormulaType const& formula, bool onlyInitialStatesRelevant = false) : formula(formula) {
+                this->onlyInitialStatesRelevant = onlyInitialStatesRelevant;
                 this->produceStrategies = true;
                 this->qualitative = false;
                 
