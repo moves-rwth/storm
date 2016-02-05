@@ -2,17 +2,19 @@
 #ifndef DFT_H
 #define	DFT_H
 
-
-#include "DFTElements.h"
-#include "../BitVector.h"
 #include <memory>
 #include <unordered_map>
 #include <list>
 #include <map>
 
+#include <boost/iterator/counting_iterator.hpp>
+
+#include "DFTIsomorphism.h"
+#include "DFTElements.h"
+#include "../BitVector.h"
+
 #include "../../utility/math.h"
 #include "src/utility/macros.h"
-#include <boost/iterator/counting_iterator.hpp>
 
 namespace storm {
     namespace storage {
@@ -28,8 +30,9 @@ namespace storm {
             }
         };
 
-
-
+        /**
+         * Represents a Dynamic Fault Tree
+         */
         template<typename ValueType>
         class DFT {
 
@@ -136,12 +139,17 @@ namespace storm {
                 return result;
             }
 
+            /**
+             *  Get a pointer to an element in the DFT
+             *  @param index The id of the element
+             */
             DFTElementPointer const& getElement(size_t index) const {
                 assert(index < nrElements());
                 return mElements[index];
             }
 
             std::shared_ptr<DFTBE<ValueType>> getBasicElement(size_t index) const {
+                assert(index < nrElements());
                 assert(mElements[index]->isBasicElement());
                 return std::static_pointer_cast<DFTBE<ValueType>>(mElements[index]);
             }
@@ -182,7 +190,8 @@ namespace storm {
             std::string getElementsWithStateString(DFTStatePointer const& state) const;
 
             std::string getStateString(DFTStatePointer const& state) const;
-            
+
+            DFTIsomorphisms detectIsomorphicChildren() const;
         private:
             bool elementIndicesCorrect() const {
                 for(size_t i = 0; i < mElements.size(); ++i) {
