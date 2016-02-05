@@ -48,7 +48,7 @@ namespace storm {
 #endif
 
         template<typename ValueType, storm::dd::DdType DdType>
-        void verifySymbolicModelWithAbstractionRefinementEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void verifySymbolicModelWithAbstractionRefinementEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
             for (auto const& formula : formulas) {
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifyProgramWithAbstractionRefinementEngine<DdType, ValueType>(program, formula, onlyInitialStatesRelevant));

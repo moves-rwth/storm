@@ -386,12 +386,13 @@ namespace storm {
     }
     
     template<storm::dd::DdType DdType, typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifyProgramWithAbstractionRefinementEngine(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula> const& formula) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifyProgramWithAbstractionRefinementEngine(storm::prism::Program const& program, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant = false) {
         STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Cannot treat non-MDP model using the abstraction refinement engine.");
         
         // FIXME: Cudd -> ValueType, double -> ValueType
         storm::modelchecker::GameBasedMdpModelChecker<storm::dd::DdType::CUDD, double> modelchecker(program);
-        return modelchecker.check(*formula);
+        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+        return modelchecker.check(task);
     }
 
     template<typename ValueType>

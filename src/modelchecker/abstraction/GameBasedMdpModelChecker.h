@@ -25,14 +25,16 @@ namespace storm {
             
             virtual ~GameBasedMdpModelChecker() override;
                         
-            virtual bool canHandle(storm::logic::Formula const& formula) const override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
             
-            virtual std::unique_ptr<CheckResult> checkProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& stateFormula) override;
+            virtual std::unique_ptr<CheckResult> checkProbabilityOperatorFormula(CheckTask<storm::logic::ProbabilityOperatorFormula> const& stateFormula) override;
             
-            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
-            virtual std::unique_ptr<CheckResult> computeEventuallyProbabilities(storm::logic::EventuallyFormula const& pathFormula, bool qualitative = false, boost::optional<OptimizationDirection> const& optimalityType = boost::optional<OptimizationDirection>()) override;
+            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeEventuallyProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) override;
             
         private:
+            void performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula> const& checkTask, storm::expressions::Expression const& targetStateExpression);
+            
             // The original program that was used to create this model checker.
             storm::prism::Program originalProgram;
             
