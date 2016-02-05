@@ -51,7 +51,7 @@ def run_storm_dft(filename, prop, parametric, quiet):
     dft_file = os.path.join(EXAMPLE_DIR, filename + ".dft")
     args = [STORM_PATH,
             dft_file,
-            '--prop', prop]
+            prop]
     if parametric:
         args.append('--parametric')
 
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     count = 0
     correct = 0
-    properties = ["ET=? [F \"failed\"]", "P=? [F \"failed\"]"]
+    properties = ['--expectedtime', '--probability']
     start = time.time()
     for index, prop in enumerate(properties):
         for (benchmark, parametric, result_original) in benchmarks:
