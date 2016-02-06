@@ -8,7 +8,9 @@
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
+#include <functional>
 
+#include "DFTElementType.h"
 #include "DFTState.h"
 #include "DFTStateSpaceGenerationQueues.h"
 #include "src/utility/constants.h"
@@ -132,7 +134,7 @@ namespace storm {
             /**
              *  Computes the independent unit of this element, that is, all elements which are direct or indirect successors of an element.
              */
-            virtual std::vector<size_t> independentUnit() const = 0;
+            virtual std::vector<size_t> independentUnit() const;
 
             /**
              *  Helper to independent unit computation
@@ -153,33 +155,15 @@ namespace storm {
              */
             virtual void extendSubDft(std::set<size_t> elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const;
 
-            void checkForSymmetricChildren() const;
+
+
+
+
+        protected:
+           // virtual bool checkIsomorphicSubDftHelper(DFTElement const& otherElem, std::vector<std::pair<DFTElement const&, DFTElement const&>>& mapping, std::vector<DFTElement const&> const& order ) const = 0;
 
         };
 
-
-        enum class DFTElementTypes {AND, COUNTING, OR, VOT, BE, CONSTF, CONSTS, PAND, SPARE, POR, FDEP, SEQAND};
-
-        inline bool isGateType(DFTElementTypes const& tp) {
-            switch(tp) {
-                case DFTElementTypes::AND:
-                case DFTElementTypes::COUNTING:
-                case DFTElementTypes::OR:
-                case DFTElementTypes::VOT:
-                case DFTElementTypes::PAND:
-                case DFTElementTypes::SPARE:
-                case DFTElementTypes::POR:
-                case DFTElementTypes::SEQAND:
-                    return true;
-                case DFTElementTypes::BE:
-                case DFTElementTypes::CONSTF:
-                case DFTElementTypes::CONSTS:
-                case DFTElementTypes::FDEP:
-                    return false;
-                default:
-                    assert(false);
-            }
-        }
 
 
 
@@ -281,7 +265,6 @@ namespace storm {
             }
 
 
-            
             virtual std::string toString() const override {
                 std::stringstream stream;
                 stream << "{" << this->name() << "} " << typestring() << "( ";
@@ -304,7 +287,7 @@ namespace storm {
                 return false;
             }
 
-            
+
         protected:
 
             void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
@@ -388,12 +371,6 @@ namespace storm {
             bool isColdBasicElement() const {
                 return storm::utility::isZero(mPassiveFailureRate);
             }
-
-            virtual std::vector<size_t> independentUnit() const override {
-                return {this->mId};
-            }
-
-
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
         };
 

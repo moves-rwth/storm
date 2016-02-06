@@ -32,6 +32,14 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::vector<size_t> DFTElement<ValueType>::independentUnit() const {
+            std::vector<size_t> res;
+            res.push_back(this->id());
+            // Extend for pdeps.
+            return res;
+        }
+
+        template<typename ValueType>
         void DFTElement<ValueType>::extendUnit(std::set<size_t>& unit) const {
             unit.insert(mId);
         }
@@ -62,11 +70,6 @@ namespace storm {
             }
         }
 
-        template<typename ValueType>
-        void DFTElement<ValueType>::checkForSymmetricChildren() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not implemented.");
-            assert(false);
-        }
 
         template<typename ValueType>
         bool DFTBE<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
