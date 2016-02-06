@@ -188,7 +188,7 @@ if(CUSTOM_BOOST_ROOT)
 	set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
 endif(CUSTOM_BOOST_ROOT)
 
-find_package(Boost REQUIRED)
+find_package(Boost 1.56.0 REQUIRED)
 
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
 	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
