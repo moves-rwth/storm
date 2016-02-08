@@ -46,7 +46,7 @@ void analyzeDFT(std::string filename, std::string property) {
 int main(int argc, char** argv) {
     if(argc < 2) {
         std::cout << "Storm-DyFTeE should be called with a filename as argument." << std::endl;
-        std::cout << "./storm-dft <filename> <optional pctl-formula> <optional --parametric>" << std::endl;
+        std::cout << "./storm-dft <filename> <--prop pctl-formula> <--parametric>" << std::endl;
         return 1;
     }
 
@@ -69,9 +69,14 @@ int main(int argc, char** argv) {
             level = log4cplus::TRACE_LOG_LEVEL;
         } else if (option == "--debug") {
             level = log4cplus::DEBUG_LOG_LEVEL;
-        } else {
+        } else if (option == "--prop") {
             assert(pctlFormula.empty());
-            pctlFormula = option;
+            ++i;
+            assert(i < argc);
+            pctlFormula = argv[i];
+        } else {
+            std::cout << "Option '" << option << "' not recognized." << std::endl;
+            return 1;
         }
     }
     assert(!pctlFormula.empty());
