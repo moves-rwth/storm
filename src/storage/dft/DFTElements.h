@@ -74,7 +74,11 @@ namespace storm {
             virtual bool isSpareGate() const {
                 return false;
             }
-            
+
+            virtual bool isDependency() const {
+                return false;
+            }
+
             virtual void setId(size_t newId) {
                 mId = newId;
             }
@@ -356,6 +360,79 @@ namespace storm {
             
         };
 
+
+        template<typename ValueType>
+        class DFTDependency : public DFTElement<ValueType> {
+
+            using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
+            using DFTBEPointer = std::shared_ptr<DFTBE<ValueType>>;
+            using DFTBEVector = std::vector<DFTBEPointer>;
+
+        protected:
+            std::string mNameTrigger;
+            std::string mNameDependent;
+            DFTGatePointer mTriggerEvent;
+            DFTBEPointer mDependentEvent;
+
+        public:
+            DFTDependency(size_t id, std::string const& name, std::string const& trigger, std::string const& dependent) :
+                DFTElement<ValueType>(id, name), mNameTrigger(trigger), mNameDependent(dependent)
+            {
+            }
+
+            virtual ~DFTDependency() {}
+
+            void initialize(DFTGatePointer triggerEvent, DFTBEPointer dependentEvent) {
+                assert(triggerEvent->name() == mNameTrigger);
+                assert(dependentEvent->name() == mNameDependent);
+                mTriggerEvent = triggerEvent;
+                mDependentEvent = dependentEvent;
+            }
+
+            std::string nameTrigger() {
+                return mNameTrigger;
+            }
+
+            std::string nameDependent() {
+                return mNameDependent;
+            }
+
+            DFTGatePointer const& triggerEvent() const {
+                assert(mTriggerEvent);
+                return mTriggerEvent;
+            }
+
+            DFTBEPointer const& dependentEvent() const {
+                assert(mDependentEvent);
+                return mDependentEvent;
+            }
+
+            virtual size_t nrChildren() const override {
+                return 1;
+            }
+
+            virtual bool isDependency() const override {
+                return true;
+            }
+
+            virtual std::vector<size_t> independentUnit() const override {
+                std::set<size_t> unit = {this->mId};
+                mDependentEvent->extendUnit(unit);
+                if(unit.count(mTriggerEvent->id()) != 0) {
+                    return {};
+                }
+                return std::vector<size_t>(unit.begin(), unit.end());
+            }
+
+            virtual std::string toString() const override {
+                std::stringstream stream;
+                stream << "{" << this->name() << "} FDEP(" << mTriggerEvent->name() << " => " << mDependentEvent->name() << ")";
+                return stream.str();
+            }
+
+        protected:
+
+        };
 
 
         template<typename ValueType>

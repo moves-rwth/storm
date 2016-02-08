@@ -107,7 +107,7 @@ namespace storm {
                     } else if (tokens[1] == "wsp" || tokens[1] == "csp") {
                         success = builder.addSpareElement(name, childNames);
                     } else if (boost::starts_with(tokens[1], "fdep")) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Functional dependencies currently not supported");
+                        success = builder.addFDepElement(name, childNames);
                     } else if (boost::starts_with(tokens[1], "lambda=")) {
                         ValueType failureRate = parseRationalExpression(tokens[1].substr(7));
                         ValueType dormancyFactor = parseRationalExpression(tokens[2].substr(5));

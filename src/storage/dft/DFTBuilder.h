@@ -19,12 +19,14 @@ namespace storm {
             using DFTElementVector = std::vector<DFTElementPointer>;
             using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
             using DFTGateVector = std::vector<DFTGatePointer>;
+            using DFTDependencyPointer = std::shared_ptr<DFTDependency<ValueType>>;
 
         private:
             std::size_t mNextId = 0;
             std::string topLevelIdentifier;
             std::unordered_map<std::string, DFTElementPointer> mElements;
             std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
+            std::vector<DFTDependencyPointer> mDependencies;
             
         public:
             DFTBuilder() {
@@ -51,6 +53,29 @@ namespace storm {
                 return addStandardGate(name, children, DFTElementTypes::SPARE);
             }
             
+            bool addFDepElement(std::string const& name, std::vector<std::string> const& children) {
+                assert(children.size() > 1);
+                if(mElements.count(name) != 0) {
+                    // Element with that name already exists.
+                    return false;
+                }
+                std::string trigger = children[0];
+                for (size_t i = 1; i < children.size(); ++i) {
+                    // TODO Matthias: better code
+                    std::stringstream stream;
+                    stream << name << "_" << i;
+                    std::string s = stream.str();
+                    if(mElements.count(s) != 0) {
+                        // Element with that name already exists.
+                        return false;
+                    }
+                    DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, s, trigger, children[i]);
+                    mElements[element->name()] = element;
+                    mDependencies.push_back(element);
+                }
+                return true;
+            }
+
             bool addVotElement(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
                 assert(children.size() > 0);
                 if(mElements.count(name) != 0) {

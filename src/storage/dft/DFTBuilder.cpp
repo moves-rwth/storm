@@ -18,9 +18,28 @@ namespace storm {
             for(auto& elem : mChildNames) {
                 DFTGatePointer gate = std::static_pointer_cast<DFTGate<ValueType>>(elem.first);
                 for(auto const& child : elem.second) {
-                    gate->pushBackChild(mElements[child]);
-                    mElements[child]->addParent(gate);
+                    auto itFind = mElements.find(child);
+                    if (itFind != mElements.end()) {
+                        // Child found
+                        DFTElementPointer childElement = itFind->second;
+                        assert(!childElement->isDependency());
+                        gate->pushBackChild(childElement);
+                        childElement->addParent(gate);
+                    } else {
+                        // Child not found -> find first dependent event to assure that child is dependency
+                        auto itFind = mElements.find(child + "_1");
+                        assert(itFind != mElements.end());
+                        assert(itFind->second->isDependency());
+                        STORM_LOG_TRACE("Ignore functional dependency " << child << " in gate " << gate->name());
+                    }
                 }
+            }
+
+            // Initialize dependencies
+            for (auto& dependency : mDependencies) {
+                DFTGatePointer triggerEvent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[dependency->nameTrigger()]);
+                std::shared_ptr<DFTBE<ValueType>> dependentEvent = std::static_pointer_cast<DFTBE<ValueType>>(mElements[dependency->nameDependent()]);
+                dependency->initialize(triggerEvent, dependentEvent);
             }
 
             // Sort elements topologically
@@ -40,7 +59,7 @@ namespace storm {
         template<typename ValueType>
         unsigned DFTBuilder<ValueType>::computeRank(DFTElementPointer const& elem) {
             if(elem->rank() == -1) {
-                if(elem->nrChildren() == 0) {
+                if(elem->nrChildren() == 0 || elem->isDependency()) {
                     elem->setRank(0);
                 } else {
                     DFTGatePointer gate = std::static_pointer_cast<DFTGate<ValueType>>(elem);
