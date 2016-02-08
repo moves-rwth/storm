@@ -1,0 +1,24 @@
+toplevel "System";
+"System" or "CPUfdep" "CPUunit" "Motorunit" "Pumpunit";
+
+"CPUfdep" fdep "trigger" "P" "B";
+"trigger" or "CS" "SS";
+"CS" lambda=0.2 dorm=0;
+"SS" lambda=0.2 dorm=0;
+"CPUunit" wsp "P" "B";
+"P" lambda=0.5 dorm=0;
+"B" lambda=0.5 dorm=0.5;
+
+"Motorunit" or "MP" "Motors";
+"MP" pand "MS" "MA";
+"Motors" csp "MA" "MB";
+"MS" lambda=0.01 dorm=0;
+"MA" lambda=1 dorm=0;
+"MB" lambda=1 dorm=0;
+
+"Pumpunit" and "PumpA" "PumpB";
+"PumpA" csp "PA" "PS";
+"PumpB" csp "PB" "PS";
+"PA" lambda=1 dorm=0;
+"PB" lambda=1 dorm=0;
+"PS" lambda=1 dorm=0;
