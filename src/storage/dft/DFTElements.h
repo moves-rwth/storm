@@ -371,12 +371,13 @@ namespace storm {
         protected:
             std::string mNameTrigger;
             std::string mNameDependent;
+            ValueType mProbability;
             DFTGatePointer mTriggerEvent;
             DFTBEPointer mDependentEvent;
 
         public:
-            DFTDependency(size_t id, std::string const& name, std::string const& trigger, std::string const& dependent) :
-                DFTElement<ValueType>(id, name), mNameTrigger(trigger), mNameDependent(dependent)
+            DFTDependency(size_t id, std::string const& name, std::string const& trigger, std::string const& dependent, ValueType probability) :
+                DFTElement<ValueType>(id, name), mNameTrigger(trigger), mNameDependent(dependent), mProbability(probability)
             {
             }
 
@@ -395,6 +396,10 @@ namespace storm {
 
             std::string nameDependent() {
                 return mNameDependent;
+            }
+
+            ValueType probability() {
+                return mProbability;
             }
 
             DFTGatePointer const& triggerEvent() const {
@@ -427,6 +432,9 @@ namespace storm {
             virtual std::string toString() const override {
                 std::stringstream stream;
                 stream << "{" << this->name() << "} FDEP(" << mTriggerEvent->name() << " => " << mDependentEvent->name() << ")";
+                if (!storm::utility::isOne(mProbability)) {
+                    stream << " with probability " << mProbability;
+                }
                 return stream.str();
             }
 
