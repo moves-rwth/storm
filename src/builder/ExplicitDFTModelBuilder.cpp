@@ -1,6 +1,7 @@
 #include "src/builder/ExplicitDFTModelBuilder.h"
 #include <src/models/sparse/Ctmc.h>
 #include <src/utility/constants.h>
+#include <src/exceptions/UnexpectedException.h>
 #include <map>
 
 namespace storm {
@@ -32,6 +33,7 @@ namespace storm {
             // Build transition matrix
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();
             STORM_LOG_DEBUG("TransitionMatrix: " << std::endl << modelComponents.transitionMatrix);
+            assert(modelComponents.transitionMatrix.getRowCount() == modelComponents.transitionMatrix.getColumnCount());
 
             // Build state labeling
             modelComponents.stateLabeling = storm::models::sparse::StateLabeling(mStates.size());
@@ -90,6 +92,8 @@ namespace storm {
                     STORM_LOG_TRACE("Added self loop for " << state->getId());
                     // No further exploration required
                     continue;
+                } else {
+                    STORM_LOG_THROW(state->nrFailableBEs() > 0, storm::exceptions::UnexpectedException, "State " << state->getId() << " is no target state but behaves like one");
                 }
 
                 // Let BE fail

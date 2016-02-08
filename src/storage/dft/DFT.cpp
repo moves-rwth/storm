@@ -133,10 +133,11 @@ namespace storm {
             for (auto const& elem : mElements) {
                 stream << state->getElementStateInt(elem->id());
                 if(elem->isSpareGate()) {
+                    stream << "[";
                     if(state->isActiveSpare(elem->id())) {
-                        stream << " actively";
+                        stream << "actively ";
                     }
-                    stream << " using " << state->uses(elem->id());
+                    stream << "using " << state->uses(elem->id()) << "]";
                 }
             }
             return stream.str();
