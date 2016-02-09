@@ -2,6 +2,7 @@
 #include <src/models/sparse/MarkovAutomaton.h>
 #include <src/models/sparse/CTMC.h>
 #include <src/utility/constants.h>
+#include <src/utility/vector.h>
 #include <src/exceptions/UnexpectedException.h>
 #include <map>
 
@@ -37,13 +38,7 @@ namespace storm {
             // Build transition matrix
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();
             STORM_LOG_DEBUG("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
-            // TODO: easier output for vectors
-            std::stringstream stream;
-            for (uint_fast64_t i = 0; i < modelComponents.exitRates.size() - 1; ++i) {
-                stream << modelComponents.exitRates[i] << ", ";
-            }
-            stream << modelComponents.exitRates.back();
-            STORM_LOG_DEBUG("Exit rates: " << stream.str());
+            STORM_LOG_DEBUG("Exit rates: " << modelComponents.exitRates);
             STORM_LOG_DEBUG("Markovian states: " << modelComponents.markovianStates);
             assert(modelComponents.transitionMatrix.getRowCount() == modelComponents.transitionMatrix.getColumnCount());
 
