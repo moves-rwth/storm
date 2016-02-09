@@ -28,14 +28,23 @@ namespace storm {
             storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
 
             // Begin model generation
-            exploreStates(stateQueue, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);
+            bool deterministic = exploreStates(stateQueue, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);
             STORM_LOG_DEBUG("Generated " << mStates.size() << " states");
+            STORM_LOG_DEBUG("Model is " << (deterministic ? "deterministic" : "non-deterministic"));
 
             // Build Markov Automaton
             modelComponents.markovianStates = storm::storage::BitVector(mStates.size(), tmpMarkovianStates);
             // Build transition matrix
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();
-            STORM_LOG_DEBUG("TransitionMatrix: " << std::endl << modelComponents.transitionMatrix);
+            STORM_LOG_DEBUG("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
+            // TODO: easier output for vectors
+            std::stringstream stream;
+            for (uint_fast64_t i = 0; i < modelComponents.exitRates.size() - 1; ++i) {
+                stream << modelComponents.exitRates[i] << ", ";
+            }
+            stream << modelComponents.exitRates.back();
+            STORM_LOG_DEBUG("Exit rates: " << stream.str());
+            STORM_LOG_DEBUG("Markovian states: " << modelComponents.markovianStates);
             assert(modelComponents.transitionMatrix.getRowCount() == modelComponents.transitionMatrix.getColumnCount());
 
             // Build state labeling
@@ -68,22 +77,42 @@ namespace storm {
                 }
             }
 
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> model = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates));
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
+            if (deterministic) {
+                // Turn the probabilities into rates by multiplying each row with the exit rate of the state.
+                // TODO Matthias: avoid transforming back and forth
+                storm::storage::SparseMatrix<ValueType> rateMatrix(modelComponents.transitionMatrix);
+                for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {
+                    for (auto& entry : rateMatrix.getRow(row)) {
+                        entry.setValue(entry.getValue() * modelComponents.exitRates[row]);
+                    }
+                }
+
+                model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(rateMatrix), std::move(modelComponents.stateLabeling));
+            } else {
+                model = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates));
+
+            }
             model->printModelInformationToStream(std::cout);
             return model;
         }
 
         template <typename ValueType>
-        void ExplicitDFTModelBuilder<ValueType>::exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates) {
+        bool ExplicitDFTModelBuilder<ValueType>::exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates) {
 
             assert(exitRates.empty());
             assert(markovianStates.empty());
-            // TODO Matthias: set Markovian states
+            // TODO Matthias: set Markovian states directly as bitvector?
             std::map<size_t, ValueType> outgoingTransitions;
+            size_t rowOffset = 0; // Captures number of non-deterministic choices
+            ValueType exitRate;
+            bool deterministic = true;
+            //TODO Matthias: Handle dependencies!
 
             while (!stateQueue.empty()) {
                 // Initialization
                 outgoingTransitions.clear();
+                exitRate = storm::utility::zero<ValueType>();
 
                 // Consider next state
                 DFTStatePointer state = stateQueue.front();
@@ -93,10 +122,12 @@ namespace storm {
 
                 // Add self loop for target states
                 if (mDft.hasFailed(state) || mDft.isFailsafe(state)) {
-                    transitionMatrixBuilder.addNextValue(state->getId(), state->getId(), storm::utility::one<ValueType>());
+                    transitionMatrixBuilder.newRowGroup(state->getId() + rowOffset);
+                    transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, state->getId(), storm::utility::one<ValueType>());
                     STORM_LOG_TRACE("Added self loop for " << state->getId());
                     exitRates.push_back(storm::utility::one<ValueType>());
                     assert(exitRates.size()-1 == state->getId());
+                    markovianStates.push_back(state->getId());
                     // No further exploration required
                     continue;
                 } else {
@@ -173,19 +204,23 @@ namespace storm {
                         outgoingTransitions.insert(std::make_pair(newState->getId(), rate));
                         STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newState->getId() << " with " << rate);
                     }
+                    exitRate += rate;
+
                 } // end while failing BE
 
                 // Add all transitions
-                ValueType exitRate = storm::utility::zero<ValueType>();
+                transitionMatrixBuilder.newRowGroup(state->getId() + rowOffset);
                 for (auto it = outgoingTransitions.begin(); it != outgoingTransitions.end(); ++it)
                 {
-                    transitionMatrixBuilder.addNextValue(state->getId(), it->first, it->second);
-                    exitRate += it->second;
+                    ValueType probability = it->second / exitRate; // Transform rate to probability
+                    transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, it->first, probability);
                 }
                 exitRates.push_back(exitRate);
                 assert(exitRates.size()-1 == state->getId());
+                markovianStates.push_back(state->getId());
 
             } // end while queue
+            return deterministic;
         }
 
         // Explicitly instantiate the class.
