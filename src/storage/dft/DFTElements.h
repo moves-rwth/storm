@@ -158,7 +158,6 @@ namespace storm {
 
 
 
-
         protected:
            // virtual bool checkIsomorphicSubDftHelper(DFTElement const& otherElem, std::vector<std::pair<DFTElement const&, DFTElement const&>>& mapping, std::vector<DFTElement const&> const& order ) const = 0;
 
