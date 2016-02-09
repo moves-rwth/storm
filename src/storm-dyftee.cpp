@@ -6,7 +6,7 @@
 #include "utility/storm.h"
 
 /*!
- * Load DFT from filename, build corresponding CTMC and check against given property.
+ * Load DFT from filename, build corresponding Markov Automaton and check against given property.
  *
  * @param filename Path to DFT file in Galileo format.
  * @param property PCTC formula capturing the property to check.
@@ -19,21 +19,21 @@ void analyzeDFT(std::string filename, std::string property) {
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
     std::cout << "Built data structure" << std::endl;
 
-    // Building CTMC
-    std::cout << "Building CTMC..." << std::endl;
+    // Building Markov Automaton
+    std::cout << "Building Markov Automaton..." << std::endl;
     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft);
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildCTMC();
-    std::cout << "Built CTMC" << std::endl;
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildMA();
+    std::cout << "Built Markov Automaton" << std::endl;
 
     // Model checking
     std::cout << "Model checking..." << std::endl;
     std::vector<std::shared_ptr<storm::logic::Formula>> formulas = storm::parseFormulasForExplicit(property);
     assert(formulas.size() == 1);
-    std::unique_ptr<storm::modelchecker::CheckResult> resultCtmc(storm::verifySparseModel(model, formulas[0]));
-    assert(resultCtmc);
+    std::unique_ptr<storm::modelchecker::CheckResult> resultMA(storm::verifySparseModel(model, formulas[0]));
+    assert(resultMA);
     std::cout << "Result: ";
-    resultCtmc->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-    std::cout << *resultCtmc << std::endl;
+    resultMA->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+    std::cout << *resultMA << std::endl;
 }
 
 /*!

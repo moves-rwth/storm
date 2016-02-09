@@ -69,15 +69,12 @@ namespace storm {
                 }
 
                 for (size_t i = 1; i < children.size(); ++i) {
-                    // TODO Matthias: better code
-                    std::stringstream stream;
-                    stream << name << "_" << i;
-                    std::string s = stream.str();
-                    if(mElements.count(s) != 0) {
+                    std::string nameFdep = name + "_" + std::to_string(i);
+                    if(mElements.count(nameFdep) != 0) {
                         // Element with that name already exists.
                         return false;
                     }
-                    DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, s, trigger, children[i], storm::utility::one<ValueType>());
+                    DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, nameFdep, trigger, children[i], storm::utility::one<ValueType>());
                     mElements[element->name()] = element;
                     mDependencies.push_back(element);
                 }
