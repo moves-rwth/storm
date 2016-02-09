@@ -1,5 +1,6 @@
 #include "src/builder/ExplicitDFTModelBuilder.h"
 #include <src/models/sparse/MarkovAutomaton.h>
+#include <src/models/sparse/CTMC.h>
 #include <src/utility/constants.h>
 #include <src/exceptions/UnexpectedException.h>
 #include <map>
@@ -13,7 +14,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType>::buildMA() {
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType>::buildModel() {
             // Initialize
             DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, newIndex++);
             mStates.findOrAdd(state->status(), state);

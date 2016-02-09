@@ -53,7 +53,7 @@ namespace storm {
                 // 2^nrBE is upper bound for state space
             }
 
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildMA();
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel();
 
         private:
             void exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates);
