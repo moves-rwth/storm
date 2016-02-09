@@ -53,28 +53,36 @@ namespace storm {
                 return addStandardGate(name, children, DFTElementTypes::SPARE);
             }
             
-            bool addFDepElement(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
+            bool addDepElement(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
                 assert(children.size() > 1);
                 if(mElements.count(name) != 0) {
                     // Element with that name already exists.
                     return false;
+                }
+
+                if (storm::utility::isZero(probability)) {
+                    // Element is superfluous
+                    return true;
                 }
                 std::string trigger = children[0];
 
                 //TODO Matthias: collect constraints for SMT solving
                 //0 <= probability <= 1
                 if (!storm::utility::isOne(probability) && children.size() > 2) {
-                    //TODO Matthias: introduce additional element for probability and then add fdeps with probability 1 to children
-                    std::cerr << "Probability != 1 currently not supported." << std::endl;
+                    //TODO Matthias: introduce additional element for probability and then add pdeps with probability 1 to children
+                    std::cerr << "Probability != 1 for more than one child currently not supported." << std::endl;
+                    return false;
                 }
 
                 for (size_t i = 1; i < children.size(); ++i) {
-                    std::string nameFdep = name + "_" + std::to_string(i);
-                    if(mElements.count(nameFdep) != 0) {
+                    std::string nameDep = name + "_" + std::to_string(i);
+                    if(mElements.count(nameDep) != 0) {
                         // Element with that name already exists.
+                        std::cerr << "Element with name: " << nameDep << " already exists." << std::endl;
                         return false;
                     }
-                    DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, nameFdep, trigger, children[i], storm::utility::one<ValueType>());
+                    assert(storm::utility::isOne(probability) || children.size() == 2);
+                    DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, nameDep, trigger, children[i], probability);
                     mElements[element->name()] = element;
                     mDependencies.push_back(element);
                 }
