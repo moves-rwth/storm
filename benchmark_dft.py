@@ -20,6 +20,7 @@ benchmarks = [
     ("cps", False, ["inf", 0.333333]),
     ("deathegg", False, [46.667, 1]),
     ("fdep", False, [0.666667, 1]),
+    ("fdep2", False, [2, 1]),
     #("ftpp_complex", False, [0, 1]), # Compute
     #("ftpp_large", False, [0, 1]), # Compute
     #("ftpp_standard", False, [0, 1]), # Compute
