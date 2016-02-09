@@ -40,7 +40,7 @@ namespace storm {
             STORM_LOG_DEBUG("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
             STORM_LOG_DEBUG("Exit rates: " << modelComponents.exitRates);
             STORM_LOG_DEBUG("Markovian states: " << modelComponents.markovianStates);
-            assert(modelComponents.transitionMatrix.getRowCount() == modelComponents.transitionMatrix.getColumnCount());
+            assert(!deterministic || modelComponents.transitionMatrix.getRowCount() == modelComponents.transitionMatrix.getColumnCount());
 
             // Build state labeling
             modelComponents.stateLabeling = storm::models::sparse::StateLabeling(mStates.size());
@@ -100,24 +100,26 @@ namespace storm {
             // TODO Matthias: set Markovian states directly as bitvector?
             std::map<size_t, ValueType> outgoingTransitions;
             size_t rowOffset = 0; // Captures number of non-deterministic choices
-            ValueType exitRate;
             bool deterministic = true;
-            //TODO Matthias: Handle dependencies!
 
             while (!stateQueue.empty()) {
                 // Initialization
                 outgoingTransitions.clear();
-                exitRate = storm::utility::zero<ValueType>();
+                ValueType exitRate = storm::utility::zero<ValueType>();
 
                 // Consider next state
                 DFTStatePointer state = stateQueue.front();
                 stateQueue.pop();
 
+                bool hasDependencies = state->nrFailableDependencies() > 0;
+                deterministic &= !hasDependencies;
+                size_t failableCount = hasDependencies ? state->nrFailableDependencies() : state->nrFailableBEs();
                 size_t smallest = 0;
+
+                transitionMatrixBuilder.newRowGroup(state->getId() + rowOffset);
 
                 // Add self loop for target states
                 if (mDft.hasFailed(state) || mDft.isFailsafe(state)) {
-                    transitionMatrixBuilder.newRowGroup(state->getId() + rowOffset);
                     transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, state->getId(), storm::utility::one<ValueType>());
                     STORM_LOG_TRACE("Added self loop for " << state->getId());
                     exitRates.push_back(storm::utility::one<ValueType>());
@@ -130,18 +132,21 @@ namespace storm {
                 }
 
                 // Let BE fail
-                while (smallest < state->nrFailableBEs()) {
+                while (smallest < failableCount) {
                     STORM_LOG_TRACE("exploring from: " << mDft.getStateString(state));
 
                     // Construct new state as copy from original one
                     DFTStatePointer newState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
                     std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType>>, bool> nextBEPair = newState->letNextBEFail(smallest++);
                     std::shared_ptr<storm::storage::DFTBE<ValueType>> nextBE = nextBEPair.first;
-                    if (nextBE == nullptr) {
-                        break;
-                    }
+                    assert(nextBE);
+                    assert(nextBEPair.second == hasDependencies);
                     STORM_LOG_TRACE("with the failure of: " << nextBE->name() << " [" << nextBE->id() << "]");
 
+                    // Update failable dependencies
+                    newState->updateFailableDependencies(nextBE->id());
+
+                    // Propagate failures
                     storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
 
                     for (DFTGatePointer parent : nextBE->parents()) {
@@ -179,42 +184,53 @@ namespace storm {
                         stateQueue.push(newState);
                     }
 
-                    // Set failure rate according to usage
-                    bool isUsed = true;
-                    if (mDft.hasRepresentant(nextBE->id())) {
-                        DFTElementPointer representant = mDft.getRepresentant(nextBE->id());
-                        // Used must be checked for the state we are coming from as this state is responsible for the
-                        // rate and not the new state we are going to
-                        isUsed = state->isUsed(representant->id());
-                    }
-                    STORM_LOG_TRACE("BE " << nextBE->name() << " is " << (isUsed ? "used" : "not used"));
-                    ValueType rate = isUsed ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
-                    auto resultFind = outgoingTransitions.find(newState->getId());
-                    if (resultFind != outgoingTransitions.end()) {
-                        // Add to existing transition
-                        resultFind->second += rate;
-                        STORM_LOG_TRACE("Updated transition from " << state->getId() << " to " << resultFind->first << " with " << rate << " to " << resultFind->second);
+                    // Set transitions
+                    if (hasDependencies) {
+                        // Failure is due to dependency -> add non-deterministic choice
+                        transitionMatrixBuilder.addNextValue(state->getId() + rowOffset++, newState->getId(), storm::utility::one<ValueType>());
                     } else {
-                        // Insert new transition
-                        outgoingTransitions.insert(std::make_pair(newState->getId(), rate));
-                        STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newState->getId() << " with " << rate);
+                        // Set failure rate according to usage
+                        bool isUsed = true;
+                        if (mDft.hasRepresentant(nextBE->id())) {
+                            DFTElementPointer representant = mDft.getRepresentant(nextBE->id());
+                            // Used must be checked for the state we are coming from as this state is responsible for the
+                            // rate and not the new state we are going to
+                            isUsed = state->isUsed(representant->id());
+                        }
+                        STORM_LOG_TRACE("BE " << nextBE->name() << " is " << (isUsed ? "used" : "not used"));
+                        ValueType rate = isUsed ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
+                        auto resultFind = outgoingTransitions.find(newState->getId());
+                        if (resultFind != outgoingTransitions.end()) {
+                            // Add to existing transition
+                            resultFind->second += rate;
+                            STORM_LOG_TRACE("Updated transition from " << state->getId() << " to " << resultFind->first << " with " << rate << " to " << resultFind->second);
+                        } else {
+                            // Insert new transition
+                            outgoingTransitions.insert(std::make_pair(newState->getId(), rate));
+                            STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newState->getId() << " with " << rate);
+                        }
+                        exitRate += rate;
                     }
-                    exitRate += rate;
 
                 } // end while failing BE
 
-                // Add all transitions
-                transitionMatrixBuilder.newRowGroup(state->getId() + rowOffset);
-                for (auto it = outgoingTransitions.begin(); it != outgoingTransitions.end(); ++it)
-                {
-                    ValueType probability = it->second / exitRate; // Transform rate to probability
-                    transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, it->first, probability);
+                if (hasDependencies) {
+                    rowOffset--; // One increment to many
+                } else {
+                    // Add all probability transitions
+                    for (auto it = outgoingTransitions.begin(); it != outgoingTransitions.end(); ++it)
+                    {
+                        ValueType probability = it->second / exitRate; // Transform rate to probability
+                        transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, it->first, probability);
+                    }
+
+                    markovianStates.push_back(state->getId());
                 }
                 exitRates.push_back(exitRate);
                 assert(exitRates.size()-1 == state->getId());
-                markovianStates.push_back(state->getId());
 
             } // end while queue
+            assert(!deterministic || rowOffset == 0);
             return deterministic;
         }
 
