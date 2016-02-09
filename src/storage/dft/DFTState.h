@@ -5,6 +5,7 @@
 #include "DFTElementState.h"
 
 #include <sstream>
+#include <memory>
 
 namespace storm {
     namespace storage {

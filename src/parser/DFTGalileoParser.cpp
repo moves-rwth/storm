@@ -54,7 +54,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Exception during file opening on " << filename << ".");
                 return false;
             }
-            file.exceptions( 0 );
+            file.exceptions( std::ifstream::goodbit );
 
             std::string line;
             bool generalSuccess = true;
