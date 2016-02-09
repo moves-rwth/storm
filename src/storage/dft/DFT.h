@@ -51,6 +51,7 @@ namespace storm {
             size_t mStateSize;
             std::map<size_t, size_t> mActivationIndex;
             std::map<size_t, std::vector<size_t>> mSpareModules;
+            std::vector<size_t> mDependencies;
             std::vector<size_t> mTopModule;
             std::vector<size_t> mIdToFailureIndex;
             std::map<size_t, size_t> mUsageIndex;
@@ -120,6 +121,10 @@ namespace storm {
                 }
             }
             
+            std::vector<size_t> const& getDependencies() const {
+                return mDependencies;
+            }
+
             void propagateActivation(DFTState<ValueType>& state, size_t representativeId) const {
                 state.activate(representativeId);
                 for(size_t id : module(representativeId)) {

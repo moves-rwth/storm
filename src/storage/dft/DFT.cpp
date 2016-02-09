@@ -13,13 +13,13 @@ namespace storm {
             size_t stateIndex = 0;
             mUsageInfoBits = storm::utility::math::uint64_log2(mElements.size()-1)+1;
 
-            for(auto& elem : mElements) {
+            for (auto& elem : mElements) {
                 mIdToFailureIndex.push_back(stateIndex);
                 stateIndex += 2;
                 if(elem->isBasicElement()) {
                     ++mNrOfBEs;
                 }
-                else if(elem->isSpareGate()) {
+                else if (elem->isSpareGate()) {
                     ++mNrOfSpares;
                     for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
                         if(mActivationIndex.count(spareReprs->id()) == 0) {
@@ -41,6 +41,8 @@ namespace storm {
                     mUsageIndex.insert(std::make_pair(elem->id(), stateIndex));
                     stateIndex += mUsageInfoBits;
 
+                } else if (elem->isDependency()) {
+                    mDependencies.push_back(elem->id());
                 }
             }
 
@@ -135,10 +137,11 @@ namespace storm {
             for (auto const& elem : mElements) {
                 stream << state->getElementStateInt(elem->id());
                 if(elem->isSpareGate()) {
+                    stream << "[";
                     if(state->isActiveSpare(elem->id())) {
-                        stream << " actively";
+                        stream << "actively ";
                     }
-                    stream << " using " << state->uses(elem->id());
+                    stream << "using " << state->uses(elem->id()) << "]";
                 }
             }
             return stream.str();

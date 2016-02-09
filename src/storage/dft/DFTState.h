@@ -5,6 +5,7 @@
 #include "DFTElementState.h"
 
 #include <sstream>
+#include <memory>
 
 namespace storm {
     namespace storage {
@@ -24,6 +25,7 @@ namespace storm {
             size_t mId;
             std::vector<size_t> mInactiveSpares;
             std::vector<size_t> mIsCurrentlyFailableBE;
+            std::vector<size_t> mFailableDependencies;
             std::vector<size_t> mUsedRepresentants;
             bool mValid = true;
             const DFT<ValueType>& mDft;
@@ -109,6 +111,17 @@ namespace storm {
                 return mIsCurrentlyFailableBE.size();
             }
 
+            size_t nrFailableDependencies() const {
+                return mFailableDependencies.size();
+            }
+
+            /**
+             * Sets all failable BEs due to dependencies from newly failed element
+             * @param id Id of the newly failed element
+             * @return true if failable dependent events exist
+             */
+            bool updateFailableDependencies(size_t id);
+
             /**
              * Sets the next BE as failed
              * @param smallestIndex Index in currentlyFailableBE of BE to fail
@@ -118,17 +131,31 @@ namespace storm {
             
             std::string getCurrentlyFailableString() const {
                 std::stringstream stream;
-                auto it = mIsCurrentlyFailableBE.begin();
-                stream << "{";
-                if(it != mIsCurrentlyFailableBE.end()) {
-                    stream << *it;
-                }
-                ++it;
-                while(it != mIsCurrentlyFailableBE.end()) {
-                    stream << ", " << *it;
+                if (nrFailableDependencies() > 0) {
+                    auto it = mFailableDependencies.begin();
+                    stream << "{Dependencies: ";
+                    if (it != mFailableDependencies.end()) {
+                        stream << *it;
+                    }
                     ++it;
+                    while(it != mFailableDependencies.end()) {
+                        stream << ", " << *it;
+                        ++it;
+                    }
+                    stream << "} ";
+                } else {
+                    auto it = mIsCurrentlyFailableBE.begin();
+                    stream << "{";
+                    if(it != mIsCurrentlyFailableBE.end()) {
+                        stream << *it;
+                    }
+                    ++it;
+                    while(it != mIsCurrentlyFailableBE.end()) {
+                        stream << ", " << *it;
+                        ++it;
+                    }
+                    stream << "}";
                 }
-                stream << "}";
                 return stream.str();
             }
 

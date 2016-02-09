@@ -19,12 +19,14 @@ namespace storm {
             using DFTElementVector = std::vector<DFTElementPointer>;
             using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
             using DFTGateVector = std::vector<DFTGatePointer>;
+            using DFTDependencyPointer = std::shared_ptr<DFTDependency<ValueType>>;
 
         private:
             std::size_t mNextId = 0;
             std::string topLevelIdentifier;
             std::unordered_map<std::string, DFTElementPointer> mElements;
             std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
+            std::vector<DFTDependencyPointer> mDependencies;
             
         public:
             DFTBuilder() {
@@ -51,6 +53,42 @@ namespace storm {
                 return addStandardGate(name, children, DFTElementType::SPARE);
             }
             
+            bool addDepElement(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
+                assert(children.size() > 1);
+                if(mElements.count(name) != 0) {
+                    // Element with that name already exists.
+                    return false;
+                }
+
+                if (storm::utility::isZero(probability)) {
+                    // Element is superfluous
+                    return true;
+                }
+                std::string trigger = children[0];
+
+                //TODO Matthias: collect constraints for SMT solving
+                //0 <= probability <= 1
+                if (!storm::utility::isOne(probability) && children.size() > 2) {
+                    //TODO Matthias: introduce additional element for probability and then add pdeps with probability 1 to children
+                    std::cerr << "Probability != 1 for more than one child currently not supported." << std::endl;
+                    return false;
+                }
+
+                for (size_t i = 1; i < children.size(); ++i) {
+                    std::string nameDep = name + "_" + std::to_string(i);
+                    if(mElements.count(nameDep) != 0) {
+                        // Element with that name already exists.
+                        std::cerr << "Element with name: " << nameDep << " already exists." << std::endl;
+                        return false;
+                    }
+                    assert(storm::utility::isOne(probability) || children.size() == 2);
+                    DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, nameDep, trigger, children[i], probability);
+                    mElements[element->name()] = element;
+                    mDependencies.push_back(element);
+                }
+                return true;
+            }
+
             bool addVotElement(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
                 assert(children.size() > 0);
                 if(mElements.count(name) != 0) {

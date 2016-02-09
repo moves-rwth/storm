@@ -54,7 +54,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Exception during file opening on " << filename << ".");
                 return false;
             }
-            file.exceptions( 0 );
+            file.exceptions( std::ifstream::goodbit );
 
             std::string line;
             bool generalSuccess = true;
@@ -106,8 +106,11 @@ namespace storm {
                         success = builder.addPandElement(name, childNames);
                     } else if (tokens[1] == "wsp" || tokens[1] == "csp") {
                         success = builder.addSpareElement(name, childNames);
-                    } else if (boost::starts_with(tokens[1], "fdep")) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Functional dependencies currently not supported");
+                    } else if (tokens[1] == "fdep") {
+                        success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
+                    } else if (boost::starts_with(tokens[1], "pdep=")) {
+                        ValueType probability = parseRationalExpression(tokens[1].substr(5));
+                        success = builder.addDepElement(name, childNames, probability);
                     } else if (boost::starts_with(tokens[1], "lambda=")) {
                         ValueType failureRate = parseRationalExpression(tokens[1].substr(7));
                         ValueType dormancyFactor = parseRationalExpression(tokens[2].substr(5));

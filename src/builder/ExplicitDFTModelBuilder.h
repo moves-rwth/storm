@@ -16,7 +16,7 @@
 namespace storm {
     namespace builder {
 
-        template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename IndexType = uint32_t>
+        template<typename ValueType>
         class ExplicitDFTModelBuilder {
 
             using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
@@ -33,8 +33,11 @@ namespace storm {
                 // The state labeling.
                 storm::models::sparse::StateLabeling stateLabeling;
 
-                // The reward models associated with the model.
-                std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<typename RewardModelType::ValueType>> rewardModels;
+                // The Markovian states.
+                storm::storage::BitVector markovianStates;
+
+                // The exit rates.
+                std::vector<ValueType> exitRates;
 
                 // A vector that stores a labeling for each choice.
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
@@ -50,10 +53,10 @@ namespace storm {
                 // 2^nrBE is upper bound for state space
             }
 
-            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> buildCTMC();
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel();
 
         private:
-            void exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder);
+            bool exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates);
 
         };
     }

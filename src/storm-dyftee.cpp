@@ -6,7 +6,7 @@
 #include "utility/storm.h"
 
 /*!
- * Load DFT from filename, build corresponding CTMC and check against given property.
+ * Load DFT from filename, build corresponding Model and check against given property.
  *
  * @param filename Path to DFT file in Galileo format.
  * @param property PCTC formula capturing the property to check.
@@ -19,21 +19,21 @@ void analyzeDFT(std::string filename, std::string property) {
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
     std::cout << "Built data structure" << std::endl;
 
-    // Building CTMC
-    std::cout << "Building CTMC..." << std::endl;
+    // Building Markov Automaton
+    std::cout << "Building Model..." << std::endl;
     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft);
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildCTMC();
-    std::cout << "Built CTMC" << std::endl;
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel();
+    std::cout << "Built Model" << std::endl;
 
     // Model checking
     std::cout << "Model checking..." << std::endl;
     std::vector<std::shared_ptr<storm::logic::Formula>> formulas = storm::parseFormulasForExplicit(property);
     assert(formulas.size() == 1);
-    std::unique_ptr<storm::modelchecker::CheckResult> resultCtmc(storm::verifySparseModel(model, formulas[0]));
-    assert(resultCtmc);
+    std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formulas[0]));
+    assert(result);
     std::cout << "Result: ";
-    resultCtmc->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-    std::cout << *resultCtmc << std::endl;
+    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+    std::cout << *result << std::endl;
 }
 
 /*!
@@ -46,7 +46,7 @@ void analyzeDFT(std::string filename, std::string property) {
 int main(int argc, char** argv) {
     if(argc < 2) {
         std::cout << "Storm-DyFTeE should be called with a filename as argument." << std::endl;
-        std::cout << "./storm-dft <filename> <optional pctl-formula> <optional --parametric>" << std::endl;
+        std::cout << "./storm-dft <filename> <--prop pctl-formula> <--parametric>" << std::endl;
         return 1;
     }
 
@@ -54,19 +54,32 @@ int main(int argc, char** argv) {
     bool parametric = false;
     log4cplus::LogLevel level = log4cplus::WARN_LOG_LEVEL;
     std::string filename = argv[1];
-    std::string pctlFormula = "Pmax=?[true U \"failed\"]";
+    std::string pctlFormula = "";
     for (int i = 2; i < argc; ++i) {
         std::string option = argv[i];
         if (option == "--parametric") {
             parametric = true;
+        } else if (option == "--expectedtime") {
+            assert(pctlFormula.empty());
+            pctlFormula = "ET=?[F \"failed\"]";
+        } else if (option == "--probability") {
+            assert(pctlFormula.empty());
+            pctlFormula = "P=? [F \"failed\"]";
         } else if (option == "--trace") {
             level = log4cplus::TRACE_LOG_LEVEL;
         } else if (option == "--debug") {
             level = log4cplus::DEBUG_LOG_LEVEL;
+        } else if (option == "--prop") {
+            assert(pctlFormula.empty());
+            ++i;
+            assert(i < argc);
+            pctlFormula = argv[i];
         } else {
-            pctlFormula = option;
+            std::cout << "Option '" << option << "' not recognized." << std::endl;
+            return 1;
         }
     }
+    assert(!pctlFormula.empty());
 
     storm::utility::setUp();
     logger.setLogLevel(level);

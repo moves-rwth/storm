@@ -13,10 +13,17 @@ EXAMPLE_DIR= "/Users/mvolk/develop/storm/examples/dft/"
 benchmarks = [ 
     ("and", False, [3, 1]),
     ("and_param", True, ["(4*x^2+2*x+1)/((x) * (2*x+1))", "1"]),
+    ("cardiac", False, [11378, 1]),
+    ("cas", False, [0.859736, 1]),
     ("cm2", False, [0.256272, 1]),
     #("cm4", False, [0, 1]),
     ("cps", False, ["inf", 0.333333]),
-    #("fdep", False, [0, 1]),
+    ("deathegg", False, [46.667, 1]),
+    ("fdep", False, [0.666667, 1]),
+    ("fdep2", False, [2, 1]),
+    #("ftpp_complex", False, [0, 1]), # Compute
+    #("ftpp_large", False, [0, 1]), # Compute
+    #("ftpp_standard", False, [0, 1]), # Compute
     ("mdcs", False, [2.85414, 1]),
     ("mdcs2", False, [2.85414, 1]),
     ("mp", False, [1.66667, 1]),
@@ -51,7 +58,7 @@ def run_storm_dft(filename, prop, parametric, quiet):
     dft_file = os.path.join(EXAMPLE_DIR, filename + ".dft")
     args = [STORM_PATH,
             dft_file,
-            '--prop', prop]
+            prop]
     if parametric:
         args.append('--parametric')
 
@@ -59,8 +66,7 @@ def run_storm_dft(filename, prop, parametric, quiet):
     # Get result
     match = re.search(r'Result: \[(.*)\]', output)
     if not match:
-        print("No valid result found in: " + output)
-        return
+        return None
     
     result = match.group(1)
     return result
@@ -88,7 +94,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     count = 0
     correct = 0
-    properties = ["ET=? [F \"failed\"]", "P=? [F \"failed\"]"]
+    properties = ['--expectedtime', '--probability']
     start = time.time()
     for index, prop in enumerate(properties):
         for (benchmark, parametric, result_original) in benchmarks:
@@ -98,6 +104,10 @@ if __name__ == "__main__":
             if args.debuglevel > 0:
                 print("Running '{}' with property '{}'".format(benchmark, prop))
             result = run_storm_dft(benchmark, prop, parametric, args.debuglevel<2)
+            if result is None:
+                print("Error occurred on example '{}' with property '{}'".format(benchmark, prop))
+                continue
+
             if not parametric:
                 # Float
                 result = float(result)
