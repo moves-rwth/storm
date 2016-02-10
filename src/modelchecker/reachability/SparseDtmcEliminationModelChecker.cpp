@@ -260,10 +260,10 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             
             // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
-            FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(transitionMatrix);
-            flexibleMatrix.filter(maybeStates, maybeStates);
-            FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(backwardTransitions);
-            flexibleBackwardTransitions.filter(maybeStates, maybeStates);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(transitionMatrix);
+            flexibleMatrix.createSubmatrix(maybeStates, maybeStates);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardTransitions);
+            flexibleBackwardTransitions.createSubmatrix(maybeStates, maybeStates);
             auto conversionEnd = std::chrono::high_resolution_clock::now();
             
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
@@ -345,11 +345,11 @@ namespace storm {
                     stateValues[*representativeIt] = bsccValue;
                 }
 
-                typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::row_type& representativeForwardRow = flexibleMatrix.getRow(*representativeIt);
+                FlexibleRowType& representativeForwardRow = flexibleMatrix.getRow(*representativeIt);
                 representativeForwardRow.clear();
                 representativeForwardRow.shrink_to_fit();
                 
-                typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::row_type& representativeBackwardRow = flexibleBackwardTransitions.getRow(*representativeIt);
+                FlexibleRowType& representativeBackwardRow = flexibleBackwardTransitions.getRow(*representativeIt);
                 auto it = representativeBackwardRow.begin(), ite = representativeBackwardRow.end();
                 for (; it != ite; ++it) {
                     if (it->getColumn() == *representativeIt) {
@@ -739,8 +739,8 @@ namespace storm {
             }
             
             std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
-            FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(submatrix);
-            FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(submatrixTransposed, true);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(submatrix);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(submatrixTransposed, true);
             std::chrono::high_resolution_clock::time_point conversionEnd = std::chrono::high_resolution_clock::now();
             
             std::unique_ptr<StatePriorityQueue> statePriorities = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, statesToEliminate);
@@ -791,7 +791,7 @@ namespace storm {
                             for (auto const& element : currentRow) {
                                 // If any of the successors is a phi state, we eliminate it (wrt. all its phi predecessors).
                                 if (!psiStates.get(element.getColumn())) {
-                                    typename FlexibleSparseMatrix::row_type const& successorRow = flexibleMatrix.getRow(element.getColumn());
+                                    FlexibleRowType const& successorRow = flexibleMatrix.getRow(element.getColumn());
                                     // Eliminate the successor only if there possibly is a psi state reachable through it.
                                     if (successorRow.size() > 1 || (!successorRow.empty() && successorRow.front().getColumn() != element.getColumn())) {
                                         STORM_LOG_TRACE("Found non-psi successor " << element.getColumn() << " that needs to be eliminated.");
@@ -821,7 +821,7 @@ namespace storm {
                             for (auto const& element : currentRow) {
                                 // If any of the successors is a psi state, we eliminate it (wrt. all its psi predecessors).
                                 if (!phiStates.get(element.getColumn())) {
-                                    typename FlexibleSparseMatrix::row_type const& successorRow = flexibleMatrix.getRow(element.getColumn());
+                                    FlexibleRowType const& successorRow = flexibleMatrix.getRow(element.getColumn());
                                     if (successorRow.size() > 1 || (!successorRow.empty() && successorRow.front().getColumn() != element.getColumn())) {
                                         STORM_LOG_TRACE("Found non-phi successor " << element.getColumn() << " that needs to be eliminated.");
                                         eliminateState(element.getColumn(), flexibleMatrix, flexibleBackwardTransitions, valueUpdateCallback, predecessorUpdateCallback, boost::none, psiFilterCallback, false);
@@ -890,7 +890,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::StatePriorityQueue> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<typename SparseDtmcModelType::ValueType>& oneStepProbabilities, storm::storage::BitVector const& states) {
+        std::unique_ptr<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::StatePriorityQueue> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& states) {
             
             STORM_LOG_TRACE("Creating state priority queue for states " << states);
             
@@ -940,7 +940,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedStateElimination(std::unique_ptr<StatePriorityQueue>& priorityQueue, FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions, std::vector<ValueType>& values, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly) {
+        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedStateElimination(std::unique_ptr<StatePriorityQueue>& priorityQueue, storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& values, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly) {
             
             ValueUpdateCallback valueUpdateCallback = [&values] (storm::storage::sparse::state_type const& state, ValueType const& loopProbability) { values[state] = storm::utility::simplify(loopProbability * values[state]); };
             PredecessorUpdateCallback predecessorCallback = [&values] (storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) { values[predecessor] = storm::utility::simplify(values[predecessor] + storm::utility::simplify(probability * values[state])); };
@@ -959,7 +959,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStateElimination(FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
+        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStateElimination(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
             std::unique_ptr<StatePriorityQueue> statePriorities = createStatePriorityQueue(distanceBasedPriorities, transitionMatrix, backwardTransitions, values, subsystem);
             
             std::size_t numberOfStatesToEliminate = statePriorities->size();
@@ -969,7 +969,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performHybridStateElimination(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
+        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performHybridStateElimination(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
             // When using the hybrid technique, we recursively treat the SCCs up to some size.
             std::vector<storm::storage::sparse::state_type> entryStateQueue;
             STORM_LOG_DEBUG("Eliminating " << subsystem.size() << " states using the hybrid elimination technique." << std::endl);
@@ -992,8 +992,8 @@ namespace storm {
             
             std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
-            FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(transitionMatrix);
-            FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(backwardTransitions);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(transitionMatrix);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardTransitions);
             auto conversionEnd = std::chrono::high_resolution_clock::now();
             
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
@@ -1052,7 +1052,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(FlexibleSparseMatrix& matrix, std::vector<ValueType>& values, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::BitVector const& initialStates, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, bool computeResultsForInitialStatesOnly, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
+        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(storm::storage::FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& values, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::BitVector const& initialStates, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, bool computeResultsForInitialStatesOnly, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
             uint_fast64_t maximalDepth = level;
             
             // If the SCCs are large enough, we try to split them further.
@@ -1068,7 +1068,7 @@ namespace storm {
                 storm::storage::BitVector remainingSccs(decomposition.size(), true);
                 
                 // First, get rid of the trivial SCCs.
-                storm::storage::BitVector statesInTrivialSccs(matrix.getNumberOfRows());
+                storm::storage::BitVector statesInTrivialSccs(matrix.getRowCount());
                 for (uint_fast64_t sccIndex = 0; sccIndex < decomposition.size(); ++sccIndex) {
                     storm::storage::StronglyConnectedComponent const& scc = decomposition.getBlock(sccIndex);
                     if (scc.isTrivial()) {
@@ -1130,17 +1130,14 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::eliminateState(storm::storage::sparse::state_type state, FlexibleSparseMatrix& matrix, FlexibleSparseMatrix& backwardTransitions,
-                                                                                    ValueUpdateCallback const& callback, PredecessorUpdateCallback const& predecessorCallback,
-                                                                                    boost::optional<PriorityUpdateCallback> const& priorityUpdateCallback,
-                                                                                    boost::optional<PredecessorFilterCallback> const& predecessorFilterCallback, bool removeForwardTransitions) {
+        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::eliminateState(storm::storage::sparse::state_type state, storm::storage::FlexibleSparseMatrix<ValueType>& matrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, ValueUpdateCallback const& callback, PredecessorUpdateCallback const& predecessorCallback, boost::optional<PriorityUpdateCallback> const& priorityUpdateCallback, boost::optional<PredecessorFilterCallback> const& predecessorFilterCallback, bool removeForwardTransitions) {
             
             STORM_LOG_TRACE("Eliminating state " << state << ".");
             
             // Start by finding loop probability.
             bool hasSelfLoop = false;
             ValueType loopProbability = storm::utility::zero<ValueType>();
-            typename FlexibleSparseMatrix::row_type& currentStateSuccessors = matrix.getRow(state);
+            FlexibleRowType& currentStateSuccessors = matrix.getRow(state);
             for (auto entryIt = currentStateSuccessors.begin(), entryIte = currentStateSuccessors.end(); entryIt != entryIte; ++entryIt) {
                 if (entryIt->getColumn() >= state) {
                     if (entryIt->getColumn() == state) {
@@ -1172,12 +1169,12 @@ namespace storm {
             }
             
             // Now connect the predecessors of the state being eliminated with its successors.
-            typename FlexibleSparseMatrix::row_type& currentStatePredecessors = backwardTransitions.getRow(state);
+            FlexibleRowType& currentStatePredecessors = backwardTransitions.getRow(state);
             
             // In case we have a constrained elimination, we need to keep track of the new predecessors.
-            typename FlexibleSparseMatrix::row_type newCurrentStatePredecessors;
+            FlexibleRowType newCurrentStatePredecessors;
 
-            std::vector<typename FlexibleSparseMatrix::row_type> newBackwardProbabilities(currentStateSuccessors.size());
+            std::vector<FlexibleRowType> newBackwardProbabilities(currentStateSuccessors.size());
             for (auto& backwardProbabilities : newBackwardProbabilities) {
                 backwardProbabilities.reserve(currentStatePredecessors.size());
             }
@@ -1203,8 +1200,8 @@ namespace storm {
                 
                 // First, find the probability with which the predecessor can move to the current state, because
                 // the forward probabilities of the state to be eliminated need to be scaled with this factor.
-                typename FlexibleSparseMatrix::row_type& predecessorForwardTransitions = matrix.getRow(predecessor);
-                typename FlexibleSparseMatrix::row_type::iterator multiplyElement = std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(), [&](storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() == state; });
+                FlexibleRowType& predecessorForwardTransitions = matrix.getRow(predecessor);
+                FlexibleRowIterator multiplyElement = std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(), [&](storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() == state; });
                 
                 // Make sure we have found the probability and set it to zero.
                 STORM_LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException, "No probability for successor found.");
@@ -1212,14 +1209,14 @@ namespace storm {
                 multiplyElement->setValue(storm::utility::zero<ValueType>());
                 
                 // At this point, we need to update the (forward) transitions of the predecessor.
-                typename FlexibleSparseMatrix::row_type::iterator first1 = predecessorForwardTransitions.begin();
-                typename FlexibleSparseMatrix::row_type::iterator last1 = predecessorForwardTransitions.end();
-                typename FlexibleSparseMatrix::row_type::iterator first2 = currentStateSuccessors.begin();
-                typename FlexibleSparseMatrix::row_type::iterator last2 = currentStateSuccessors.end();
+                FlexibleRowIterator first1 = predecessorForwardTransitions.begin();
+                FlexibleRowIterator last1 = predecessorForwardTransitions.end();
+                FlexibleRowIterator first2 = currentStateSuccessors.begin();
+                FlexibleRowIterator last2 = currentStateSuccessors.end();
                 
-                typename FlexibleSparseMatrix::row_type newSuccessors;
+                FlexibleRowType newSuccessors;
                 newSuccessors.reserve((last1 - first1) + (last2 - first2));
-                std::insert_iterator<typename FlexibleSparseMatrix::row_type> result(newSuccessors, newSuccessors.end());
+                std::insert_iterator<FlexibleRowType> result(newSuccessors, newSuccessors.end());
                 
                 uint_fast64_t successorOffsetInNewBackwardTransitions = 0;
                 // Now we merge the two successor lists. (Code taken from std::set_union and modified to suit our needs).
@@ -1236,7 +1233,7 @@ namespace storm {
                     }
                     
                     if (first2 == last2) {
-                        std::copy_if(first1, last1, result, [&] (storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() != state; } );
+                        std::copy_if(first1, last1, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != state; } );
                         break;
                     }
                     if (first2->getColumn() < first1->getColumn()) {
@@ -1251,7 +1248,7 @@ namespace storm {
                         ++first1;
                     } else {
                         auto probability = storm::utility::simplify(first1->getValue() + storm::utility::simplify(multiplyFactor * first2->getValue()));
-                        *result = storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type>(first1->getColumn(), probability);
+                        *result = storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), probability);
                         newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, probability);
 //                        std::cout << "(2) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
                         ++first1;
@@ -1288,7 +1285,7 @@ namespace storm {
                     continue;
                 }
                 
-                typename FlexibleSparseMatrix::row_type& successorBackwardTransitions = backwardTransitions.getRow(successorEntry.getColumn());
+                FlexibleRowType& successorBackwardTransitions = backwardTransitions.getRow(successorEntry.getColumn());
 //                std::cout << "old backward trans of " << successorEntry.getColumn() << std::endl;
 //                for (auto const& trans : successorBackwardTransitions) {
 //                    std::cout << trans << std::endl;
@@ -1297,24 +1294,24 @@ namespace storm {
                 // Delete the current state as a predecessor of the successor state only if we are going to remove the
                 // current state's forward transitions.
                 if (removeForwardTransitions) {
-                    typename FlexibleSparseMatrix::row_type::iterator elimIt = std::find_if(successorBackwardTransitions.begin(), successorBackwardTransitions.end(), [&](storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() == state; });
+                    FlexibleRowIterator elimIt = std::find_if(successorBackwardTransitions.begin(), successorBackwardTransitions.end(), [&](storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() == state; });
                     STORM_LOG_ASSERT(elimIt != successorBackwardTransitions.end(), "Expected a proper backward transition from " << successorEntry.getColumn() << " to " << state << ", but found none.");
                     successorBackwardTransitions.erase(elimIt);
                 }
                 
-                typename FlexibleSparseMatrix::row_type::iterator first1 = successorBackwardTransitions.begin();
-                typename FlexibleSparseMatrix::row_type::iterator last1 = successorBackwardTransitions.end();
-                typename FlexibleSparseMatrix::row_type::iterator first2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].begin();
-                typename FlexibleSparseMatrix::row_type::iterator last2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].end();
+                FlexibleRowIterator first1 = successorBackwardTransitions.begin();
+                FlexibleRowIterator last1 = successorBackwardTransitions.end();
+                FlexibleRowIterator first2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].begin();
+                FlexibleRowIterator last2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].end();
                 
 //                std::cout << "adding backward trans " << successorEntry.getColumn() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
 //                for (auto const& trans : newBackwardProbabilities[successorOffsetInNewBackwardTransitions]) {
 //                    std::cout << trans << std::endl;
 //                }
                 
-                typename FlexibleSparseMatrix::row_type newPredecessors;
+                FlexibleRowType newPredecessors;
                 newPredecessors.reserve((last1 - first1) + (last2 - first2));
-                std::insert_iterator<typename FlexibleSparseMatrix::row_type> result(newPredecessors, newPredecessors.end());
+                std::insert_iterator<FlexibleRowType> result(newPredecessors, newPredecessors.end());
                 
                 for (; first1 != last1; ++result) {
                     if (first2 == last2) {
@@ -1340,9 +1337,9 @@ namespace storm {
                     }
                 }
                 if (predecessorFilterCallback) {
-                    std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() != state && predecessorFilterCallback.get()(a.getColumn()); });
+                    std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != state && predecessorFilterCallback.get()(a.getColumn()); });
                 } else {
-                    std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() != state; });
+                    std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type> const& a) { return a.getColumn() != state; });
                 }
                 
                 // Now move the new predecessors in place.
@@ -1416,111 +1413,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::FlexibleSparseMatrix(index_type rows) : data(rows) {
-            // Intentionally left empty.
-        }
-        
-        template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::reserveInRow(index_type row, index_type numberOfElements) {
-            this->data[row].reserve(numberOfElements);
-        }
-        
-        template<typename SparseDtmcModelType>
-        typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::row_type& SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::getRow(index_type index) {
-            return this->data[index];
-        }
-        
-        template<typename SparseDtmcModelType>
-        typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::row_type const& SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::getRow(index_type index) const {
-            return this->data[index];
-        }
-        
-        template<typename SparseDtmcModelType>
-        typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::index_type SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::getNumberOfRows() const {
-            return this->data.size();
-        }
-        
-        template<typename SparseDtmcModelType>
-        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::hasSelfLoop(storm::storage::sparse::state_type state) {
-            for (auto const& entry : this->getRow(state)) {
-                if (entry.getColumn() < state) {
-                    continue;
-                } else if (entry.getColumn() > state) {
-                    return false;
-                } else if (entry.getColumn() == state) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::print() const {
-            for (uint_fast64_t index = 0; index < this->data.size(); ++index) {
-                std::cout << index << " - ";
-                for (auto const& element : this->getRow(index)) {
-                    std::cout << "(" << element.getColumn() << ", " << element.getValue() << ") ";
-                }
-                std::cout << std::endl;
-            }
-        }
-        
-        template<typename SparseDtmcModelType>
-        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::empty() const {
-            for (auto const& row : this->data) {
-                if (!row.empty()) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        
-        template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::filter(storm::storage::BitVector const& rowFilter, storm::storage::BitVector const& columnFilter) {
-            for (uint_fast64_t rowIndex = 0; rowIndex < this->data.size(); ++rowIndex) {
-                auto& row = this->data[rowIndex];
-                if (!rowFilter.get(rowIndex)) {
-                    row.clear();
-                    row.shrink_to_fit();
-                    continue;
-                }
-                row_type newRow;
-                for (auto const& element : row) {
-                    if (columnFilter.get(element.getColumn())) {
-                        newRow.push_back(element);
-                    }
-                }
-                row = std::move(newRow);
-            }
-        }
-        
-        template<typename SparseDtmcModelType>
-        typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix SparseDtmcEliminationModelChecker<SparseDtmcModelType>::getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) {
-            FlexibleSparseMatrix flexibleMatrix(matrix.getRowCount());
-            
-            for (typename FlexibleSparseMatrix::index_type rowIndex = 0; rowIndex < matrix.getRowCount(); ++rowIndex) {
-                typename storm::storage::SparseMatrix<ValueType>::const_rows row = matrix.getRow(rowIndex);
-                flexibleMatrix.reserveInRow(rowIndex, row.getNumberOfEntries());
-                
-                for (auto const& element : row) {
-                    // If the probability is zero, we skip this entry.
-                    if (storm::utility::isZero(element.getValue())) {
-                        continue;
-                    }
-                    
-                    if (setAllValuesToOne) {
-                        flexibleMatrix.getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>());
-                    } else {
-                        flexibleMatrix.getRow(rowIndex).emplace_back(element);
-                    }
-                }
-            }
-            
-            return flexibleMatrix;
-        }
-        
-        template<typename SparseDtmcModelType>
-        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeStatePenalty(storm::storage::sparse::state_type const& state, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
+        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeStatePenalty(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
             uint_fast64_t penalty = 0;
             bool hasParametricSelfLoop = false;
             
@@ -1547,12 +1440,12 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
+        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
             return backwardTransitions.getRow(state).size() * transitionMatrix.getRow(state).size();
         }
         
         template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::StatePriorityQueue::update(storm::storage::sparse::state_type, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
+        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::StatePriorityQueue::update(storm::storage::sparse::state_type, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
             // Intentionally left empty.
         }
         
@@ -1605,7 +1498,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::DynamicPenaltyStatePriorityQueue::update(storm::storage::sparse::state_type state, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
+        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::DynamicPenaltyStatePriorityQueue::update(storm::storage::sparse::state_type state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
             // First, we need to find the priority until now.
             auto priorityIt = stateToPriorityMapping.find(state);
             
@@ -1634,8 +1527,8 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::checkConsistent(FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions) {
-            for (uint_fast64_t forwardIndex = 0; forwardIndex < transitionMatrix.getNumberOfRows(); ++forwardIndex) {
+        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::checkConsistent(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions) {
+            for (uint_fast64_t forwardIndex = 0; forwardIndex < transitionMatrix.getRowCount(); ++forwardIndex) {
                 for (auto const& forwardEntry : transitionMatrix.getRow(forwardIndex)) {
                     if (forwardEntry.getColumn() == forwardIndex) {
                         continue;
