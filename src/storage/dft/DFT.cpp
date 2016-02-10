@@ -148,11 +148,10 @@ namespace storm {
         }
 
         template <typename ValueType>
-        bool DFT<ValueType>::rootOfClosedSubDFT(size_t index) const {
-            //boost::container::flat_set<size_t> marked;
-            //DFTElementPointer elem = getElement(index);
-
-
+        std::vector<size_t> DFT<ValueType>::getIndependentSubDftRoots(size_t index) const {
+            auto elem = getElement(index);
+            auto ISD = elem->independentSubDft();
+            return ISD;
         }
 
         // Explicitly instantiate the class.

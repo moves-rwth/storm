@@ -127,7 +127,7 @@ namespace storm {
              * @param smallestIndex Index in currentlyFailableBE of BE to fail
              * @return Pair of BE which fails and flag indicating if the failure was due to functional dependencies
              */
-            std::pair<std::shared_ptr<DFTBE<ValueType>>, bool> letNextBEFail(size_t smallestIndex = 0);
+            std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> letNextBEFail(size_t smallestIndex = 0);
             
             std::string getCurrentlyFailableString() const {
                 std::stringstream stream;

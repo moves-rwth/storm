@@ -82,7 +82,7 @@ namespace storm {
         bool DFTState<ValueType>::updateFailableDependencies(size_t id) {
             assert(hasFailed(id));
             for (size_t i = 0; i < mDft.getDependencies().size(); ++i) {
-                std::shared_ptr<DFTDependency<ValueType>> dependency = std::static_pointer_cast<DFTDependency<ValueType>>(mDft.getElement(mDft.getDependencies()[i]));
+                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mDft.getDependencies()[i]);
                 if (dependency->triggerEvent()->id() == id) {
                     if (!hasFailed(dependency->dependentEvent()->id())) {
                         mFailableDependencies.push_back(dependency->id());
@@ -94,21 +94,21 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::pair<std::shared_ptr<DFTBE<ValueType>>, bool> DFTState<ValueType>::letNextBEFail(size_t index)
+        std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> DFTState<ValueType>::letNextBEFail(size_t index)
         {
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
             if (nrFailableDependencies() > 0) {
                 // Consider failure due to dependency
                 assert(index < nrFailableDependencies());
-                std::shared_ptr<DFTDependency<ValueType>> dependency = std::static_pointer_cast<DFTDependency<ValueType>>(mDft.getElement(mFailableDependencies[index]));
-                std::pair<std::shared_ptr<DFTBE<ValueType>>,bool> res(mDft.getBasicElement(dependency->dependentEvent()->id()), true);
+                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mFailableDependencies[index]);
+                std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvent()->id()), true);
                 mFailableDependencies.erase(mFailableDependencies.begin() + index);
                 setFailed(res.first->id());
                 return res;
             } else {
                 // Consider "normal" failure
                 assert(index < nrFailableBEs());
-                std::pair<std::shared_ptr<DFTBE<ValueType>>,bool> res(mDft.getBasicElement(mIsCurrentlyFailableBE[index]), false);
+                std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(mIsCurrentlyFailableBE[index]), false);
                 mIsCurrentlyFailableBE.erase(mIsCurrentlyFailableBE.begin() + index);
                 setFailed(res.first->id());
                 return res;

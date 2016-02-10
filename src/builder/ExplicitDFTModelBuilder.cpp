@@ -137,8 +137,8 @@ namespace storm {
 
                     // Construct new state as copy from original one
                     DFTStatePointer newState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
-                    std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType>>, bool> nextBEPair = newState->letNextBEFail(smallest++);
-                    std::shared_ptr<storm::storage::DFTBE<ValueType>> nextBE = nextBEPair.first;
+                    std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, bool> nextBEPair = newState->letNextBEFail(smallest++);
+                    std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE = nextBEPair.first;
                     assert(nextBE);
                     assert(nextBEPair.second == hasDependencies);
                     STORM_LOG_TRACE("with the failure of: " << nextBE->name() << " [" << nextBE->id() << "]");
@@ -192,7 +192,7 @@ namespace storm {
                         // Set failure rate according to usage
                         bool isUsed = true;
                         if (mDft.hasRepresentant(nextBE->id())) {
-                            DFTElementPointer representant = mDft.getRepresentant(nextBE->id());
+                            DFTElementCPointer representant = mDft.getRepresentant(nextBE->id());
                             // Used must be checked for the state we are coming from as this state is responsible for the
                             // rate and not the new state we are going to
                             isUsed = state->isUsed(representant->id());
