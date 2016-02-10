@@ -359,7 +359,7 @@ namespace storm {
                 return DFTElementType::BE;
             }
 
-            virtual size_t nrChildren() const {
+            virtual size_t nrChildren() const override {
                 return 0;
             }
 
@@ -371,17 +371,17 @@ namespace storm {
                 return mPassiveFailureRate;
             }
         
-            std::string toString() const {
+            std::string toString() const override {
                 std::stringstream stream;
                 stream << *this;
                 return stream.str();
             }
             
-            bool isBasicElement() const {
+            bool isBasicElement() const override{
                 return true;
             }
             
-            bool isColdBasicElement() const {
+            bool isColdBasicElement() const override{
                 return storm::utility::isZero(mPassiveFailureRate);
             }
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
@@ -421,7 +421,7 @@ namespace storm {
                 return true;
             }
             
-            virtual size_t nrChildren() const {
+            virtual size_t nrChildren() const override {
                 return 0;
             }
             
@@ -547,7 +547,7 @@ namespace storm {
                 return DFTElementType::AND;
             }
             
-            std::string typestring() const {
+            std::string typestring() const override {
                 return "AND";
             }
         };
@@ -587,7 +587,7 @@ namespace storm {
                 return DFTElementType::OR;
             }
             
-            std::string typestring() const {
+            std::string typestring() const override {
                 return "OR";
             }
         };
@@ -788,7 +788,7 @@ namespace storm {
                 return DFTElementType::VOT;
             }
             
-            std::string typestring() const {
+            std::string typestring() const override{
                 return "VOT (" + std::to_string(mThreshold) + ")";
             }
 
