@@ -109,7 +109,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type handled separately.");
                 case DFTElementType::CONSTF:
                 case DFTElementType::CONSTS:
-                case DFTElementType::FDEP:
+                case DFTElementType::PDEP:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not supported.");
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not known.");

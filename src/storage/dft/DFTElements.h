@@ -51,6 +51,8 @@ namespace storm {
                 return mId;
             }
 
+            virtual DFTElementType type() const = 0;
+
             virtual void setRank(size_t rank) {
                 mRank = rank;
             }
@@ -114,7 +116,11 @@ namespace storm {
             bool hasParents() const {
                 return !mParents.empty();
             }
-            
+
+            size_t nrParents() const {
+                return mParents.size();
+            }
+
             DFTGateVector const& parents() const {
                 return mParents;
             }
@@ -348,7 +354,11 @@ namespace storm {
             DFTBE(size_t id, std::string const& name, ValueType failureRate, ValueType dormancyFactor) :
                     DFTElement<ValueType>(id, name), mActiveFailureRate(failureRate), mPassiveFailureRate(dormancyFactor * failureRate)
             {}
-                        
+
+            DFTElementType type() const override {
+                return DFTElementType::BE;
+            }
+
             virtual size_t nrChildren() const {
                 return 0;
             }
@@ -393,7 +403,16 @@ namespace storm {
             DFTConst(size_t id, std::string const& name, bool failed) :
                     DFTElement<ValueType>(id, name), mFailed(failed)
             {}
-            
+
+            DFTElementType type() const override {
+                if(mFailed) {
+                    return DFTElementType::CONSTF;
+                } else {
+                    return DFTElementType::CONSTS;
+                }
+            }
+
+
             bool failed() const {
                 return mFailed;
             }
@@ -438,15 +457,15 @@ namespace storm {
                 mDependentEvent = dependentEvent;
             }
 
-            std::string nameTrigger() {
+            std::string nameTrigger() const {
                 return mNameTrigger;
             }
 
-            std::string nameDependent() {
+            std::string nameDependent() const {
                 return mNameDependent;
             }
 
-            ValueType probability() {
+            ValueType const& probability() const {
                 return mProbability;
             }
 
@@ -458,6 +477,10 @@ namespace storm {
             DFTBEPointer const& dependentEvent() const {
                 assert(mDependentEvent);
                 return mDependentEvent;
+            }
+
+            DFTElementType type() const override {
+                return DFTElementType::PDEP;
             }
 
             virtual size_t nrChildren() const override {
@@ -519,6 +542,10 @@ namespace storm {
                     this->childrenDontCare(state, queues);
                 }
             }
+
+            virtual DFTElementType type() const override {
+                return DFTElementType::AND;
+            }
             
             std::string typestring() const {
                 return "AND";
@@ -554,6 +581,10 @@ namespace storm {
                      }
                  }
                  this->failsafe(state, queues);
+            }
+
+            virtual DFTElementType type() const override {
+                return DFTElementType::OR;
             }
             
             std::string typestring() const {
@@ -606,8 +637,12 @@ namespace storm {
                 }
                 //return false;
             }
-            
-            std::string  typestring() const {
+
+            virtual DFTElementType type() const override {
+                return DFTElementType::SEQAND;
+            }
+
+            std::string  typestring() const override {
                 return "SEQAND";
             }
         };
@@ -653,8 +688,12 @@ namespace storm {
                     this->childrenDontCare(state, queues);
                 }
             }
+
+            virtual DFTElementType type() const override {
+                return DFTElementType::PAND;
+            }
             
-            std::string typestring() const {
+            std::string typestring() const override {
                 return "PAND";
             }
         };
@@ -680,8 +719,12 @@ namespace storm {
             void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
                 assert(false);
             }
+
+            virtual DFTElementType type() const override {
+                return DFTElementType::POR;
+            }
             
-            std::string  typestring() const {
+            std::string  typestring() const override {
                 return "POR";
             }
         };
@@ -740,6 +783,10 @@ namespace storm {
                     }
                 }
             }
+
+            virtual DFTElementType type() const override {
+                return DFTElementType::VOT;
+            }
             
             std::string typestring() const {
                 return "VOT (" + std::to_string(mThreshold) + ")";
@@ -766,11 +813,15 @@ namespace storm {
                     DFTGate<ValueType>(id, name, children)
             {}
             
-            std::string typestring() const {
+            std::string typestring() const override {
                 return "SPARE";
             }
-            
-            bool isSpareGate() const {
+
+            virtual DFTElementType type() const override {
+                return DFTElementType::SPARE;
+            }
+
+            bool isSpareGate() const override {
                 return true;
             }
             
