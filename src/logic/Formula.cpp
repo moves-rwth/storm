@@ -115,6 +115,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isOperatorFormula() const {
+            return false;
+        }
+        
         bool Formula::isPctlPathFormula() const {
             return false;
         }
@@ -377,6 +381,14 @@ namespace storm {
         
         RewardOperatorFormula const& Formula::asRewardOperatorFormula() const {
             return dynamic_cast<RewardOperatorFormula const&>(*this);
+        }
+        
+        OperatorFormula& Formula::asOperatorFormula() {
+            return dynamic_cast<OperatorFormula&>(*this);
+        }
+        
+        OperatorFormula const& Formula::asOperatorFormula() const {
+            return dynamic_cast<OperatorFormula const&>(*this);
         }
         
         std::vector<std::shared_ptr<AtomicExpressionFormula const>> Formula::getAtomicExpressionFormulas() const {

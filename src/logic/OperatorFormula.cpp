@@ -34,6 +34,10 @@ namespace storm {
             return optimalityType.get();
         }
         
+        bool OperatorFormula::isOperatorFormula() const {
+            return true;
+        }
+        
         std::ostream& OperatorFormula::writeToStream(std::ostream& out) const {
             if (hasOptimalityType()) {
                 out << (getOptimalityType() == OptimizationDirection::Minimize ? "min" : "max");

@@ -957,8 +957,6 @@ namespace storm {
                 //  (4.2) Construct constraint system.
                 buildConstraintSystem(*solver, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation, probabilityThreshold, strictBound, includeSchedulerCuts);
                 
-                solver->writeModelToFile("model.lp");
-                
                 // (4.3) Optimize the model.
                 solver->optimize();
                 

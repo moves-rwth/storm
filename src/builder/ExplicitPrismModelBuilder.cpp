@@ -264,7 +264,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
 #endif
             }
-            
+                            
             // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
             if (options.labelsToBuild) {
                 if (!options.buildAllLabels) {
