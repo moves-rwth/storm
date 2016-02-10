@@ -23,6 +23,7 @@ namespace storm {
             // TODO: make this class a bit more consistent with the big sparse matrix and improve it:
             // * add output iterator and improve the way the matrix is printed
             // * add stuff like clearRow, multiplyRowWithScalar
+            // * implement row grouping
             
             typedef uint_fast64_t index_type;
             typedef ValueType value_type;
@@ -102,6 +103,13 @@ namespace storm {
              * @return True, if the matrix is empty.
              */
             bool empty() const;
+            
+            /*!
+             * Retrieves whether the matrix has a (possibly) non-trivial row grouping.
+             *
+             * @return True iff the matrix has a (possibly) non-trivial row grouping.
+             */
+            bool hasNontrivialRowGrouping() const;
 
             /*!
              * Creates a submatrix of the current matrix in place by dropping all rows and columns whose bits are not
@@ -137,6 +145,17 @@ namespace storm {
 
             // The number of entries in the matrix.
             index_type nonzeroEntryCount;
+            
+            // A vector containing the indices at which each given row begins. The values of the entries in row i are
+            // data[rowIndications[i]] to data[rowIndications[i + 1]] where the last entry is not included anymore.
+            std::vector<index_type> rowIndications;
+            
+            // A flag that indicates whether the matrix has a non-trivial row-grouping, i.e. (possibly) more than one
+            // row per row group.
+            bool nontrivialRowGrouping;
+            
+            // A vector indicating the row groups of the matrix.
+            std::vector<index_type> rowGroupIndices;
         };
     }
 }

@@ -13,7 +13,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        FlexibleSparseMatrix<ValueType>::FlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) : data(matrix.getRowCount()), columnCount(matrix.getColumnCount()), nonzeroEntryCount(matrix.getNonzeroEntryCount()) {
+        FlexibleSparseMatrix<ValueType>::FlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) : data(matrix.getRowCount()), columnCount(matrix.getColumnCount()), nonzeroEntryCount(matrix.getNonzeroEntryCount()), nontrivialRowGrouping(matrix.hasNontrivialRowGrouping()) {
+            if (nontrivialRowGrouping) {
+                rowGroupIndices = matrix.getRowGroupIndices();
+                rowIndications = matrix.getRowIndications();
+                // Not fully implemented yet
+                assert(false);
+            }
             for (index_type rowIndex = 0; rowIndex < matrix.getRowCount(); ++rowIndex) {
                 typename storm::storage::SparseMatrix<ValueType>::const_rows row = matrix.getRow(rowIndex);
                 reserveInRow(rowIndex, row.getNumberOfEntries());
@@ -82,6 +88,11 @@ namespace storm {
                 }
             }
             return true;
+        }
+        
+        template<typename ValueType>
+        bool SparseMatrix<ValueType>::hasNontrivialRowGrouping() const {
+            return nontrivialRowGrouping;
         }
 
         template<typename ValueType>
