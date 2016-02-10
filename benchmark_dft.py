@@ -6,8 +6,8 @@ import time
 import math
 import argparse
 
-STORM_PATH= "/Users/mvolk/develop/storm/build/src/storm-dft"
-EXAMPLE_DIR= "/Users/mvolk/develop/storm/examples/dft/"
+STORM_PATH= "/Users/mvolk/develop/dft-storm/build/src/storm-dft"
+EXAMPLE_DIR= "/Users/mvolk/develop/dft-storm/examples/dft/"
 
 
 benchmarks = [ 
@@ -30,6 +30,8 @@ benchmarks = [
     ("or", False, [1, 1]),
     ("pand", False, ["inf", 0.666667]),
     ("pand_param", True, ["-1", "(x)/(y+x)"]),
+    ("pdep", False, [0, 1]), #Compute
+    ("pdep2", False, [0, 1]), #Compute
     ("spare", False, [3.53846, 1]),
     ("spare2", False, [1.86957, 1]),
     ("spare3", False, [1.27273, 1]),
@@ -37,6 +39,8 @@ benchmarks = [
     ("spare5", False, [2.66667, 1]), # We discard the result 2.16667 from DFTCalc
     ("spare6", False, [1.4, 1]),
     ("spare7", False, [3.67333, 1]),
+    ("symmetry", False, [4.16667, 1]),
+    ("symmetry2", False, [3.06111, 1]),
     ("tripple_and1", False, [4.16667, 1]),
     ("tripple_and2", False, [3.66667, 1]),
     ("tripple_and2_c", False, [3.6667, 1]),
