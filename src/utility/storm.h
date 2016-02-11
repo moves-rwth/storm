@@ -59,6 +59,7 @@
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
+#include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
@@ -297,6 +298,13 @@ namespace storm {
 
             storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
             result = modelchecker.check(task);
+        } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
+            std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
+
+            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
+            result = modelchecker.check(task);
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported.");
         }
         return result;
 
