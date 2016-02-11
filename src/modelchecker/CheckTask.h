@@ -30,7 +30,7 @@ namespace storm {
              */
             CheckTask(FormulaType const& formula, bool onlyInitialStatesRelevant = false) : formula(formula) {
                 this->onlyInitialStatesRelevant = onlyInitialStatesRelevant;
-                this->produceStrategies = true;
+                this->produceSchedulers = true;
                 this->qualitative = false;
                 
                 if (formula.isOperatorFormula()) {
@@ -76,7 +76,7 @@ namespace storm {
              */
             template<typename NewFormulaType>
             CheckTask<NewFormulaType, ValueType> replaceFormula(NewFormulaType const& newFormula) const {
-                return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceStrategies);
+                return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers);
             }
             
             /*!
@@ -166,10 +166,10 @@ namespace storm {
             }
             
             /*!
-             * Retrieves whether strategies are to be produced (if supported).
+             * Retrieves whether scheduler(s) are to be produced (if supported).
              */
-            bool isProduceStrategiesSet() const {
-                return produceStrategies;
+            bool isProduceSchedulersSet() const {
+                return produceSchedulers;
             }
             
         private:
@@ -185,10 +185,10 @@ namespace storm {
              * together with the flag that indicates only initial states of the model are relevant.
              * @param qualitative A flag specifying whether the property needs to be checked qualitatively, i.e. compared
              * with bounds 0/1.
-             * @param produceStrategies If supported by the model checker and the model formalism, strategies to achieve
+             * @param produceSchedulers If supported by the model checker and the model formalism, schedulers to achieve
              * a value will be produced if this flag is set.
              */
-            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> const& bound, bool qualitative, bool produceStrategies) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceStrategies(produceStrategies) {
+            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> const& bound, bool qualitative, bool produceSchedulers) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers) {
                 // Intentionally left empty.
             }
             
@@ -210,9 +210,9 @@ namespace storm {
             // A flag specifying whether the property needs to be checked qualitatively, i.e. compared with bounds 0/1.
             bool qualitative;
             
-            // If supported by the model checker and the model formalism, strategies to achieve a value will be produced
+            // If supported by the model checker and the model formalism, schedulers to achieve a value will be produced
             // if this flag is set.
-            bool produceStrategies;
+            bool produceSchedulers;
         };
         
     }

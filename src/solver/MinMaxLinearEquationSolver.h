@@ -6,8 +6,8 @@
 #include <memory>
 #include "SolverSelectionOptions.h"
 #include "src/storage/sparse/StateType.h"
-#include "AllowEarlyTerminationCondition.h"
-#include "OptimizationDirection.h"
+#include "src/solver/AllowEarlyTerminationCondition.h"
+#include "src/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace storage {
@@ -15,17 +15,18 @@ namespace storm {
     }
     
     namespace solver {
-                
         
         /**
          * Abstract base class which provides value-type independent helpers.
          */
         class AbstractMinMaxLinearEquationSolver {
-        
         public:
-            void setPolicyTracking(bool setToTrue=true);
+            void setSchedulerTracking(bool trackScheduler = true);
             
-            std::vector<storm::storage::sparse::state_type> getPolicy() const;
+            std::vector<storm::storage::sparse::state_type> getScheduler() const {
+                STORM_LOG_THROW(scheduler, storm::exceptions::Invali, "Cannot retrieve scheduler, because none was generated.");
+                reutrn scheduler.get();
+            }
             
             void setOptimizationDirection(OptimizationDirection d) {
                 direction = convert(d);
@@ -35,14 +36,16 @@ namespace storm {
                 direction = OptimizationDirectionSetting::Unset;
             }
             
+            void setEarlyTerminationCriterion(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v) {
+                earlyTermination = std::move(v);
+            }
             
         protected:
-            AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech);
+            AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackScheduler, MinMaxTechniqueSelection prefTech);
             
             /// The direction in which to optimize, can be unset.
             OptimizationDirectionSetting direction;
 
-            
             /// The required precision for the iterative methods.
             double precision;
             
@@ -55,11 +58,14 @@ namespace storm {
             /// Whether value iteration or policy iteration is to be used.
             bool useValueIteration;
             
-            /// Whether we track the policy we generate.
-            bool trackPolicy;
+            /// Whether we generate a scheduler during solving.
+            bool trackScheduler;
             
-            /// 
-            mutable std::vector<storm::storage::sparse::state_type> policy;
+            /// The scheduler (if it could be successfully generated).
+            boost::optional<storm::storage::Scheduler> scheduler;
+
+            // A termination criterion to be used (can be unset).
+            std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> earlyTermination;
         };
         
         /*!
@@ -77,7 +83,6 @@ namespace storm {
             }
         
         public:
-            
             virtual ~MinMaxLinearEquationSolver() {
                 // Intentionally left empty.
             }
@@ -107,6 +112,7 @@ namespace storm {
                 assert(isSet(this->direction));
                 solveEquationSystem(convert(this->direction), x, b, multiplyResult, newX);
             }
+            
             /*!
              * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
              * x[i+1] = min/max(A*x[i] + b) until x[n], where x[0] = x. After each multiplication and addition, the
@@ -134,15 +140,8 @@ namespace storm {
                 return performMatrixVectorMultiplication(convert(this->direction), x, b, n, multiplyResult);
             }
             
-            void setEarlyTerminationCriterion(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v) {
-                earlyTermination = std::move(v);
-            }
-            
-            
         protected:
             storm::storage::SparseMatrix<ValueType> const& A;
-            std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> earlyTermination;
-            
         };
         
     } // namespace solver

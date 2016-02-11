@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "src/storage/SparseMatrix.h"
+#include "src/solver/AllowEarlyTerminationCondition.h"
 
 namespace storm {
     namespace solver {
@@ -15,7 +16,6 @@ namespace storm {
         template<class Type>
         class LinearEquationSolver {
         public:
-            
             virtual ~LinearEquationSolver() {
                 // Intentionally left empty.
             }
@@ -45,6 +45,13 @@ namespace storm {
              * vector must be equal to the number of rows of A.
              */
             virtual void performMatrixVectorMultiplication(std::vector<Type>& x, std::vector<Type> const* b = nullptr, uint_fast64_t n = 1, std::vector<Type>* multiplyResult = nullptr) const = 0;
+            
+            void setEarlyTerminationCriterion(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v) {
+                earlyTermination = std::move(v);
+            }
+
+            // A termination criterion to be used (can be unset).
+            std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> earlyTermination;
         };
         
     } // namespace solver
