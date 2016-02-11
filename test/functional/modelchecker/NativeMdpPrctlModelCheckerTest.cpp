@@ -29,7 +29,7 @@ TEST(SparseMdpPrctlModelCheckerTest, Dice) {
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));
 
-    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -145,7 +145,7 @@ TEST(SparseMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));
 
-    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -209,7 +209,7 @@ TEST(SparseMdpPrctlModelCheckerTest, LRA_SingleMec) {
 
         storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));
 
-        std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
+        std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
 
         std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
         storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -241,7 +241,7 @@ TEST(SparseMdpPrctlModelCheckerTest, LRA_SingleMec) {
 
         storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));
 
-        std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
+        std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
 
         std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
         storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -282,7 +282,7 @@ TEST(SparseMdpPrctlModelCheckerTest, LRA_SingleMec) {
 
         storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));
 
-        std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
+        std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
 
         std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
         storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -368,7 +368,7 @@ TEST(SparseMdpPrctlModelCheckerTest, LRA) {
 
         storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));
 
-        std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
+        std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
 
         std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
         storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -490,7 +490,7 @@ TEST(SparseMdpPrctlModelCheckerTest, LRA) {
 
         storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));
 
-        std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
+        std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRAmax=? [\"a\"]");
 
         std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
         storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();

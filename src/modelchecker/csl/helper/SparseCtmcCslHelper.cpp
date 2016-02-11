@@ -694,7 +694,7 @@ namespace storm {
                     }
                 }
 
-                return storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>>::computeReachabilityRewards(probabilityMatrix, backwardTransitions, initialStates, targetStates, totalRewardVector, false, qualitative);
+                return storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>>::computeReachabilityRewards(probabilityMatrix, backwardTransitions, initialStates, targetStates, totalRewardVector, false);
             }
 
             template class SparseCtmcCslHelper<double>;

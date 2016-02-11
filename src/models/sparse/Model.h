@@ -278,6 +278,7 @@ namespace storm {
                 
                 virtual bool isSparseModel() const override;
                 
+                virtual bool isParametric() const override;
             protected:
 
                 RewardModelType & rewardModel(std::string const& rewardModelName);
