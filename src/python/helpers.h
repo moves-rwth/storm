@@ -7,10 +7,11 @@ void shared_ptr_implicitly_convertible() {
     boost::python::implicitly_convertible<std::shared_ptr<Source>, std::shared_ptr<Target>>();
 }
 
-
 template<typename T>
 void register_shared_ptr() {
     boost::python::register_ptr_to_python<std::shared_ptr<T>>();
+    boost::python::register_ptr_to_python<std::shared_ptr<const T>>();
+    
 }
 
 

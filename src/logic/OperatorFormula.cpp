@@ -10,12 +10,20 @@ namespace storm {
             return static_cast<bool>(bound);
         }
         
-        ComparisonType const& OperatorFormula::getComparisonType() const {
+        ComparisonType OperatorFormula::getComparisonType() const {
             return comparisonType.get();
+        }
+        
+        void OperatorFormula::setComparisonType(ComparisonType t) {
+            comparisonType = boost::optional<ComparisonType>(t);
         }
         
         double OperatorFormula::getBound() const {
             return bound.get();
+        }
+        
+        void OperatorFormula::setBound(double b) {
+            bound = boost::optional<double>(b);
         }
         
         bool OperatorFormula::hasOptimalityType() const {

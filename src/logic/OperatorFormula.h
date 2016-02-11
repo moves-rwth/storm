@@ -18,8 +18,10 @@ namespace storm {
             }
             
             bool hasBound() const;
-            ComparisonType const& getComparisonType() const;
+            ComparisonType getComparisonType() const;
+            void setComparisonType(ComparisonType);
             double getBound() const;
+            void setBound(double);
             bool hasOptimalityType() const;
             OptimizationDirection const& getOptimalityType() const;
             

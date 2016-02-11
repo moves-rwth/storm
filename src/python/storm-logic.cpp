@@ -5,13 +5,24 @@
 
 #include "helpers.h"
 #include "boostPyExtension.h"
-
+//  Less, LessEqual, Greater, GreaterEqual
 
 
 BOOST_PYTHON_MODULE(_logic)
 {
     using namespace boost::python;
 
+    enum_<storm::logic::ComparisonType>("ComparisonType")
+        .value("LESS", storm::logic::ComparisonType::Less)
+        .value("LEQ", storm::logic::ComparisonType::LessEqual)
+        .value("GREATER", storm::logic::ComparisonType::Greater)
+        .value("GEQ", storm::logic::ComparisonType::GreaterEqual)
+    ;
+    
+    defineClass<std::vector<std::shared_ptr<storm::logic::Formula>>, void, void>("FormulaVec", "Vector of formulas")
+        .def(vector_indexing_suite<std::vector<std::shared_ptr<storm::logic::Formula>>, true>())
+    ;
+    
     ////////////////////////////////////////////
     // Formula
     ////////////////////////////////////////////
@@ -72,7 +83,11 @@ BOOST_PYTHON_MODULE(_logic)
     defineClass<storm::logic::UnaryBooleanStateFormula, storm::logic::UnaryStateFormula>("UnaryBooleanStateFormula",
     "");
     defineClass<storm::logic::OperatorFormula, storm::logic::UnaryStateFormula, boost::noncopyable>("OperatorFormula",
-    "");
+    "")
+        .add_property("has_bound", &storm::logic::OperatorFormula::hasBound)
+        .add_property("bound", &storm::logic::OperatorFormula::getBound, &storm::logic::OperatorFormula::setBound)
+        .add_property("comparison_type", &storm::logic::OperatorFormula::getComparisonType, &storm::logic::OperatorFormula::setComparisonType)
+    ;
     defineClass<storm::logic::ExpectedTimeOperatorFormula, storm::logic::OperatorFormula>("ExpectedTimeOperator",
     "The expected time between two events");
     defineClass<storm::logic::LongRunAverageOperatorFormula, storm::logic::OperatorFormula>("LongRunAvarageOperator",

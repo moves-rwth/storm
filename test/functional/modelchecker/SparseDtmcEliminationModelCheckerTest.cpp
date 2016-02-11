@@ -27,7 +27,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Die) {
 
     storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc);
 
-    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -71,7 +71,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
 
     storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc);
 
-    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -121,7 +121,7 @@ TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
 
     storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc);
 
-    std::shared_ptr<storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
