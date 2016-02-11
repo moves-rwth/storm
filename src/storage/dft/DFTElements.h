@@ -384,7 +384,7 @@ namespace storm {
             bool isColdBasicElement() const override{
                 return storm::utility::isZero(mPassiveFailureRate);
             }
-            virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const;
+            virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override;
         };
 
         template<typename ValueType>
@@ -523,7 +523,7 @@ namespace storm {
                     DFTGate<ValueType>(id, name, children)
             {}
 
-            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if(state.isOperational(this->mId)) {
                     for(auto const& child : this->mChildren)
                     {
@@ -535,7 +535,7 @@ namespace storm {
                 }
             }
 
-            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 assert(this->hasFailsafeChild(state));
                 if(state.isOperational(this->mId)) {
                     this->failsafe(state, queues);
@@ -567,14 +567,14 @@ namespace storm {
                     DFTGate<ValueType>(id, name, children)
             {}
 
-            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 assert(this->hasFailedChild(state));
                 if(state.isOperational(this->mId)) {
                     this->fail(state, queues);
                 }
             }
 
-            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                  for(auto const& child : this->mChildren) {
                      if(!state.isFailsafe(child->id())) {
                          return;
@@ -662,7 +662,7 @@ namespace storm {
                     DFTGate<ValueType>(id, name, children)
             {}
 
-            void checkFails(storm::storage::DFTState<ValueType>& state,  DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            void checkFails(storm::storage::DFTState<ValueType>& state,  DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if(state.isOperational(this->mId)) {
                     bool childOperationalBefore = false;
                     for(auto const& child : this->mChildren)
@@ -681,7 +681,7 @@ namespace storm {
                 }
             }
 
-            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 assert(this->hasFailsafeChild(state));
                 if(state.isOperational(this->mId)) {
                     this->failsafe(state, queues);
@@ -712,11 +712,11 @@ namespace storm {
                     DFTGate<ValueType>(id, name, children)
             {}
 
-            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                  assert(false);
             }
 
-            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 assert(false);
             }
 
@@ -747,7 +747,7 @@ namespace storm {
                     DFTGate<ValueType>(id, name, children), mThreshold(threshold)
             {}
 
-            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if(state.isOperational(this->mId)) {
                     unsigned nrFailedChildren = 0;
                     for(auto const& child : this->mChildren)
@@ -765,7 +765,7 @@ namespace storm {
                 } 
             }
 
-            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 assert(this->hasFailsafeChild(state));
                 if(state.isOperational(this->mId)) {
                     unsigned nrFailsafeChildren = 0;
@@ -838,7 +838,7 @@ namespace storm {
                 state.setUsesAtPosition(mUseIndex, this->mChildren[0]->id());
             }
 
-            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if(state.isOperational(this->mId)) {
                     size_t uses = state.extractUses(mUseIndex);
                     if(!state.isOperational(uses)) {
@@ -850,7 +850,7 @@ namespace storm {
                 } 
             }
 
-            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if(state.isOperational(this->mId)) {
                     if(state.isFailsafe(state.extractUses((mUseIndex)))) {
                         this->failsafe(state, queues);
