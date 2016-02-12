@@ -128,8 +128,8 @@ namespace storm {
                 // the existing Dijkstra isn't working anyway AND
                 // doesn't fully meet our requirements, so let's roll our own
 
-                T inftyDistance = utility::zero<T>();
-                T zeroDistance = utility::one<T>();
+                T inftyDistance = zero<T>();
+                T zeroDistance = one<T>();
                 shortestPathDistances.resize(numStates, inftyDistance);
                 shortestPathPredecessors.resize(numStates, boost::optional<state_t>());
 
@@ -232,7 +232,7 @@ namespace storm {
                     // there is no such edge
                     // let's disallow that for now, because I'm not expecting it to happen
                     assert(false);
-                    return utility::zero<T>();
+                    return zero<T>();
                 } else {
                     // edge must be "virtual edge" to meta-target
                     assert(isMetaTargetPredecessor(tailNode));
