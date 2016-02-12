@@ -4,6 +4,8 @@
 // Include config to know whether CARL is available or not.
 #include "storm-config.h"
 
+#include <boost/multiprecision/gmp.hpp>
+
 #ifdef STORM_HAVE_CARL
 
 #include <carl/numbers/numbers.h>
@@ -42,9 +44,12 @@ namespace carl {
 }
 
 namespace storm {
-    typedef cln::cl_RA RationalNumber;
+//    typedef boost::multiprecision::gmp_rational RationalNumber;
+    typedef boost::multiprecision::number<boost::multiprecision::gmp_rational> RationalNumber;
+    
+    typedef cln::cl_RA CarlRationalNumber;
     typedef carl::Variable Variable;
-    typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
+    typedef carl::MultivariatePolynomial<CarlRationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
     typedef carl::Relation CompareRelation;
     
