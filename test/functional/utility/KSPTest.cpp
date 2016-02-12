@@ -107,7 +107,7 @@ TEST(KSPTest, kspPathAsList) {
     storm::utility::ksp::ShortestPathsGenerator<double> spg(model, testState);
 
     // TODO: use path that actually has a loop or something to make this more interesting
-    auto reference = std::vector<storm::utility::ksp::state_t>{300, 293, 285, 279, 271, 265, 259, 252, 244, 237, 229, 223, 217, 210, 202, 195, 187, 181, 175, 168, 160, 153, 145, 139, 133, 126, 118, 111, 103, 97, 91, 84, 76, 69, 61, 55, 49, 43, 35, 41, 32, 25, 19, 14, 10, 7, 4, 2, 1, 0};
+    auto reference = storm::utility::ksp::ordered_state_list_t{300, 293, 285, 279, 271, 265, 259, 252, 244, 237, 229, 223, 217, 210, 202, 195, 187, 181, 175, 168, 160, 153, 145, 139, 133, 126, 118, 111, 103, 97, 91, 84, 76, 69, 61, 55, 49, 43, 35, 41, 32, 25, 19, 14, 10, 7, 4, 2, 1, 0};
     auto list = spg.getPathAsList(7);
 
     EXPECT_EQ(list, reference);

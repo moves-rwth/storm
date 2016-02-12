@@ -30,20 +30,25 @@ namespace storm {
                 candidatePaths.resize(numStates);
             }
 
+            // extracts the relevant info from the model and delegates to ctor above
+            template <typename T>
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, BitVector const& targetBV)
+                    : ShortestPathsGenerator<T>(model->getTransitionMatrix(), allProbOneMap(targetBV), model->getInitialStates()) {}
+
             // several alternative ways to specify the targets are provided,
             // each converts the targets and delegates to the ctor above
             // I admit it's kind of ugly, but actually pretty convenient (and I've wanted to try C++11 delegation)
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
-                    state_t singleTarget) : ShortestPathsGenerator<T>(model, std::vector<state_t>{singleTarget}) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_t singleTarget)
+                    : ShortestPathsGenerator<T>(model, std::vector<state_t>{singleTarget}) {}
 
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
-                    storage::BitVector const& targetBV) : ShortestPathsGenerator<T>(model, bitvectorToList(targetBV)) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::vector<state_t> const& targetList)
+                    : ShortestPathsGenerator<T>(model, BitVector(model->getNumberOfStates(), targetList)) {}
 
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
-                    std::string const& targetLabel) : ShortestPathsGenerator<T>(model, bitvectorToList(model->getStates(targetLabel))) {}
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel)
+                    : ShortestPathsGenerator<T>(model, model->getStates(targetLabel)) {}
 
             template <typename T>
             T ShortestPathsGenerator<T>::getDistance(unsigned long k) {
@@ -72,10 +77,10 @@ namespace storm {
             }
 
             template <typename T>
-            state_list_t ShortestPathsGenerator<T>::getPathAsList(unsigned long k) {
+            std::vector<state_t> ShortestPathsGenerator<T>::getPathAsList(unsigned long k) {
                 computeKSP(k);
 
-                state_list_t backToFrontList;
+                std::vector<state_t> backToFrontList;
 
                 Path<T> currentPath = kShortestPaths[metaTarget][k - 1];
                 boost::optional<state_t> maybePredecessor = currentPath.predecessorNode;

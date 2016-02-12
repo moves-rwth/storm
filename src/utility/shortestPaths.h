@@ -12,21 +12,20 @@
 //       for more information about the purpose, design decisions,
 //       etc., you may consult `shortestPath.md`. - Tom
 
-/*
- * TODO:
- *  - take care of self-loops of target states
- *  - implement target group
- *  - think about how to get paths with new nodes, rather than different
- *    paths over the same set of states (which happens often)
- */
+// TODO: test whether using BitVector instead of vector<state_t> is
+//       faster for storing predecessors etc.
 
+// Now using BitVectors instead of vector<state_t> in the API because
+// BitVectors are used throughout Storm to represent a (unordered) list
+// of states.
+// (Even though both initialStates and targets are probably very sparse.)
 
 namespace storm {
     namespace utility {
         namespace ksp {
             typedef storage::sparse::state_type state_t;
-            typedef std::vector<state_t> state_list_t;
             using BitVector = storage::BitVector;
+            typedef std::vector<state_t> ordered_state_list_t;
 
             template <typename T>
             struct Path {
@@ -57,13 +56,12 @@ namespace storm {
                  * Modifications are done locally, `model` remains unchanged.
                  * Target (group) cannot be changed.
                  */
-                // FIXME: this shared_ptr-passing business might be a bad idea
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_list_t const& targets);
+                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, BitVector const& targetBV);
 
                 // allow alternative ways of specifying the target,
-                // all of which will be converted to list and delegated to constructor above
+                // all of which will be converted to BitVector and delegated to constructor above
                 ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_t singleTarget);
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, storage::BitVector const& targetBV);
+                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::vector<state_t> const& targetList);
                 ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel = "target");
 
                 // a further alternative: use transition matrix of maybe-states
@@ -94,7 +92,7 @@ namespace storm {
                  * Computes KSP if not yet computed.
                  * @throws std::invalid_argument if no such k-shortest path exists
                  */
-                state_list_t getPathAsList(unsigned long k);
+                ordered_state_list_t getPathAsList(unsigned long k);
 
 
             private:
@@ -105,9 +103,9 @@ namespace storm {
                 BitVector initialStates;
                 std::unordered_map<state_t, T> targetProbMap;
 
-                std::vector<state_list_t>             graphPredecessors;
+                std::vector<ordered_state_list_t>     graphPredecessors; // FIXME is a switch to BitVector a good idea here?
                 std::vector<boost::optional<state_t>> shortestPathPredecessors;
-                std::vector<state_list_t>             shortestPathSuccessors;
+                std::vector<ordered_state_list_t>     shortestPathSuccessors;
                 std::vector<T>                        shortestPathDistances;
 
                 std::vector<std::vector<Path<T>>> kShortestPaths;
