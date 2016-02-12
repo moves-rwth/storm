@@ -4,10 +4,14 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
-#include "SolverSelectionOptions.h"
+
+#include "src/solver/AbstractEquationSolver.h"
+#include "src/solver/SolverSelectionOptions.h"
 #include "src/storage/sparse/StateType.h"
-#include "src/solver/AllowEarlyTerminationCondition.h"
+#include "src/storage/Scheduler.h"
 #include "src/solver/OptimizationDirection.h"
+
+#include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace storage {
@@ -17,15 +21,16 @@ namespace storm {
     namespace solver {
         
         /**
-         * Abstract base class which provides value-type independent helpers.
+         * Abstract base class of min-max linea equation solvers.
          */
-        class AbstractMinMaxLinearEquationSolver {
+        template<typename ValueType>
+        class AbstractMinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
         public:
             void setSchedulerTracking(bool trackScheduler = true);
             
             std::vector<storm::storage::sparse::state_type> getScheduler() const {
-                STORM_LOG_THROW(scheduler, storm::exceptions::Invali, "Cannot retrieve scheduler, because none was generated.");
-                reutrn scheduler.get();
+                STORM_LOG_THROW(scheduler, storm::exceptions::InvalidSettingsException, "Cannot retrieve scheduler, because none was generated.");
+                return scheduler.get();
             }
             
             void setOptimizationDirection(OptimizationDirection d) {
@@ -35,37 +40,30 @@ namespace storm {
             void resetOptimizationDirection() {
                 direction = OptimizationDirectionSetting::Unset;
             }
-            
-            void setEarlyTerminationCriterion(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v) {
-                earlyTermination = std::move(v);
-            }
-            
+                        
         protected:
             AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackScheduler, MinMaxTechniqueSelection prefTech);
             
-            /// The direction in which to optimize, can be unset.
+            // The direction in which to optimize, can be unset.
             OptimizationDirectionSetting direction;
 
-            /// The required precision for the iterative methods.
+            // The required precision for the iterative methods.
             double precision;
             
-            /// Sets whether the relative or absolute error is to be considered for convergence detection.
+            // Sets whether the relative or absolute error is to be considered for convergence detection.
             bool relative;
             
-            /// The maximal number of iterations to do before iteration is aborted.
+            // The maximal number of iterations to do before iteration is aborted.
             uint_fast64_t maximalNumberOfIterations;
 
-            /// Whether value iteration or policy iteration is to be used.
+            // Whether value iteration or policy iteration is to be used.
             bool useValueIteration;
             
-            /// Whether we generate a scheduler during solving.
+            // Whether we generate a scheduler during solving.
             bool trackScheduler;
             
-            /// The scheduler (if it could be successfully generated).
-            boost::optional<storm::storage::Scheduler> scheduler;
-
-            // A termination criterion to be used (can be unset).
-            std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> earlyTermination;
+            // The scheduler (if it could be successfully generated).
+            boost::optional<std::unique_ptr<storm::storage::Scheduler>> scheduler;
         };
         
         /*!
@@ -74,11 +72,9 @@ namespace storm {
          * provided.
          */
         template<class ValueType>
-        class MinMaxLinearEquationSolver : public AbstractMinMaxLinearEquationSolver {
+        class MinMaxLinearEquationSolver : public AbstractMinMaxLinearEquationSolver<ValueType> {
         protected:
-            MinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& matrix, double precision, bool relativeError, uint_fast64_t maxNrIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech) :
-                AbstractMinMaxLinearEquationSolver(precision, relativeError, maxNrIterations, trackPolicy, prefTech),
-                A(matrix), earlyTermination(new NoEarlyTerminationCondition<ValueType>()) {
+            MinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& matrix, double precision, bool relativeError, uint_fast64_t maxNrIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech) : AbstractMinMaxLinearEquationSolver<ValueType>(precision, relativeError, maxNrIterations, trackPolicy, prefTech), A(matrix) {
                 // Intentionally left empty.
             }
         

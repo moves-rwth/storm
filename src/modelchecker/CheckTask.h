@@ -41,7 +41,7 @@ namespace storm {
                     
                     if (operatorFormula.hasBound()) {
                         if (onlyInitialStatesRelevant) {
-                            this->bound = std::make_pair(operatorFormula.getComparisonType(), static_cast<ValueType>(operatorFormula.getBound()));
+                            this->bound = operatorFormula.getBound();
                         }
 
                         if (!optimizationDirection) {
@@ -54,7 +54,7 @@ namespace storm {
                     storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
                     
                     if (probabilityOperatorFormula.hasBound()) {
-                        if (probabilityOperatorFormula.getBound() == storm::utility::zero<ValueType>() || probabilityOperatorFormula.getBound() == storm::utility::one<ValueType>()) {
+                        if (probabilityOperatorFormula.getThreshold() == storm::utility::zero<ValueType>() || probabilityOperatorFormula.getThreshold() == storm::utility::one<ValueType>()) {
                             this->qualitative = true;
                         }
                     }
@@ -63,7 +63,7 @@ namespace storm {
                     this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
                     
                     if (rewardOperatorFormula.hasBound()) {
-                        if (rewardOperatorFormula.getBound() == storm::utility::zero<ValueType>()) {
+                        if (rewardOperatorFormula.getThreshold() == storm::utility::zero<ValueType>()) {
                             this->qualitative = true;
                         }
                     }
@@ -139,21 +139,21 @@ namespace storm {
             /*!
              * Retrieves the value of the bound (if set).
              */
-            ValueType const& getBoundValue() const {
-                return bound.get().second;
+            ValueType const& getBoundThreshold() const {
+                return bound.get().threshold;
             }
             
             /*!
              * Retrieves the comparison type of the bound (if set).
              */
             storm::logic::ComparisonType const& getBoundComparisonType() const {
-                return bound.get().first;
+                return bound.get().comparisonType;
             }
             
             /*!
-             * Retrieves the bound for the initial states (if set).
+             * Retrieves the bound (if set).
              */
-            std::pair<storm::logic::ComparisonType, ValueType> const& getBound() const {
+            storm::logic::Bound<ValueType> const& getBound() const {
                 return bound.get();
             }
             
@@ -181,14 +181,13 @@ namespace storm {
              * @param rewardModelName If given, the checking has to be done wrt. to this reward model.
              * @param onlyInitialStatesRelevant If set to true, the model checker may decide to only compute the values
              * for the initial states.
-             * @param initialStatesBound The bound with which the initial states will be compared. This may only be set
-             * together with the flag that indicates only initial states of the model are relevant.
+             * @param bound The bound with which the states will be compared.
              * @param qualitative A flag specifying whether the property needs to be checked qualitatively, i.e. compared
              * with bounds 0/1.
              * @param produceSchedulers If supported by the model checker and the model formalism, schedulers to achieve
              * a value will be produced if this flag is set.
              */
-            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> const& bound, bool qualitative, bool produceSchedulers) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers) {
+            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound<ValueType>> const& bound, bool qualitative, bool produceSchedulers) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers) {
                 // Intentionally left empty.
             }
             
@@ -204,8 +203,8 @@ namespace storm {
             // If set to true, the model checker may decide to only compute the values for the initial states.
             bool onlyInitialStatesRelevant;
 
-            // The bound with which the initial states will be compared.
-            boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> bound;
+            // The bound with which the states will be compared.
+            boost::optional<storm::logic::Bound<ValueType>> bound;
             
             // A flag specifying whether the property needs to be checked qualitatively, i.e. compared with bounds 0/1.
             bool qualitative;

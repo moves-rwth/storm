@@ -5,7 +5,7 @@
 
 #include "src/solver/OptimizationDirection.h"
 #include "src/logic/ComparisonType.h"
-#include "src/logic/BoundInfo.h"
+#include "src/logic/Bound.h"
 #include "src/storage/BitVector.h"
 
 namespace storm {
@@ -57,11 +57,11 @@ namespace storm {
         template<typename ValueType>
         class BoundedGoal : public SolveGoal {
         public:
-            BoundedGoal(OptimizationDirection optimizationDirection, storm::logic::ComparisonType ct, ValueType const& threshold, storm::storage::BitVector const& relColumns) : SolveGoal(optimizationDirection), boundType(ct), threshold(threshold), relevantColumnVector(relColumns) {
+            BoundedGoal(OptimizationDirection optimizationDirection, storm::logic::ComparisonType comparisonType, ValueType const& threshold, storm::storage::BitVector const& relevantValues) : SolveGoal(optimizationDirection), bound(comparisonType, threshold), relevantValueVector(relevantValues) {
                 // Intentionally left empty.
             }
             
-            BoundedGoal(OptimizationDirection optimizationDirection, storm::logic::BoundInfo<ValueType> const& boundInfo, storm::storage::BitVector const& relevantColumns) : SolveGoal(optimizationDirection), boundType(boundInfo.boundType), threshold(boundInfo.bound), relevantColumnVector(relevantColumns) {
+            BoundedGoal(OptimizationDirection optimizationDirection, storm::logic::Bound<ValueType> const& bound, storm::storage::BitVector const& relevantValues) : SolveGoal(optimizationDirection), bound(bound), relevantValueVector(relevantValues) {
                 // Intentionally left empty.
             }
             
@@ -74,21 +74,20 @@ namespace storm {
             }
             
             bool boundIsALowerBound() const { 
-                return (boundType == storm::logic::ComparisonType::Greater || boundType == storm::logic::ComparisonType::GreaterEqual);
+                return (bound.comparisonType == storm::logic::ComparisonType::Greater || bound.comparisonType == storm::logic::ComparisonType::GreaterEqual);
             }
             
             ValueType const& thresholdValue() const {
-                return threshold;
+                return bound.threshold;
             }
             
-            storm::storage::BitVector const& relevantColumns() const {
-                return relevantColumnVector;
+            storm::storage::BitVector const& relevantValues() const {
+                return relevantValues;
             }
             
         private:
-            storm::logic::ComparisonType boundType;
-            ValueType threshold;
-            storm::storage::BitVector relevantColumnVector;
+            Bound<ValueType> bound;
+            storm::storage::BitVector relevantValueVector;
         };
         
         template<typename ValueType>

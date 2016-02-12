@@ -14,33 +14,33 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const&  matrix) {
+        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix) {
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> p = factory.create(matrix);
             p->setOptimizationDirection(goal.direction());
-            p->setEarlyTerminationCriterion(std::make_unique<TerminateAfterFilteredExtremumPassesThresholdValue<double>>(goal.relevantColumns(), goal.thresholdValue(), goal.minimize()));
+            p->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumPassesThresholdValue<double>>(goal.relevantColumns(), goal.thresholdValue(), goal.minimize()));
             return p;
         }
         
         template<typename ValueType> 
-        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const&  matrix) {
+        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix) {
             if (goal.isBounded()) {
                 return configureMinMaxLinearEquationSolver(static_cast<BoundedGoal<ValueType> const&>(goal), factory, matrix);
             }  
-            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> p = factory.create(matrix);
-            p->setOptimizationDirection(goal.direction());
-            return p;
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = factory.create(matrix);
+            solver->setOptimizationDirection(goal.direction());
+            return solver;
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const&  matrix) {
-            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> p = factory.create(matrix);
-            p->setOptimizationDirection(goal.direction());
-            p->setEarlyTerminationCriterion(std::make_unique<TerminateAfterFilteredExtremumPassesThresholdValue<double>>(goal.relevantColumns(), goal.thresholdValue(), goal.minimize()));
-            return p;
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix) {
+            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = factory.create(matrix);
+            solver->setOptimizationDirection(goal.direction());
+            solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumPassesThresholdValue<double>>(goal.relevantColumns(), goal.thresholdValue(), goal.minimize()));
+            return solver;
         }
         
         template<typename ValueType>
-        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const&  matrix) {
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix) {
             if (goal.isBounded()) {
                 return configureLinearEquationSolver(static_cast<BoundedGoal<ValueType> const&>(goal), factory, matrix);
             }
