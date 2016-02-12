@@ -99,10 +99,10 @@ namespace storm {
             private:
                 storage::SparseMatrix<T> transitionMatrix;
                 state_t numStates; // includes meta-target, i.e. states in model + 1
-                std::unordered_set<state_t> targetSet;
                 state_t metaTarget;
                 storage::BitVector initialStates;
                 state_list_t targets;
+                std::unordered_map<state_t, T> targetProbMap;
 
                 std::vector<state_list_t>             graphPredecessors;
                 std::vector<boost::optional<state_t>> shortestPathPredecessors;

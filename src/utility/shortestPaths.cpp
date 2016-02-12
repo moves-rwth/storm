@@ -13,7 +13,9 @@ namespace storm {
                                                    metaTarget(model->getNumberOfStates()), // first unused state number
                                                    initialStates(model->getInitialStates()),
                                                    targets(targets) {
-                targetSet = std::unordered_set<state_t>(targets.begin(), targets.end());
+                for (state_t target : targets) {
+                    targetProbMap.emplace(target, one<T>());
+                }
 
                 computePredecessors();
 
@@ -134,7 +136,7 @@ namespace storm {
                     state_t currentNode = (*dijkstraQueue.begin()).second;
                     dijkstraQueue.erase(dijkstraQueue.begin());
 
-                    if (targetSet.count(currentNode) == 0) {
+                    if (targetProbMap.count(currentNode) == 0) {
                         // non-target node, treated normally
                         for (auto const& transition : transitionMatrix.getRowGroup(currentNode)) {
                             state_t otherNode = transition.getColumn();
@@ -223,7 +225,7 @@ namespace storm {
                     return utility::zero<T>();
                 } else {
                     // edge must be "virtual edge" from target state to meta-target
-                    assert(targetSet.count(tailNode) == 1);
+                    assert(targetProbMap.count(tailNode) == 1);
                     return utility::one<T>();
                 }
             }
