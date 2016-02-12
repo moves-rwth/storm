@@ -7,3 +7,14 @@ ExternalProject_Add(
         BUILD_COMMAND make
         BUILD_IN_SOURCE 0
 )
+
+ExternalProject_Add(
+    glpk
+    DOWNLOAD_COMMAND ""
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/glpk-4.57
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glpk-4.57
+    CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} ${CMAKE_CURRENT_SOURCE_DIR}/glpk-4.57/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/glpk-4.57
+    BUILD_COMMAND make "CFLAGS=-O2 -w"
+    INSTALL_COMMAND make install
+    BUILD_IN_SOURCE 0
+)
