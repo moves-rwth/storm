@@ -52,9 +52,9 @@ namespace storm {
             }
 
             template <typename T>
-            storage::BitVector ShortestPathsGenerator<T>::getStates(unsigned long k) {
+            BitVector ShortestPathsGenerator<T>::getStates(unsigned long k) {
                 computeKSP(k);
-                storage::BitVector stateSet(numStates - 1, false); // no meta-target
+                BitVector stateSet(numStates - 1, false); // no meta-target
 
                 Path<T> currentPath = kShortestPaths[metaTarget][k - 1];
                 boost::optional<state_t> maybePredecessor = currentPath.predecessorNode;

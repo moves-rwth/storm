@@ -26,6 +26,7 @@ namespace storm {
         namespace ksp {
             typedef storage::sparse::state_type state_t;
             typedef std::vector<state_t> state_list_t;
+            using BitVector = storage::BitVector;
 
             template <typename T>
             struct Path {
@@ -100,8 +101,8 @@ namespace storm {
                 storage::SparseMatrix<T> transitionMatrix;
                 state_t numStates; // includes meta-target, i.e. states in model + 1
                 state_t metaTarget;
-                storage::BitVector initialStates;
                 state_list_t targets;
+                BitVector initialStates;
                 std::unordered_map<state_t, T> targetProbMap;
 
                 std::vector<state_list_t>             graphPredecessors;
