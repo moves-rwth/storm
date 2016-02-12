@@ -103,7 +103,7 @@ namespace storm {
                 BitVector initialStates;
                 std::unordered_map<state_t, T> targetProbMap;
 
-                std::vector<ordered_state_list_t>     graphPredecessors; // FIXME is a switch to BitVector a good idea here?
+                std::vector<ordered_state_list_t>     graphPredecessors;
                 std::vector<boost::optional<state_t>> shortestPathPredecessors;
                 std::vector<ordered_state_list_t>     shortestPathSuccessors;
                 std::vector<T>                        shortestPathDistances;
@@ -167,7 +167,7 @@ namespace storm {
                     return find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
                 }
 
-                inline bool isTargetState(state_t node) const {
+                inline bool isMetaTargetPredecessor(state_t node) const {
                     return targetProbMap.count(node) == 1;
                 }
 

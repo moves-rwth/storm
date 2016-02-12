@@ -107,16 +107,18 @@ namespace storm {
 
                 for (state_t i = 0; i < numStates - 1; i++) {
                     for (auto const& transition : transitionMatrix.getRowGroup(i)) {
-                        // to avoid non-minimal paths, the target states are
+                        // to avoid non-minimal paths, the meta-target-predecessors are
                         // *not* predecessors of any state but the meta-target
-                        if (!isTargetState(i)) {
+                        if (!isMetaTargetPredecessor(i)) {
                             graphPredecessors[transition.getColumn()].push_back(i);
                         }
                     }
                 }
 
-                // meta-target has exactly the target states as predecessors
-                for (auto targetProbPair : targetProbMap) { // FIXME
+                // meta-target has exactly the meta-target-predecessors as predecessors
+                // (duh. note that the meta-target-predecessors used to be called target,
+                // but that's not necessarily true in the matrix/value invocation case)
+                for (auto targetProbPair : targetProbMap) {
                     graphPredecessors[metaTarget].push_back(targetProbPair.first);
                 }
             }
@@ -144,7 +146,7 @@ namespace storm {
                     state_t currentNode = (*dijkstraQueue.begin()).second;
                     dijkstraQueue.erase(dijkstraQueue.begin());
 
-                    if (!isTargetState(currentNode)) {
+                    if (!isMetaTargetPredecessor(currentNode)) {
                         // non-target node, treated normally
                         for (auto const& transition : transitionMatrix.getRowGroup(currentNode)) {
                             state_t otherNode = transition.getColumn();
@@ -158,9 +160,9 @@ namespace storm {
                             }
                         }
                     } else {
-                        // target node has only "virtual edge" (with prob 1) to meta-target
-                        // no multiplication necessary
-                        T alternateDistance = shortestPathDistances[currentNode]; // FIXME
+                        // node only has one "virtual edge" (with prob as per targetProbMap) to meta-target
+                        // FIXME: double check
+                        T alternateDistance = shortestPathDistances[currentNode] * targetProbMap[currentNode];
                         if (alternateDistance > shortestPathDistances[metaTarget]) {
                             shortestPathDistances[metaTarget] = alternateDistance;
                             shortestPathPredecessors[metaTarget] = boost::optional<state_t>(currentNode);
@@ -232,9 +234,9 @@ namespace storm {
                     assert(false);
                     return utility::zero<T>();
                 } else {
-                    // edge must be "virtual edge" from target state to meta-target
-                    assert(targetProbMap.count(tailNode) == 1);
-                    return one<T>();
+                    // edge must be "virtual edge" to meta-target
+                    assert(isMetaTargetPredecessor(tailNode));
+                    return targetProbMap.at(tailNode); // FIXME double check
                 }
             }
 
