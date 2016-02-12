@@ -79,18 +79,17 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model, bool computeResultsForInitialStatesOnly) : SparsePropositionalModelChecker<SparseDtmcModelType>(model), computeResultsForInitialStatesOnly(computeResultsForInitialStatesOnly) {
+        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model) : SparsePropositionalModelChecker<SparseDtmcModelType>(model) {
             // Intentionally left empty.
         }
         
         template<typename SparseDtmcModelType>
-        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(storm::logic::Formula const& formula) const {
+        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isProbabilityOperatorFormula()) {
-                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
-                return this->canHandle(probabilityOperatorFormula.getSubformula());
+                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
             } else if (formula.isRewardOperatorFormula()) {
-                storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
-                return this->canHandle(rewardOperatorFormula.getSubformula());
+                return this->canHandle(checkTask.replaceFormula(formula.asRewardOperatorFormula().getSubformula()));
             } else if (formula.isUntilFormula() || formula.isEventuallyFormula()) {
                 if (formula.isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = formula.asUntilFormula();
@@ -134,7 +133,8 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageProbabilities(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula> const& checkTask) {
+            storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
             storm::storage::BitVector const& psiStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
 
@@ -149,7 +149,7 @@ namespace storm {
             
             storm::storage::BitVector const& initialStates = this->getModel().getInitialStates();
             STORM_LOG_THROW(initialStates.getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-            STORM_LOG_THROW(this->computeResultsForInitialStatesOnly, storm::exceptions::IllegalArgumentException, "Cannot compute long-run probabilities for all states.");
+            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::IllegalArgumentException, "Cannot compute long-run probabilities for all states.");
             
             storm::storage::SparseMatrix<ValueType> backwardTransitions = this->getModel().getBackwardTransitions();
             storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowCount(), true), psiStates);
@@ -158,7 +158,7 @@ namespace storm {
             
             // Determine whether we need to perform some further computation.
             bool furtherComputationNeeded = true;
-            if (computeResultsForInitialStatesOnly && initialStates.isDisjointFrom(maybeStates)) {
+            if (checkTask.isOnlyInitialStatesRelevantSet() && initialStates.isDisjointFrom(maybeStates)) {
                 STORM_LOG_DEBUG("The long-run probability for all initial states was found in a preprocessing step.");
                 furtherComputationNeeded = false;
             }
@@ -168,7 +168,7 @@ namespace storm {
             }
             
             if (furtherComputationNeeded) {
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.
                     storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, storm::storage::BitVector(numberOfStates, true), storm::storage::BitVector(numberOfStates, false));
                     
@@ -178,12 +178,12 @@ namespace storm {
                 
                 std::vector<ValueType> stateValues(maybeStates.size(), storm::utility::zero<ValueType>());
                 storm::utility::vector::setVectorValues(stateValues, psiStates, storm::utility::one<ValueType>());
-                result = computeLongRunValues(transitionMatrix, backwardTransitions, initialStates, maybeStates, computeResultsForInitialStatesOnly, stateValues);
+                result = computeLongRunValues(transitionMatrix, backwardTransitions, initialStates, maybeStates, checkTask.isOnlyInitialStatesRelevantSet(), stateValues);
             }
             
             // Construct check result based on whether we have computed values for all states or just the initial states.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            if (computeResultsForInitialStatesOnly) {
+            if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 // If we computed the results for the initial states only, we need to filter the result to only
                 // communicate these results.
                 checkResult->filter(ExplicitQualitativeCheckResult(initialStates));
@@ -192,14 +192,14 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageRewards(storm::logic::LongRunAverageRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageRewards(CheckTask<storm::logic::LongRunAverageRewardFormula> const& checkTask) {
             // Do some sanity checks to establish some required properties.
-            RewardModelType const& rewardModel = this->getModel().getRewardModel(rewardModelName ? rewardModelName.get() : "");
+            RewardModelType const& rewardModel = this->getModel().getRewardModel(checkTask.isRewardModelSet() ? checkTask.getRewardModel() : "");
             STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
 
             storm::storage::BitVector const& initialStates = this->getModel().getInitialStates();
             STORM_LOG_THROW(initialStates.getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-            STORM_LOG_THROW(this->computeResultsForInitialStatesOnly, storm::exceptions::IllegalArgumentException, "Cannot compute long-run probabilities for all states.");
+            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::IllegalArgumentException, "Cannot compute long-run probabilities for all states.");
             
             storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
             uint_fast64_t numberOfStates = transitionMatrix.getRowCount();
@@ -225,12 +225,12 @@ namespace storm {
 
             // Determine whether we need to perform some further computation.
             bool furtherComputationNeeded = true;
-            if (computeResultsForInitialStatesOnly && initialStates.isDisjointFrom(maybeStates)) {
+            if (checkTask.isOnlyInitialStatesRelevantSet() && initialStates.isDisjointFrom(maybeStates)) {
                 furtherComputationNeeded = false;
             }
             
             if (furtherComputationNeeded) {
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.
                     storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, storm::storage::BitVector(numberOfStates, true), storm::storage::BitVector(numberOfStates, false));
                     
@@ -238,12 +238,12 @@ namespace storm {
                     maybeStates &= reachableStates;
                 }
                 
-                result = computeLongRunValues(transitionMatrix, backwardTransitions, initialStates, maybeStates, computeResultsForInitialStatesOnly, stateRewardValues);
+                result = computeLongRunValues(transitionMatrix, backwardTransitions, initialStates, maybeStates, checkTask.isOnlyInitialStatesRelevantSet(), stateRewardValues);
             }
             
             // Construct check result based on whether we have computed values for all states or just the initial states.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            if (computeResultsForInitialStatesOnly) {
+            if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 // If we computed the results for the initial states only, we need to filter the result to only
                 // communicate these results.
                 checkResult->filter(ExplicitQualitativeCheckResult(initialStates));
@@ -397,7 +397,9 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula> const& checkTask) {
+            storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
+            
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
@@ -411,7 +413,7 @@ namespace storm {
             
             // Determine whether we need to perform some further computation.
             bool furtherComputationNeeded = true;
-            if (computeResultsForInitialStatesOnly && this->getModel().getInitialStates().isDisjointFrom(statesWithProbabilityGreater0)) {
+            if (checkTask.isOnlyInitialStatesRelevantSet() && this->getModel().getInitialStates().isDisjointFrom(statesWithProbabilityGreater0)) {
                 STORM_LOG_DEBUG("The probability for all initial states was found in a preprocessing step.");
                 furtherComputationNeeded = false;
             } else if (statesWithProbabilityGreater0.empty()) {
@@ -427,7 +429,7 @@ namespace storm {
             if (furtherComputationNeeded) {
                 uint_fast64_t timeBound = pathFormula.getDiscreteTimeBound();
                 
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.
                     storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, phiStates, psiStates, true, timeBound);
                     
@@ -440,7 +442,7 @@ namespace storm {
                 
                 std::vector<std::size_t> distancesFromInitialStates;
                 storm::storage::BitVector relevantStates;
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of initial states of the sub-model.
                     storm::storage::BitVector subInitialStates = this->getModel().getInitialStates() % statesWithProbabilityGreater0;
 
@@ -469,7 +471,7 @@ namespace storm {
                     // If we are computing the results for the initial states only, we can use the minimal distance from
                     // each state to the initial states to determine whether we still need to consider the values for
                     // these states. If not, we can null-out all their probabilities.
-                    if (computeResultsForInitialStatesOnly) {
+                    if (checkTask.isOnlyInitialStatesRelevantSet()) {
                         for (auto state : relevantStates) {
                             if (distancesFromInitialStates[state] > (timeBound - timeStep)) {
                                 for (auto& element : submatrix.getRow(state)) {
@@ -489,7 +491,7 @@ namespace storm {
             
             // Construct check result based on whether we have computed values for all states or just the initial states.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            if (computeResultsForInitialStatesOnly) {
+            if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
                 // result to only communicate these results.
                 checkResult->filter(ExplicitQualitativeCheckResult(this->getModel().getInitialStates() | psiStates));
@@ -498,7 +500,9 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
+            storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
+            
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
@@ -513,7 +517,7 @@ namespace storm {
 
             // Determine whether we need to perform some further computation.
             bool furtherComputationNeeded = true;
-            if (computeResultsForInitialStatesOnly && this->getModel().getInitialStates().isDisjointFrom(maybeStates)) {
+            if (checkTask.isOnlyInitialStatesRelevantSet() && this->getModel().getInitialStates().isDisjointFrom(maybeStates)) {
                 STORM_LOG_DEBUG("The probability for all initial states was found in a preprocessing step.");
                 furtherComputationNeeded = false;
             } else if (maybeStates.empty()) {
@@ -525,7 +529,7 @@ namespace storm {
             if (furtherComputationNeeded) {
                 // If we compute the results for the initial states only, we can cut off all maybe state that are not
                 // reachable from them.
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.
                     storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, statesWithProbability1);
                 
@@ -543,7 +547,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> submatrix = this->getModel().getTransitionMatrix().getSubmatrix(false, maybeStates, maybeStates);
                 storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
                 
-                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, computeResultsForInitialStatesOnly, phiStates, psiStates, oneStepProbabilities);
+                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, oneStepProbabilities, submatrixTransposed, newInitialStates, checkTask.isOnlyInitialStatesRelevantSet(), phiStates, psiStates, oneStepProbabilities);
                 storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, subresult);
             }
 
@@ -553,7 +557,7 @@ namespace storm {
 
             // Construct check result based on whether we have computed values for all states or just the initial states.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            if (computeResultsForInitialStatesOnly) {
+            if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
                 // result to only communicate these results.
                 checkResult->filter(ExplicitQualitativeCheckResult(~maybeStates | this->getModel().getInitialStates()));
@@ -562,14 +566,16 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) {
+            storm::logic::ReachabilityRewardFormula const& rewardPathFormula = checkTask.getFormula();
+            
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             storm::storage::BitVector phiStates(this->getModel().getNumberOfStates(), true);
             storm::storage::BitVector const& psiStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             
             // Do some sanity checks to establish some required properties.
-            RewardModelType const& rewardModel = this->getModel().getRewardModel(rewardModelName ? rewardModelName.get() : "");
+            RewardModelType const& rewardModel = this->getModel().getRewardModel(checkTask.isRewardModelSet() ? checkTask.getRewardModel() : "");
             STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
             
             // Then, compute the subset of states that has a reachability reward less than infinity.
@@ -580,7 +586,7 @@ namespace storm {
             
             // Determine whether we need to perform some further computation.
             bool furtherComputationNeeded = true;
-            if (computeResultsForInitialStatesOnly) {
+            if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 if (this->getModel().getInitialStates().isSubsetOf(infinityStates)) {
                     STORM_LOG_DEBUG("The reward of all initial states was found in a preprocessing step.");
                     furtherComputationNeeded = false;
@@ -595,7 +601,7 @@ namespace storm {
             if (furtherComputationNeeded) {
                 // If we compute the results for the initial states only, we can cut off all maybe state that are not
                 // reachable from them.
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.
                     storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), maybeStates, psiStates);
                     
@@ -613,7 +619,7 @@ namespace storm {
                 // Project the state reward vector to all maybe-states.
                 std::vector<ValueType> stateRewardValues = rewardModel.getTotalRewardVector(maybeStates.getNumberOfSetBits(), this->getModel().getTransitionMatrix(), maybeStates);
 
-                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, stateRewardValues, submatrixTransposed, newInitialStates, computeResultsForInitialStatesOnly, phiStates, psiStates, this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, psiStates));
+                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, stateRewardValues, submatrixTransposed, newInitialStates, checkTask.isOnlyInitialStatesRelevantSet(), phiStates, psiStates, this->getModel().getTransitionMatrix().getConstrainedRowSumVector(maybeStates, psiStates));
                 storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, subresult);
             }
             
@@ -623,7 +629,7 @@ namespace storm {
 
             // Construct check result based on whether we have computed values for all states or just the initial states.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            if (computeResultsForInitialStatesOnly) {
+            if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 // If we computed the results for the initial (and inf) states only, we need to filter the result to
                 // only communicate these results.
                 checkResult->filter(ExplicitQualitativeCheckResult(~maybeStates | this->getModel().getInitialStates()));
@@ -632,8 +638,8 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(storm::logic::ConditionalPathFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
-            std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalPathFormula> const& checkTask) {
+            storm::logic::ConditionalPathFormula const& pathFormula = checkTask.getFormula();
             
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             STORM_LOG_THROW(pathFormula.getLeftSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Expected 'eventually' formula.");
@@ -648,7 +654,7 @@ namespace storm {
             // Do some sanity checks to establish some required properties.
             // STORM_LOG_WARN_COND(storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::State, "The chosen elimination method is not available for computing conditional probabilities. Falling back to regular state elimination.");
             STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-            STORM_LOG_THROW(this->computeResultsForInitialStatesOnly, storm::exceptions::IllegalArgumentException, "Cannot compute conditional probabilities for all states.");
+            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::IllegalArgumentException, "Cannot compute conditional probabilities for all states.");
             storm::storage::sparse::state_type initialState = *this->getModel().getInitialStates().begin();
             
             storm::storage::SparseMatrix<ValueType> backwardTransitions = this->getModel().getBackwardTransitions();
@@ -677,18 +683,10 @@ namespace storm {
             storm::storage::BitVector statesReachingPhi = storm::utility::graph::performProbGreater0(backwardTransitions, trueStates, phiStates);
             
             // The set of states we need to consider are those that have a non-zero probability to satisfy the condition or are on some path that has a psi state in it.
-            STORM_LOG_TRACE("Initial state: " << this->getModel().getInitialStates());
-            STORM_LOG_TRACE("Phi states: " << phiStates);
-            STORM_LOG_TRACE("Psi state: " << psiStates);
-            STORM_LOG_TRACE("States with probability greater 0 of satisfying the condition: " << statesWithProbabilityGreater0);
-            STORM_LOG_TRACE("States with psi predecessor: " << statesWithPsiPredecessor);
-            STORM_LOG_TRACE("States reaching phi: " << statesReachingPhi);
             storm::storage::BitVector maybeStates = statesWithProbabilityGreater0 | (statesWithPsiPredecessor & statesReachingPhi);
-            STORM_LOG_TRACE("Found " << maybeStates.getNumberOfSetBits() << " relevant states: " << maybeStates);
             
             // Determine the set of initial states of the sub-DTMC.
             storm::storage::BitVector newInitialStates = this->getModel().getInitialStates() % maybeStates;
-            STORM_LOG_TRACE("Found new initial states: " << newInitialStates << " (old: " << this->getModel().getInitialStates() << ")");
             
             // Create a dummy vector for the one-step probabilities.
             std::vector<ValueType> oneStepProbabilities(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
@@ -710,10 +708,7 @@ namespace storm {
             // Keep only the states that we do not eliminate in the maybe states.
             maybeStates = phiStates | psiStates;
             
-            STORM_LOG_TRACE("Phi states in reduced model " << phiStates);
-            STORM_LOG_TRACE("Psi states in reduced model " << psiStates);
             storm::storage::BitVector statesToEliminate = ~maybeStates & ~newInitialStates;
-            STORM_LOG_TRACE("Eliminating the states " << statesToEliminate);
             
             // Before starting the model checking process, we assign priorities to states so we can use them to
             // impose ordering constraints later.
@@ -737,7 +732,6 @@ namespace storm {
             uint_fast64_t numberOfStatesToEliminate = statePriorities->size();
             STORM_LOG_INFO("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique." << std::endl);
             performPrioritizedStateElimination(statePriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, this->getModel().getInitialStates(), true);
-            STORM_LOG_INFO("Eliminated " << numberOfStatesToEliminate << " states." << std::endl);
             
             storm::solver::stateelimination::ConditionalEliminator<SparseDtmcModelType> stateEliminator = storm::solver::stateelimination::ConditionalEliminator<SparseDtmcModelType>(flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, phiStates, psiStates);
             
@@ -853,25 +847,6 @@ namespace storm {
                     numerator += trans1.getValue() * additiveTerm;
                 }
             }
-            std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
-            std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
-            
-            if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                std::chrono::high_resolution_clock::duration conversionTime = conversionEnd - conversionStart;
-                std::chrono::milliseconds conversionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(conversionTime);
-                std::chrono::high_resolution_clock::duration modelCheckingTime = modelCheckingEnd - modelCheckingStart;
-                std::chrono::milliseconds modelCheckingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(modelCheckingTime);
-                std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
-                std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
-                
-                STORM_PRINT_AND_LOG(std::endl);
-                STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
-                STORM_PRINT_AND_LOG("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
-                STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG(std::endl);
-            }
             
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, numerator / denominator));
         }
@@ -972,9 +947,6 @@ namespace storm {
         
         template<typename SparseDtmcModelType>
         std::vector<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& values, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates,  bool computeResultsForInitialStatesOnly, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& oneStepProbabilitiesToTarget) {
-            std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
-            
-            std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(transitionMatrix);
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardTransitions);
@@ -1001,31 +973,6 @@ namespace storm {
         
             STORM_LOG_ASSERT(flexibleMatrix.empty(), "Not all transitions were eliminated.");
             STORM_LOG_ASSERT(flexibleBackwardTransitions.empty(), "Not all transitions were eliminated.");
-            
-            std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
-            std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
-            
-            if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                std::chrono::high_resolution_clock::duration conversionTime = conversionEnd - conversionStart;
-                std::chrono::milliseconds conversionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(conversionTime);
-                std::chrono::high_resolution_clock::duration modelCheckingTime = modelCheckingEnd - modelCheckingStart;
-                std::chrono::milliseconds modelCheckingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(modelCheckingTime);
-                std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
-                std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
-                
-                STORM_PRINT_AND_LOG(std::endl);
-                STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
-                STORM_PRINT_AND_LOG("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
-                STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG(std::endl);
-                STORM_PRINT_AND_LOG("Other:" << std::endl);
-                STORM_PRINT_AND_LOG("    * number of states eliminated: " << transitionMatrix.getRowCount() << std::endl);
-                if (storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::Hybrid) {
-                    STORM_PRINT_AND_LOG("    * maximal depth of SCC decomposition: " << maximalDepth << std::endl);
-                }
-            }
             
             // Now, we return the value for the only initial state.
             STORM_LOG_DEBUG("Simplifying and returning result.");
@@ -1290,9 +1237,6 @@ namespace storm {
                     }
                     
                     if (!foundCorrespondingElement) {
-//                        std::cout << "forward entry: " << forwardIndex << " -> " << forwardEntry << std::endl;
-//                        transitionMatrix.print();
-//                        backwardTransitions.print();
                         return false;
                     }
                 }

@@ -236,15 +236,15 @@ namespace storm {
                 if (settings.isSymbolicSet()) {
 #ifdef STORM_HAVE_CARL
                     if (settings.isParametricSet()) {
-                        buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formulas);
+                        buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formulas, true);
                     } else {
 #endif
-                        buildAndCheckSymbolicModel<double>(program.get(), formulas);
+                        buildAndCheckSymbolicModel<double>(program.get(), formulas, true);
 #ifdef STORM_HAVE_CARL
                     }
 #endif
                 } else if (settings.isExplicitSet()) {
-                    buildAndCheckExplicitModel<double>(formulas);
+                    buildAndCheckExplicitModel<double>(formulas, true);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
                 }

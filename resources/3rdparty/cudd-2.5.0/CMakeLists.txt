@@ -26,7 +26,7 @@ elseif(MSVC)
 	# required for GMM to compile, ugly error directive in their code
 	add_definitions(/D_SCL_SECURE_NO_DEPRECATE /D_CRT_SECURE_NO_WARNINGS)
 else(CLANG)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-newline-eof -Wno-unneeded-internal-declaration -Wno-unused-variable -Wno-unused-const-variable")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-newline-eof -Wno-unneeded-internal-declaration -Wno-unused-variable -Wno-unused-const-variable -Wno-parentheses-equality")
 endif()
 
 # Since we do not target Alphas, this symbol is always set
