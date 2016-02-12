@@ -43,9 +43,11 @@ namespace storm {
             /*!
              * Base class for all symbolic models.
              */
-            template<storm::dd::DdType Type, typename ValueType = double>
+            template<storm::dd::DdType Type, typename CValueType = double>
             class Model : public storm::models::ModelBase {
             public:
+                typedef CValueType ValueType;
+                
                 static const storm::dd::DdType DdType = Type;
                 typedef StandardRewardModel<Type, ValueType> RewardModelType;
                 

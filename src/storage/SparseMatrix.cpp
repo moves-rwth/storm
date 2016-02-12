@@ -451,6 +451,11 @@ namespace storm {
         std::vector<typename SparseMatrix<ValueType>::index_type> const& SparseMatrix<ValueType>::getRowGroupIndices() const {
             return rowGroupIndices;
         }
+
+        template<typename ValueType>
+        std::vector<typename SparseMatrix<ValueType>::index_type> const& SparseMatrix<ValueType>::getRowIndications() const {
+            return rowIndications;
+        }
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::makeRowsAbsorbing(storm::storage::BitVector const& rows) {

@@ -32,20 +32,44 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::vector<size_t> DFTElement<ValueType>::independentUnit() const {
+            std::vector<size_t> res;
+            res.push_back(this->id());
+            // Extend for pdeps.
+            return res;
+        }
+
+        template<typename ValueType>
         void DFTElement<ValueType>::extendUnit(std::set<size_t>& unit) const {
             unit.insert(mId);
+        }
+
+        template<typename ValueType>
+        std::vector<size_t> DFTElement<ValueType>::independentSubDft() const {
+            std::vector<size_t> res;
+            res.push_back(this->id());
+            // Extend for pdeps.
+            return res;
+        }
+
+        template<typename ValueType>
+        void DFTElement<ValueType>::extendSubDft(std::set<size_t> elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const {
+            if(std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), mId) != parentsOfSubRoot.end()) {
+                // This is a parent of the suspected root, thus it is not a subdft.
+                elemsInSubtree.clear();
+                return;
+            }
+            elemsInSubtree.insert(mId);
             for(auto const& parent : mParents) {
-                if(unit.count(parent->id()) != 0) {
-                    parent->extendUnit(unit);
+                if(elemsInSubtree.count(parent->id()) != 0) {
+                    parent->extendUnit(elemsInSubtree);
+                    if(elemsInSubtree.empty()) {
+                        return;
+                    }
                 }
             }
         }
 
-        template<typename ValueType>
-        void DFTElement<ValueType>::checkForSymmetricChildren() const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not implemented.");
-            assert(false);
-        }
 
         template<typename ValueType>
         bool DFTBE<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {

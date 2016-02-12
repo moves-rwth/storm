@@ -80,7 +80,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementTypes tp) {
+        bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementType tp) {
             assert(children.size() > 0);
             if(mElements.count(name) != 0) {
                 // Element with that name already exists.
@@ -88,28 +88,28 @@ namespace storm {
             }
             DFTElementPointer element;
             switch(tp) {
-                case DFTElementTypes::AND:
+                case DFTElementType::AND:
                     element = std::make_shared<DFTAnd<ValueType>>(mNextId++, name);
                     break;
-                case DFTElementTypes::OR:
+                case DFTElementType::OR:
                     element = std::make_shared<DFTOr<ValueType>>(mNextId++, name);
                     break;
-                case DFTElementTypes::PAND:
+                case DFTElementType::PAND:
                     element = std::make_shared<DFTPand<ValueType>>(mNextId++, name);
                     break;
-                case DFTElementTypes::POR:
+                case DFTElementType::POR:
                     element = std::make_shared<DFTPor<ValueType>>(mNextId++, name);
                     break;
-                case DFTElementTypes::SPARE:
+                case DFTElementType::SPARE:
                    element = std::make_shared<DFTSpare<ValueType>>(mNextId++, name);
                    break;
-                case DFTElementTypes::BE:
-                case DFTElementTypes::VOT:
+                case DFTElementType::BE:
+                case DFTElementType::VOT:
                     // Handled separately
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type handled separately.");
-                case DFTElementTypes::CONSTF:
-                case DFTElementTypes::CONSTS:
-                case DFTElementTypes::FDEP:
+                case DFTElementType::CONSTF:
+                case DFTElementType::CONSTS:
+                case DFTElementType::PDEP:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not supported.");
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not known.");

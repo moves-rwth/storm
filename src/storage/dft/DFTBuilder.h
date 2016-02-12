@@ -34,23 +34,23 @@ namespace storm {
             }
             
             bool addAndElement(std::string const& name, std::vector<std::string> const& children) {
-                return addStandardGate(name, children, DFTElementTypes::AND);
+                return addStandardGate(name, children, DFTElementType::AND);
             }
             
             bool addOrElement(std::string const& name, std::vector<std::string> const& children) {
-                return addStandardGate(name, children, DFTElementTypes::OR);
+                return addStandardGate(name, children, DFTElementType::OR);
             }
             
             bool addPandElement(std::string const& name, std::vector<std::string> const& children) {
-                return addStandardGate(name, children, DFTElementTypes::PAND);
+                return addStandardGate(name, children, DFTElementType::PAND);
             }
             
             bool addPorElement(std::string const& name, std::vector<std::string> const& children) {
-                return addStandardGate(name, children, DFTElementTypes::POR);
+                return addStandardGate(name, children, DFTElementType::POR);
             }
             
             bool addSpareElement(std::string const& name, std::vector<std::string> const& children) {
-                return addStandardGate(name, children, DFTElementTypes::SPARE);
+                return addStandardGate(name, children, DFTElementType::SPARE);
             }
             
             bool addDepElement(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
@@ -136,7 +136,7 @@ namespace storm {
             
             unsigned computeRank(DFTElementPointer const& elem);
             
-            bool addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementTypes tp);
+            bool addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementType tp);
             
             enum class topoSortColour {WHITE, BLACK, GREY}; 
             

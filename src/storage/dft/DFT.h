@@ -9,7 +9,6 @@
 
 #include <boost/iterator/counting_iterator.hpp>
 
-#include "DFTIsomorphism.h"
 #include "DFTElements.h"
 #include "../BitVector.h"
 
@@ -37,6 +36,7 @@ namespace storm {
         class DFT {
 
             using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
+            using DFTElementCPointer = std::shared_ptr<DFTElement<ValueType> const>;
             using DFTElementVector = std::vector<DFTElementPointer>;
             using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
             using DFTGateVector = std::vector<DFTGatePointer>;
@@ -148,15 +148,40 @@ namespace storm {
              *  Get a pointer to an element in the DFT
              *  @param index The id of the element
              */
-            DFTElementPointer const& getElement(size_t index) const {
+            DFTElementCPointer getElement(size_t index) const {
                 assert(index < nrElements());
                 return mElements[index];
             }
 
-            std::shared_ptr<DFTBE<ValueType>> getBasicElement(size_t index) const {
-                assert(index < nrElements());
-                assert(mElements[index]->isBasicElement());
-                return std::static_pointer_cast<DFTBE<ValueType>>(mElements[index]);
+            bool isBasicElement(size_t index) const {
+                return getElement(index)->isBasicElement();
+            }
+
+            bool isGate(size_t index) const {
+                return getElement(index)->isGate();
+            }
+
+            bool isDependency(size_t index) const {
+                return getElement(index)->isDependency();
+            }
+
+//            std::shared_ptr<DFTGate<ValueType> const> getGate(size_t index) const {
+//                return
+//            }
+
+            std::shared_ptr<DFTBE<ValueType> const> getBasicElement(size_t index) const {
+                assert(isBasicElement(index));
+                return std::static_pointer_cast<DFTBE<ValueType> const>(mElements[index]);
+            }
+
+            std::shared_ptr<DFTGate<ValueType> const> getGate(size_t index) const {
+                assert(isGate(index));
+                return std::static_pointer_cast<DFTGate<ValueType> const>(mElements[index]);
+            }
+
+            std::shared_ptr<DFTDependency<ValueType> const> getDependency(size_t index) const {
+                assert(isDependency(index));
+                return std::static_pointer_cast<DFTDependency<ValueType> const>(mElements[index]);
             }
 
             std::vector<std::shared_ptr<DFTBE<ValueType>>> getBasicElements() const {
@@ -173,7 +198,7 @@ namespace storm {
                 return mRepresentants.find(id) != mRepresentants.end();
             }
 
-            DFTElementPointer getRepresentant(size_t id) const {
+            DFTElementCPointer getRepresentant(size_t id) const {
                 assert(hasRepresentant(id));
                 return getElement(mRepresentants.find(id)->second);
             }
@@ -196,7 +221,7 @@ namespace storm {
 
             std::string getStateString(DFTStatePointer const& state) const;
 
-            DFTIsomorphisms detectIsomorphicChildren() const;
+            std::vector<size_t> getIndependentSubDftRoots(size_t index) const;
         private:
             bool elementIndicesCorrect() const {
                 for(size_t i = 0; i < mElements.size(); ++i) {

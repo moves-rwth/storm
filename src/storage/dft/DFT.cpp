@@ -1,3 +1,5 @@
+#include <boost/container/flat_set.hpp>
+
 #include "DFT.h"
 
 namespace storm {
@@ -145,7 +147,12 @@ namespace storm {
             return stream.str();
         }
 
-
+        template <typename ValueType>
+        std::vector<size_t> DFT<ValueType>::getIndependentSubDftRoots(size_t index) const {
+            auto elem = getElement(index);
+            auto ISD = elem->independentSubDft();
+            return ISD;
+        }
 
         // Explicitly instantiate the class.
         template class DFT<double>;

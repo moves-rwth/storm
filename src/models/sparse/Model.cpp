@@ -311,6 +311,11 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::isParametric() const {
+                return std::is_same<ValueType, storm::RationalFunction>::value;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             std::unordered_map<std::string, RewardModelType>& Model<ValueType, RewardModelType>::getRewardModels() {
                 return this->rewardModels;
             }
@@ -319,6 +324,8 @@ namespace storm {
             std::unordered_map<std::string, RewardModelType> const& Model<ValueType, RewardModelType>::getRewardModels() const {
                 return this->rewardModels;
             }
+            
+            
 
             std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
                 return storm::storage::getVariables(model.getTransitionMatrix());

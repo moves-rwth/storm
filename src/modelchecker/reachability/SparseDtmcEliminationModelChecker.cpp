@@ -25,6 +25,10 @@
 #include "src/exceptions/InvalidSettingsException.h"
 #include "src/exceptions/IllegalArgumentException.h"
 
+#include "src/solver/stateelimination/LongRunAverageEliminator.h"
+#include "src/solver/stateelimination/ConditionalEliminator.h"
+#include "src/solver/stateelimination/PrioritizedEliminator.h"
+
 namespace storm {
     namespace modelchecker {
         
@@ -75,18 +79,17 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model, bool computeResultsForInitialStatesOnly) : SparsePropositionalModelChecker<SparseDtmcModelType>(model), computeResultsForInitialStatesOnly(computeResultsForInitialStatesOnly) {
+        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::SparseDtmcEliminationModelChecker(storm::models::sparse::Dtmc<ValueType> const& model) : SparsePropositionalModelChecker<SparseDtmcModelType>(model) {
             // Intentionally left empty.
         }
         
         template<typename SparseDtmcModelType>
-        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(storm::logic::Formula const& formula) const {
+        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
+            storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isProbabilityOperatorFormula()) {
-                storm::logic::ProbabilityOperatorFormula const& probabilityOperatorFormula = formula.asProbabilityOperatorFormula();
-                return this->canHandle(probabilityOperatorFormula.getSubformula());
+                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
             } else if (formula.isRewardOperatorFormula()) {
-                storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
-                return this->canHandle(rewardOperatorFormula.getSubformula());
+                return this->canHandle(checkTask.replaceFormula(formula.asRewardOperatorFormula().getSubformula()));
             } else if (formula.isUntilFormula() || formula.isEventuallyFormula()) {
                 if (formula.isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = formula.asUntilFormula();
@@ -130,7 +133,8 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageProbabilities(storm::logic::StateFormula const& stateFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula> const& checkTask) {
+            storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> subResultPointer = this->check(stateFormula);
             storm::storage::BitVector const& psiStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
 
@@ -145,7 +149,7 @@ namespace storm {
             
             storm::storage::BitVector const& initialStates = this->getModel().getInitialStates();
             STORM_LOG_THROW(initialStates.getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-            STORM_LOG_THROW(this->computeResultsForInitialStatesOnly, storm::exceptions::IllegalArgumentException, "Cannot compute long-run probabilities for all states.");
+            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::IllegalArgumentException, "Cannot compute long-run probabilities for all states.");
             
             storm::storage::SparseMatrix<ValueType> backwardTransitions = this->getModel().getBackwardTransitions();
             storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowCount(), true), psiStates);
@@ -154,7 +158,7 @@ namespace storm {
             
             // Determine whether we need to perform some further computation.
             bool furtherComputationNeeded = true;
-            if (computeResultsForInitialStatesOnly && initialStates.isDisjointFrom(maybeStates)) {
+            if (checkTask.isOnlyInitialStatesRelevantSet() && initialStates.isDisjointFrom(maybeStates)) {
                 STORM_LOG_DEBUG("The long-run probability for all initial states was found in a preprocessing step.");
                 furtherComputationNeeded = false;
             }
@@ -164,7 +168,7 @@ namespace storm {
             }
             
             if (furtherComputationNeeded) {
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.
                     storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, storm::storage::BitVector(numberOfStates, true), storm::storage::BitVector(numberOfStates, false));
                     
@@ -174,12 +178,12 @@ namespace storm {
                 
                 std::vector<ValueType> stateValues(maybeStates.size(), storm::utility::zero<ValueType>());
                 storm::utility::vector::setVectorValues(stateValues, psiStates, storm::utility::one<ValueType>());
-                result = computeLongRunValues(transitionMatrix, backwardTransitions, initialStates, maybeStates, computeResultsForInitialStatesOnly, stateValues);
+                result = computeLongRunValues(transitionMatrix, backwardTransitions, initialStates, maybeStates, checkTask.isOnlyInitialStatesRelevantSet(), stateValues);
             }
             
             // Construct check result based on whether we have computed values for all states or just the initial states.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            if (computeResultsForInitialStatesOnly) {
+            if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 // If we computed the results for the initial states only, we need to filter the result to only
                 // communicate these results.
                 checkResult->filter(ExplicitQualitativeCheckResult(initialStates));
@@ -188,14 +192,14 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageRewards(storm::logic::LongRunAverageRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageRewards(CheckTask<storm::logic::LongRunAverageRewardFormula> const& checkTask) {
             // Do some sanity checks to establish some required properties.
-            RewardModelType const& rewardModel = this->getModel().getRewardModel(rewardModelName ? rewardModelName.get() : "");
+            RewardModelType const& rewardModel = this->getModel().getRewardModel(checkTask.isRewardModelSet() ? checkTask.getRewardModel() : "");
             STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
 
             storm::storage::BitVector const& initialStates = this->getModel().getInitialStates();
             STORM_LOG_THROW(initialStates.getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-            STORM_LOG_THROW(this->computeResultsForInitialStatesOnly, storm::exceptions::IllegalArgumentException, "Cannot compute long-run probabilities for all states.");
+            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::IllegalArgumentException, "Cannot compute long-run probabilities for all states.");
             
             storm::storage::SparseMatrix<ValueType> const& transitionMatrix = this->getModel().getTransitionMatrix();
             uint_fast64_t numberOfStates = transitionMatrix.getRowCount();
@@ -221,12 +225,12 @@ namespace storm {
 
             // Determine whether we need to perform some further computation.
             bool furtherComputationNeeded = true;
-            if (computeResultsForInitialStatesOnly && initialStates.isDisjointFrom(maybeStates)) {
+            if (checkTask.isOnlyInitialStatesRelevantSet() && initialStates.isDisjointFrom(maybeStates)) {
                 furtherComputationNeeded = false;
             }
             
             if (furtherComputationNeeded) {
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.
                     storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, storm::storage::BitVector(numberOfStates, true), storm::storage::BitVector(numberOfStates, false));
                     
@@ -234,12 +238,12 @@ namespace storm {
                     maybeStates &= reachableStates;
                 }
                 
-                result = computeLongRunValues(transitionMatrix, backwardTransitions, initialStates, maybeStates, computeResultsForInitialStatesOnly, stateRewardValues);
+                result = computeLongRunValues(transitionMatrix, backwardTransitions, initialStates, maybeStates, checkTask.isOnlyInitialStatesRelevantSet(), stateRewardValues);
             }
             
             // Construct check result based on whether we have computed values for all states or just the initial states.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            if (computeResultsForInitialStatesOnly) {
+            if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 // If we computed the results for the initial states only, we need to filter the result to only
                 // communicate these results.
                 checkResult->filter(ExplicitQualitativeCheckResult(initialStates));
@@ -260,10 +264,10 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             
             // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
-            FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(transitionMatrix);
-            flexibleMatrix.filter(maybeStates, maybeStates);
-            FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(backwardTransitions);
-            flexibleBackwardTransitions.filter(maybeStates, maybeStates);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(transitionMatrix);
+            flexibleMatrix.createSubmatrix(maybeStates, maybeStates);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardTransitions);
+            flexibleBackwardTransitions.createSubmatrix(maybeStates, maybeStates);
             auto conversionEnd = std::chrono::high_resolution_clock::now();
             
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
@@ -300,30 +304,13 @@ namespace storm {
             std::vector<ValueType> averageTimeInStates(stateValues.size(), storm::utility::one<ValueType>());
             
             // First, we eliminate all states in BSCCs (except for the representative states).
-            {
-                std::unique_ptr<StatePriorityQueue> priorityQueue = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, stateValues, regularStatesInBsccs);
-                
-                ValueUpdateCallback valueUpdateCallback = [&stateValues,&averageTimeInStates] (storm::storage::sparse::state_type const& state, ValueType const& loopProbability) {
-                    stateValues[state] = storm::utility::simplify(loopProbability * stateValues[state]);
-                    averageTimeInStates[state] = storm::utility::simplify(loopProbability * averageTimeInStates[state]);
-                };
-                
-                PredecessorUpdateCallback predecessorCallback = [&stateValues,&averageTimeInStates] (storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) {
-                    stateValues[predecessor] = storm::utility::simplify(stateValues[predecessor] + storm::utility::simplify(probability * stateValues[state]));
-                    averageTimeInStates[predecessor] = storm::utility::simplify(averageTimeInStates[predecessor] + storm::utility::simplify(probability * averageTimeInStates[state]));
-                };
-                
-                boost::optional<PriorityUpdateCallback> priorityUpdateCallback = PriorityUpdateCallback([&flexibleMatrix,&flexibleBackwardTransitions,&stateValues,&priorityQueue] (storm::storage::sparse::state_type const& state) {
-                    priorityQueue->update(state, flexibleMatrix, flexibleBackwardTransitions, stateValues);
-                });
-                
-                boost::optional<PredecessorFilterCallback> predecessorFilterCallback = boost::none;
-                
-                while (priorityQueue->hasNextState()) {
-                    storm::storage::sparse::state_type state = priorityQueue->popNextState();
-                    eliminateState(state, flexibleMatrix, flexibleBackwardTransitions, valueUpdateCallback, predecessorCallback, priorityUpdateCallback, predecessorFilterCallback, true);
-                    STORM_LOG_ASSERT(checkConsistent(flexibleMatrix, flexibleBackwardTransitions), "The forward and backward transition matrices became inconsistent.");
-                }
+            std::unique_ptr<StatePriorityQueue<ValueType>> priorityQueue = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, stateValues, regularStatesInBsccs);
+            storm::solver::stateelimination::LongRunAverageEliminator<SparseDtmcModelType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, *priorityQueue, stateValues, averageTimeInStates);
+            
+            while (priorityQueue->hasNextState()) {
+                storm::storage::sparse::state_type state = priorityQueue->popNextState();
+                stateEliminator.eliminateState(state, true);
+                STORM_LOG_ASSERT(checkConsistent(flexibleMatrix, flexibleBackwardTransitions), "The forward and backward transition matrices became inconsistent.");
             }
             
             // Now, we set the values of all states in BSCCs to that of the representative value (and clear the
@@ -345,11 +332,11 @@ namespace storm {
                     stateValues[*representativeIt] = bsccValue;
                 }
 
-                typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::row_type& representativeForwardRow = flexibleMatrix.getRow(*representativeIt);
+                FlexibleRowType& representativeForwardRow = flexibleMatrix.getRow(*representativeIt);
                 representativeForwardRow.clear();
                 representativeForwardRow.shrink_to_fit();
                 
-                typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::row_type& representativeBackwardRow = flexibleBackwardTransitions.getRow(*representativeIt);
+                FlexibleRowType& representativeBackwardRow = flexibleBackwardTransitions.getRow(*representativeIt);
                 auto it = representativeBackwardRow.begin(), ite = representativeBackwardRow.end();
                 for (; it != ite; ++it) {
                     if (it->getColumn() == *representativeIt) {
@@ -410,7 +397,9 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeBoundedUntilProbabilities(storm::logic::BoundedUntilFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula> const& checkTask) {
+            storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
+            
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
@@ -424,7 +413,7 @@ namespace storm {
             
             // Determine whether we need to perform some further computation.
             bool furtherComputationNeeded = true;
-            if (computeResultsForInitialStatesOnly && this->getModel().getInitialStates().isDisjointFrom(statesWithProbabilityGreater0)) {
+            if (checkTask.isOnlyInitialStatesRelevantSet() && this->getModel().getInitialStates().isDisjointFrom(statesWithProbabilityGreater0)) {
                 STORM_LOG_DEBUG("The probability for all initial states was found in a preprocessing step.");
                 furtherComputationNeeded = false;
             } else if (statesWithProbabilityGreater0.empty()) {
@@ -440,7 +429,7 @@ namespace storm {
             if (furtherComputationNeeded) {
                 uint_fast64_t timeBound = pathFormula.getDiscreteTimeBound();
                 
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of states that is reachable from the initial state without jumping over a target state.
                     storm::storage::BitVector reachableStates = storm::utility::graph::getReachableStates(transitionMatrix, initialStates, phiStates, psiStates, true, timeBound);
                     
@@ -453,7 +442,7 @@ namespace storm {
                 
                 std::vector<std::size_t> distancesFromInitialStates;
                 storm::storage::BitVector relevantStates;
-                if (computeResultsForInitialStatesOnly) {
+                if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of initial states of the sub-model.
                     storm::storage::BitVector subInitialStates = this->getModel().getInitialStates() % statesWithProbabilityGreater0;
 
@@ -482,7 +471,7 @@ namespace storm {
                     // If we are computing the results for the initial states only, we can use the minimal distance from
                     // each state to the initial states to determine whether we still need to consider the values for
                     // these states. If not, we can null-out all their probabilities.
-                    if (computeResultsForInitialStatesOnly) {
+                    if (checkTask.isOnlyInitialStatesRelevantSet()) {
                         for (auto state : relevantStates) {
                             if (distancesFromInitialStates[state] > (timeBound - timeStep)) {
                                 for (auto& element : submatrix.getRow(state)) {
@@ -502,7 +491,7 @@ namespace storm {
             
             // Construct check result based on whether we have computed values for all states or just the initial states.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            if (computeResultsForInitialStatesOnly) {
+            if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
                 // result to only communicate these results.
                 checkResult->filter(ExplicitQualitativeCheckResult(this->getModel().getInitialStates() | psiStates));
@@ -511,15 +500,16 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeUntilProbabilities(storm::logic::UntilFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
-
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) {
+            storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
+            
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             storm::storage::BitVector const& phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             storm::storage::BitVector const& psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
 
-            std::vector<ValueType> result = computeUntilProbabilities(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), phiStates, psiStates, this->computeResultsForInitialStatesOnly);
+            std::vector<ValueType> result = computeUntilProbabilities(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), phiStates, psiStates, checkTask.isOnlyInitialStatesRelevantSet());
 
             // Construct check result.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
@@ -574,6 +564,7 @@ namespace storm {
             // Construct full result.
             storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
             storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
+
             if (computeForInitialStatesOnly) {
                 // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
                 // result to only communicate these results.
@@ -583,18 +574,21 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::logic::ReachabilityRewardFormula const& rewardPathFormula, boost::optional<std::string> const& rewardModelName, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) {
+            storm::logic::ReachabilityRewardFormula const& rewardPathFormula = checkTask.getFormula();
+            
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
             storm::storage::BitVector targetStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
             
             // Do some sanity checks to establish some required properties.
-            RewardModelType const& rewardModel = this->getModel().getRewardModel(rewardModelName ? rewardModelName.get() : "");
+            RewardModelType const& rewardModel = this->getModel().getRewardModel(checkTask.isRewardModelSet() ? checkTask.getRewardModel() : "");
+            // TODO use maybeStates instead of all states
             std::vector<ValueType> stateRewardValues = rewardModel.getTotalRewardVector(trueStates.getNumberOfSetBits(), this->getModel().getTransitionMatrix(), trueStates);
 
             STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
-            std::vector<ValueType> result = computeReachabilityRewards(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), targetStates, stateRewardValues, this->computeResultsForInitialStatesOnly, qualitative, optimalityType);
+            std::vector<ValueType> result = computeReachabilityRewards(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), targetStates, stateRewardValues, checkTask.isOnlyInitialStatesRelevantSet());
 
             // Construct check result.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
@@ -602,7 +596,7 @@ namespace storm {
         }
 
         template<typename SparseDtmcModelType>
-        std::vector<typename SparseDtmcModelType::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, std::vector<ValueType> const& stateRewardValues, bool computeForInitialStatesOnly, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
+        std::vector<typename SparseDtmcModelType::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, std::vector<ValueType>& stateRewardValues, bool computeForInitialStatesOnly) {
 
             uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
             
@@ -645,9 +639,9 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
                 
                 // Project the state reward vector to all maybe-states.
-                std::vector<ValueType> rewardValues = storm::utility::vector::filterVector(stateRewardValues, maybeStates);
                 storm::storage::BitVector phiStates(numberOfStates, true);
-                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, rewardValues, submatrixTransposed, newInitialStates, computeForInitialStatesOnly, phiStates, targetStates, probabilityMatrix.getConstrainedRowSumVector(maybeStates, targetStates));
+
+                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, stateRewardValues, submatrixTransposed, newInitialStates, computeForInitialStatesOnly, phiStates, targetStates, probabilityMatrix.getConstrainedRowSumVector(maybeStates, targetStates));
                 storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, subresult);
             }
             
@@ -663,8 +657,8 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(storm::logic::ConditionalPathFormula const& pathFormula, bool qualitative, boost::optional<OptimizationDirection> const& optimalityType) {
-            std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalPathFormula> const& checkTask) {
+            storm::logic::ConditionalPathFormula const& pathFormula = checkTask.getFormula();
             
             // Retrieve the appropriate bitvectors by model checking the subformulas.
             STORM_LOG_THROW(pathFormula.getLeftSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Expected 'eventually' formula.");
@@ -679,7 +673,7 @@ namespace storm {
             // Do some sanity checks to establish some required properties.
             // STORM_LOG_WARN_COND(storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::State, "The chosen elimination method is not available for computing conditional probabilities. Falling back to regular state elimination.");
             STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
-            STORM_LOG_THROW(this->computeResultsForInitialStatesOnly, storm::exceptions::IllegalArgumentException, "Cannot compute conditional probabilities for all states.");
+            STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::IllegalArgumentException, "Cannot compute conditional probabilities for all states.");
             storm::storage::sparse::state_type initialState = *this->getModel().getInitialStates().begin();
             
             storm::storage::SparseMatrix<ValueType> backwardTransitions = this->getModel().getBackwardTransitions();
@@ -708,18 +702,10 @@ namespace storm {
             storm::storage::BitVector statesReachingPhi = storm::utility::graph::performProbGreater0(backwardTransitions, trueStates, phiStates);
             
             // The set of states we need to consider are those that have a non-zero probability to satisfy the condition or are on some path that has a psi state in it.
-            STORM_LOG_TRACE("Initial state: " << this->getModel().getInitialStates());
-            STORM_LOG_TRACE("Phi states: " << phiStates);
-            STORM_LOG_TRACE("Psi state: " << psiStates);
-            STORM_LOG_TRACE("States with probability greater 0 of satisfying the condition: " << statesWithProbabilityGreater0);
-            STORM_LOG_TRACE("States with psi predecessor: " << statesWithPsiPredecessor);
-            STORM_LOG_TRACE("States reaching phi: " << statesReachingPhi);
             storm::storage::BitVector maybeStates = statesWithProbabilityGreater0 | (statesWithPsiPredecessor & statesReachingPhi);
-            STORM_LOG_TRACE("Found " << maybeStates.getNumberOfSetBits() << " relevant states: " << maybeStates);
             
             // Determine the set of initial states of the sub-DTMC.
             storm::storage::BitVector newInitialStates = this->getModel().getInitialStates() % maybeStates;
-            STORM_LOG_TRACE("Found new initial states: " << newInitialStates << " (old: " << this->getModel().getInitialStates() << ")");
             
             // Create a dummy vector for the one-step probabilities.
             std::vector<ValueType> oneStepProbabilities(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
@@ -741,10 +727,7 @@ namespace storm {
             // Keep only the states that we do not eliminate in the maybe states.
             maybeStates = phiStates | psiStates;
             
-            STORM_LOG_TRACE("Phi states in reduced model " << phiStates);
-            STORM_LOG_TRACE("Psi states in reduced model " << psiStates);
             storm::storage::BitVector statesToEliminate = ~maybeStates & ~newInitialStates;
-            STORM_LOG_TRACE("Eliminating the states " << statesToEliminate);
             
             // Before starting the model checking process, we assign priorities to states so we can use them to
             // impose ordering constraints later.
@@ -757,28 +740,23 @@ namespace storm {
             }
             
             std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
-            FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(submatrix);
-            FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(submatrixTransposed, true);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(submatrix);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(submatrixTransposed, true);
             std::chrono::high_resolution_clock::time_point conversionEnd = std::chrono::high_resolution_clock::now();
             
-            std::unique_ptr<StatePriorityQueue> statePriorities = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, statesToEliminate);
+            std::unique_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, statesToEliminate);
 
             STORM_LOG_INFO("Computing conditional probilities." << std::endl);
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
             uint_fast64_t numberOfStatesToEliminate = statePriorities->size();
             STORM_LOG_INFO("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique." << std::endl);
             performPrioritizedStateElimination(statePriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, this->getModel().getInitialStates(), true);
-            STORM_LOG_INFO("Eliminated " << numberOfStatesToEliminate << " states." << std::endl);
             
-            // Prepare some callbacks for the elimination procedure.
-            ValueUpdateCallback valueUpdateCallback = [&oneStepProbabilities] (storm::storage::sparse::state_type const& state, ValueType const& loopProbability) { oneStepProbabilities[state] = storm::utility::simplify(loopProbability * oneStepProbabilities[state]); };
-            PredecessorUpdateCallback predecessorUpdateCallback = [&oneStepProbabilities] (storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) { oneStepProbabilities[predecessor] = storm::utility::simplify(oneStepProbabilities[predecessor] * storm::utility::simplify(probability * oneStepProbabilities[state])); };
-            boost::optional<PredecessorFilterCallback> phiFilterCallback = PredecessorFilterCallback([&phiStates] (storm::storage::sparse::state_type const& state) { return phiStates.get(state); });
-            boost::optional<PredecessorFilterCallback> psiFilterCallback = PredecessorFilterCallback([&psiStates] (storm::storage::sparse::state_type const& state) { return psiStates.get(state); });
+            storm::solver::stateelimination::ConditionalEliminator<SparseDtmcModelType> stateEliminator = storm::solver::stateelimination::ConditionalEliminator<SparseDtmcModelType>(flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, phiStates, psiStates);
             
             // Eliminate the transitions going into the initial state (if there are any).
             if (!flexibleBackwardTransitions.getRow(*newInitialStates.begin()).empty()) {
-                eliminateState(*newInitialStates.begin(), flexibleMatrix, flexibleBackwardTransitions, valueUpdateCallback, predecessorUpdateCallback, boost::none, boost::none, false);
+                stateEliminator.eliminateState(*newInitialStates.begin(), false);
             }
             
             // Now we need to basically eliminate all chains of not-psi states after phi states and chains of not-phi
@@ -809,11 +787,13 @@ namespace storm {
                             for (auto const& element : currentRow) {
                                 // If any of the successors is a phi state, we eliminate it (wrt. all its phi predecessors).
                                 if (!psiStates.get(element.getColumn())) {
-                                    typename FlexibleSparseMatrix::row_type const& successorRow = flexibleMatrix.getRow(element.getColumn());
+                                    FlexibleRowType const& successorRow = flexibleMatrix.getRow(element.getColumn());
                                     // Eliminate the successor only if there possibly is a psi state reachable through it.
                                     if (successorRow.size() > 1 || (!successorRow.empty() && successorRow.front().getColumn() != element.getColumn())) {
                                         STORM_LOG_TRACE("Found non-psi successor " << element.getColumn() << " that needs to be eliminated.");
-                                        eliminateState(element.getColumn(), flexibleMatrix, flexibleBackwardTransitions, valueUpdateCallback, predecessorUpdateCallback, boost::none, phiFilterCallback, false);
+                                        stateEliminator.setStatePhi();
+                                        stateEliminator.eliminateState(element.getColumn(), false);
+                                        stateEliminator.clearState();
                                         hasNonPsiSuccessor = true;
                                     }
                                 }
@@ -839,10 +819,12 @@ namespace storm {
                             for (auto const& element : currentRow) {
                                 // If any of the successors is a psi state, we eliminate it (wrt. all its psi predecessors).
                                 if (!phiStates.get(element.getColumn())) {
-                                    typename FlexibleSparseMatrix::row_type const& successorRow = flexibleMatrix.getRow(element.getColumn());
+                                    FlexibleRowType const& successorRow = flexibleMatrix.getRow(element.getColumn());
                                     if (successorRow.size() > 1 || (!successorRow.empty() && successorRow.front().getColumn() != element.getColumn())) {
                                         STORM_LOG_TRACE("Found non-phi successor " << element.getColumn() << " that needs to be eliminated.");
-                                        eliminateState(element.getColumn(), flexibleMatrix, flexibleBackwardTransitions, valueUpdateCallback, predecessorUpdateCallback, boost::none, psiFilterCallback, false);
+                                        stateEliminator.setStatePsi();
+                                        stateEliminator.eliminateState(element.getColumn(), false);
+                                        stateEliminator.clearState();
                                         hasNonPhiSuccessor = true;
                                     }
                                 }
@@ -884,31 +866,12 @@ namespace storm {
                     numerator += trans1.getValue() * additiveTerm;
                 }
             }
-            std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
-            std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
-            
-            if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                std::chrono::high_resolution_clock::duration conversionTime = conversionEnd - conversionStart;
-                std::chrono::milliseconds conversionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(conversionTime);
-                std::chrono::high_resolution_clock::duration modelCheckingTime = modelCheckingEnd - modelCheckingStart;
-                std::chrono::milliseconds modelCheckingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(modelCheckingTime);
-                std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
-                std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
-                
-                STORM_PRINT_AND_LOG(std::endl);
-                STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
-                STORM_PRINT_AND_LOG("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
-                STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG(std::endl);
-            }
             
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(initialState, numerator / denominator));
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::StatePriorityQueue> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<typename SparseDtmcModelType::ValueType>& oneStepProbabilities, storm::storage::BitVector const& states) {
+        std::unique_ptr<StatePriorityQueue<typename SparseDtmcModelType::ValueType>> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& states) {
             
             STORM_LOG_TRACE("Creating state priority queue for states " << states);
             
@@ -952,23 +915,20 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::StatePriorityQueue> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createNaivePriorityQueue(storm::storage::BitVector const& states) {
+        std::unique_ptr<StatePriorityQueue<typename SparseDtmcModelType::ValueType>> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createNaivePriorityQueue(storm::storage::BitVector const& states) {
             std::vector<storm::storage::sparse::state_type> sortedStates(states.begin(), states.end());
-            return std::unique_ptr<StatePriorityQueue>(new StaticStatePriorityQueue(sortedStates));
+            return std::unique_ptr<StatePriorityQueue<ValueType>>(new StaticStatePriorityQueue(sortedStates));
         }
         
         template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedStateElimination(std::unique_ptr<StatePriorityQueue>& priorityQueue, FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions, std::vector<ValueType>& values, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly) {
+        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedStateElimination(std::unique_ptr<StatePriorityQueue<ValueType>>& priorityQueue, storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& values, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly) {
             
-            ValueUpdateCallback valueUpdateCallback = [&values] (storm::storage::sparse::state_type const& state, ValueType const& loopProbability) { values[state] = storm::utility::simplify(loopProbability * values[state]); };
-            PredecessorUpdateCallback predecessorCallback = [&values] (storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) { values[predecessor] = storm::utility::simplify(values[predecessor] + storm::utility::simplify(probability * values[state])); };
-            boost::optional<PriorityUpdateCallback> priorityUpdateCallback = PriorityUpdateCallback([&transitionMatrix,&backwardTransitions,&values,&priorityQueue] (storm::storage::sparse::state_type const& state) { priorityQueue->update(state, transitionMatrix, backwardTransitions, values); });
-            boost::optional<PredecessorFilterCallback> predecessorFilterCallback = boost::none;
+            storm::solver::stateelimination::PrioritizedEliminator<SparseDtmcModelType> stateEliminator(transitionMatrix, backwardTransitions, *priorityQueue, values);
             
             while (priorityQueue->hasNextState()) {
                 storm::storage::sparse::state_type state = priorityQueue->popNextState();
                 bool removeForwardTransitions = computeResultsForInitialStatesOnly && !initialStates.get(state);
-                eliminateState(state, transitionMatrix, backwardTransitions, valueUpdateCallback, predecessorCallback, priorityUpdateCallback, predecessorFilterCallback, removeForwardTransitions);
+                stateEliminator.eliminateState(state, removeForwardTransitions);
                 if (removeForwardTransitions) {
                     values[state] = storm::utility::zero<ValueType>();
                 }
@@ -977,8 +937,8 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStateElimination(FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
-            std::unique_ptr<StatePriorityQueue> statePriorities = createStatePriorityQueue(distanceBasedPriorities, transitionMatrix, backwardTransitions, values, subsystem);
+        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStateElimination(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
+            std::unique_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, transitionMatrix, backwardTransitions, values, subsystem);
             
             std::size_t numberOfStatesToEliminate = statePriorities->size();
             STORM_LOG_DEBUG("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique." << std::endl);
@@ -987,7 +947,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performHybridStateElimination(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
+        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performHybridStateElimination(storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
             // When using the hybrid technique, we recursively treat the SCCs up to some size.
             std::vector<storm::storage::sparse::state_type> entryStateQueue;
             STORM_LOG_DEBUG("Eliminating " << subsystem.size() << " states using the hybrid elimination technique." << std::endl);
@@ -997,7 +957,7 @@ namespace storm {
             if (storm::settings::sparseDtmcEliminationModelCheckerSettings().isEliminateEntryStatesLastSet()) {
                 STORM_LOG_DEBUG("Eliminating " << entryStateQueue.size() << " entry states as a last step.");
                 std::vector<storm::storage::sparse::state_type> sortedStates(entryStateQueue.begin(), entryStateQueue.end());
-                std::unique_ptr<StatePriorityQueue> queuePriorities = std::unique_ptr<StatePriorityQueue>(new StaticStatePriorityQueue(sortedStates));
+                std::unique_ptr<StatePriorityQueue<ValueType>> queuePriorities = std::unique_ptr<StatePriorityQueue<ValueType>>(new StaticStatePriorityQueue(sortedStates));
                 performPrioritizedStateElimination(queuePriorities, transitionMatrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
             }
             STORM_LOG_DEBUG("Eliminated " << subsystem.size() << " states." << std::endl);
@@ -1006,12 +966,9 @@ namespace storm {
         
         template<typename SparseDtmcModelType>
         std::vector<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& values, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates,  bool computeResultsForInitialStatesOnly, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& oneStepProbabilitiesToTarget) {
-            std::chrono::high_resolution_clock::time_point totalTimeStart = std::chrono::high_resolution_clock::now();
-            
-            std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
-            FlexibleSparseMatrix flexibleMatrix = getFlexibleSparseMatrix(transitionMatrix);
-            FlexibleSparseMatrix flexibleBackwardTransitions = getFlexibleSparseMatrix(backwardTransitions);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(transitionMatrix);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardTransitions);
             auto conversionEnd = std::chrono::high_resolution_clock::now();
             
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
@@ -1036,31 +993,6 @@ namespace storm {
             STORM_LOG_ASSERT(flexibleMatrix.empty(), "Not all transitions were eliminated.");
             STORM_LOG_ASSERT(flexibleBackwardTransitions.empty(), "Not all transitions were eliminated.");
             
-            std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
-            std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
-            
-            if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                std::chrono::high_resolution_clock::duration conversionTime = conversionEnd - conversionStart;
-                std::chrono::milliseconds conversionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(conversionTime);
-                std::chrono::high_resolution_clock::duration modelCheckingTime = modelCheckingEnd - modelCheckingStart;
-                std::chrono::milliseconds modelCheckingTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(modelCheckingTime);
-                std::chrono::high_resolution_clock::duration totalTime = totalTimeEnd - totalTimeStart;
-                std::chrono::milliseconds totalTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(totalTime);
-                
-                STORM_PRINT_AND_LOG(std::endl);
-                STORM_PRINT_AND_LOG("Time breakdown:" << std::endl);
-                STORM_PRINT_AND_LOG("    * time for conversion: " << conversionTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG("    * time for checking: " << modelCheckingTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG("------------------------------------------" << std::endl);
-                STORM_PRINT_AND_LOG("    * total time: " << totalTimeInMilliseconds.count() << "ms" << std::endl);
-                STORM_PRINT_AND_LOG(std::endl);
-                STORM_PRINT_AND_LOG("Other:" << std::endl);
-                STORM_PRINT_AND_LOG("    * number of states eliminated: " << transitionMatrix.getRowCount() << std::endl);
-                if (storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::Hybrid) {
-                    STORM_PRINT_AND_LOG("    * maximal depth of SCC decomposition: " << maximalDepth << std::endl);
-                }
-            }
-            
             // Now, we return the value for the only initial state.
             STORM_LOG_DEBUG("Simplifying and returning result.");
             for (auto& value : values) {
@@ -1070,7 +1002,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(FlexibleSparseMatrix& matrix, std::vector<ValueType>& values, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::BitVector const& initialStates, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, FlexibleSparseMatrix& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, bool computeResultsForInitialStatesOnly, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
+        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::treatScc(storm::storage::FlexibleSparseMatrix<ValueType>& matrix, std::vector<ValueType>& values, storm::storage::BitVector const& entryStates, storm::storage::BitVector const& scc, storm::storage::BitVector const& initialStates, storm::storage::SparseMatrix<ValueType> const& forwardTransitions, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, bool eliminateEntryStates, uint_fast64_t level, uint_fast64_t maximalSccSize, std::vector<storm::storage::sparse::state_type>& entryStateQueue, bool computeResultsForInitialStatesOnly, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
             uint_fast64_t maximalDepth = level;
             
             // If the SCCs are large enough, we try to split them further.
@@ -1086,7 +1018,7 @@ namespace storm {
                 storm::storage::BitVector remainingSccs(decomposition.size(), true);
                 
                 // First, get rid of the trivial SCCs.
-                storm::storage::BitVector statesInTrivialSccs(matrix.getNumberOfRows());
+                storm::storage::BitVector statesInTrivialSccs(matrix.getRowCount());
                 for (uint_fast64_t sccIndex = 0; sccIndex < decomposition.size(); ++sccIndex) {
                     storm::storage::StronglyConnectedComponent const& scc = decomposition.getBlock(sccIndex);
                     if (scc.isTrivial()) {
@@ -1096,7 +1028,7 @@ namespace storm {
                     }
                 }
                 
-                std::unique_ptr<StatePriorityQueue> statePriorities = createStatePriorityQueue(distanceBasedPriorities, matrix, backwardTransitions, values, statesInTrivialSccs);
+                std::unique_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, matrix, backwardTransitions, values, statesInTrivialSccs);
                 STORM_LOG_TRACE("Eliminating " << statePriorities->size() << " trivial SCCs.");
                 performPrioritizedStateElimination(statePriorities, matrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
                 STORM_LOG_TRACE("Eliminated all trivial SCCs.");
@@ -1126,7 +1058,7 @@ namespace storm {
             } else {
                 // In this case, we perform simple state elimination in the current SCC.
                 STORM_LOG_TRACE("SCC of size " << scc.getNumberOfSetBits() << " is small enough to be eliminated directly.");
-                std::unique_ptr<StatePriorityQueue> statePriorities = createStatePriorityQueue(distanceBasedPriorities, matrix, backwardTransitions, values, scc & ~entryStates);
+                std::unique_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, matrix, backwardTransitions, values, scc & ~entryStates);
                 performPrioritizedStateElimination(statePriorities, matrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
                 STORM_LOG_TRACE("Eliminated all states of SCC.");
             }
@@ -1134,7 +1066,7 @@ namespace storm {
             // Finally, eliminate the entry states (if we are required to do so).
             if (eliminateEntryStates) {
                 STORM_LOG_TRACE("Finally, eliminating entry states.");
-                std::unique_ptr<StatePriorityQueue> naivePriorities = createNaivePriorityQueue(entryStates);
+                std::unique_ptr<StatePriorityQueue<ValueType>> naivePriorities = createNaivePriorityQueue(entryStates);
                 performPrioritizedStateElimination(naivePriorities, matrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
                 STORM_LOG_TRACE("Eliminated/added entry states.");
             } else {
@@ -1145,245 +1077,6 @@ namespace storm {
             }
             
             return maximalDepth;
-        }
-        
-        template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::eliminateState(storm::storage::sparse::state_type state, FlexibleSparseMatrix& matrix, FlexibleSparseMatrix& backwardTransitions,
-                                                                                    ValueUpdateCallback const& callback, PredecessorUpdateCallback const& predecessorCallback,
-                                                                                    boost::optional<PriorityUpdateCallback> const& priorityUpdateCallback,
-                                                                                    boost::optional<PredecessorFilterCallback> const& predecessorFilterCallback, bool removeForwardTransitions) {
-            
-            STORM_LOG_TRACE("Eliminating state " << state << ".");
-            
-            // Start by finding loop probability.
-            bool hasSelfLoop = false;
-            ValueType loopProbability = storm::utility::zero<ValueType>();
-            typename FlexibleSparseMatrix::row_type& currentStateSuccessors = matrix.getRow(state);
-            for (auto entryIt = currentStateSuccessors.begin(), entryIte = currentStateSuccessors.end(); entryIt != entryIte; ++entryIt) {
-                if (entryIt->getColumn() >= state) {
-                    if (entryIt->getColumn() == state) {
-                        loopProbability = entryIt->getValue();
-                        hasSelfLoop = true;
-                        
-                        // If we do not clear the forward transitions completely, we need to remove the self-loop,
-                        // because we scale all the other outgoing transitions with it anyway.
-                        if (!removeForwardTransitions) {
-                            currentStateSuccessors.erase(entryIt);
-                        }
-                    }
-                    break;
-                }
-            }
-            
-            // Scale all entries in this row with (1 / (1 - loopProbability)) only in case there was a self-loop.
-            STORM_LOG_TRACE((hasSelfLoop ? "State has self-loop." : "State does not have a self-loop."));
-            if (hasSelfLoop) {
-                STORM_LOG_ASSERT(loopProbability != storm::utility::one<ValueType>(), "Must not eliminate state with probability 1 self-loop.");
-                loopProbability = storm::utility::simplify(storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - loopProbability));
-                for (auto& entry : matrix.getRow(state)) {
-                    // Only scale the non-diagonal entries.
-                    if (entry.getColumn() != state) {
-                        entry.setValue(storm::utility::simplify(entry.getValue() * loopProbability));
-                    }
-                }
-                callback(state, loopProbability);
-            }
-            
-            // Now connect the predecessors of the state being eliminated with its successors.
-            typename FlexibleSparseMatrix::row_type& currentStatePredecessors = backwardTransitions.getRow(state);
-            
-            // In case we have a constrained elimination, we need to keep track of the new predecessors.
-            typename FlexibleSparseMatrix::row_type newCurrentStatePredecessors;
-
-            std::vector<typename FlexibleSparseMatrix::row_type> newBackwardProbabilities(currentStateSuccessors.size());
-            for (auto& backwardProbabilities : newBackwardProbabilities) {
-                backwardProbabilities.reserve(currentStatePredecessors.size());
-            }
-            
-            // Now go through the predecessors and eliminate the ones (satisfying the constraint if given).
-            for (auto const& predecessorEntry : currentStatePredecessors) {
-                uint_fast64_t predecessor = predecessorEntry.getColumn();
-                STORM_LOG_TRACE("Found predecessor " << predecessor << ".");
-
-                // Skip the state itself as one of its predecessors.
-                if (predecessor == state) {
-                    assert(hasSelfLoop);
-                    continue;
-                }
-                
-                // Skip the state if the elimination is constrained, but the predecessor is not in the constraint.
-                if (predecessorFilterCallback && !predecessorFilterCallback.get()(predecessor)) {
-                    newCurrentStatePredecessors.emplace_back(predecessorEntry);
-                    STORM_LOG_TRACE("Not eliminating predecessor " << predecessor << ", because it does not fit the filter.");
-                    continue;
-                }
-                STORM_LOG_TRACE("Eliminating predecessor " << predecessor << ".");
-                
-                // First, find the probability with which the predecessor can move to the current state, because
-                // the forward probabilities of the state to be eliminated need to be scaled with this factor.
-                typename FlexibleSparseMatrix::row_type& predecessorForwardTransitions = matrix.getRow(predecessor);
-                typename FlexibleSparseMatrix::row_type::iterator multiplyElement = std::find_if(predecessorForwardTransitions.begin(), predecessorForwardTransitions.end(), [&](storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() == state; });
-                
-                // Make sure we have found the probability and set it to zero.
-                STORM_LOG_THROW(multiplyElement != predecessorForwardTransitions.end(), storm::exceptions::InvalidStateException, "No probability for successor found.");
-                ValueType multiplyFactor = multiplyElement->getValue();
-                multiplyElement->setValue(storm::utility::zero<ValueType>());
-                
-                // At this point, we need to update the (forward) transitions of the predecessor.
-                typename FlexibleSparseMatrix::row_type::iterator first1 = predecessorForwardTransitions.begin();
-                typename FlexibleSparseMatrix::row_type::iterator last1 = predecessorForwardTransitions.end();
-                typename FlexibleSparseMatrix::row_type::iterator first2 = currentStateSuccessors.begin();
-                typename FlexibleSparseMatrix::row_type::iterator last2 = currentStateSuccessors.end();
-                
-                typename FlexibleSparseMatrix::row_type newSuccessors;
-                newSuccessors.reserve((last1 - first1) + (last2 - first2));
-                std::insert_iterator<typename FlexibleSparseMatrix::row_type> result(newSuccessors, newSuccessors.end());
-                
-                uint_fast64_t successorOffsetInNewBackwardTransitions = 0;
-                // Now we merge the two successor lists. (Code taken from std::set_union and modified to suit our needs).
-                for (; first1 != last1; ++result) {
-                    // Skip the transitions to the state that is currently being eliminated.
-                    if (first1->getColumn() == state || (first2 != last2 && first2->getColumn() == state)) {
-                        if (first1->getColumn() == state) {
-                            ++first1;
-                        }
-                        if (first2 != last2 && first2->getColumn() == state) {
-                            ++first2;
-                        }
-                        continue;
-                    }
-                    
-                    if (first2 == last2) {
-                        std::copy_if(first1, last1, result, [&] (storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() != state; } );
-                        break;
-                    }
-                    if (first2->getColumn() < first1->getColumn()) {
-                        auto successorEntry = storm::utility::simplify(std::move(*first2 * multiplyFactor));
-                        *result = successorEntry;
-                        newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, successorEntry.getValue());
-//                        std::cout << "(1) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
-                        ++first2;
-                        ++successorOffsetInNewBackwardTransitions;
-                    } else if (first1->getColumn() < first2->getColumn()) {
-                        *result = *first1;
-                        ++first1;
-                    } else {
-                        auto probability = storm::utility::simplify(first1->getValue() + storm::utility::simplify(multiplyFactor * first2->getValue()));
-                        *result = storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type>(first1->getColumn(), probability);
-                        newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, probability);
-//                        std::cout << "(2) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
-                        ++first1;
-                        ++first2;
-                        ++successorOffsetInNewBackwardTransitions;
-                    }
-                }
-                for (; first2 != last2; ++first2) {
-                    if (first2->getColumn() != state) {
-                        auto stateProbability = storm::utility::simplify(std::move(*first2 * multiplyFactor));
-                        *result = stateProbability;
-                        newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, stateProbability.getValue());
-//                        std::cout << "(3) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
-                        ++successorOffsetInNewBackwardTransitions;
-                    }
-                }
-                
-                // Now move the new transitions in place.
-                predecessorForwardTransitions = std::move(newSuccessors);
-                STORM_LOG_TRACE("Fixed new next-state probabilities of predecessor state " << predecessor << ".");
-
-                predecessorCallback(predecessor, multiplyFactor, state);
-
-                if (priorityUpdateCallback) {
-                    STORM_LOG_TRACE("Updating priority of predecessor.");
-                    priorityUpdateCallback.get()(predecessor);
-                }
-            }
-            
-            // Finally, we need to add the predecessor to the set of predecessors of every successor.
-            uint_fast64_t successorOffsetInNewBackwardTransitions = 0;
-            for (auto const& successorEntry : currentStateSuccessors) {
-                if (successorEntry.getColumn() == state) {
-                    continue;
-                }
-                
-                typename FlexibleSparseMatrix::row_type& successorBackwardTransitions = backwardTransitions.getRow(successorEntry.getColumn());
-//                std::cout << "old backward trans of " << successorEntry.getColumn() << std::endl;
-//                for (auto const& trans : successorBackwardTransitions) {
-//                    std::cout << trans << std::endl;
-//                }
-                
-                // Delete the current state as a predecessor of the successor state only if we are going to remove the
-                // current state's forward transitions.
-                if (removeForwardTransitions) {
-                    typename FlexibleSparseMatrix::row_type::iterator elimIt = std::find_if(successorBackwardTransitions.begin(), successorBackwardTransitions.end(), [&](storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() == state; });
-                    STORM_LOG_ASSERT(elimIt != successorBackwardTransitions.end(), "Expected a proper backward transition from " << successorEntry.getColumn() << " to " << state << ", but found none.");
-                    successorBackwardTransitions.erase(elimIt);
-                }
-                
-                typename FlexibleSparseMatrix::row_type::iterator first1 = successorBackwardTransitions.begin();
-                typename FlexibleSparseMatrix::row_type::iterator last1 = successorBackwardTransitions.end();
-                typename FlexibleSparseMatrix::row_type::iterator first2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].begin();
-                typename FlexibleSparseMatrix::row_type::iterator last2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].end();
-                
-//                std::cout << "adding backward trans " << successorEntry.getColumn() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
-//                for (auto const& trans : newBackwardProbabilities[successorOffsetInNewBackwardTransitions]) {
-//                    std::cout << trans << std::endl;
-//                }
-                
-                typename FlexibleSparseMatrix::row_type newPredecessors;
-                newPredecessors.reserve((last1 - first1) + (last2 - first2));
-                std::insert_iterator<typename FlexibleSparseMatrix::row_type> result(newPredecessors, newPredecessors.end());
-                
-                for (; first1 != last1; ++result) {
-                    if (first2 == last2) {
-                        std::copy(first1, last1, result);
-                        break;
-                    }
-                    if (first2->getColumn() < first1->getColumn()) {
-                        if (first2->getColumn() != state) {
-                            *result = *first2;
-                        }
-                        ++first2;
-                    } else if (first1->getColumn() == first2->getColumn()) {
-                        if (estimateComplexity(first1->getValue()) > estimateComplexity(first2->getValue())) {
-                            *result = *first1;
-                        } else {
-                            *result = *first2;
-                        }
-                        ++first1;
-                        ++first2;
-                    } else {
-                        *result = *first1;
-                        ++first1;
-                    }
-                }
-                if (predecessorFilterCallback) {
-                    std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() != state && predecessorFilterCallback.get()(a.getColumn()); });
-                } else {
-                    std::copy_if(first2, last2, result, [&] (storm::storage::MatrixEntry<typename FlexibleSparseMatrix::index_type, typename FlexibleSparseMatrix::value_type> const& a) { return a.getColumn() != state; });
-                }
-                
-                // Now move the new predecessors in place.
-                successorBackwardTransitions = std::move(newPredecessors);
-//                std::cout << "new backward trans of " << successorEntry.getColumn() << std::endl;
-//                for (auto const& trans : successorBackwardTransitions) {
-//                    std::cout << trans << std::endl;
-//                }
-                ++successorOffsetInNewBackwardTransitions;
-            }
-            STORM_LOG_TRACE("Fixed predecessor lists of successor states.");
-            
-            if (removeForwardTransitions) {
-                // Clear the eliminated row to reduce memory consumption.
-                currentStateSuccessors.clear();
-                currentStateSuccessors.shrink_to_fit();
-            }
-            if (predecessorFilterCallback) {
-                currentStatePredecessors = std::move(newCurrentStatePredecessors);
-            } else {
-                currentStatePredecessors.clear();
-                currentStatePredecessors.shrink_to_fit();
-            }
         }
         
         template<typename SparseDtmcModelType>
@@ -1434,111 +1127,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::FlexibleSparseMatrix(index_type rows) : data(rows) {
-            // Intentionally left empty.
-        }
-        
-        template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::reserveInRow(index_type row, index_type numberOfElements) {
-            this->data[row].reserve(numberOfElements);
-        }
-        
-        template<typename SparseDtmcModelType>
-        typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::row_type& SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::getRow(index_type index) {
-            return this->data[index];
-        }
-        
-        template<typename SparseDtmcModelType>
-        typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::row_type const& SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::getRow(index_type index) const {
-            return this->data[index];
-        }
-        
-        template<typename SparseDtmcModelType>
-        typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::index_type SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::getNumberOfRows() const {
-            return this->data.size();
-        }
-        
-        template<typename SparseDtmcModelType>
-        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::hasSelfLoop(storm::storage::sparse::state_type state) {
-            for (auto const& entry : this->getRow(state)) {
-                if (entry.getColumn() < state) {
-                    continue;
-                } else if (entry.getColumn() > state) {
-                    return false;
-                } else if (entry.getColumn() == state) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        
-        template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::print() const {
-            for (uint_fast64_t index = 0; index < this->data.size(); ++index) {
-                std::cout << index << " - ";
-                for (auto const& element : this->getRow(index)) {
-                    std::cout << "(" << element.getColumn() << ", " << element.getValue() << ") ";
-                }
-                std::cout << std::endl;
-            }
-        }
-        
-        template<typename SparseDtmcModelType>
-        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::empty() const {
-            for (auto const& row : this->data) {
-                if (!row.empty()) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        
-        template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix::filter(storm::storage::BitVector const& rowFilter, storm::storage::BitVector const& columnFilter) {
-            for (uint_fast64_t rowIndex = 0; rowIndex < this->data.size(); ++rowIndex) {
-                auto& row = this->data[rowIndex];
-                if (!rowFilter.get(rowIndex)) {
-                    row.clear();
-                    row.shrink_to_fit();
-                    continue;
-                }
-                row_type newRow;
-                for (auto const& element : row) {
-                    if (columnFilter.get(element.getColumn())) {
-                        newRow.push_back(element);
-                    }
-                }
-                row = std::move(newRow);
-            }
-        }
-        
-        template<typename SparseDtmcModelType>
-        typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::FlexibleSparseMatrix SparseDtmcEliminationModelChecker<SparseDtmcModelType>::getFlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) {
-            FlexibleSparseMatrix flexibleMatrix(matrix.getRowCount());
-            
-            for (typename FlexibleSparseMatrix::index_type rowIndex = 0; rowIndex < matrix.getRowCount(); ++rowIndex) {
-                typename storm::storage::SparseMatrix<ValueType>::const_rows row = matrix.getRow(rowIndex);
-                flexibleMatrix.reserveInRow(rowIndex, row.getNumberOfEntries());
-                
-                for (auto const& element : row) {
-                    // If the probability is zero, we skip this entry.
-                    if (storm::utility::isZero(element.getValue())) {
-                        continue;
-                    }
-                    
-                    if (setAllValuesToOne) {
-                        flexibleMatrix.getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>());
-                    } else {
-                        flexibleMatrix.getRow(rowIndex).emplace_back(element);
-                    }
-                }
-            }
-            
-            return flexibleMatrix;
-        }
-        
-        template<typename SparseDtmcModelType>
-        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeStatePenalty(storm::storage::sparse::state_type const& state, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
+        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeStatePenalty(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
             uint_fast64_t penalty = 0;
             bool hasParametricSelfLoop = false;
             
@@ -1565,17 +1154,17 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
+        uint_fast64_t SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
             return backwardTransitions.getRow(state).size() * transitionMatrix.getRow(state).size();
         }
         
-        template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::StatePriorityQueue::update(storm::storage::sparse::state_type, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
+        template<typename ValueType>
+        void StatePriorityQueue<ValueType>::update(storm::storage::sparse::state_type, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
             // Intentionally left empty.
         }
         
         template<typename SparseDtmcModelType>
-        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::StaticStatePriorityQueue::StaticStatePriorityQueue(std::vector<storm::storage::sparse::state_type> const& sortedStates) : StatePriorityQueue(), sortedStates(sortedStates), currentPosition(0) {
+        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::StaticStatePriorityQueue::StaticStatePriorityQueue(std::vector<storm::storage::sparse::state_type> const& sortedStates) : StatePriorityQueue<ValueType>(), sortedStates(sortedStates), currentPosition(0) {
             // Intentionally left empty.
         }
         
@@ -1596,7 +1185,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::DynamicPenaltyStatePriorityQueue::DynamicPenaltyStatePriorityQueue(std::vector<std::pair<storm::storage::sparse::state_type, uint_fast64_t>> const& sortedStatePenaltyPairs, PenaltyFunctionType const& penaltyFunction) : StatePriorityQueue(), priorityQueue(), stateToPriorityMapping(), penaltyFunction(penaltyFunction) {
+        SparseDtmcEliminationModelChecker<SparseDtmcModelType>::DynamicPenaltyStatePriorityQueue::DynamicPenaltyStatePriorityQueue(std::vector<std::pair<storm::storage::sparse::state_type, uint_fast64_t>> const& sortedStatePenaltyPairs, PenaltyFunctionType const& penaltyFunction) : StatePriorityQueue<ValueType>(), priorityQueue(), stateToPriorityMapping(), penaltyFunction(penaltyFunction) {
             // Insert all state-penalty pairs into our priority queue.
             for (auto const& statePenalty : sortedStatePenaltyPairs) {
                 priorityQueue.insert(priorityQueue.end(), statePenalty);
@@ -1623,7 +1212,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::DynamicPenaltyStatePriorityQueue::update(storm::storage::sparse::state_type state, FlexibleSparseMatrix const& transitionMatrix, FlexibleSparseMatrix const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
+        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::DynamicPenaltyStatePriorityQueue::update(storm::storage::sparse::state_type state, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& oneStepProbabilities) {
             // First, we need to find the priority until now.
             auto priorityIt = stateToPriorityMapping.find(state);
             
@@ -1652,8 +1241,8 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::checkConsistent(FlexibleSparseMatrix& transitionMatrix, FlexibleSparseMatrix& backwardTransitions) {
-            for (uint_fast64_t forwardIndex = 0; forwardIndex < transitionMatrix.getNumberOfRows(); ++forwardIndex) {
+        bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::checkConsistent(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions) {
+            for (uint_fast64_t forwardIndex = 0; forwardIndex < transitionMatrix.getRowCount(); ++forwardIndex) {
                 for (auto const& forwardEntry : transitionMatrix.getRow(forwardIndex)) {
                     if (forwardEntry.getColumn() == forwardIndex) {
                         continue;
@@ -1667,9 +1256,6 @@ namespace storm {
                     }
                     
                     if (!foundCorrespondingElement) {
-//                        std::cout << "forward entry: " << forwardIndex << " -> " << forwardEntry << std::endl;
-//                        transitionMatrix.print();
-//                        backwardTransitions.print();
                         return false;
                     }
                 }
@@ -1677,9 +1263,11 @@ namespace storm {
             return true;
         }
         
+        template class StatePriorityQueue<double>;
         template class SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>>;
-        
+            
 #ifdef STORM_HAVE_CARL
+        template class StatePriorityQueue<storm::RationalFunction>;
         template class SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
 #endif
     } // namespace modelchecker

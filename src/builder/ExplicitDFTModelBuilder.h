@@ -20,6 +20,7 @@ namespace storm {
         class ExplicitDFTModelBuilder {
 
             using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
+            using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
             using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
 
