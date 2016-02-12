@@ -7,15 +7,12 @@ namespace storm {
     namespace utility {
         namespace ksp {
             template <typename T>
-            ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
-                    state_list_t const& targets) : transitionMatrix(model->getTransitionMatrix()),
-                                                   numStates(model->getNumberOfStates() + 1), // one more for meta-target
-                                                   metaTarget(model->getNumberOfStates()), // first unused state number
-                                                   initialStates(model->getInitialStates()),
-                                                   targets(targets) {
-                for (state_t target : targets) {
-                    targetProbMap.emplace(target, one<T>());
-                }
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> transitionMatrix, std::unordered_map<state_t, T> targetProbMap, BitVector initialStates) :
+                    transitionMatrix(transitionMatrix),
+                    numStates(transitionMatrix.getColumnCount() + 1), // one more for meta-target
+                    metaTarget(transitionMatrix.getColumnCount()), // first unused state index
+                    initialStates(initialStates),
+                    targetProbMap(targetProbMap) {
 
                 computePredecessors();
 
@@ -29,6 +26,8 @@ namespace storm {
 
                 candidatePaths.resize(numStates);
             }
+
+            // TODO: probTargetVector [!] to probTargetMap ctor
 
             // extracts the relevant info from the model and delegates to ctor above
             template <typename T>
@@ -108,14 +107,16 @@ namespace storm {
                     for (auto const& transition : transitionMatrix.getRowGroup(i)) {
                         // to avoid non-minimal paths, the target states are
                         // *not* predecessors of any state but the meta-target
-                        if (std::find(targets.begin(), targets.end(), i) == targets.end()) {
+                        if (!isTargetState(i)) {
                             graphPredecessors[transition.getColumn()].push_back(i);
                         }
                     }
                 }
 
                 // meta-target has exactly the target states as predecessors
-                graphPredecessors[metaTarget] = targets;
+                for (auto targetProbPair : targetProbMap) { // FIXME
+                    graphPredecessors[metaTarget].push_back(targetProbPair.first);
+                }
             }
 
             template <typename T>
@@ -141,7 +142,7 @@ namespace storm {
                     state_t currentNode = (*dijkstraQueue.begin()).second;
                     dijkstraQueue.erase(dijkstraQueue.begin());
 
-                    if (targetProbMap.count(currentNode) == 0) {
+                    if (!isTargetState(currentNode)) {
                         // non-target node, treated normally
                         for (auto const& transition : transitionMatrix.getRowGroup(currentNode)) {
                             state_t otherNode = transition.getColumn();
@@ -157,7 +158,7 @@ namespace storm {
                     } else {
                         // target node has only "virtual edge" (with prob 1) to meta-target
                         // no multiplication necessary
-                        T alternateDistance = shortestPathDistances[currentNode];
+                        T alternateDistance = shortestPathDistances[currentNode]; // FIXME
                         if (alternateDistance > shortestPathDistances[metaTarget]) {
                             shortestPathDistances[metaTarget] = alternateDistance;
                             shortestPathPredecessors[metaTarget] = boost::optional<state_t>(currentNode);
@@ -231,7 +232,7 @@ namespace storm {
                 } else {
                     // edge must be "virtual edge" from target state to meta-target
                     assert(targetProbMap.count(tailNode) == 1);
-                    return utility::one<T>();
+                    return one<T>();
                 }
             }
 

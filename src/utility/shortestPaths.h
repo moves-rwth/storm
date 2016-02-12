@@ -69,6 +69,7 @@ namespace storm {
                 // vector from SamplingModel);
                 // in this case separately specifying a target makes no sense
                 //ShortestPathsGenerator(storm::storage::SparseMatrix<T> maybeTransitionMatrix, std::vector<T> targetProbVector);
+                ShortestPathsGenerator(storm::storage::SparseMatrix<T> maybeTransitionMatrix, std::unordered_map<state_t, T> targetProbMap, BitVector initialStates);
 
                 inline ~ShortestPathsGenerator(){}
 
@@ -99,7 +100,6 @@ namespace storm {
                 storage::SparseMatrix<T> transitionMatrix;
                 state_t numStates; // includes meta-target, i.e. states in model + 1
                 state_t metaTarget;
-                state_list_t targets;
                 BitVector initialStates;
                 std::unordered_map<state_t, T> targetProbMap;
 
@@ -167,12 +167,19 @@ namespace storm {
                     return find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
                 }
 
-                inline state_list_t bitvectorToList(storage::BitVector const& bv) const {
-                    state_list_t list;
-                    for (state_t state : bv) {
-                        list.push_back(state);
+                inline bool isTargetState(state_t node) const {
+                    return targetProbMap.count(node) == 1;
+                }
+
+                /**
+                 * Returns a map where each state of the input BitVector is mapped to 1 (`one<T>`).
+                 */
+                inline std::unordered_map<state_t, T> allProbOneMap(BitVector bitVector) const& {
+                    std::unordered_map<state_t, T> stateProbMap;
+                    for (state_t node : bitVector) {
+                        stateProbMap.emplace(node, one<T>());
                     }
-                    return list;
+                    return stateProbMap;
                 }
                 // -----------------------
             };
