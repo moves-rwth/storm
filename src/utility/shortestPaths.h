@@ -63,7 +63,13 @@ namespace storm {
                 // all of which will be converted to list and delegated to constructor above
                 ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, state_t singleTarget);
                 ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, storage::BitVector const& targetBV);
-                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel);
+                ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel = "target");
+
+                // a further alternative: use transition matrix of maybe-states
+                // combined with target vector (e.g., the instantiated matrix/
+                // vector from SamplingModel);
+                // in this case separately specifying a target makes no sense
+                //ShortestPathsGenerator(storm::storage::SparseMatrix<T> maybeTransitionMatrix, std::vector<T> targetProbVector);
 
                 inline ~ShortestPathsGenerator(){}
 
@@ -91,13 +97,12 @@ namespace storm {
 
 
             private:
-                std::shared_ptr<models::sparse::Model<T>> model;
                 storage::SparseMatrix<T> transitionMatrix;
                 state_t numStates; // includes meta-target, i.e. states in model + 1
-
-                state_list_t targets;
                 std::unordered_set<state_t> targetSet;
                 state_t metaTarget;
+                storage::BitVector initialStates;
+                state_list_t targets;
 
                 std::vector<state_list_t>             graphPredecessors;
                 std::vector<boost::optional<state_t>> shortestPathPredecessors;
@@ -160,7 +165,6 @@ namespace storm {
 
                 // --- tiny helper fcts ---
                 inline bool isInitialState(state_t node) const {
-                    auto initialStates = model->getInitialStates();
                     return find(initialStates.begin(), initialStates.end(), node) != initialStates.end();
                 }
 

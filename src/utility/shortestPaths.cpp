@@ -8,12 +8,11 @@ namespace storm {
         namespace ksp {
             template <typename T>
             ShortestPathsGenerator<T>::ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model,
-                                                              state_list_t const& targets) : model(model), targets(targets) {
-                // FIXME: does this create a copy? I don't need one, so I should avoid that
-                transitionMatrix = model->getTransitionMatrix();
-                numStates = model->getNumberOfStates() + 1; // one more for meta-target
-
-                metaTarget = numStates - 1; // first unused state number
+                    state_list_t const& targets) : transitionMatrix(model->getTransitionMatrix()),
+                                                   numStates(model->getNumberOfStates() + 1), // one more for meta-target
+                                                   metaTarget(model->getNumberOfStates()), // first unused state number
+                                                   initialStates(model->getInitialStates()),
+                                                   targets(targets) {
                 targetSet = std::unordered_set<state_t>(targets.begin(), targets.end());
 
                 computePredecessors();
@@ -126,7 +125,7 @@ namespace storm {
                 // default comparison on pair actually works fine if distance is the first entry
                 std::set<std::pair<T, state_t>, std::greater<std::pair<T, state_t>>> dijkstraQueue;
 
-                for (state_t initialState : model->getInitialStates()) {
+                for (state_t initialState : initialStates) {
                     shortestPathDistances[initialState] = zeroDistance;
                     dijkstraQueue.emplace(zeroDistance, initialState);
                 }
@@ -179,7 +178,7 @@ namespace storm {
 
                 // BFS in Dijkstra-SP order
                 std::queue<state_t> bfsQueue;
-                for (state_t initialState : model->getInitialStates()) {
+                for (state_t initialState : initialStates) {
                     bfsQueue.push(initialState);
                 }
 
