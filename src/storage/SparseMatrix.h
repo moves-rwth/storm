@@ -550,13 +550,6 @@ namespace storm {
             std::vector<index_type> const& getRowGroupIndices() const;
             
             /*!
-             * Returns the indices where new row groups start.
-             *
-             * @return The indices where new row groups start.
-             */
-            std::vector<index_type> const& getRowIndications() const;
-            
-            /*!
              * This function makes the given rows absorbing.
              *
              * @param rows A bit vector indicating which rows are to be made absorbing.

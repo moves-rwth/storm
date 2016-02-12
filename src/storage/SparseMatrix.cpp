@@ -453,11 +453,6 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<typename SparseMatrix<ValueType>::index_type> const& SparseMatrix<ValueType>::getRowIndications() const {
-            return rowIndications;
-        }
-        
-        template<typename ValueType>
         void SparseMatrix<ValueType>::makeRowsAbsorbing(storm::storage::BitVector const& rows) {
             for (auto row : rows) {
                 makeRowDirac(row, row);
