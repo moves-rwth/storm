@@ -16,7 +16,7 @@ namespace storm {
             qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
                 auto lineStart = boost::spirit::get_line_start(b, where);
                 auto lineEnd = std::find(where, e, '\n');
-                std::string line(++lineStart, lineEnd);
+                std::string line(lineStart, lineEnd);
                 
                 std::stringstream stream;
                 stream << "Parsing error at " << get_line(where) << ":" << boost::spirit::get_column(lineStart, where) << ": " << " expecting " << what << ", here:" << std::endl;

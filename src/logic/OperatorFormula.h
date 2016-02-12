@@ -24,6 +24,7 @@ namespace storm {
             void setBound(double);
             bool hasOptimalityType() const;
             OptimizationDirection const& getOptimalityType() const;
+            virtual bool isOperatorFormula() const override;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             

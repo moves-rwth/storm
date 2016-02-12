@@ -137,7 +137,7 @@ else(CLANG)
     endif()
 
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -Wno-unused-local-typedefs -ftemplate-depth=1024")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -stdlib=${CLANG_STDLIB} -Wall -pedantic -Wno-newline-eof -Wno-mismatched-tags -Wno-unused-local-typedefs -ftemplate-depth=1024 -Wno-parentheses-equality")
 
     if(FORCE_COLOR)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
@@ -194,11 +194,11 @@ if(CUSTOM_BOOST_ROOT)
 endif(CUSTOM_BOOST_ROOT)
 
 if(STORM_PYTHON)
-	find_package(Boost REQUIRED COMPONENTS python3)
+	find_package(Boost 1.56 REQUIRED COMPONENTS python3)
 	#HACK for DEBIAN
 	if(NOT Boost_PYTHON3_FOUND)
 	set(PYVERSION 34)
-	load_library(pycarl Boost 1.55 COMPONENTS python-py${PYVERSION})
+	find_package(Boost 1.56 COMPONENTS python-py${PYVERSION})
 	if(NOT Boost_PYTHON-PY${PYVERSION}_FOUND)
 		message(FATAL_ERROR "Could not find Boost Python")
 	endif()
@@ -206,6 +206,7 @@ endif()
 else()
 find_package(Boost REQUIRED)
 endif()
+
 
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
 	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
@@ -256,9 +257,11 @@ endif(STORM_HAVE_Z3)
 
 set(STORM_HAVE_GLPK 1)
 message (STATUS "StoRM - Linking with glpk")
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/glpk-4.53")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/glpk-4.53/src")
-list(APPEND STORM_LINK_LIBRARIES "glpk")
+
+set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk.a)
+set(GLPK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/include)
+include_directories(${GLPK_INCLUDE_DIR})
+list(APPEND STORM_LINK_LIBRARIES ${GLPK_LIBRARIES})
 
 
 
