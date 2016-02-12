@@ -27,7 +27,9 @@ namespace storm {
                 candidatePaths.resize(numStates);
             }
 
-            // TODO: probTargetVector [!] to probTargetMap ctor
+            template <typename T>
+            ShortestPathsGenerator<T>::ShortestPathsGenerator(storage::SparseMatrix<T> transitionMatrix, std::vector<T> targetProbVector, BitVector initialStates)
+                    : ShortestPathsGenerator<T>(transitionMatrix, vectorToMap(targetProbVector), initialStates) {}
 
             // extracts the relevant info from the model and delegates to ctor above
             template <typename T>

@@ -65,11 +65,11 @@ namespace storm {
                 ShortestPathsGenerator(std::shared_ptr<models::sparse::Model<T>> model, std::string const& targetLabel = "target");
 
                 // a further alternative: use transition matrix of maybe-states
-                // combined with target vector (e.g., the instantiated matrix/
-                // vector from SamplingModel);
+                // combined with target vector (e.g., the instantiated matrix/vector from SamplingModel);
                 // in this case separately specifying a target makes no sense
-                //ShortestPathsGenerator(storm::storage::SparseMatrix<T> maybeTransitionMatrix, std::vector<T> targetProbVector);
-                ShortestPathsGenerator(storm::storage::SparseMatrix<T> maybeTransitionMatrix, std::unordered_map<state_t, T> targetProbMap, BitVector initialStates);
+                ShortestPathsGenerator(storage::SparseMatrix<T> transitionMatrix, std::vector<T> targetProbVector, BitVector initialStates);
+                ShortestPathsGenerator(storage::SparseMatrix<T> maybeTransitionMatrix, std::unordered_map<state_t, T> targetProbMap, BitVector initialStates);
+
 
                 inline ~ShortestPathsGenerator(){}
 
@@ -174,11 +174,28 @@ namespace storm {
                 /**
                  * Returns a map where each state of the input BitVector is mapped to 1 (`one<T>`).
                  */
-                inline std::unordered_map<state_t, T> allProbOneMap(BitVector bitVector) const& {
+                inline std::unordered_map<state_t, T> allProbOneMap(BitVector bitVector) const {
                     std::unordered_map<state_t, T> stateProbMap;
                     for (state_t node : bitVector) {
-                        stateProbMap.emplace(node, one<T>());
+                        stateProbMap.emplace(node, one<T>()); // FIXME check rvalue warning (here and below)
                     }
+                    return stateProbMap;
+                }
+
+                inline std::unordered_map<state_t, T> vectorToMap(std::vector<T> probVector) const {
+                    assert(probVector.size() == numStates);
+
+                    std::unordered_map<state_t, T> stateProbMap;
+
+                    // non-zero entries (i.e. true transitions) are added to the map
+                    for (state_t i = 0; i < probVector.size(); i++) {
+                        T probEntry = probVector[i];
+                        if (probEntry != 0) {
+                            assert(0 < probEntry <= 1);
+                            stateProbMap.emplace(i, probEntry);
+                        }
+                    }
+
                     return stateProbMap;
                 }
                 // -----------------------
