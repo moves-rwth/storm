@@ -71,6 +71,22 @@ namespace storm {
              * @return An object representing the given row.
              */
             row_type const& getRow(index_type) const;
+            
+            /*!
+             * Returns an object representing the offset'th row in the rowgroup
+             * @param rowGroup the row group
+             * @param offset which row in the group
+             * @return An object representing the given row.
+             */
+            row_type& getRow(index_type rowGroup, index_type offset);
+            
+            /*!
+             * Returns an object representing the offset'th row in the rowgroup
+             * @param rowGroup the row group
+             * @param offset which row in the group
+             * @return An object representing the given row.
+             */
+            row_type const& getRow(index_type rowGroup, index_type entryInGroup) const;
 
             /*!
              * Returns the number of rows of the matrix.
@@ -92,6 +108,21 @@ namespace storm {
              * @return The number of nonzero entries in the matrix.
              */
             index_type getNonzeroEntryCount() const;
+            
+            /*!
+             * Returns the number of row groups in the matrix.
+             *
+             * @return The number of row groups in the matrix.
+             */
+            index_type getRowGroupCount() const;
+            
+            /*!
+             * Returns the size of the given row group.
+             *
+             * @param group The group whose size to retrieve.
+             * @return The number of rows that belong to the given row group.
+             */
+            index_type getRowGroupSize(index_type group) const;
 
             /*!
              * Recomputes the number of columns and the number of non-zero entries.
@@ -145,10 +176,6 @@ namespace storm {
 
             // The number of entries in the matrix.
             index_type nonzeroEntryCount;
-            
-            // A vector containing the indices at which each given row begins. The values of the entries in row i are
-            // data[rowIndications[i]] to data[rowIndications[i + 1]] where the last entry is not included anymore.
-            std::vector<index_type> rowIndications;
             
             // A flag that indicates whether the matrix has a non-trivial row-grouping, i.e. (possibly) more than one
             // row per row group.

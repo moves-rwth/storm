@@ -16,9 +16,6 @@ namespace storm {
         FlexibleSparseMatrix<ValueType>::FlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) : data(matrix.getRowCount()), columnCount(matrix.getColumnCount()), nonzeroEntryCount(matrix.getNonzeroEntryCount()), nontrivialRowGrouping(matrix.hasNontrivialRowGrouping()) {
             if (nontrivialRowGrouping) {
                 rowGroupIndices = matrix.getRowGroupIndices();
-                rowIndications = matrix.getRowIndications();
-                // Not fully implemented yet
-                assert(false);
             }
             for (index_type rowIndex = 0; rowIndex < matrix.getRowCount(); ++rowIndex) {
                 typename storm::storage::SparseMatrix<ValueType>::const_rows row = matrix.getRow(rowIndex);
@@ -53,6 +50,20 @@ namespace storm {
         }
         
         template<typename ValueType>
+        typename FlexibleSparseMatrix<ValueType>::row_type& FlexibleSparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) {
+            assert(rowGroup < this->getRowGroupCount());
+            assert(offset < this->getRowGroupSize(rowGroup));
+            return getRow(rowGroupIndices[rowGroup] + offset);
+        }
+        
+        template<typename ValueType>
+        typename FlexibleSparseMatrix<ValueType>::row_type const& FlexibleSparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) const {
+            assert(rowGroup < this->getRowGroupCount());
+            assert(offset < this->getRowGroupSize(rowGroup));
+            return getRow(rowGroupIndices[rowGroup] + offset);
+        }
+        
+        template<typename ValueType>
         typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getRowCount() const {
             return this->data.size();
         }
@@ -65,6 +76,20 @@ namespace storm {
         template<typename ValueType>
         typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getNonzeroEntryCount() const {
             return nonzeroEntryCount;
+        }
+        
+        template<typename ValueType>
+        typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getRowGroupCount() const {
+            return rowGroupIndices.size();
+        }
+        
+        template<typename ValueType>
+        typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getRowGroupSize(index_type group) const {
+            if (group == getRowGroupCount() - 1) {
+                return getRowCount() - rowGroupIndices[group];
+            } else {
+                return rowGroupIndices[group + 1] - rowGroupIndices[group];
+            }
         }
 
         template<typename ValueType>
@@ -91,7 +116,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool SparseMatrix<ValueType>::hasNontrivialRowGrouping() const {
+        bool FlexibleSparseMatrix<ValueType>::hasNontrivialRowGrouping() const {
             return nontrivialRowGrouping;
         }
 
@@ -142,13 +167,50 @@ namespace storm {
 
         template<typename ValueType>
         std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<ValueType> const& matrix) {
-            for (uint_fast64_t index = 0; index < matrix->data.size(); ++index) {
-                out << index << " - ";
-                for (auto const& element : matrix->getRow(index)) {
-                    out << "(" << element.getColumn() << ", " << element.getValue() << ") ";
-                }
-                return out;
+            // Print column numbers in header.
+            out << "\t\t";
+            for (typename FlexibleSparseMatrix<ValueType>::index_type i = 0; i < matrix.getColumnCount(); ++i) {
+                out << i << "\t";
             }
+            out << std::endl;
+            
+            typename FlexibleSparseMatrix<ValueType>::index_type endIndex = matrix.hasNontrivialRowGrouping() ? matrix.getRowGroupCount() : matrix.getRowCount();
+            // Iterate over all rows.
+            for (typename SparseMatrix<ValueType>::index_type i = 0; i < endIndex; ++i) {
+                if (matrix.hasNontrivialRowGrouping()) {
+                    out << "\t---- group " << i << "/" << (matrix.getRowGroupCount() - 1) << " ---- " << std::endl;
+                }
+                typename FlexibleSparseMatrix<ValueType>::index_type startRow = matrix.hasNontrivialRowGrouping() ? matrix.rowGroupIndices[i] : i;
+                typename FlexibleSparseMatrix<ValueType>::index_type endRow = matrix.hasNontrivialRowGrouping() ? matrix.rowGroupIndices[i + 1] : i+1;
+                for (typename FlexibleSparseMatrix<ValueType>::index_type rowIndex = startRow; rowIndex < endRow; ++rowIndex) {
+                    // Print the actual row.
+                    out << i << "\t(\t";
+                    typename FlexibleSparseMatrix<ValueType>::row_type row = matrix.getRow(rowIndex);
+                    typename FlexibleSparseMatrix<ValueType>::index_type columnIndex = 0;
+                    for (auto const& entry : row) {
+                        //Insert zero between entries.
+                        while (columnIndex < entry.getColumn()) {
+                            out << "0\t";
+                            ++columnIndex;
+                        }
+                        ++columnIndex;
+                        out << entry.getValue() << "\t";
+                    }
+                    //Insert remaining zeros.
+                    while (columnIndex++ <= matrix.getColumnCount()) {
+                        out << "0\t";
+                    }
+                    out << "\t)\t" << i << std::endl;
+                }
+            }
+            
+            // Print column numbers in footer.
+            out << "\t\t";
+            for (typename FlexibleSparseMatrix<ValueType>::index_type i = 0; i < matrix.getColumnCount(); ++i) {
+                out << i << "\t";
+            }
+            out << std::endl;
+            return out;
         }
 
         // Explicitly instantiate the matrix.
