@@ -1,6 +1,6 @@
 #include "src/builder/ExplicitDFTModelBuilder.h"
 #include <src/models/sparse/MarkovAutomaton.h>
-#include <src/models/sparse/CTMC.h>
+#include <src/models/sparse/Ctmc.h>
 #include <src/utility/constants.h>
 #include <src/utility/vector.h>
 #include <src/exceptions/UnexpectedException.h>
