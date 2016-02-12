@@ -39,6 +39,28 @@ target group is required in the constructor. (It would have been possible to
 allow for interchangeable target groups, but I don't anticipate that use
 case.)
 
+#### Special case: Using Matrix/Vector from SamplingModel
+
+The class has been updated to support the matrix/vector that `SamplingModel`
+generates (as an instance of a PDTMC) as input. This is in fact closely
+related to the target groups, since it works as follows:
+
+The input is a (sub-stochastic) transition matrix of the maybe-states (only!)
+and a vector (again over the maybe-states) with the probabilities to an
+implied target state.
+
+This naturally corresponds to having a meta-target, except the probability
+of its incoming edges range over $(0,1]$ rather than being $1$.
+Thus, applying the term "target group" to the set of states with non-zero
+transitions to the meta-target is now misleading (I suppose the correct term
+would now be "meta-target predecessors"), but nevertheless it should work
+exactly the same. [Right?]
+
+In terms of implementation, in `getEdgeDistance` as well as in the loop of
+the Dijkstra, the "virtual" edges to the meta-target were checked for and
+set to probability $1$; this must now be changed to use the probability as
+indicated in the `targetProbVector` if this input format is used.
+
 ### Minimality of paths
 Secondly, we define shortest paths as "minimal" shortest paths in the
 following sense: The path may not visit any target state except at the
