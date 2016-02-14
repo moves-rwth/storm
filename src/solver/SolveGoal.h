@@ -77,12 +77,16 @@ namespace storm {
                 return (bound.comparisonType == storm::logic::ComparisonType::Greater || bound.comparisonType == storm::logic::ComparisonType::GreaterEqual);
             }
             
+            bool boundIsStrict() const {
+                return (bound.comparisonType == storm::logic::ComparisonType::Greater || bound.comparisonType == storm::logic::ComparisonType::Less);
+            }
+            
             ValueType const& thresholdValue() const {
                 return bound.threshold;
             }
             
             storm::storage::BitVector const& relevantValues() const {
-                return relevantValues;
+                return relevantValueVector;
             }
             
         private:

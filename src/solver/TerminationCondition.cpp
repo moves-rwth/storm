@@ -29,9 +29,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool TerminateIfFilteredExtremumExceedsThreshold<ValueType>::terminateNow(const std::vector<ValueType>& currentValues) const {
-            STORM_LOG_ASSERT(currentValues.size() == filter.size(), "Vectors sizes mismatch.");
-            ValueType currentValue = useMinimum ? storm::utility::vector::min_if(currentValues, filter) : storm::utility::vector::max_if(currentValues, filter);
+        bool TerminateIfFilteredExtremumExceedsThreshold<ValueType>::terminateNow(std::vector<ValueType> const& currentValues) const {
+            STORM_LOG_ASSERT(currentValues.size() == this->filter.size(), "Vectors sizes mismatch.");
+            ValueType currentValue = useMinimum ? storm::utility::vector::min_if(currentValues, this->filter) : storm::utility::vector::max_if(currentValues, this->filter);
             return this->strict ? currentValue > this->threshold : currentValue >= this->threshold;
         }
         

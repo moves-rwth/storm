@@ -5,6 +5,7 @@
 #include "src/settings/SettingsManager.h"
 #include "src/adapters/GmmxxAdapter.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/storage/TotalScheduler.h"
 #include "src/utility/vector.h"
 
 #include "src/settings/modules/GeneralSettings.h"
@@ -53,7 +54,7 @@ namespace storm {
 
 				// Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
 				// of iterations.
-				while (!converged && iterations < this->maximalNumberOfIterations && !this->earlyTermination->terminateNow(*currentX)) {
+				while (!converged && iterations < this->maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
 					// Compute x' = A*x + b.
 					gmm::mult(*gmmxxMatrix, *currentX, *multiplyResult);
 					gmm::add(b, *multiplyResult);
@@ -92,7 +93,7 @@ namespace storm {
 			} else {
 				// We will use Policy Iteration to solve the given system.
 				// We first guess an initial choice resolution which will be refined after each iteration.
-				this->policy = std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupIndices().size() - 1);
+				std::vector<storm::storage::sparse::state_type> scheduler(this->A.getRowGroupIndices().size() - 1);
 
 				// Create our own multiplyResult for solving the deterministic sub-instances.
 				std::vector<ValueType> deterministicMultiplyResult(rowGroupIndices.size() - 1);
@@ -119,13 +120,13 @@ namespace storm {
 
 				// Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
 				// of iterations.
-				while (!converged && iterations < this->maximalNumberOfIterations && !this->earlyTermination->terminateNow(*currentX)) {
+				while (!converged && iterations < this->maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
 					// Take the sub-matrix according to the current choices
-					storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->policy, true);
+					storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(scheduler, true);
 					submatrix.convertToEquationSystem();
 					
 					GmmxxLinearEquationSolver<ValueType> gmmLinearEquationSolver(submatrix, storm::solver::GmmxxLinearEquationSolver<double>::SolutionMethod::Gmres, this->precision, this->maximalNumberOfIterations, storm::solver::GmmxxLinearEquationSolver<double>::Preconditioner::Ilu, this->relative, 50);
-					storm::utility::vector::selectVectorValues<ValueType>(subB, this->policy, rowGroupIndices, b);
+					storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, rowGroupIndices, b);
 
 					// Copy X since we will overwrite it
 					std::copy(currentX->begin(), currentX->end(), newX->begin());
@@ -139,8 +140,7 @@ namespace storm {
 
 					// Reduce the vector x by applying min/max over all nondeterministic choices.
 					// Here, we capture which choice was taken in each state, thereby refining our initial guess.
-					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices, &(this->policy));
-					
+					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices, &(scheduler));
 
 					// Determine whether the method converged.
 					converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, static_cast<ValueType>(this->precision), this->relative);
@@ -156,6 +156,11 @@ namespace storm {
 				} else {
 					LOG4CPLUS_WARN(logger, "Iterative solver did not converge after " << iterations << " iterations.");
 				}
+                
+                // If requested, we store the scheduler for retrieval.
+                if (this->isTrackSchedulerSet()) {
+                    this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(scheduler));
+                }
 
 				// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
 				// is currently stored in currentX, but x is the output vector.

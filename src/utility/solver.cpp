@@ -105,8 +105,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackPolicy) const {
-                
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> MinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackScheduler) const {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> p1;
                 
                 switch (solverType) {
@@ -127,7 +126,7 @@ namespace storm {
                         break;
                     }
                 }
-                p1->setPolicyTracking(trackPolicy);
+                p1->setTrackScheduler(trackScheduler);
                 return p1;
                 
             }

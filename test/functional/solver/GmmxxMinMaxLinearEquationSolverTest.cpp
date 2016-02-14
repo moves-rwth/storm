@@ -39,7 +39,8 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptionsAndEarlyTerminatio
         
     double bound = 0.8;
     storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A);
-    solver.setEarlyTerminationCriterion(std::make_unique<storm::solver::TerminateAfterFilteredExtremumPassesThresholdValue<double>>(storm::storage::BitVector(1, true), bound, true));
+    
+    solver.setTerminationCondition(std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<double>>(storm::storage::BitVector(A.getRowGroupCount(), true), bound, false, true));
     ASSERT_NO_THROW(solver.solveEquationSystem(storm::OptimizationDirection::Minimize, x, b));
     ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::gmmxxEquationSolverSettings().getPrecision());
     
@@ -47,11 +48,10 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptionsAndEarlyTerminatio
     ASSERT_LT(std::abs(x[0] - 0.989991), 0.989991 - bound - storm::settings::gmmxxEquationSolverSettings().getPrecision());
     
     bound = 0.6;
-    solver.setEarlyTerminationCriterion(std::make_unique<storm::solver::TerminateAfterFilteredExtremumPassesThresholdValue<double>>(storm::storage::BitVector(1, true), bound, true));
+    solver.setTerminationCondition(std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<double>>(storm::storage::BitVector(A.getRowGroupCount(), true), bound, false, true));
     
     ASSERT_NO_THROW(solver.solveEquationSystem(storm::OptimizationDirection::Maximize, x, b));
     ASSERT_LT(std::abs(x[0] - 0.989991), 0.989991 - bound - storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    
 }
 
 TEST(GmmxxMinMaxLinearEquationSolver, MatrixVectorMultiplication) {

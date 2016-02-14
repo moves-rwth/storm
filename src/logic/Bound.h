@@ -14,7 +14,8 @@ namespace storm {
             ComparisonType comparisonType;
             ValueType threshold;
 
-            friend std::ostream& operator<<(std::ostream& out, Bound<ValueType> const& bound);
+            template<typename ValueTypePrime>
+            friend std::ostream& operator<<(std::ostream& out, Bound<ValueTypePrime> const& bound);
         };
 
         template<typename ValueType>

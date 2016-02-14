@@ -113,7 +113,7 @@ namespace storm {
                 /*!
                  * Creates a new min/max linear equation solver instance with the given matrix.
                  */
-                virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackPolicy = false) const;
+                virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackScheduler = false) const;
                 void setSolverType(storm::solver::EquationSolverTypeSelection solverType);
                 void setPreferredTechnique(storm::solver::MinMaxTechniqueSelection);
                 

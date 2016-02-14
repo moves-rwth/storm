@@ -29,7 +29,7 @@ namespace storm {
             /*!
              * Retrieves whether a custom termination condition has been set.
              */
-            bool hasCustomTerminationCondition() {
+            bool hasCustomTerminationCondition() const {
                 return static_cast<bool>(this->terminationCondition);
             }
             

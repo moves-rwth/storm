@@ -17,7 +17,7 @@ namespace storm {
         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix) {
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> p = factory.create(matrix);
             p->setOptimizationDirection(goal.direction());
-            p->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumPassesThresholdValue<double>>(goal.relevantColumns(), goal.thresholdValue(), goal.minimize()));
+            p->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<double>>(goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), goal.minimize()));
             return p;
         }
         
@@ -34,8 +34,7 @@ namespace storm {
         template<typename ValueType>
         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix) {
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = factory.create(matrix);
-            solver->setOptimizationDirection(goal.direction());
-            solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumPassesThresholdValue<double>>(goal.relevantColumns(), goal.thresholdValue(), goal.minimize()));
+            solver->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<double>>(goal.relevantValues(), goal.thresholdValue(), goal.boundIsStrict(), goal.minimize()));
             return solver;
         }
         

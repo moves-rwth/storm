@@ -38,8 +38,6 @@ namespace storm {
             bool terminateNow(std::vector<ValueType> const& currentValue) const;
             
         protected:
-            ValueType threshold;
-            storm::storage::BitVector filter;
             bool useMinimum;
         };
     }

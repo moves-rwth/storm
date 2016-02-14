@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <memory>
 
+#include <boost/optional.hpp>
+
 #include "src/solver/AbstractEquationSolver.h"
 #include "src/solver/SolverSelectionOptions.h"
 #include "src/storage/sparse/StateType.h"
@@ -26,20 +28,13 @@ namespace storm {
         template<typename ValueType>
         class AbstractMinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
         public:
-            void setSchedulerTracking(bool trackScheduler = true);
+            void setTrackScheduler(bool trackScheduler = true);
+            bool isTrackSchedulerSet() const;
             
-            std::vector<storm::storage::sparse::state_type> getScheduler() const {
-                STORM_LOG_THROW(scheduler, storm::exceptions::InvalidSettingsException, "Cannot retrieve scheduler, because none was generated.");
-                return scheduler.get();
-            }
+            storm::storage::Scheduler const& getScheduler() const;
             
-            void setOptimizationDirection(OptimizationDirection d) {
-                direction = convert(d);
-            }
-            
-            void resetOptimizationDirection() {
-                direction = OptimizationDirectionSetting::Unset;
-            }
+            void setOptimizationDirection(OptimizationDirection d);
+            void resetOptimizationDirection();
                         
         protected:
             AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackScheduler, MinMaxTechniqueSelection prefTech);
@@ -63,7 +58,7 @@ namespace storm {
             bool trackScheduler;
             
             // The scheduler (if it could be successfully generated).
-            boost::optional<std::unique_ptr<storm::storage::Scheduler>> scheduler;
+            mutable boost::optional<std::unique_ptr<storm::storage::Scheduler>> scheduler;
         };
         
         /*!

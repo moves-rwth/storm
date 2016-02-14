@@ -171,7 +171,7 @@ namespace storm {
             uint_fast64_t iterationCount = 0;
             bool converged = false;
             
-            while (!converged && iterationCount < maximalNumberOfIterations) {
+            while (!converged && iterationCount < maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 gmm::mult(*gmmLU, *currentX, tmpX);
                 gmm::add(b, gmm::scaled(tmpX, -storm::utility::one<ValueType>()), tmpX);
