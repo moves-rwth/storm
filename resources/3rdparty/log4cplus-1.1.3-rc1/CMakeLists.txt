@@ -24,9 +24,9 @@ message("-- Generating build for Log4cplus version ${log4cplus_version_major}.${
 set (log4cplus_soversion 9)
 set (log4cplus_postfix "")
 
-option(LOG4CPLUS_BUILD_TESTING "Build the test suite." ON)
+option(LOG4CPLUS_BUILD_TESTING "Build the test suite." OFF)
 
-option(LOG4CPLUS_BUILD_LOGGINGSERVER "Build the logging server." ON)
+option(LOG4CPLUS_BUILD_LOGGINGSERVER "Build the logging server." OFF)
 
 option(LOG4CPLUS_DEFINE_INSTALL_TARGET "Whether the install target should be generated." OFF)
 
