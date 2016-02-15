@@ -14,19 +14,12 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique, bool trackPolicy) : 
-        MinMaxLinearEquationSolver<ValueType>(A, storm::settings::nativeEquationSolverSettings().getPrecision(), \
-            storm::settings::nativeEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative, \
-            storm::settings::nativeEquationSolverSettings().getMaximalIterationCount(), trackPolicy, preferredTechnique)
-        {
+        NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique, bool trackScheduler) :  MinMaxLinearEquationSolver<ValueType>(A, storm::settings::nativeEquationSolverSettings().getPrecision(), storm::settings::nativeEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative, storm::settings::nativeEquationSolverSettings().getMaximalIterationCount(), trackScheduler, preferredTechnique) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-		NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, MinMaxTechniqueSelection tech, bool relative, bool trackPolicy) : 
-        MinMaxLinearEquationSolver<ValueType>(A, precision, \
-            relative, \
-            maximalNumberOfIterations, trackPolicy, tech) {
+		NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, MinMaxTechniqueSelection tech, bool relative, bool trackScheduler) : MinMaxLinearEquationSolver<ValueType>(A, precision, relative, maximalNumberOfIterations, trackScheduler, tech) {
             // Intentionally left empty.
         }
         
