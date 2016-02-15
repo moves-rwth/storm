@@ -187,7 +187,9 @@ namespace storm {
                     // Set transitions
                     if (hasDependencies) {
                         // Failure is due to dependency -> add non-deterministic choice
-                        transitionMatrixBuilder.addNextValue(state->getId() + rowOffset++, newState->getId(), storm::utility::one<ValueType>());
+                        std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency = mDft.getDependency(state->getDependencyId(smallest-1));
+                        transitionMatrixBuilder.addNextValue(state->getId() + rowOffset++, newState->getId(), dependency->probability());
+                        STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newState->getId() << " with probability " << dependency->probability());
                     } else {
                         // Set failure rate according to usage
                         bool isUsed = true;
@@ -203,11 +205,11 @@ namespace storm {
                         if (resultFind != outgoingTransitions.end()) {
                             // Add to existing transition
                             resultFind->second += rate;
-                            STORM_LOG_TRACE("Updated transition from " << state->getId() << " to " << resultFind->first << " with " << rate << " to " << resultFind->second);
+                            STORM_LOG_TRACE("Updated transition from " << state->getId() << " to " << resultFind->first << " with rate " << rate << " to new rate " << resultFind->second);
                         } else {
                             // Insert new transition
                             outgoingTransitions.insert(std::make_pair(newState->getId(), rate));
-                            STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newState->getId() << " with " << rate);
+                            STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newState->getId() << " with rate " << rate);
                         }
                         exitRate += rate;
                     }

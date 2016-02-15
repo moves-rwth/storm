@@ -99,8 +99,7 @@ namespace storm {
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
             if (nrFailableDependencies() > 0) {
                 // Consider failure due to dependency
-                assert(index < nrFailableDependencies());
-                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mFailableDependencies[index]);
+                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(getDependencyId(index));
                 std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvent()->id()), true);
                 mFailableDependencies.erase(mFailableDependencies.begin() + index);
                 setFailed(res.first->id());
