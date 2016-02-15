@@ -1,7 +1,6 @@
 #include "src/solver/stateelimination/StateEliminator.h"
 
 #include "src/storage/BitVector.h"
-#include "src/adapters/CarlAdapter.h"
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidStateException.h"
