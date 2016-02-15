@@ -43,6 +43,8 @@ ExternalProject_Add(
         CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCXX=${CMAKE_CXX_COMPILER}
         # Disable install step
         INSTALL_COMMAND ""
+        BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0"
+        INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0"
         # Wrap download, configure and build steps in a script to log output
         LOG_CONFIGURE ON
         LOG_BUILD ON)
