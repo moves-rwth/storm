@@ -85,6 +85,13 @@ namespace storm {
              * @return An object representing the given row.
              */
             row_type const& getRow(index_type rowGroup, index_type entryInGroup) const;
+            
+            /*!
+             * Returns the grouping of rows of this matrix.
+             *
+             * @return The grouping of rows of this matrix.
+             */
+            std::vector<index_type> const& getRowGroupIndices() const;
 
             /*!
              * Returns the number of rows of the matrix.
@@ -163,6 +170,14 @@ namespace storm {
              */
             bool rowHasDiagonalElement(storm::storage::sparse::state_type state);
 
+            /*!
+             * Print row.
+             * @param out Output stream.
+             * @param rowIndex Index of row to print.
+             * @return Output with printed row.
+             */
+            std::ostream& printRow(std::ostream& out, index_type const& rowIndex) const;
+            
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<TPrime> const& matrix);
 

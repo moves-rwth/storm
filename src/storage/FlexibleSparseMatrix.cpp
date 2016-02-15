@@ -64,6 +64,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::vector<typename FlexibleSparseMatrix<ValueType>::index_type> const& FlexibleSparseMatrix<ValueType>::getRowGroupIndices() const {
+            return rowGroupIndices;
+        }
+        
+        template<typename ValueType>
         typename FlexibleSparseMatrix<ValueType>::index_type FlexibleSparseMatrix<ValueType>::getRowCount() const {
             return this->data.size();
         }
@@ -164,49 +169,64 @@ namespace storm {
             }
             return false;
         }
+        
+        template<typename ValueType>
+        std::ostream& FlexibleSparseMatrix<ValueType>::printRow(std::ostream& out, index_type const& rowIndex) const {
+            index_type columnIndex = 0;
+            row_type row = this->getRow(rowIndex);
+            for (index_type column = 0; column < this->getColumnCount(); ++column) {
+                if (columnIndex < row.size() && row[columnIndex].getColumn() == column) {
+                    // Insert entry
+                    out << row[columnIndex].getValue() << "\t";
+                    ++columnIndex;
+                } else {
+                    // Insert zero
+                    out << "0\t";
+                }
+            }
+            return out;
+        }
+        
 
         template<typename ValueType>
         std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<ValueType> const& matrix) {
+            typedef typename FlexibleSparseMatrix<ValueType>::index_type FlexibleIndex;
+            
             // Print column numbers in header.
             out << "\t\t";
-            for (typename FlexibleSparseMatrix<ValueType>::index_type i = 0; i < matrix.getColumnCount(); ++i) {
+            for (FlexibleIndex i = 0; i < matrix.getColumnCount(); ++i) {
                 out << i << "\t";
             }
             out << std::endl;
             
-            typename FlexibleSparseMatrix<ValueType>::index_type endIndex = matrix.hasNontrivialRowGrouping() ? matrix.getRowGroupCount() : matrix.getRowCount();
-            // Iterate over all rows.
-            for (typename SparseMatrix<ValueType>::index_type i = 0; i < endIndex; ++i) {
-                if (matrix.hasNontrivialRowGrouping()) {
-                    out << "\t---- group " << i << "/" << (matrix.getRowGroupCount() - 1) << " ---- " << std::endl;
+            if (matrix.hasNontrivialRowGrouping()) {
+                // Iterate over all row groups
+                FlexibleIndex rowGroupCount = matrix.getRowGroupCount();
+                for (FlexibleIndex rowGroup = 0; rowGroup < rowGroupCount; ++rowGroup) {
+                    out << "\t---- group " << rowGroup << "/" << (rowGroupCount - 1) << " ---- " << std::endl;
+                    FlexibleIndex endRow = rowGroup+1 < rowGroupCount ? matrix.rowGroupIndices[rowGroup + 1] : matrix.getRowCount();
+                    // Iterate over all rows.
+                    for (FlexibleIndex row = matrix.rowGroupIndices[rowGroup]; row < endRow; ++row) {
+                        // Print the actual row.
+                        out << rowGroup << "\t(\t";
+                        matrix.printRow(out, row);
+                        out << "\t)\t" << rowGroup << std::endl;
+                    }
                 }
-                typename FlexibleSparseMatrix<ValueType>::index_type startRow = matrix.hasNontrivialRowGrouping() ? matrix.rowGroupIndices[i] : i;
-                typename FlexibleSparseMatrix<ValueType>::index_type endRow = matrix.hasNontrivialRowGrouping() ? matrix.rowGroupIndices[i + 1] : i+1;
-                for (typename FlexibleSparseMatrix<ValueType>::index_type rowIndex = startRow; rowIndex < endRow; ++rowIndex) {
+
+            } else {
+                // Iterate over all rows
+                for (FlexibleIndex row = 0; row < matrix.getRowCount(); ++row) {
                     // Print the actual row.
-                    out << i << "\t(\t";
-                    typename FlexibleSparseMatrix<ValueType>::row_type row = matrix.getRow(rowIndex);
-                    typename FlexibleSparseMatrix<ValueType>::index_type columnIndex = 0;
-                    for (auto const& entry : row) {
-                        //Insert zero between entries.
-                        while (columnIndex < entry.getColumn()) {
-                            out << "0\t";
-                            ++columnIndex;
-                        }
-                        ++columnIndex;
-                        out << entry.getValue() << "\t";
-                    }
-                    //Insert remaining zeros.
-                    while (columnIndex++ <= matrix.getColumnCount()) {
-                        out << "0\t";
-                    }
-                    out << "\t)\t" << i << std::endl;
+                    out << row << "\t(\t";
+                    matrix.printRow(out, row);
+                    out << "\t)\t" << row << std::endl;
                 }
             }
             
             // Print column numbers in footer.
             out << "\t\t";
-            for (typename FlexibleSparseMatrix<ValueType>::index_type i = 0; i < matrix.getColumnCount(); ++i) {
+            for (FlexibleIndex i = 0; i < matrix.getColumnCount(); ++i) {
                 out << i << "\t";
             }
             out << std::endl;
@@ -215,8 +235,11 @@ namespace storm {
 
         // Explicitly instantiate the matrix.
         template class FlexibleSparseMatrix<double>;
+        template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<double> const& matrix);
+        
 #ifdef STORM_HAVE_CARL
         template class FlexibleSparseMatrix<storm::RationalFunction>;
+        template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<storm::RationalFunction> const& matrix);
 #endif
 
     } // namespace storage
