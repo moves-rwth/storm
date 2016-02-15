@@ -11,9 +11,10 @@ namespace storm {
             class LongRunAverageEliminator : public StateEliminator<SparseModelType> {
 
                 typedef typename SparseModelType::ValueType ValueType;
+                typedef typename std::shared_ptr<storm::modelchecker::StatePriorityQueue<ValueType>> PriorityQueuePointer;
 
             public:
-                LongRunAverageEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::modelchecker::StatePriorityQueue<ValueType>& priorityQueue, std::vector<ValueType>& stateValues, std::vector<ValueType>& averageTimeInStates);
+                LongRunAverageEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, PriorityQueuePointer priorityQueue, std::vector<ValueType>& stateValues, std::vector<ValueType>& averageTimeInStates);
                 
                 // Instantiaton of Virtual methods
                 void updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) override;
@@ -24,7 +25,7 @@ namespace storm {
                 
             private:
                 
-                storm::modelchecker::StatePriorityQueue<ValueType>& priorityQueue;
+                PriorityQueuePointer priorityQueue;
                 std::vector<ValueType>& stateValues;
                 std::vector<ValueType>& averageTimeInStates;
             };

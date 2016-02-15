@@ -5,7 +5,7 @@ namespace storm {
         namespace stateelimination {
             
             template<typename SparseModelType>
-            PrioritizedEliminator<SparseModelType>::PrioritizedEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::modelchecker::StatePriorityQueue<ValueType> priorityQueue, std::vector<ValueType>& stateValues) : StateEliminator<SparseModelType>(transitionMatrix, backwardTransitions), priorityQueue(priorityQueue), stateValues(stateValues) {
+            PrioritizedEliminator<SparseModelType>::PrioritizedEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, PriorityQueuePointer priorityQueue, std::vector<ValueType>& stateValues) : StateEliminator<SparseModelType>(transitionMatrix, backwardTransitions), priorityQueue(priorityQueue), stateValues(stateValues) {
             }
             
             template<typename SparseModelType>
@@ -20,7 +20,7 @@ namespace storm {
             
             template<typename SparseModelType>
             void PrioritizedEliminator<SparseModelType>::updatePriority(storm::storage::sparse::state_type const& state) {
-                priorityQueue.update(state, StateEliminator<SparseModelType>::transitionMatrix, StateEliminator<SparseModelType>::backwardTransitions, stateValues);
+                priorityQueue->update(state, StateEliminator<SparseModelType>::transitionMatrix, StateEliminator<SparseModelType>::backwardTransitions, stateValues);
             }
             
             template<typename SparseModelType>
