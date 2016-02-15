@@ -14,6 +14,8 @@
 
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/parser/AutoParser.h"
+#include "src/parser/PrismParser.h"
+#include "src/builder/ExplicitPrismModelBuilder.h"
 
 TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
@@ -187,4 +189,38 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult6 = result->asExplicitQuantitativeCheckResult<double>();
 
     EXPECT_NEAR(4.285689611, quantitativeResult6[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+}
+
+TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/scheduler_generation.nm");
+    
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser formulaParser;
+    
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+    EXPECT_EQ(4ul, model->getNumberOfStates());
+    EXPECT_EQ(11ul, model->getNumberOfTransitions());
+    
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();
+
+    EXPECT_EQ(7ul, mdp->getNumberOfChoices());
+    
+    auto solverFactory = std::make_unique<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(storm::solver::EquationSolverTypeSelection::Gmmxx);
+    solverFactory->setPreferredTechnique(storm::solver::MinMaxTechniqueSelection::PolicyIteration);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::move(solverFactory));
+    
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"target\"]");
+    
+    storm::modelchecker::CheckTask<storm::logic::Formula> checkTask(*formula);
+    checkTask.setProduceSchedulers(true);
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(checkTask);
+    
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"target\"]");
+    checkTask.replaceFormula(*formula);
+
+    result = checker.check(checkTask);
+    
 }

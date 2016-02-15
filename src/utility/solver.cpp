@@ -91,17 +91,19 @@ namespace storm {
             }
             
             template<typename ValueType>
-            void MinMaxLinearEquationSolverFactory<ValueType>::setSolverType(storm::solver::EquationSolverTypeSelection solverTypeSel) {
+            MinMaxLinearEquationSolverFactory<ValueType>& MinMaxLinearEquationSolverFactory<ValueType>::setSolverType(storm::solver::EquationSolverTypeSelection solverTypeSel) {
                 if(solverTypeSel == storm::solver::EquationSolverTypeSelection::FROMSETTINGS) {
                     this->solverType = storm::settings::generalSettings().getEquationSolver();
                 } else {
                     this->solverType = storm::solver::convert(solverTypeSel);
                 }
-                
+                return *this;
             }
+            
             template<typename ValueType>
-            void MinMaxLinearEquationSolverFactory<ValueType>::setPreferredTechnique(storm::solver::MinMaxTechniqueSelection preferredTech) {
+            MinMaxLinearEquationSolverFactory<ValueType>& MinMaxLinearEquationSolverFactory<ValueType>::setPreferredTechnique(storm::solver::MinMaxTechniqueSelection preferredTech) {
                 this->prefTech = preferredTech;
+                return *this;
             }
             
             template<typename ValueType>
@@ -128,7 +130,6 @@ namespace storm {
                 }
                 p1->setTrackScheduler(trackScheduler);
                 return p1;
-                
             }
 
             template<typename ValueType>

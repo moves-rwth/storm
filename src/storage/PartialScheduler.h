@@ -19,6 +19,9 @@ namespace storm {
             
             uint_fast64_t getChoice(uint_fast64_t state) const override;
             
+            map_type::const_iterator begin() const;
+            map_type::const_iterator end() const;
+            
             friend std::ostream& operator<<(std::ostream& out, PartialScheduler const& scheduler);
 
         private:

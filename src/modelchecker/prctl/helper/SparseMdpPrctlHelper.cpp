@@ -1,4 +1,4 @@
-#include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+ #include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
@@ -12,6 +12,7 @@
 
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/Expression.h"
+#include "src/storage/TotalScheduler.h"
 
 #include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/solver/LpSolver.h"
@@ -56,7 +57,6 @@ namespace storm {
                 
                 return result;
             }
-            
 
             template<typename ValueType>
             std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeNextProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& nextStates, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
@@ -73,7 +73,8 @@ namespace storm {
        
             
             template<typename ValueType>
-            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool producePolicy, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                STORM_LOG_THROW(!(qualitative && produceScheduler), storm::exceptions::InvalidSettingsException, "Cannot produce scheduler when performing qualitative model checking only.");
                      
                 // We need to identify the states which have to be taken out of the matrix, i.e.
                 // all states that have probability 0 and 1 of satisfying the until-formula.
@@ -96,7 +97,12 @@ namespace storm {
                 // Set values of resulting vector that are known exactly.
                 storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability0, storm::utility::zero<ValueType>());
                 storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
-                
+
+                // If requested, we will produce a scheduler.
+                std::unique_ptr<storm::storage::TotalScheduler> scheduler;
+                if (produceScheduler) {
+                    scheduler = std::make_unique<storm::storage::TotalScheduler>(transitionMatrix.getRowGroupCount());
+                }
                 
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative) {
@@ -119,20 +125,44 @@ namespace storm {
                         
                         // Solve the corresponding system of equations.
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, minMaxLinearEquationSolverFactory, submatrix);
+                        solver->setTrackScheduler(produceScheduler);
                         solver->solveEquationSystem(x, b);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
+                        
+                        if (produceScheduler) {
+                            storm::storage::Scheduler const& subscheduler = solver->getScheduler();
+                            uint_fast64_t currentSubState = 0;
+                            for (auto maybeState : maybeStates) {
+                                scheduler->setChoice(maybeState, subscheduler.getChoice(currentSubState));
+                                ++currentSubState;
+                            }
+                        }
                     }
                 }
                 
-                return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result));
+                // Finally, if we need to produce a scheduler, we also need to figure out the parts of the scheduler for
+                // the states with probability 0 or 1 (depending on whether we maximize or minimize).
+                if (produceScheduler) {
+                    storm::storage::PartialScheduler relevantQualitativeScheduler;
+                    if (goal.minimize()) {
+                        relevantQualitativeScheduler = storm::utility::graph::computeSchedulerProb0E(statesWithProbability0, transitionMatrix);
+                    } else {
+                        relevantQualitativeScheduler = storm::utility::graph::computeSchedulerProb1E(statesWithProbability1, transitionMatrix, backwardTransitions, phiStates, psiStates);
+                    }
+                    for (auto const& stateChoicePair : relevantQualitativeScheduler) {
+                        scheduler->setChoice(stateChoicePair.first, stateChoicePair.second);
+                    }
+                }
+                
+                return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
             }
 
             template<typename ValueType>
-            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool producePolicy, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
                 storm::solver::SolveGoal goal(dir);
-                return std::move(computeUntilProbabilities(goal, transitionMatrix, backwardTransitions, phiStates, psiStates, qualitative, producePolicy, minMaxLinearEquationSolverFactory));
+                return std::move(computeUntilProbabilities(goal, transitionMatrix, backwardTransitions, phiStates, psiStates, qualitative, produceScheduler, minMaxLinearEquationSolverFactory));
             }
            
             template<typename ValueType>

@@ -30,6 +30,7 @@ namespace storm {
         public:
             void setTrackScheduler(bool trackScheduler = true);
             bool isTrackSchedulerSet() const;
+            bool hasScheduler() const;
             
             storm::storage::Scheduler const& getScheduler() const;
             
@@ -69,7 +70,7 @@ namespace storm {
         template<class ValueType>
         class MinMaxLinearEquationSolver : public AbstractMinMaxLinearEquationSolver<ValueType> {
         protected:
-            MinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& matrix, double precision, bool relativeError, uint_fast64_t maxNrIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech) : AbstractMinMaxLinearEquationSolver<ValueType>(precision, relativeError, maxNrIterations, trackPolicy, prefTech), A(matrix) {
+            MinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& matrix, double precision, bool relativeError, uint_fast64_t maxNrIterations, bool trackScheduler, MinMaxTechniqueSelection prefTech) : AbstractMinMaxLinearEquationSolver<ValueType>(precision, relativeError, maxNrIterations, trackScheduler, prefTech), A(matrix) {
                 // Intentionally left empty.
             }
         

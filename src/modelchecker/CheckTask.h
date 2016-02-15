@@ -30,7 +30,7 @@ namespace storm {
              */
             CheckTask(FormulaType const& formula, bool onlyInitialStatesRelevant = false) : formula(formula) {
                 this->onlyInitialStatesRelevant = onlyInitialStatesRelevant;
-                this->produceSchedulers = true;
+                this->produceSchedulers = false;
                 this->qualitative = false;
                 
                 if (formula.isOperatorFormula()) {
@@ -163,6 +163,13 @@ namespace storm {
              */
             bool isQualitativeSet() const {
                 return qualitative;
+            }
+            
+            /*!
+             * Sets whether to produce schedulers (if supported).
+             */
+            void setProduceSchedulers(bool produceSchedulers) {
+                this->produceSchedulers = produceSchedulers;
             }
             
             /*!

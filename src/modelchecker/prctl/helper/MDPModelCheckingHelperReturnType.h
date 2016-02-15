@@ -3,13 +3,12 @@
 
 #include <vector>
 #include <memory>
-#include "src/storage/PartialScheduler.h"
+#include "src/storage/Scheduler.h"
 
 namespace storm {
     namespace storage {
         class BitVector;
     }
-    
     
     namespace modelchecker {
         namespace helper {
@@ -19,7 +18,7 @@ namespace storm {
                 MDPSparseModelCheckingHelperReturnType(MDPSparseModelCheckingHelperReturnType const&) = delete;
                 MDPSparseModelCheckingHelperReturnType(MDPSparseModelCheckingHelperReturnType&&) = default;
                 
-                MDPSparseModelCheckingHelperReturnType(std::vector<ValueType>&& values, std::unique_ptr<storm::storage::PartialScheduler> && scheduler = nullptr) : values(std::move(values)), scheduler(std::move(scheduler)) {
+                MDPSparseModelCheckingHelperReturnType(std::vector<ValueType>&& values, std::unique_ptr<storm::storage::Scheduler>&& scheduler = nullptr) : values(std::move(values)), scheduler(std::move(scheduler)) {
                     // Intentionally left empty.
                 }
                 
@@ -31,7 +30,7 @@ namespace storm {
                 std::vector<ValueType> values;
                 
                 // A scheduler, if it was computed.
-                std::unique_ptr<storm::storage::PartialScheduler> scheduler;
+                std::unique_ptr<storm::storage::Scheduler> scheduler;
             };
         }
         

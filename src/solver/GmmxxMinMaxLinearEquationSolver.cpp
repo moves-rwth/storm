@@ -16,12 +16,8 @@ namespace storm {
         
         template<typename ValueType>
         GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique, bool trackPolicy) : 
-        MinMaxLinearEquationSolver<ValueType>(A, storm::settings::gmmxxEquationSolverSettings().getPrecision(), \
-                                                storm::settings::gmmxxEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative,\
-                                                storm::settings::gmmxxEquationSolverSettings().getMaximalIterationCount(), trackPolicy, preferredTechnique),
-            gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()) {
-           
-			
+        MinMaxLinearEquationSolver<ValueType>(A, storm::settings::gmmxxEquationSolverSettings().getPrecision(), storm::settings::gmmxxEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative, storm::settings::gmmxxEquationSolverSettings().getMaximalIterationCount(), trackPolicy, preferredTechnique), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()) {
+                // Intentionally left empty.
         }
         
         template<typename ValueType>
@@ -29,11 +25,12 @@ namespace storm {
             // Intentionally left empty.
         }
 
-        
         template<typename ValueType>
         void GmmxxMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			if (this->useValueIteration) {
-				// Set up the environment for the power method. If scratch memory was not provided, we need to create it.
+                STORM_LOG_THROW(!this->isTrackSchedulerSet(), storm::exceptions::InvalidSettingsException, "Unable to produce a scheduler when using value iteration. Use policy iteration instead.");
+
+                // Set up the environment for the power method. If scratch memory was not provided, we need to create it.
 				bool multiplyResultMemoryProvided = true;
 				if (multiplyResult == nullptr) {
 					multiplyResult = new std::vector<ValueType>(b.size());

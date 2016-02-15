@@ -24,6 +24,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool AbstractMinMaxLinearEquationSolver<ValueType>::hasScheduler() const {
+            return static_cast<bool>(scheduler);
+        }
+        
+        template<typename ValueType>
         bool AbstractMinMaxLinearEquationSolver<ValueType>::isTrackSchedulerSet() const {
             return this->trackScheduler;
         }

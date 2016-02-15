@@ -280,7 +280,7 @@ namespace storm {
                             }
                         }
                         if (allSuccessorsInStates) {
-                            result.setChoice(state, choice);
+                            result.setChoice(state, choice - nondeterministicChoiceIndices[state]);
                             break;
                         }
                     }
@@ -304,7 +304,7 @@ namespace storm {
                             }
                         }
                         if (oneSuccessorInStates) {
-                            result.setChoice(state, choice);
+                            result.setChoice(state, choice - nondeterministicChoiceIndices[state]);
                             break;
                         }
                     }
@@ -356,7 +356,7 @@ namespace storm {
                                 // If all successors for a given nondeterministic choice are in the prob1E state set, we
                                 // perform a backward search from that state.
                                 if (allSuccessorsInProb1EStates && hasSuccessorInCurrentStates) {
-                                    result.setChoice(predecessorEntryIt->getColumn(), row);
+                                    result.setChoice(predecessorEntryIt->getColumn(), row - nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]);
                                     currentStates.set(predecessorEntryIt->getColumn(), true);
                                     stack.push_back(predecessorEntryIt->getColumn());
                                     break;
