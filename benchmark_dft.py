@@ -3,7 +3,6 @@ import os.path
 import subprocess
 import re
 import time
-import math
 import argparse
 
 STORM_PATH= "/Users/mvolk/develop/dft-storm/build/src/storm-dft"
@@ -92,6 +91,11 @@ def run_tool(args, quiet=False):
             result = output
     return result
 
+def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
+    if a == b:
+        return True
+    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Benchmarking DFTs via Storm')
     parser.add_argument('--debuglevel', type=int, default=0, help='the debug level (0=silent, 1=print benchmarks, 2=print output from storm')
@@ -115,7 +119,7 @@ if __name__ == "__main__":
             if not parametric:
                 # Float
                 result = float(result)
-                if not math.isclose(result, float(expected_result), rel_tol=1e-05):
+                if not isclose(result, float(expected_result), rel_tol=1e-05):
                     print("Wrong result on example '{}' with property '{}': result: {}, Expected: {}".format(benchmark, prop, result, expected_result))
                 else:
                     correct += 1
