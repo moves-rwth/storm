@@ -128,6 +128,14 @@ namespace storm {
              * @return The number of rows that belong to the given row group.
              */
             index_type getRowGroupSize(index_type group) const;
+            
+            /*!
+             * Computes the sum of the entries in a given row.
+             *
+             * @param row The row that is to be summed.
+             * @return The sum of the selected row.
+             */
+            value_type getRowSum(index_type row) const;
 
             /*!
              * Recomputes the number of columns and the number of non-zero entries.

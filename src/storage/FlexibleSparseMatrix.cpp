@@ -96,6 +96,15 @@ namespace storm {
                 return rowGroupIndices[group + 1] - rowGroupIndices[group];
             }
         }
+        
+        template<typename ValueType>
+        ValueType FlexibleSparseMatrix<ValueType>::getRowSum(index_type row) const {
+            ValueType sum = storm::utility::zero<ValueType>();
+            for (auto const& element : getRow(row)) {
+                sum += element.getValue();
+            }
+            return sum;
+        }
 
         template<typename ValueType>
         void FlexibleSparseMatrix<ValueType>::updateDimensions() {
