@@ -1,13 +1,14 @@
 import os
 import os.path
+import sys
 import subprocess
 import re
 import time
 import argparse
 
-STORM_PATH= "/Users/mvolk/develop/dft-storm/build/src/storm-dft"
-EXAMPLE_DIR= "/Users/mvolk/develop/dft-storm/examples/dft/"
-
+DIR=os.getcwd()
+STORM_PATH=os.path.join(DIR, "build/src/storm-dft")
+EXAMPLE_DIR=os.path.join(DIR, "examples/dft/")
 
 benchmarks = [ 
     ("and", False, [3, 1]),
