@@ -5,7 +5,7 @@ include(ExternalProject)
 ExternalProject_Add(
         xercesc
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2
-        CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2 CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=-O3 CXXFLAGS=-O3
+        CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2 --libdir=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=-O3 CXXFLAGS=-O3
         PREFIX ${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2
         BUILD_COMMAND make
         BUILD_IN_SOURCE 0
@@ -20,7 +20,7 @@ ExternalProject_Add(
     DOWNLOAD_COMMAND ""
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/glpk-4.57
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glpk-4.57
-    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/glpk-4.57/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/glpk-4.57 CC=${CMAKE_C_COMPILER}
+    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/glpk-4.57/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/glpk-4.57  --libdir=${CMAKE_CURRENT_BINARY_DIR}/glpk-4.57/lib CC=${CMAKE_C_COMPILER}
     BUILD_COMMAND make "CFLAGS=-O2 -w"
     INSTALL_COMMAND make install
     BUILD_IN_SOURCE 0
@@ -40,7 +40,7 @@ ExternalProject_Add(
         SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gtest-1.7.0"
         # Force separate output paths for debug and release builds to allow easy
         # identification of correct lib in subsequent TARGET_LINK_LIBRARIES 
-        CMAKE_ARGS  -Dgtest_force_shared_crt=ON
+        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCXX=${CMAKE_CXX_COMPILER}
         # Disable install step
         INSTALL_COMMAND ""
         # Wrap download, configure and build steps in a script to log output
