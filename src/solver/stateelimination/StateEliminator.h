@@ -4,6 +4,9 @@
 #include "src/storage/FlexibleSparseMatrix.h"
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/sparse/StateType.h"
+#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/StandardRewardModel.h"
+#include "src/adapters/CarlAdapter.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 
 namespace storm {
