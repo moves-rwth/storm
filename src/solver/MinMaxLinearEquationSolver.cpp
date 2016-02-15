@@ -34,7 +34,13 @@ namespace storm {
         }
         
         template<typename ValueType>
-        storm::storage::Scheduler const& AbstractMinMaxLinearEquationSolver<ValueType>::getScheduler() const {
+        storm::storage::TotalScheduler const& AbstractMinMaxLinearEquationSolver<ValueType>::getScheduler() const {
+            STORM_LOG_THROW(scheduler, storm::exceptions::InvalidSettingsException, "Cannot retrieve scheduler, because none was generated.");
+            return *scheduler.get();
+        }
+
+        template<typename ValueType>
+        storm::storage::TotalScheduler& AbstractMinMaxLinearEquationSolver<ValueType>::getScheduler() {
             STORM_LOG_THROW(scheduler, storm::exceptions::InvalidSettingsException, "Cannot retrieve scheduler, because none was generated.");
             return *scheduler.get();
         }

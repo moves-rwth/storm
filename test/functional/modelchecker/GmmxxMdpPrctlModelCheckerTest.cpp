@@ -193,7 +193,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
 TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/scheduler_generation.nm");
-    
+
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
@@ -206,7 +206,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();
 
     EXPECT_EQ(7ul, mdp->getNumberOfChoices());
-    
+
     auto solverFactory = std::make_unique<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(storm::solver::EquationSolverTypeSelection::Gmmxx);
     solverFactory->setPreferredTechnique(storm::solver::MinMaxTechniqueSelection::PolicyIteration);
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::move(solverFactory));
@@ -218,9 +218,25 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(checkTask);
     
-    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"target\"]");
-    checkTask.replaceFormula(*formula);
-
-    result = checker.check(checkTask);
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    ASSERT_TRUE(result->asExplicitQuantitativeCheckResult<double>().hasScheduler());
+    storm::storage::Scheduler const& scheduler = result->asExplicitQuantitativeCheckResult<double>().getScheduler();
+    EXPECT_EQ(0, scheduler.getChoice(0));
+    EXPECT_EQ(1, scheduler.getChoice(1));
+    EXPECT_EQ(0, scheduler.getChoice(2));
+    EXPECT_EQ(0, scheduler.getChoice(3));
     
+    formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"target\"]");
+    
+    checkTask = storm::modelchecker::CheckTask<storm::logic::Formula>(*formula);
+    checkTask.setProduceSchedulers(true);
+    result = checker.check(checkTask);
+
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    ASSERT_TRUE(result->asExplicitQuantitativeCheckResult<double>().hasScheduler());
+    storm::storage::Scheduler const& scheduler2 = result->asExplicitQuantitativeCheckResult<double>().getScheduler();
+    EXPECT_EQ(1, scheduler2.getChoice(0));
+    EXPECT_EQ(2, scheduler2.getChoice(1));
+    EXPECT_EQ(0, scheduler2.getChoice(2));
+    EXPECT_EQ(0, scheduler2.getChoice(3));
 }

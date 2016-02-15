@@ -10,7 +10,7 @@
 #include "src/solver/AbstractEquationSolver.h"
 #include "src/solver/SolverSelectionOptions.h"
 #include "src/storage/sparse/StateType.h"
-#include "src/storage/Scheduler.h"
+#include "src/storage/TotalScheduler.h"
 #include "src/solver/OptimizationDirection.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
@@ -32,7 +32,8 @@ namespace storm {
             bool isTrackSchedulerSet() const;
             bool hasScheduler() const;
             
-            storm::storage::Scheduler const& getScheduler() const;
+            storm::storage::TotalScheduler const& getScheduler() const;
+            storm::storage::TotalScheduler& getScheduler();
             
             void setOptimizationDirection(OptimizationDirection d);
             void resetOptimizationDirection();
@@ -59,7 +60,7 @@ namespace storm {
             bool trackScheduler;
             
             // The scheduler (if it could be successfully generated).
-            mutable boost::optional<std::unique_ptr<storm::storage::Scheduler>> scheduler;
+            mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> scheduler;
         };
         
         /*!

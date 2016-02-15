@@ -120,19 +120,13 @@ namespace storm {
                         // the accumulated probability of going from state i to some 'yes' state.
                         std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, statesWithProbability1);
                         
-                        // Create vector for results for maybe states.
-                        std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
-                        
-                        // Solve the corresponding system of equations.
-                        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, minMaxLinearEquationSolverFactory, submatrix);
-                        solver->setTrackScheduler(produceScheduler);
-                        solver->solveEquationSystem(x, b);
+                        MDPSparseModelCheckingHelperReturnType<ValueType> resultForMaybeStates = computeUntilProbabilitiesOnlyMaybeStates(goal, submatrix, b, produceScheduler, minMaxLinearEquationSolverFactory);
                         
                         // Set values of resulting vector according to result.
-                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
-                        
+                        storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, resultForMaybeStates.values);
+
                         if (produceScheduler) {
-                            storm::storage::Scheduler const& subscheduler = solver->getScheduler();
+                            storm::storage::Scheduler const& subscheduler = *resultForMaybeStates.scheduler;
                             uint_fast64_t currentSubState = 0;
                             for (auto maybeState : maybeStates) {
                                 scheduler->setChoice(maybeState, subscheduler.getChoice(currentSubState));
@@ -157,6 +151,26 @@ namespace storm {
                 }
                 
                 return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(result), std::move(scheduler));
+            }
+            
+            template<typename ValueType>
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeUntilProbabilitiesOnlyMaybeStates(storm::solver::SolveGoal const& goal, storm::storage::SparseMatrix<ValueType> const& submatrix, std::vector<ValueType> const& b, bool produceScheduler, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                // If requested, we will produce a scheduler.
+                std::unique_ptr<storm::storage::TotalScheduler> scheduler;
+                
+                // Create vector for results for maybe states.
+                std::vector<ValueType> x(submatrix.getRowGroupCount());
+                
+                // Solve the corresponding system of equations.
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, minMaxLinearEquationSolverFactory, submatrix);
+                solver->setTrackScheduler(produceScheduler);
+                solver->solveEquationSystem(x, b);
+                
+                if (produceScheduler) {
+                    scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(solver->getScheduler()));
+                }
+                
+                return MDPSparseModelCheckingHelperReturnType<ValueType>(std::move(x), std::move(scheduler));
             }
 
             template<typename ValueType>
