@@ -2,6 +2,7 @@
 #define STORM_MODELS_SPARSE_MARKOVAUTOMATON_H_
 
 #include "src/models/sparse/NondeterministicModel.h"
+#include "src/models/sparse/Ctmc.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -120,6 +121,10 @@ namespace storm {
                  * Closes the Markov automaton. That is, this applies the maximal progress assumption to all hybrid states.
                  */
                 void close();
+                
+                bool hasOnlyTrivialNondeterminism() const;
+                
+                std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCTMC();
                 
                 virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const;
                 

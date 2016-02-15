@@ -30,7 +30,7 @@ namespace storm {
         template<typename SparseMarkovAutomatonModelType>
         bool SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isCslStateFormula() || formula.isCslPathFormula() || (formula.isRewardPathFormula() && formula.isReachabilityRewardFormula());
+            return formula.isCslStateFormula() || formula.isCslPathFormula() || (formula.isRewardPathFormula() && formula.isReachabilityRewardFormula()) || formula.isExpectedTimeOperatorFormula();
         }
         
         template<typename SparseMarkovAutomatonModelType>

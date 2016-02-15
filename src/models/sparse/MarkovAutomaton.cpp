@@ -3,6 +3,8 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
+#include "src/storage/FlexibleSparseMatrix.h"
+#include "src/models/sparse/Dtmc.h"
 
 namespace storm {
     namespace models {
@@ -216,6 +218,29 @@ namespace storm {
                     }
                 }
             }
+            
+            template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::hasOnlyTrivialNondeterminism() const {
+                // Check every state
+                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    // Get number of choices in current state
+                    uint_fast64_t numberChoices = this->getTransitionMatrix().getRowGroupIndices()[state + 1] - this->getTransitionMatrix().getRowGroupIndices()[state];
+                    if (isMarkovianState(state)) {
+                        assert(numberChoices == 1);
+                    }
+                    if (numberChoices > 1) {
+                        assert(isProbabilisticState(state));
+                        return false;
+                    }
+                }
+                return true;
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> MarkovAutomaton<ValueType, RewardModelType>::convertToCTMC() {
+                assert(false)
+            }
+
             
             template class MarkovAutomaton<double>;
 //            template class MarkovAutomaton<float>;

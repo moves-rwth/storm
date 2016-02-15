@@ -277,6 +277,8 @@ namespace storm {
                 storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker2(*dtmc);
                 if (modelchecker2.canHandle(task)) {
                     result = modelchecker2.check(task);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << *formula << " is not supported on DTMCs.");
                 }
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
@@ -300,9 +302,15 @@ namespace storm {
             result = modelchecker.check(task);
         } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
             std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
-
-            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
-            result = modelchecker.check(task);
+            if (ma->hasOnlyTrivialNondeterminism()) {
+                // Markov automaton can be converted into CTMC
+                std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = ma->convertToCTMC();
+                storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
+                result = modelchecker.check(task);
+            } else {
+                storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
+                result = modelchecker.check(task);
+            }
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported.");
         }
