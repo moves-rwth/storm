@@ -88,11 +88,11 @@ namespace storm {
             
             static std::vector<ValueType> computeReachabilityValues(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& values, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& oneStepProbabilitiesToTarget);
             
-            static std::unique_ptr<StatePriorityQueue<ValueType>> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& stateDistances, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& states);
+            static std::shared_ptr<StatePriorityQueue<ValueType>> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& stateDistances, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& states);
 
-            static std::unique_ptr<StatePriorityQueue<ValueType>> createNaivePriorityQueue(storm::storage::BitVector const& states);
+            static std::shared_ptr<StatePriorityQueue<ValueType>> createNaivePriorityQueue(storm::storage::BitVector const& states);
             
-            static void performPrioritizedStateElimination(std::unique_ptr<StatePriorityQueue<ValueType>>& priorityQueue, storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& values, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly);
+            static void performPrioritizedStateElimination(std::shared_ptr<StatePriorityQueue<ValueType>>& priorityQueue, storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& values, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly);
             
             static void performOrdinaryStateElimination(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<ValueType>>& additionalStateValues, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities);
 

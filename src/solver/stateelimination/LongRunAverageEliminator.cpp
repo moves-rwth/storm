@@ -5,7 +5,7 @@ namespace storm {
         namespace stateelimination {
             
             template<typename SparseModelType>
-            LongRunAverageEliminator<SparseModelType>::LongRunAverageEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::modelchecker::StatePriorityQueue<ValueType>& priorityQueue, std::vector<ValueType>& stateValues, std::vector<ValueType>& averageTimeInStates) : StateEliminator<SparseModelType>(transitionMatrix, backwardTransitions), priorityQueue(priorityQueue), stateValues(stateValues), averageTimeInStates(averageTimeInStates) {
+            LongRunAverageEliminator<SparseModelType>::LongRunAverageEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, PriorityQueuePointer priorityQueue, std::vector<ValueType>& stateValues, std::vector<ValueType>& averageTimeInStates) : StateEliminator<SparseModelType>(transitionMatrix, backwardTransitions), priorityQueue(priorityQueue), stateValues(stateValues), averageTimeInStates(averageTimeInStates) {
             }
             
             template<typename SparseModelType>
@@ -22,7 +22,7 @@ namespace storm {
             
             template<typename SparseModelType>
             void LongRunAverageEliminator<SparseModelType>::updatePriority(storm::storage::sparse::state_type const& state) {
-                priorityQueue.update(state, StateEliminator<SparseModelType>::transitionMatrix, StateEliminator<SparseModelType>::backwardTransitions, stateValues);
+                priorityQueue->update(state, StateEliminator<SparseModelType>::transitionMatrix, StateEliminator<SparseModelType>::backwardTransitions, stateValues);
             }
             
             template<typename SparseModelType>

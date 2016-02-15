@@ -11,9 +11,10 @@ namespace storm {
             class PrioritizedEliminator : public StateEliminator<SparseModelType> {
 
                 typedef typename SparseModelType::ValueType ValueType;
+                typedef typename std::shared_ptr<storm::modelchecker::StatePriorityQueue<ValueType>> PriorityQueuePointer;
 
             public:
-                PrioritizedEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::modelchecker::StatePriorityQueue<ValueType> priorityQueue, std::vector<ValueType>& stateValues);
+                PrioritizedEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, PriorityQueuePointer priorityQueue, std::vector<ValueType>& stateValues);
                 
                 // Instantiaton of Virtual methods
                 void updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) override;
@@ -23,7 +24,7 @@ namespace storm {
                 bool isFilterPredecessor() const override;
                 
             private:
-                storm::modelchecker::StatePriorityQueue<ValueType>& priorityQueue;
+                PriorityQueuePointer priorityQueue;
                 std::vector<ValueType>& stateValues;
             };
             

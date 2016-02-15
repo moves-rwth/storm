@@ -21,9 +21,7 @@ namespace storm {
         class FlexibleSparseMatrix {
         public:
             // TODO: make this class a bit more consistent with the big sparse matrix and improve it:
-            // * add output iterator and improve the way the matrix is printed
-            // * add stuff like clearRow, multiplyRowWithScalar
-            // * implement row grouping
+            // * add stuff like iterator, clearRow, multiplyRowWithScalar
             
             typedef uint_fast64_t index_type;
             typedef ValueType value_type;

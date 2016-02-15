@@ -304,8 +304,8 @@ namespace storm {
             std::vector<ValueType> averageTimeInStates(stateValues.size(), storm::utility::one<ValueType>());
             
             // First, we eliminate all states in BSCCs (except for the representative states).
-            std::unique_ptr<StatePriorityQueue<ValueType>> priorityQueue = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, stateValues, regularStatesInBsccs);
-            storm::solver::stateelimination::LongRunAverageEliminator<SparseDtmcModelType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, *priorityQueue, stateValues, averageTimeInStates);
+            std::shared_ptr<StatePriorityQueue<ValueType>> priorityQueue = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, stateValues, regularStatesInBsccs);
+            storm::solver::stateelimination::LongRunAverageEliminator<SparseDtmcModelType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions, priorityQueue, stateValues, averageTimeInStates);
             
             while (priorityQueue->hasNextState()) {
                 storm::storage::sparse::state_type state = priorityQueue->popNextState();
@@ -725,7 +725,7 @@ namespace storm {
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(submatrixTransposed, true);
             std::chrono::high_resolution_clock::time_point conversionEnd = std::chrono::high_resolution_clock::now();
             
-            std::unique_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, statesToEliminate);
+            std::shared_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, statesToEliminate);
 
             STORM_LOG_INFO("Computing conditional probilities." << std::endl);
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
@@ -852,7 +852,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<StatePriorityQueue<typename SparseDtmcModelType::ValueType>> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& states) {
+        std::shared_ptr<StatePriorityQueue<typename SparseDtmcModelType::ValueType>> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& states) {
             
             STORM_LOG_TRACE("Creating state priority queue for states " << states);
             
@@ -896,15 +896,15 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<StatePriorityQueue<typename SparseDtmcModelType::ValueType>> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createNaivePriorityQueue(storm::storage::BitVector const& states) {
+        std::shared_ptr<StatePriorityQueue<typename SparseDtmcModelType::ValueType>> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::createNaivePriorityQueue(storm::storage::BitVector const& states) {
             std::vector<storm::storage::sparse::state_type> sortedStates(states.begin(), states.end());
-            return std::unique_ptr<StatePriorityQueue<ValueType>>(new StaticStatePriorityQueue(sortedStates));
+            return std::shared_ptr<StatePriorityQueue<ValueType>>(new StaticStatePriorityQueue(sortedStates));
         }
         
         template<typename SparseDtmcModelType>
-        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedStateElimination(std::unique_ptr<StatePriorityQueue<ValueType>>& priorityQueue, storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& values, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly) {
+        void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performPrioritizedStateElimination(std::shared_ptr<StatePriorityQueue<ValueType>>& priorityQueue, storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& values, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly) {
             
-            storm::solver::stateelimination::PrioritizedEliminator<SparseDtmcModelType> stateEliminator(transitionMatrix, backwardTransitions, *priorityQueue, values);
+            storm::solver::stateelimination::PrioritizedEliminator<SparseDtmcModelType> stateEliminator(transitionMatrix, backwardTransitions, priorityQueue, values);
             
             while (priorityQueue->hasNextState()) {
                 storm::storage::sparse::state_type state = priorityQueue->popNextState();
@@ -919,7 +919,7 @@ namespace storm {
         
         template<typename SparseDtmcModelType>
         void SparseDtmcEliminationModelChecker<SparseDtmcModelType>::performOrdinaryStateElimination(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& initialStates, bool computeResultsForInitialStatesOnly, std::vector<ValueType>& values, boost::optional<std::vector<uint_fast64_t>> const& distanceBasedPriorities) {
-            std::unique_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, transitionMatrix, backwardTransitions, values, subsystem);
+            std::shared_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, transitionMatrix, backwardTransitions, values, subsystem);
             
             std::size_t numberOfStatesToEliminate = statePriorities->size();
             STORM_LOG_DEBUG("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique." << std::endl);
@@ -938,7 +938,7 @@ namespace storm {
             if (storm::settings::sparseDtmcEliminationModelCheckerSettings().isEliminateEntryStatesLastSet()) {
                 STORM_LOG_DEBUG("Eliminating " << entryStateQueue.size() << " entry states as a last step.");
                 std::vector<storm::storage::sparse::state_type> sortedStates(entryStateQueue.begin(), entryStateQueue.end());
-                std::unique_ptr<StatePriorityQueue<ValueType>> queuePriorities = std::unique_ptr<StatePriorityQueue<ValueType>>(new StaticStatePriorityQueue(sortedStates));
+                std::shared_ptr<StatePriorityQueue<ValueType>> queuePriorities = std::shared_ptr<StatePriorityQueue<ValueType>>(new StaticStatePriorityQueue(sortedStates));
                 performPrioritizedStateElimination(queuePriorities, transitionMatrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
             }
             STORM_LOG_DEBUG("Eliminated " << subsystem.size() << " states." << std::endl);
@@ -1009,7 +1009,7 @@ namespace storm {
                     }
                 }
                 
-                std::unique_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, matrix, backwardTransitions, values, statesInTrivialSccs);
+                std::shared_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, matrix, backwardTransitions, values, statesInTrivialSccs);
                 STORM_LOG_TRACE("Eliminating " << statePriorities->size() << " trivial SCCs.");
                 performPrioritizedStateElimination(statePriorities, matrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
                 STORM_LOG_TRACE("Eliminated all trivial SCCs.");
@@ -1039,7 +1039,7 @@ namespace storm {
             } else {
                 // In this case, we perform simple state elimination in the current SCC.
                 STORM_LOG_TRACE("SCC of size " << scc.getNumberOfSetBits() << " is small enough to be eliminated directly.");
-                std::unique_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, matrix, backwardTransitions, values, scc & ~entryStates);
+                std::shared_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, matrix, backwardTransitions, values, scc & ~entryStates);
                 performPrioritizedStateElimination(statePriorities, matrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
                 STORM_LOG_TRACE("Eliminated all states of SCC.");
             }
@@ -1047,7 +1047,7 @@ namespace storm {
             // Finally, eliminate the entry states (if we are required to do so).
             if (eliminateEntryStates) {
                 STORM_LOG_TRACE("Finally, eliminating entry states.");
-                std::unique_ptr<StatePriorityQueue<ValueType>> naivePriorities = createNaivePriorityQueue(entryStates);
+                std::shared_ptr<StatePriorityQueue<ValueType>> naivePriorities = createNaivePriorityQueue(entryStates);
                 performPrioritizedStateElimination(naivePriorities, matrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
                 STORM_LOG_TRACE("Eliminated/added entry states.");
             } else {
