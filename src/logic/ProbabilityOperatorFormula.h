@@ -8,10 +8,10 @@ namespace storm {
         class ProbabilityOperatorFormula : public OperatorFormula {
         public:
             ProbabilityOperatorFormula(std::shared_ptr<Formula const> const& subformula);
-            ProbabilityOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
-            ProbabilityOperatorFormula(OptimizationDirection optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
+            ProbabilityOperatorFormula(Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
+            ProbabilityOperatorFormula(OptimizationDirection optimalityType, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
             ProbabilityOperatorFormula(OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula);
-            ProbabilityOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
+            ProbabilityOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula);
 
             virtual ~ProbabilityOperatorFormula() {
                 // Intentionally left empty.

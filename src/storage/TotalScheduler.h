@@ -25,7 +25,14 @@ namespace storm {
              * @param choices A vector whose i-th entry defines the choice of state i.
              */
             TotalScheduler(std::vector<uint_fast64_t> const& choices);
-            
+
+            /*!
+             * Creates a total scheduler that defines the choices for states according to the given vector.
+             *
+             * @param choices A vector whose i-th entry defines the choice of state i.
+             */
+            TotalScheduler(std::vector<uint_fast64_t>&& choices);
+
             void setChoice(uint_fast64_t state, uint_fast64_t choice) override;
             
             bool isChoiceDefined(uint_fast64_t state) const override;
