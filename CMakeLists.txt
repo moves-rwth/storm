@@ -42,12 +42,11 @@ else()
     set (CMAKE_BUILD_TYPE "RELEASE")
 endif()
 message(STATUS "StoRM - Building ${CMAKE_BUILD_TYPE} version.")
-message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 
 if(STORM_COMPILE_WITH_CCACHE)
 	find_program(CCACHE_FOUND ccache)
 	if(CCACHE_FOUND)
-		message(STATUS "SToRM - Using ccache")
+		message(STATUS "StoRM - Using ccache")
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 	else()
@@ -458,7 +457,6 @@ endif()
 
 if(STORM_HAVE_CARL)
     message(STATUS "StoRM - Linking with carl.")
-	message("${carl_INCLUDE_DIR}")
     include_directories("${carl_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
 endif()
@@ -515,7 +513,7 @@ endif(ENABLE_MSAT)
 
 find_package(Xerces)
 if(NOT XERCES_FOUND)
-	message("Use shipped version of xerces")
+	message(STATUS "Use shipped version of xerces")
 	set(XERCES_ROOT ${CMAKE_BINARY_DIR}/resources/3rdparty/xercesc-3.1.2)
 	set(XERCESC_INCLUDE ${XERCES_ROOT}/include)
 	set(XERCES_LIBRARY_PATH ${XERCES_ROOT}/lib)
@@ -565,9 +563,6 @@ endif()
 ##
 #############################################################
 
-set(gtest_force_shared_crt ON)
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.7.0")
-
 #############################################################
 ##
 ##	Log4CPlus
@@ -597,20 +592,16 @@ set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_mer
 
 
 find_package(TBB)
-if (TBB_FOUND AND STORM_USE_INTELTBB)
-	link_directories(${TBB_LIBRARY_DIRS})
-	set(STORM_CPP_INTELTBB_DEF "define")
-else()
-	set(STORM_CPP_INTELTBB_DEF "undef")
-endif()
 
-
+set(STORM_HAVE_INTELTBB 0)
 if (TBB_FOUND)
-	message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
+        message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
 	if (STORM_USE_INTELTBB)
+                set(STORM_HAVE_INTELTBB 1)
 		message(STATUS "StoRM - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
-		include_directories(${TBB_INCLUDE_DIRS})
-		target_link_libraries(storm tbb tbbmalloc)
+                link_directories(${TBB_LIBRARY_DIRS})
+                include_directories(${TBB_INCLUDE_DIRS})
+                list(APPEND STORM_LINK_LIBRARIES tbb tbbmalloc)	
 	endif(STORM_USE_INTELTBB)
 endif(TBB_FOUND)
 
