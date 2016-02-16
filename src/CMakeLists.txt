@@ -109,9 +109,8 @@ endif(ADDITIONAL_LINK_DIRS)
 ##                                                                            #
 ###############################################################################
 add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS} ${STORM_GENERATED_SOURCES}) # Adding headers for xcode
-add_dependencies(storm xercesc)
 add_dependencies(storm sylvan)
-add_dependencies(storm glpk)
+add_dependencies(storm resources)
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
