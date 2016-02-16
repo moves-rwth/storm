@@ -83,9 +83,9 @@ namespace storm {
         bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isProbabilityOperatorFormula()) {
-                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
+                return this->canHandle(checkTask.substituteFormula(formula.asProbabilityOperatorFormula().getSubformula()));
             } else if (formula.isRewardOperatorFormula()) {
-                return this->canHandle(checkTask.replaceFormula(formula.asRewardOperatorFormula().getSubformula()));
+                return this->canHandle(checkTask.substituteFormula(formula.asRewardOperatorFormula().getSubformula()));
             } else if (formula.isUntilFormula() || formula.isEventuallyFormula()) {
                 if (formula.isUntilFormula()) {
                     storm::logic::UntilFormula const& untilFormula = formula.asUntilFormula();
@@ -101,11 +101,6 @@ namespace storm {
             } else if (formula.isBoundedUntilFormula()) {
                 storm::logic::BoundedUntilFormula const& boundedUntilFormula = formula.asBoundedUntilFormula();
                 if (boundedUntilFormula.getLeftSubformula().isPropositionalFormula() && boundedUntilFormula.getRightSubformula().isPropositionalFormula()) {
-                    return true;
-                }
-            } else if (formula.isReachabilityRewardFormula()) {
-                storm::logic::ReachabilityRewardFormula const& reachabilityRewardFormula = formula.asReachabilityRewardFormula();
-                if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
                     return true;
                 }
             } else if (formula.isConditionalPathFormula()) {
@@ -579,11 +574,11 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) {
-            storm::logic::ReachabilityRewardFormula const& rewardPathFormula = checkTask.getFormula();
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+            storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
             
             // Retrieve the appropriate bitvectors by model checking the subformulas.
-            std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
+            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             storm::storage::BitVector phiStates(this->getModel().getNumberOfStates(), true);
             storm::storage::BitVector const& psiStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             

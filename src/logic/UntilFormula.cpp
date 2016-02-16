@@ -10,6 +10,10 @@ namespace storm {
             return true;
         }
         
+        bool UntilFormula::isValidProbabilityPathFormula() const {
+            return true;
+        }
+        
         std::shared_ptr<Formula> UntilFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return std::make_shared<UntilFormula>(this->getLeftSubformula().substitute(substitution), this->getRightSubformula().substitute(substitution));
         }

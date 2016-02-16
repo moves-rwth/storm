@@ -10,6 +10,10 @@ namespace storm {
             return true;
         }
         
+        bool NextFormula::isValidProbabilityPathFormula() const {
+            return true;
+        }
+        
         bool NextFormula::containsNextFormula() const {
             return true;
         }

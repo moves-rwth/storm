@@ -21,7 +21,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeGloballyProbabilities(CheckTask<storm::logic::GloballyFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask) override;
-            virtual std::unique_ptr<CheckResult> computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask) override;
             
         protected:
             storm::models::symbolic::Dtmc<DdType, ValueType> const& getModel() const override;

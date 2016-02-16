@@ -129,7 +129,6 @@ namespace storm {
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> rewardPathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> cumulativeRewardFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> reachabilityRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> instantaneousRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> longRunAverageRewardFormula;
             
@@ -139,7 +138,6 @@ namespace storm {
             // Methods that actually create the expression objects.
             std::shared_ptr<storm::logic::Formula> createInstantaneousRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
             std::shared_ptr<storm::logic::Formula> createCumulativeRewardFormula(boost::variant<unsigned, double> const& timeBound) const;
-            std::shared_ptr<storm::logic::Formula> createReachabilityRewardFormula(std::shared_ptr<storm::logic::Formula> const& stateFormula) const;
             std::shared_ptr<storm::logic::Formula> createLongRunAverageRewardFormula() const;
             std::shared_ptr<storm::logic::Formula> createAtomicExpressionFormula(storm::expressions::Expression const& expression) const;
             std::shared_ptr<storm::logic::Formula> createBooleanLiteralFormula(bool literal) const;
@@ -255,10 +253,7 @@ namespace storm {
             cumulativeRewardFormula = (qi::lit("C<=") >> strict_double)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)] | (qi::lit("C<=") > qi::uint_)[qi::_val = phoenix::bind(&FormulaParserGrammar::createCumulativeRewardFormula, phoenix::ref(*this), qi::_1)];
             cumulativeRewardFormula.name("cumulative reward formula");
             
-            reachabilityRewardFormula = (qi::lit("F") > stateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createReachabilityRewardFormula, phoenix::ref(*this), qi::_1)];
-            reachabilityRewardFormula.name("reachability reward formula");
-            
-            rewardPathFormula = reachabilityRewardFormula | cumulativeRewardFormula | instantaneousRewardFormula | longRunAverageRewardFormula;
+            rewardPathFormula = eventuallyFormula | cumulativeRewardFormula | instantaneousRewardFormula | longRunAverageRewardFormula | conditionalFormula;
             rewardPathFormula.name("reward path formula");
             
             expressionFormula = expressionParser[qi::_val = phoenix::bind(&FormulaParserGrammar::createAtomicExpressionFormula, phoenix::ref(*this), qi::_1)];
@@ -382,7 +377,6 @@ namespace storm {
             qi::on_error<qi::fail>(labelFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(expressionFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(rewardPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(reachabilityRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(cumulativeRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(instantaneousRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         }
@@ -409,10 +403,6 @@ namespace storm {
                 STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Cumulative reward property must have non-negative bound.");
                 return std::shared_ptr<storm::logic::Formula>(new storm::logic::CumulativeRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
             }
-        }
-        
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createReachabilityRewardFormula(std::shared_ptr<storm::logic::Formula> const& stateFormula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ReachabilityRewardFormula(stateFormula));
         }
         
         std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createLongRunAverageRewardFormula() const {

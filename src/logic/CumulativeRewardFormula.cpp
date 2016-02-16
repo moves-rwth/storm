@@ -14,6 +14,10 @@ namespace storm {
             return true;
         }
         
+        bool CumulativeRewardFormula::isValidRewardPathFormula() const {
+            return true;
+        }
+        
         bool CumulativeRewardFormula::hasDiscreteTimeBound() const {
             return timeBound.which() == 0;
         }

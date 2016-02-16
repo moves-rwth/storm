@@ -30,6 +30,10 @@ namespace storm {
             return bounds.which() == 0;
         }
         
+        bool BoundedUntilFormula::isValidProbabilityPathFormula() const {
+            return true;
+        }
+        
         bool BoundedUntilFormula::isPctlPathFormula() const {
             return this->hasDiscreteTimeBound() && this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
         }

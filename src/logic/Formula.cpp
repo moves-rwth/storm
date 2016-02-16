@@ -87,19 +87,11 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isRewardPathFormula() const {
-            return false;
-        }
-        
         bool Formula::isCumulativeRewardFormula() const {
             return false;
         }
         
         bool Formula::isInstantaneousRewardFormula() const {
-            return false;
-        }
-        
-        bool Formula::isReachabilityRewardFormula() const {
             return false;
         }
         
@@ -144,6 +136,14 @@ namespace storm {
         }
         
         bool Formula::isPropositionalFormula() const {
+            return false;
+        }
+        
+        bool Formula::isValidProbabilityPathFormula() const {
+            return false;
+        }
+        
+        bool Formula::isValidRewardPathFormula() const {
             return false;
         }
         
@@ -327,14 +327,6 @@ namespace storm {
             return dynamic_cast<ExpectedTimeOperatorFormula const&>(*this);
         }
         
-        RewardPathFormula& Formula::asRewardPathFormula() {
-            return dynamic_cast<RewardPathFormula&>(*this);
-        }
-        
-        RewardPathFormula const& Formula::asRewardPathFormula() const {
-            return dynamic_cast<RewardPathFormula const&>(*this);
-        }
-        
         CumulativeRewardFormula& Formula::asCumulativeRewardFormula() {
             return dynamic_cast<CumulativeRewardFormula&>(*this);
         }
@@ -350,15 +342,7 @@ namespace storm {
         InstantaneousRewardFormula const& Formula::asInstantaneousRewardFormula() const {
             return dynamic_cast<InstantaneousRewardFormula const&>(*this);
         }
-        
-        ReachabilityRewardFormula& Formula::asReachabilityRewardFormula() {
-            return dynamic_cast<ReachabilityRewardFormula&>(*this);
-        }
-        
-        ReachabilityRewardFormula const& Formula::asReachabilityRewardFormula() const {
-            return dynamic_cast<ReachabilityRewardFormula const&>(*this);
-        }
-        
+                
         LongRunAverageRewardFormula& Formula::asLongRunAverageRewardFormula() {
             return dynamic_cast<LongRunAverageRewardFormula&>(*this);
         }

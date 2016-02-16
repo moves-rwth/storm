@@ -9,7 +9,11 @@ namespace storm {
         bool GloballyFormula::isGloballyFormula() const {
             return true;
         }
-        
+
+        bool GloballyFormula::isValidProbabilityPathFormula() const {
+            return true;
+        }
+
         std::shared_ptr<Formula> GloballyFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return std::make_shared<GloballyFormula>(this->getSubformula().substitute(substitution));
         }

@@ -32,7 +32,7 @@ namespace storm {
         template <typename SparseCtmcModelType>
         bool SparseCtmcCslModelChecker<SparseCtmcModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isCslStateFormula() || formula.isCslPathFormula() || formula.isRewardPathFormula();
+            return formula.isCslStateFormula() || formula.isCslPathFormula();
         }
         
         template <typename SparseCtmcModelType>
@@ -91,9 +91,9 @@ namespace storm {
         }
                 
         template <typename SparseCtmcModelType>
-        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) {
-            storm::logic::ReachabilityRewardFormula const& rewardPathFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+            storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
+            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
             
             std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeReachabilityRewards(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *linearEquationSolverFactory);

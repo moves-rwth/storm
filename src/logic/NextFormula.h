@@ -14,7 +14,8 @@ namespace storm {
             }
             
             virtual bool isNextFormula() const override;
-            
+            virtual bool isValidProbabilityPathFormula() const override;
+
             virtual bool containsNextFormula() const override;
             
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;

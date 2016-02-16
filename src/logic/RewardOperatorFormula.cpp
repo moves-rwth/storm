@@ -23,7 +23,8 @@ namespace storm {
         }
         
         bool RewardOperatorFormula::isPctlStateFormula() const {
-            return this->getSubformula().isRewardPathFormula();
+            Formula const& subformula = this->getSubformula();
+            return subformula.isEventuallyFormula() || subformula.isCumulativeRewardFormula() || subformula.isInstantaneousRewardFormula();
         }
         
         bool RewardOperatorFormula::containsRewardOperator() const {

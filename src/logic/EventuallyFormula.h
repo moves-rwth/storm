@@ -14,7 +14,9 @@ namespace storm {
             }
             
             virtual bool isEventuallyFormula() const override;
-            
+            virtual bool isValidProbabilityPathFormula() const override;
+            virtual bool isValidRewardPathFormula() const override;
+
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;

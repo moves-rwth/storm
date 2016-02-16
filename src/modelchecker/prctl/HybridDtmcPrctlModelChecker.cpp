@@ -36,7 +36,7 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         bool HybridDtmcPrctlModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isPctlStateFormula() || formula.isPctlPathFormula() || formula.isRewardPathFormula();
+            return formula.isPctlStateFormula() || formula.isPctlPathFormula();
         }
                 
         template<storm::dd::DdType DdType, typename ValueType>
@@ -91,9 +91,9 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) {
-            storm::logic::ReachabilityRewardFormula const& rewardPathFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
+        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<DdType, ValueType>::computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+            storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
+            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             return storm::modelchecker::helper::HybridDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(this->getModel(), this->getModel().getTransitionMatrix(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *this->linearEquationSolverFactory);
         }

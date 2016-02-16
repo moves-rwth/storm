@@ -16,6 +16,10 @@ namespace storm {
     
     namespace modelchecker {
         
+        enum class CheckType {
+            Probabilities, Rewards
+        };
+        
         /*
          * This class is used to customize the checking process of a formula.
          */
@@ -59,6 +63,8 @@ namespace storm {
                         }
                     }
                 } else if (formula.isRewardOperatorFormula()) {
+                    this->checkType = CheckType::Rewards;
+                    
                     storm::logic::RewardOperatorFormula const& rewardOperatorFormula = formula.asRewardOperatorFormula();
                     this->rewardModel = rewardOperatorFormula.getOptionalRewardModelName();
                     
@@ -75,8 +81,8 @@ namespace storm {
              * changes the formula type of the check task object.
              */
             template<typename NewFormulaType>
-            CheckTask<NewFormulaType, ValueType> replaceFormula(NewFormulaType const& newFormula) const {
-                return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers);
+            CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
+                return CheckTask<NewFormulaType, ValueType>(newFormula, this->checkType, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers);
             }
             
             /*!
@@ -84,6 +90,27 @@ namespace storm {
              */
             FormulaType const& getFormula() const {
                 return formula.get();
+            }
+
+            /*!
+             * Retrieves whether probabilities are to be computed.
+             */
+            bool computeProbabilities() const {
+                return checkType == CheckType::Probabilities;
+            }
+            
+            /*!
+             * Retrieves whether rewards are to be computed.
+             */
+            bool computeRewards() const {
+                return checkType == CheckType::Rewards;
+            }
+            
+            /*!
+             * Retrieves the type of this task.
+             */
+            CheckType getCheckType() const {
+                return checkType;
             }
             
             /*!
@@ -184,6 +211,7 @@ namespace storm {
              * Creates a task object with the given options.
              *
              * @param formula The formula to attach to the task.
+             * @param checkType The type of task: whether to compute probabilities or rewards.
              * @param optimizationDirection If set, the probabilities will be minimized/maximized.
              * @param rewardModelName If given, the checking has to be done wrt. to this reward model.
              * @param onlyInitialStatesRelevant If set to true, the model checker may decide to only compute the values
@@ -194,12 +222,15 @@ namespace storm {
              * @param produceSchedulers If supported by the model checker and the model formalism, schedulers to achieve
              * a value will be produced if this flag is set.
              */
-            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound<ValueType>> const& bound, bool qualitative, bool produceSchedulers) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers) {
+            CheckTask(std::reference_wrapper<FormulaType const> const& formula, CheckType checkType, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound<ValueType>> const& bound, bool qualitative, bool produceSchedulers) : formula(formula), checkType(checkType), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers) {
                 // Intentionally left empty.
             }
             
             // The formula that is to be checked.
             std::reference_wrapper<FormulaType const> formula;
+            
+            // A type indicating whether probabilities or rewards are to be computed.
+            CheckType checkType;
             
             // If set, the probabilities will be minimized/maximized.
             boost::optional<storm::OptimizationDirection> optimizationDirection;

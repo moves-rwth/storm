@@ -31,10 +31,8 @@ namespace storm {
         class NextFormula;
         class LongRunAverageOperatorFormula;
         class ExpectedTimeOperatorFormula;
-        class RewardPathFormula;
         class CumulativeRewardFormula;
         class InstantaneousRewardFormula;
-        class ReachabilityRewardFormula;
         class LongRunAverageRewardFormula;
         class ProbabilityOperatorFormula;
         class RewardOperatorFormula;
@@ -74,10 +72,8 @@ namespace storm {
             virtual bool isNextFormula() const;
             virtual bool isLongRunAverageOperatorFormula() const;
             virtual bool isExpectedTimeOperatorFormula() const;
-            virtual bool isRewardPathFormula() const;
             virtual bool isCumulativeRewardFormula() const;
             virtual bool isInstantaneousRewardFormula() const;
-            virtual bool isReachabilityRewardFormula() const;
             virtual bool isLongRunAverageRewardFormula() const;
             virtual bool isProbabilityOperatorFormula() const;
             virtual bool isRewardOperatorFormula() const;
@@ -90,6 +86,8 @@ namespace storm {
             virtual bool isPltlFormula() const;
             virtual bool isLtlFormula() const;
             virtual bool isPropositionalFormula() const;
+            virtual bool isValidProbabilityPathFormula() const;
+            virtual bool isValidRewardPathFormula() const;
             virtual bool containsBoundedUntilFormula() const;
             virtual bool containsNextFormula() const;
             virtual bool containsProbabilityOperator() const;
@@ -156,18 +154,12 @@ namespace storm {
             ExpectedTimeOperatorFormula& asExpectedTimeOperatorFormula();
             ExpectedTimeOperatorFormula const& asExpectedTimeOperatorFormula() const;
             
-            RewardPathFormula& asRewardPathFormula();
-            RewardPathFormula const& asRewardPathFormula() const;
-            
             CumulativeRewardFormula& asCumulativeRewardFormula();
             CumulativeRewardFormula const& asCumulativeRewardFormula() const;
             
             InstantaneousRewardFormula& asInstantaneousRewardFormula();
             InstantaneousRewardFormula const& asInstantaneousRewardFormula() const;
             
-            ReachabilityRewardFormula& asReachabilityRewardFormula();
-            ReachabilityRewardFormula const& asReachabilityRewardFormula() const;
-
             LongRunAverageRewardFormula& asLongRunAverageRewardFormula();
             LongRunAverageRewardFormula const& asLongRunAverageRewardFormula() const;
             

@@ -39,11 +39,11 @@ namespace storm {
         template<typename SparseMdpModelType>
         bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if (formula.isPctlStateFormula() || formula.isPctlPathFormula() || formula.isRewardPathFormula()) {
+            if (formula.isPctlStateFormula() || formula.isPctlPathFormula()) {
                 return true;
             }
             if (formula.isProbabilityOperatorFormula()) {
-                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
+                return this->canHandle(checkTask.substituteFormula(formula.asProbabilityOperatorFormula().getSubformula()));
             }
             if (formula.isGloballyFormula()) {
                 return true;
@@ -140,10 +140,10 @@ namespace storm {
         }
                 
         template<typename SparseMdpModelType>
-        std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) {
-            storm::logic::ReachabilityRewardFormula const& rewardPathFormula = checkTask.getFormula();
+        std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+            storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
-            std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
+            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
             std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeReachabilityRewards(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
