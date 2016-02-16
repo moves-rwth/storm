@@ -256,7 +256,7 @@ endif(STORM_HAVE_Z3)
 set(STORM_HAVE_GLPK 1)
 message (STATUS "StoRM - Linking with glpk")
 
-set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk.so)
+set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk${DYNAMIC_EXT})
 set(GLPK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/include)
 include_directories(${GLPK_INCLUDE_DIR})
 list(APPEND STORM_LINK_LIBRARIES ${GLPK_LIBRARIES})
