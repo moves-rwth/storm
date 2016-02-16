@@ -58,17 +58,38 @@ endif()
 set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
 
 # Auto-detect operating system.
+set(MACOSX 0)
+set(LINUX 0)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	# Mac OS
 	set(OPERATING_SYSTEM "Mac OS")
+        set(MACOSX 1)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     # Linux
 	set(OPERATING_SYSTEM "Linux")
-else()
+        set(LINUX 1)
+elseif(WIN32)
     # Assuming Windows.
     set(OPERATING_SYSTEM "Windows")
+else()
+    message(WARNING "We are unsure about your operating system.")
+    set(OPERATING_SYSTEM "Linux")
+    set(LINUX 1)
 ENDIF()
-message(STATUS "Detected operating system: ${OPERATING_SYSTEM}")
+message(STATUS "Operating system: ${OPERATING_SYSTEM}")
+
+
+set(DYNAMIC_EXT ".so")
+set(STATIC_EXT ".a")
+if(MACOSX)
+	set(DYNAMIC_EXT ".dylib")
+	set(STATIC_EXT ".a")
+elseif (WIN32)
+	set(DYNAMIC_EXT ".dll")
+	set(STATIC_EXT ".lib")
+endif()
+message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
+message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
 
 #############################################################
 ##
@@ -239,7 +260,7 @@ endif(STORM_HAVE_Z3)
 set(STORM_HAVE_GLPK 1)
 message (STATUS "StoRM - Linking with glpk")
 
-set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk.a)
+set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk.so)
 set(GLPK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/include)
 include_directories(${GLPK_INCLUDE_DIR})
 list(APPEND STORM_LINK_LIBRARIES ${GLPK_LIBRARIES})
@@ -568,7 +589,7 @@ endif()
 ##	Log4CPlus
 ##
 #############################################################
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+set(BUILD_SHARED_LIBS ON CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
 set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
 set(LOG4CPLUS_BUILD_TESTING OFF)
 set(LOG4CPLUS_USE_UNICODE OFF)
