@@ -9,7 +9,6 @@
 #include "src/utility/OsDetection.h"
 #include "src/utility/Hash.h"
 #include "src/utility/macros.h"
-#include "resources/3rdparty/glpk-4.53/src/zlib/zconf.h"
 
 namespace storm {
     namespace storage {
