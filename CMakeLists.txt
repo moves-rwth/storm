@@ -207,7 +207,7 @@ endif(CUSTOM_BOOST_ROOT)
 find_package(Boost 1.56.0 REQUIRED)
 
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
-	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
+    set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 link_directories(${Boost_LIBRARY_DIRS})
 
@@ -425,14 +425,6 @@ if(ENABLE_CUDA)
         list(APPEND STORM_LINK_LIBRARIES ${STORM_CUDA_LIB_NAME})
         include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
 endif()
-
-
-if(GMP_FOUND)
-	link_directories(${GMP_LIBRARY_DIR})
-elseif(MPIR_FOUND)
-	link_directories(${GMP_MPIR_LIBRARY_DIR} ${GMP_MPIRXX_LIBRARY_DIR})
-endif(GMP_FOUND)
-
 
 
 #############################################################
