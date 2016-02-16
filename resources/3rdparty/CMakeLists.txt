@@ -38,9 +38,9 @@ ExternalProject_Add(
         #TIMEOUT 10
         DOWNLOAD_COMMAND ""
         SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gtest-1.7.0"
-        # Force separate output paths for debug and release builds to allow easy
-        # identification of correct lib in subsequent TARGET_LINK_LIBRARIES 
-        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCXX=${CMAKE_CXX_COMPILER}
+        # Force the same output paths for debug and release builds so that
+        # we know in which place the binaries end up when using the Xcode generator
+        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCXX=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0 
         # Disable install step
         INSTALL_COMMAND ""
         BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/gtest-1.7.0"
