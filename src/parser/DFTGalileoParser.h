@@ -31,7 +31,7 @@ namespace storm {
             storm::storage::DFT<ValueType> parseDFT(std::string const& filename);
             
         private:
-            bool readFile(std::string const& filename);
+            void readFile(std::string const& filename);
 
             std::string stripQuotsFromName(std::string const& name);
 

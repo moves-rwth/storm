@@ -6,6 +6,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <map>
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace storage {
@@ -70,7 +71,7 @@ namespace storm {
                 //0 <= probability <= 1
                 if (!storm::utility::isOne(probability) && children.size() > 2) {
                     //TODO Matthias: introduce additional element for probability and then add pdeps with probability 1 to children
-                    std::cerr << "Probability != 1 for more than one child currently not supported." << std::endl;
+                    STORM_LOG_ERROR("Probability != 1 for more than one child currently not supported.");
                     return false;
                 }
 
@@ -78,7 +79,7 @@ namespace storm {
                     std::string nameDep = name + "_" + std::to_string(i);
                     if(mElements.count(nameDep) != 0) {
                         // Element with that name already exists.
-                        std::cerr << "Element with name: " << nameDep << " already exists." << std::endl;
+                        STORM_LOG_ERROR("Element with name: " << nameDep << " already exists.");
                         return false;
                     }
                     assert(storm::utility::isOne(probability) || children.size() == 2);
@@ -92,7 +93,7 @@ namespace storm {
             bool addVotElement(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
                 assert(children.size() > 0);
                 if(mElements.count(name) != 0) {
-                    std::cerr << "Element with name: " << name << " already exists." << std::endl;
+                    STORM_LOG_ERROR("Element with name: " << name << " already exists.");
                     return false;
                 }
                 // It is an and-gate
@@ -105,7 +106,7 @@ namespace storm {
                 }
                 
                 if(threshold > children.size()) {
-                    std::cerr << "Voting gates with threshold higher than the number of children is not supported." << std::endl;
+                    STORM_LOG_ERROR("Voting gates with threshold higher than the number of children is not supported.");
                     return false;
                 }
                 DFTElementPointer element = std::make_shared<DFTVot<ValueType>>(mNextId++, name, threshold);

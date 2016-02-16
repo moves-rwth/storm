@@ -15,14 +15,11 @@ namespace storm {
 
         template<typename ValueType>
         storm::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename) {
-            if(readFile(filename)) {
-                storm::storage::DFT<ValueType> dft = builder.build();
-                STORM_LOG_DEBUG("Elements:" << std::endl << dft.getElementsString());
-                STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
-                return dft;
-            } else {
-                throw storm::exceptions::FileIoException();
-            }
+            readFile(filename);
+            storm::storage::DFT<ValueType> dft = builder.build();
+            STORM_LOG_DEBUG("Elements:" << std::endl << dft.getElementsString());
+            STORM_LOG_DEBUG("Spare Modules:" << std::endl << dft.getSpareModulesString());
+            return dft;
         }
 
         template<typename ValueType>
@@ -39,7 +36,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFTGalileoParser<ValueType>::readFile(const std::string& filename) {
+        void DFTGalileoParser<ValueType>::readFile(const std::string& filename) {
             // constants
             std::string toplevelToken = "toplevel";
             std::string toplevelId;
@@ -52,12 +49,11 @@ namespace storm {
             }
             catch (std::ifstream::failure e) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Exception during file opening on " << filename << ".");
-                return false;
+                return;
             }
             file.exceptions( std::ifstream::goodbit );
 
             std::string line;
-            bool generalSuccess = true;
             while(std::getline(file, line)) {
                 bool success = true;
                 STORM_LOG_TRACE("Parsing: " << line);
@@ -119,16 +115,13 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << tokens[1] << "  not recognized.");
                         success = false;
                     }
-                }
-                if (generalSuccess) {
-                    generalSuccess = success;
+                    STORM_LOG_THROW(success, storm::exceptions::FileIoException, "Error while adding element '" << name << "' of line '" << line << "'.");
                 }
             }
             if(!builder.setTopLevel(toplevelId)) {
                 STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Top level id unknown.");
             }
             file.close();
-            return generalSuccess;
         }
 
         template<typename ValueType>
