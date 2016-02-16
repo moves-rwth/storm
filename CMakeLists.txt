@@ -180,10 +180,6 @@ message(STATUS "StoRM - Using Compiler Configuration: ${STORM_COMPILED_BY}")
 #############################################################
 
 
-# Add the version of Eigen3 in the repository to the include pathes
-set(EIGEN3_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen")
-include_directories(${EIGEN3_INCLUDE_DIR})
-
 # Add the version of GMM in the repository to the include pathes
 set(GMMXX_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-5.0/include")
 include_directories(${GMMXX_INCLUDE_DIR})
