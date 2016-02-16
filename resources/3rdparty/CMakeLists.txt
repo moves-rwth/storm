@@ -1,19 +1,21 @@
 add_custom_target(resources) 
 add_custom_target(test-resources)
 
-include(ExternalProject)
-ExternalProject_Add(
-        xercesc
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2
-        CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2 --libdir=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=-O3 CXXFLAGS=-O3
-        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2
-        BUILD_COMMAND make
-        BUILD_IN_SOURCE 0
-        LOG_CONFIGURE ON
-        LOG_BUILD ON
-        LOG_INSTALL ON
-)
-add_dependencies(resources xercesc)
+if(STORM_SUPPORT_XML_FORMATS)
+    include(ExternalProject)
+    ExternalProject_Add(
+            xercesc
+            SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2
+            CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2 --libdir=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=-O3 CXXFLAGS=-O3
+            PREFIX ${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2
+            BUILD_COMMAND make
+            BUILD_IN_SOURCE 0
+            LOG_CONFIGURE ON
+            LOG_BUILD ON
+            LOG_INSTALL ON
+    )
+    add_dependencies(resources xercesc)
+endif()
 
 ExternalProject_Add(
     glpk
