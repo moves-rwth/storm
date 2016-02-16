@@ -13,6 +13,7 @@ namespace storm {
                 // Intentionally left empty.
             }
             
+            virtual bool isRewardPathFormula() const override;
             virtual bool isLongRunAverageRewardFormula() const override;
             virtual bool isValidRewardPathFormula() const override;
 

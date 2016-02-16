@@ -18,6 +18,7 @@ namespace storm {
             virtual bool isAtomicLabelFormula() const override;
 
             virtual bool isPctlStateFormula() const override;
+            virtual bool isPctlWithConditionalStateFormula() const override;
             virtual bool isLtlFormula() const override;
             virtual bool isPropositionalFormula() const override;
             

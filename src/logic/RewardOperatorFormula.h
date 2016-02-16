@@ -19,8 +19,8 @@ namespace storm {
             }
             
             virtual bool isRewardOperatorFormula() const override;
+            virtual bool isRewardStateFormula() const override;
 
-            virtual bool isPctlStateFormula() const override;
             virtual bool containsRewardOperator() const override;
             virtual bool containsNestedRewardOperators() const override;
             

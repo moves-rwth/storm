@@ -10,6 +10,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        bool CumulativeRewardFormula::isRewardPathFormula() const {
+            return true;
+        }
+        
         bool CumulativeRewardFormula::isCumulativeRewardFormula() const {
             return true;
         }

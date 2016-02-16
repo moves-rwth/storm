@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subformula) : UnaryPathFormula(subformula) {
+        EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subformula, bool isRewardFormula) : UnaryPathFormula(subformula), isRewardFormula(isRewardFormula) {
             // Intentionally left empty.
         }
         
@@ -10,12 +10,16 @@ namespace storm {
             return true;
         }
         
+        bool EventuallyFormula::isRewardPathFormula() const {
+            return isRewardFormula;
+        }
+        
         bool EventuallyFormula::isValidProbabilityPathFormula() const {
-            return true;
+            return !isRewardFormula;
         }
         
         bool EventuallyFormula::isValidRewardPathFormula() const {
-            return true;
+            return isRewardFormula;
         }
         
         std::shared_ptr<Formula> EventuallyFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {

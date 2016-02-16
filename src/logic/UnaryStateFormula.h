@@ -16,6 +16,7 @@ namespace storm {
             virtual bool isUnaryStateFormula() const override;
 
             virtual bool isPropositionalFormula() const override;
+            virtual bool isPctlWithConditionalStateFormula() const override;
             virtual bool isPctlStateFormula() const override;
             virtual bool isLtlFormula() const override;
             virtual bool containsBoundedUntilFormula() const override;

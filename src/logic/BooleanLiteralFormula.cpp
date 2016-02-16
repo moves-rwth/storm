@@ -18,6 +18,10 @@ namespace storm {
             return true;
         }
         
+        bool BooleanLiteralFormula::isPctlWithConditionalStateFormula() const {
+            return true;
+        }
+        
         bool BooleanLiteralFormula::isLtlFormula() const {
             return true;
         }

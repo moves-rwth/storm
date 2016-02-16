@@ -26,6 +26,10 @@ namespace storm {
             return this->getSubformula().isPctlPathFormula();
         }
         
+        bool ProbabilityOperatorFormula::isPctlWithConditionalStateFormula() const {
+            return this->getSubformula().isPctlWithConditionalPathFormula();
+        }
+        
         bool ProbabilityOperatorFormula::isCslStateFormula() const {
             return this->getSubformula().isCslPathFormula();
         }

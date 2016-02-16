@@ -13,6 +13,10 @@ namespace storm {
         bool AtomicExpressionFormula::isPctlStateFormula() const {
             return true;
         }
+        
+        bool AtomicExpressionFormula::isPctlWithConditionalStateFormula() const {
+            return true;
+        }
                 
         bool AtomicExpressionFormula::isLtlFormula() const {
             return true;

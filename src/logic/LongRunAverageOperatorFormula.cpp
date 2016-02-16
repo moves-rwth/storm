@@ -26,6 +26,10 @@ namespace storm {
             return this->getSubformula().isPctlStateFormula();
         }
         
+        bool LongRunAverageOperatorFormula::isPctlWithConditionalStateFormula() const {
+            return this->getSubformula().isPctlWithConditionalStateFormula();
+        }
+        
         bool LongRunAverageOperatorFormula::containsProbabilityOperator() const {
             return this->getSubformula().containsProbabilityOperator();
         }

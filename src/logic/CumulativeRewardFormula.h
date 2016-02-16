@@ -17,6 +17,7 @@ namespace storm {
                 // Intentionally left empty.
             }
             
+            virtual bool isRewardPathFormula() const override;
             virtual bool isCumulativeRewardFormula() const override;
             virtual bool isValidRewardPathFormula() const override;
 

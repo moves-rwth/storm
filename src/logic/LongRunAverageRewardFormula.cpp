@@ -14,6 +14,10 @@ namespace storm {
             return true;
         }
         
+        bool LongRunAverageRewardFormula::isRewardPathFormula() const {
+            return true;
+        }
+        
         std::shared_ptr<Formula> LongRunAverageRewardFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return std::shared_ptr<Formula>(new LongRunAverageRewardFormula());
         }

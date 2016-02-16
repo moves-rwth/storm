@@ -111,11 +111,35 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isPctlFormula() const {
+            return this->isPctlStateFormula() || this->isPctlPathFormula();
+        }
+        
+        bool Formula::isPctlWithConditionalFormula() const {
+            return this->isPctlWithConditionalStateFormula() || this->isPctlWithConditionalPathFormula();
+        }
+        
+        bool Formula::isRewardFormula() const {
+            return this->isRewardStateFormula() || this->isRewardPathFormula();
+        }
+        
+        bool Formula::isCslFormula() const {
+            return this->isCslStateFormula() || this->isCslPathFormula();
+        }
+        
         bool Formula::isPctlPathFormula() const {
             return false;
         }
         
         bool Formula::isPctlStateFormula() const {
+            return false;
+        }
+        
+        bool Formula::isPctlWithConditionalPathFormula() const {
+            return false;
+        }
+        
+        bool Formula::isPctlWithConditionalStateFormula() const {
             return false;
         }
         
@@ -125,6 +149,14 @@ namespace storm {
         
         bool Formula::isCslStateFormula() const {
             return this->isPctlStateFormula();
+        }
+        
+        bool Formula::isRewardPathFormula() const {
+            return false;
+        }
+        
+        bool Formula::isRewardStateFormula() const {
+            return false;
         }
         
         bool Formula::isPltlFormula() const {

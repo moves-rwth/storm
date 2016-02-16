@@ -7,13 +7,14 @@ namespace storm {
     namespace logic {
         class EventuallyFormula : public UnaryPathFormula {
         public:
-            EventuallyFormula(std::shared_ptr<Formula const> const& subformula);
+            EventuallyFormula(std::shared_ptr<Formula const> const& subformula, bool isRewardFormula = false);
             
             virtual ~EventuallyFormula() {
                 // Intentionally left empty.
             }
             
             virtual bool isEventuallyFormula() const override;
+            virtual bool isRewardPathFormula() const override;
             virtual bool isValidProbabilityPathFormula() const override;
             virtual bool isValidRewardPathFormula() const override;
 
@@ -21,6 +22,8 @@ namespace storm {
             
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
 
+        private:
+            bool isRewardFormula;
         };
     }
 }

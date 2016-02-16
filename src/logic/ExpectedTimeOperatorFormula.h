@@ -20,6 +20,7 @@ namespace storm {
             virtual bool isExpectedTimeOperatorFormula() const override;
             
             virtual bool isPctlStateFormula() const override;
+            virtual bool isPctlWithConditionalStateFormula() const override;
             virtual bool containsProbabilityOperator() const override;
             virtual bool containsNestedProbabilityOperators() const override;
             

@@ -13,6 +13,10 @@ namespace storm {
         bool BinaryStateFormula::isPctlStateFormula() const {
             return this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
         }
+        
+        bool BinaryStateFormula::isPctlWithConditionalStateFormula() const {
+            return this->getLeftSubformula().isPctlWithConditionalStateFormula() && this->getRightSubformula().isPctlWithConditionalStateFormula();
+        }
 
         bool BinaryStateFormula::isCslStateFormula() const {
             return this->getLeftSubformula().isCslStateFormula() && this->getRightSubformula().isCslStateFormula();

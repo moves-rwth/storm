@@ -79,10 +79,18 @@ namespace storm {
             virtual bool isRewardOperatorFormula() const;
             virtual bool isOperatorFormula() const;
 
+            bool isPctlFormula() const;
+            bool isPctlWithConditionalFormula() const;
+            bool isRewardFormula() const;
+            bool isCslFormula() const;
             virtual bool isPctlPathFormula() const;
             virtual bool isPctlStateFormula() const;
+            virtual bool isPctlWithConditionalPathFormula() const;
+            virtual bool isPctlWithConditionalStateFormula() const;
             virtual bool isCslPathFormula() const;
             virtual bool isCslStateFormula() const;
+            virtual bool isRewardPathFormula() const;
+            virtual bool isRewardStateFormula() const;
             virtual bool isPltlFormula() const;
             virtual bool isLtlFormula() const;
             virtual bool isPropositionalFormula() const;

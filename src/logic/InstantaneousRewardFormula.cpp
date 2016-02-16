@@ -18,6 +18,10 @@ namespace storm {
             return true;
         }
         
+        bool InstantaneousRewardFormula::isRewardPathFormula() const {
+            return true;
+        }
+        
         bool InstantaneousRewardFormula::hasDiscreteTimeBound() const {
             return timeBound.which() == 0;
         }

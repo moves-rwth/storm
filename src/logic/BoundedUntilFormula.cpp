@@ -38,6 +38,10 @@ namespace storm {
             return this->hasDiscreteTimeBound() && this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
         }
         
+        bool BoundedUntilFormula::isPctlWithConditionalPathFormula() const {
+            return this->hasDiscreteTimeBound() && this->getLeftSubformula().isPctlWithConditionalStateFormula() && this->getRightSubformula().isPctlWithConditionalStateFormula();
+        }
+        
         bool BoundedUntilFormula::isCslPathFormula() const {
             return this->getLeftSubformula().isCslStateFormula() && this->getRightSubformula().isCslStateFormula();
         }
