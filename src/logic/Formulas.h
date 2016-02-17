@@ -23,7 +23,7 @@
 #include "src/logic/UnaryPathFormula.h"
 #include "src/logic/UnaryStateFormula.h"
 #include "src/logic/UntilFormula.h"
-#include "src/logic/ConditionalPathFormula.h"
+#include "src/logic/ConditionalFormula.h"
 #include "src/logic/ProbabilityOperatorFormula.h"
 #include "src/logic/RewardOperatorFormula.h"
 #include "src/logic/ComparisonType.h"

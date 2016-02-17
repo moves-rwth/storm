@@ -19,11 +19,9 @@ namespace storm {
             }
             
             virtual bool isRewardOperatorFormula() const override;
-            virtual bool isRewardStateFormula() const override;
 
-            virtual bool containsRewardOperator() const override;
-            virtual bool containsNestedRewardOperators() const override;
-            
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
+
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;

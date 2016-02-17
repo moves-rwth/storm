@@ -71,7 +71,23 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isConditionalPathFormula() const {
+        bool Formula::isConditionalProbabilityFormula() const {
+            return false;
+        }
+        
+        bool Formula::isConditionalRewardFormula() const {
+            return false;
+        }
+        
+        bool Formula::isProbabilityPathFormula() const {
+            return false;
+        }
+        
+        bool Formula::isRewardPathFormula() const {
+            return false;
+        }
+        
+        bool Formula::isExpectedTimePathFormula() const {
             return false;
         }
         
@@ -99,6 +115,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isReachbilityExpectedTimeFormula() const {
+            return false;
+        }
+        
         bool Formula::isProbabilityOperatorFormula() const {
             return false;
         }
@@ -108,98 +128,6 @@ namespace storm {
         }
         
         bool Formula::isOperatorFormula() const {
-            return false;
-        }
-        
-        bool Formula::isPctlFormula() const {
-            return this->isPctlStateFormula() || this->isPctlPathFormula();
-        }
-        
-        bool Formula::isPctlWithConditionalFormula() const {
-            return this->isPctlWithConditionalStateFormula() || this->isPctlWithConditionalPathFormula();
-        }
-        
-        bool Formula::isRewardFormula() const {
-            return this->isRewardStateFormula() || this->isRewardPathFormula();
-        }
-        
-        bool Formula::isCslFormula() const {
-            return this->isCslStateFormula() || this->isCslPathFormula();
-        }
-        
-        bool Formula::isPctlPathFormula() const {
-            return false;
-        }
-        
-        bool Formula::isPctlStateFormula() const {
-            return false;
-        }
-        
-        bool Formula::isPctlWithConditionalPathFormula() const {
-            return false;
-        }
-        
-        bool Formula::isPctlWithConditionalStateFormula() const {
-            return false;
-        }
-        
-        bool Formula::isCslPathFormula() const {
-            return this->isPctlPathFormula();
-        }
-        
-        bool Formula::isCslStateFormula() const {
-            return this->isPctlStateFormula();
-        }
-        
-        bool Formula::isRewardPathFormula() const {
-            return false;
-        }
-        
-        bool Formula::isRewardStateFormula() const {
-            return false;
-        }
-        
-        bool Formula::isPltlFormula() const {
-            return false;
-        }
-        
-        bool Formula::isLtlFormula() const {
-            return false;
-        }
-        
-        bool Formula::isPropositionalFormula() const {
-            return false;
-        }
-        
-        bool Formula::isValidProbabilityPathFormula() const {
-            return false;
-        }
-        
-        bool Formula::isValidRewardPathFormula() const {
-            return false;
-        }
-        
-        bool Formula::containsBoundedUntilFormula() const {
-            return false;
-        }
-        
-        bool Formula::containsNextFormula() const {
-            return false;
-        }
-        
-        bool Formula::containsProbabilityOperator() const {
-            return false;
-        }
-        
-        bool Formula::containsNestedProbabilityOperators() const {
-            return false;
-        }
-        
-        bool Formula::containsRewardOperator() const {
-            return false;
-        }
-        
-        bool Formula::containsNestedRewardOperators() const {
             return false;
         }
         
@@ -239,12 +167,12 @@ namespace storm {
             return dynamic_cast<UnaryStateFormula const&>(*this);
         }
         
-        ConditionalPathFormula& Formula::asConditionalPathFormula() {
-            return dynamic_cast<ConditionalPathFormula&>(*this);
+        ConditionalFormula& Formula::asConditionalFormula() {
+            return dynamic_cast<ConditionalFormula&>(*this);
         }
         
-        ConditionalPathFormula const& Formula::asConditionalPathFormula() const {
-            return dynamic_cast<ConditionalPathFormula const&>(*this);
+        ConditionalFormula const& Formula::asConditionalFormula() const {
+            return dynamic_cast<ConditionalFormula const&>(*this);
         }
         
         BinaryBooleanStateFormula& Formula::asBinaryBooleanStateFormula() {

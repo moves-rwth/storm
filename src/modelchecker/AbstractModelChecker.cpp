@@ -17,11 +17,15 @@ namespace storm {
             if (formula.isStateFormula()) {
                 return this->checkStateFormula(checkTask.substituteFormula(formula.asStateFormula()));
             } else if (formula.isPathFormula()) {
-                if (checkTask.computeProbabilities()) {
+                if (formula.isProbabilityPathFormula()) {
                     return this->computeProbabilities(checkTask.substituteFormula(formula.asPathFormula()));
-                } else if (checkTask.computeRewards()) {
+                } else if (formula.isRewardPathFormula()) {
                     return this->computeRewards(checkTask.substituteFormula(formula.asPathFormula()));
                 }
+            } else if (formula.isConditionalProbabilityFormula()) {
+                return this->computeConditionalProbabilities(checkTask.substituteFormula(formula.asConditionalFormula()));
+            } else if (formula.isConditionalRewardFormula()) {
+                return this->computeConditionalRewards(checkTask.substituteFormula(formula.asConditionalFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
@@ -30,8 +34,6 @@ namespace storm {
             storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
             if (pathFormula.isBoundedUntilFormula()) {
                 return this->computeBoundedUntilProbabilities(checkTask.substituteFormula(pathFormula.asBoundedUntilFormula()));
-            } else if (pathFormula.isConditionalPathFormula()) {
-                return this->computeConditionalProbabilities(checkTask.substituteFormula(pathFormula.asConditionalPathFormula()));
             } else if (pathFormula.isEventuallyFormula()) {
                 return this->computeEventuallyProbabilities(checkTask.substituteFormula(pathFormula.asEventuallyFormula()));
             } else if (pathFormula.isGloballyFormula()) {
@@ -48,7 +50,7 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalPathFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalFormula> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
         
@@ -82,6 +84,10 @@ namespace storm {
                 return this->computeLongRunAverageRewards(checkTask.substituteFormula(rewardPathFormula.asLongRunAverageRewardFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << rewardPathFormula << "' is invalid.");
+        }
+        
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeConditionalRewards(CheckTask<storm::logic::ConditionalFormula> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
         
         std::unique_ptr<CheckResult> AbstractModelChecker::computeCumulativeRewards(CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask) {
@@ -171,8 +177,6 @@ namespace storm {
         
         std::unique_ptr<CheckResult> AbstractModelChecker::checkProbabilityOperatorFormula(CheckTask<storm::logic::ProbabilityOperatorFormula> const& checkTask) {
             storm::logic::ProbabilityOperatorFormula const& stateFormula = checkTask.getFormula();
-            STORM_LOG_THROW(stateFormula.getSubformula().isValidProbabilityPathFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
-            
             std::unique_ptr<CheckResult> result = this->computeProbabilities(checkTask.substituteFormula(stateFormula.getSubformula().asPathFormula()));
             
             if (stateFormula.hasBound()) {
@@ -185,8 +189,6 @@ namespace storm {
         
         std::unique_ptr<CheckResult> AbstractModelChecker::checkRewardOperatorFormula(CheckTask<storm::logic::RewardOperatorFormula> const& checkTask) {
             storm::logic::RewardOperatorFormula const& stateFormula = checkTask.getFormula();
-            STORM_LOG_THROW(stateFormula.getSubformula().isValidRewardPathFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
-            
             std::unique_ptr<CheckResult> result = this->computeRewards(checkTask.substituteFormula(stateFormula.getSubformula().asPathFormula()));
             
             if (checkTask.isBoundSet()) {

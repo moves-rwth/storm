@@ -1,5 +1,7 @@
 #include "src/logic/LongRunAverageOperatorFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(std::shared_ptr<Formula const> const& subformula) : LongRunAverageOperatorFormula(boost::none, boost::none, subformula) {
@@ -22,20 +24,8 @@ namespace storm {
             return true;
         }
         
-        bool LongRunAverageOperatorFormula::isPctlStateFormula() const {
-            return this->getSubformula().isPctlStateFormula();
-        }
-        
-        bool LongRunAverageOperatorFormula::isPctlWithConditionalStateFormula() const {
-            return this->getSubformula().isPctlWithConditionalStateFormula();
-        }
-        
-        bool LongRunAverageOperatorFormula::containsProbabilityOperator() const {
-            return this->getSubformula().containsProbabilityOperator();
-        }
-        
-        bool LongRunAverageOperatorFormula::containsNestedProbabilityOperators() const {
-            return this->getSubformula().containsNestedProbabilityOperators();
+        boost::any LongRunAverageOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, bound, subformula) {

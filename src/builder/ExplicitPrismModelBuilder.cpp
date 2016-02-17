@@ -185,10 +185,8 @@ namespace storm {
             
             // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {
-                if (formula.containsRewardOperator()) {
-                    std::set<std::string> referencedRewardModels = formula.getReferencedRewardModels();
-                    rewardModelsToBuild.insert(referencedRewardModels.begin(), referencedRewardModels.end());
-                }
+                std::set<std::string> referencedRewardModels = formula.getReferencedRewardModels();
+                rewardModelsToBuild.insert(referencedRewardModels.begin(), referencedRewardModels.end());
             }
             
             // Extract all the labels used in the formula.

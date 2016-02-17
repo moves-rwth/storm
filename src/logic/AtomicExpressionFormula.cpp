@@ -1,5 +1,7 @@
 #include "src/logic/AtomicExpressionFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         AtomicExpressionFormula::AtomicExpressionFormula(storm::expressions::Expression const& expression) : expression(expression) {
@@ -10,22 +12,10 @@ namespace storm {
             return true;
         }
         
-        bool AtomicExpressionFormula::isPctlStateFormula() const {
-            return true;
+        boost::any AtomicExpressionFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
-        bool AtomicExpressionFormula::isPctlWithConditionalStateFormula() const {
-            return true;
-        }
-                
-        bool AtomicExpressionFormula::isLtlFormula() const {
-            return true;
-        }
-        
-        bool AtomicExpressionFormula::isPropositionalFormula() const {
-            return true;
-        }
-                
         storm::expressions::Expression const& AtomicExpressionFormula::getExpression() const {
             return expression;
         }

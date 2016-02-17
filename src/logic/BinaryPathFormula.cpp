@@ -9,47 +9,7 @@ namespace storm {
         bool BinaryPathFormula::isBinaryPathFormula() const {
             return true;
         }
-        
-        bool BinaryPathFormula::isPctlPathFormula() const {
-            return this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
-        }
-        
-        bool BinaryPathFormula::isPctlWithConditionalPathFormula() const {
-            return this->getLeftSubformula().isPctlWithConditionalPathFormula() && this->getRightSubformula().isPctlWithConditionalPathFormula();
-        }
-        
-        bool BinaryPathFormula::isCslPathFormula() const {
-            return this->getLeftSubformula().isCslStateFormula() && this->getRightSubformula().isCslStateFormula();
-        }
-        
-        bool BinaryPathFormula::isLtlFormula() const {
-            return this->getLeftSubformula().isLtlFormula() && this->getRightSubformula().isLtlFormula();
-        }
-        
-        bool BinaryPathFormula::containsBoundedUntilFormula() const {
-            return this->getLeftSubformula().containsBoundedUntilFormula() || this->getRightSubformula().containsBoundedUntilFormula();
-        }
-        
-        bool BinaryPathFormula::containsNextFormula() const {
-            return this->getLeftSubformula().containsNextFormula() || this->getRightSubformula().containsNextFormula();
-        }
-        
-        bool BinaryPathFormula::containsProbabilityOperator() const {
-            return this->getLeftSubformula().containsProbabilityOperator() || this->getRightSubformula().containsProbabilityOperator();
-        }
-        
-        bool BinaryPathFormula::containsNestedProbabilityOperators() const {
-            return this->getLeftSubformula().containsNestedProbabilityOperators() || this->getRightSubformula().containsNestedProbabilityOperators();
-        }
-        
-        bool BinaryPathFormula::containsRewardOperator() const {
-            return this->getLeftSubformula().containsRewardOperator() || this->getRightSubformula().containsRewardOperator();
-        }
-        
-        bool BinaryPathFormula::containsNestedRewardOperators() const {
-            return this->getLeftSubformula().containsNestedRewardOperators() || this->getRightSubformula().containsNestedRewardOperators();
-        }
-        
+                
         Formula const& BinaryPathFormula::getLeftSubformula() const {
             return *leftSubformula;
         }

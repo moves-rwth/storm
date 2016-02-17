@@ -1,5 +1,7 @@
 #include "src/logic/CumulativeRewardFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         CumulativeRewardFormula::CumulativeRewardFormula(uint_fast64_t timeBound) : timeBound(timeBound) {
@@ -10,16 +12,16 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        bool CumulativeRewardFormula::isRewardPathFormula() const {
-            return true;
-        }
-        
         bool CumulativeRewardFormula::isCumulativeRewardFormula() const {
             return true;
         }
         
-        bool CumulativeRewardFormula::isValidRewardPathFormula() const {
+        bool CumulativeRewardFormula::isRewardPathFormula() const {
             return true;
+        }
+        
+        boost::any CumulativeRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         bool CumulativeRewardFormula::hasDiscreteTimeBound() const {

@@ -1,5 +1,7 @@
 #include "src/logic/BinaryBooleanStateFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         BinaryBooleanStateFormula::BinaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula) : BinaryStateFormula(leftSubformula, rightSubformula), operatorType(operatorType) {
@@ -10,8 +12,8 @@ namespace storm {
             return true;
         }
         
-        bool BinaryBooleanStateFormula::isPropositionalFormula() const {
-            return this->getLeftSubformula().isPropositionalFormula() && this->getRightSubformula().isPropositionalFormula();
+        boost::any BinaryBooleanStateFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         BinaryBooleanStateFormula::OperatorType BinaryBooleanStateFormula::getOperator() const {

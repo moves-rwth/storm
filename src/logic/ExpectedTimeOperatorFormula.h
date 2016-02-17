@@ -3,6 +3,8 @@
 
 #include "src/logic/OperatorFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         class ExpectedTimeOperatorFormula : public OperatorFormula {
@@ -18,11 +20,8 @@ namespace storm {
             }
             
             virtual bool isExpectedTimeOperatorFormula() const override;
-            
-            virtual bool isPctlStateFormula() const override;
-            virtual bool isPctlWithConditionalStateFormula() const override;
-            virtual bool containsProbabilityOperator() const override;
-            virtual bool containsNestedProbabilityOperators() const override;
+
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             

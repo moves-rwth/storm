@@ -6,37 +6,18 @@
 #include <iostream>
 #include <set>
 
+#include <boost/any.hpp>
+
 #include "src/storage/expressions/Variable.h"
 #include "src/storage/expressions/Expression.h"
 
+#include "src/logic/FormulasForwardDeclarations.h"
+
 namespace storm {
     namespace logic {
-        // Forward-declare all formula classes.
-        class PathFormula;
-        class StateFormula;
-        class BinaryStateFormula;
-        class UnaryStateFormula;
-        class BinaryBooleanStateFormula;
-        class UnaryBooleanStateFormula;
-        class BooleanLiteralFormula;
-        class AtomicExpressionFormula;
-        class AtomicLabelFormula;
-        class UntilFormula;
-        class BoundedUntilFormula;
-        class EventuallyFormula;
-        class GloballyFormula;
-        class BinaryPathFormula;
-        class UnaryPathFormula;
-        class ConditionalPathFormula;
-        class NextFormula;
-        class LongRunAverageOperatorFormula;
-        class ExpectedTimeOperatorFormula;
-        class CumulativeRewardFormula;
-        class InstantaneousRewardFormula;
-        class LongRunAverageRewardFormula;
-        class ProbabilityOperatorFormula;
-        class RewardOperatorFormula;
-        class OperatorFormula;
+
+        // Forward-declare visitor for accept() method.
+        class FormulaVisitor;
 
         // Also foward-declare base model checker class.
         class ModelChecker;
@@ -49,59 +30,57 @@ namespace storm {
             };
             
             friend std::ostream& operator<<(std::ostream& out, Formula const& formula);
-            
-            // Methods for querying the exact formula type.
+
+            // Basic formula types.
             virtual bool isPathFormula() const;
             virtual bool isStateFormula() const;
-            virtual bool isBinaryStateFormula() const;
-            virtual bool isUnaryStateFormula() const;
+            virtual bool isConditionalProbabilityFormula() const;
+            virtual bool isConditionalRewardFormula() const;
+            
+            virtual bool isProbabilityPathFormula() const;
+            virtual bool isRewardPathFormula() const;
+            virtual bool isExpectedTimePathFormula() const;
+
             virtual bool isBinaryBooleanStateFormula() const;
             virtual bool isUnaryBooleanStateFormula() const;
+
+            // Operator formulas.
+            virtual bool isOperatorFormula() const;
+            virtual bool isLongRunAverageOperatorFormula() const;
+            virtual bool isExpectedTimeOperatorFormula() const;
+            virtual bool isProbabilityOperatorFormula() const;
+            virtual bool isRewardOperatorFormula() const;
+
+            // Atomic state formulas.
             virtual bool isBooleanLiteralFormula() const;
             virtual bool isTrueFormula() const;
             virtual bool isFalseFormula() const;
             virtual bool isAtomicExpressionFormula() const;
             virtual bool isAtomicLabelFormula() const;
+
+            // Probability path formulas.
+            virtual bool isNextFormula() const;
             virtual bool isUntilFormula() const;
             virtual bool isBoundedUntilFormula() const;
             virtual bool isEventuallyFormula() const;
             virtual bool isGloballyFormula() const;
-            virtual bool isBinaryPathFormula() const;
-            virtual bool isUnaryPathFormula() const;
-            virtual bool isConditionalPathFormula() const;
-            virtual bool isNextFormula() const;
-            virtual bool isLongRunAverageOperatorFormula() const;
-            virtual bool isExpectedTimeOperatorFormula() const;
+
+            // Reward formulas.
             virtual bool isCumulativeRewardFormula() const;
             virtual bool isInstantaneousRewardFormula() const;
+            virtual bool isReachabilityRewardFormula() const;
             virtual bool isLongRunAverageRewardFormula() const;
-            virtual bool isProbabilityOperatorFormula() const;
-            virtual bool isRewardOperatorFormula() const;
-            virtual bool isOperatorFormula() const;
+            
+            // Expected time formulas.
+            virtual bool isReachbilityExpectedTimeFormula() const;
+            
+            // Type checks for abstract intermediate classes.
+            virtual bool isBinaryPathFormula() const;
+            virtual bool isBinaryStateFormula() const;
+            virtual bool isUnaryPathFormula() const;
+            virtual bool isUnaryStateFormula() const;
 
-            bool isPctlFormula() const;
-            bool isPctlWithConditionalFormula() const;
-            bool isRewardFormula() const;
-            bool isCslFormula() const;
-            virtual bool isPctlPathFormula() const;
-            virtual bool isPctlStateFormula() const;
-            virtual bool isPctlWithConditionalPathFormula() const;
-            virtual bool isPctlWithConditionalStateFormula() const;
-            virtual bool isCslPathFormula() const;
-            virtual bool isCslStateFormula() const;
-            virtual bool isRewardPathFormula() const;
-            virtual bool isRewardStateFormula() const;
-            virtual bool isPltlFormula() const;
-            virtual bool isLtlFormula() const;
-            virtual bool isPropositionalFormula() const;
-            virtual bool isValidProbabilityPathFormula() const;
-            virtual bool isValidRewardPathFormula() const;
-            virtual bool containsBoundedUntilFormula() const;
-            virtual bool containsNextFormula() const;
-            virtual bool containsProbabilityOperator() const;
-            virtual bool containsNestedProbabilityOperators() const;
-            virtual bool containsRewardOperator() const;
-            virtual bool containsNestedRewardOperators() const;
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const = 0;
             
             static std::shared_ptr<Formula const> getTrueFormula();
             
@@ -150,8 +129,8 @@ namespace storm {
             UnaryPathFormula& asUnaryPathFormula();
             UnaryPathFormula const& asUnaryPathFormula() const;
             
-            ConditionalPathFormula& asConditionalPathFormula();
-            ConditionalPathFormula const& asConditionalPathFormula() const;
+            ConditionalFormula& asConditionalFormula();
+            ConditionalFormula const& asConditionalFormula() const;
             
             NextFormula& asNextFormula();
             NextFormula const& asNextFormula() const;

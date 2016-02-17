@@ -1,5 +1,7 @@
 #include "src/logic/ProbabilityOperatorFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         ProbabilityOperatorFormula::ProbabilityOperatorFormula(std::shared_ptr<Formula const> const& subformula) : ProbabilityOperatorFormula(boost::none, boost::none, subformula) {
@@ -22,30 +24,10 @@ namespace storm {
             return true;
         }
         
-        bool ProbabilityOperatorFormula::isPctlStateFormula() const {
-            return this->getSubformula().isPctlPathFormula();
+        boost::any ProbabilityOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
-        
-        bool ProbabilityOperatorFormula::isPctlWithConditionalStateFormula() const {
-            return this->getSubformula().isPctlWithConditionalPathFormula();
-        }
-        
-        bool ProbabilityOperatorFormula::isCslStateFormula() const {
-            return this->getSubformula().isCslPathFormula();
-        }
-        
-        bool ProbabilityOperatorFormula::isPltlFormula() const {
-            return this->getSubformula().isLtlFormula();
-        }
-        
-        bool ProbabilityOperatorFormula::containsProbabilityOperator() const {
-            return true;
-        }
-        
-        bool ProbabilityOperatorFormula::containsNestedProbabilityOperators() const {
-            return this->getSubformula().containsProbabilityOperator();
-        }
-        
+                
         ProbabilityOperatorFormula::ProbabilityOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, bound, subformula) {
             // Intentionally left empty.
         }

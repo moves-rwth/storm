@@ -15,17 +15,6 @@ namespace storm {
             
             virtual bool isBinaryStateFormula() const override;
 
-            virtual bool isPctlStateFormula() const override;
-            virtual bool isPctlWithConditionalStateFormula() const override;
-            virtual bool isCslStateFormula() const override;
-            virtual bool isLtlFormula() const override;
-            virtual bool containsBoundedUntilFormula() const override;
-            virtual bool containsNextFormula() const override;
-            virtual bool containsProbabilityOperator() const override;
-            virtual bool containsNestedProbabilityOperators() const override;
-            virtual bool containsRewardOperator() const override;
-            virtual bool containsNestedRewardOperators() const override;
-            
             Formula const& getLeftSubformula() const;
             Formula const& getRightSubformula() const;
             

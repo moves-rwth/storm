@@ -1,5 +1,7 @@
 #include "src/logic/ExpectedTimeOperatorFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(std::shared_ptr<Formula const> const& subformula) : ExpectedTimeOperatorFormula(boost::none, boost::none, subformula) {
@@ -22,20 +24,8 @@ namespace storm {
             return true;
         }
         
-        bool ExpectedTimeOperatorFormula::isPctlStateFormula() const {
-            return this->getSubformula().isPctlStateFormula();
-        }
-        
-        bool ExpectedTimeOperatorFormula::isPctlWithConditionalStateFormula() const {
-            return this->getSubformula().isPctlWithConditionalStateFormula();
-        }
-        
-        bool ExpectedTimeOperatorFormula::containsProbabilityOperator() const {
-            return this->getSubformula().containsProbabilityOperator();
-        }
-        
-        bool ExpectedTimeOperatorFormula::containsNestedProbabilityOperators() const {
-            return this->getSubformula().containsNestedProbabilityOperators();
+        boost::any ExpectedTimeOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, bound, subformula) {
