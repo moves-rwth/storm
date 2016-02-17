@@ -91,7 +91,9 @@ namespace storm {
         
         template<typename ValueType>
         void DFTState<ValueType>::setDependencySuccessful(size_t id) {
-            mStatus.set(mDft.failureIndex(id));
+            // No distinction between successful dependency and no dependency at all
+            // -> we do not set bit
+            //mStatus.set(mDft.failureIndex(id));
         }
 
         template<typename ValueType>
