@@ -80,6 +80,22 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool ExplicitQuantitativeCheckResult<ValueType>::hasScheduler() const {
+            return static_cast<bool>(scheduler);
+        }
+        
+        template<typename ValueType>
+        void ExplicitQuantitativeCheckResult<ValueType>::setScheduler(std::unique_ptr<storm::storage::Scheduler>&& scheduler) {
+            this->scheduler = std::move(scheduler);
+        }
+        
+        template<typename ValueType>
+        storm::storage::Scheduler const& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() const {
+            STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
+            return *scheduler.get();
+        }
+        
+        template<typename ValueType>
         std::ostream& ExplicitQuantitativeCheckResult<ValueType>::writeToStream(std::ostream& out) const {
             out << "[";
             if (this->isResultForAllStates()) {

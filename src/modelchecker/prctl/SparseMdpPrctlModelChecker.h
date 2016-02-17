@@ -4,8 +4,6 @@
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/models/sparse/Mdp.h"
 #include "src/utility/solver.h"
-#include "src/logic/BoundInfo.h"
-#include "src/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {
