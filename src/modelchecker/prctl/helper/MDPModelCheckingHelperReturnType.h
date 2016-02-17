@@ -3,42 +3,38 @@
 
 #include <vector>
 #include <memory>
-#include "src/storage/PartialScheduler.h"
+#include "src/storage/Scheduler.h"
 
 namespace storm {
     namespace storage {
         class BitVector;
     }
     
-    
     namespace modelchecker {
-
-
         namespace helper {
             template<typename ValueType>
             struct MDPSparseModelCheckingHelperReturnType {
+                
                 MDPSparseModelCheckingHelperReturnType(MDPSparseModelCheckingHelperReturnType const&) = delete;
                 MDPSparseModelCheckingHelperReturnType(MDPSparseModelCheckingHelperReturnType&&) = default;
                 
-                explicit MDPSparseModelCheckingHelperReturnType(std::vector<ValueType> && res) : result(std::move(res))
-                {
-                    
+                MDPSparseModelCheckingHelperReturnType(std::vector<ValueType>&& values, std::unique_ptr<storm::storage::Scheduler>&& scheduler = nullptr) : values(std::move(values)), scheduler(std::move(scheduler)) {
+                    // Intentionally left empty.
                 }
                 
-                MDPSparseModelCheckingHelperReturnType(std::vector<ValueType> &&  res, std::unique_ptr<storm::storage::PartialScheduler> && pSched) :
-                result(std::move(res)), partScheduler(std::move(pSched)) {}
-
-                virtual ~MDPSparseModelCheckingHelperReturnType() { }
+                virtual ~MDPSparseModelCheckingHelperReturnType() {
+                    // Intentionally left empty.
+                }
                 
+                // The values computed for the states.
+                std::vector<ValueType> values;
                 
-                std::vector<ValueType> result;
-                std::unique_ptr<storm::storage::PartialScheduler> partScheduler;
+                // A scheduler, if it was computed.
+                std::unique_ptr<storm::storage::Scheduler> scheduler;
             };
         }
-
+        
     }
 }
 
-
 #endif	/* MDPMODELCHECKINGRETURNTYPE_H */
-

@@ -8,9 +8,8 @@
 
 namespace storm {
     namespace solver {
-        AbstractMinMaxLinearEquationSolver::AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech) :
-        precision(precision), relative(relativeError), maximalNumberOfIterations(maximalIterations), trackPolicy(trackPolicy)
-        {
+        template<typename ValueType>
+        AbstractMinMaxLinearEquationSolver<ValueType>::AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackScheduler, MinMaxTechniqueSelection prefTech) : precision(precision), relative(relativeError), maximalNumberOfIterations(maximalIterations), trackScheduler(trackScheduler) {
             
             if(prefTech == MinMaxTechniqueSelection::FROMSETTINGS) {
                 useValueIteration = (storm::settings::generalSettings().getMinMaxEquationSolvingTechnique() == storm::solver::MinMaxTechnique::ValueIteration);
@@ -19,13 +18,45 @@ namespace storm {
             }
         }
         
-        void AbstractMinMaxLinearEquationSolver::setPolicyTracking(bool setToTrue) {
-            trackPolicy = setToTrue;
+        template<typename ValueType>
+        void AbstractMinMaxLinearEquationSolver<ValueType>::setTrackScheduler(bool trackScheduler) {
+            this->trackScheduler = trackScheduler;
         }
         
-        std::vector<storm::storage::sparse::state_type> AbstractMinMaxLinearEquationSolver::getPolicy() const {
-            STORM_LOG_THROW(!useValueIteration, storm::exceptions::NotImplementedException, "Getting policies after value iteration is not yet supported!");
-            return policy;
+        template<typename ValueType>
+        bool AbstractMinMaxLinearEquationSolver<ValueType>::hasScheduler() const {
+            return static_cast<bool>(scheduler);
         }
+        
+        template<typename ValueType>
+        bool AbstractMinMaxLinearEquationSolver<ValueType>::isTrackSchedulerSet() const {
+            return this->trackScheduler;
+        }
+        
+        template<typename ValueType>
+        storm::storage::TotalScheduler const& AbstractMinMaxLinearEquationSolver<ValueType>::getScheduler() const {
+            STORM_LOG_THROW(scheduler, storm::exceptions::InvalidSettingsException, "Cannot retrieve scheduler, because none was generated.");
+            return *scheduler.get();
+        }
+
+        template<typename ValueType>
+        storm::storage::TotalScheduler& AbstractMinMaxLinearEquationSolver<ValueType>::getScheduler() {
+            STORM_LOG_THROW(scheduler, storm::exceptions::InvalidSettingsException, "Cannot retrieve scheduler, because none was generated.");
+            return *scheduler.get();
+        }
+        
+        template<typename ValueType>
+        void AbstractMinMaxLinearEquationSolver<ValueType>::setOptimizationDirection(OptimizationDirection d) {
+            direction = convert(d);
+        }
+        
+        template<typename ValueType>
+        void AbstractMinMaxLinearEquationSolver<ValueType>::resetOptimizationDirection() {
+            direction = OptimizationDirectionSetting::Unset;
+        }
+        
+        template class AbstractMinMaxLinearEquationSolver<float>;
+        template class AbstractMinMaxLinearEquationSolver<double>;
+
     }
 }
