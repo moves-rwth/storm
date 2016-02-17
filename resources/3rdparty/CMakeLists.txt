@@ -1,8 +1,8 @@
 add_custom_target(resources) 
 add_custom_target(test-resources)
 
+
 if(STORM_SUPPORT_XML_FORMATS)
-    include(ExternalProject)
     ExternalProject_Add(
             xercesc
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2
@@ -38,13 +38,18 @@ ExternalProject_Add(
     DOWNLOAD_COMMAND ""
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0
-    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0/configure  --enable-shared --prefix=${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0 --libdir=${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
+    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0/configure  --enable-shared   --enable-obj --prefix=${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0 --libdir=${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
     BUILD_COMMAND make "CFLAGS=-O2 -w"
     INSTALL_COMMAND make install
     BUILD_IN_SOURCE 0
 )
 add_dependencies(resources cudd3)
 
+ExternalProject_Get_Property(cudd3 binary_dir)
+set(CUDD3_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/include PARENT_SCOPE)
+
+set(CUDD3_SHARED_LIBRARIES ${binary_dir}/libcudd${DYNAMIC_EXT} PARENT_SCOPE)
+set(CUDD3_STATIC_LIBRARIES ${binary_dir}/libcudd${STATIC_EXT} PARENT_SCOPE)
 
 ExternalProject_Add(
         googletest

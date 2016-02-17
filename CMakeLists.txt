@@ -12,6 +12,7 @@ include_directories("${PROJECT_SOURCE_DIR}/src")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmake/")
 
 
+include(ExternalProject)
 #############################################################
 ##
 ##	CMake options of StoRM
@@ -181,6 +182,7 @@ message(STATUS "StoRM - Using Compiler Configuration: ${STORM_COMPILED_BY}")
 #############################################################
 
 
+add_subdirectory(resources/3rdparty)
 # Add the version of GMM in the repository to the include pathes
 set(GMMXX_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-5.0/include")
 include_directories(${GMMXX_INCLUDE_DIR})
@@ -434,6 +436,9 @@ endif()
 ##
 #############################################################
 
+message("${CUDD3_INCLUDE_DIR}")
+include_directories(${CUDD3_INCLUDE_DIR})
+list(APPEND STORM_LINK_LIBRARIES ${CUDD3_STATIC_LIBRARIES})
 
 #############################################################
 ##
@@ -529,7 +534,7 @@ endif()
 ##	Sylvan
 ##
 #############################################################
-include(ExternalProject)
+
 set(STORM_SYLVAN_ROOT "${PROJECT_SOURCE_DIR}/resources/3rdparty/sylvan")
 ExternalProject_Add(
     sylvan
@@ -714,7 +719,6 @@ set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
-add_subdirectory(resources/3rdparty)
 add_subdirectory(src)
 add_subdirectory(test)
 
