@@ -1,6 +1,7 @@
 #include <boost/container/flat_set.hpp>
 
 #include "DFT.h"
+#include "src/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace storage {
@@ -28,7 +29,12 @@ namespace storm {
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
                         std::vector<size_t> sparesAndBes;
+                        bool secondSpare = false;
                         for(auto const& modelem : module) {
+                            if (mElements[modelem]->isSpareGate()) {
+                                STORM_LOG_THROW(!secondSpare, storm::exceptions::NotSupportedException, "Module for '" << spareReprs->name() << "' contains more than one spare.");
+                                secondSpare = true;
+                            }
                             if(mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
                                 sparesAndBes.push_back(modelem);
                                 mRepresentants.insert(std::make_pair(modelem, spareReprs->id()));
