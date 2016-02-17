@@ -48,8 +48,8 @@ add_dependencies(resources cudd3)
 ExternalProject_Get_Property(cudd3 binary_dir)
 set(CUDD3_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/include PARENT_SCOPE)
 
-set(CUDD3_SHARED_LIBRARIES ${binary_dir}/libcudd${DYNAMIC_EXT} PARENT_SCOPE)
-set(CUDD3_STATIC_LIBRARIES ${binary_dir}/libcudd${STATIC_EXT} PARENT_SCOPE)
+set(CUDD3_SHARED_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/libcudd${DYNAMIC_EXT} PARENT_SCOPE)
+set(CUDD3_STATIC_LIBRARIES${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/libcudd${STATIC_EXT} PARENT_SCOPE)
 
 ExternalProject_Add(
         googletest
