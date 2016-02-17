@@ -434,7 +434,7 @@ namespace storm {
             
             if (currentLevel == maxLevel) {
                 groups.push_back(InternalAdd<DdType::CUDD, ValueType>(ddManager, cudd::ADD(ddManager->getCuddManager(), dd)));
-            } else if (ddGroupVariableIndices[currentLevel] < dd->index) {
+            } else if (ddGroupVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
                 splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             } else {
@@ -459,15 +459,15 @@ namespace storm {
             
             if (currentLevel == maxLevel) {
                 groups.push_back(std::make_pair(InternalAdd<DdType::CUDD, ValueType>(ddManager, cudd::ADD(ddManager->getCuddManager(), dd1)), InternalAdd<DdType::CUDD, ValueType>(ddManager, cudd::ADD(ddManager->getCuddManager(), dd2))));
-            } else if (ddGroupVariableIndices[currentLevel] < dd1->index) {
-                if (ddGroupVariableIndices[currentLevel] < dd2->index) {
+            } else if (ddGroupVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd1)) {
+                if (ddGroupVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd2)) {
                     splitIntoGroupsRec(dd1, dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                     splitIntoGroupsRec(dd1, dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 } else {
                     splitIntoGroupsRec(dd1, Cudd_T(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                     splitIntoGroupsRec(dd1, Cudd_E(dd2), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 }
-            } else if (ddGroupVariableIndices[currentLevel] < dd2->index) {
+            } else if (ddGroupVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd2)) {
                 splitIntoGroupsRec(Cudd_T(dd1), dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(Cudd_E(dd1), dd2, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             } else {
@@ -500,26 +500,26 @@ namespace storm {
                 DdNode const* thenElse;
                 DdNode const* thenThen;
                 
-                if (ddColumnVariableIndices[currentColumnLevel] < dd->index) {
+                if (ddColumnVariableIndices[currentColumnLevel] < Cudd_NodeReadIndex(dd)) {
                     elseElse = elseThen = thenElse = thenThen = dd;
-                } else if (ddRowVariableIndices[currentColumnLevel] < dd->index) {
-                    elseElse = thenElse = Cudd_E(dd);
-                    elseThen = thenThen = Cudd_T(dd);
+                } else if (ddRowVariableIndices[currentColumnLevel] < Cudd_NodeReadIndex(dd)) {
+                    elseElse = thenElse = Cudd_E_const(dd);
+                    elseThen = thenThen = Cudd_T_const(dd);
                 } else {
-                    DdNode const* elseNode = Cudd_E(dd);
-                    if (ddColumnVariableIndices[currentColumnLevel] < elseNode->index) {
+                    DdNode const* elseNode = Cudd_E_const(dd);
+                    if (ddColumnVariableIndices[currentColumnLevel] < Cudd_NodeReadIndex(elseNode)) {
                         elseElse = elseThen = elseNode;
                     } else {
-                        elseElse = Cudd_E(elseNode);
-                        elseThen = Cudd_T(elseNode);
+                        elseElse = Cudd_E_const(elseNode);
+                        elseThen = Cudd_T_const(elseNode);
                     }
                     
-                    DdNode const* thenNode = Cudd_T(dd);
-                    if (ddColumnVariableIndices[currentColumnLevel] < thenNode->index) {
+                    DdNode const* thenNode = Cudd_T_const(dd);
+                    if (ddColumnVariableIndices[currentColumnLevel] < Cudd_NodeReadIndex(thenNode)) {
                         thenElse = thenThen = thenNode;
                     } else {
-                        thenElse = Cudd_E(thenNode);
-                        thenThen = Cudd_T(thenNode);
+                        thenElse = Cudd_E_const(thenNode);
+                        thenThen = Cudd_T_const(thenNode);
                     }
                 }
                 

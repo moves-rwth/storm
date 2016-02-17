@@ -2640,6 +2640,23 @@ ADD::OrAbstract(
 
 } // ADD::OrAbstract
 
+ADD
+ADD::MinAbstract(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMinAbstract(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MinAbstract
+    
+ADD
+ADD::MaxAbstract(const ADD& cube) const
+{
+    DdManager *mgr = checkSameManager(cube);
+    DdNode *result = Cudd_addMaxAbstract(mgr, node, cube.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+} // ADD::MaxAbstract
 
 ADD
 ADD::Plus(
@@ -2832,7 +2849,39 @@ ADD::Xnor(
 
 } // ADD::Xnor
 
-
+ADD
+ADD::Pow(
+  const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addPow, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::Pow
+    
+ADD
+ADD::Mod(
+  const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addMod, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::Mod
+    
+ADD
+ADD::LogXY(
+  const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addLogXY, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::LogXY
+    
 ADD
 ADD::Log() const
 {
@@ -2840,9 +2889,28 @@ ADD::Log() const
     DdNode *result = Cudd_addMonadicApply(mgr, Cudd_addLog, node);
     checkReturnValue(result);
     return ADD(p, result);
-
+        
 } // ADD::Log
-
+    
+ADD
+ADD::Floor() const
+{
+    DdManager *mgr = p->manager;
+    DdNode *result = Cudd_addMonadicApply(mgr, Cudd_addFloor, node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::Floor
+    
+ADD
+ADD::Ceil() const
+{
+    DdManager *mgr = p->manager;
+    DdNode *result = Cudd_addMonadicApply(mgr, Cudd_addCeil, node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::Ceil
 
 ADD
 ADD::FindMax() const
@@ -3008,6 +3076,65 @@ Cudd::addResidue(
 
 } // Cudd::addResidue
 
+ADD
+ADD::Equals(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::Equals
+    
+ADD
+ADD::NotEquals(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addNotEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::NotEquals
+
+ADD
+ADD::LessThan(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addLessThan, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::LessThan
+    
+ADD
+ADD::LessThanOrEqual(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addLessThanEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::LessThanOrEqual
+    
+ADD
+ADD::GreaterThan(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addGreaterThan, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::GreaterThan
+    
+ADD
+ADD::GreaterThanOrEqual(const ADD& g) const
+{
+    DdManager *mgr = checkSameManager(g);
+    DdNode *result = Cudd_addApply(mgr, Cudd_addGreaterThanEquals, node, g.node);
+    checkReturnValue(result);
+    return ADD(p, result);
+        
+} // ADD::GreaterThanOrEqual
 
 BDD
 BDD::AndAbstract(
@@ -5130,6 +5257,16 @@ ADD::EqualSupNorm(
 
 } // ADD::EqualSupNorm
 
+bool
+ADD::EqualSupNormRel(
+  const ADD& g,
+  CUDD_VALUE_TYPE tolerance,
+  int pr) const
+{
+    DdManager *mgr = checkSameManager(g);
+    return Cudd_EqualSupNormRel(mgr, node, g.node, tolerance, pr) != 0;
+        
+} // ADD::EqualSupNormRel
 
 BDD
 BDD::MakePrime(
