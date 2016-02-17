@@ -2,7 +2,7 @@ add_custom_target(resources)
 add_custom_target(test-resources)
 
 
-if(STORM_SUPPORT_XML_FORMATS)
+if(STORM_SUPPORT_XML_INPUT_FORMATS)
     ExternalProject_Add(
             xercesc
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2
