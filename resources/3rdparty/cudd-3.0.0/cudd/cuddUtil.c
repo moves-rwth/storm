@@ -577,48 +577,93 @@ Cudd_SharingSize(
   Cudd_PrintDebug Cudd_CountPath
 
 */
+//double
+//Cudd_CountMinterm(
+//  DdManager * manager,
+//  DdNode * node,
+//  int  nvars)
+//{
+//    double	max;
+//    DdHashTable	*table;
+//    double	res;
+//    CUDD_VALUE_TYPE epsilon;
+//
+//    /* Scale the maximum number of minterm.  This is done in an attempt
+//     * to deal with functions that depend on more than 1023, but less
+//     * than 2044 variables and don't have too many minterms.
+//     */
+//    printf("vars: %i, min_exp: %.400f, %i\n", nvars, DBL_MIN_EXP, DBL_MIN_EXP);
+//    printf("1: %f, 2: %i \n", (double)(nvars + DBL_MIN_EXP), (nvars + DBL_MIN_EXP));
+//    max = pow(2.0,(double)(nvars + DBL_MIN_EXP));
+//    printf("max: %f, DD_PLUS_INF_VAL: %.50f\n", max, DD_PLUS_INF_VAL);
+//    if (max >= DD_PLUS_INF_VAL) {
+//        return((double)CUDD_OUT_OF_MEM);
+//    }
+//    table = cuddHashTableInit(manager,1,2);
+//    if (table == NULL) {
+//	return((double)CUDD_OUT_OF_MEM);
+//    }
+//    /* Temporarily set epsilon to 0 to avoid rounding errors. */
+//    epsilon = Cudd_ReadEpsilon(manager);
+//    Cudd_SetEpsilon(manager,(CUDD_VALUE_TYPE)0.0);
+//    res = ddCountMintermAux(manager,node,max,table);
+//    cuddHashTableQuit(table);
+//    Cudd_SetEpsilon(manager,epsilon);
+//    if (res == (double)CUDD_OUT_OF_MEM) {
+//        return((double)CUDD_OUT_OF_MEM);
+//    } else if (res >= pow(2.0,(double)(DBL_MAX_EXP + DBL_MIN_EXP))) {
+//        /* Minterm count is too large to be scaled back. */
+//        return(DD_PLUS_INF_VAL);
+//    } else {
+//        printf("in third case: %.400f\n", res);
+//        /* Undo the scaling. */
+//        res *= pow(2.0,(double)-DBL_MIN_EXP);
+//        printf("after rescaling: %f\n", res);
+//        return(res);
+//    }
+//
+//} /* end of Cudd_CountMinterm */
+
+/**Function********************************************************************
+ 
+ Synopsis    [Counts the number of minterms of a DD.]
+ 
+ Description [Counts the number of minterms of a DD. The function is
+ assumed to depend on nvars variables. The minterm count is
+ represented as a double, to allow for a larger number of variables.
+ Returns the number of minterms of the function rooted at node if
+ successful; (double) CUDD_OUT_OF_MEM otherwise.]
+ 
+ SideEffects [None]
+ 
+ SeeAlso     [Cudd_PrintDebug Cudd_CountPath]
+ 
+ ******************************************************************************/
 double
 Cudd_CountMinterm(
-  DdManager * manager,
-  DdNode * node,
-  int  nvars)
+                  DdManager * manager,
+                  DdNode * node,
+                  int  nvars)
 {
     double	max;
     DdHashTable	*table;
     double	res;
     CUDD_VALUE_TYPE epsilon;
-
-    /* Scale the maximum number of minterm.  This is done in an attempt
-     * to deal with functions that depend on more than 1023, but less
-     * than 2044 variables and don't have too many minterms.
-     */
-    max = pow(2.0,(double)(nvars + DBL_MIN_EXP));
-    if (max >= DD_PLUS_INF_VAL) {
-        return((double)CUDD_OUT_OF_MEM);
-    }
+    
+    max = pow(2.0,(double)nvars);
     table = cuddHashTableInit(manager,1,2);
     if (table == NULL) {
-	return((double)CUDD_OUT_OF_MEM);
+        return((double)CUDD_OUT_OF_MEM);
     }
-    /* Temporarily set epsilon to 0 to avoid rounding errors. */
     epsilon = Cudd_ReadEpsilon(manager);
     Cudd_SetEpsilon(manager,(CUDD_VALUE_TYPE)0.0);
     res = ddCountMintermAux(manager,node,max,table);
     cuddHashTableQuit(table);
     Cudd_SetEpsilon(manager,epsilon);
-    if (res == (double)CUDD_OUT_OF_MEM) {
-        return((double)CUDD_OUT_OF_MEM);
-    } else if (res >= pow(2.0,(double)(DBL_MAX_EXP + DBL_MIN_EXP))) {
-        /* Minterm count is too large to be scaled back. */
-        return(DD_PLUS_INF_VAL);
-    } else {
-        /* Undo the scaling. */
-        res *= pow(2.0,(double)-DBL_MIN_EXP);
-        return(res);
-    }
-
+    
+    return(res);
+    
 } /* end of Cudd_CountMinterm */
-
 
 /**
   @brief Counts the paths of a %DD.

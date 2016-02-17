@@ -230,6 +230,7 @@ namespace storm {
             if (numberOfDdVariables == 0) {
                 return 0;
             }
+            std::cout << "num dd vars: " << numberOfDdVariables << std::endl;
             return static_cast<uint_fast64_t>(this->getCuddAdd().CountMinterm(static_cast<int>(numberOfDdVariables)));
         }
         
