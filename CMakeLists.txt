@@ -34,6 +34,7 @@ set(MSAT_ROOT "" CACHE STRING "The root directory of MathSAT (if available).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory.")
+set(STORM_SUPPORT_XML_INPUT_FORMATS 0)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise.
 if (STORM_DEBUG)
@@ -42,12 +43,11 @@ else()
     set (CMAKE_BUILD_TYPE "RELEASE")
 endif()
 message(STATUS "StoRM - Building ${CMAKE_BUILD_TYPE} version.")
-message(STATUS "StoRM - CMAKE_BUILD_TYPE (ENV): $ENV{CMAKE_BUILD_TYPE}")
 
 if(STORM_COMPILE_WITH_CCACHE)
 	find_program(CCACHE_FOUND ccache)
 	if(CCACHE_FOUND)
-		message(STATUS "SToRM - Using ccache")
+		message(STATUS "StoRM - Using ccache")
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
 		set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 	else()
@@ -59,17 +59,38 @@ endif()
 set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
 
 # Auto-detect operating system.
+set(MACOSX 0)
+set(LINUX 0)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	# Mac OS
 	set(OPERATING_SYSTEM "Mac OS")
+        set(MACOSX 1)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     # Linux
 	set(OPERATING_SYSTEM "Linux")
-else()
+        set(LINUX 1)
+elseif(WIN32)
     # Assuming Windows.
     set(OPERATING_SYSTEM "Windows")
+else()
+    message(WARNING "We are unsure about your operating system.")
+    set(OPERATING_SYSTEM "Linux")
+    set(LINUX 1)
 ENDIF()
-message(STATUS "Detected operating system: ${OPERATING_SYSTEM}")
+message(STATUS "Operating system: ${OPERATING_SYSTEM}")
+
+
+set(DYNAMIC_EXT ".so")
+set(STATIC_EXT ".a")
+if(MACOSX)
+	set(DYNAMIC_EXT ".dylib")
+	set(STATIC_EXT ".a")
+elseif (WIN32)
+	set(DYNAMIC_EXT ".dll")
+	set(STATIC_EXT ".lib")
+endif()
+message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
+message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
 
 #############################################################
 ##
@@ -160,10 +181,6 @@ message(STATUS "StoRM - Using Compiler Configuration: ${STORM_COMPILED_BY}")
 #############################################################
 
 
-# Add the version of Eigen3 in the repository to the include pathes
-set(EIGEN3_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen")
-include_directories(${EIGEN3_INCLUDE_DIR})
-
 # Add the version of GMM in the repository to the include pathes
 set(GMMXX_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-5.0/include")
 include_directories(${GMMXX_INCLUDE_DIR})
@@ -191,7 +208,7 @@ endif(CUSTOM_BOOST_ROOT)
 find_package(Boost 1.56.0 REQUIRED)
 
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
-	set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
+    set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 link_directories(${Boost_LIBRARY_DIRS})
 
@@ -240,7 +257,7 @@ endif(STORM_HAVE_Z3)
 set(STORM_HAVE_GLPK 1)
 message (STATUS "StoRM - Linking with glpk")
 
-set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk.a)
+set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk${DYNAMIC_EXT})
 set(GLPK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/include)
 include_directories(${GLPK_INCLUDE_DIR})
 list(APPEND STORM_LINK_LIBRARIES ${GLPK_LIBRARIES})
@@ -411,14 +428,6 @@ if(ENABLE_CUDA)
 endif()
 
 
-if(GMP_FOUND)
-	link_directories(${GMP_LIBRARY_DIR})
-elseif(MPIR_FOUND)
-	link_directories(${GMP_MPIR_LIBRARY_DIR} ${GMP_MPIRXX_LIBRARY_DIR})
-endif(GMP_FOUND)
-
-
-
 #############################################################
 ##
 ##	CUDD
@@ -458,7 +467,6 @@ endif()
 
 if(STORM_HAVE_CARL)
     message(STATUS "StoRM - Linking with carl.")
-	message("${carl_INCLUDE_DIR}")
     include_directories("${carl_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
 endif()
@@ -515,7 +523,7 @@ endif(ENABLE_MSAT)
 
 find_package(Xerces)
 if(NOT XERCES_FOUND)
-	message("Use shipped version of xerces")
+	message(STATUS "Use shipped version of xerces")
 	set(XERCES_ROOT ${CMAKE_BINARY_DIR}/resources/3rdparty/xercesc-3.1.2)
 	set(XERCESC_INCLUDE ${XERCES_ROOT}/include)
 	set(XERCES_LIBRARY_PATH ${XERCES_ROOT}/lib)
@@ -565,15 +573,12 @@ endif()
 ##
 #############################################################
 
-set(gtest_force_shared_crt ON)
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/gtest-1.7.0")
-
 #############################################################
 ##
 ##	Log4CPlus
 ##
 #############################################################
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+set(BUILD_SHARED_LIBS ON CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
 set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
 set(LOG4CPLUS_BUILD_TESTING OFF)
 set(LOG4CPLUS_USE_UNICODE OFF)
@@ -597,20 +602,16 @@ set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_mer
 
 
 find_package(TBB)
-if (TBB_FOUND AND STORM_USE_INTELTBB)
-	link_directories(${TBB_LIBRARY_DIRS})
-	set(STORM_CPP_INTELTBB_DEF "define")
-else()
-	set(STORM_CPP_INTELTBB_DEF "undef")
-endif()
 
-
+set(STORM_HAVE_INTELTBB 0)
 if (TBB_FOUND)
-	message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
+        message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
 	if (STORM_USE_INTELTBB)
+                set(STORM_HAVE_INTELTBB 1)
 		message(STATUS "StoRM - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
-		include_directories(${TBB_INCLUDE_DIRS})
-		target_link_libraries(storm tbb tbbmalloc)
+                link_directories(${TBB_LIBRARY_DIRS})
+                include_directories(${TBB_INCLUDE_DIRS})
+                list(APPEND STORM_LINK_LIBRARIES tbb tbbmalloc)	
 	endif(STORM_USE_INTELTBB)
 endif(TBB_FOUND)
 

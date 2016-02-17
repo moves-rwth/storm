@@ -8,10 +8,10 @@ namespace storm {
         class LongRunAverageOperatorFormula : public OperatorFormula {
         public:
             LongRunAverageOperatorFormula(std::shared_ptr<Formula const> const& subformula);
-            LongRunAverageOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
-            LongRunAverageOperatorFormula(OptimizationDirection optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
+            LongRunAverageOperatorFormula(Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
+            LongRunAverageOperatorFormula(OptimizationDirection optimalityType, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
             LongRunAverageOperatorFormula(OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula);
-            LongRunAverageOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
+            LongRunAverageOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula);
             
             virtual ~LongRunAverageOperatorFormula() {
                 // Intentionally left empty.

@@ -5,64 +5,107 @@
 
 #include "src/solver/OptimizationDirection.h"
 #include "src/logic/ComparisonType.h"
-#include "src/logic/BoundInfo.h"
+#include "src/logic/Bound.h"
 #include "src/storage/BitVector.h"
 
 namespace storm {
     namespace storage {
-        template<typename VT> class SparseMatrix;
+        template<typename ValueType> class SparseMatrix;
     }
+    
     namespace utility {
         namespace solver {
-            template<typename VT> class MinMaxLinearEquationSolverFactory;
+            template<typename ValueType> class MinMaxLinearEquationSolverFactory;
+            template<typename ValueType> class LinearEquationSolverFactory;
         }
     }
     
-    
     namespace solver {
-        template<typename VT> class MinMaxLinearEquationSolver;
+        template<typename ValueType> class MinMaxLinearEquationSolver;
+        template<typename ValueType> class LinearEquationSolver;
         
         class SolveGoal {
         public:
-            SolveGoal(bool minimize) : optDirection(minimize ? OptimizationDirection::Minimize : OptimizationDirection::Maximize) {}
-            SolveGoal(OptimizationDirection d) : optDirection(d) {}
-            virtual ~SolveGoal() {}
+            SolveGoal(bool minimize) : optimizationDirection(minimize ? OptimizationDirection::Minimize : OptimizationDirection::Maximize) {
+                // Intentionally left empty.
+            }
+            
+            SolveGoal(OptimizationDirection d) : optimizationDirection(d) {
+                // Intentionally left empty.
+            }
+            
+            virtual ~SolveGoal() {
+                // Intentionally left empty.
+            }
            
-            bool minimize() const { return optDirection == OptimizationDirection::Minimize; }
-            OptimizationDirection direction() const { return optDirection; }
-            virtual bool isBounded() const { return false; }
+            bool minimize() const {
+                return optimizationDirection == OptimizationDirection::Minimize;
+            }
+            
+            OptimizationDirection direction() const {
+                return optimizationDirection;
+            }
+            
+            virtual bool isBounded() const {
+                return false;
+            }
            
         private:
-            OptimizationDirection optDirection;
-           
+            OptimizationDirection optimizationDirection;
         };
         
-        
-        template<typename VT>
+        template<typename ValueType>
         class BoundedGoal : public SolveGoal {
         public:
-            BoundedGoal(OptimizationDirection dir, storm::logic::ComparisonType ct, VT const& threshold, storm::storage::BitVector const& relColumns) : SolveGoal(dir), boundType(ct), threshold(threshold), relevantColumnVector(relColumns) {}
-            BoundedGoal(OptimizationDirection dir, storm::logic::BoundInfo<VT> const& bi, storm::storage::BitVector const& relColumns) : SolveGoal(dir), boundType(bi.boundType), threshold(bi.bound), relevantColumnVector(relColumns) {}
-            virtual ~BoundedGoal() {}
+            BoundedGoal(OptimizationDirection optimizationDirection, storm::logic::ComparisonType comparisonType, ValueType const& threshold, storm::storage::BitVector const& relevantValues) : SolveGoal(optimizationDirection), bound(comparisonType, threshold), relevantValueVector(relevantValues) {
+                // Intentionally left empty.
+            }
             
-            bool isBounded() const override { return true; }
+            BoundedGoal(OptimizationDirection optimizationDirection, storm::logic::Bound<ValueType> const& bound, storm::storage::BitVector const& relevantValues) : SolveGoal(optimizationDirection), bound(bound), relevantValueVector(relevantValues) {
+                // Intentionally left empty.
+            }
+            
+            virtual ~BoundedGoal() {
+                // Intentionally left empty.
+            }
+            
+            bool isBounded() const override {
+                return true;
+            }
             
             bool boundIsALowerBound() const { 
-                return (boundType == storm::logic::ComparisonType::Greater |
-                        boundType == storm::logic::ComparisonType::GreaterEqual);
+                return (bound.comparisonType == storm::logic::ComparisonType::Greater || bound.comparisonType == storm::logic::ComparisonType::GreaterEqual);
             }
-            VT thresholdValue() const { return threshold; }
-            storm::storage::BitVector relevantColumns() const { return relevantColumnVector; }
             
-            storm::logic::ComparisonType boundType;
-            VT threshold;
-            storm::storage::BitVector relevantColumnVector;
+            bool boundIsStrict() const {
+                return (bound.comparisonType == storm::logic::ComparisonType::Greater || bound.comparisonType == storm::logic::ComparisonType::Less);
+            }
+            
+            ValueType const& thresholdValue() const {
+                return bound.threshold;
+            }
+            
+            storm::storage::BitVector const& relevantValues() const {
+                return relevantValueVector;
+            }
+            
+        private:
+            Bound<ValueType> bound;
+            storm::storage::BitVector relevantValueVector;
         };
         
-        template<typename VT>
-        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<VT>> configureMinMaxLinearEquationSolver(BoundedGoal<VT> const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<VT> const& factory, storm::storage::SparseMatrix<VT> const&  matrix);
-        template<typename VT> 
-        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<VT>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<VT> const& factory, storm::storage::SparseMatrix<VT> const&  matrix);
+        template<typename ValueType>
+        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
+        
+        template<typename ValueType> 
+        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
+
+        template<typename ValueType>
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
+        
+        template<typename ValueType>
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> configureLinearEquationSolver(SolveGoal const& goal, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix);
+
     }
 }
 
