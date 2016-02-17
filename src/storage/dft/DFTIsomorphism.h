@@ -55,7 +55,6 @@ namespace storage {
 
 
 
-
     /**
      *
      */
@@ -154,9 +153,10 @@ namespace storage {
         /// Current permutations of right hand side groups which lead to the homomorphism.
         /// Contains only colours with more than one member.
         BijectionCandidates<ValueType> currentPermutations;
+        DFT<ValueType> const& dft;
 
     public:
-        DFTIsomorphismCheck(BijectionCandidates<ValueType> const& left, BijectionCandidates<ValueType> const& right) : bleft(left), bright(right)
+        DFTIsomorphismCheck(BijectionCandidates<ValueType> const& left, BijectionCandidates<ValueType> const& right, DFT<ValueType> const& dft) : bleft(left), bright(right), dft(dft)
         {
             checkCompatibility();
         }
@@ -217,14 +217,14 @@ namespace storage {
             bool foundNext = false;
             if(!currentPermutations.beCandidates.empty()) {
                 auto it = currentPermutations.beCandidates.begin();
-                while(!foundNext && it == currentPermutations.beCandidates.end()) {
+                while(!foundNext && it != currentPermutations.beCandidates.end()) {
                     foundNext = std::next_permutation(it->second.begin(), it->second.end());
                     ++it;
                 }
             }
             if(!foundNext && !currentPermutations.gateCandidates.empty()) {
                 auto it = currentPermutations.gateCandidates.begin();
-                while(!foundNext && it == currentPermutations.beCandidates.end()) {
+                while(!foundNext && it != currentPermutations.gateCandidates.end()) {
                     foundNext = std::next_permutation(it->second.begin(), it->second.end());
                     ++it;
                 }
@@ -232,7 +232,7 @@ namespace storage {
 
             if(!foundNext && !currentPermutations.pdepCandidates.empty()) {
                 auto it = currentPermutations.pdepCandidates.begin();
-                while(!foundNext && it == currentPermutations.pdepCandidates.end()) {
+                while(!foundNext && it != currentPermutations.pdepCandidates.end()) {
                     foundNext = std::next_permutation(it->second.begin(), it->second.end());
                     ++it;
                 }
@@ -260,34 +260,48 @@ namespace storage {
          *
          */
         bool check() {
+            // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
+            for(auto const& index : bijection) {
+                // As they are in the same group, the types are fine already. We just have to check the children.
 
+            }
+            return false;
         }
 
     private:
         /**
          * Returns true if the colours are compatible.
          */
-        bool checkCompatibility() {
+        void checkCompatibility() {
             if(bleft.gateCandidates.size() != bright.gateCandidates.size()) {
                 candidatesCompatible = false;
+                return;
             }
-            else if(bleft.beCandidates.size() != bright.beCandidates.size()) {
+            if(bleft.beCandidates.size() != bright.beCandidates.size()) {
                 candidatesCompatible = false;
+                return;
             }
-            else {
-                for (auto const &gc : bleft.gateCandidates) {
-                    if (bright.gateCandidates.count(gc.first) == 0) {
-                        candidatesCompatible = false;
-                        break;
-                    }
+            if(bleft.beCandidates.size() != bright.beCandidates.size()) {
+                candidatesCompatible = false;
+                return;
+            }
+            
+            for (auto const &gc : bleft.gateCandidates) {
+                if (bright.gateCandidates.count(gc.first) == 0) {
+                    candidatesCompatible = false;
                 }
-                if(candidatesCompatible) {
-                    for(auto const& bc : bleft.gateCandidates) {
-                        if(bright.beCandidates.count(bc.first) == 0) {
-                            candidatesCompatible = false;
-                            break;
-                        }
-                    }
+            }
+            for(auto const& bc : bleft.beCandidates) {
+                if(bright.beCandidates.count(bc.first) == 0) {
+                    candidatesCompatible = false;
+                    return;
+                }
+            }
+               
+            for(auto const& dc : bleft.pdepCandidates) {
+                if(bright.pdepCandidates.count(dc.first) == 0) {
+                    candidatesCompatible = false;
+                    return;
                 }
             }
         }
@@ -302,12 +316,13 @@ namespace storage {
             for(auto const& colour : right) {
                 if(colour.second.size()>1) {
                     auto it = permutations.insert(colour);
-                    std::sort(it->second.begin(), it->second.end());
+                    assert(it.second);
+                    std::sort(it.first->second.begin(), it.first->second.end());
                     zipVectorsIntoMap(colour.second, permutations.find(colour.first)->second, bijection);
                 } else {
                     assert(colour.second.size() == 1);
-                    assert(bijection.count(left[colour.first].front()) == 0);
-                    bijection[left[colour.first].front()] = colour.second.front();
+                    assert(bijection.count(left.at(colour.first).front()) == 0);
+                    bijection[left.at(colour.first).front()] = colour.second.front();
                 }
             }
         }

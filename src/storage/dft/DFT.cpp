@@ -198,6 +198,10 @@ namespace storm {
                                 std::vector<size_t> isubdft2 = getGate(*it2)->independentSubDft();
                                 if(!isubdft1.empty() && !isubdft2.empty() && isubdft1.size() == isubdft2.size()) {
                                     std::cout << "Checking subdfts from " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
+                                    auto LHS = colouring.colourSubdft(isubdft1);
+                                    auto RHS = colouring.colourSubdft(isubdft2);
+                                    auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
+                                    IsoCheck.findIsomorphism();
                                 }
                             }
                         }
