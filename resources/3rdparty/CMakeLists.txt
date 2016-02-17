@@ -34,6 +34,19 @@ add_dependencies(resources glpk)
 
 
 ExternalProject_Add(
+    cudd3
+    DOWNLOAD_COMMAND ""
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0
+    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0/configure  --enable-shared --prefix=${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0 --libdir=${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
+    BUILD_COMMAND make "CFLAGS=-O2 -w"
+    INSTALL_COMMAND make install
+    BUILD_IN_SOURCE 0
+)
+add_dependencies(resources cudd3)
+
+
+ExternalProject_Add(
         googletest
         #For downloads (may be useful later!)
         #SVN_REPOSITORY http://googletest.googlecode.com/svn/trunk/
