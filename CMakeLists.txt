@@ -438,7 +438,7 @@ endif()
 
 message("${CUDD3_INCLUDE_DIR}")
 include_directories(${CUDD3_INCLUDE_DIR})
-list(APPEND STORM_LINK_LIBRARIES ${CUDD3_STATIC_LIBRARIES})
+list(APPEND STORM_LINK_LIBRARIES ${CUDD3_SHARED_LIBRARIES})
 
 #############################################################
 ##
