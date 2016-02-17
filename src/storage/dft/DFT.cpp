@@ -3,6 +3,9 @@
 #include "DFT.h"
 #include "src/exceptions/NotSupportedException.h"
 
+#include "DFTIsomorphism.h"
+#include "utility/iota_n.h"
+
 namespace storm {
     namespace storage {
 
@@ -167,6 +170,43 @@ namespace storm {
             auto ISD = elem->independentSubDft();
             return ISD;
         }
+
+        template<typename ValueType>
+        DFTColouring<ValueType> DFT<ValueType>::colourDFT() const {
+            return DFTColouring<ValueType>(*this);
+        }
+
+        template<typename ValueType>
+        std::vector<std::vector<size_t>> DFT<ValueType>::findSymmetries(DFTColouring<ValueType> const& colouring) const {
+            std::vector<size_t> vec;
+            vec.reserve(nrElements());
+            storm::utility::iota_n(std::back_inserter(vec), 14, 0);
+            BijectionCandidates<ValueType> completeCategories = colouring.colourSubdft(vec);
+            std::vector<std::vector<size_t>> res;
+            for(auto const& colourClass : completeCategories.gateCandidates) {
+                if(colourClass.second.size() > 1) {
+                    for(auto it1 = colourClass.second.cbegin(); it1 != colourClass.second.cend(); ++it1) {
+                        std::vector<size_t> sortedParent1Ids = getGate(*it1)->parentIds();
+                        std::sort(sortedParent1Ids.begin(), sortedParent1Ids.end());
+                        auto it2 = it1;
+                        for(++it2; it2 != colourClass.second.cend(); ++it2) {
+                            std::vector<size_t> sortedParent2Ids = getGate(*it2)->parentIds();
+                            std::sort(sortedParent2Ids.begin(), sortedParent2Ids.end());
+                            if(sortedParent1Ids == sortedParent2Ids) {
+                                std::cout << "Considering ids " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
+                                std::vector<size_t> isubdft1 = getGate(*it1)->independentSubDft();
+                                std::vector<size_t> isubdft2 = getGate(*it2)->independentSubDft();
+                                if(!isubdft1.empty() && !isubdft2.empty() && isubdft1.size() == isubdft2.size()) {
+                                    std::cout << "Checking subdfts from " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return res;
+        }
+
 
         // Explicitly instantiate the class.
         template class DFT<double>;

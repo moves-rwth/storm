@@ -29,6 +29,11 @@ namespace storm {
             }
         };
 
+
+        // Forward declarations
+        template<typename T> class DFTColouring;
+
+
         /**
          * Represents a Dynamic Fault Tree
          */
@@ -222,6 +227,11 @@ namespace storm {
             std::string getStateString(DFTStatePointer const& state) const;
 
             std::vector<size_t> getIndependentSubDftRoots(size_t index) const;
+
+            DFTColouring<ValueType> colourDFT() const;
+
+            std::vector<std::vector<size_t>> findSymmetries(DFTColouring<ValueType> const& colouring) const;
+
         private:
             bool elementIndicesCorrect() const {
                 for(size_t i = 0; i < mElements.size(); ++i) {
