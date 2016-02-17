@@ -521,19 +521,21 @@ endif(ENABLE_MSAT)
 ##
 #############################################################
 
-find_package(Xerces)
-if(NOT XERCES_FOUND)
-	message(STATUS "Use shipped version of xerces")
-	set(XERCES_ROOT ${CMAKE_BINARY_DIR}/resources/3rdparty/xercesc-3.1.2)
-	set(XERCESC_INCLUDE ${XERCES_ROOT}/include)
-	set(XERCES_LIBRARY_PATH ${XERCES_ROOT}/lib)
-	set(XERCESC_LIBRARIES ${XERCES_LIBRARY_PATH}/libxerces-c.a)
-endif()
+if(STORM_SUPPORT_XML_INPUT_FORMATS)
+    find_package(Xerces)
+    if(NOT XERCES_FOUND)
+            message(STATUS "Use shipped version of xerces")
+            set(XERCES_ROOT ${CMAKE_BINARY_DIR}/resources/3rdparty/xercesc-3.1.2)
+            set(XERCESC_INCLUDE ${XERCES_ROOT}/include)
+            set(XERCES_LIBRARY_PATH ${XERCES_ROOT}/lib)
+            set(XERCESC_LIBRARIES ${XERCES_LIBRARY_PATH}/libxerces-c.a)
+    endif()
 
-set(STORM_HAVE_XERCES TRUE)
-if(STORM_HAVE_XERCES)
-	include_directories(${XERCESC_INCLUDE})
-	list(APPEND STORM_LINK_LIBRARIES ${XERCESC_LIBRARIES})
+    set(STORM_HAVE_XERCES TRUE)
+    if(STORM_HAVE_XERCES)
+            include_directories(${XERCESC_INCLUDE})
+            list(APPEND STORM_LINK_LIBRARIES ${XERCESC_LIBRARIES})
+    endif()
 endif()
 
 #############################################################
@@ -587,7 +589,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
 include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
 
-list(APPEND STORM_LINK_LIBRARIES log4cplusS)
+list(APPEND STORM_LINK_LIBRARIES log4cplus)
 if (UNIX AND NOT APPLE)
     list(APPEND STORM_LINK_LIBRARIES rt)
 endif(UNIX AND NOT APPLE)
