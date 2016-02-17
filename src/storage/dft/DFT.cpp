@@ -118,13 +118,17 @@ namespace storm {
             for (auto const& elem : mElements) {
                 stream << "[" << elem->id() << "]";
                 stream << elem->toString();
-                stream << "\t** " << state->getElementState(elem->id());
-                if(elem->isSpareGate()) {
-                    if(state->isActiveSpare(elem->id())) {
-                        stream << " actively";
+                if (elem->isDependency()) {
+                    stream << "\t** " << storm::storage::toChar(state->getDependencyState(elem->id()));
+                } else {
+                    stream << "\t** " << storm::storage::toChar(state->getElementState(elem->id()));
+                    if(elem->isSpareGate()) {
+                        if(state->isActiveSpare(elem->id())) {
+                            stream << " actively";
+                        }
+                        stream << " using " << state->uses(elem->id());
                     }
-                    stream << " using " << state->uses(elem->id());
-                } 
+                }
                 stream << std::endl;
             }
             return stream.str();
@@ -135,13 +139,17 @@ namespace storm {
             std::stringstream stream;
             stream << "(" << state->getId() << ") ";
             for (auto const& elem : mElements) {
-                stream << state->getElementStateInt(elem->id());
-                if(elem->isSpareGate()) {
-                    stream << "[";
-                    if(state->isActiveSpare(elem->id())) {
-                        stream << "actively ";
+                if (elem->isDependency()) {
+                    stream << storm::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
+                } else {
+                    stream << storm::storage::toChar(state->getElementState(elem->id()));
+                    if(elem->isSpareGate()) {
+                        stream << "[";
+                        if(state->isActiveSpare(elem->id())) {
+                            stream << "actively ";
+                        }
+                        stream << "using " << state->uses(elem->id()) << "]";
                     }
-                    stream << "using " << state->uses(elem->id()) << "]";
                 }
             }
             return stream.str();

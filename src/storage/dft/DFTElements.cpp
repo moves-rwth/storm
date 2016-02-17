@@ -7,7 +7,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTElement<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
-            if(!state.dontCare(mId))
+            if(!state.dontCare(mId) && !hasDependencies())
             {
                 for(DFTGatePointer const& parent : mParents) {
                     if(state.isOperational(parent->id())) {

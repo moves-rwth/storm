@@ -22,6 +22,7 @@ namespace storm {
         class DFTState {
             friend struct std::hash<DFTState>;
         private:
+            // Status is bitvector where each element has two bits with the meaning according to DFTElementState
             storm::storage::BitVector mStatus;
             size_t mId;
             std::vector<size_t> mInactiveSpares;
@@ -35,6 +36,8 @@ namespace storm {
             DFTState(DFT<ValueType> const& dft, size_t id);
             
             DFTElementState getElementState(size_t id) const;
+            
+            DFTDependencyState getDependencyState(size_t id) const;
 
             int getElementStateInt(size_t id) const;
 
@@ -50,12 +53,22 @@ namespace storm {
             
             bool dontCare(size_t id) const;
             
+            bool dependencyTriggered(size_t id) const;
+
+            bool dependencySuccessful(size_t id) const;
+
+            bool dependencyUnsuccessful(size_t id) const;
+
             void setFailed(size_t id);
             
             void setFailsafe(size_t id);
             
             void setDontCare(size_t id);
             
+            void setDependencySuccessful(size_t id);
+
+            void setDependencyUnsuccessful(size_t id);
+
             void beNoLongerFailable(size_t id);
             
             void activate(size_t repr);
@@ -135,10 +148,16 @@ namespace storm {
 
             /**
              * Sets the next BE as failed
-             * @param smallestIndex Index in currentlyFailableBE of BE to fail
+             * @param index Index in currentlyFailableBE of BE to fail
              * @return Pair of BE which fails and flag indicating if the failure was due to functional dependencies
              */
-            std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> letNextBEFail(size_t smallestIndex = 0);
+            std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> letNextBEFail(size_t index = 0);
+            
+            /**
+             * Sets the dependency as unsuccesful meaning no BE will fail.
+             * @param index Index of dependency to fail.
+             */
+            void letDependencyBeUnsuccessful(size_t index = 0);
             
             std::string getCurrentlyFailableString() const {
                 std::stringstream stream;

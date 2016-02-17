@@ -19,6 +19,11 @@ namespace storm {
         DFTElementState DFTState<ValueType>::getElementState(size_t id) const {
             return static_cast<DFTElementState>(getElementStateInt(id));
         }
+        
+        template<typename ValueType>
+        DFTDependencyState DFTState<ValueType>::getDependencyState(size_t id) const {
+            return static_cast<DFTDependencyState>(getElementStateInt(id));
+        }
 
         template<typename ValueType>
         int DFTState<ValueType>::getElementStateInt(size_t id) const {
@@ -54,6 +59,20 @@ namespace storm {
         bool DFTState<ValueType>::dontCare(size_t id) const {
             return getElementState(id) == DFTElementState::DontCare;
         }
+        
+        template<typename ValueType>
+        bool DFTState<ValueType>::dependencyTriggered(size_t id) const {
+            return getElementStateInt(id) > 0;
+        }
+        
+        template<typename ValueType>
+        bool DFTState<ValueType>::dependencySuccessful(size_t id) const {
+            return mStatus[mDft.failureIndex(id)];
+        }
+        template<typename ValueType>
+        bool DFTState<ValueType>::dependencyUnsuccessful(size_t id) const {
+            return mStatus[mDft.failureIndex(id)+1];
+        }
 
         template<typename ValueType>
         void DFTState<ValueType>::setFailed(size_t id) {
@@ -68,6 +87,16 @@ namespace storm {
         template<typename ValueType>
         void DFTState<ValueType>::setDontCare(size_t id) {
             mStatus.setFromInt(mDft.failureIndex(id), 2, static_cast<uint_fast64_t>(DFTElementState::DontCare) );
+        }
+        
+        template<typename ValueType>
+        void DFTState<ValueType>::setDependencySuccessful(size_t id) {
+            mStatus.set(mDft.failureIndex(id));
+        }
+
+        template<typename ValueType>
+        void DFTState<ValueType>::setDependencyUnsuccessful(size_t id) {
+            mStatus.set(mDft.failureIndex(id)+1);
         }
 
         template<typename ValueType>
@@ -84,7 +113,8 @@ namespace storm {
             for (size_t i = 0; i < mDft.getDependencies().size(); ++i) {
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mDft.getDependencies()[i]);
                 if (dependency->triggerEvent()->id() == id) {
-                    if (!hasFailed(dependency->dependentEvent()->id())) {
+                    if (getElementState(dependency->dependentEvent()->id()) == DFTElementState::Operational) {
+                        assert(!isFailsafe(dependency->dependentEvent()->id()));
                         mFailableDependencies.push_back(dependency->id());
                         STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
                     }
@@ -99,10 +129,12 @@ namespace storm {
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
             if (nrFailableDependencies() > 0) {
                 // Consider failure due to dependency
+                assert(index < nrFailableDependencies());
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(getDependencyId(index));
                 std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvent()->id()), true);
                 mFailableDependencies.erase(mFailableDependencies.begin() + index);
                 setFailed(res.first->id());
+                setDependencySuccessful(dependency->id());
                 return res;
             } else {
                 // Consider "normal" failure
@@ -112,6 +144,14 @@ namespace storm {
                 setFailed(res.first->id());
                 return res;
             }
+        }
+ 
+        template<typename ValueType>
+        void DFTState<ValueType>::letDependencyBeUnsuccessful(size_t index) {
+            assert(nrFailableDependencies() > 0 && index < nrFailableDependencies());
+            std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(getDependencyId(index));
+            mFailableDependencies.erase(mFailableDependencies.begin() + index);
+            setDependencyUnsuccessful(dependency->id());
         }
 
         template<typename ValueType>

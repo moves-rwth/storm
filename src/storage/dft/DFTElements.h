@@ -23,12 +23,17 @@ namespace storm {
 
         template<typename ValueType>
         class DFTGate;
+        
+        template<typename ValueType>
+        class DFTDependency;
 
         template<typename ValueType>
         class DFTElement {
 
             using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
             using DFTGateVector = std::vector<DFTGatePointer>;
+            using DFTDependencyPointer = std::shared_ptr<DFTDependency<ValueType>>;
+            using DFTDependencyVector = std::vector<DFTDependencyPointer>;
 
 
         protected:
@@ -36,6 +41,7 @@ namespace storm {
             std::string mName;
             size_t mRank = -1;
             DFTGateVector mParents;
+            DFTDependencyVector dependencies;
 
         public:
             DFTElement(size_t id, std::string const& name) :
@@ -131,6 +137,29 @@ namespace storm {
                     res.push_back(parent->id());
                 }
                 return res;
+            }
+            
+            bool addDependency(DFTDependencyPointer const& e) {
+                if(std::find(dependencies.begin(), dependencies.end(), e) != dependencies.end()) {
+                    return false;
+                }
+                else
+                {
+                    dependencies.push_back(e);
+                    return true;
+                }
+            }
+            
+            bool hasDependencies() const {
+                return !dependencies.empty();
+            }
+            
+            size_t nrDependencies() const {
+                return dependencies.size();
+            }
+            
+            DFTDependencyVector const& getDependencies() const {
+                return dependencies;
             }
 
             virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
@@ -433,8 +462,7 @@ namespace storm {
 
             using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
             using DFTBEPointer = std::shared_ptr<DFTBE<ValueType>>;
-            using DFTBEVector = std::vector<DFTBEPointer>;
-
+            
         protected:
             std::string mNameTrigger;
             std::string mNameDependent;

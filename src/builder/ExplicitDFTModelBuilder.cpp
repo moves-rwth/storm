@@ -77,17 +77,20 @@ namespace storm {
             // TODO Matthias: avoid transforming back and forth
             storm::storage::SparseMatrix<ValueType> rateMatrix(modelComponents.transitionMatrix);
             for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {
+                assert(row < modelComponents.markovianStates.size());
                 if (modelComponents.markovianStates.get(row)) {
                     for (auto& entry : rateMatrix.getRow(row)) {
                         entry.setValue(entry.getValue() * modelComponents.exitRates[row]);
                     }
                 }
             }
+            
             if (deterministic) {
                 model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(rateMatrix), std::move(modelComponents.stateLabeling));
             } else {
                 model = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(rateMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates));
             }
+            
             model->printModelInformationToStream(std::cout);
             return model;
         }
@@ -143,9 +146,6 @@ namespace storm {
                     assert(nextBEPair.second == hasDependencies);
                     STORM_LOG_TRACE("with the failure of: " << nextBE->name() << " [" << nextBE->id() << "]");
 
-                    // Update failable dependencies
-                    newState->updateFailableDependencies(nextBE->id());
-
                     // Propagate failures
                     storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;
 
@@ -169,6 +169,9 @@ namespace storm {
                         DFTElementPointer next = queues.nextDontCarePropagation();
                         next->checkDontCareAnymore(*newState, queues);
                     }
+                    
+                    // Update failable dependencies
+                    newState->updateFailableDependencies(nextBE->id());
 
                     if (mStates.contains(newState->status())) {
                         // State already exists
@@ -180,7 +183,7 @@ namespace storm {
                         mStates.findOrAdd(newState->status(), newState);
                         STORM_LOG_TRACE("New state " << mDft.getStateString(newState));
 
-                        // Add state to search
+                        // Add state to search queue
                         stateQueue.push(newState);
                     }
 
@@ -188,8 +191,37 @@ namespace storm {
                     if (hasDependencies) {
                         // Failure is due to dependency -> add non-deterministic choice
                         std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency = mDft.getDependency(state->getDependencyId(smallest-1));
-                        transitionMatrixBuilder.addNextValue(state->getId() + rowOffset++, newState->getId(), dependency->probability());
+                        transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, newState->getId(), dependency->probability());
                         STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newState->getId() << " with probability " << dependency->probability());
+
+                        if (!storm::utility::isOne(dependency->probability())) {
+                            // Add transition to state where dependency was unsuccessful
+                            DFTStatePointer unsuccessfulState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
+                            unsuccessfulState->letDependencyBeUnsuccessful(smallest-1);
+                            
+                            if (mStates.contains(unsuccessfulState->status())) {
+                                // Unsuccessful state already exists
+                                unsuccessfulState = mStates.findOrAdd(unsuccessfulState->status(), unsuccessfulState);
+                                STORM_LOG_TRACE("State " << mDft.getStateString(unsuccessfulState) << " already exists");
+                            } else {
+                                // New unsuccessful state
+                                unsuccessfulState->setId(newIndex++);
+                                mStates.findOrAdd(unsuccessfulState->status(), unsuccessfulState);
+                                STORM_LOG_TRACE("New state " << mDft.getStateString(unsuccessfulState));
+                                
+                                // Add unsuccessful state to search queue
+                                stateQueue.push(unsuccessfulState);
+                            }
+
+                            ValueType remainingProbability = storm::utility::one<ValueType>() - dependency->probability();
+                            transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, unsuccessfulState->getId(), remainingProbability);
+                            STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << unsuccessfulState->getId() << " with probability " << remainingProbability);
+                        } else {
+                            // Self-loop with probability one cannot be eliminated later one.
+                            assert(state->getId() != newState->getId());
+                        }
+                        ++rowOffset;
+
                     } else {
                         // Set failure rate according to usage
                         bool isUsed = true;

@@ -31,8 +31,9 @@ benchmarks = [
     ("or", False, [1, 1]),
     ("pand", False, ["inf", 0.666667]),
     ("pand_param", True, ["-1", "(x)/(y+x)"]),
-    ("pdep", False, [0, 1]), #Compute
+    ("pdep", False, [2.66667, 1]),
     ("pdep2", False, [0, 1]), #Compute
+    ("pdep3", False, [2.79167, 1]),
     ("spare", False, [3.53846, 1]),
     ("spare2", False, [1.86957, 1]),
     ("spare3", False, [1.27273, 1]),

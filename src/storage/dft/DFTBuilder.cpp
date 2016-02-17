@@ -40,6 +40,7 @@ namespace storm {
                 DFTGatePointer triggerEvent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[dependency->nameTrigger()]);
                 std::shared_ptr<DFTBE<ValueType>> dependentEvent = std::static_pointer_cast<DFTBE<ValueType>>(mElements[dependency->nameDependent()]);
                 dependency->initialize(triggerEvent, dependentEvent);
+                triggerEvent->addDependency(dependency);
             }
 
             // Sort elements topologically
