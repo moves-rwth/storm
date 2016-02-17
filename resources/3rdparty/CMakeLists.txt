@@ -2,7 +2,6 @@ add_custom_target(resources)
 add_custom_target(test-resources)
 
 if(STORM_SUPPORT_XML_INPUT_FORMATS)
-    include(ExternalProject)
     ExternalProject_Add(
             xercesc
             SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2
@@ -59,4 +58,4 @@ ExternalProject_Get_Property(googletest binary_dir)
 set(GTEST_LIBRARIES ${binary_dir}/libgtest.a ${binary_dir}/libgtest_main.a PARENT_SCOPE)
 
 add_dependencies(test-resources googletest)
-    
+
