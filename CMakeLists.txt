@@ -589,7 +589,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
 include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
 
-list(APPEND STORM_LINK_LIBRARIES log4cplusS)
+list(APPEND STORM_LINK_LIBRARIES log4cplus)
 if (UNIX AND NOT APPLE)
     list(APPEND STORM_LINK_LIBRARIES rt)
 endif(UNIX AND NOT APPLE)
