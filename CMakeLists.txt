@@ -573,7 +573,7 @@ endif()
 ##	Log4CPlus
 ##
 #############################################################
-set(BUILD_SHARED_LIBS ON CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
 set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
 set(LOG4CPLUS_BUILD_TESTING OFF)
 set(LOG4CPLUS_USE_UNICODE OFF)
@@ -582,7 +582,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
 include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
 
-list(APPEND STORM_LINK_LIBRARIES log4cplus)
+list(APPEND STORM_LINK_LIBRARIES log4cplusS)
 if (UNIX AND NOT APPLE)
     list(APPEND STORM_LINK_LIBRARIES rt)
 endif(UNIX AND NOT APPLE)
@@ -713,7 +713,7 @@ configure_file (
 # Configure a header file to pass the storm version to the source code
 configure_file (
 	"${PROJECT_SOURCE_DIR}/storm-version.cpp.in"
-	"${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp"
+	"${PROJECT_SOURCE_DIR}/src/utility/storm-version.cpp"
 )
 
 set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp")
