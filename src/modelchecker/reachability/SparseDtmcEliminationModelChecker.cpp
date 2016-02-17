@@ -739,15 +739,12 @@ namespace storm {
                                                              eliminationOrderNeedsReversedDistances(order));
             }
             
-            std::chrono::high_resolution_clock::time_point conversionStart = std::chrono::high_resolution_clock::now();
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(submatrix);
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(submatrixTransposed, true);
-            std::chrono::high_resolution_clock::time_point conversionEnd = std::chrono::high_resolution_clock::now();
             
             std::shared_ptr<StatePriorityQueue<ValueType>> statePriorities = createStatePriorityQueue(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, statesToEliminate);
 
             STORM_LOG_INFO("Computing conditional probilities." << std::endl);
-            std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
             uint_fast64_t numberOfStatesToEliminate = statePriorities->size();
             STORM_LOG_INFO("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique." << std::endl);
             performPrioritizedStateElimination(statePriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, this->getModel().getInitialStates(), true);
@@ -969,10 +966,7 @@ namespace storm {
             // Then, we convert the reduced matrix to a more flexible format to be able to perform state elimination more easily.
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(transitionMatrix);
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardTransitions);
-            auto conversionEnd = std::chrono::high_resolution_clock::now();
-            
-            std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
-            
+
             storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder order = storm::settings::sparseDtmcEliminationModelCheckerSettings().getEliminationOrder();
             boost::optional<std::vector<uint_fast64_t>> distanceBasedPriorities;
             if (eliminationOrderNeedsDistances(order)) {

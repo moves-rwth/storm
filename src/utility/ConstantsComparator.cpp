@@ -114,6 +114,7 @@ namespace storm {
         template class ConstantsComparator<RationalFunction>;
         template class ConstantsComparator<Polynomial>;
         template class ConstantsComparator<Interval>;
+        template class ConstantsComparator<CarlRationalNumber>;
 #endif
     }
 }

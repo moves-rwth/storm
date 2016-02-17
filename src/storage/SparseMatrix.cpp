@@ -1258,6 +1258,15 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
         // Rat Function
+        template class MatrixEntry<typename SparseMatrix<CarlRationalNumber>::index_type, CarlRationalNumber>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, CarlRationalNumber> const& entry);
+        template class SparseMatrixBuilder<CarlRationalNumber>;
+        template class SparseMatrix<CarlRationalNumber>;
+        template std::ostream& operator<<(std::ostream& out, SparseMatrix<CarlRationalNumber> const& matrix);
+        template std::vector<storm::CarlRationalNumber> SparseMatrix<CarlRationalNumber>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::CarlRationalNumber> const& otherMatrix) const;
+        template bool SparseMatrix<storm::CarlRationalNumber>::isSubmatrixOf(SparseMatrix<storm::CarlRationalNumber> const& matrix) const;
+        
+        // Rat Function
         template class MatrixEntry<typename SparseMatrix<RationalFunction>::index_type, RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, RationalFunction> const& entry);
         template class SparseMatrixBuilder<RationalFunction>;
