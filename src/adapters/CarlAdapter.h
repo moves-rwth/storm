@@ -41,6 +41,14 @@ namespace carl {
         std::hash<Interval<Number>> h;
         return h(i);
     }
+
+}
+
+namespace cln {
+    inline size_t hash_value(cl_RA const& n) {
+        std::hash<cln::cl_RA> h;
+        return h(n);
+    }
 }
 
 namespace storm {
