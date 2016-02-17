@@ -366,7 +366,7 @@ namespace storm {
                     }
                     
                     return std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
-                } else if (ddVariableIndices[currentLevel] < static_cast<uint_fast64_t>(dd->index)) {
+                } else if (ddVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
                     // If we skipped the level in the DD, we compute the ODD just for the else-successor and use the same
                     // node for the then-successor as well.
                     std::shared_ptr<Odd> elseNode = createOddRec(dd, manager, currentLevel + 1, maxLevel, ddVariableIndices, uniqueTableForLevels);
@@ -406,15 +406,15 @@ namespace storm {
             if (currentLevel == maxLevel) {
                 ValueType& targetValue = targetVector[offsets != nullptr ? (*offsets)[currentOffset] : currentOffset];
                 targetValue = function(targetValue, Cudd_V(dd));
-            } else if (ddVariableIndices[currentLevel] < dd->index) {
+            } else if (ddVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.
                 composeWithExplicitVectorRec(dd, offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
                 composeWithExplicitVectorRec(dd, offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
             } else {
                 // Otherwise, we simply recursively call the function for both (different) cases.
-                composeWithExplicitVectorRec(Cudd_E(dd), offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
-                composeWithExplicitVectorRec(Cudd_T(dd), offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
+                composeWithExplicitVectorRec(Cudd_E_const(dd), offsets, currentLevel + 1, maxLevel, currentOffset, odd.getElseSuccessor(), ddVariableIndices, targetVector, function);
+                composeWithExplicitVectorRec(Cudd_T_const(dd), offsets, currentLevel + 1, maxLevel, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), ddVariableIndices, targetVector, function);
             }
         }
         

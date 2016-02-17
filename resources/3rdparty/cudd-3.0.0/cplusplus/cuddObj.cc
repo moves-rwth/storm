@@ -63,6 +63,8 @@ using std::string;
 using std::vector;
 using std::sort;
 
+namespace cudd {
+
 // ---------------------------------------------------------------------------
 // Variable declarations
 // ---------------------------------------------------------------------------
@@ -5625,6 +5627,28 @@ ABDD::CountLeaves() const
 
 } // ABDD::CountLeaves
 
+DdGen *
+ABDD::FirstCube(
+                int ** cube,
+                CUDD_VALUE_TYPE * value) const
+{
+    DdManager *mgr = p->manager;
+    DdGen *result = Cudd_FirstCube(mgr, node, cube, value);
+    checkReturnValue((DdNode *)result);
+    return result;
+    
+} // ABDD::FirstCube
+
+
+int
+ABDD::NextCube(
+               DdGen * gen,
+               int ** cube,
+               CUDD_VALUE_TYPE * value)
+{
+    return Cudd_NextCube(gen, cube, value);
+    
+} // ABDD::NextCube
 
 void
 BDD::PickOneCube(
@@ -6166,3 +6190,5 @@ Cudd::OrderString(void) const
     return oss.str();
 
 } // Cudd::OrderString
+    
+} // end namespace storm

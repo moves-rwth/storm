@@ -588,8 +588,8 @@ Cudd_IsNonConstant(
   @see Cudd_E Cudd_V
 
 */
-DdNode *
-Cudd_T(DdNode *node)
+DdNode const *
+Cudd_T_const(DdNode const *node)
 {
     return Cudd_Regular(node)->type.kids.T;
 
@@ -607,13 +607,49 @@ Cudd_T(DdNode *node)
   @see Cudd_T Cudd_V
 
 */
-DdNode *
-Cudd_E(DdNode *node)
+DdNode const *
+Cudd_E_const(DdNode const * node)
 {
     return Cudd_Regular(node)->type.kids.E;
 
 } /* end of Cudd_E */
 
+/**
+ @brief Returns the then child of an internal node.
+ 
+ @details If <code>node</code> is a constant node, the result is
+ unpredictable.
+ 
+ @sideeffect none
+ 
+ @see Cudd_E Cudd_V
+ 
+ */
+DdNode *
+Cudd_T(DdNode * node)
+{
+    return Cudd_Regular(node)->type.kids.T;
+    
+} /* end of Cudd_T */
+
+
+/**
+ @brief Returns the else child of an internal node.
+ 
+ @details If <code>node</code> is a constant node, the result is
+ unpredictable.
+ 
+ @sideeffect none
+ 
+ @see Cudd_T Cudd_V
+ 
+ */
+DdNode *
+Cudd_E(DdNode * node)
+{
+    return Cudd_Regular(node)->type.kids.E;
+    
+} /* end of Cudd_E */
 
 /**
   @brief Returns the value of a constant node.
@@ -627,7 +663,7 @@ Cudd_E(DdNode *node)
 
 */
 CUDD_VALUE_TYPE
-Cudd_V(DdNode *node)
+Cudd_V(DdNode const *node)
 {
     return Cudd_Regular(node)->type.value;
 
@@ -2504,12 +2540,11 @@ Cudd_FreeZddTree(
 */
 unsigned int
 Cudd_NodeReadIndex(
-  DdNode * node)
+  DdNode const * node)
 {
     return((unsigned int) Cudd_Regular(node)->index);
 
 } /* end of Cudd_NodeReadIndex */
-
 
 /**
   @brief Returns the current position of the i-th variable in the

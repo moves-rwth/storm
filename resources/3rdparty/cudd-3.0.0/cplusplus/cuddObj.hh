@@ -54,7 +54,10 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include "mtr.h"
 #include "cudd.h"
+
+namespace cudd {
 
 /*---------------------------------------------------------------------------*/
 /* Type definitions                                                          */
@@ -147,6 +150,8 @@ public:
     void ClassifySupport(const ABDD& g, BDD* common, BDD* onlyF, BDD* onlyG)
 	const;
     int CountLeaves() const;
+    DdGen * FirstCube(int ** cube, CUDD_VALUE_TYPE * value) const;
+    static int NextCube(DdGen * gen, int ** cube, CUDD_VALUE_TYPE * value);
     double Density(int nvars) const;
 
 }; // ABDD
@@ -746,5 +751,6 @@ public:
 
 }; // Cudd
 
+} // end of namespace cudd
 
 #endif
