@@ -13,13 +13,13 @@ EXAMPLE_DIR=os.path.join(DIR, "examples/dft/")
 benchmarks = [ 
     ("and", False, [3, 1]),
     ("and_param", True, ["(4*x^2+2*x+1)/((x) * (2*x+1))", "1"]),
-    ("cardiac", False, [11378, 1]),
+    ("cardiac", False, [8597.360004, 1]),
     ("cas", False, [0.859736, 1]),
     ("cm2", False, [0.256272, 1]),
-    #("cm4", False, [0, 1]),
+    #("cm4", False, [0.338225, 1]), # big
     ("cps", False, ["inf", 0.333333]),
-    ("deathegg", False, [46.667, 1]),
-    ("fdep", False, [0.666667, 1]),
+    #("deathegg", False, [24.642857, 1]), # contains fdep to gate
+    #("fdep", False, [0.666667, 1]), # contains fdep to two elements
     ("fdep2", False, [2, 1]),
     ("fdep3", False, [2.5, 1]),
     #("ftpp_complex", False, [0, 1]), # Compute
@@ -32,13 +32,13 @@ benchmarks = [
     ("pand", False, ["inf", 0.666667]),
     ("pand_param", True, ["-1", "(x)/(y+x)"]),
     ("pdep", False, [2.66667, 1]),
-    ("pdep2", False, [0, 1]), #Compute
+    #("pdep2", False, [0, 1]), #Compute # contains pdep to two elements
     ("pdep3", False, [2.79167, 1]),
     ("spare", False, [3.53846, 1]),
     ("spare2", False, [1.86957, 1]),
     ("spare3", False, [1.27273, 1]),
     ("spare4", False, [4.8459, 1]),
-    ("spare5", False, [2.66667, 1]), # We discard the result 2.16667 from DFTCalc
+    ("spare5", False, [2.66667, 1]),
     ("spare6", False, [1.4, 1]),
     ("spare7", False, [3.67333, 1]),
     ("symmetry", False, [4.16667, 1]),
