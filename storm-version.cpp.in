@@ -1,3 +1,5 @@
+//AUTO GENERATED -- DO NOT CHANGE 
+// TODO resolve issues when placing this in the build order directly.
 #include "src/utility/storm-version.h"
 
 namespace storm {
