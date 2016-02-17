@@ -1,7 +1,7 @@
 add_custom_target(resources) 
 add_custom_target(test-resources)
 
-if(STORM_SUPPORT_XML_FORMATS)
+if(STORM_SUPPORT_XML_INPUT_FORMATS)
     include(ExternalProject)
     ExternalProject_Add(
             xercesc
