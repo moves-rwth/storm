@@ -35,7 +35,7 @@ if(NOT LOG4CPLUS_SINGLE_THREADED)
   message (STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
 endif(NOT LOG4CPLUS_SINGLE_THREADED)
 
-set(BUILD_SHARED_LIBS TRUE CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+set(BUILD_SHARED_LIBS FALSE CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
 
 if (WIN32)
   set (UNICODE_DEFAULT ON)
