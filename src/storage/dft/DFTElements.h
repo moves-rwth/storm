@@ -118,10 +118,20 @@ namespace storm {
                 }
             }
 
+             bool hasOnlyStaticParents() const {
+                for(auto const& parent : mParents) {
+                    if(!isStaticGateType(parent->type())) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            
             bool hasParents() const {
                 return !mParents.empty();
             }
-
+            
             size_t nrParents() const {
                 return mParents.size();
             }
@@ -194,7 +204,9 @@ namespace storm {
              */
             virtual void extendSubDft(std::set<size_t> elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const;
 
-
+            virtual bool isTypeEqualTo(DFTElement<ValueType> const& other) const {
+                return type() == other.type();
+            }
 
 
         protected:
@@ -368,7 +380,7 @@ namespace storm {
                 }
                 return false;
             }
-
+            
         };
         
        
@@ -442,6 +454,13 @@ namespace storm {
             bool isColdBasicElement() const override{
                 return storm::utility::isZero(mPassiveFailureRate);
             }
+            
+            bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
+                if(!DFTElement<ValueType>::isTypeEqualTo(other)) return false;
+                DFTBE<ValueType> const&  otherBE = static_cast<DFTBE<ValueType> const&>(other);
+                return (mActiveFailureRate == otherBE.mActiveFailureRate) && (mPassiveFailureRate == otherBE.mPassiveFailureRate);
+            }
+            
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override;
         };
 
@@ -481,6 +500,12 @@ namespace storm {
             
             virtual size_t nrChildren() const override {
                 return 0;
+            }
+            
+            bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
+                if(!DFTElement<ValueType>::isTypeEqualTo(other)) return false;
+                DFTConst<ValueType> const& otherCNST = static_cast<DFTConst<ValueType> const&>(other);
+                return (mFailed == otherCNST.mFailed);
             }
             
         };
@@ -547,6 +572,13 @@ namespace storm {
             virtual bool isDependency() const override {
                 return true;
             }
+            
+            virtual bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
+                if(!DFTElement<ValueType>::isTypeEqualTo(other)) return false;
+                DFTDependency<ValueType> const& otherDEP= static_cast<DFTDependency<ValueType> const&>(other);
+                return (mProbability == otherDEP.mProbability);
+            }
+            
 
             virtual std::vector<size_t> independentUnit() const override {
                 std::set<size_t> unit = {this->mId};
@@ -848,7 +880,12 @@ namespace storm {
             std::string typestring() const override{
                 return "VOT (" + std::to_string(mThreshold) + ")";
             }
-
+            
+            virtual bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
+                if(!DFTElement<ValueType>::isTypeEqualTo(other)) return false;
+                DFTVot<ValueType> const& otherVOT = static_cast<DFTVot<ValueType> const&>(other);
+                return (mThreshold == otherVOT.mThreshold);
+            }
         };
 
         template<typename ValueType>
@@ -916,7 +953,12 @@ namespace storm {
                 }
             }
         };
-
+        
+        template<typename ValueType>
+        bool equalType(DFTElement<ValueType> const& e1, DFTElement<ValueType> const& e2) {
+            return e1.isTypeEqualTo(e2);
+        }
+        
     }
 }
 
