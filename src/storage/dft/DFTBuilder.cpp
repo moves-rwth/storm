@@ -123,7 +123,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void DFTBuilder<ValueType>::topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour>& visited, DFTElementVector& L) {
+        void DFTBuilder<ValueType>::topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, OrderElementsById<ValueType>>& visited, DFTElementVector& L) {
             if(visited[n] == topoSortColour::GREY) {
                 throw storm::exceptions::WrongFormatException("DFT is cyclic");
             } else if(visited[n] == topoSortColour::WHITE) {
@@ -141,7 +141,7 @@ namespace storm {
         // TODO Matthias: use typedefs
         template<typename ValueType>
         std::vector<std::shared_ptr<DFTElement<ValueType>>> DFTBuilder<ValueType>::topoSort() {
-            std::map<DFTElementPointer, topoSortColour> visited;
+            std::map<DFTElementPointer, topoSortColour, OrderElementsById<ValueType>> visited;
             for(auto const& e : mElements) {
                 visited.insert(std::make_pair(e.second, topoSortColour::WHITE)); 
             }
