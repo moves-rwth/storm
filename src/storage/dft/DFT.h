@@ -11,7 +11,7 @@
 
 #include "DFTElements.h"
 #include "../BitVector.h"
-
+#include "SymmetricUnits.h"
 #include "../../utility/math.h"
 #include "src/utility/macros.h"
 
@@ -230,7 +230,7 @@ namespace storm {
 
             DFTColouring<ValueType> colourDFT() const;
 
-            std::vector<std::vector<size_t>> findSymmetries(DFTColouring<ValueType> const& colouring) const;
+            DFTIndependentSymmetries findSymmetries(DFTColouring<ValueType> const& colouring) const;
 
         private:
             bool elementIndicesCorrect() const {

@@ -23,7 +23,8 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     if(symred) {
         std::cout << dft.getElementsString() << std::endl;
         auto colouring = dft.colourDFT();
-        dft.findSymmetries(colouring);
+        auto res = dft.findSymmetries(colouring);
+        std::cout << res;
     }
         
     // Building Markov Automaton

@@ -1,5 +1,6 @@
 #include <boost/container/flat_set.hpp>
 
+#include <map>
 #include "DFT.h"
 #include "src/exceptions/NotSupportedException.h"
 
@@ -177,12 +178,12 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<std::vector<size_t>> DFT<ValueType>::findSymmetries(DFTColouring<ValueType> const& colouring) const {
+        DFTIndependentSymmetries DFT<ValueType>::findSymmetries(DFTColouring<ValueType> const& colouring) const {
             std::vector<size_t> vec;
             vec.reserve(nrElements());
             storm::utility::iota_n(std::back_inserter(vec), nrElements(), 0);
             BijectionCandidates<ValueType> completeCategories = colouring.colourSubdft(vec);
-            std::vector<std::vector<size_t>> res;
+            std::map<size_t, std::vector<std::vector<size_t>>> res;
             
             for(auto const& colourClass : completeCategories.gateCandidates) {
                 if(colourClass.second.size() > 1) {
@@ -229,10 +230,6 @@ namespace storm {
                                     auto symClassIt = symClass.begin();
                                     for(auto const& i : isubdft1) {
                                         symClassIt->emplace_back(IsoCheck.getIsomorphism().at(i));
-                                        for(auto const& v : *symClassIt) {
-                                            std::cout << v << " ";
-                                        }
-                                        std::cout << std::endl;
                                         ++symClassIt;
                                         
                                     }
@@ -240,10 +237,14 @@ namespace storm {
                                 }
                             }
                         }
+                        if(!symClass.empty()) {
+                            res.emplace(*it1, symClass);
+                        }
                     }
+                    
                 }
             }
-            return res;
+            return DFTIndependentSymmetries(res);
         }
 
 
