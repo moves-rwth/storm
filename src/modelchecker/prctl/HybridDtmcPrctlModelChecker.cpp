@@ -17,6 +17,8 @@
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 #include "src/modelchecker/results/HybridQuantitativeCheckResult.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -36,7 +38,7 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         bool HybridDtmcPrctlModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isPctlStateFormula() || formula.isPctlPathFormula();
+            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false).setLongRunAverageProbabilitiesAllowed(true));
         }
                 
         template<storm::dd::DdType DdType, typename ValueType>

@@ -32,6 +32,10 @@ namespace storm {
             return this->rewardModelName.get();
         }
         
+        bool RewardOperatorFormula::hasRewardModelName() const {
+            return static_cast<bool>(rewardModelName);
+        }
+        
         boost::optional<std::string> const& RewardOperatorFormula::getOptionalRewardModelName() const {
             return this->rewardModelName;
         }

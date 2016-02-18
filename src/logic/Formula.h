@@ -19,8 +19,11 @@ namespace storm {
         // Forward-declare visitor for accept() method.
         class FormulaVisitor;
 
-        // Also foward-declare base model checker class.
-        class ModelChecker;
+        // Forward-declare fragment specification for isInFragment() method.
+        class FragmentSpecification;
+        
+        // Forward-declare formula information class for info() method.
+        class FormulaInformation;
         
         class Formula : public std::enable_shared_from_this<Formula const> {
         public:
@@ -80,7 +83,10 @@ namespace storm {
             virtual bool isUnaryPathFormula() const;
             virtual bool isUnaryStateFormula() const;
 
-            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const = 0;
+            bool isInFragment(FragmentSpecification const& fragment) const;
+            FormulaInformation info() const;
+            
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data = boost::any()) const = 0;
             
             static std::shared_ptr<Formula const> getTrueFormula();
             

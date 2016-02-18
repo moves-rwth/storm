@@ -1,6 +1,9 @@
 #include "src/logic/Formulas.h"
 #include <sstream>
 
+#include "src/logic/FragmentChecker.h"
+#include "src/logic/FormulaInformationVisitor.h"
+
 namespace storm {
     namespace logic {
         bool Formula::isPathFormula() const {
@@ -111,6 +114,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isReachabilityRewardFormula() const {
+            return false;
+        }
+        
         bool Formula::isLongRunAverageRewardFormula() const {
             return false;
         }
@@ -129,6 +136,16 @@ namespace storm {
         
         bool Formula::isOperatorFormula() const {
             return false;
+        }
+        
+        bool Formula::isInFragment(FragmentSpecification const& fragment) const {
+            FragmentChecker checker;
+            return checker.conformsToSpecification(*this, fragment);
+        }
+        
+        FormulaInformation Formula::info() const {
+            FormulaInformationVisitor visitor;
+            return visitor.getInformation(*this);
         }
         
         std::shared_ptr<Formula const> Formula::getTrueFormula() {

@@ -5,6 +5,8 @@
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQuantitativeCheckResult.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/models/symbolic/StandardRewardModel.h"
 
 #include "src/utility/macros.h"
@@ -32,16 +34,7 @@ namespace storm {
         template<storm::dd::DdType DdType, typename ValueType>
         bool SymbolicMdpPrctlModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if (formula.isPctlStateFormula() || formula.isPctlPathFormula()) {
-                return true;
-            }
-            if (formula.isProbabilityOperatorFormula()) {
-                return this->canHandle(checkTask.substituteFormula(formula.asProbabilityOperatorFormula().getSubformula()));
-            }
-            if (formula.isGloballyFormula()) {
-                return true;
-            }
-            return false;
+            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false));
         }
         
         template<storm::dd::DdType DdType, typename ValueType>

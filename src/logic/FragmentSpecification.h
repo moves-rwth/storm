@@ -5,6 +5,12 @@ namespace storm {
     namespace logic {
         class FragmentSpecification {
         public:
+            FragmentSpecification();
+            FragmentSpecification(FragmentSpecification const& other) = default;
+            FragmentSpecification(FragmentSpecification&& other) = default;
+            FragmentSpecification& operator=(FragmentSpecification const& other) = default;
+            FragmentSpecification& operator=(FragmentSpecification&& other) = default;
+            
             FragmentSpecification copy() const;
             
             bool areProbabilityOperatorsAllowed() const;
@@ -73,6 +79,22 @@ namespace storm {
             bool areNestedOperatorsAllowed() const;
             FragmentSpecification& setNestedOperatorsAllowed(bool newValue);
 
+            bool areNestedPathFormulasAllowed() const;
+            FragmentSpecification& setNestedPathFormulasAllowed(bool newValue);
+            
+            bool areOnlyEventuallyFormuluasInConditionalFormulasAllowed() const;
+            FragmentSpecification& setOnlyEventuallyFormuluasInConditionalFormulasAllowed(bool newValue);
+
+            bool areStepBoundedUntilFormulasAllowed() const;
+            FragmentSpecification& setStepBoundedUntilFormulasAllowed(bool newValue);
+            
+            bool areTimeBoundedUntilFormulasAllowed() const;
+            FragmentSpecification& setTimeBoundedUntilFormulasAllowed(bool newValue);
+            
+            FragmentSpecification& setOperatorsAllowed(bool newValue);
+            FragmentSpecification& setExpectedTimeAllowed(bool newValue);
+            FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
+            
         private:
             // Flags that indicate whether it is legal to see such a formula.
             bool probabilityOperator;
@@ -104,8 +126,27 @@ namespace storm {
             
             // Members that indicate certain restrictions.
             bool nestedOperators;
-            
+            bool nestedPathFormulas;
+            bool onlyEventuallyFormuluasInConditionalFormulas;
+            bool stepBoundedUntilFormulas;
+            bool timeBoundedUntilFormulas;
         };
+        
+        // Propositional.
+        FragmentSpecification propositional();
+        
+        // Regular PCTL.
+        FragmentSpecification pctl();
+        
+        // PCTL + cumulative, instantaneous, reachability and long-run rewards.
+        FragmentSpecification prctl();
+        
+        // Regular CSL.
+        FragmentSpecification csl();
+        
+        // CSL + cumulative, instantaneous, reachability and long-run rewards.
+        FragmentSpecification csrl();
+
     }
 }
 

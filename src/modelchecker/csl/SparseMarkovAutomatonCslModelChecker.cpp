@@ -12,6 +12,8 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/NotImplementedException.h"
 
@@ -30,7 +32,9 @@ namespace storm {
         template<typename SparseMarkovAutomatonModelType>
         bool SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isCslStateFormula() || formula.isCslPathFormula();
+            storm::logic::FragmentSpecification fragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setReachabilityRewardFormulasAllowed(true);
+            fragment.setExpectedTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true);
+            return formula.isInFragment(fragment);
         }
         
         template<typename SparseMarkovAutomatonModelType>

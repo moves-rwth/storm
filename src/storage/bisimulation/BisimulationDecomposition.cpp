@@ -15,6 +15,9 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 
+#include "src/logic/FormulaInformation.h"
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/InvalidOptionException.h"
@@ -55,11 +58,14 @@ namespace storm {
             phiStates = boost::none;
             psiStates = boost::none;
             
+            // Retrieve information about formula.
+            storm::logic::FormulaInformation info = formula.info();
+            
             // Preserve rewards if necessary.
-            keepRewards = keepRewards || formula.containsRewardOperator();
+            keepRewards = keepRewards || info.containsRewardOperator();
             
             // Preserve bounded properties if necessary.
-            bounded = bounded || (formula.containsBoundedUntilFormula() || formula.containsNextFormula());
+            bounded = bounded || (info.containsBoundedUntilFormula() || info.containsNextFormula());
             
             // Compute the relevant labels and expressions.
             this->addToRespectedAtomicPropositions(formula.getAtomicExpressionFormulas(), formula.getAtomicLabelFormulas());
@@ -67,10 +73,13 @@ namespace storm {
         
         template<typename ModelType, typename BlockDataType>
         void BisimulationDecomposition<ModelType, BlockDataType>::Options::preserveSingleFormula(ModelType const& model, storm::logic::Formula const& formula) {
-            keepRewards = formula.containsRewardOperator();
+            // Retrieve information about formula.
+            storm::logic::FormulaInformation info = formula.info();
+
+            keepRewards = info.containsRewardOperator();
             
             // We need to preserve bounded properties iff the formula contains a bounded until or a next subformula.
-            bounded = formula.containsBoundedUntilFormula() || formula.containsNextFormula();
+            bounded = info.containsBoundedUntilFormula() || info.containsNextFormula();
             
             // Compute the relevant labels and expressions.
             this->addToRespectedAtomicPropositions(formula.getAtomicExpressionFormulas(), formula.getAtomicLabelFormulas());
@@ -114,12 +123,12 @@ namespace storm {
             if (newFormula->isUntilFormula()) {
                 leftSubformula = newFormula->asUntilFormula().getLeftSubformula().asSharedPointer();
                 rightSubformula = newFormula->asUntilFormula().getRightSubformula().asSharedPointer();
-                if (leftSubformula->isPropositionalFormula() && rightSubformula->isPropositionalFormula()) {
+                if (leftSubformula->isInFragment(storm::logic::propositional()) && rightSubformula->isInFragment(storm::logic::propositional())) {
                     measureDrivenInitialPartition = true;
                 }
             } else if (newFormula->isEventuallyFormula()) {
                 rightSubformula = newFormula->asEventuallyFormula().getSubformula().asSharedPointer();
-                if (rightSubformula->isPropositionalFormula()) {
+                if (rightSubformula->isInFragment(storm::logic::propositional())) {
                     measureDrivenInitialPartition = true;
                 }
             }

@@ -12,10 +12,6 @@ namespace storm {
             return true;
         }
         
-        boost::any UnaryStateFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
-            return visitor.visit(*this, data);
-        }
-        
         Formula const& UnaryStateFormula::getSubformula() const {
             return *subformula;
         }

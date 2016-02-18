@@ -11,6 +11,8 @@
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "src/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/settings/modules/GeneralSettings.h"
@@ -34,22 +36,7 @@ namespace storm {
         template<typename SparseDtmcModelType>
         bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if (formula.isPctlStateFormula() || formula.isPctlPathFormula()) {
-                return true;
-            }
-            if (formula.isGloballyFormula()) {
-                return true;
-            }
-            if (formula.isProbabilityOperatorFormula()) {
-                return this->canHandle(checkTask.substituteFormula(formula.asProbabilityOperatorFormula().getSubformula()));
-            }
-            if (formula.isConditionalPathFormula()) {
-                storm::logic::ConditionalPathFormula const& conditionalPathFormula = formula.asConditionalPathFormula();
-                if (conditionalPathFormula.getLeftSubformula().isEventuallyFormula() && conditionalPathFormula.getRightSubformula().isEventuallyFormula()) {
-                    return this->canHandle(conditionalPathFormula.getLeftSubformula()) && this->canHandle(conditionalPathFormula.getRightSubformula());
-                }
-            }
-            return false;
+            return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true));
         }
         
         template<typename SparseDtmcModelType>
@@ -129,13 +116,13 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalPathFormula> const& checkTask) {
-            storm::logic::ConditionalPathFormula const& pathFormula = checkTask.getFormula();
-            STORM_LOG_THROW(pathFormula.getLeftSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Illegal conditional probability formula.");
-            STORM_LOG_THROW(pathFormula.getRightSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Illegal conditional probability formula.");
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalFormula> const& checkTask) {
+            storm::logic::ConditionalFormula const& conditionalFormula = checkTask.getFormula();
+            STORM_LOG_THROW(conditionalFormula.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Illegal conditional probability formula.");
+            STORM_LOG_THROW(conditionalFormula.getConditionFormula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Illegal conditional probability formula.");
 
-            std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula().asEventuallyFormula().getSubformula());
-            std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula().asEventuallyFormula().getSubformula());
+            std::unique_ptr<CheckResult> leftResultPointer = this->check(conditionalFormula.getSubformula().asEventuallyFormula().getSubformula());
+            std::unique_ptr<CheckResult> rightResultPointer = this->check(conditionalFormula.getConditionFormula().asEventuallyFormula().getSubformula());
             ExplicitQualitativeCheckResult const& leftResult = leftResultPointer->asExplicitQualitativeCheckResult();
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
 

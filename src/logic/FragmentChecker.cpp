@@ -4,49 +4,75 @@
 
 namespace storm {
     namespace logic {
+        class InheritedInformation {
+        public:
+            InheritedInformation(FragmentSpecification const& fragmentSpecification) : fragmentSpecification(fragmentSpecification) {
+                // Intentionally left empty.
+            }
+            
+            FragmentSpecification const& getSpecification() const {
+                return fragmentSpecification;
+            }
+
+        private:
+            FragmentSpecification const& fragmentSpecification;
+        };
+        
         bool FragmentChecker::conformsToSpecification(Formula const& f, FragmentSpecification const& specification) const {
-            boost::any result = f.accept(*this, specification);
+            boost::any result = f.accept(*this, InheritedInformation(specification));
             return boost::any_cast<bool>(result);
         }
         
         boost::any FragmentChecker::visit(AtomicExpressionFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areAtomicExpressionFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            return inherited.getSpecification().areAtomicExpressionFormulasAllowed();
         }
         
         boost::any FragmentChecker::visit(AtomicLabelFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areAtomicLabelFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            return inherited.getSpecification().areAtomicLabelFormulasAllowed();
         }
         
         boost::any FragmentChecker::visit(BinaryBooleanStateFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            bool result = specification.areBinaryBooleanStateFormulasAllowed();
-            result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, specification));
-            result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, specification));
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areBinaryBooleanStateFormulasAllowed();
+            result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
+            result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
             return result;
         }
         
         boost::any FragmentChecker::visit(BooleanLiteralFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areBooleanLiteralFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            return inherited.getSpecification().areBooleanLiteralFormulasAllowed();
         }
         
         boost::any FragmentChecker::visit(BoundedUntilFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            bool result = specification.areBoundedUntilFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areBoundedUntilFormulasAllowed();
+            if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+                result = result && !f.getLeftSubformula().isPathFormula();
+                result = result && !f.getRightSubformula().isPathFormula();
+            }
+            if (f.hasDiscreteTimeBound()) {
+                result = result && inherited.getSpecification().areStepBoundedUntilFormulasAllowed();
+            } else {
+                result = result && inherited.getSpecification().areTimeBoundedUntilFormulasAllowed();
+            }
             result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
             result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
             return result;
         }
         
         boost::any FragmentChecker::visit(ConditionalFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = true;
             if (f.isConditionalProbabilityFormula()) {
-                result &= specification.areConditionalProbabilityFormulasAllowed();
+                result = result && inherited.getSpecification().areConditionalProbabilityFormulasAllowed();
             } else if (f.Formula::isConditionalRewardFormula()) {
-                result &= specification.areConditionalRewardFormulasFormulasAllowed();
+                result = result && inherited.getSpecification().areConditionalRewardFormulasFormulasAllowed();
+            }
+            if (inherited.getSpecification().areOnlyEventuallyFormuluasInConditionalFormulasAllowed()) {
+                result = result && f.getSubformula().isEventuallyFormula() && f.getConditionFormula().isEventuallyFormula();
             }
             result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             result = result && boost::any_cast<bool>(f.getConditionFormula().accept(*this, data));
@@ -54,65 +80,124 @@ namespace storm {
         }
         
         boost::any FragmentChecker::visit(CumulativeRewardFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areCumulativeRewardFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            return inherited.getSpecification().areCumulativeRewardFormulasAllowed();
         }
         
         boost::any FragmentChecker::visit(EventuallyFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            bool result = specification.areEventuallyFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = true;
+            if (f.isEventuallyFormula()) {
+                result = inherited.getSpecification().areEventuallyFormulasAllowed();
+                if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+                    result = result && !f.getSubformula().isPathFormula();
+                }
+            } else if (f.isReachabilityRewardFormula()) {
+                result = result && inherited.getSpecification().areReachabilityRewardFormulasAllowed();
+                result = result && f.getSubformula().isStateFormula();
+            } else if (f.isReachbilityExpectedTimeFormula()) {
+                result = result && inherited.getSpecification().areReachbilityExpectedTimeFormulasAllowed();
+                result = result && f.getSubformula().isStateFormula();
+            }
             result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             return result;
         }
         
         boost::any FragmentChecker::visit(ExpectedTimeOperatorFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areExpectedTimeOperatorsAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areExpectedTimeOperatorsAllowed();
+            result = result && f.getSubformula().isExpectedTimePathFormula();
+            if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, inherited.getSpecification().copy().setOperatorsAllowed(false)));
+            } else {
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+            }
+            return result;
         }
         
         boost::any FragmentChecker::visit(GloballyFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areGloballyFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areGloballyFormulasAllowed();
+            if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+                result = result && !f.getSubformula().isPathFormula();
+            }
+            result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+            return result;
         }
         
         boost::any FragmentChecker::visit(InstantaneousRewardFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areInstantaneousRewardFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            return inherited.getSpecification().areInstantaneousRewardFormulasAllowed();
         }
         
         boost::any FragmentChecker::visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areLongRunAverageOperatorsAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areLongRunAverageOperatorsAllowed();
+            result = result && f.getSubformula().isStateFormula();
+            if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, inherited.getSpecification().copy().setOperatorsAllowed(false)));
+            } else {
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+            }
+            return result;
         }
         
         boost::any FragmentChecker::visit(LongRunAverageRewardFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areLongRunAverageRewardFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            return inherited.getSpecification().areLongRunAverageRewardFormulasAllowed();
         }
         
         boost::any FragmentChecker::visit(NextFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areNextFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areNextFormulasAllowed();
+            if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+                result = result && !f.getSubformula().isPathFormula();
+            }
+            result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+            return result;
         }
         
         boost::any FragmentChecker::visit(ProbabilityOperatorFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areProbabilityOperatorsAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areProbabilityOperatorsAllowed();
+            result = result && f.getSubformula().isProbabilityPathFormula();
+            if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, inherited.getSpecification().copy().setOperatorsAllowed(false)));
+            } else {
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+            }
+            return result;
         }
         
         boost::any FragmentChecker::visit(RewardOperatorFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areRewardOperatorsAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areRewardOperatorsAllowed();
+            result = result && f.getSubformula().isRewardPathFormula();
+            if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, inherited.getSpecification().copy().setOperatorsAllowed(false)));
+            } else {
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+            }
+            return result;
         }
         
         boost::any FragmentChecker::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areUnaryBooleanStateFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areUnaryBooleanStateFormulasAllowed();
+            result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+            return result;
         }
         
         boost::any FragmentChecker::visit(UntilFormula const& f, boost::any const& data) const {
-            FragmentSpecification const& specification = boost::any_cast<FragmentSpecification const&>(data);
-            return specification.areUntilFormulasAllowed();
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areUntilFormulasAllowed();
+            if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
+                result = result && !f.getLeftSubformula().isPathFormula();
+                result = result && !f.getRightSubformula().isPathFormula();
+            }
+            result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
+            result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
+            return result;
         }
     }
 }

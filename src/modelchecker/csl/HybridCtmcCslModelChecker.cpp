@@ -10,6 +10,8 @@
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, class ValueType>
@@ -25,7 +27,7 @@ namespace storm {
         template<storm::dd::DdType DdType, class ValueType>
         bool HybridCtmcCslModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isCslFormula() || formula.isRewardFormula();
+            return formula.isInFragment(storm::logic::csrl().setGloballyFormulasAllowed(false).setLongRunAverageRewardFormulasAllowed(false).setLongRunAverageProbabilitiesAllowed(true));
         }
                 
         template<storm::dd::DdType DdType, class ValueType>

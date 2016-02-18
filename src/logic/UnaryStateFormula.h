@@ -14,8 +14,6 @@ namespace storm {
             }
             
             virtual bool isUnaryStateFormula() const override;
-
-            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             Formula const& getSubformula() const;
             
