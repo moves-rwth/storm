@@ -7,6 +7,11 @@ namespace storm {
         class FormulaInformation {
         public:
             FormulaInformation();
+            FormulaInformation(FormulaInformation const& other) = default;
+            FormulaInformation(FormulaInformation&& other) = default;
+            FormulaInformation& operator=(FormulaInformation const& other) = default;
+            FormulaInformation& operator=(FormulaInformation&& other) = default;
+            
             bool containsRewardOperator() const;
             bool containsNextFormula() const;
             bool containsBoundedUntilFormula() const;

@@ -99,7 +99,7 @@ namespace storm {
                 result = result && inherited.getSpecification().areReachbilityExpectedTimeFormulasAllowed();
                 result = result && f.getSubformula().isStateFormula();
             }
-            result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+            result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             return result;
         }
         
@@ -108,7 +108,7 @@ namespace storm {
             bool result = inherited.getSpecification().areExpectedTimeOperatorsAllowed();
             result = result && f.getSubformula().isExpectedTimePathFormula();
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
-                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, inherited.getSpecification().copy().setOperatorsAllowed(false)));
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             }
@@ -135,7 +135,7 @@ namespace storm {
             bool result = inherited.getSpecification().areLongRunAverageOperatorsAllowed();
             result = result && f.getSubformula().isStateFormula();
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
-                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, inherited.getSpecification().copy().setOperatorsAllowed(false)));
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             }
@@ -160,9 +160,9 @@ namespace storm {
         boost::any FragmentChecker::visit(ProbabilityOperatorFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areProbabilityOperatorsAllowed();
-            result = result && f.getSubformula().isProbabilityPathFormula();
+            result = result && (f.getSubformula().isProbabilityPathFormula() || f.getSubformula().isConditionalProbabilityFormula());
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
-                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, inherited.getSpecification().copy().setOperatorsAllowed(false)));
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             }
@@ -174,7 +174,7 @@ namespace storm {
             bool result = inherited.getSpecification().areRewardOperatorsAllowed();
             result = result && f.getSubformula().isRewardPathFormula();
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
-                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, inherited.getSpecification().copy().setOperatorsAllowed(false)));
+                result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             }

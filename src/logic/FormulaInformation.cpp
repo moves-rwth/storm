@@ -17,7 +17,7 @@ namespace storm {
         }
         
         bool FormulaInformation::containsBoundedUntilFormula() const {
-            return this-mContainsBoundedUntilFormula;
+            return this->mContainsBoundedUntilFormula;
         }
         
         FormulaInformation FormulaInformation::join(FormulaInformation const& other) {

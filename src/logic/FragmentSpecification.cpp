@@ -1,5 +1,7 @@
 #include "src/logic/FragmentSpecification.h"
 
+#include <iostream>
+
 namespace storm {
     namespace logic {
         
@@ -50,7 +52,7 @@ namespace storm {
         }
         
         FragmentSpecification csrl() {
-            FragmentSpecification csrl;
+            FragmentSpecification csrl = csl();
             
             csrl.setRewardOperatorsAllowed(true);
             csrl.setCumulativeRewardFormulasAllowed(true);
