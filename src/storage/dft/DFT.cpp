@@ -186,8 +186,12 @@ namespace storm {
             
             for(auto const& colourClass : completeCategories.gateCandidates) {
                 if(colourClass.second.size() > 1) {
-                    std::vector<size_t> handledWithinClass;
+                    std::set<size_t> foundEqClassFor;
                     for(auto it1 = colourClass.second.cbegin(); it1 != colourClass.second.cend(); ++it1) {
+                        std::vector<std::vector<size_t>> symClass;
+                        if(foundEqClassFor.count(*it1) > 0) {
+                            continue;
+                        }
                         if(!getGate(*it1)->hasOnlyStaticParents()) {
                             continue;
                         }
@@ -200,20 +204,38 @@ namespace storm {
                             }
                             std::vector<size_t> sortedParent2Ids = getGate(*it2)->parentIds();
                             std::sort(sortedParent2Ids.begin(), sortedParent2Ids.end());
+                            
                             if(sortedParent1Ids == sortedParent2Ids) {
                                 std::cout << "Considering ids " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
                                 bool isSymmetry = false;
                                 std::vector<size_t> isubdft1 = getGate(*it1)->independentSubDft();
                                 std::vector<size_t> isubdft2 = getGate(*it2)->independentSubDft();
-                                if(!isubdft1.empty() && !isubdft2.empty() && isubdft1.size() == isubdft2.size()) {
-                                    std::cout << "Checking subdfts from " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
-                                    auto LHS = colouring.colourSubdft(isubdft1);
-                                    auto RHS = colouring.colourSubdft(isubdft2);
-                                    auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
-                                    isSymmetry = IsoCheck.findIsomorphism();
+                                if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
+                                    continue;
                                 }
+                                std::cout << "Checking subdfts from " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
+                                auto LHS = colouring.colourSubdft(isubdft1);
+                                auto RHS = colouring.colourSubdft(isubdft2);
+                                auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
+                                isSymmetry = IsoCheck.findIsomorphism();
                                 if(isSymmetry) {
                                     std::cout << "subdfts are symmetric" << std::endl;
+                                    foundEqClassFor.insert(*it2);
+                                    if(symClass.empty()) {
+                                        for(auto const& i : isubdft1) {
+                                            symClass.push_back(std::vector<size_t>({i}));
+                                        }
+                                    }
+                                    auto symClassIt = symClass.begin();
+                                    for(auto const& i : isubdft1) {
+                                        symClassIt->emplace_back(IsoCheck.getIsomorphism().at(i));
+                                        for(auto const& v : *symClassIt) {
+                                            std::cout << v << " ";
+                                        }
+                                        std::cout << std::endl;
+                                        ++symClassIt;
+                                        
+                                    }
                                     
                                 }
                             }

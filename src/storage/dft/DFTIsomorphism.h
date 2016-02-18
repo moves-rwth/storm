@@ -256,8 +256,8 @@ namespace storage {
          * Can only be called after the findIsomorphism procedure returned that an isomorphism has found.
          * @see findIsomorphism
          */
-        std::vector<std::pair<size_t, size_t>> getIsomorphism() const {
-
+        std::map<size_t, size_t> const& getIsomorphism() const {
+            return bijection;
         }
 
         /**

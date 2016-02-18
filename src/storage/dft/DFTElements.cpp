@@ -55,11 +55,6 @@ namespace storm {
         template<typename ValueType>
         void DFTElement<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const {
             if(elemsInSubtree.count(this->id()) > 0) return;
-            std::cout << "ID " <<  this->id() <<  "PREL elems ";
-            for(auto const& i : elemsInSubtree) {
-                std::cout << i << " ";
-            }
-            std::cout << "in subtree." << std::endl;
             if(std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), mId) != parentsOfSubRoot.end()) {
                 // This is a parent of the suspected root, thus it is not a subdft.
                 elemsInSubtree.clear();

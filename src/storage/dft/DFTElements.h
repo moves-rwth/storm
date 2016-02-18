@@ -291,11 +291,6 @@ namespace storm {
                 std::vector<size_t> pids = this->parentIds();
                 for(auto const& child : mChildren) {
                     child->extendSubDft(unit, pids);
-                    std::cout << "int sub ";
-                    for(auto const& i : unit) {
-                        std::cout << i << " ";
-                    }
-                    std::cout << std::endl;
                     if(unit.empty()) {
                         // Parent in the subdft, ie it is *not* a subdft
                         break;
