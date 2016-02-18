@@ -261,11 +261,42 @@ namespace storage {
          */
         bool check() {
             // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
-            for(auto const& index : bijection) {
-                // As they are in the same group, the types are fine already. We just have to check the children.
-
+            for(auto const& indexpair : bijection) {
+                // Check type first. Colouring takes care of a lot, but not necesarily everything (e.g. voting thresholds)
+                equalType(*dft.getElement(indexpair.first), *dft.getElement(indexpair.second));
+                if(dft.isGate(indexpair.first)) {
+                    assert(dft.isGate(indexpair.second));
+                    auto const& lGate = dft.getGate(indexpair.first);
+                    std::set<size_t> childrenLeftMapped;
+                    for(auto const& child : lGate->children() ) {
+                        childrenLeftMapped.insert(bijection.at(child->id()));
+                    }
+                    auto const& rGate = dft.getGate(indexpair.second);
+                    std::set<size_t> childrenRight;
+                    for(auto const& child : rGate->children() ) {
+                        childrenRight.insert(child->id());
+                    }
+                    if(childrenLeftMapped != childrenRight) {
+                        return false;
+                    }
+                } else if(dft.isDependency(indexpair.first)) {
+                    assert(dft.isDependency(indexpair.second));
+                    auto const& lDep = dft.getDependency(indexpair.first);
+                    auto const& rDep = dft.getDependency(indexpair.second);
+                    if(bijection.at(lDep->triggerEvent()->id()) != rDep->triggerEvent()->id()) {
+                        return false;
+                    } 
+                    if(bijection.at(lDep->dependentEvent()->id()) != rDep->dependentEvent()->id()) {
+                        return false;
+                    }
+                }
+                else {
+                    assert(dft.isBasicElement(indexpair.first));
+                    assert(dft.isBasicElement(indexpair.second));
+                    // No operations required.
+                }
             }
-            return false;
+            return true;
         }
 
     private:
@@ -341,9 +372,7 @@ namespace storage {
         }
 
 
-        //std::vector<std::pair<size_t, size_t>> computeNextCandidate(){
-
-        //}
+        
     };
 
 
