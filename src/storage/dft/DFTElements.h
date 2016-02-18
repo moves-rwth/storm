@@ -35,13 +35,12 @@ namespace storm {
             using DFTDependencyPointer = std::shared_ptr<DFTDependency<ValueType>>;
             using DFTDependencyVector = std::vector<DFTDependencyPointer>;
 
-
         protected:
             size_t mId;
             std::string mName;
             size_t mRank = -1;
             DFTGateVector mParents;
-            DFTDependencyVector dependencies;
+            DFTDependencyVector mOutgoingDependencies;
 
         public:
             DFTElement(size_t id, std::string const& name) :
@@ -139,29 +138,30 @@ namespace storm {
                 return res;
             }
             
-            bool addDependency(DFTDependencyPointer const& e) {
-                if(std::find(dependencies.begin(), dependencies.end(), e) != dependencies.end()) {
+            bool addOutgoingDependency(DFTDependencyPointer const& e) {
+                assert(e->triggerEvent()->id() == this->id());
+                if(std::find(mOutgoingDependencies.begin(), mOutgoingDependencies.end(), e) != mOutgoingDependencies.end()) {
                     return false;
                 }
                 else
                 {
-                    dependencies.push_back(e);
+                    mOutgoingDependencies.push_back(e);
                     return true;
                 }
             }
             
-            bool hasDependencies() const {
-                return !dependencies.empty();
+            bool hasOutgoingDependencies() const {
+                return !mOutgoingDependencies.empty();
             }
             
-            size_t nrDependencies() const {
-                return dependencies.size();
+            size_t nrOutgoingDependencies() const {
+                return mOutgoingDependencies.size();
             }
             
-            DFTDependencyVector const& getDependencies() const {
-                return dependencies;
+            DFTDependencyVector const& getOutgoingDependencies() const {
+                return mOutgoingDependencies;
             }
-
+            
             virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
             
             virtual size_t nrChildren() const = 0;
@@ -375,9 +375,14 @@ namespace storm {
 
         template<typename ValueType>
         class DFTBE : public DFTElement<ValueType> {
+            
+            using DFTDependencyPointer = std::shared_ptr<DFTDependency<ValueType>>;
+            using DFTDependencyVector = std::vector<DFTDependencyPointer>;
 
+        protected:
             ValueType mActiveFailureRate;
             ValueType mPassiveFailureRate;
+            DFTDependencyVector mIngoingDependencies;
 
         public:
             DFTBE(size_t id, std::string const& name, ValueType failureRate, ValueType dormancyFactor) :
@@ -398,6 +403,30 @@ namespace storm {
 
             ValueType const& passiveFailureRate() const {
                 return mPassiveFailureRate;
+            }
+            
+            bool addIngoingDependency(DFTDependencyPointer const& e) {
+                assert(e->dependentEvent()->id() == this->id());
+                if(std::find(mIngoingDependencies.begin(), mIngoingDependencies.end(), e) != mIngoingDependencies.end()) {
+                    return false;
+                }
+                else
+                {
+                    mIngoingDependencies.push_back(e);
+                    return true;
+                }
+            }
+            
+            bool hasIngoingDependencies() const {
+                return !mIngoingDependencies.empty();
+            }
+            
+            size_t nrIngoingDependencies() const {
+                return mIngoingDependencies.size();
+            }
+            
+            DFTDependencyVector const& getIngoingDependencies() const {
+                return mIngoingDependencies;
             }
         
             std::string toString() const override {

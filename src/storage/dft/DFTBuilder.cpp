@@ -41,7 +41,8 @@ namespace storm {
                 assert(mElements[dependency->nameDependent()]->isBasicElement());
                 std::shared_ptr<DFTBE<ValueType>> dependentEvent = std::static_pointer_cast<DFTBE<ValueType>>(mElements[dependency->nameDependent()]);
                 dependency->initialize(triggerEvent, dependentEvent);
-                triggerEvent->addDependency(dependency);
+                triggerEvent->addOutgoingDependency(dependency);
+                dependentEvent->addIngoingDependency(dependency);
             }
 
             // Sort elements topologically
