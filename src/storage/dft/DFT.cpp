@@ -196,8 +196,8 @@ namespace storm {
                         if(!getGate(*it1)->hasOnlyStaticParents()) {
                             continue;
                         }
-                        std::vector<size_t> sortedParent1Ids = getGate(*it1)->parentIds();
-                        std::sort(sortedParent1Ids.begin(), sortedParent1Ids.end());
+                        
+                        std::pair<std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getSortedParentAndOutDepIds(*it1);
                         auto it2 = it1;
                         for(++it2; it2 != colourClass.second.cend(); ++it2) {
                             if(!getGate(*it2)->hasOnlyStaticParents()) {
@@ -206,7 +206,7 @@ namespace storm {
                             std::vector<size_t> sortedParent2Ids = getGate(*it2)->parentIds();
                             std::sort(sortedParent2Ids.begin(), sortedParent2Ids.end());
                             
-                            if(sortedParent1Ids == sortedParent2Ids) {
+                            if(influencedElem1Ids == getSortedParentAndOutDepIds(*it2)) {
                                 std::cout << "Considering ids " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
                                 bool isSymmetry = false;
                                 std::vector<size_t> isubdft1 = getGate(*it1)->independentSubDft();
@@ -247,6 +247,18 @@ namespace storm {
             return DFTIndependentSymmetries(res);
         }
 
+        template<typename ValueType>
+        std::pair<std::vector<size_t>, std::vector<size_t>> DFT<ValueType>::getSortedParentAndOutDepIds(size_t index) const {
+            std::pair<std::vector<size_t>, std::vector<size_t>> res;
+            res.first = getElement(index)->parentIds();
+            std::sort(res.first.begin(), res.first.end());
+            for(auto const& dep : getElement(index)->outgoingDependencies()) {
+                res.second.push_back(dep->id());
+            }
+            std::sort(res.second.begin(), res.second.end());
+            return res;
+        }
+        
 
         // Explicitly instantiate the class.
         template class DFT<double>;

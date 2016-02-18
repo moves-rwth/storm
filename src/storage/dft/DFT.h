@@ -233,6 +233,8 @@ namespace storm {
             DFTIndependentSymmetries findSymmetries(DFTColouring<ValueType> const& colouring) const;
 
         private:
+            std::pair<std::vector<size_t>, std::vector<size_t>> getSortedParentAndOutDepIds(size_t index) const;
+            
             bool elementIndicesCorrect() const {
                 for(size_t i = 0; i < mElements.size(); ++i) {
                     if(mElements[i]->id() != i) return false;
