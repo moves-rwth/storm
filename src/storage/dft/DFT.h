@@ -53,7 +53,7 @@ namespace storm {
             size_t mNrOfSpares;
             size_t mTopLevelIndex;
             size_t mUsageInfoBits;
-            size_t mStateSize;
+            size_t mStateVectorSize;
             std::map<size_t, size_t> mActivationIndex;
             std::map<size_t, std::vector<size_t>> mSpareModules;
             std::vector<size_t> mDependencies;
@@ -65,8 +65,8 @@ namespace storm {
         public:
             DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
 
-            size_t stateSize() const {
-                return mStateSize;
+            size_t stateVectorSize() const {
+                return mStateVectorSize;
             }
             
             size_t nrElements() const {
@@ -197,6 +197,15 @@ namespace storm {
                     }
                 }
                 return elements;
+            }
+            
+            bool isRepresentative(size_t id) const {
+                for (auto const& parent : getElement(id)->parents()) {
+                    if (parent->isSpareGate()) {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             bool hasRepresentant(size_t id) const {

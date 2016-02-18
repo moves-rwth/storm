@@ -6,13 +6,12 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, size_t id) : mStatus(dft.stateSize()), mId(id), mDft(dft)  {
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mDft(dft)  {
             mInactiveSpares = dft.getSpareIndices();
             dft.initializeUses(*this);
             dft.initializeActivation(*this);
             std::vector<size_t> alwaysActiveBEs = dft.nonColdBEs();
             mIsCurrentlyFailableBE.insert(mIsCurrentlyFailableBE.end(), alwaysActiveBEs.begin(), alwaysActiveBEs.end());
-            
         }
 
         template<typename ValueType>

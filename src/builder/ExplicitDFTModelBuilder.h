@@ -49,7 +49,7 @@ namespace storm {
             size_t newIndex = 0;
 
         public:
-            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const &dft) : mDft(dft), mStates(((mDft.stateSize() / 64) + 1) * 64, std::pow(2, mDft.nrBasicElements())) {
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const &dft) : mDft(dft), mStates(((mDft.stateVectorSize() / 64) + 1) * 64, std::pow(2, mDft.nrBasicElements())) {
                 // stateSize is bound for size of bitvector
                 // 2^nrBE is upper bound for state space
             }

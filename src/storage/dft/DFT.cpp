@@ -10,13 +10,12 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0)
+        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mTopLevelIndex(tle->id()), mNrOfBEs(0), mNrOfSpares(0)
         {
             assert(elementIndicesCorrect());
-
-            size_t stateIndex = 0;
             mUsageInfoBits = storm::utility::math::uint64_log2(mElements.size()-1)+1;
-
+            size_t stateIndex = 0;
+            
             for (auto& elem : mElements) {
                 mIdToFailureIndex.push_back(stateIndex);
                 stateIndex += 2;
@@ -25,6 +24,7 @@ namespace storm {
                 }
                 else if (elem->isSpareGate()) {
                     ++mNrOfSpares;
+                    bool firstChild = true;
                     for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
                         if(mActivationIndex.count(spareReprs->id()) == 0) {
                             mActivationIndex[spareReprs->id()] =  stateIndex++;
@@ -32,11 +32,9 @@ namespace storm {
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
                         std::vector<size_t> sparesAndBes;
-                        bool secondSpare = false;
-                        for(auto const& modelem : module) {
-                            if (mElements[modelem]->isSpareGate()) {
-                                STORM_LOG_THROW(!secondSpare, storm::exceptions::NotSupportedException, "Module for '" << spareReprs->name() << "' contains more than one spare.");
-                                secondSpare = true;
+                        for(size_t modelem : module) {
+                            if (spareReprs->id() != modelem && (isRepresentative(modelem) || (!firstChild && mTopLevelIndex == modelem))) {
+                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Module for '" << spareReprs->name() << "' contains more than one representative.");
                             }
                             if(mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
                                 sparesAndBes.push_back(modelem);
@@ -44,7 +42,7 @@ namespace storm {
                             }
                         }
                         mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
-
+                        firstChild = false;
                     }
                     std::static_pointer_cast<DFTSpare<ValueType>>(elem)->setUseIndex(stateIndex);
                     mUsageIndex.insert(std::make_pair(elem->id(), stateIndex));
@@ -71,8 +69,8 @@ namespace storm {
             }
             mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
 
-            mStateSize = stateIndex;
-            mTopLevelIndex = tle->id();
+            mStateVectorSize = stateIndex;
+        }
 
         }
 
