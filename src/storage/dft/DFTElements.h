@@ -120,8 +120,8 @@ namespace storm {
             }
 
              bool hasOnlyStaticParents() const {
-                for(auto const& parent : parents) {
-                    if(!isStaticGateType(parents->type()) {
+                for(auto const& parent : mParents) {
+                    if(!isStaticGateType(parent->type())) {
                         return false;
                     }
                 }
