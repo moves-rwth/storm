@@ -46,14 +46,20 @@ namespace storm {
 
         template<typename ValueType>
         std::vector<size_t> DFTElement<ValueType>::independentSubDft() const {
+            std::cout << "INDEPENDENT SUBTREE CALL " << this->id() << std::endl;
             std::vector<size_t> res;
             res.push_back(this->id());
-            // Extend for pdeps.
             return res;
         }
 
         template<typename ValueType>
-        void DFTElement<ValueType>::extendSubDft(std::set<size_t> elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const {
+        void DFTElement<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const {
+            if(elemsInSubtree.count(this->id()) > 0) return;
+            std::cout << "ID " <<  this->id() <<  "PREL elems ";
+            for(auto const& i : elemsInSubtree) {
+                std::cout << i << " ";
+            }
+            std::cout << "in subtree." << std::endl;
             if(std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), mId) != parentsOfSubRoot.end()) {
                 // This is a parent of the suspected root, thus it is not a subdft.
                 elemsInSubtree.clear();
@@ -61,12 +67,18 @@ namespace storm {
             }
             elemsInSubtree.insert(mId);
             for(auto const& parent : mParents) {
-                if(elemsInSubtree.count(parent->id()) != 0) {
-                    parent->extendUnit(elemsInSubtree);
-                    if(elemsInSubtree.empty()) {
-                        return;
-                    }
+                
+                parent->extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                if(elemsInSubtree.empty()) {
+                    return;
                 }
+            }
+            for(auto const& dep : mOutgoingDependencies) {
+                dep->extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                if(elemsInSubtree.empty()) {
+                    return;
+                }
+
             }
         }
 
