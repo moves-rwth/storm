@@ -1,5 +1,6 @@
 #include <boost/container/flat_set.hpp>
 
+#include <map>
 #include "DFT.h"
 #include "src/exceptions/NotSupportedException.h"
 
@@ -247,40 +248,87 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<std::vector<size_t>> DFT<ValueType>::findSymmetries(DFTColouring<ValueType> const& colouring) const {
+        DFTIndependentSymmetries DFT<ValueType>::findSymmetries(DFTColouring<ValueType> const& colouring) const {
             std::vector<size_t> vec;
             vec.reserve(nrElements());
-            storm::utility::iota_n(std::back_inserter(vec), 14, 0);
+            storm::utility::iota_n(std::back_inserter(vec), nrElements(), 0);
             BijectionCandidates<ValueType> completeCategories = colouring.colourSubdft(vec);
-            std::vector<std::vector<size_t>> res;
+            std::map<size_t, std::vector<std::vector<size_t>>> res;
+            
             for(auto const& colourClass : completeCategories.gateCandidates) {
                 if(colourClass.second.size() > 1) {
+                    std::set<size_t> foundEqClassFor;
                     for(auto it1 = colourClass.second.cbegin(); it1 != colourClass.second.cend(); ++it1) {
-                        std::vector<size_t> sortedParent1Ids = getGate(*it1)->parentIds();
-                        std::sort(sortedParent1Ids.begin(), sortedParent1Ids.end());
+                        std::vector<std::vector<size_t>> symClass;
+                        if(foundEqClassFor.count(*it1) > 0) {
+                            continue;
+                        }
+                        if(!getGate(*it1)->hasOnlyStaticParents()) {
+                            continue;
+                        }
+                        
+                        std::pair<std::vector<size_t>, std::vector<size_t>> influencedElem1Ids = getSortedParentAndOutDepIds(*it1);
                         auto it2 = it1;
                         for(++it2; it2 != colourClass.second.cend(); ++it2) {
+                            if(!getGate(*it2)->hasOnlyStaticParents()) {
+                                continue;
+                            }
                             std::vector<size_t> sortedParent2Ids = getGate(*it2)->parentIds();
                             std::sort(sortedParent2Ids.begin(), sortedParent2Ids.end());
-                            if(sortedParent1Ids == sortedParent2Ids) {
+                            
+                            if(influencedElem1Ids == getSortedParentAndOutDepIds(*it2)) {
                                 std::cout << "Considering ids " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
+                                bool isSymmetry = false;
                                 std::vector<size_t> isubdft1 = getGate(*it1)->independentSubDft();
                                 std::vector<size_t> isubdft2 = getGate(*it2)->independentSubDft();
-                                if(!isubdft1.empty() && !isubdft2.empty() && isubdft1.size() == isubdft2.size()) {
-                                    std::cout << "Checking subdfts from " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
-                                    auto LHS = colouring.colourSubdft(isubdft1);
-                                    auto RHS = colouring.colourSubdft(isubdft2);
-                                    auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
-                                    IsoCheck.findIsomorphism();
+                                if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
+                                    continue;
+                                }
+                                std::cout << "Checking subdfts from " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
+                                auto LHS = colouring.colourSubdft(isubdft1);
+                                auto RHS = colouring.colourSubdft(isubdft2);
+                                auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
+                                isSymmetry = IsoCheck.findIsomorphism();
+                                if(isSymmetry) {
+                                    std::cout << "subdfts are symmetric" << std::endl;
+                                    foundEqClassFor.insert(*it2);
+                                    if(symClass.empty()) {
+                                        for(auto const& i : isubdft1) {
+                                            symClass.push_back(std::vector<size_t>({i}));
+                                        }
+                                    }
+                                    auto symClassIt = symClass.begin();
+                                    for(auto const& i : isubdft1) {
+                                        symClassIt->emplace_back(IsoCheck.getIsomorphism().at(i));
+                                        ++symClassIt;
+                                        
+                                    }
+                                    
                                 }
                             }
                         }
+                        if(!symClass.empty()) {
+                            res.emplace(*it1, symClass);
+                        }
                     }
+                    
                 }
             }
-            return res;
+            return DFTIndependentSymmetries(res);
         }
 
+        template<typename ValueType>
+        std::pair<std::vector<size_t>, std::vector<size_t>> DFT<ValueType>::getSortedParentAndOutDepIds(size_t index) const {
+            std::pair<std::vector<size_t>, std::vector<size_t>> res;
+            res.first = getElement(index)->parentIds();
+            std::sort(res.first.begin(), res.first.end());
+            for(auto const& dep : getElement(index)->outgoingDependencies()) {
+                res.second.push_back(dep->id());
+            }
+            std::sort(res.second.begin(), res.second.end());
+            return res;
+        }
+        
 
         // Explicitly instantiate the class.
         template class DFT<double>;

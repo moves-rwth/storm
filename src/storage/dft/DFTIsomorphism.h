@@ -63,6 +63,87 @@ namespace storage {
         std::unordered_map<size_t, std::vector<size_t>> gateCandidates;
         std::unordered_map<BEColourClass<ValueType>, std::vector<size_t>> beCandidates;
         std::unordered_map<std::pair<ValueType, ValueType>, std::vector<size_t>> pdepCandidates;
+        
+        size_t nrGroups() const {
+            return gateCandidates.size() + beCandidates.size() + pdepCandidates.size();
+        }
+        
+        size_t size() const {
+            return nrGates() + nrBEs() + nrDeps();
+        }
+        
+        size_t nrGates() const {
+            size_t res = 0;
+            for(auto const& x : gateCandidates) {
+                res += x.second.size();
+            }
+            return res;
+        }
+        
+        size_t nrBEs() const {
+            size_t res = 0;
+            for(auto const& x : beCandidates) {
+                res += x.second.size();
+            }
+            return res;
+        }
+        
+        size_t nrDeps() const {
+            size_t res = 0;
+            for(auto const& x : pdepCandidates) {
+                res += x.second.size();
+            }
+            return res;
+        }
+        
+        bool hasGate(size_t index) const {
+            for(auto const& x : gateCandidates) {
+                for( auto const& ind : x.second) {
+                    if(index == ind) return true;
+                }
+            }
+            return false;
+        }
+        
+        bool hasBE(size_t index) const {
+            for(auto const& x : beCandidates) {
+                for(auto const& ind : x.second) {
+                    if(index == ind) return true;
+                }
+            }
+            return false;
+        }
+        
+        bool hasDep(size_t index) const {
+            for(auto const& x : pdepCandidates) {
+                for(auto const& ind : x.second) {
+                    if(index == ind) return true;
+                }
+            }
+            return false;
+        }
+        
+        bool has(size_t index) const {
+            return hasGate(index) || hasBE(index) || hasDep(index);
+        }
+        
+        
+        
+        size_t trivialGateGroups() const {
+            size_t res = 0;
+            for(auto const& x : gateCandidates) {
+                if(x.second.size() == 1) ++res;
+            }
+            return res;
+        }
+        
+        size_t trivialBEGroups() const {
+            size_t res = 0;
+            for(auto const& x : beCandidates) {
+                if(x.second.size() == 1) ++res;
+            }
+            return res;
+        }
     };
 
     template<typename ValueType>
@@ -175,8 +256,8 @@ namespace storage {
          * Can only be called after the findIsomorphism procedure returned that an isomorphism has found.
          * @see findIsomorphism
          */
-        std::vector<std::pair<size_t, size_t>> getIsomorphism() const {
-
+        std::map<size_t, size_t> const& getIsomorphism() const {
+            return bijection;
         }
 
         /**
@@ -207,6 +288,9 @@ namespace storage {
             initializePermutationsAndTreatTrivialGroups(bleft.beCandidates, bright.beCandidates, currentPermutations.beCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.gateCandidates, bright.gateCandidates, currentPermutations.gateCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.pdepCandidates, bright.pdepCandidates, currentPermutations.pdepCandidates);
+            std::cout << bijection.size() << " vs. " << bleft.size() << " vs. " << bright.size() << std::endl;
+            assert(bijection.size() == bleft.size());
+            
         }
 
         /**
@@ -214,6 +298,7 @@ namespace storage {
          * @return true if a next bijection exists.
          */
         bool findNextBijection() {
+            assert(candidatesCompatible);
             bool foundNext = false;
             if(!currentPermutations.beCandidates.empty()) {
                 auto it = currentPermutations.beCandidates.begin();
@@ -260,12 +345,46 @@ namespace storage {
          *
          */
         bool check() {
+            assert(bijection.size() == bleft.size());
             // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
-            for(auto const& index : bijection) {
-                // As they are in the same group, the types are fine already. We just have to check the children.
-
+            for(auto const& indexpair : bijection) {
+                // Check type first. Colouring takes care of a lot, but not necesarily everything (e.g. voting thresholds)
+                equalType(*dft.getElement(indexpair.first), *dft.getElement(indexpair.second));
+                if(dft.isGate(indexpair.first)) {
+                    assert(dft.isGate(indexpair.second));
+                    auto const& lGate = dft.getGate(indexpair.first);
+                    std::set<size_t> childrenLeftMapped;
+                    for(auto const& child : lGate->children() ) {
+                        assert(bleft.has(child->id()));
+                        childrenLeftMapped.insert(bijection.at(child->id()));
+                    }
+                    auto const& rGate = dft.getGate(indexpair.second);
+                    std::set<size_t> childrenRight;
+                    for(auto const& child : rGate->children() ) {
+                        assert(bright.has(child->id()));
+                        childrenRight.insert(child->id());
+                    }
+                    if(childrenLeftMapped != childrenRight) {
+                        return false;
+                    }
+                } else if(dft.isDependency(indexpair.first)) {
+                    assert(dft.isDependency(indexpair.second));
+                    auto const& lDep = dft.getDependency(indexpair.first);
+                    auto const& rDep = dft.getDependency(indexpair.second);
+                    if(bijection.at(lDep->triggerEvent()->id()) != rDep->triggerEvent()->id()) {
+                        return false;
+                    } 
+                    if(bijection.at(lDep->dependentEvent()->id()) != rDep->dependentEvent()->id()) {
+                        return false;
+                    }
+                }
+                else {
+                    assert(dft.isBasicElement(indexpair.first));
+                    assert(dft.isBasicElement(indexpair.second));
+                    // No operations required.
+                }
             }
-            return false;
+            return true;
         }
 
     private:
@@ -318,7 +437,7 @@ namespace storage {
                     auto it = permutations.insert(colour);
                     assert(it.second);
                     std::sort(it.first->second.begin(), it.first->second.end());
-                    zipVectorsIntoMap(colour.second, permutations.find(colour.first)->second, bijection);
+                    zipVectorsIntoMap(left.at(colour.first), it.first->second, bijection);
                 } else {
                     assert(colour.second.size() == 1);
                     assert(bijection.count(left.at(colour.first).front()) == 0);
@@ -341,9 +460,7 @@ namespace storage {
         }
 
 
-        //std::vector<std::pair<size_t, size_t>> computeNextCandidate(){
-
-        //}
+        
     };
 
 

@@ -168,7 +168,7 @@ namespace storm {
                 return mOutgoingDependencies.size();
             }
             
-            DFTDependencyVector const& getOutgoingDependencies() const {
+            DFTDependencyVector const& outgoingDependencies() const {
                 return mOutgoingDependencies;
             }
             
@@ -202,7 +202,7 @@ namespace storm {
              * Helper to the independent subtree computation
              * @see independentSubDft
              */
-            virtual void extendSubDft(std::set<size_t> elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const;
+            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const;
 
             virtual bool isTypeEqualTo(DFTElement<ValueType> const& other) const {
                 return type() == other.type();
@@ -299,9 +299,10 @@ namespace storm {
                 return std::vector<size_t>(unit.begin(), unit.end());
             }
 
-            virtual void extendSubDft(std::set<size_t> elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const override {
+            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const override {
+                if(elemsInSubtree.count(this->id()) > 0) return;
                 DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot);
-                if(!elemsInSubtree.empty()) {
+                if(elemsInSubtree.empty()) {
                     // Parent in the subdft, ie it is *not* a subdft
                     return;
                 }
@@ -309,7 +310,7 @@ namespace storm {
                     child->extendSubDft(elemsInSubtree, parentsOfSubRoot);
                     if(elemsInSubtree.empty()) {
                         // Parent in the subdft, ie it is *not* a subdft
-                        break;
+                        return;
                     }
                 }
             }
@@ -437,7 +438,7 @@ namespace storm {
                 return mIngoingDependencies.size();
             }
             
-            DFTDependencyVector const& getIngoingDependencies() const {
+            DFTDependencyVector const& ingoingDependencies() const {
                 return mIngoingDependencies;
             }
         
@@ -453,6 +454,22 @@ namespace storm {
             
             bool isColdBasicElement() const override{
                 return storm::utility::isZero(mPassiveFailureRate);
+            }
+            
+            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const override {
+                 if(elemsInSubtree.count(this->id())) return;
+                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                if(elemsInSubtree.empty()) {
+                    // Parent in the subdft, ie it is *not* a subdft
+                    return;
+                }
+                for(auto const& incDep : mIngoingDependencies) {
+                    incDep->extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                    if(elemsInSubtree.empty()) {
+                        // Parent in the subdft, ie it is *not* a subdft
+                        return;
+                    }
+                }
             }
             
             bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
@@ -501,6 +518,8 @@ namespace storm {
             virtual size_t nrChildren() const override {
                 return 0;
             }
+            
+            
             
             bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
                 if(!DFTElement<ValueType>::isTypeEqualTo(other)) return false;
@@ -589,6 +608,23 @@ namespace storm {
                 return std::vector<size_t>(unit.begin(), unit.end());
             }
 
+            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot) const override {
+                 if(elemsInSubtree.count(this->id())) return;
+                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                if(elemsInSubtree.empty()) {
+                    // Parent in the subdft, ie it is *not* a subdft
+                    return;
+                }
+                mDependentEvent->extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                if(elemsInSubtree.empty()) {
+                    // Parent in the subdft, ie it is *not* a subdft
+                    return;
+                }
+                mTriggerEvent->extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                
+                
+            }
+            
             virtual std::string toString() const override {
                 std::stringstream stream;
                 bool fdep = storm::utility::isOne(mProbability);

@@ -141,7 +141,7 @@ namespace storm {
             
             enum class topoSortColour {WHITE, BLACK, GREY}; 
             
-            void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour>& visited, DFTElementVector& L);
+            void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, OrderElementsById<ValueType>>& visited, DFTElementVector& L);
 
             DFTElementVector topoSort();
             

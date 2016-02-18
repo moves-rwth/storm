@@ -4,6 +4,7 @@
 #include "builder/ExplicitDFTModelBuilder.h"
 #include "modelchecker/results/CheckResult.h"
 #include "utility/storm.h"
+#include "storage/dft/DFTIsomorphism.h"
 
 /*!
  * Load DFT from filename, build corresponding Model and check against given property.
@@ -12,13 +13,20 @@
  * @param property PCTC formula capturing the property to check.
  */
 template <typename ValueType>
-void analyzeDFT(std::string filename, std::string property) {
+void analyzeDFT(std::string filename, std::string property, bool symred = false) {
     // Parsing DFT
     std::cout << "Parsing DFT file..." << std::endl;
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
     std::cout << "Built data structure" << std::endl;
-
+    
+    if(symred) {
+        std::cout << dft.getElementsString() << std::endl;
+        auto colouring = dft.colourDFT();
+        auto res = dft.findSymmetries(colouring);
+        std::cout << res;
+    }
+        
     // Building Markov Automaton
     std::cout << "Building Model..." << std::endl;
     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft);
@@ -52,6 +60,7 @@ int main(int argc, char** argv) {
 
     // Parse cli arguments
     bool parametric = false;
+    bool symred = false;
     log4cplus::LogLevel level = log4cplus::WARN_LOG_LEVEL;
     std::string filename = argv[1];
     std::string pctlFormula = "";
@@ -74,6 +83,8 @@ int main(int argc, char** argv) {
             ++i;
             assert(i < argc);
             pctlFormula = argv[i];
+        } else if (option == "--symred") {
+            symred = true;
         } else {
             std::cout << "Option '" << option << "' not recognized." << std::endl;
             return 1;
@@ -88,8 +99,8 @@ int main(int argc, char** argv) {
     std::cout << "Running " << (parametric ? "parametric " : "") << "DFT analysis on file " << filename << " with property " << pctlFormula << std::endl;
 
     if (parametric) {
-        analyzeDFT<storm::RationalFunction>(filename, pctlFormula);
+        analyzeDFT<storm::RationalFunction>(filename, pctlFormula, symred);
     } else {
-        analyzeDFT<double>(filename, pctlFormula);
+        analyzeDFT<double>(filename, pctlFormula, symred);
     }
 }
