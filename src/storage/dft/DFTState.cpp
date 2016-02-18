@@ -6,10 +6,25 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mDft(dft)  {
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo)  {
             mInactiveSpares = dft.getSpareIndices();
-            dft.initializeUses(*this);
-            dft.initializeActivation(*this);
+            
+            // Initialize uses
+            for(size_t id  : mDft.getSpareIndices()) {
+                std::shared_ptr<DFTGate<ValueType> const> elem = mDft.getGate(id);
+                assert(elem->isSpareGate());
+                assert(elem->nrChildren() > 0);
+                this->setUses(id, elem->children()[0]->id());
+            }
+            
+            // Initialize activation
+            this->activate(mDft.getTopLevelIndex());
+            for(auto const& id : mDft.module(mDft.getTopLevelIndex())) {
+                if(mDft.getElement(id)->isSpareGate()) {
+                    propagateActivation(uses(id));
+                }
+            }
+
             std::vector<size_t> alwaysActiveBEs = dft.nonColdBEs();
             mIsCurrentlyFailableBE.insert(mIsCurrentlyFailableBE.end(), alwaysActiveBEs.begin(), alwaysActiveBEs.end());
         }
@@ -26,7 +41,7 @@ namespace storm {
 
         template<typename ValueType>
         int DFTState<ValueType>::getElementStateInt(size_t id) const {
-            return mStatus.getAsInt(mDft.failureIndex(id), 2);
+            return mStatus.getAsInt(mStateGenerationInfo.getStateIndex(id), 2);
         }
 
         template<typename ValueType>
@@ -46,12 +61,12 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTState<ValueType>::hasFailed(size_t id) const {
-            return mStatus[mDft.failureIndex(id)];
+            return mStatus[mStateGenerationInfo.getStateIndex(id)];
         }
 
         template<typename ValueType>
         bool DFTState<ValueType>::isFailsafe(size_t id) const {
-            return mStatus[mDft.failureIndex(id)+1];
+            return mStatus[mStateGenerationInfo.getStateIndex(id)+1];
         }
 
         template<typename ValueType>
@@ -66,38 +81,38 @@ namespace storm {
         
         template<typename ValueType>
         bool DFTState<ValueType>::dependencySuccessful(size_t id) const {
-            return mStatus[mDft.failureIndex(id)];
+            return mStatus[mStateGenerationInfo.getStateIndex(id)];
         }
         template<typename ValueType>
         bool DFTState<ValueType>::dependencyUnsuccessful(size_t id) const {
-            return mStatus[mDft.failureIndex(id)+1];
+            return mStatus[mStateGenerationInfo.getStateIndex(id)+1];
         }
 
         template<typename ValueType>
         void DFTState<ValueType>::setFailed(size_t id) {
-            mStatus.set(mDft.failureIndex(id));
+            mStatus.set(mStateGenerationInfo.getStateIndex(id));
         }
 
         template<typename ValueType>
         void DFTState<ValueType>::setFailsafe(size_t id) {
-            mStatus.set(mDft.failureIndex(id)+1);
+            mStatus.set(mStateGenerationInfo.getStateIndex(id)+1);
         }
 
         template<typename ValueType>
         void DFTState<ValueType>::setDontCare(size_t id) {
-            mStatus.setFromInt(mDft.failureIndex(id), 2, static_cast<uint_fast64_t>(DFTElementState::DontCare) );
+            mStatus.setFromInt(mStateGenerationInfo.getStateIndex(id), 2, static_cast<uint_fast64_t>(DFTElementState::DontCare) );
         }
         
         template<typename ValueType>
         void DFTState<ValueType>::setDependencySuccessful(size_t id) {
             // No distinction between successful dependency and no dependency at all
-            // -> we do not set bit
-            //mStatus.set(mDft.failureIndex(id));
+            // => we do not set bit
+            //mStatus.set(mStateGenerationInfo.mIdToStateIndex(id));
         }
 
         template<typename ValueType>
         void DFTState<ValueType>::setDependencyUnsuccessful(size_t id) {
-            mStatus.set(mDft.failureIndex(id)+1);
+            mStatus.set(mStateGenerationInfo.getStateIndex(id)+1);
         }
 
         template<typename ValueType>
@@ -157,8 +172,7 @@ namespace storm {
 
         template<typename ValueType>
         void DFTState<ValueType>::activate(size_t repr) {
-            std::vector<size_t>  const& module = mDft.module(repr);
-            for(size_t elem : module) {
+            for(size_t elem : mDft.module(repr)) {
                 if(mDft.getElement(elem)->isColdBasicElement() && isOperational(elem)) {
                     mIsCurrentlyFailableBE.push_back(elem);
                 }
@@ -174,16 +188,26 @@ namespace storm {
             assert(mDft.getElement(id)->isSpareGate());
             return (std::find(mInactiveSpares.begin(), mInactiveSpares.end(), id) == mInactiveSpares.end());
         }
+            
+        template<typename ValueType>
+        void DFTState<ValueType>::propagateActivation(size_t representativeId) {
+            activate(representativeId);
+            for(size_t id : mDft.module(representativeId)) {
+                if(mDft.getElement(id)->isSpareGate()) {
+                    propagateActivation(uses(id));
+                }
+            }
+        }
 
         template<typename ValueType>
         uint_fast64_t DFTState<ValueType>::uses(size_t id) const {
-            return extractUses(mDft.usageIndex(id));
+            return extractUses(mStateGenerationInfo.getSpareUsageIndex(id));
         }
 
         template<typename ValueType>
         uint_fast64_t DFTState<ValueType>::extractUses(size_t from) const {
-            assert(mDft.usageInfoBits() < 64);
-            return mStatus.getAsInt(from, mDft.usageInfoBits());
+            assert(mStateGenerationInfo.usageInfoBits() < 64);
+            return mStatus.getAsInt(from, mStateGenerationInfo.usageInfoBits());
         }
 
         template<typename ValueType>
@@ -192,13 +216,13 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void DFTState<ValueType>::setUsesAtPosition(size_t usageIndex, size_t child) {
-            mStatus.setFromInt(usageIndex, mDft.usageInfoBits(), child);
+        void DFTState<ValueType>::setUses(size_t spareId, size_t child) {
+            mStatus.setFromInt(mStateGenerationInfo.getSpareUsageIndex(spareId), mStateGenerationInfo.usageInfoBits(), child);
             mUsedRepresentants.push_back(child);
         }
 
         template<typename ValueType>
-        bool DFTState<ValueType>::claimNew(size_t spareId, size_t usageIndex, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children) {
+        bool DFTState<ValueType>::claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children) {
             auto it = children.begin();
             while ((*it)->id() != currentlyUses) {
                 assert(it != children.end());
@@ -208,9 +232,9 @@ namespace storm {
             while(it != children.end()) {
                 size_t childId = (*it)->id();
                 if(!hasFailed(childId) && !isUsed(childId)) {
-                    setUsesAtPosition(usageIndex, childId);
+                    setUses(spareId, childId);
                     if(isActiveSpare(spareId)) {
-                        mDft.propagateActivation(*this, childId);
+                        propagateActivation(childId);
                     }
                     return true;
                 }

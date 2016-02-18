@@ -17,6 +17,7 @@ namespace storm {
         class DFTBE;
         template<typename ValueType>
         class DFTElement;
+        class DFTStateGenerationInfo;
 
         template<typename ValueType>
         class DFTState {
@@ -31,9 +32,10 @@ namespace storm {
             std::vector<size_t> mUsedRepresentants;
             bool mValid = true;
             const DFT<ValueType>& mDft;
+            const DFTStateGenerationInfo& mStateGenerationInfo;
             
         public:
-            DFTState(DFT<ValueType> const& dft, size_t id);
+            DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
             
             DFTElementState getElementState(size_t id) const;
             
@@ -75,6 +77,8 @@ namespace storm {
             
             bool isActiveSpare(size_t id) const;
             
+            void propagateActivation(size_t representativeId);
+            
             void markAsInvalid() {
                 mValid = false;
             }
@@ -109,13 +113,13 @@ namespace storm {
             bool isUsed(size_t child) const;
             
             /**
-             * Sets to to the usageIndex which child is now used.
-             * @param usageIndex 
-             * @param child
+             * Sets for the spare which child is now used.
+             * @param spareId Id of the spare
+             * @param child Id of the child which is now used
              */
-            void setUsesAtPosition(size_t usageIndex, size_t child);
+            void setUses(size_t spareId, size_t child);
             
-            bool claimNew(size_t spareId, size_t usageIndex, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children);
+            bool claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children);
             
             bool hasOutgoingEdges() const {
                 return !mIsCurrentlyFailableBE.empty();

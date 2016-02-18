@@ -33,6 +33,69 @@ namespace storm {
         // Forward declarations
         template<typename T> class DFTColouring;
 
+        
+        class DFTStateGenerationInfo {
+        private:
+            const size_t mUsageInfoBits;
+            std::map<size_t, size_t> mSpareUsageIndex; // id spare -> index first bit in state
+            std::map<size_t, size_t> mSpareActivationIndex; // id spare representative -> index in state
+            std::vector<size_t> mIdToStateIndex; // id -> index first bit in state
+            
+        public:
+            
+            DFTStateGenerationInfo(size_t nrElements) : mUsageInfoBits(storm::utility::math::uint64_log2(nrElements-1)+1), mIdToStateIndex(nrElements) {
+            }
+
+            size_t usageInfoBits() const {
+                return mUsageInfoBits;
+            }
+            
+            void addStateIndex(size_t id, size_t index) {
+                assert(id < mIdToStateIndex.size());
+                mIdToStateIndex[id] = index;
+            }
+
+            void addSpareActivationIndex(size_t id, size_t index) {
+                mSpareActivationIndex[id] = index;
+            }
+
+            void addSpareUsageIndex(size_t id, size_t index) {
+                mSpareUsageIndex[id] = index;
+            }
+
+            size_t getStateIndex(size_t id) const {
+                assert(id < mIdToStateIndex.size());
+                return mIdToStateIndex[id];
+            }
+            
+            size_t getSpareUsageIndex(size_t id) const {
+                assert(mSpareUsageIndex.count(id) > 0);
+                return mSpareUsageIndex.at(id);
+            }
+            
+            size_t getSpareActivationIndex(size_t id) const {
+                assert(mSpareActivationIndex.count(id) > 0);
+                return mSpareActivationIndex.at(id);
+            }
+            
+            friend std::ostream& operator<<(std::ostream& os, DFTStateGenerationInfo const& info) {
+                os << "Id to state index:" << std::endl;
+                for (size_t id = 0; id < info.mIdToStateIndex.size(); ++id) {
+                    os << id << " -> " << info.getStateIndex(id) << std::endl;
+                }
+                os << "Spare usage index with usage InfoBits of size " << info.mUsageInfoBits << ":" << std::endl;
+                for (auto pair : info.mSpareUsageIndex) {
+                    os << pair.first << " -> " << pair.second << std::endl;
+                }
+                os << "Spare activation index:" << std::endl;
+                for (auto pair : info.mSpareActivationIndex) {
+                    os << pair.first << " -> " << pair.second << std::endl;
+                }
+                return os;
+            }
+            
+        };
+        
 
         /**
          * Represents a Dynamic Fault Tree
@@ -52,18 +115,17 @@ namespace storm {
             size_t mNrOfBEs;
             size_t mNrOfSpares;
             size_t mTopLevelIndex;
-            size_t mUsageInfoBits;
             size_t mStateVectorSize;
-            std::map<size_t, size_t> mActivationIndex;
             std::map<size_t, std::vector<size_t>> mSpareModules;
             std::vector<size_t> mDependencies;
             std::vector<size_t> mTopModule;
-            std::vector<size_t> mIdToFailureIndex;
-            std::map<size_t, size_t> mUsageIndex;
-            std::map<size_t, size_t> mRepresentants;
+            std::map<size_t, size_t> mRepresentants; // id element -> id representative
+            std::vector<std::vector<size_t>> mSymmetries;
             
         public:
             DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
+            
+            DFTStateGenerationInfo buildStateGenerationInfo(std::vector<size_t> const& subTreeRoots, std::vector<std::vector<size_t>> const& symmetries) const;
 
             size_t stateVectorSize() const {
                 return mStateVectorSize;
@@ -77,34 +139,8 @@ namespace storm {
                 return mNrOfBEs;
             }
             
-            size_t usageInfoBits() const {
-                return mUsageInfoBits;
-            }
-            
-            size_t usageIndex(size_t id) const {
-                assert(mUsageIndex.find(id) != mUsageIndex.end());
-                return mUsageIndex.find(id)->second;
-            }
-            
-            size_t failureIndex(size_t id) const {
-                return mIdToFailureIndex[id];
-            }
-            
-            void initializeUses(DFTState<ValueType>& state) const {
-                for(auto const& elem : mElements) {
-                    if(elem->isSpareGate()) {
-                        std::static_pointer_cast<DFTSpare<ValueType>>(elem)->initializeUses(state);
-                    }
-                }
-            }
-            
-            void initializeActivation(DFTState<ValueType>& state) const {
-                state.activate(mTopLevelIndex);
-                for(auto const& elem : mTopModule) {
-                    if(mElements[elem]->isSpareGate()) {
-                        propagateActivation(state, state.uses(elem));
-                    }
-                }
+            size_t getTopLevelIndex() const {
+                return mTopLevelIndex;
             }
             
             std::vector<size_t> getSpareIndices() const {
@@ -130,15 +166,6 @@ namespace storm {
                 return mDependencies;
             }
 
-            void propagateActivation(DFTState<ValueType>& state, size_t representativeId) const {
-                state.activate(representativeId);
-                for(size_t id : module(representativeId)) {
-                    if(mElements[id]->isSpareGate()) {
-                        propagateActivation(state, state.uses(id));
-                    }
-                }
-            }
-            
             std::vector<size_t> nonColdBEs() const {
                 std::vector<size_t> result;
                 for(DFTElementPointer elem : mElements) {
@@ -169,10 +196,6 @@ namespace storm {
             bool isDependency(size_t index) const {
                 return getElement(index)->isDependency();
             }
-
-//            std::shared_ptr<DFTGate<ValueType> const> getGate(size_t index) const {
-//                return
-//            }
 
             std::shared_ptr<DFTBE<ValueType> const> getBasicElement(size_t index) const {
                 assert(isBasicElement(index));

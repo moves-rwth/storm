@@ -13,11 +13,52 @@ namespace storm {
         ExplicitDFTModelBuilder<ValueType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), markovianStates(), exitRates(), choiceLabeling() {
             // Intentionally left empty.
         }
+        
+        template <typename ValueType>
+        ExplicitDFTModelBuilder<ValueType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft) : mDft(dft), mStates(((mDft.stateVectorSize() / 64) + 1) * 64, std::pow(2, mDft.nrBasicElements())) {
+            // stateSize is bound for size of bitvector
+            // 2^nrBE is upper bound for state space
+
+            // Find symmetries
+            // TODO activate
+            // Currently using hack to test
+            std::vector<std::vector<size_t>> symmetries;
+            std::vector<size_t> vecB;
+            std::vector<size_t> vecC;
+            std::vector<size_t> vecD;
+            if (false) {
+                for (size_t i = 0; i < mDft.nrElements(); ++i) {
+                    std::string name = mDft.getElement(i)->name();
+                    size_t id = mDft.getElement(i)->id();
+                    if (boost::starts_with(name, "B")) {
+                        vecB.push_back(id);
+                    } else if (boost::starts_with(name, "C")) {
+                        vecC.push_back(id);
+                    } else if (boost::starts_with(name, "D")) {
+                        vecD.push_back(id);
+                    }
+                }
+                symmetries.push_back(vecB);
+                symmetries.push_back(vecC);
+                symmetries.push_back(vecD);
+                std::cout << "Found the following symmetries:" << std::endl;
+                for (auto const& symmetry : symmetries) {
+                    for (auto const& elem : symmetry) {
+                        std::cout << elem << " -> ";
+                    }
+                    std::cout << std::endl;
+                }
+            } else {
+                vecB.push_back(mDft.getTopLevelIndex());
+            }
+            mStateGenerationInfo = std::make_shared<storm::storage::DFTStateGenerationInfo>(mDft.buildStateGenerationInfo(vecB, symmetries));
+        }
+
 
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType>::buildModel() {
             // Initialize
-            DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, newIndex++);
+            DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, *mStateGenerationInfo, newIndex++);
             mStates.findOrAdd(state->status(), state);
 
             std::queue<DFTStatePointer> stateQueue;
