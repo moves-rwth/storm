@@ -96,7 +96,7 @@ namespace storage {
             return res;
         }
         
-        bool hasGate(size_t index) {
+        bool hasGate(size_t index) const {
             for(auto const& x : gateCandidates) {
                 for( auto const& ind : x.second) {
                     if(index == ind) return true;
@@ -105,7 +105,7 @@ namespace storage {
             return false;
         }
         
-        bool hasBE(size_t index) {
+        bool hasBE(size_t index) const {
             for(auto const& x : beCandidates) {
                 for(auto const& ind : x.second) {
                     if(index == ind) return true;
@@ -114,7 +114,7 @@ namespace storage {
             return false;
         }
         
-        bool hasDep(size_t index) {
+        bool hasDep(size_t index) const {
             for(auto const& x : pdepCandidates) {
                 for(auto const& ind : x.second) {
                     if(index == ind) return true;
@@ -123,7 +123,7 @@ namespace storage {
             return false;
         }
         
-        bool has(size_t index) {
+        bool has(size_t index) const {
             return hasGate(index) || hasBE(index) || hasDep(index);
         }
         
@@ -355,11 +355,13 @@ namespace storage {
                     auto const& lGate = dft.getGate(indexpair.first);
                     std::set<size_t> childrenLeftMapped;
                     for(auto const& child : lGate->children() ) {
+                        assert(bleft.has(child->id()));
                         childrenLeftMapped.insert(bijection.at(child->id()));
                     }
                     auto const& rGate = dft.getGate(indexpair.second);
                     std::set<size_t> childrenRight;
                     for(auto const& child : rGate->children() ) {
+                        assert(bright.has(child->id()));
                         childrenRight.insert(child->id());
                     }
                     if(childrenLeftMapped != childrenRight) {
@@ -435,7 +437,7 @@ namespace storage {
                     auto it = permutations.insert(colour);
                     assert(it.second);
                     std::sort(it.first->second.begin(), it.first->second.end());
-                    zipVectorsIntoMap(colour.second, permutations.find(colour.first)->second, bijection);
+                    zipVectorsIntoMap(left.at(colour.first), it.first->second, bijection);
                 } else {
                     assert(colour.second.size() == 1);
                     assert(bijection.count(left.at(colour.first).front()) == 0);
