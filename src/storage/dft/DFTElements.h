@@ -168,7 +168,7 @@ namespace storm {
                 return mOutgoingDependencies.size();
             }
             
-            DFTDependencyVector const& getOutgoingDependencies() const {
+            DFTDependencyVector const& outgoingDependencies() const {
                 return mOutgoingDependencies;
             }
             
