@@ -119,6 +119,16 @@ namespace storm {
                 }
             }
 
+             bool hasOnlyStaticParents() const {
+                for(auto const& parent : parents) {
+                    if(!isStaticGateType(parents->type()) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            
             bool hasParents() const {
                 return !mParents.empty();
             }
