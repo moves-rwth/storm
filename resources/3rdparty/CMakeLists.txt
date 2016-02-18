@@ -77,4 +77,4 @@ ExternalProject_Get_Property(googletest binary_dir)
 set(GTEST_LIBRARIES ${binary_dir}/libgtest.a ${binary_dir}/libgtest_main.a PARENT_SCOPE)
 
 add_dependencies(test-resources googletest)
-    
+
