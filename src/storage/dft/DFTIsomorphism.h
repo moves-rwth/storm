@@ -63,6 +63,87 @@ namespace storage {
         std::unordered_map<size_t, std::vector<size_t>> gateCandidates;
         std::unordered_map<BEColourClass<ValueType>, std::vector<size_t>> beCandidates;
         std::unordered_map<std::pair<ValueType, ValueType>, std::vector<size_t>> pdepCandidates;
+        
+        size_t nrGroups() const {
+            return gateCandidates.size() + beCandidates.size() + pdepCandidates.size();
+        }
+        
+        size_t size() const {
+            return nrGates() + nrBEs() + nrDeps();
+        }
+        
+        size_t nrGates() const {
+            size_t res = 0;
+            for(auto const& x : gateCandidates) {
+                res += x.second.size();
+            }
+            return res;
+        }
+        
+        size_t nrBEs() const {
+            size_t res = 0;
+            for(auto const& x : beCandidates) {
+                res += x.second.size();
+            }
+            return res;
+        }
+        
+        size_t nrDeps() const {
+            size_t res = 0;
+            for(auto const& x : pdepCandidates) {
+                res += x.second.size();
+            }
+            return res;
+        }
+        
+        bool hasGate(size_t index) {
+            for(auto const& x : gateCandidates) {
+                for( auto const& ind : x.second) {
+                    if(index == ind) return true;
+                }
+            }
+            return false;
+        }
+        
+        bool hasBE(size_t index) {
+            for(auto const& x : beCandidates) {
+                for(auto const& ind : x.second) {
+                    if(index == ind) return true;
+                }
+            }
+            return false;
+        }
+        
+        bool hasDep(size_t index) {
+            for(auto const& x : pdepCandidates) {
+                for(auto const& ind : x.second) {
+                    if(index == ind) return true;
+                }
+            }
+            return false;
+        }
+        
+        bool has(size_t index) {
+            return hasGate(index) || hasBE(index) || hasDep(index);
+        }
+        
+        
+        
+        size_t trivialGateGroups() const {
+            size_t res = 0;
+            for(auto const& x : gateCandidates) {
+                if(x.second.size() == 1) ++res;
+            }
+            return res;
+        }
+        
+        size_t trivialBEGroups() const {
+            size_t res = 0;
+            for(auto const& x : beCandidates) {
+                if(x.second.size() == 1) ++res;
+            }
+            return res;
+        }
     };
 
     template<typename ValueType>
@@ -207,6 +288,9 @@ namespace storage {
             initializePermutationsAndTreatTrivialGroups(bleft.beCandidates, bright.beCandidates, currentPermutations.beCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.gateCandidates, bright.gateCandidates, currentPermutations.gateCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.pdepCandidates, bright.pdepCandidates, currentPermutations.pdepCandidates);
+            std::cout << bijection.size() << " vs. " << bleft.size() << " vs. " << bright.size() << std::endl;
+            assert(bijection.size() == bleft.size());
+            
         }
 
         /**
@@ -214,6 +298,7 @@ namespace storage {
          * @return true if a next bijection exists.
          */
         bool findNextBijection() {
+            assert(candidatesCompatible);
             bool foundNext = false;
             if(!currentPermutations.beCandidates.empty()) {
                 auto it = currentPermutations.beCandidates.begin();
@@ -260,6 +345,7 @@ namespace storage {
          *
          */
         bool check() {
+            assert(bijection.size() == bleft.size());
             // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
             for(auto const& indexpair : bijection) {
                 // Check type first. Colouring takes care of a lot, but not necesarily everything (e.g. voting thresholds)
