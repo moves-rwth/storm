@@ -82,42 +82,11 @@ namespace storm {
             visitQueue.push(subTreeRoots[0]);
             bool consideredDependencies = false;
             while (true) {
-                while (!visitQueue.empty()) {
-                    size_t id = visitQueue.front();
-                    visitQueue.pop();
-                    if (visited.count(id) == 1) {
-                        // Already visited
-                        continue;
-                    }
-                    visited.insert(id);
-                    DFTElementPointer element = mElements[id];
-                    
-                    // Insert children
-                    if (element->isGate()) {
-                        for (auto const& child : std::static_pointer_cast<DFTGate<ValueType>>(element)->children()) {
-                            visitQueue.push(child->id());
-                        }
-                    }
-                    
-                    // Reserve bits for element
-                    generationInfo.addStateIndex(id, stateIndex);
-                    stateIndex += 2;
-
-                    if (isRepresentative(id)) {
-                        generationInfo.addSpareActivationIndex(id, stateIndex);
-                        ++stateIndex;
-                    }
-
-                    if (element->isSpareGate()) {
-                        generationInfo.addSpareUsageIndex(id, stateIndex);
-                        stateIndex += generationInfo.usageInfoBits();
-                    }
-                    
-                }
-                
                 if (consideredDependencies) {
                     break;
                 }
+                
+                stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
                 
                 // Consider dependencies
                 for (size_t idDependency : getDependencies()) {
@@ -134,8 +103,43 @@ namespace storm {
             
             return generationInfo;
         }
-
-
+        
+        template<typename ValueType>
+        size_t DFT<ValueType>::performStateGenerationInfoDFS(DFTStateGenerationInfo& generationInfo, std::queue<size_t>& visitQueue, std::set<size_t>& visited, size_t stateIndex) const {
+            while (!visitQueue.empty()) {
+                size_t id = visitQueue.front();
+                visitQueue.pop();
+                if (visited.count(id) == 1) {
+                    // Already visited
+                    continue;
+                }
+                visited.insert(id);
+                DFTElementPointer element = mElements[id];
+                
+                // Insert children
+                if (element->isGate()) {
+                    for (auto const& child : std::static_pointer_cast<DFTGate<ValueType>>(element)->children()) {
+                        visitQueue.push(child->id());
+                    }
+                }
+                
+                // Reserve bits for element
+                generationInfo.addStateIndex(id, stateIndex);
+                stateIndex += 2;
+                
+                if (isRepresentative(id)) {
+                    generationInfo.addSpareActivationIndex(id, stateIndex);
+                    ++stateIndex;
+                }
+                
+                if (element->isSpareGate()) {
+                    generationInfo.addSpareUsageIndex(id, stateIndex);
+                    stateIndex += generationInfo.usageInfoBits();
+                }
+                
+            }
+            return stateIndex;
+        }
 
         template<typename ValueType>
         std::string DFT<ValueType>::getElementsString() const {

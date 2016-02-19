@@ -127,6 +127,8 @@ namespace storm {
             
             DFTStateGenerationInfo buildStateGenerationInfo(std::vector<size_t> const& subTreeRoots, std::vector<std::vector<size_t>> const& symmetries) const;
 
+            size_t performStateGenerationInfoDFS(DFTStateGenerationInfo& generationInfo, std::queue<size_t>& visitQueue, std::set<size_t>& visited, size_t stateIndex) const;
+            
             size_t stateVectorSize() const {
                 return mStateVectorSize;
             }
