@@ -2,6 +2,7 @@
 #define STORM_SOLVER_ABSTRACTEQUATIONSOLVER_H_
 
 #include "src/solver/TerminationCondition.h"
+#include <memory>
 
 namespace storm {
     namespace solver {
