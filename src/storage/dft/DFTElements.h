@@ -173,6 +173,8 @@ namespace storm {
             }
             
             virtual void extendSpareModule(std::set<size_t>& elementsInModule) const;
+
+           // virtual void extendImmediateFailureCausePathEvents(std::set<size_t>& ) const;
             
             virtual size_t nrChildren() const = 0;
 
