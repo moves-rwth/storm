@@ -240,6 +240,5 @@ namespace storm {
         
         template class BitVectorHashMap<uint_fast64_t>;
         template class BitVectorHashMap<uint32_t>;
-        template class BitVectorHashMap<size_t>;
     }
 }

@@ -50,7 +50,7 @@ namespace storm {
             
             storm::storage::DFT<ValueType> const& mDft;
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> mStateGenerationInfo;
-            storm::storage::BitVectorHashMap<size_t> mStates;
+            storm::storage::BitVectorHashMap<uint32_t> mStates;
             size_t newIndex = 0;
 
         public:
