@@ -4,9 +4,6 @@
 
 #include "src/utility/macros.h"
 
-#include "src/storage/dft/DFTState.h"
-#include "src/adapters/CarlAdapter.h"
-
 namespace storm {
     namespace storage {
         template<class ValueType, class Hash1, class Hash2>
@@ -243,9 +240,6 @@ namespace storm {
         
         template class BitVectorHashMap<uint_fast64_t>;
         template class BitVectorHashMap<uint32_t>;
-        template class BitVectorHashMap<std::shared_ptr<DFTState<double>>>;
-#ifdef STORM_HAVE_CARL
-        template class BitVectorHashMap<std::shared_ptr<DFTState<storm::RationalFunction>>>;
-#endif
+        template class BitVectorHashMap<size_t>;
     }
 }

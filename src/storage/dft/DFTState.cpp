@@ -63,10 +63,20 @@ namespace storm {
         bool DFTState<ValueType>::hasFailed(size_t id) const {
             return mStatus[mStateGenerationInfo.getStateIndex(id)];
         }
+        
+        template<typename ValueType>
+        bool DFTState<ValueType>::hasFailed(storm::storage::BitVector const& state, size_t indexId) {
+            return state[indexId];
+        }
 
         template<typename ValueType>
         bool DFTState<ValueType>::isFailsafe(size_t id) const {
             return mStatus[mStateGenerationInfo.getStateIndex(id)+1];
+        }
+        
+        template<typename ValueType>
+        bool DFTState<ValueType>::isFailsafe(storm::storage::BitVector const& state, size_t indexId) {
+            return state[indexId+1];
         }
 
         template<typename ValueType>

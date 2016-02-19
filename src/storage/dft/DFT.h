@@ -244,8 +244,16 @@ namespace storm {
                 return state->hasFailed(mTopLevelIndex);
             }
             
+            bool hasFailed(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo) const {
+                return storm::storage::DFTState<ValueType>::hasFailed(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
+            }
+            
             bool isFailsafe(DFTStatePointer const& state) const {
                 return state->isFailsafe(mTopLevelIndex);
+            }
+            
+            bool isFailsafe(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo) const {
+                return storm::storage::DFTState<ValueType>::isFailsafe(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
             }
             
             std::string getElementsString() const;

@@ -51,10 +51,14 @@ namespace storm {
             
             bool hasFailed(size_t id) const;
             
-            bool isFailsafe(size_t id) const ;
+            static bool hasFailed(storm::storage::BitVector const& state, size_t indexId);
             
+            bool isFailsafe(size_t id) const;
+
+            static bool isFailsafe(storm::storage::BitVector const& state, size_t indexId);
+
             bool dontCare(size_t id) const;
-            
+
             bool dependencyTriggered(size_t id) const;
 
             bool dependencySuccessful(size_t id) const;

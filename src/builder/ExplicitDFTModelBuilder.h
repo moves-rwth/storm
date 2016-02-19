@@ -43,10 +43,12 @@ namespace storm {
                 // A vector that stores a labeling for each choice.
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
             };
+            
+            const size_t INITIAL_BUCKETSIZE = 20000;
 
             storm::storage::DFT<ValueType> const& mDft;
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> mStateGenerationInfo;
-            storm::storage::BitVectorHashMap<DFTStatePointer> mStates;
+            storm::storage::BitVectorHashMap<size_t> mStates;
             size_t newIndex = 0;
 
         public:

@@ -204,6 +204,7 @@ namespace storm {
             return stream.str();
         }
 
+        // TODO rewrite to only use bitvector and id
         template<typename ValueType>
         std::string DFT<ValueType>::getStateString(DFTStatePointer const& state) const{
             std::stringstream stream;
