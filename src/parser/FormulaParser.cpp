@@ -351,10 +351,9 @@ namespace storm {
             debug(labelFormula);
             debug(expressionFormula);
             debug(rewardPathFormula);
-            debug(reachabilityRewardFormula);
             debug(cumulativeRewardFormula);
             debug(instantaneousRewardFormula);
-             */
+            */
 
             // Enable error reporting.
             qi::on_error<qi::fail>(start, handler(qi::_1, qi::_2, qi::_3, qi::_4));
