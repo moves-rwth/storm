@@ -13,13 +13,9 @@ namespace storm {
         template<typename ValueType>
         DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()) {
             assert(elementIndicesCorrect());
-            size_t stateVectorIndex = 0;
-            std::set<size_t> tmpRepresentatives;
-            size_t usageInfoBits = storm::utility::math::uint64_log2(mElements.size()-1)+1;
             size_t nrRepresentatives = 0;
             
             for (auto& elem : mElements) {
-                stateVectorIndex += 2;
                 if (isRepresentative(elem->id())) {
                     ++nrRepresentatives;
                 }
@@ -30,7 +26,6 @@ namespace storm {
                     ++mNrOfSpares;
                     bool firstChild = true;
                     for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
-                        tmpRepresentatives.insert(spareReprs->id());
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
                         std::vector<size_t> sparesAndBes;
@@ -46,14 +41,12 @@ namespace storm {
                         mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
                         firstChild = false;
                     }
-                    stateVectorIndex += usageInfoBits;
 
                 } else if (elem->isDependency()) {
                     mDependencies.push_back(elem->id());
                 }
             }
-            stateVectorIndex += tmpRepresentatives.size();
-
+          
             // For the top module, we assume, contrary to [Jun15], that we have all spare gates and basic elements which are not in another module.
             std::set<size_t> topModuleSet;
             // Initialize with all ids.
@@ -70,11 +63,8 @@ namespace storm {
             }
             mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
             
-            std::cout << tmpRepresentatives.size() << ", " << nrRepresentatives << std::endl;
-            std::cout << stateVectorIndex << ", " << (nrElements() * 2 + mNrOfSpares * usageInfoBits + tmpRepresentatives.size()) << std::endl;
-            assert(tmpRepresentatives.size() == nrRepresentatives);
-            assert(stateVectorIndex == nrElements() * 2 + mNrOfSpares * usageInfoBits + tmpRepresentatives.size());
-            mStateVectorSize = stateVectorIndex;
+            size_t usageInfoBits = storm::utility::math::uint64_log2(mElements.size()-1)+1;
+            mStateVectorSize = nrElements() * 2 + mNrOfSpares * usageInfoBits + nrRepresentatives;
         }
 
         template<typename ValueType>
