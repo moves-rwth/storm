@@ -542,7 +542,7 @@ namespace storm {
                 
                 // However, for weak bisimulation, we need to make sure the representative state is a non-silent one (if
                 // there is any such state).
-                if (this->options.getType() == BisimulationType::Weak) {
+                if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Dtmc) {
                     for (auto const& state : block) {
                         if (!isSilent(state)) {
                             representativeState = state;
