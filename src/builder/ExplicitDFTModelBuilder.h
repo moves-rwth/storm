@@ -44,15 +44,13 @@ namespace storm {
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
             };
 
-            storm::storage::DFT<ValueType> const &mDft;
+            storm::storage::DFT<ValueType> const& mDft;
+            std::shared_ptr<storm::storage::DFTStateGenerationInfo> mStateGenerationInfo;
             storm::storage::BitVectorHashMap<DFTStatePointer> mStates;
             size_t newIndex = 0;
 
         public:
-            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const &dft) : mDft(dft), mStates(((mDft.stateSize() / 64) + 1) * 64, std::pow(2, mDft.nrBasicElements())) {
-                // stateSize is bound for size of bitvector
-                // 2^nrBE is upper bound for state space
-            }
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft);
 
             std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel();
 

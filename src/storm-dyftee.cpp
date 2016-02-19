@@ -6,6 +6,8 @@
 #include "utility/storm.h"
 #include "storage/dft/DFTIsomorphism.h"
 
+#include <boost/lexical_cast.hpp>
+
 /*!
  * Load DFT from filename, build corresponding Model and check against given property.
  *
@@ -23,8 +25,8 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     if(symred) {
         std::cout << dft.getElementsString() << std::endl;
         auto colouring = dft.colourDFT();
-        auto res = dft.findSymmetries(colouring);
-        std::cout << res;
+        storm::storage::DFTIndependentSymmetries symmetries = dft.findSymmetries(colouring);
+        std::cout << symmetries;
     }
         
     // Building Markov Automaton
@@ -74,6 +76,20 @@ int main(int argc, char** argv) {
         } else if (option == "--probability") {
             assert(pctlFormula.empty());
             pctlFormula = "P=? [F \"failed\"]";
+        } else if (option == "--timebound") {
+            assert(pctlFormula.empty());
+            ++i;
+            assert(i < argc);
+            double timeBound;
+            try {
+                timeBound = boost::lexical_cast<double>(argv[i]);
+            } catch (boost::bad_lexical_cast e) {
+                std::cerr << "The time bound '" << argv[i] << "' is not valid." << std::endl;
+                return 2;
+            }
+            std::stringstream stream;
+            stream << "P=? [F<=" << timeBound << " \"failed\"]";
+            pctlFormula = stream.str();
         } else if (option == "--trace") {
             level = log4cplus::TRACE_LOG_LEVEL;
         } else if (option == "--debug") {

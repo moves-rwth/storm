@@ -11,33 +11,27 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0)
-        {
+        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()) {
             assert(elementIndicesCorrect());
-
-            size_t stateIndex = 0;
-            mUsageInfoBits = storm::utility::math::uint64_log2(mElements.size()-1)+1;
-
+            size_t nrRepresentatives = 0;
+            
             for (auto& elem : mElements) {
-                mIdToFailureIndex.push_back(stateIndex);
-                stateIndex += 2;
+                if (isRepresentative(elem->id())) {
+                    ++nrRepresentatives;
+                }
                 if(elem->isBasicElement()) {
                     ++mNrOfBEs;
                 }
                 else if (elem->isSpareGate()) {
                     ++mNrOfSpares;
+                    bool firstChild = true;
                     for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
-                        if(mActivationIndex.count(spareReprs->id()) == 0) {
-                            mActivationIndex[spareReprs->id()] =  stateIndex++;
-                        }
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
                         std::vector<size_t> sparesAndBes;
-                        bool secondSpare = false;
-                        for(auto const& modelem : module) {
-                            if (mElements[modelem]->isSpareGate()) {
-                                STORM_LOG_THROW(!secondSpare, storm::exceptions::NotSupportedException, "Module for '" << spareReprs->name() << "' contains more than one spare.");
-                                secondSpare = true;
+                        for(size_t modelem : module) {
+                            if (spareReprs->id() != modelem && (isRepresentative(modelem) || (!firstChild && mTopLevelIndex == modelem))) {
+                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Module for '" << spareReprs->name() << "' contains more than one representative.");
                             }
                             if(mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
                                 sparesAndBes.push_back(modelem);
@@ -45,17 +39,14 @@ namespace storm {
                             }
                         }
                         mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
-
+                        firstChild = false;
                     }
-                    std::static_pointer_cast<DFTSpare<ValueType>>(elem)->setUseIndex(stateIndex);
-                    mUsageIndex.insert(std::make_pair(elem->id(), stateIndex));
-                    stateIndex += mUsageInfoBits;
 
                 } else if (elem->isDependency()) {
                     mDependencies.push_back(elem->id());
                 }
             }
-
+          
             // For the top module, we assume, contrary to [Jun15], that we have all spare gates and basic elements which are not in another module.
             std::set<size_t> topModuleSet;
             // Initialize with all ids.
@@ -71,11 +62,80 @@ namespace storm {
                 }
             }
             mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
-
-            mStateSize = stateIndex;
-            mTopLevelIndex = tle->id();
-
+            
+            size_t usageInfoBits = mElements.size() > 1 ? storm::utility::math::uint64_log2(mElements.size()-1) + 1 : 1;
+            mStateVectorSize = nrElements() * 2 + mNrOfSpares * usageInfoBits + nrRepresentatives;
         }
+
+        template<typename ValueType>
+        DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(std::vector<size_t> const& subTreeRoots, std::vector<std::vector<size_t>> const& symmetries) const {
+            // Use symmetry
+            // Collect all elements in the first subtree
+            // TODO make recursive to use for nested subtrees
+            
+            DFTStateGenerationInfo generationInfo(nrElements());
+
+            // Perform DFS and insert all elements of subtree sequentially
+            size_t stateIndex = 0;
+            std::queue<size_t> visitQueue;
+            std::set<size_t> visited;
+            visitQueue.push(subTreeRoots[0]);
+            bool consideredDependencies = false;
+            while (true) {
+                while (!visitQueue.empty()) {
+                    size_t id = visitQueue.front();
+                    visitQueue.pop();
+                    if (visited.count(id) == 1) {
+                        // Already visited
+                        continue;
+                    }
+                    visited.insert(id);
+                    DFTElementPointer element = mElements[id];
+                    
+                    // Insert children
+                    if (element->isGate()) {
+                        for (auto const& child : std::static_pointer_cast<DFTGate<ValueType>>(element)->children()) {
+                            visitQueue.push(child->id());
+                        }
+                    }
+                    
+                    // Reserve bits for element
+                    generationInfo.addStateIndex(id, stateIndex);
+                    stateIndex += 2;
+
+                    if (isRepresentative(id)) {
+                        generationInfo.addSpareActivationIndex(id, stateIndex);
+                        ++stateIndex;
+                    }
+
+                    if (element->isSpareGate()) {
+                        generationInfo.addSpareUsageIndex(id, stateIndex);
+                        stateIndex += generationInfo.usageInfoBits();
+                    }
+                    
+                }
+                
+                if (consideredDependencies) {
+                    break;
+                }
+                
+                // Consider dependencies
+                for (size_t idDependency : getDependencies()) {
+                    std::shared_ptr<DFTDependency<ValueType> const> dependency = getDependency(idDependency);
+                    visitQueue.push(dependency->id());
+                    visitQueue.push(dependency->triggerEvent()->id());
+                    visitQueue.push(dependency->dependentEvent()->id());
+                }
+                consideredDependencies = true;
+            }
+            assert(stateIndex = mStateVectorSize);
+
+            STORM_LOG_TRACE(generationInfo);
+            
+            return generationInfo;
+        }
+
+
 
         template<typename ValueType>
         std::string DFT<ValueType>::getElementsString() const {

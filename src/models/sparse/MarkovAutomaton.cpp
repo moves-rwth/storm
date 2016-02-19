@@ -35,6 +35,19 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
+            MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
+                                                                         storm::models::sparse::StateLabeling&& stateLabeling,
+                                                                         storm::storage::BitVector const& markovianStates,
+                                                                         std::vector<ValueType> const& exitRates,
+                                                                         bool probabilities,
+                                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels,
+                                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
+                assert(probabilities);
+                assert(this->getTransitionMatrix().isProbabilistic());
+            }
+            
+            template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isClosed() const {
                 return closed;
             }

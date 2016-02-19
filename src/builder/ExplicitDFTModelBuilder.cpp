@@ -13,11 +13,52 @@ namespace storm {
         ExplicitDFTModelBuilder<ValueType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), markovianStates(), exitRates(), choiceLabeling() {
             // Intentionally left empty.
         }
+        
+        template <typename ValueType>
+        ExplicitDFTModelBuilder<ValueType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft) : mDft(dft), mStates(((mDft.stateVectorSize() / 64) + 1) * 64, std::pow(2, mDft.nrBasicElements())) {
+            // stateSize is bound for size of bitvector
+            // 2^nrBE is upper bound for state space
+
+            // Find symmetries
+            // TODO activate
+            // Currently using hack to test
+            std::vector<std::vector<size_t>> symmetries;
+            std::vector<size_t> vecB;
+            std::vector<size_t> vecC;
+            std::vector<size_t> vecD;
+            if (false) {
+                for (size_t i = 0; i < mDft.nrElements(); ++i) {
+                    std::string name = mDft.getElement(i)->name();
+                    size_t id = mDft.getElement(i)->id();
+                    if (boost::starts_with(name, "B")) {
+                        vecB.push_back(id);
+                    } else if (boost::starts_with(name, "C")) {
+                        vecC.push_back(id);
+                    } else if (boost::starts_with(name, "D")) {
+                        vecD.push_back(id);
+                    }
+                }
+                symmetries.push_back(vecB);
+                symmetries.push_back(vecC);
+                symmetries.push_back(vecD);
+                std::cout << "Found the following symmetries:" << std::endl;
+                for (auto const& symmetry : symmetries) {
+                    for (auto const& elem : symmetry) {
+                        std::cout << elem << " -> ";
+                    }
+                    std::cout << std::endl;
+                }
+            } else {
+                vecB.push_back(mDft.getTopLevelIndex());
+            }
+            mStateGenerationInfo = std::make_shared<storm::storage::DFTStateGenerationInfo>(mDft.buildStateGenerationInfo(vecB, symmetries));
+        }
+
 
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType>::buildModel() {
             // Initialize
-            DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, newIndex++);
+            DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, *mStateGenerationInfo, newIndex++);
             mStates.findOrAdd(state->status(), state);
 
             std::queue<DFTStatePointer> stateQueue;
@@ -73,22 +114,22 @@ namespace storm {
             }
 
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
-            // Turn the probabilities into rates by multiplying each row with the exit rate of the state.
-            // TODO Matthias: avoid transforming back and forth
-            storm::storage::SparseMatrix<ValueType> rateMatrix(modelComponents.transitionMatrix);
-            for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {
-                assert(row < modelComponents.markovianStates.size());
-                if (modelComponents.markovianStates.get(row)) {
-                    for (auto& entry : rateMatrix.getRow(row)) {
-                        entry.setValue(entry.getValue() * modelComponents.exitRates[row]);
-                    }
-                }
-            }
             
             if (deterministic) {
+                // Turn the probabilities into rates by multiplying each row with the exit rate of the state.
+                // TODO Matthias: avoid transforming back and forth
+                storm::storage::SparseMatrix<ValueType> rateMatrix(modelComponents.transitionMatrix);
+                for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {
+                    assert(row < modelComponents.markovianStates.size());
+                    if (modelComponents.markovianStates.get(row)) {
+                        for (auto& entry : rateMatrix.getRow(row)) {
+                            entry.setValue(entry.getValue() * modelComponents.exitRates[row]);
+                        }
+                    }
+                }
                 model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(rateMatrix), std::move(modelComponents.stateLabeling));
             } else {
-                model = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(rateMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates));
+                model = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates), true);
             }
             
             model->printModelInformationToStream(std::cout);

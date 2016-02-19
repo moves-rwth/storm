@@ -936,10 +936,6 @@ namespace storm {
         template<typename ValueType>
         class DFTSpare : public DFTGate<ValueType> {
 
-        private:
-            size_t mUseIndex;
-            size_t mActiveIndex;
-            
         public:
             DFTSpare(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
                     DFTGate<ValueType>(id, name, children)
@@ -957,24 +953,11 @@ namespace storm {
                 return true;
             }
             
-            void setUseIndex(size_t useIndex) {
-                mUseIndex = useIndex; 
-            }
-            
-            void setActiveIndex(size_t activeIndex) {
-                mActiveIndex = activeIndex;
-            }
-
-            void initializeUses(storm::storage::DFTState<ValueType>& state) {
-                assert(this->mChildren.size() > 0);
-                state.setUsesAtPosition(mUseIndex, this->mChildren[0]->id());
-            }
-
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if(state.isOperational(this->mId)) {
-                    size_t uses = state.extractUses(mUseIndex);
+                    size_t uses = state.uses(this->mId);
                     if(!state.isOperational(uses)) {
-                        bool claimingSuccessful = state.claimNew(this->mId, mUseIndex, uses, this->mChildren);
+                        bool claimingSuccessful = state.claimNew(this->mId, uses, this->mChildren);
                         if(!claimingSuccessful) {
                             this->fail(state, queues);
                         }
@@ -984,7 +967,7 @@ namespace storm {
 
             void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if(state.isOperational(this->mId)) {
-                    if(state.isFailsafe(state.extractUses((mUseIndex)))) {
+                    if(state.isFailsafe(state.uses(this->mId))) {
                         this->failsafe(state, queues);
                         this->childrenDontCare(state, queues);
                     }

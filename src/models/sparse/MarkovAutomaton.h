@@ -49,6 +49,25 @@ namespace storm {
                                 std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                                 boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
+                /*!
+                 * Constructs a model by moving the given data.
+                 *
+                 * @param transitionMatrix The matrix representing the transitions in the model in terms of rates.
+                 * @param stateLabeling The labeling of the states.
+                 * @param markovianStates A bit vector indicating the Markovian states of the automaton.
+                 * @param exitRates A vector storing the exit rates of the states.
+                 * @param rewardModels A mapping of reward model names to reward models.
+                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
+                 * @param probabilities Flag if transitions matrix contains probabilities or rates
+                 */
+                MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
+                                storm::models::sparse::StateLabeling&& stateLabeling,
+                                storm::storage::BitVector const& markovianStates,
+                                std::vector<ValueType> const& exitRates,
+                                bool probabilities,
+                                std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
+                                boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                
                 MarkovAutomaton(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;
                 MarkovAutomaton& operator=(MarkovAutomaton<ValueType, RewardModelType> const& other) = default;
                 

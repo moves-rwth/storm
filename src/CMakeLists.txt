@@ -37,13 +37,13 @@ file(GLOB STORM_SOLVER_STATEELIMINATION_FILES ${PROJECT_SOURCE_DIR}/src/solver/s
 file(GLOB STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SOURCE_DIR}/src/storage/*.cpp)
 file(GLOB STORM_STORAGE_BISIMULATION_FILES ${PROJECT_SOURCE_DIR}/src/storage/bisimulation/*.h ${PROJECT_SOURCE_DIR}/src/storage/bisimulation/*.cpp)
 file(GLOB STORM_STORAGE_DD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/*.cpp)
+file(GLOB STORM_STORAGE_DFT_FILES ${PROJECT_SOURCE_DIR}/src/storage/dft/*.h ${PROJECT_SOURCE_DIR}/src/storage/dft/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_DD_CUDD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_DD_SYLVAN_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.h ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_PRISM_FILES ${PROJECT_SOURCE_DIR}/src/storage/prism/*.h ${PROJECT_SOURCE_DIR}/src/storage/prism/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_SPARSE_FILES ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.h ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.cpp)
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
-file(GLOB_RECURSE STORM_STORAGE_DFT_FILES ${PROJECT_SOURCE_DIR}/src/storage/dft/*.h ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.cpp)
 
 
 # Additional include files like the storm-config.h
