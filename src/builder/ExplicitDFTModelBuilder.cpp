@@ -56,7 +56,7 @@ namespace storm {
 
 
         template <typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType>::buildModel() {
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType>::buildModel(LabelOptions const& labelOpts) {
             // Initialize
             DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, *mStateGenerationInfo, newIndex++);
             mStates.findOrAdd(state->status(), state);
@@ -89,25 +89,32 @@ namespace storm {
             modelComponents.stateLabeling.addLabel("init");
             modelComponents.stateLabeling.addLabelToState("init", 0);
             // Label all states corresponding to their status (failed, failsafe, failed BE)
-            modelComponents.stateLabeling.addLabel("failed");
-            modelComponents.stateLabeling.addLabel("failsafe");
+            if(labelOpts.buildFailLabel) {
+                modelComponents.stateLabeling.addLabel("failed");
+            } 
+            if(labelOpts.buildFailSafeLabel) {
+                modelComponents.stateLabeling.addLabel("failsafe");
+            }
+            
             // Collect labels for all BE
             std::vector<std::shared_ptr<storage::DFTBE<ValueType>>> basicElements = mDft.getBasicElements();
             for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
-                modelComponents.stateLabeling.addLabel(elem->name() + "_fail");
+                if(labelOpts.beLabels.count(elem->name()) > 0) {
+                    modelComponents.stateLabeling.addLabel(elem->name() + "_fail");
+                }
             }
 
             for (auto const& stateVectorPair : mStates) {
                 DFTStatePointer state = stateVectorPair.second;
-                if (mDft.hasFailed(state)) {
+                if (labelOpts.buildFailLabel && mDft.hasFailed(state)) {
                     modelComponents.stateLabeling.addLabelToState("failed", state->getId());
                 }
-                if (mDft.isFailsafe(state)) {
+                if (labelOpts.buildFailSafeLabel && mDft.isFailsafe(state)) {
                     modelComponents.stateLabeling.addLabelToState("failsafe", state->getId());
                 };
                 // Set fail status for each BE
                 for (std::shared_ptr<storage::DFTBE<ValueType>> elem : basicElements) {
-                    if (state->hasFailed(elem->id())) {
+                    if (labelOpts.beLabels.count(elem->name()) > 0 && state->hasFailed(elem->id()) ) {
                         modelComponents.stateLabeling.addLabelToState(elem->name() + "_fail", state->getId());
                     }
                 }
@@ -129,7 +136,13 @@ namespace storm {
                 }
                 model = std::make_shared<storm::models::sparse::Ctmc<ValueType>>(std::move(rateMatrix), std::move(modelComponents.stateLabeling));
             } else {
-                model = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates), true);
+                std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates), true);
+                if (ma->hasOnlyTrivialNondeterminism()) {
+                 // Markov automaton can be converted into CTMC
+                    model = ma->convertToCTMC();
+                } else {
+                    model = ma;
+                }
             }
             
             model->printModelInformationToStream(std::cout);

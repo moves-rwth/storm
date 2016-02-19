@@ -32,7 +32,8 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     // Building Markov Automaton
     std::cout << "Building Model..." << std::endl;
     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft);
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel();
+    typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel(labeloptions);
     std::cout << "Built Model" << std::endl;
 
     // Model checking
