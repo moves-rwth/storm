@@ -46,15 +46,23 @@ namespace storm {
             
             const size_t INITIAL_BUCKETSIZE = 20000;
 
+          
+            
             storm::storage::DFT<ValueType> const& mDft;
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> mStateGenerationInfo;
             storm::storage::BitVectorHashMap<size_t> mStates;
             size_t newIndex = 0;
 
         public:
+              struct LabelOptions {
+                bool buildFailLabel = true;
+                bool buildFailSafeLabel = false;
+                std::set<std::string> beLabels = {};
+            };
+            
             ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft);
 
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel();
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel(LabelOptions const& labelOpts);
 
         private:
             bool exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates);

@@ -196,6 +196,15 @@ namespace storm {
     
     template<typename ModelType>
     std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) {
+        if(model->getType() == storm::models::ModelType::MarkovAutomaton && model->isSparseModel()) {
+            std::shared_ptr<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<typename ModelType::ValueType>>();
+            if (ma->hasOnlyTrivialNondeterminism()) {
+                // Markov automaton can be converted into CTMC
+                model = ma->convertToCTMC();
+                
+            } 
+        }
+        
         if (model->isSparseModel() && storm::settings::generalSettings().isBisimulationSet()) {
             storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
             if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
@@ -205,6 +214,7 @@ namespace storm {
             STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
             return performBisimulationMinimization<ModelType>(model->template as<storm::models::sparse::Model<typename ModelType::ValueType>>(), formulas, bisimType);
         }
+        
         return model;
     }
     
@@ -302,15 +312,8 @@ namespace storm {
             result = modelchecker.check(task);
         } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
             std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
-            if (ma->hasOnlyTrivialNondeterminism()) {
-                // Markov automaton can be converted into CTMC
-                std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = ma->convertToCTMC();
-                storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
-                result = modelchecker.check(task);
-            } else {
-                storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
-                result = modelchecker.check(task);
-            }
+            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
+            result = modelchecker.check(task);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported.");
         }

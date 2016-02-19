@@ -238,9 +238,19 @@ namespace storm {
         }
 
         template<typename ValueType>
+        std::vector<size_t> DFT<ValueType>::immediateFailureCauses(size_t index) const {
+            if(isGate(index)) {
+
+            } else {
+                return {index};
+            }
+        }
+
+        template<typename ValueType>
         DFTColouring<ValueType> DFT<ValueType>::colourDFT() const {
             return DFTColouring<ValueType>(*this);
         }
+
 
         template<typename ValueType>
         DFTIndependentSymmetries DFT<ValueType>::findSymmetries(DFTColouring<ValueType> const& colouring) const {
