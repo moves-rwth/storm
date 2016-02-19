@@ -16,12 +16,19 @@
  */
 template <typename ValueType>
 void analyzeDFT(std::string filename, std::string property, bool symred = false) {
+    storm::settings::SettingsManager& manager = storm::settings::mutableManager();
+    manager.setFromString("");
+
     // Parsing DFT
     std::cout << "Parsing DFT file..." << std::endl;
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
     std::cout << "Built data structure" << std::endl;
-    
+    std::cout << "Parse formula..." << std::endl;
+    std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas = storm::parseFormulasForExplicit(property);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
+    assert(formulas.size() == 1);
+    std::cout << "parsed formula." << std::endl;
     if(symred) {
         std::cout << dft.getElementsString() << std::endl;
         auto colouring = dft.colourDFT();
@@ -36,10 +43,20 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel(labeloptions);
     std::cout << "Built Model" << std::endl;
 
+    
+    model->printModelInformationToStream(std::cout);
+    
+    std::cout << "Bisimulation..." << std::endl;
+    
+    if (model->isOfType(storm::models::ModelType::Ctmc)) {
+            model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
+    }
+    
+    
+    model->printModelInformationToStream(std::cout);
+    
     // Model checking
     std::cout << "Model checking..." << std::endl;
-    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = storm::parseFormulasForExplicit(property);
-    assert(formulas.size() == 1);
     std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formulas[0]));
     assert(result);
     std::cout << "Result: ";

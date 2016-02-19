@@ -145,7 +145,6 @@ namespace storm {
                 }
             }
             
-            model->printModelInformationToStream(std::cout);
             return model;
         }
 
