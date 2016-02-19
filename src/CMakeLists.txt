@@ -38,6 +38,7 @@ file(GLOB STORM_STORAGE_FILES ${PROJECT_SOURCE_DIR}/src/storage/*.h ${PROJECT_SO
 file(GLOB STORM_STORAGE_BISIMULATION_FILES ${PROJECT_SOURCE_DIR}/src/storage/bisimulation/*.h ${PROJECT_SOURCE_DIR}/src/storage/bisimulation/*.cpp)
 file(GLOB STORM_STORAGE_DD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/*.cpp)
 file(GLOB STORM_STORAGE_DFT_FILES ${PROJECT_SOURCE_DIR}/src/storage/dft/*.h ${PROJECT_SOURCE_DIR}/src/storage/dft/*.cpp)
+file(GLOB STORM_STORAGE_DFT_ELEMENTS_FILES ${PROJECT_SOURCE_DIR}/src/storage/dft/elements/*.h ${PROJECT_SOURCE_DIR}/src/storage/dft/elements/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_DD_CUDD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_DD_SYLVAN_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.h ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.cpp)
@@ -94,6 +95,7 @@ source_group(storage\\expressions FILES ${STORM_STORAGE_EXPRESSIONS_FILES})
 source_group(storage\\prism FILES ${STORM_STORAGE_PRISM_FILES})
 source_group(storage\\sparse FILES ${STORM_STORAGE_SPARSE_FILES})
 source_group(storage\\dft FILES ${STORM_STORAGE_DFT_FILES})
+source_group(storage\\dft\\elements FILES ${STORM_STORAGE_DFT_ELEMENTS_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 
 # Add custom additional include or link directories
