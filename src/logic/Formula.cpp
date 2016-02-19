@@ -256,6 +256,14 @@ namespace storm {
             return dynamic_cast<EventuallyFormula const&>(*this);
         }
         
+        EventuallyFormula& Formula::asReachabilityRewardFormula() {
+            return dynamic_cast<EventuallyFormula&>(*this);
+        }
+        
+        EventuallyFormula const& Formula::asReachabilityRewardFormula() const {
+            return dynamic_cast<EventuallyFormula const&>(*this);
+        }
+        
         GloballyFormula& Formula::asGloballyFormula() {
             return dynamic_cast<GloballyFormula&>(*this);
         }
@@ -382,7 +390,7 @@ namespace storm {
             return;
         }
         
-        void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicExpressionFormulas) const {
+        void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const {
             return;
         }
         

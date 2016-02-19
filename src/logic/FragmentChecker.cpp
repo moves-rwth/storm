@@ -68,11 +68,15 @@ namespace storm {
             bool result = true;
             if (f.isConditionalProbabilityFormula()) {
                 result = result && inherited.getSpecification().areConditionalProbabilityFormulasAllowed();
-            } else if (f.Formula::isConditionalRewardFormula()) {
+            } else if (f.isConditionalRewardFormula()) {
                 result = result && inherited.getSpecification().areConditionalRewardFormulasFormulasAllowed();
             }
             if (inherited.getSpecification().areOnlyEventuallyFormuluasInConditionalFormulasAllowed()) {
-                result = result && f.getSubformula().isEventuallyFormula() && f.getConditionFormula().isEventuallyFormula();
+                if (f.isConditionalProbabilityFormula()) {
+                    result = result && f.getSubformula().isEventuallyFormula() && f.getConditionFormula().isEventuallyFormula();
+                } else if (f.isConditionalRewardFormula()) {
+                    result = result && f.getSubformula().isReachabilityRewardFormula() && f.getConditionFormula().isEventuallyFormula();
+                }
             }
             result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             result = result && boost::any_cast<bool>(f.getConditionFormula().accept(*this, data));
@@ -172,7 +176,7 @@ namespace storm {
         boost::any FragmentChecker::visit(RewardOperatorFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areRewardOperatorsAllowed();
-            result = result && f.getSubformula().isRewardPathFormula();
+            result = result && (f.getSubformula().isRewardPathFormula() || f.getSubformula().isConditionalRewardFormula());
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {

@@ -126,6 +126,9 @@ namespace storm {
             EventuallyFormula& asEventuallyFormula();
             EventuallyFormula const& asEventuallyFormula() const;
             
+            EventuallyFormula& asReachabilityRewardFormula();
+            EventuallyFormula const& asReachabilityRewardFormula() const;
+            
             GloballyFormula& asGloballyFormula();
             GloballyFormula const& asGloballyFormula() const;
             
@@ -178,7 +181,7 @@ namespace storm {
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const;
-            virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicExpressionFormulas) const;
+            virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const;
             
         private:

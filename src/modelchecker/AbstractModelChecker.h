@@ -44,7 +44,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask);
             
             // The methods to compute the rewards for path formulas.
-            virtual std::unique_ptr<CheckResult> computeRewards(CheckTask<storm::logic::PathFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeRewards(CheckTask<storm::logic::Formula> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeConditionalRewards(CheckTask<storm::logic::ConditionalFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask);

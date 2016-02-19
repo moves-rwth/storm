@@ -2,6 +2,7 @@
 #define STORM_LOGIC_CONDITIONALFORMULA_H_
 
 #include "src/logic/BinaryPathFormula.h"
+#include "src/logic/FormulaContext.h"
 
 namespace storm {
     namespace logic {
@@ -9,7 +10,7 @@ namespace storm {
         public:
             enum class Context { Probability, Reward };
             
-            ConditionalFormula(std::shared_ptr<Formula const> const& subformula, std::shared_ptr<Formula const> const& conditionFormula, Context context = Context::Probability);
+            ConditionalFormula(std::shared_ptr<Formula const> const& subformula, std::shared_ptr<Formula const> const& conditionFormula, FormulaContext context = FormulaContext::Probability);
             
             virtual ~ConditionalFormula() {
                 // Intentionally left empty.
@@ -27,10 +28,14 @@ namespace storm {
             
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             
+            virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
+            virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
+            virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
+            
         private:
             std::shared_ptr<Formula const> subformula;
             std::shared_ptr<Formula const> conditionFormula;
-            Context context;
+            FormulaContext context;
         };
     }
 }

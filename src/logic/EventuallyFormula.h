@@ -2,14 +2,13 @@
 #define STORM_LOGIC_EVENTUALLYFORMULA_H_
 
 #include "src/logic/UnaryPathFormula.h"
+#include "src/logic/FormulaContext.h"
 
 namespace storm {
     namespace logic {
         class EventuallyFormula : public UnaryPathFormula {
-        public:
-            enum class Context { Probability, Reward, ExpectedTime };
-            
-            EventuallyFormula(std::shared_ptr<Formula const> const& subformula, Context context = Context::Probability);
+        public:            
+            EventuallyFormula(std::shared_ptr<Formula const> const& subformula, FormulaContext context = FormulaContext::Probability);
             
             virtual ~EventuallyFormula() {
                 // Intentionally left empty.
@@ -29,7 +28,7 @@ namespace storm {
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
 
         private:
-            Context context;
+            FormulaContext context;
         };
     }
 }
