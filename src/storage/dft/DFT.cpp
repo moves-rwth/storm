@@ -63,7 +63,7 @@ namespace storm {
             }
             mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
             
-            size_t usageInfoBits = storm::utility::math::uint64_log2(mElements.size()-1)+1;
+            size_t usageInfoBits = mElements.size() > 1 ? storm::utility::math::uint64_log2(mElements.size()-1) + 1 : 1;
             mStateVectorSize = nrElements() * 2 + mNrOfSpares * usageInfoBits + nrRepresentatives;
         }
 

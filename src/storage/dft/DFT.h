@@ -43,7 +43,7 @@ namespace storm {
             
         public:
             
-            DFTStateGenerationInfo(size_t nrElements) : mUsageInfoBits(storm::utility::math::uint64_log2(nrElements-1)+1), mIdToStateIndex(nrElements) {
+            DFTStateGenerationInfo(size_t nrElements) : mUsageInfoBits(nrElements > 1 ? storm::utility::math::uint64_log2(nrElements-1) + 1 : 1), mIdToStateIndex(nrElements) {
             }
 
             size_t usageInfoBits() const {
