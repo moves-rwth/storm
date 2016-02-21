@@ -159,6 +159,18 @@ namespace storm {
             DFTGateVector const& parents() const {
                 return mParents;
             }
+            
+            bool hasRestrictions() const {
+                return !mRestrictions.empty();
+            }
+            
+            size_t nrRestrictions() const {
+                return mRestrictions.size();
+            }
+            
+            DFTRestrictionVector const& restrictions() const {
+                return mRestrictions;
+            }
 
             std::vector<size_t> parentIds() const {
                 std::vector<size_t> res;
@@ -371,7 +383,11 @@ namespace storm {
                         queues.propagateFailure(parent);
                     }
                 }
+                for(std::shared_ptr<DFTRestriction<ValueType>> restr : this->mRestrictions) {
+                    queues.checkRestrictionLater(restr);
+                }
                 state.setFailed(this->mId);
+                // TODO can this be moved towards DFTSpare?
                 if (this->isSpareGate()) {
                     this->finalizeSpare(state);
                 }

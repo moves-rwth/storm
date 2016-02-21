@@ -52,7 +52,7 @@ namespace storm {
 
         template<typename ValueType>
         std::vector<size_t> DFTElement<ValueType>::independentSubDft() const {
-            std::cout << "INDEPENDENT SUBTREE CALL " << this->id() << std::endl;
+            //std::cout << "INDEPENDENT SUBTREE CALL " << this->id() << std::endl;
             std::vector<size_t> res;
             res.push_back(this->id());
             return res;

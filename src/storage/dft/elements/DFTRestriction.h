@@ -127,7 +127,7 @@ namespace storm {
         protected:
 
             void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
-                //state.restrictionViolated(this->mId);
+                state.markAsInvalid();
             }
 
             void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
@@ -187,7 +187,7 @@ namespace storm {
             }
 
             void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
-                assert(this->hasFailsafeChild(state));
+                
 
             }
 

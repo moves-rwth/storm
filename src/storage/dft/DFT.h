@@ -10,6 +10,7 @@
 #include <boost/iterator/counting_iterator.hpp>
 
 #include "DFTElements.h"
+#include "elements/DFTRestriction.h"
 #include "../BitVector.h"
 #include "SymmetricUnits.h"
 #include "../../utility/math.h"
