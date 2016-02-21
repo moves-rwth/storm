@@ -26,6 +26,8 @@ namespace storm {
         
         template<typename ValueType>
         class DFTDependency;
+        template<typename ValueType>
+        class DFTRestriction;
 
         template<typename ValueType>
         class DFTElement {
@@ -34,6 +36,9 @@ namespace storm {
             using DFTGateVector = std::vector<DFTGatePointer>;
             using DFTDependencyPointer = std::shared_ptr<DFTDependency<ValueType>>;
             using DFTDependencyVector = std::vector<DFTDependencyPointer>;
+            using DFTRestrictionPointer = std::shared_ptr<DFTRestriction<ValueType>>;
+            using DFTRestrictionVector = std::vector<DFTRestrictionPointer>;
+
 
         protected:
             size_t mId;
@@ -41,6 +46,8 @@ namespace storm {
             size_t mRank = -1;
             DFTGateVector mParents;
             DFTDependencyVector mOutgoingDependencies;
+            DFTRestrictionVector mRestrictions;
+
 
         public:
             DFTElement(size_t id, std::string const& name) :
@@ -95,6 +102,10 @@ namespace storm {
             virtual bool isDependency() const {
                 return false;
             }
+            
+            virtual bool isRestriction() const {
+                return false;
+            }
 
             virtual void setId(size_t newId) {
                 mId = newId;
@@ -114,6 +125,15 @@ namespace storm {
                 else 
                 {
                     mParents.push_back(e);
+                    return true;
+                }
+            }
+
+            bool addRestriction(DFTRestrictionPointer const& e) {
+                if (std::find(mRestrictions.begin(), mRestrictions.end(), e) != mRestrictions.end()) {
+                    return false;
+                } else {
+                    mRestrictions.push_back(e);
                     return true;
                 }
             }

@@ -3,6 +3,7 @@
 #define	DFTBUILDER_H
 
 #include "DFTElements.h"
+#include "elements/DFTRestriction.h"
 #include <iostream>
 #include <unordered_map>
 #include <map>
@@ -21,13 +22,16 @@ namespace storm {
             using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
             using DFTGateVector = std::vector<DFTGatePointer>;
             using DFTDependencyPointer = std::shared_ptr<DFTDependency<ValueType>>;
+            using DFTRestrictionPointer = std::shared_ptr<DFTRestriction<ValueType>>;
 
         private:
             std::size_t mNextId = 0;
             std::string topLevelIdentifier;
             std::unordered_map<std::string, DFTElementPointer> mElements;
             std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
+            std::unordered_map<DFTRestrictionPointer, std::vector<std::string>> mRestrictionChildNames;
             std::vector<DFTDependencyPointer> mDependencies;
+            std::vector<DFTRestrictionPointer> mRestrictions;
             
         public:
             DFTBuilder() {
@@ -53,9 +57,19 @@ namespace storm {
             bool addSpareElement(std::string const& name, std::vector<std::string> const& children) {
                 return addStandardGate(name, children, DFTElementType::SPARE);
             }
+
+            bool addSequenceEnforcer(std::string const& name, std::vector<std::string> const& children) {
+                return addRestriction(name, children, DFTElementType::SEQ);
+            }
+
+            bool addMutex(std::string const& name, std::vector<std::string> const& children) {
+                return addRestriction(name, children, DFTElementType::MUTEX);
+            }
             
             bool addDepElement(std::string const& name, std::vector<std::string> const& children, ValueType probability) {
-                assert(children.size() > 1);
+                if(children.size() <= 1) {
+                    STORM_LOG_ERROR("Dependencies require at least two children");
+                }
                 if(mElements.count(name) != 0) {
                     // Element with that name already exists.
                     return false;
@@ -138,7 +152,8 @@ namespace storm {
             unsigned computeRank(DFTElementPointer const& elem);
             
             bool addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementType tp);
-            
+            bool addRestriction(std::string const& name, std::vector<std::string> const& children, DFTElementType tp);
+
             enum class topoSortColour {WHITE, BLACK, GREY}; 
             
             void topoVisit(DFTElementPointer const& n, std::map<DFTElementPointer, topoSortColour, OrderElementsById<ValueType>>& visited, DFTElementVector& L);
