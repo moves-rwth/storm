@@ -80,23 +80,17 @@ namespace storm {
             std::queue<size_t> visitQueue;
             std::set<size_t> visited;
             visitQueue.push(subTreeRoots[0]);
-            bool consideredDependencies = false;
-            while (true) {
-                if (consideredDependencies) {
-                    break;
-                }
-                
-                stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
-                
-                // Consider dependencies
-                for (size_t idDependency : getDependencies()) {
-                    std::shared_ptr<DFTDependency<ValueType> const> dependency = getDependency(idDependency);
-                    visitQueue.push(dependency->id());
-                    visitQueue.push(dependency->triggerEvent()->id());
-                    visitQueue.push(dependency->dependentEvent()->id());
-                }
-                consideredDependencies = true;
+            stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
+            
+            // Consider dependencies
+            for (size_t idDependency : getDependencies()) {
+                std::shared_ptr<DFTDependency<ValueType> const> dependency = getDependency(idDependency);
+                visitQueue.push(dependency->id());
+                visitQueue.push(dependency->triggerEvent()->id());
+                visitQueue.push(dependency->dependentEvent()->id());
             }
+            stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
+            
             assert(stateIndex = mStateVectorSize);
 
             STORM_LOG_TRACE(generationInfo);
