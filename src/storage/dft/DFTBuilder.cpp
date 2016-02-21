@@ -130,6 +130,7 @@ namespace storm {
             mElements[name] = restr;
             mRestrictionChildNames[restr] = children;
             mRestrictions.push_back(restr);
+            return true;
         }
 
         template<typename ValueType>

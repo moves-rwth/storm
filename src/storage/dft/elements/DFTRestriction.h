@@ -116,10 +116,6 @@ namespace storm {
             }
 
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
-                if(DFTElement<ValueType>::checkDontCareAnymore(state, queues)) {
-                    childrenDontCare(state, queues);
-                    return true;
-                }
                 return false;
             }
 
@@ -132,10 +128,6 @@ namespace storm {
 
             void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
 
-            }
-
-            void childrenDontCare(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
-                queues.propagateDontCare(mChildren);
             }
 
             bool hasFailsafeChild(DFTState<ValueType>& state) const {
@@ -189,6 +181,10 @@ namespace storm {
             void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 
 
+            }
+            
+            bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) {
+                
             }
 
             virtual DFTElementType type() const override {

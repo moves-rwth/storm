@@ -10,6 +10,7 @@ namespace storm {
             if (state.dontCare(mId)) {
                 return false;
             }
+            
             // Check that no outgoing dependencies can be triggered anymore
             for (DFTDependencyPointer dependency : mOutgoingDependencies) {
                 if (state.isOperational(dependency->dependentEvent()->id()) && state.isOperational(dependency->triggerEvent()->id())) {
@@ -22,6 +23,9 @@ namespace storm {
                     return false;
                 }
             }
+            
+            
+        
 
             state.setDontCare(mId);
             return true;

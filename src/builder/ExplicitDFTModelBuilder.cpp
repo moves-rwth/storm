@@ -57,36 +57,47 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> ExplicitDFTModelBuilder<ValueType>::buildModel(LabelOptions const& labelOpts) {
             // Initialize
-            DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, *mStateGenerationInfo, newIndex++);
-            mStates.findOrAdd(state->status(), state->getId());
-
-            std::queue<DFTStatePointer> stateQueue;
-            stateQueue.push(state);
-
             bool deterministicModel = false;
             ModelComponents modelComponents;
             std::vector<uint_fast64_t> tmpMarkovianStates;
             storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
+            
 
+            if(mergeFailedStates) {
+                newIndex++;
+                
+                transitionMatrixBuilder.newRowGroup(failedIndex);
+                transitionMatrixBuilder.addNextValue(failedIndex, failedIndex, storm::utility::one<ValueType>());
+                STORM_LOG_TRACE("Added self loop for " << failedIndex);
+                modelComponents.exitRates.push_back(storm::utility::one<ValueType>());
+                tmpMarkovianStates.push_back(failedIndex);        
+            }
+            
+            DFTStatePointer state = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, *mStateGenerationInfo, newIndex++);
+            mStates.findOrAdd(state->status(), state->getId());
+            initialStateIndex = state->getId();
+            std::queue<DFTStatePointer> stateQueue;
+            stateQueue.push(state);
+            
             // Begin model generation
             bool deterministic = exploreStates(stateQueue, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);
-            STORM_LOG_DEBUG("Generated " << mStates.size() << " states");
+            STORM_LOG_DEBUG("Generated " << mStates.size() + (mergeFailedStates ? 1 : 0) << " states");
             STORM_LOG_DEBUG("Model is " << (deterministic ? "deterministic" : "non-deterministic"));
 
+            size_t stateSize = mStates.size() + (mergeFailedStates ? 1 : 0);
             // Build Markov Automaton
-            modelComponents.markovianStates = storm::storage::BitVector(mStates.size(), tmpMarkovianStates);
+            modelComponents.markovianStates = storm::storage::BitVector(stateSize, tmpMarkovianStates);
             // Build transition matrix
-            modelComponents.transitionMatrix = transitionMatrixBuilder.build();
+            modelComponents.transitionMatrix = transitionMatrixBuilder.build(stateSize, stateSize);
             STORM_LOG_DEBUG("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
             STORM_LOG_DEBUG("Exit rates: " << modelComponents.exitRates);
             STORM_LOG_DEBUG("Markovian states: " << modelComponents.markovianStates);
-            assert(!deterministic || modelComponents.transitionMatrix.getRowCount() == modelComponents.transitionMatrix.getColumnCount());
-
+            
             // Build state labeling
-            modelComponents.stateLabeling = storm::models::sparse::StateLabeling(mStates.size());
+            modelComponents.stateLabeling = storm::models::sparse::StateLabeling(mStates.size() + (mergeFailedStates ? 1 : 0));
             // Initial state is always first state without any failure
             modelComponents.stateLabeling.addLabel("init");
-            modelComponents.stateLabeling.addLabelToState("init", 0);
+            modelComponents.stateLabeling.addLabelToState("init", initialStateIndex);
             // Label all states corresponding to their status (failed, failsafe, failed BE)
             if(labelOpts.buildFailLabel) {
                 modelComponents.stateLabeling.addLabel("failed");
@@ -103,10 +114,13 @@ namespace storm {
                 }
             }
 
+            if(mergeFailedStates) {
+                modelComponents.stateLabeling.addLabelToState("failed", failedIndex);
+            }
             for (auto const& stateIdPair : mStates) {
                 storm::storage::BitVector state = stateIdPair.first;
                 size_t stateId = stateIdPair.second;
-                if (labelOpts.buildFailLabel && mDft.hasFailed(state, *mStateGenerationInfo)) {
+                if (!mergeFailedStates && labelOpts.buildFailLabel && mDft.hasFailed(state, *mStateGenerationInfo)) {
                     modelComponents.stateLabeling.addLabelToState("failed", stateId);
                 }
                 if (labelOpts.buildFailSafeLabel && mDft.isFailsafe(state, *mStateGenerationInfo)) {
@@ -151,13 +165,12 @@ namespace storm {
         template <typename ValueType>
         bool ExplicitDFTModelBuilder<ValueType>::exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates) {
 
-            assert(exitRates.empty());
-            assert(markovianStates.empty());
             // TODO Matthias: set Markovian states directly as bitvector?
             std::map<size_t, ValueType> outgoingTransitions;
             size_t rowOffset = 0; // Captures number of non-deterministic choices
             bool deterministic = true;
-
+            
+            
             while (!stateQueue.empty()) {
                 // Initialization
                 outgoingTransitions.clear();
@@ -189,6 +202,7 @@ namespace storm {
 
                 // Let BE fail
                 while (smallest < failableCount) {
+                    assert(!mDft.hasFailed(state));
                     STORM_LOG_TRACE("exploring from: " << mDft.getStateString(state));
 
                     // Construct new state as copy from original one
@@ -207,10 +221,22 @@ namespace storm {
                             queues.propagateFailure(parent);
                         }
                     }
+                    for (DFTRestrictionPointer restr : nextBE->restrictions()) {
+                        queues.checkRestrictionLater(restr);
+                    }
 
                     while (!queues.failurePropagationDone()) {
                         DFTGatePointer next = queues.nextFailurePropagation();
                         next->checkFails(*newState, queues);
+                    }
+                    
+                    while(!queues.restrictionChecksDone()) {
+                        DFTRestrictionPointer next = queues.nextRestrictionCheck();
+                        next->checkFails(*newState, queues);
+                    } 
+                    
+                    if(newState->isInvalid()) {
+                        continue;
                     }
 
                     while (!queues.failsafePropagationDone()) {
@@ -226,19 +252,24 @@ namespace storm {
                     // Update failable dependencies
                     newState->updateFailableDependencies(nextBE->id());
                     
+                    bool dftFailed = newState->hasFailed(mDft.getTopLevelIndex());
                     size_t newStateId;
-                    if (mStates.contains(newState->status())) {
-                        // State already exists
-                        newStateId = mStates.getValue(newState->status());
-                        STORM_LOG_TRACE("State " << mDft.getStateString(newState) << " already exists");
+                    if(dftFailed && mergeFailedStates) {
+                        newStateId = failedIndex;
                     } else {
-                        // New state
-                        newState->setId(newIndex++);
-                        newStateId = mStates.findOrAdd(newState->status(), newState->getId());
-                        STORM_LOG_TRACE("New state " << mDft.getStateString(newState));
+                       if (mStates.contains(newState->status())) {
+                            // State already exists
+                            newStateId = mStates.getValue(newState->status());
+                            STORM_LOG_TRACE("State " << mDft.getStateString(newState) << " already exists");
+                        } else {
+                            // New state
+                            newState->setId(newIndex++);
+                            newStateId = mStates.findOrAdd(newState->status(), newState->getId());
+                            STORM_LOG_TRACE("New state " << mDft.getStateString(newState));
 
-                        // Add state to search queue
-                        stateQueue.push(newState);
+                            // Add state to search queue
+                            stateQueue.push(newState);
+                        } 
                     }
 
                     // Set transitions

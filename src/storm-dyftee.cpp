@@ -48,7 +48,7 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     
     std::cout << "Bisimulation..." << std::endl;
     
-    if (model->isOfType(storm::models::ModelType::Ctmc)) {
+    if (model->getNumberOfStates() > 500 && model->isOfType(storm::models::ModelType::Ctmc)) {
             model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
     }
     

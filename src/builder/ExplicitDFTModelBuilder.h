@@ -23,6 +23,8 @@ namespace storm {
             using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
             using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
+            using DFTRestrictionPointer = std::shared_ptr<storm::storage::DFTRestriction<ValueType>>;
+
 
             // A structure holding the individual components of a model.
             struct ModelComponents {
@@ -52,6 +54,9 @@ namespace storm {
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> mStateGenerationInfo;
             storm::storage::BitVectorHashMap<size_t> mStates;
             size_t newIndex = 0;
+            bool mergeFailedStates = true;
+            size_t failedIndex = 0;
+            size_t initialStateIndex = 0;
 
         public:
               struct LabelOptions {
