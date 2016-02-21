@@ -80,23 +80,17 @@ namespace storm {
             std::queue<size_t> visitQueue;
             std::set<size_t> visited;
             visitQueue.push(subTreeRoots[0]);
-            bool consideredDependencies = false;
-            while (true) {
-                if (consideredDependencies) {
-                    break;
-                }
-                
-                stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
-                
-                // Consider dependencies
-                for (size_t idDependency : getDependencies()) {
-                    std::shared_ptr<DFTDependency<ValueType> const> dependency = getDependency(idDependency);
-                    visitQueue.push(dependency->id());
-                    visitQueue.push(dependency->triggerEvent()->id());
-                    visitQueue.push(dependency->dependentEvent()->id());
-                }
-                consideredDependencies = true;
+            stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
+            
+            // Consider dependencies
+            for (size_t idDependency : getDependencies()) {
+                std::shared_ptr<DFTDependency<ValueType> const> dependency = getDependency(idDependency);
+                visitQueue.push(dependency->id());
+                visitQueue.push(dependency->triggerEvent()->id());
+                visitQueue.push(dependency->dependentEvent()->id());
             }
+            stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
+            
             assert(stateIndex = mStateVectorSize);
 
             STORM_LOG_TRACE(generationInfo);
@@ -197,10 +191,11 @@ namespace storm {
                 } else {
                     stream << "\t** " << storm::storage::toChar(state->getElementState(elem->id()));
                     if(elem->isSpareGate()) {
-                        if(state->isActiveSpare(elem->id())) {
-                            stream << " actively";
+                        size_t useId = state->uses(elem->id());
+                        if(state->isActive(useId)) {
+                            stream << " actively ";
                         }
-                        stream << " using " << state->uses(elem->id());
+                        stream << " using " << useId;
                     }
                 }
                 stream << std::endl;
@@ -220,10 +215,11 @@ namespace storm {
                     stream << storm::storage::toChar(state->getElementState(elem->id()));
                     if(elem->isSpareGate()) {
                         stream << "[";
-                        if(state->isActiveSpare(elem->id())) {
-                            stream << "actively ";
+                        size_t useId = state->uses(elem->id());
+                        if(state->isActive(useId)) {
+                            stream << " actively ";
                         }
-                        stream << "using " << state->uses(elem->id()) << "]";
+                        stream << "using " << useId << "]";
                     }
                 }
             }

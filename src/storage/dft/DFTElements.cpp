@@ -7,18 +7,24 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTElement<ValueType>::checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
-            if(!state.dontCare(mId) && !hasOutgoingDependencies())
-            {
-                for(DFTGatePointer const& parent : mParents) {
-                    if(state.isOperational(parent->id())) {
-                        return false;
-                    }
-                }
-                state.setDontCare(mId);
-                return true;
-
+            if (state.dontCare(mId)) {
+                return false;
             }
-            return false;
+            // Check that no outgoing dependencies can be triggered anymore
+            for (DFTDependencyPointer dependency : mOutgoingDependencies) {
+                if (state.isOperational(dependency->dependentEvent()->id()) && state.isOperational(dependency->triggerEvent()->id())) {
+                    return false;
+                }
+            }
+            // Check that no parent can fail anymore
+            for(DFTGatePointer const& parent : mParents) {
+                if(state.isOperational(parent->id())) {
+                    return false;
+                }
+            }
+
+            state.setDontCare(mId);
+            return true;
         }
 
         template<typename ValueType>
