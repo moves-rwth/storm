@@ -4,20 +4,20 @@
 namespace storm {
     namespace storage {
 
-        enum class DFTElementType : int {AND = 0, COUNTING = 1, OR = 2, VOT = 3, BE = 4, CONSTF = 5, CONSTS = 6, PAND = 7, SPARE = 8, POR = 9, PDEP = 10, SEQAND = 11};
+        enum class DFTElementType : int {AND = 0, OR = 2, VOT = 3, BE = 4, CONSTF = 5, CONSTS = 6, PAND = 7, SPARE = 8, POR = 9, PDEP = 10, SEQ = 11, MUTEX=12};
 
         
         inline bool isGateType(DFTElementType const& tp) {
             switch(tp) {
                 case DFTElementType::AND:
-                case DFTElementType::COUNTING:
                 case DFTElementType::OR:
                 case DFTElementType::VOT:
                 case DFTElementType::PAND:
                 case DFTElementType::SPARE:
                 case DFTElementType::POR:
-                case DFTElementType::SEQAND:
                     return true;
+                case DFTElementType::SEQ:
+                case DFTElementType::MUTEX:
                 case DFTElementType::BE:
                 case DFTElementType::CONSTF:
                 case DFTElementType::CONSTS:
@@ -40,7 +40,6 @@ namespace storm {
                 case DFTElementType::POR:
                 case DFTElementType::SPARE:
                 case DFTElementType::PAND:
-                case DFTElementType::SEQAND:
                     return false;
                 default:
                     assert(false);

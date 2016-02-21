@@ -728,60 +728,6 @@ namespace storm {
 
 
 
-        template<typename ValueType>
-        class DFTSeqAnd : public DFTGate<ValueType> {
-
-        public:
-            DFTSeqAnd(size_t id, std::string const& name, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children = {}) :
-                    DFTGate<ValueType>(id, name, children)
-            {}
-
-            void checkFails(storm::storage::DFTState<ValueType>& state,  DFTStateSpaceGenerationQueues<ValueType>& queues) const {
-                if(!state.hasFailed(this->mId)) {
-                    bool childOperationalBefore = false;
-                    for(auto const& child : this->mChildren)
-                    {
-                        if(!state.hasFailed(child->id())) {
-                            childOperationalBefore = true;
-                        }
-                        else {
-                            if(childOperationalBefore) {
-                                state.markAsInvalid();
-                                return;
-                            }
-                        }
-                    }
-                    if(!childOperationalBefore) {
-                       fail(state, queues);
-                    }
-                  
-                } 
-            }
-
-            void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const{
-                assert(hasFailsafeChild(state));
-                if(state.isOperational(this->mId)) {
-                    failsafe(state, queues);
-                    //return true;
-                }
-                //return false;
-            }
-
-            virtual DFTElementType type() const override {
-                return DFTElementType::SEQAND;
-            }
-
-            std::string  typestring() const override {
-                return "SEQAND";
-            }
-        };
-
-        template<typename ValueType>
-        inline std::ostream& operator<<(std::ostream& os, DFTSeqAnd<ValueType> const& gate) {
-             return os << gate.toString();
-        }
-
-
 
         template<typename ValueType>
         class DFTPand : public DFTGate<ValueType> {
