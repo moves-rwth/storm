@@ -191,10 +191,11 @@ namespace storm {
                 } else {
                     stream << "\t** " << storm::storage::toChar(state->getElementState(elem->id()));
                     if(elem->isSpareGate()) {
-                        if(state->isActiveSpare(elem->id())) {
-                            stream << " actively";
+                        size_t useId = state->uses(elem->id());
+                        if(state->isActive(useId)) {
+                            stream << " actively ";
                         }
-                        stream << " using " << state->uses(elem->id());
+                        stream << " using " << useId;
                     }
                 }
                 stream << std::endl;
@@ -214,10 +215,11 @@ namespace storm {
                     stream << storm::storage::toChar(state->getElementState(elem->id()));
                     if(elem->isSpareGate()) {
                         stream << "[";
-                        if(state->isActiveSpare(elem->id())) {
-                            stream << "actively ";
+                        size_t useId = state->uses(elem->id());
+                        if(state->isActive(useId)) {
+                            stream << " actively ";
                         }
-                        stream << "using " << state->uses(elem->id()) << "]";
+                        stream << "using " << useId << "]";
                     }
                 }
             }

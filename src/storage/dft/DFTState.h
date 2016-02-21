@@ -26,7 +26,6 @@ namespace storm {
             // Status is bitvector where each element has two bits with the meaning according to DFTElementState
             storm::storage::BitVector mStatus;
             size_t mId;
-            std::vector<size_t> mInactiveSpares;
             std::vector<size_t> mIsCurrentlyFailableBE;
             std::vector<size_t> mFailableDependencies;
             std::vector<size_t> mUsedRepresentants;
@@ -79,9 +78,7 @@ namespace storm {
             
             void activate(size_t repr);
             
-            bool isActiveSpare(size_t id) const;
-            
-            void propagateActivation(size_t representativeId);
+            bool isActive(size_t id) const;
             
             void markAsInvalid() {
                 mValid = false;
@@ -200,6 +197,10 @@ namespace storm {
             friend bool operator==(DFTState const& a, DFTState const& b) {
                 return a.mStatus == b.mStatus;
             }
+            
+        private:
+            void propagateActivation(size_t representativeId);
+
         };
 
     }

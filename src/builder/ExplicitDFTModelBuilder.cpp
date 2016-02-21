@@ -256,7 +256,7 @@ namespace storm {
                             if (mStates.contains(unsuccessfulState->status())) {
                                 // Unsuccessful state already exists
                                 unsuccessfulStateId = mStates.getValue(unsuccessfulState->status());
-                                STORM_LOG_TRACE("State " << mDft.getStateString(unsuccessfulState) << " already exists");
+                                STORM_LOG_TRACE("State " << mDft.getStateString(unsuccessfulState) << " with id " << unsuccessfulStateId << " already exists");
                             } else {
                                 // New unsuccessful state
                                 unsuccessfulState->setId(newIndex++);
@@ -277,16 +277,15 @@ namespace storm {
                         ++rowOffset;
 
                     } else {
-                        // Set failure rate according to usage
-                        bool isUsed = true;
+                        // Set failure rate according to activation
+                        bool isActive = true;
                         if (mDft.hasRepresentant(nextBE->id())) {
-                            DFTElementCPointer representant = mDft.getRepresentant(nextBE->id());
-                            // Used must be checked for the state we are coming from as this state is responsible for the
+                            // Active must be checked for the state we are coming from as this state is responsible for the
                             // rate and not the new state we are going to
-                            isUsed = state->isUsed(representant->id());
+                            isActive = state->isActive(mDft.getRepresentant(nextBE->id())->id());
                         }
-                        STORM_LOG_TRACE("BE " << nextBE->name() << " is " << (isUsed ? "used" : "not used"));
-                        ValueType rate = isUsed ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
+                        STORM_LOG_TRACE("BE " << nextBE->name() << " is " << (isActive ? "active" : "not active"));
+                        ValueType rate = isActive ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
                         auto resultFind = outgoingTransitions.find(newStateId);
                         if (resultFind != outgoingTransitions.end()) {
                             // Add to existing transition
