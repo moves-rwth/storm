@@ -370,6 +370,7 @@ namespace storm {
                     }
                 }
                 state.setFailed(this->mId);
+                this->childrenDontCare(state, queues);
             }
 
             void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
@@ -379,6 +380,7 @@ namespace storm {
                     }
                 }
                 state.setFailsafe(this->mId);
+                this->childrenDontCare(state, queues);
             }
 
             void childrenDontCare(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
