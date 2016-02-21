@@ -7,7 +7,6 @@ namespace storm {
 
         template<typename ValueType>
         DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateVectorSize()), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo)  {
-            mInactiveSpares = dft.getSpareIndices();
             
             // Initialize uses
             for(size_t id  : mDft.getSpareIndices()) {
@@ -18,12 +17,7 @@ namespace storm {
             }
             
             // Initialize activation
-            this->activate(mDft.getTopLevelIndex());
-            for(auto const& id : mDft.module(mDft.getTopLevelIndex())) {
-                if(mDft.getElement(id)->isSpareGate()) {
-                    propagateActivation(uses(id));
-                }
-            }
+            propagateActivation(mDft.getTopLevelIndex());
 
             std::vector<size_t> alwaysActiveBEs = dft.nonColdBEs();
             mIsCurrentlyFailableBE.insert(mIsCurrentlyFailableBE.end(), alwaysActiveBEs.begin(), alwaysActiveBEs.end());
@@ -182,29 +176,25 @@ namespace storm {
 
         template<typename ValueType>
         void DFTState<ValueType>::activate(size_t repr) {
-            for(size_t elem : mDft.module(repr)) {
-                if(mDft.getElement(elem)->isColdBasicElement() && isOperational(elem)) {
-                    mIsCurrentlyFailableBE.push_back(elem);
-                }
-                else if(mDft.getElement(elem)->isSpareGate()) {
-                    assert(std::find(mInactiveSpares.begin(), mInactiveSpares.end(), elem) != mInactiveSpares.end());
-                    mInactiveSpares.erase(std::find(mInactiveSpares.begin(), mInactiveSpares.end(), elem));
-                }
-            }
+            size_t activationIndex = mStateGenerationInfo.getSpareActivationIndex(repr);
+            assert(!mStatus[activationIndex]);
+            mStatus.set(activationIndex);
+            propagateActivation(repr);
         }
 
         template<typename ValueType>
-        bool DFTState<ValueType>::isActiveSpare(size_t id) const {
-            assert(mDft.getElement(id)->isSpareGate());
-            return (std::find(mInactiveSpares.begin(), mInactiveSpares.end(), id) == mInactiveSpares.end());
+        bool DFTState<ValueType>::isActive(size_t id) const {
+            assert(mDft.isRepresentative(id));
+            return mStatus[mStateGenerationInfo.getSpareActivationIndex(id)];
         }
             
         template<typename ValueType>
         void DFTState<ValueType>::propagateActivation(size_t representativeId) {
-            activate(representativeId);
-            for(size_t id : mDft.module(representativeId)) {
-                if(mDft.getElement(id)->isSpareGate()) {
-                    propagateActivation(uses(id));
+            for(size_t elem : mDft.module(representativeId)) {
+                if(mDft.getElement(elem)->isColdBasicElement() && isOperational(elem)) {
+                    mIsCurrentlyFailableBE.push_back(elem);
+                } else if (mDft.getElement(elem)->isSpareGate() && !isActive(uses(elem))) {
+                    activate(uses(elem));
                 }
             }
         }
@@ -243,8 +233,8 @@ namespace storm {
                 size_t childId = (*it)->id();
                 if(!hasFailed(childId) && !isUsed(childId)) {
                     setUses(spareId, childId);
-                    if(isActiveSpare(spareId)) {
-                        propagateActivation(childId);
+                    if(isActive(currentlyUses)) {
+                        activate(childId);
                     }
                     return true;
                 }

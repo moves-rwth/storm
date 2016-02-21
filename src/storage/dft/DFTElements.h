@@ -279,11 +279,13 @@ namespace storm {
             virtual void checkFailsafe(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const = 0;
             
             virtual void extendSpareModule(std::set<size_t>& elementsInSpareModule) const override {
-                DFTElement<ValueType>::extendSpareModule(elementsInSpareModule);
-                for(auto const& child : mChildren) {
-                    if(elementsInSpareModule.count(child->id()) == 0) {
-                        elementsInSpareModule.insert(child->id());
-                        child->extendSpareModule(elementsInSpareModule);
+                if (!this->isSpareGate()) {
+                    DFTElement<ValueType>::extendSpareModule(elementsInSpareModule);
+                    for( auto const& child : mChildren) {
+                        if(elementsInSpareModule.count(child->id()) == 0) {
+                            elementsInSpareModule.insert(child->id());
+                            child->extendSpareModule(elementsInSpareModule);
+                        }
                     }
                 }
             }
@@ -370,6 +372,9 @@ namespace storm {
                     }
                 }
                 state.setFailed(this->mId);
+                if (this->isSpareGate()) {
+                    this->finalizeSpare(state);
+                }
                 this->childrenDontCare(state, queues);
             }
 
@@ -380,11 +385,28 @@ namespace storm {
                     }
                 }
                 state.setFailsafe(this->mId);
+                if (this->isSpareGate()) {
+                    this->finalizeSpare(state);
+                }
                 this->childrenDontCare(state, queues);
             }
 
             void childrenDontCare(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
                 queues.propagateDontCare(mChildren);
+            }
+
+            /**
+             * Finish failed/failsafe spare gate by activating the children and setting the useIndex to zero.
+             * This prevents multiple fail states with different usages or activations.
+             * @param state The current state.
+             */
+            void finalizeSpare(DFTState<ValueType>& state) const {
+                state.setUses(this->mId, 0);
+                for (auto child : this->children()) {
+                    if (!state.isActive(child->id())) {
+                        state.activate(child->id());
+                    }
+                }
             }
 
             bool hasFailsafeChild(DFTState<ValueType>& state) const {
