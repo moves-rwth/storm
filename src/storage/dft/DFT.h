@@ -126,7 +126,7 @@ namespace storm {
         public:
             DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
             
-            DFTStateGenerationInfo buildStateGenerationInfo(std::vector<size_t> const& subTreeRoots, std::vector<std::vector<size_t>> const& symmetries) const;
+            DFTStateGenerationInfo buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const;
 
             size_t performStateGenerationInfoDFS(DFTStateGenerationInfo& generationInfo, std::queue<size_t>& visitQueue, std::set<size_t>& visited, size_t stateIndex) const;
             

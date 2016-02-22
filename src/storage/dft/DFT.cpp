@@ -68,7 +68,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(std::vector<size_t> const& subTreeRoots, std::vector<std::vector<size_t>> const& symmetries) const {
+        DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const {
             // Use symmetry
             // Collect all elements in the first subtree
             // TODO make recursive to use for nested subtrees
@@ -79,7 +79,13 @@ namespace storm {
             size_t stateIndex = 0;
             std::queue<size_t> visitQueue;
             std::set<size_t> visited;
-            visitQueue.push(subTreeRoots[0]);
+            size_t firstRoot;
+            if (symmetries.groups.empty()) {
+                firstRoot = mTopLevelIndex;
+            } else {
+                firstRoot = symmetries.groups.begin()->first;
+            }
+            visitQueue.push(firstRoot);
             stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
             
             // Consider dependencies

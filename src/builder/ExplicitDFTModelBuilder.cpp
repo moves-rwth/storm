@@ -15,42 +15,10 @@ namespace storm {
         }
         
         template <typename ValueType>
-        ExplicitDFTModelBuilder<ValueType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft) : mDft(dft), mStates(((mDft.stateVectorSize() / 64) + 1) * 64, INITIAL_BUCKETSIZE) {
+        ExplicitDFTModelBuilder<ValueType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries) : mDft(dft), mStates(((mDft.stateVectorSize() / 64) + 1) * 64, INITIAL_BUCKETSIZE) {
             // stateVectorSize is bound for size of bitvector
 
-            // Find symmetries
-            // TODO activate
-            // Currently using hack to test
-            std::vector<std::vector<size_t>> symmetriesTmp;
-            std::vector<size_t> vecB;
-            std::vector<size_t> vecC;
-            std::vector<size_t> vecD;
-            if (false) {
-                for (size_t i = 0; i < mDft.nrElements(); ++i) {
-                    std::string name = mDft.getElement(i)->name();
-                    size_t id = mDft.getElement(i)->id();
-                    if (boost::starts_with(name, "B")) {
-                        vecB.push_back(id);
-                    } else if (boost::starts_with(name, "C")) {
-                        vecC.push_back(id);
-                    } else if (boost::starts_with(name, "D")) {
-                        vecD.push_back(id);
-                    }
-                }
-                symmetriesTmp.push_back(vecB);
-                symmetriesTmp.push_back(vecC);
-                symmetriesTmp.push_back(vecD);
-                std::cout << "Found the following symmetries:" << std::endl;
-                for (auto const& symmetry : symmetriesTmp) {
-                    for (auto const& elem : symmetry) {
-                        std::cout << elem << " -> ";
-                    }
-                    std::cout << std::endl;
-                }
-            } else {
-                vecB.push_back(mDft.getTopLevelIndex());
-            }
-            mStateGenerationInfo = std::make_shared<storm::storage::DFTStateGenerationInfo>(mDft.buildStateGenerationInfo(vecB, symmetriesTmp));
+            mStateGenerationInfo = std::make_shared<storm::storage::DFTStateGenerationInfo>(mDft.buildStateGenerationInfo(symmetries));
         }
 
 
