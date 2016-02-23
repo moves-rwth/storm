@@ -75,44 +75,7 @@ namespace storm {
         ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::InternalStateInformation::InternalStateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 10000000), bitsPerState(bitsPerState), reachableStates() {
             // Intentionally left empty.
         }
-        
-        template <typename ValueType, typename RewardModelType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, bool initialValue, uint_fast64_t bitOffset) : variable(variable), initialValue(initialValue), bitOffset(bitOffset) {
-            // Intentionally left empty.
-        }
-        
-        template <typename ValueType, typename RewardModelType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t initialValue, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : variable(variable), initialValue(initialValue), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth) {
-            // Intentionally left empty.
-        }
-        
-        template <typename ValueType, typename RewardModelType, typename IndexType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::VariableInformation(storm::expressions::ExpressionManager const& manager) : manager(manager) {
-            // Intentionally left empty.
-        }
-        
-        template <typename ValueType, typename RewardModelType, typename IndexType>
-        uint_fast64_t ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::getBitOffset(storm::expressions::Variable const& variable) const {
-            auto const& booleanIndex = booleanVariableToIndexMap.find(variable);
-            if (booleanIndex != booleanVariableToIndexMap.end()) {
-                return booleanVariables[booleanIndex->second].bitOffset;
-            }
-            auto const& integerIndex = integerVariableToIndexMap.find(variable);
-            if (integerIndex != integerVariableToIndexMap.end()) {
-                return integerVariables[integerIndex->second].bitOffset;
-            }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot look-up bit index of unknown variable.");
-        }
-
-        template <typename ValueType, typename RewardModelType, typename IndexType>
-        uint_fast64_t ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::VariableInformation::getBitWidth(storm::expressions::Variable const& variable) const {
-            auto const& integerIndex = integerVariableToIndexMap.find(variable);
-            if (integerIndex != integerVariableToIndexMap.end()) {
-                return integerVariables[integerIndex->second].bitWidth;
-            }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Cannot look-up bit width of unknown variable.");
-        }
-        
+            
         template <typename ValueType, typename RewardModelType, typename IndexType>
         ExplicitPrismModelBuilder<ValueType, RewardModelType, IndexType>::ModelComponents::ModelComponents() : transitionMatrix(), stateLabeling(), rewardModels(), choiceLabeling() {
             // Intentionally left empty.
