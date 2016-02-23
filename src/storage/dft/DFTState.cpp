@@ -242,6 +242,37 @@ namespace storm {
             }
             return false;
         }
+        
+        template<typename ValueType>
+        bool DFTState<ValueType>::orderBySymmetry() {
+            bool changed = false;
+            for (size_t pos = 0; pos < mStateGenerationInfo.getSymmetrySize(); ++pos) {
+                // Check each symmetry
+                size_t length = mStateGenerationInfo.getSymmetryLength(pos);
+                std::vector<size_t> symmetryIndices = mStateGenerationInfo.getSymmetryIndices(pos);
+                // Sort symmetry group in decreasing order by bubble sort
+                // TODO use better algorithm?
+                size_t tmp, elem1, elem2;
+                size_t n = symmetryIndices.size();
+                do {
+                    tmp = 0;
+                    for (size_t i = 1; i < n; ++i) {
+                        elem1 = mStatus.getAsInt(symmetryIndices[i-1], length);
+                        elem2 = mStatus.getAsInt(symmetryIndices[i], length);
+                        if (elem1 > elem2) {
+                            // Swap elements
+                            mStatus.setFromInt(symmetryIndices[i-1], length, elem2);
+                            mStatus.setFromInt(symmetryIndices[i], length, elem1);
+                            tmp = i;
+                            changed = true;
+                        }
+                    }
+                    n = tmp;
+                } while (n > 0);
+            }
+            return changed;
+        }
+
 
         // Explicitly instantiate the class.
         template class DFTState<double>;
