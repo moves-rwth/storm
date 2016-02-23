@@ -85,22 +85,28 @@ namespace storm {
                 visitQueue.push(mTopLevelIndex);
                 stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
             } else {
-                // Perform DFS for first subtree of each symmetry
                 for (auto const& symmetryGroup : symmetries.groups) {
-                    visitQueue.push(symmetryGroup.first);
-                    size_t stateIndexBefore = stateIndex;
-                    stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
-                    size_t offset = stateIndex - stateIndexBefore;
-
-                    // Mirror symmetries
                     assert(!symmetryGroup.second.empty());
+
+                    // Perform DFS for first subtree of each symmetry
+                    visitQueue.push(symmetryGroup.first);
+                    size_t groupIndex = stateIndex;
+                    stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
+                    size_t offset = stateIndex - groupIndex;
+                    
+                    // Mirror symmetries
+                    size_t noSymmetricElements = symmetryGroup.second.front().size();
+                    assert(noSymmetricElements > 1);
+
                     for (std::vector<size_t> symmetricElements : symmetryGroup.second) {
-                        assert(symmetricElements.size() > 1);
+                        assert(symmetricElements.size() == noSymmetricElements);
+
+                        // Initialize for original element
                         size_t originalElement = symmetricElements[0];
                         size_t index = generationInfo.getStateIndex(originalElement);
                         size_t activationIndex = isRepresentative(originalElement) ? generationInfo.getSpareActivationIndex(originalElement) : 0;
                         size_t usageIndex = mElements[originalElement]->isSpareGate() ? generationInfo.getSpareUsageIndex(originalElement) : 0;
-
+                        
                         // Mirror symmetry for each element
                         for (size_t i = 1; i < symmetricElements.size(); ++i) {
                             size_t symmetricElement = symmetricElements[i];
@@ -122,6 +128,13 @@ namespace storm {
                             }
                         }
                     }
+
+                    // Store starting indices of symmetry groups
+                    std::vector<size_t> symmetryIndices;
+                    for (size_t i = 0; i < noSymmetricElements; ++i) {
+                        symmetryIndices.push_back(groupIndex + i * offset);
+                    }
+                    generationInfo.addSymmetry(offset, symmetryIndices);
                 }
             }
 
@@ -146,7 +159,30 @@ namespace storm {
             STORM_LOG_TRACE(generationInfo);
             assert(stateIndex == mStateVectorSize);
             assert(visited.full());
+            
             return generationInfo;
+        }
+        
+        template<typename ValueType>
+        size_t DFT<ValueType>::generateStateInfo(DFTStateGenerationInfo& generationInfo, size_t id, storm::storage::BitVector& visited, size_t stateIndex) const {
+            assert(!visited[id]);
+            visited.set(id);
+            
+            // Reserve bits for element
+            generationInfo.addStateIndex(id, stateIndex);
+            stateIndex += 2;
+            
+            if (isRepresentative(id)) {
+                generationInfo.addSpareActivationIndex(id, stateIndex);
+                ++stateIndex;
+            }
+            
+            if (mElements[id]->isSpareGate()) {
+                generationInfo.addSpareUsageIndex(id, stateIndex);
+                stateIndex += generationInfo.usageInfoBits();
+            }
+            
+            return stateIndex;
         }
         
         template<typename ValueType>
@@ -158,30 +194,14 @@ namespace storm {
                     // Already visited
                     continue;
                 }
-                visited.set(id);
-                DFTElementPointer element = mElements[id];
+                stateIndex = generateStateInfo(generationInfo, id, visited, stateIndex);
                 
                 // Insert children
-                if (element->isGate()) {
-                    for (auto const& child : std::static_pointer_cast<DFTGate<ValueType>>(element)->children()) {
+                if (mElements[id]->isGate()) {
+                    for (auto const& child : std::static_pointer_cast<DFTGate<ValueType>>(mElements[id])->children()) {
                         visitQueue.push(child->id());
                     }
                 }
-                
-                // Reserve bits for element
-                generationInfo.addStateIndex(id, stateIndex);
-                stateIndex += 2;
-                
-                if (isRepresentative(id)) {
-                    generationInfo.addSpareActivationIndex(id, stateIndex);
-                    ++stateIndex;
-                }
-                
-                if (element->isSpareGate()) {
-                    generationInfo.addSpareUsageIndex(id, stateIndex);
-                    stateIndex += generationInfo.usageInfoBits();
-                }
-                
             }
             return stateIndex;
         }

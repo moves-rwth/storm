@@ -41,6 +41,7 @@ namespace storm {
             std::map<size_t, size_t> mSpareUsageIndex; // id spare -> index first bit in state
             std::map<size_t, size_t> mSpareActivationIndex; // id spare representative -> index in state
             std::vector<size_t> mIdToStateIndex; // id -> index first bit in state
+            std::vector<std::pair<size_t, std::vector<size_t>>> mSymmetries; // pair (lenght of symmetry group, vector indicating the starting points of the symmetry groups)
             
         public:
             
@@ -79,6 +80,24 @@ namespace storm {
                 return mSpareActivationIndex.at(id);
             }
             
+            size_t addSymmetry(size_t lenght, std::vector<size_t>& startingIndices) {
+                mSymmetries.push_back(std::make_pair(lenght, startingIndices));
+            }
+            
+            size_t getSymmetrySize() {
+                return mSymmetries.size();
+            }
+            
+            size_t getSymmetryLength(size_t pos) {
+                assert(pos < mSymmetries.size());
+                return mSymmetries[pos].first;
+            }
+            
+            std::vector<size_t> const& getSymmetryIndices(size_t pos) {
+                assert(pos < mSymmetries.size());
+                return mSymmetries[pos].second;
+            }
+            
             friend std::ostream& operator<<(std::ostream& os, DFTStateGenerationInfo const& info) {
                 os << "Id to state index:" << std::endl;
                 for (size_t id = 0; id < info.mIdToStateIndex.size(); ++id) {
@@ -91,6 +110,14 @@ namespace storm {
                 os << "Spare activation index:" << std::endl;
                 for (auto pair : info.mSpareActivationIndex) {
                     os << pair.first << " -> " << pair.second << std::endl;
+                }
+                os << "Symmetries:" << std::endl;
+                for (auto pair : info.mSymmetries) {
+                    os << "Length: " << pair.first << ", starting indices: ";
+                    for (size_t index : pair.second) {
+                        os << index << ", ";
+                    }
+                    os << std::endl;
                 }
                 return os;
             }
@@ -127,6 +154,8 @@ namespace storm {
             DFT(DFTElementVector const& elements, DFTElementPointer const& tle);
             
             DFTStateGenerationInfo buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const;
+            
+            size_t generateStateInfo(DFTStateGenerationInfo& generationInfo, size_t id, storm::storage::BitVector& visited, size_t stateIndex) const;
 
             size_t performStateGenerationInfoDFS(DFTStateGenerationInfo& generationInfo, std::queue<size_t>& visitQueue, storm::storage::BitVector& visited, size_t stateIndex) const;
             
