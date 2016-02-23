@@ -22,8 +22,10 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 
-#include "src/utility/constants.h"
+
 #include "src/utility/prism.h"
+
+#include "src/generator/VariableInformation.h"
 
 namespace storm {
     namespace utility {
@@ -37,7 +39,7 @@ namespace storm {
         // Forward-declare classes.
         template <typename ValueType> struct RewardModelBuilder;
         
-        template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename IndexType = uint32_t>
+        template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename StateType = uint32_t>
         class ExplicitPrismModelBuilder {
         public:
             typedef storm::storage::BitVector CompressedState;
@@ -47,16 +49,16 @@ namespace storm {
                 InternalStateInformation(uint64_t bitsPerState);
 
                 // This member stores all the states and maps them to their unique indices.
-                storm::storage::BitVectorHashMap<IndexType> stateStorage;
+                storm::storage::BitVectorHashMap<StateType> stateStorage;
                 
                 // A list of initial states in terms of their global indices.
-                std::vector<IndexType> initialStateIndices;
+                std::vector<StateType> initialStateIndices;
 
                 // The number of bits of each state.
                 uint64_t bitsPerState;
                 
-                // A list of reachable states as indices in the stateToIndexMap.
-                std::vector<storm::storage::BitVector> reachableStates;
+                // The number of states that were found in the exploration so far.
+                uint_fast64_t numberOfStates;
             };
             
             // A structure holding information about the reachable state space that can be retrieved from the outside.
@@ -175,6 +177,13 @@ namespace storm {
             };
             
             /*!
+             * Creates a builder for the given program.
+             *
+             * @param program The program to build.
+             */
+            ExplicitPrismModelBuilder(storm::prism::Program const& program, Options const& options = Options());
+            
+            /*!
              * Convert the program given at construction time to an abstract model. The type of the model is the one
              * specified in the program. The given reward model name selects the rewards that the model will contain.
              *
@@ -184,7 +193,7 @@ namespace storm {
              * @param rewardModel The reward model that is to be built.
              * @return The explicit model that was given by the probabilistic program.
              */
-            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> translateProgram(storm::prism::Program program, Options const& options = Options());
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> translate();
             
             /*!
              * If requested in the options, information about the variable valuations in the reachable states can be
@@ -195,39 +204,14 @@ namespace storm {
             StateInformation const& getStateInformation() const;
             
             /*!
-             * Retrieves the program that was actually translated (i.e. including constant substitutions etc.). Note
-             * that this function may only be called after a succesful translation.
+             * Retrieves the program that was actually translated (i.e. including constant substitutions etc.).
              *
              * @return The translated program.
              */
             storm::prism::Program const& getTranslatedProgram() const;
             
         private:
-            static void unpackStateIntoEvaluator(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
-
-            static storm::expressions::SimpleValuation unpackStateIntoValuation(storm::storage::BitVector const& currentState, VariableInformation const& variableInformation);
-
-            /*!
-             * Applies an update to the given state and returns the resulting new state object. This methods does not
-             * modify the given state but returns a new one.
-             *
-             * @params state The state to which to apply the update.
-             * @params update The update to apply.
-             * @return The resulting state.
-             */
-            static CompressedState applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator);
-            
-            /*!
-             * Applies an update to the given state and returns the resulting new state object. The update is evaluated
-             * over the variable values of the given base state. This methods does not modify the given state but
-             * returns a new one.
-             *
-             * @param state The state to which to apply the update.
-             * @param baseState The state used for evaluating the update.
-             * @param update The update to apply.
-             * @return The resulting state.
-             */
-            static CompressedState applyUpdate(VariableInformation const& variableInformation, CompressedState const& state, CompressedState const& baseState, storm::prism::Update const& update, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator);
+            storm::expressions::SimpleValuation unpackStateIntoValuation(storm::storage::BitVector const& currentState);
             
             /*!
              * Retrieves the state id of the given state. If the state has not been encountered yet, it will be added to
@@ -239,29 +223,8 @@ namespace storm {
              * @param internalStateInformation The information about the already explored part of the reachable state space.
              * @return A pair indicating whether the state was already discovered before and the state id of the state.
              */
-            static IndexType getOrAddStateIndex(CompressedState const& state, InternalStateInformation& internalStateInformation, std::queue<storm::storage::BitVector>& stateQueue);
+            StateType getOrAddStateIndex(CompressedState const& state);
     
-            /*!
-             * Retrieves all commands that are labeled with the given label and enabled in the given state, grouped by
-             * modules.
-             *
-             * This function will iterate over all modules and retrieve all commands that are labeled with the given
-             * action and active (i.e. enabled) in the current state. The result is a list of lists of commands in which
-             * the inner lists contain all commands of exactly one module. If a module does not have *any* (including
-             * disabled) commands, there will not be a list of commands of that module in the result. If, however, the
-             * module has a command with a relevant label, but no enabled one, nothing is returned to indicate that there
-             * is no legal transition possible.
-             *
-             * @param The program in which to search for active commands.
-             * @param state The current state.
-             * @param actionIndex The index of the action label to select.
-             * @return A list of lists of active commands or nothing.
-             */
-            static boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> getActiveCommandsByActionIndex(storm::prism::Program const& program,storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, uint_fast64_t const& actionIndex);
-                        
-            static std::vector<Choice<ValueType>> getUnlabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, InternalStateInformation& internalStateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
-            
-            static std::vector<Choice<ValueType>> getLabeledTransitions(storm::prism::Program const& program, bool discreteTimeModel, InternalStateInformation& internalStateInformation, VariableInformation const& variableInformation, storm::storage::BitVector const& currentState, bool choiceLabeling, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator, std::queue<storm::storage::BitVector>& stateQueue, storm::utility::ConstantsComparator<ValueType> const& comparator);
             /*!
              * Builds the transition matrix and the transition reward matrix based for the given program.
              *
@@ -279,7 +242,7 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            static boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::prism::Program const& program, VariableInformation const& variableInformation, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, InternalStateInformation& internalStateInformation, bool commandLabels, bool deterministicModel, bool discreteTimeModel, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression);
+            boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, InternalStateInformation& internalStateInformation, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression);
             
             /*!
              * Explores the state space of the given program and returns the components of the model as a result.
@@ -289,7 +252,7 @@ namespace storm {
              * @param options A set of options used to customize the building process.
              * @return A structure containing the components of the resulting model.
              */
-            ModelComponents buildModelComponents(storm::prism::Program const& program, std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, Options const& options);
+            ModelComponents buildModelComponents(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels);
             
             /*!
              * Builds the state labeling for the given program.
@@ -299,14 +262,27 @@ namespace storm {
              * @param internalStateInformation Information about the state space of the program.
              * @return The state labeling of the given program.
              */
-            static storm::models::sparse::StateLabeling buildStateLabeling(storm::prism::Program const& program, VariableInformation const& variableInformation, InternalStateInformation const& internalStateInformation);
+            storm::models::sparse::StateLabeling buildStateLabeling();
+            
+            // The program to translate. The necessary transformations are performed upon construction of the builder.
+            storm::prism::Program program;
+            
+            // The options to be used for translating the program.
+            Options options;
+            
+            // The variable information.
+            storm::generator::VariableInformation variableInformation;
+            
+            // Internal information about the states that were explored.
+            InternalStateInformation internalStateInformation;
             
             // This member holds information about reachable states that can be retrieved from the outside after a
             // successful build.
             boost::optional<StateInformation> stateInformation;
             
-            // This member holds the program that was most recently translated (if any).
-            boost::optional<storm::prism::Program> preparedProgram;
+            // A queue of states that still need to be explored.
+            std::queue<storm::storage::BitVector> statesToExplore;
+
         };
         
     } // namespace adapters

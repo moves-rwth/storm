@@ -142,8 +142,8 @@ namespace storm {
             // The total probability mass (or rates) of this choice.
             ValueType totalMass;
             
-            // The reward value associated with this choice.
-            ValueType choiceReward;
+            // The reward values associated with this choice.
+            std::vector<ValueType> choiceRewards;
             
             // The labels that are associated with this choice.
             boost::optional<LabelSet> choiceLabels;

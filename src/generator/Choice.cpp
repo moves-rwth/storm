@@ -6,7 +6,7 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        Choice<ValueType, StateType>::Choice(uint_fast64_t actionIndex, bool markovian) : markovian(markovian), actionIndex(actionIndex), distribution(), totalMass(storm::utility::zero<ValueType>()), choiceReward(storm::utility::zero<ValueType>()) {
+        Choice<ValueType, StateType>::Choice(uint_fast64_t actionIndex, bool markovian) : markovian(markovian), actionIndex(actionIndex), distribution(), totalMass(storm::utility::zero<ValueType>()), choiceRewards() {
             // Intentionally left empty.
         }
         
@@ -89,7 +89,7 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         void Choice<ValueType, StateType>::addChoiceReward(ValueType const& value) {
-            choiceReward += value;
+            choiceRewards.push_back(value);
         }
         
         template<typename ValueType, typename StateType>

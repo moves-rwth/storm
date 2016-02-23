@@ -11,15 +11,15 @@
 
 namespace storm {
     namespace generator {
+        typedef storm::storage::BitVector CompressedState;
+
         template<typename ValueType, typename StateType = uint32_t>
         class NextStateGenerator {
         public:
-            typedef storm::storage::BitVector InternalStateType;
-            typedef StateType (*StateToIdCallback)(InternalStateType const&);
-            
+            typedef StateType (*StateToIdCallback)(CompressedState const&);
+
             virtual std::vector<StateType> getInitialStates(StateToIdCallback stateToIdCallback) = 0;
-            virtual std::vector<Choice<ValueType>> expand(StateType const& state, StateToIdCallback stateToIdCallback) = 0;
-            virtual ValueType getStateReward(StateType const& state) = 0;
+            virtual std::vector<Choice<ValueType>> expand(CompressedState const& state, StateToIdCallback stateToIdCallback) = 0;
         };
     }
 }
