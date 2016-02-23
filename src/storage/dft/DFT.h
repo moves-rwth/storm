@@ -84,16 +84,16 @@ namespace storm {
                 mSymmetries.push_back(std::make_pair(lenght, startingIndices));
             }
             
-            size_t getSymmetrySize() {
+            size_t getSymmetrySize() const {
                 return mSymmetries.size();
             }
             
-            size_t getSymmetryLength(size_t pos) {
+            size_t getSymmetryLength(size_t pos) const {
                 assert(pos < mSymmetries.size());
                 return mSymmetries[pos].first;
             }
             
-            std::vector<size_t> const& getSymmetryIndices(size_t pos) {
+            std::vector<size_t> const& getSymmetryIndices(size_t pos) const {
                 assert(pos < mSymmetries.size());
                 return mSymmetries[pos].second;
             }
