@@ -259,7 +259,7 @@ namespace storm {
                     for (size_t i = 1; i < n; ++i) {
                         elem1 = mStatus.getAsInt(symmetryIndices[i-1], length);
                         elem2 = mStatus.getAsInt(symmetryIndices[i], length);
-                        if (elem1 > elem2) {
+                        if (elem1 < elem2) {
                             // Swap elements
                             mStatus.setFromInt(symmetryIndices[i-1], length, elem2);
                             mStatus.setFromInt(symmetryIndices[i], length, elem1);
