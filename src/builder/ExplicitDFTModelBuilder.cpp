@@ -134,7 +134,7 @@ namespace storm {
         bool ExplicitDFTModelBuilder<ValueType>::exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates) {
 
             // TODO Matthias: set Markovian states directly as bitvector?
-            std::map<size_t, ValueType> outgoingTransitions;
+            std::map<uint_fast64_t, ValueType> outgoingTransitions;
             size_t rowOffset = 0; // Captures number of non-deterministic choices
             bool deterministic = true;
             
@@ -221,23 +221,51 @@ namespace storm {
                     newState->updateFailableDependencies(nextBE->id());
                     
                     bool dftFailed = newState->hasFailed(mDft.getTopLevelIndex());
-                    size_t newStateId;
+                    uint_fast64_t newStateId;
                     if(dftFailed && mergeFailedStates) {
                         newStateId = failedIndex;
                     } else {
-                       if (mStates.contains(newState->status())) {
+                        // Order state by symmetry
+                        STORM_LOG_TRACE("Check for symmetry: " << mDft.getStateString(newState));
+                        bool changed = newState->orderBySymmetry();
+                        STORM_LOG_TRACE("State " << (changed ? "changed to " : "did not change") << (changed ? mDft.getStateString(newState) : ""));
+                        
+                        // Check if state already exists
+                        if (mStates.contains(newState->status())) {
                             // State already exists
                             newStateId = mStates.getValue(newState->status());
-                            STORM_LOG_TRACE("State " << mDft.getStateString(newState) << " already exists");
+                            STORM_LOG_TRACE("State " << mDft.getStateString(newState) << " with id " << newStateId << " already exists");
+                            
+                            // Check if possible pseudo state can be created now
+                            if (!changed && newStateId >= OFFSET_PSEUDO_STATE) {
+                                newStateId = newStateId - OFFSET_PSEUDO_STATE;
+                                assert(newStateId < mPseudoStatesMapping.size());
+                                if (mPseudoStatesMapping[newStateId] == 0) {
+                                    // Create pseudo state now
+                                    newState->setId(newIndex++);
+                                    mPseudoStatesMapping[newStateId] = newState->getId();
+                                    newStateId = newState->getId();
+                                    mStates.setOrAdd(newState->status(), newStateId);
+                                    stateQueue.push(newState);
+                                    STORM_LOG_TRACE("Now create state " << mDft.getStateString(newState) << " with id " << newStateId);
+                                }
+                            }
                         } else {
                             // New state
-                            newState->setId(newIndex++);
-                            newStateId = mStates.findOrAdd(newState->status(), newState->getId());
-                            STORM_LOG_TRACE("New state " << mDft.getStateString(newState));
-
-                            // Add state to search queue
-                            stateQueue.push(newState);
-                        } 
+                            if (changed) {
+                                // Remember to create state later on
+                                newState->setId(mPseudoStatesMapping.size() + OFFSET_PSEUDO_STATE);
+                                mPseudoStatesMapping.push_back(0);
+                                newStateId = mStates.findOrAdd(newState->status(), newState->getId());
+                                STORM_LOG_TRACE("New state for later creation: " << mDft.getStateString(newState));
+                            } else {
+                                // Create new state
+                                newState->setId(newIndex++);
+                                newStateId = mStates.findOrAdd(newState->status(), newState->getId());
+                                STORM_LOG_TRACE("New state: " << mDft.getStateString(newState));
+                                stateQueue.push(newState);
+                            }
+                        }
                     }
 
                     // Set transitions
@@ -248,10 +276,11 @@ namespace storm {
                         STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newStateId << " with probability " << dependency->probability());
 
                         if (!storm::utility::isOne(dependency->probability())) {
+                            // TODO Matthias: use symmetry as well
                             // Add transition to state where dependency was unsuccessful
                             DFTStatePointer unsuccessfulState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
                             unsuccessfulState->letDependencyBeUnsuccessful(smallest-1);
-                            size_t unsuccessfulStateId;
+                            uint_fast64_t unsuccessfulStateId;
                             if (mStates.contains(unsuccessfulState->status())) {
                                 // Unsuccessful state already exists
                                 unsuccessfulStateId = mStates.getValue(unsuccessfulState->status());
@@ -303,6 +332,38 @@ namespace storm {
                 if (hasDependencies) {
                     rowOffset--; // One increment to many
                 } else {
+                    // Try to merge pseudo states with their instantiation
+                    // TODO Matthias: improve?
+                    auto it = outgoingTransitions.begin();
+                    while (it != outgoingTransitions.end()) {
+                        if (it->first >= OFFSET_PSEUDO_STATE) {
+                            uint_fast64_t newId = it->first - OFFSET_PSEUDO_STATE;
+                            assert(newId < mPseudoStatesMapping.size());
+                            if (mPseudoStatesMapping[newId] > 0) {
+                                // State exists already
+                                newId = mPseudoStatesMapping[newId];
+                                auto itFind = outgoingTransitions.find(newId);
+                                if (itFind != outgoingTransitions.end()) {
+                                    // Add probability from pseudo state to instantiation
+                                    itFind->second += it->second;
+                                    STORM_LOG_TRACE("Merged pseudo state " << newId << " adding rate " << it->second << " to total rate of " << itFind->second);
+                                } else {
+                                    // Only change id
+                                    outgoingTransitions.emplace(newId, it->second);
+                                    STORM_LOG_TRACE("Instantiated pseudo state " << newId << " with rate " << it->second);
+                                }
+                                // Remove pseudo state
+                                auto itErase = it;
+                                ++it;
+                                outgoingTransitions.erase(itErase);
+                            } else {
+                                ++it;
+                            }
+                        } else {
+                            ++it;
+                        }
+                    }
+                    
                     // Add all probability transitions
                     for (auto it = outgoingTransitions.begin(); it != outgoingTransitions.end(); ++it)
                     {
@@ -316,6 +377,11 @@ namespace storm {
                 assert(exitRates.size()-1 == state->getId());
 
             } // end while queue
+            assert(std::find(mPseudoStatesMapping.begin(), mPseudoStatesMapping.end(), 0) == mPseudoStatesMapping.end());
+            
+            // Replace pseudo states in matrix
+            transitionMatrixBuilder.replaceColumns(mPseudoStatesMapping, OFFSET_PSEUDO_STATE);
+            
             assert(!deterministic || rowOffset == 0);
             return deterministic;
         }

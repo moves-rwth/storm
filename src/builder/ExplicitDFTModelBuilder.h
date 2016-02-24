@@ -47,12 +47,12 @@ namespace storm {
             };
             
             const size_t INITIAL_BUCKETSIZE = 20000;
-
-          
+            const uint_fast64_t OFFSET_PSEUDO_STATE = UINT_FAST64_MAX / 2;
             
             storm::storage::DFT<ValueType> const& mDft;
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> mStateGenerationInfo;
-            storm::storage::BitVectorHashMap<size_t> mStates;
+            storm::storage::BitVectorHashMap<uint_fast64_t> mStates;
+            std::vector<uint_fast64_t> mPseudoStatesMapping;
             size_t newIndex = 0;
             bool mergeFailedStates = true;
             size_t failedIndex = 0;
