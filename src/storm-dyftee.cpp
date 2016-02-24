@@ -28,17 +28,19 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas = storm::parseFormulasForExplicit(property);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
     assert(formulas.size() == 1);
-    std::cout << "parsed formula." << std::endl;
+    std::cout << "Parsed formula." << std::endl;
+    std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
+    storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
     if(symred) {
         std::cout << dft.getElementsString() << std::endl;
         auto colouring = dft.colourDFT();
-        storm::storage::DFTIndependentSymmetries symmetries = dft.findSymmetries(colouring);
-        std::cout << symmetries;
+        symmetries = dft.findSymmetries(colouring);
+        std::cout << "Symmetries: " << symmetries << std::endl;
     }
         
     // Building Markov Automaton
     std::cout << "Building Model..." << std::endl;
-    storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft);
+    storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
     typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
     std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel(labeloptions);
     std::cout << "Built Model" << std::endl;
@@ -51,7 +53,6 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     if (model->getNumberOfStates() > 500 && model->isOfType(storm::models::ModelType::Ctmc)) {
             model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
     }
-    
     
     model->printModelInformationToStream(std::cout);
     

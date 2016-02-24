@@ -1,0 +1,21 @@
+toplevel "A";
+"A" and "BA" "BB" "BC" "BD" "BE" "BF";
+"BA" and "CA" "DA";
+"BB" and "CB" "DB";
+"BC" and "CC" "DC";
+"BD" and "CD" "DD";
+"BE" and "CE" "DE";
+"BF" and "CF" "DF";
+"CA" lambda=0.5 dorm=0;
+"DA" lambda=0.5 dorm=0;
+"CB" lambda=0.5 dorm=0;
+"DB" lambda=0.5 dorm=0;
+"CC" lambda=0.5 dorm=0;
+"DC" lambda=0.5 dorm=0;
+"CD" lambda=0.5 dorm=0;
+"DD" lambda=0.5 dorm=0;
+"CE" lambda=0.5 dorm=0;
+"DE" lambda=0.5 dorm=0;
+"CF" lambda=0.5 dorm=0;
+"DF" lambda=0.5 dorm=0;
+

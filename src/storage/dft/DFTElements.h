@@ -446,12 +446,12 @@ namespace storm {
             }
 
             /**
-             * Finish failed/failsafe spare gate by activating the children and setting the useIndex to zero.
+             * Finish failed/failsafe spare gate by activating the children and setting the useIndex to the spare id.
              * This prevents multiple fail states with different usages or activations.
              * @param state The current state.
              */
             void finalizeSpare(DFTState<ValueType>& state) const {
-                state.setUses(this->mId, 0);
+                state.setUses(this->mId, this->mId);
                 for (auto child : this->children()) {
                     if (!state.isActive(child->id())) {
                         state.activate(child->id());

@@ -220,6 +220,73 @@ namespace storm {
             return lastColumn;
         }
         
+        // Debug method for printing the current matrix
+        template<typename ValueType>
+        void print(std::vector<typename SparseMatrix<ValueType>::index_type> const& rowGroupIndices, std::vector<MatrixEntry<typename SparseMatrix<ValueType>::index_type, typename SparseMatrix<ValueType>::value_type>> const& columnsAndValues, std::vector<typename SparseMatrix<ValueType>::index_type> const& rowIndications) {
+            typename SparseMatrix<ValueType>::index_type endGroups;
+            typename SparseMatrix<ValueType>::index_type endRows;
+            // Iterate over all row groups.
+            for (typename SparseMatrix<ValueType>::index_type group = 0; group < rowGroupIndices.size(); ++group) {
+                std::cout << "\t---- group " << group << "/" << (rowGroupIndices.size() - 1) << " ---- " << std::endl;
+                endGroups = group < rowGroupIndices.size()-1 ? rowGroupIndices[group+1] : rowIndications.size();
+                // Iterate over all rows in a row group
+                for (typename SparseMatrix<ValueType>::index_type i = rowGroupIndices[group]; i < endGroups; ++i) {
+                    endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
+                    // Print the actual row.
+                    std::cout << "Row " << i << " (" << rowIndications[i] << " - " << endRows << ")" << ": ";
+                    for (typename SparseMatrix<ValueType>::index_type pos = rowIndications[i]; pos < endRows; ++pos) {
+                        std::cout << "(" << columnsAndValues[pos].getColumn() << ": " << columnsAndValues[pos].getValue() << ") ";
+                    }
+                    std::cout << std::endl;
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        bool SparseMatrixBuilder<ValueType>::replaceColumns(std::vector<index_type> const& replacements, index_type offset) {
+            bool changed = false;
+            index_type maxColumn = 0;
+            for (auto& elem : columnsAndValues) {
+                if (elem.getColumn() >= offset) {
+                    elem.setColumn(replacements[elem.getColumn() - offset]);
+                    changed = true;
+                }
+                maxColumn = std::max(maxColumn, elem.getColumn());
+            }
+            assert(changed || highestColumn == maxColumn);
+            highestColumn = maxColumn;
+            assert(changed || lastColumn == columnsAndValues[columnsAndValues.size() - 1].getColumn());
+            lastColumn = columnsAndValues[columnsAndValues.size() - 1].getColumn();
+            
+            if (changed) {
+                fixColumns();
+            }
+            return changed;
+        }
+
+        template<typename ValueType>
+        void SparseMatrixBuilder<ValueType>::fixColumns() {
+            // Sort columns per row
+            typename SparseMatrix<ValueType>::index_type endGroups;
+            typename SparseMatrix<ValueType>::index_type endRows;
+            for (index_type group = 0; group < rowGroupIndices.size(); ++group) {
+                endGroups = group < rowGroupIndices.size()-1 ? rowGroupIndices[group+1] : rowIndications.size();
+                for (index_type i = rowGroupIndices[group]; i < endGroups; ++i) {
+                    endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
+                    // Sort the row
+                    std::sort(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                              [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
+                                  return a.getColumn() < b.getColumn();
+                              });
+                    // Assert no equal elements
+                    assert(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                                          [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
+                                              return a.getColumn() <= b.getColumn();
+                                          }));
+                }
+            }
+        }
+        
         template<typename ValueType>
         SparseMatrix<ValueType>::rows::rows(iterator begin, index_type entryCount) : beginIterator(begin), entryCount(entryCount) {
             // Intentionally left empty.
