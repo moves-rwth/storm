@@ -102,6 +102,8 @@ namespace storm {
                         success = builder.addPandElement(name, childNames);
                     } else if (tokens[1] == "wsp" || tokens[1] == "csp") {
                         success = builder.addSpareElement(name, childNames);
+                    } else if (tokens[1] == "seq") {
+                        success = builder.addSequenceEnforcer(name, childNames);
                     } else if (tokens[1] == "fdep") {
                         success = builder.addDepElement(name, childNames, storm::utility::one<ValueType>());
                     } else if (boost::starts_with(tokens[1], "pdep=")) {

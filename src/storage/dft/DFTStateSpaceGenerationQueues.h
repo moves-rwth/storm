@@ -15,6 +15,8 @@ namespace storm {
         class DFTGate;
         template<typename ValueType>
         class DFTElement;
+        template<typename ValueType>
+        class DFTRestriction;
 
 
         template<typename ValueType>
@@ -24,11 +26,14 @@ namespace storm {
             using DFTElementVector = std::vector<DFTElementPointer>;
             using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
             using DFTGateVector = std::vector<DFTGatePointer>;
+            using DFTRestrictionPointer = std::shared_ptr<DFTRestriction<ValueType>>;
+            using DFTRestrictionVector = std::vector<DFTRestrictionPointer>;
 
             std::priority_queue<DFTGatePointer, DFTGateVector, OrderElementsByRank<ValueType>> failurePropagation;
             DFTGateVector failsafePropagation;
             DFTElementVector dontcarePropagation;
             DFTElementVector activatePropagation;
+            DFTRestrictionVector restrictionChecks;
 
         public:
             void propagateFailure(DFTGatePointer const& elem) {
@@ -43,6 +48,21 @@ namespace storm {
                 DFTGatePointer next = failurePropagation.top();
                 failurePropagation.pop();
                 return next;
+            }
+            
+            bool restrictionChecksDone() const {
+                return restrictionChecks.empty();
+            }
+            
+            DFTRestrictionPointer nextRestrictionCheck() {
+                assert(!restrictionChecksDone());
+                DFTRestrictionPointer next = restrictionChecks.back();
+                restrictionChecks.pop_back();
+                return next;
+            }
+            
+            void checkRestrictionLater(DFTRestrictionPointer const& restr) {
+                restrictionChecks.push_back(restr);
             }
             
             bool failsafePropagationDone() const {

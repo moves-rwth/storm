@@ -584,11 +584,13 @@ namespace storm {
             
             // Do some sanity checks to establish some required properties.
             RewardModelType const& rewardModel = this->getModel().getRewardModel(checkTask.isRewardModelSet() ? checkTask.getRewardModel() : "");
-            // TODO use maybeStates instead of all states
-            std::vector<ValueType> stateRewardValues = rewardModel.getTotalRewardVector(trueStates.getNumberOfSetBits(), this->getModel().getTransitionMatrix(), trueStates);
 
             STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
-            std::vector<ValueType> result = computeReachabilityRewards(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), targetStates, stateRewardValues, checkTask.isOnlyInitialStatesRelevantSet());
+            std::vector<ValueType> result = computeReachabilityRewards(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), targetStates,
+                                                                       [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                                           return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates);
+                                                                       },
+                                                                       checkTask.isOnlyInitialStatesRelevantSet());
 
             // Construct check result.
             std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
@@ -597,6 +599,17 @@ namespace storm {
 
         template<typename SparseDtmcModelType>
         std::vector<typename SparseDtmcModelType::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, std::vector<ValueType>& stateRewardValues, bool computeForInitialStatesOnly) {
+            return computeReachabilityRewards(probabilityMatrix, backwardTransitions, initialStates, targetStates,
+                                              [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                  std::vector<ValueType> result(numberOfRows);
+                                                  storm::utility::vector::selectVectorValues(result, maybeStates, stateRewardValues);
+                                                  return result;
+                                              },
+                                              computeForInitialStatesOnly);
+        }
+
+        template<typename SparseDtmcModelType>
+        std::vector<typename SparseDtmcModelType::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, bool computeForInitialStatesOnly) {
 
             uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
             
@@ -639,9 +652,9 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> submatrixTransposed = submatrix.transpose();
                 
                 // Project the state reward vector to all maybe-states.
-                storm::storage::BitVector phiStates(numberOfStates, true);
+                std::vector<ValueType> stateRewardValues = totalStateRewardVectorGetter(submatrix.getRowCount(), probabilityMatrix, maybeStates);
 
-                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, stateRewardValues, submatrixTransposed, newInitialStates, computeForInitialStatesOnly, phiStates, targetStates, probabilityMatrix.getConstrainedRowSumVector(maybeStates, targetStates));
+                std::vector<ValueType> subresult = computeReachabilityValues(submatrix, stateRewardValues, submatrixTransposed, newInitialStates, computeForInitialStatesOnly, trueStates, targetStates, probabilityMatrix.getConstrainedRowSumVector(maybeStates, targetStates));
                 storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, subresult);
             }
             

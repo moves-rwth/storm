@@ -27,11 +27,23 @@ namespace storm {
                         childElement->addParent(gate);
                     } else {
                         // Child not found -> find first dependent event to assure that child is dependency
+                        // TODO: Not sure whether this is the intended behaviour?
                         auto itFind = mElements.find(child + "_1");
                         assert(itFind != mElements.end());
                         assert(itFind->second->isDependency());
                         STORM_LOG_TRACE("Ignore functional dependency " << child << " in gate " << gate->name());
                     }
+                }
+            }
+            
+            for(auto& elem : mRestrictionChildNames) {
+                for(auto const& childName : elem.second) {
+                    auto itFind = mElements.find(childName);
+                    assert(itFind != mElements.end());
+                    DFTElementPointer childElement = itFind->second;
+                    assert(!childElement->isDependency() && !childElement->isRestriction());
+                    elem.first->pushBackChild(childElement);
+                    childElement->addRestriction(elem.first);
                 }
             }
 
@@ -44,6 +56,17 @@ namespace storm {
                 triggerEvent->addOutgoingDependency(dependency);
                 dependentEvent->addIngoingDependency(dependency);
             }
+
+//            for (auto& restriction : mRestrictions) {
+//                std::set<DFTGatePointer> parentsOfRestrictedElements;
+//                for (auto& child : restriction->children()) {
+//                    for(DFTGatePointer& parent : child->parents()) {
+//                        parentsOfRestrictedElements.insert(parent);
+//                    }
+//                }
+//
+//
+//            }
 
             // Sort elements topologically
             // compute rank
@@ -83,6 +106,34 @@ namespace storm {
         }
 
         template<typename ValueType>
+        bool DFTBuilder<ValueType>::addRestriction(std::string const& name, std::vector<std::string> const& children, DFTElementType tp) {
+            if (children.size() <= 1) {
+                STORM_LOG_ERROR("Sequence enforcers require at least two children");
+            }
+            if (mElements.count(name) != 0) {
+                return false;
+            }
+            DFTRestrictionPointer restr;
+            switch (tp) {
+                case DFTElementType::SEQ:
+                    restr = std::make_shared<DFTSeq < ValueType>>
+                    (mNextId++, name);
+                    break;
+                case DFTElementType::MUTEX:
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not supported.");
+                    break;
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not known.");
+                    break;
+            }
+
+            mElements[name] = restr;
+            mRestrictionChildNames[restr] = children;
+            mRestrictions.push_back(restr);
+            return true;
+        }
+
+        template<typename ValueType>
         bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementType tp) {
             assert(children.size() > 0);
             if(mElements.count(name) != 0) {
@@ -108,11 +159,11 @@ namespace storm {
                    break;
                 case DFTElementType::BE:
                 case DFTElementType::VOT:
+                case DFTElementType::PDEP:
                     // Handled separately
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type handled separately.");
                 case DFTElementType::CONSTF:
                 case DFTElementType::CONSTS:
-                case DFTElementType::PDEP:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not supported.");
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not known.");

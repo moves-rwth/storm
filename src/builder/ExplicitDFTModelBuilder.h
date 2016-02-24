@@ -1,13 +1,13 @@
 #ifndef EXPLICITDFTMODELBUILDER_H
 #define	EXPLICITDFTMODELBUILDER_H
 
-#include "../storage/dft/DFT.h"
-
 #include <src/models/sparse/StateLabeling.h>
 #include <src/models/sparse/StandardRewardModel.h>
 #include <src/models/sparse/Model.h>
 #include <src/storage/SparseMatrix.h>
 #include <src/storage/BitVectorHashMap.h>
+#include <src/storage/dft/DFT.h>
+#include <src/storage/dft/SymmetricUnits.h>
 #include <boost/container/flat_set.hpp>
 #include <boost/optional/optional.hpp>
 #include <stack>
@@ -23,6 +23,8 @@ namespace storm {
             using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
             using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
+            using DFTRestrictionPointer = std::shared_ptr<storm::storage::DFTRestriction<ValueType>>;
+
 
             // A structure holding the individual components of a model.
             struct ModelComponents {
@@ -45,13 +47,16 @@ namespace storm {
             };
             
             const size_t INITIAL_BUCKETSIZE = 20000;
-
-          
+            const uint_fast64_t OFFSET_PSEUDO_STATE = UINT_FAST64_MAX / 2;
             
             storm::storage::DFT<ValueType> const& mDft;
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> mStateGenerationInfo;
-            storm::storage::BitVectorHashMap<uint32_t> mStates;
+            storm::storage::BitVectorHashMap<uint_fast64_t> mStates;
+            std::vector<uint_fast64_t> mPseudoStatesMapping;
             size_t newIndex = 0;
+            bool mergeFailedStates = true;
+            size_t failedIndex = 0;
+            size_t initialStateIndex = 0;
 
         public:
               struct LabelOptions {
@@ -60,7 +65,7 @@ namespace storm {
                 std::set<std::string> beLabels = {};
             };
             
-            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft);
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries);
 
             std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel(LabelOptions const& labelOpts);
 

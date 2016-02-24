@@ -164,6 +164,12 @@ namespace storm {
              */
             void letDependencyBeUnsuccessful(size_t index = 0);
             
+            /**
+             * Order the state in decreasing order using the symmetries.
+             * @return True, if elements were swapped, false if nothing changed.
+             */
+            bool orderBySymmetry();
+            
             std::string getCurrentlyFailableString() const {
                 std::stringstream stream;
                 if (nrFailableDependencies() > 0) {
