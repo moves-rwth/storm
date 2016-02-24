@@ -73,10 +73,10 @@ namespace storm {
 			// For testing only
 			if (sizeof(ValueType) == sizeof(double)) {
 				//std::cout << "<<< Using CUDA-DOUBLE Kernels >>>" << std::endl;
-				LOG4CPLUS_INFO(logger, "<<< Using CUDA-DOUBLE Kernels >>>");
+				STORM_LOG_INFO("<<< Using CUDA-DOUBLE Kernels >>>");
 			} else {
 				//std::cout << "<<< Using CUDA-FLOAT Kernels >>>" << std::endl;
-				LOG4CPLUS_INFO(logger, "<<< Using CUDA-FLOAT Kernels >>>");
+				STORM_LOG_INFO("<<< Using CUDA-FLOAT Kernels >>>");
 			}
 
 			// Now, we need to determine the SCCs of the MDP and perform a topological sort.
@@ -107,12 +107,12 @@ namespace storm {
 				} else {
 					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				}
-				LOG4CPLUS_INFO(logger, "Executed " << globalIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
+				STORM_LOG_INFO("Executed " << globalIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
 
 				bool converged = false;
 				if (!result) {
 					converged = false;
-					LOG4CPLUS_ERROR(logger, "An error occurred in the CUDA Plugin. Can not continue.");
+					STORM_LOG_ERROR("An error occurred in the CUDA Plugin. Can not continue.");
 					throw storm::exceptions::InvalidStateException() << "An error occurred in the CUDA Plugin. Can not continue.";
 				} else {
 					converged = true;
@@ -120,12 +120,12 @@ namespace storm {
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
-					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << globalIterations << " iterations.");
+					STORM_LOG_INFO("Iterative solver converged after " << globalIterations << " iterations.");
 				} else {
-					LOG4CPLUS_WARN(logger, "Iterative solver did not converged after " << globalIterations << " iterations.");
+					STORM_LOG_WARN("Iterative solver did not converged after " << globalIterations << " iterations.");
 				}
 #else
-				LOG4CPLUS_ERROR(logger, "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
+				STORM_LOG_ERROR("The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
 				throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
 #endif
 			} else {
@@ -139,7 +139,7 @@ namespace storm {
 
 				// Calculate the optimal distribution of sccs
 				std::vector<std::pair<bool, storm::storage::StateBlock>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, this->A);
-				LOG4CPLUS_INFO(logger, "Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
+				STORM_LOG_INFO("Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
 
 				std::vector<ValueType>* currentX = nullptr;
 				std::vector<ValueType>* swap = nullptr;
@@ -198,9 +198,9 @@ namespace storm {
 #ifdef STORM_HAVE_CUDA
                         STORM_LOG_THROW(resetCudaDevice(), storm::exceptions::InvalidStateException, "Could not reset CUDA Device, can not use CUDA-based equation solver.");
 
-						//LOG4CPLUS_INFO(logger, "Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory())) * 100 << "%).");
-						//LOG4CPLUS_INFO(logger, "We will allocate " << (sizeof(uint_fast64_t)* sccSubmatrix.rowIndications.size() + sizeof(uint_fast64_t)* sccSubmatrix.columnsAndValues.size() * 2 + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubB.size() + sizeof(double)* sccSubB.size() + sizeof(uint_fast64_t)* sccSubNondeterministicChoiceIndices.size()) << " Bytes.");
-						//LOG4CPLUS_INFO(logger, "The CUDA Runtime Version is " << getRuntimeCudaVersion());
+						//STORM_LOG_INFO("Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory())) * 100 << "%).");
+						//STORM_LOG_INFO("We will allocate " << (sizeof(uint_fast64_t)* sccSubmatrix.rowIndications.size() + sizeof(uint_fast64_t)* sccSubmatrix.columnsAndValues.size() * 2 + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubB.size() + sizeof(double)* sccSubB.size() + sizeof(uint_fast64_t)* sccSubNondeterministicChoiceIndices.size()) << " Bytes.");
+						//STORM_LOG_INFO("The CUDA Runtime Version is " << getRuntimeCudaVersion());
 
 						bool result = false;
 						localIterations = 0;
@@ -209,11 +209,11 @@ namespace storm {
 						} else {
 							result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 						}
-						LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
+						STORM_LOG_INFO("Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
 
 						if (!result) {
 							converged = false;
-							LOG4CPLUS_ERROR(logger, "An error occurred in the CUDA Plugin. Can not continue.");
+							STORM_LOG_ERROR("An error occurred in the CUDA Plugin. Can not continue.");
 							throw storm::exceptions::InvalidStateException() << "An error occurred in the CUDA Plugin. Can not continue.";
 						} else {
 							converged = true;
@@ -226,12 +226,12 @@ namespace storm {
 						}
 						globalIterations += localIterations;
 #else
-						LOG4CPLUS_ERROR(logger, "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
+						STORM_LOG_ERROR("The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
 						throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
 #endif
 					} else {
 						//std::cout << "WARNING: Using CPU based TopoSolver! (double)" << std::endl;
-						LOG4CPLUS_INFO(logger, "Performance Warning: Using CPU based TopoSolver! (double)");
+						STORM_LOG_INFO("Performance Warning: Using CPU based TopoSolver! (double)");
 						localIterations = 0;
 						converged = false;
 						while (!converged && localIterations < this->maximalNumberOfIterations) {
@@ -263,7 +263,7 @@ namespace storm {
 							++localIterations;
 							++globalIterations;
 						}
-						LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << this->maximalNumberOfIterations << " Iterations.");
+						STORM_LOG_INFO("Executed " << localIterations << " of max. " << this->maximalNumberOfIterations << " Iterations.");
 					}
 
 
@@ -289,9 +289,9 @@ namespace storm {
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
-					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << currentMaxLocalIterations << " iterations.");
+					STORM_LOG_INFO("Iterative solver converged after " << currentMaxLocalIterations << " iterations.");
 				} else {
-					LOG4CPLUS_WARN(logger, "Iterative solver did not converged after " << currentMaxLocalIterations << " iterations.");
+					STORM_LOG_WARN("Iterative solver did not converged after " << currentMaxLocalIterations << " iterations.");
 				}
 			}
         }

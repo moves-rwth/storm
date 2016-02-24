@@ -24,20 +24,20 @@
  * @param parser An AutoParser to get the model from.
  */
  void generateCounterExample(std::shared_ptr<storm::models::sparse::Model<double>> model) {
-	LOG4CPLUS_INFO(logger, "Starting counterexample generation.");
-	LOG4CPLUS_INFO(logger, "Testing inputs...");
+	STORM_LOG_INFO("Starting counterexample generation.");
+	STORM_LOG_INFO("Testing inputs...");
 
 	storm::settings::SettingsManager* s  = storm::settings::SettingsManager::getInstance();
 
 	// First test output directory.
 	std::string outPath = s->getOptionByLongName("counterExample").getArgument(0).getValueAsString();
 	if(outPath.back() != '/' && outPath.back() != '\\') {
-		LOG4CPLUS_ERROR(logger, "The output path is not valid.");
+		STORM_LOG_ERROR("The output path is not valid.");
 		return;
 	}
 	std::ofstream testFile(outPath + "test.dot");
 	if(testFile.fail()) {
-		LOG4CPLUS_ERROR(logger, "The output path is not valid.");
+		STORM_LOG_ERROR("The output path is not valid.");
 		return;
 	}
 	testFile.close();
@@ -45,7 +45,7 @@
 
  	// Differentiate between model types.
 	if(model->getType() != storm::models::DTMC) {
-		LOG4CPLUS_ERROR(logger, "Counterexample generation for the selected model type is not supported.");
+		STORM_LOG_ERROR("Counterexample generation for the selected model type is not supported.");
 		return;
 	}
 
@@ -53,21 +53,21 @@
 	// Note that the ownership of the object referenced by dtmc lies at the main function.
 	// Thus, it must not be deleted.
 	storm::models::Dtmc<double> dtmc = *(model->as<storm::models::Dtmc<double>>());
-	LOG4CPLUS_INFO(logger, "Model is a DTMC.");
+	STORM_LOG_INFO("Model is a DTMC.");
 
 	// Get specified PRCTL formulas.
 	if(!s->isSet("prctl")) {
-		LOG4CPLUS_ERROR(logger, "No PRCTL formula file specified.");
+		STORM_LOG_ERROR("No PRCTL formula file specified.");
 		return;
 	}
 
 	std::string const chosenPrctlFile = s->getOptionByLongName("prctl").getArgument(0).getValueAsString();
-	LOG4CPLUS_INFO(logger, "Parsing prctl file: " << chosenPrctlFile << ".");
+	STORM_LOG_INFO("Parsing prctl file: " << chosenPrctlFile << ".");
 	std::list<std::shared_ptr<storm::properties::prctl::PrctlFilter<double>>> formulaList = storm::parser::PrctlFileParser::parsePrctlFile(chosenPrctlFile);
 
 	// Test for each formula if a counterexample can be generated for it.
 	if(formulaList.size() == 0) {
-		LOG4CPLUS_ERROR(logger, "No PRCTL formula found.");
+		STORM_LOG_ERROR("No PRCTL formula found.");
 		return;
 	}
 
@@ -94,7 +94,7 @@
 
 		// First check if it is a formula type for which a counterexample can be generated.
 		if (std::dynamic_pointer_cast<storm::properties::prctl::AbstractStateFormula<double>>(formula->getChild()).get() == nullptr) {
-			LOG4CPLUS_ERROR(logger, "Unexpected kind of formula. Expected a state formula.");
+			STORM_LOG_ERROR("Unexpected kind of formula. Expected a state formula.");
 			continue;
 		}
 
@@ -102,9 +102,9 @@
 
 		// Do some output
 		std::cout << "Generating counterexample for formula " << fIndex << ":" << std::endl;
-		LOG4CPLUS_INFO(logger, "Generating counterexample for formula " + std::to_string(fIndex) + ": ");
+		STORM_LOG_INFO("Generating counterexample for formula " + std::to_string(fIndex) + ": ");
 		std::cout << "\t" << formula->toString() << "\n" << std::endl;
-		LOG4CPLUS_INFO(logger, formula->toString());
+		STORM_LOG_INFO(formula->toString());
 
 		// Now check if the model does not satisfy the formula.
 		// That is if there is at least one initial state of the model that does not.
@@ -117,14 +117,14 @@
 
 		if((result & dtmc.getInitialStates()).getNumberOfSetBits() == dtmc.getInitialStates().getNumberOfSetBits()) {
 			std::cout << "Formula is satisfied. Can not generate counterexample.\n\n" << std::endl;
-			LOG4CPLUS_INFO(logger, "Formula is satisfied. Can not generate counterexample.");
+			STORM_LOG_INFO("Formula is satisfied. Can not generate counterexample.");
 			continue;
 		}
 
 		// Generate counterexample
 		storm::models::Dtmc<double> counterExample = storm::counterexamples::PathBasedSubsystemGenerator<double>::computeCriticalSubsystem(dtmc, stateForm);
 
-		LOG4CPLUS_INFO(logger, "Found counterexample.");
+		STORM_LOG_INFO("Found counterexample.");
 
 		// Output counterexample
 		// Do standard output

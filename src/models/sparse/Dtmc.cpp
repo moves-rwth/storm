@@ -33,7 +33,7 @@ namespace storm {
                 //
                 //		// Is there any state in the subsystem?
                 //		if(subSysStates.getNumberOfSetBits() == 0) {
-                //			LOG4CPLUS_ERROR(logger, "No states in subsystem!");
+                //			STORM_LOG_ERROR("No states in subsystem!");
                 //			return storm::models::Dtmc<ValueType>(storm::storage::SparseMatrix<ValueType>(),
                 //					  	  	  	  	  	  storm::models::sparse::StateLabeling(this->getStateLabeling(), subSysStates),
                 //					  	  	  	  	  	  boost::optional<std::vector<ValueType>>(),
@@ -43,13 +43,13 @@ namespace storm {
                 //
                 //		// Does the vector have the right size?
                 //		if(subSysStates.size() != this->getNumberOfStates()) {
-                //			LOG4CPLUS_INFO(logger, "BitVector has wrong size. Resizing it...");
+                //			STORM_LOG_INFO("BitVector has wrong size. Resizing it...");
                 //			subSysStates.resize(this->getNumberOfStates());
                 //		}
                 //
                 //		// Test if it is a proper subsystem of this Dtmc, i.e. if there is at least one state to be left out.
                 //		if(subSysStates.getNumberOfSetBits() == subSysStates.size()) {
-                //			LOG4CPLUS_INFO(logger, "All states are kept. This is no proper subsystem.");
+                //			STORM_LOG_INFO("All states are kept. This is no proper subsystem.");
                 //			return storm::models::Dtmc<ValueType>(*this);
                 //		}
                 //

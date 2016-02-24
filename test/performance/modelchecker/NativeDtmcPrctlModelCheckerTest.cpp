@@ -79,7 +79,7 @@ TEST(NativeDtmcPrctlModelCheckerTest, SynchronousLeader) {
     EXPECT_NEAR(0.9993949793, quantitativeResult2[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
-    auto reachabilityRewardFormula = std::make_shared<storm::logic::ReachabilityRewardFormula>(labelFormula);
+    auto reachabilityRewardFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula, storm::logic::FormulaContext::Reward);
     
     result = checker.check(*reachabilityRewardFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();

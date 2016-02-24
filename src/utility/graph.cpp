@@ -829,7 +829,7 @@ namespace storm {
             template <typename T>
             std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) {
                 if (matrix.getRowCount() != matrix.getColumnCount()) {
-                    LOG4CPLUS_ERROR(logger, "Provided matrix is required to be square.");
+                    STORM_LOG_ERROR("Provided matrix is required to be square.");
                     throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
                 }
                 
@@ -903,7 +903,7 @@ namespace storm {
                                                                                   storm::storage::BitVector const& startingStates,
                                                                                   storm::storage::BitVector const* filterStates) {
                 
-                LOG4CPLUS_INFO(logger, "Performing Dijkstra search.");
+                STORM_LOG_INFO("Performing Dijkstra search.");
                 
                 const uint_fast64_t noPredecessorValue = storm::utility::zero<uint_fast64_t>();
                 std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::zero<T>());
@@ -949,7 +949,7 @@ namespace storm {
                 std::pair<std::vector<T>, std::vector<uint_fast64_t>> result;
                 result.first = std::move(probabilities);
                 result.second = std::move(predecessors);
-                LOG4CPLUS_INFO(logger, "Done performing Dijkstra search.");
+                STORM_LOG_INFO("Done performing Dijkstra search.");
                 return result;
             }
             

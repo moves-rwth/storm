@@ -37,7 +37,7 @@ namespace storm {
 
             // Since Markov Automata do not support transition rewards no path should be given here.
             if (transitionRewardFilename != "") {
-                LOG4CPLUS_ERROR(logger, "Transition rewards are unsupported for Markov automata.");
+                STORM_LOG_ERROR("Transition rewards are unsupported for Markov automata.");
                 throw storm::exceptions::WrongFormatException() << "Transition rewards are unsupported for Markov automata.";
             }
 
