@@ -260,8 +260,6 @@ endif(STORM_HAVE_Z3)
 set(STORM_HAVE_GLPK 1)
 message (STATUS "StoRM - Linking with glpk")
 
-set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk${DYNAMIC_EXT})
-set(GLPK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/include)
 include_directories(${GLPK_INCLUDE_DIR})
 list(APPEND STORM_LINK_LIBRARIES ${GLPK_LIBRARIES})
 
@@ -538,28 +536,15 @@ endif()
 ##
 #############################################################
 
-set(STORM_SYLVAN_ROOT "${PROJECT_SOURCE_DIR}/resources/3rdparty/sylvan")
-ExternalProject_Add(
-    sylvan
-    DOWNLOAD_COMMAND ""
-    PREFIX "sylvan"
-    SOURCE_DIR "${STORM_SYLVAN_ROOT}"
-    CMAKE_ARGS -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
-    BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
-    INSTALL_COMMAND ""
-    INSTALL_DIR "${PROJECT_BINARY_DIR}/sylvan"
-)
-ExternalProject_Get_Property(sylvan binary_dir)
-set(Sylvan_INCLUDE_DIR "${STORM_SYLVAN_ROOT}/src")
 message(STATUS "Linking with shipped version of sylvan (in directory ${STORM_SYLVAN_ROOT}).")
 include_directories("${Sylvan_INCLUDE_DIR}")
-list(APPEND STORM_LINK_LIBRARIES "${binary_dir}/src/libsylvan.a")
+list(APPEND STORM_LINK_LIBRARIES ${Sylvan_LIBRARY})
 if(${OPERATING_SYSTEM} MATCHES "Linux")
 	find_package(Hwloc QUIET)
 	if(NOT Hwloc_FOUND)
-		message(SEND_ERROR "HWLOC is required but was not found.")
+            message(SEND_ERROR "HWLOC is required but was not found.")
 	else()
-		list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})	
+            list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})	
 	endif()
 endif()
 

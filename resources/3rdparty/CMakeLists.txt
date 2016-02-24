@@ -56,6 +56,22 @@ set(CUDD3_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/include PARENT_SCOP
 set(CUDD3_SHARED_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/lib/libcudd${DYNAMIC_EXT} PARENT_SCOPE)
 set(CUDD3_STATIC_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/liblibcudd${STATIC_EXT} PARENT_SCOPE)
 
+set(STORM_SYLVAN_ROOT "${PROJECT_SOURCE_DIR}/resources/3rdparty/sylvan")
+ExternalProject_Add(
+    sylvan
+    DOWNLOAD_COMMAND ""
+    PREFIX "sylvan"
+    SOURCE_DIR "${STORM_SYLVAN_ROOT}"
+    CMAKE_ARGS -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
+    BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
+    INSTALL_COMMAND ""
+    INSTALL_DIR "${PROJECT_BINARY_DIR}/sylvan"
+)
+ExternalProject_Get_Property(sylvan binary_dir)
+set(Sylvan_INCLUDE_DIR "${STORM_SYLVAN_ROOT}/src" PARENT_SCOPE)
+set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan.a" PARENT_SCOPE)
+
+
 ExternalProject_Add(
         googletest
         #For downloads (may be useful later!)
