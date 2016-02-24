@@ -32,6 +32,8 @@ ExternalProject_Add(
 )
 add_dependencies(resources glpk)
 
+set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk${DYNAMIC_EXT} PARENT_SCOPE)
+set(GLPK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/include PARENT_SCOPE)
 
 ExternalProject_Add(
     cudd3
@@ -42,6 +44,9 @@ ExternalProject_Add(
     BUILD_COMMAND make "CFLAGS=-O2 -w"
     INSTALL_COMMAND make install
     BUILD_IN_SOURCE 0
+    LOG_CONFIGURE ON
+    LOG_BUILD ON
+    LOG_INSTALL ON
 )
 add_dependencies(resources cudd3)
 
