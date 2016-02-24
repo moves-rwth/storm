@@ -7,7 +7,7 @@
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/BitVector.h"
 
-#include "src/generator/Choice.h"
+#include "src/generator/StateBehavior.h"
 
 namespace storm {
     namespace generator {
@@ -19,7 +19,7 @@ namespace storm {
             typedef StateType (*StateToIdCallback)(CompressedState const&);
 
             virtual std::vector<StateType> getInitialStates(StateToIdCallback stateToIdCallback) = 0;
-            virtual std::vector<Choice<ValueType>> expand(CompressedState const& state, StateToIdCallback stateToIdCallback) = 0;
+            virtual StateBehavior<ValueType, StateType> expand(CompressedState const& state, StateToIdCallback stateToIdCallback) = 0;
         };
     }
 }

@@ -23,7 +23,7 @@ namespace storm {
             void addRewardModel(storm::prism::RewardModel const& rewardModel);
             
             virtual std::vector<StateType> getInitialStates(StateToIdCallback stateToIdCallback) = 0;
-            virtual std::vector<Choice<ValueType>> expand(CompressedState const& state, StateToIdCallback stateToIdCallback) override;
+            virtual StateBehavior<ValueType, StateType> expand(CompressedState const& state, StateToIdCallback stateToIdCallback) override;
                         
         private:
             /*!
@@ -34,26 +34,13 @@ namespace storm {
             void unpackStateIntoEvaluator(CompressedState const& state);
             
             /*!
-             * Applies an update to the given state and returns the resulting new state object. This methods does not
-             * modify the given state but returns a new one.
-             *
-             * @params state The state to which to apply the update.
+             * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
+             * the given compressed state.
+             * @params state The state to which to apply the new values.
              * @params update The update to apply.
              * @return The resulting state.
              */
             CompressedState applyUpdate(CompressedState const& state, storm::prism::Update const& update);
-            
-            /*!
-             * Applies an update to the given state and returns the resulting new state object. The update is evaluated
-             * over the variable values of the given base state. This methods does not modify the given state but
-             * returns a new one.
-             *
-             * @param state The state to which to apply the update.
-             * @param baseState The state used for evaluating the update.
-             * @param update The update to apply.
-             * @return The resulting state.
-             */
-            CompressedState applyUpdate(CompressedState const& state, CompressedState const& baseState, storm::prism::Update const& update);
             
             /*!
              * Retrieves all commands that are labeled with the given label and enabled in the given state, grouped by

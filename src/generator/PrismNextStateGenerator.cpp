@@ -18,7 +18,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::expand(CompressedState const& state, typename NextStateGenerator<ValueType, StateType>::StateToIdCallback stateToIdCallback) {
+        StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType>::expand(CompressedState const& state, typename NextStateGenerator<ValueType, StateType>::StateToIdCallback stateToIdCallback) {
             // TODO
         }
         
@@ -34,11 +34,6 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         CompressedState PrismNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::prism::Update const& update) {
-            return applyUpdate(variableInformation, state, state, update);
-        }
-        
-        template<typename ValueType, typename StateType>
-        CompressedState PrismNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, CompressedState const& baseState, storm::prism::Update const& update) {
             CompressedState newState(state);
             
             auto assignmentIt = update.getAssignments().begin();
