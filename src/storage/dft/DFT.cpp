@@ -11,7 +11,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()) {
+        DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
             assert(elementIndicesCorrect());
             size_t nrRepresentatives = 0;
             
@@ -25,6 +25,7 @@ namespace storm {
                 else if (elem->isSpareGate()) {
                     ++mNrOfSpares;
                     bool firstChild = true;
+                    mMaxSpareChildCount = std::max(mMaxSpareChildCount, std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children().size());
                     for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
@@ -63,7 +64,9 @@ namespace storm {
             }
             mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
             
-            size_t usageInfoBits = mElements.size() > 1 ? storm::utility::math::uint64_log2(mElements.size()-1) + 1 : 1;
+            //Reserve space for failed spares
+            ++mMaxSpareChildCount;
+            size_t usageInfoBits = storm::utility::math::uint64_log2(mMaxSpareChildCount) + 1;
             mStateVectorSize = nrElements() * 2 + mNrOfSpares * usageInfoBits + nrRepresentatives;
         }
 
@@ -73,7 +76,7 @@ namespace storm {
             // Collect all elements in the first subtree
             // TODO make recursive to use for nested subtrees
 
-            DFTStateGenerationInfo generationInfo(nrElements());
+            DFTStateGenerationInfo generationInfo(nrElements(), mMaxSpareChildCount);
 
             // Perform DFS and insert all elements of subtree sequentially
             size_t stateIndex = 0;
@@ -296,7 +299,25 @@ namespace storm {
             }
             return stream.str();
         }
-
+        
+        template<typename ValueType>
+        size_t DFT<ValueType>::getChild(size_t spareId, size_t nrUsedChild) const {
+            assert(mElements[spareId]->isSpareGate());
+            return getGate(spareId)->children()[nrUsedChild]->id();
+        }
+        
+        template<typename ValueType>
+        size_t DFT<ValueType>::getNrChild(size_t spareId, size_t childId) const {
+            assert(mElements[spareId]->isSpareGate());
+            DFTElementVector children = getGate(spareId)->children();
+            for (size_t nrChild = 0; nrChild < children.size(); ++nrChild) {
+                if (children[nrChild]->id() == childId) {
+                    return nrChild;
+                }
+            }
+            assert(false);
+        }
+        
         template <typename ValueType>
         std::vector<size_t> DFT<ValueType>::getIndependentSubDftRoots(size_t index) const {
             auto elem = getElement(index);

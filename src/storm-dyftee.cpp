@@ -32,7 +32,6 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
     storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
     if(symred) {
-        std::cout << dft.getElementsString() << std::endl;
         auto colouring = dft.colourDFT();
         symmetries = dft.findSymmetries(colouring);
         std::cout << "Symmetries: " << symmetries << std::endl;

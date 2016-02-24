@@ -201,7 +201,12 @@ namespace storm {
 
         template<typename ValueType>
         uint_fast64_t DFTState<ValueType>::uses(size_t id) const {
-            return extractUses(mStateGenerationInfo.getSpareUsageIndex(id));
+            size_t nrUsedChild = extractUses(mStateGenerationInfo.getSpareUsageIndex(id));
+            if (nrUsedChild == mDft.getMaxSpareChildCount()) {
+                return id;
+            } else {
+                return mDft.getChild(id, nrUsedChild);
+            }
         }
 
         template<typename ValueType>
@@ -217,8 +222,14 @@ namespace storm {
 
         template<typename ValueType>
         void DFTState<ValueType>::setUses(size_t spareId, size_t child) {
-            mStatus.setFromInt(mStateGenerationInfo.getSpareUsageIndex(spareId), mStateGenerationInfo.usageInfoBits(), child);
+            mStatus.setFromInt(mStateGenerationInfo.getSpareUsageIndex(spareId), mStateGenerationInfo.usageInfoBits(), mDft.getNrChild(spareId, child));
             mUsedRepresentants.push_back(child);
+        }
+        
+        template<typename ValueType>
+        void DFTState<ValueType>::finalizeUses(size_t spareId) {
+            assert(hasFailed(spareId));
+            mStatus.setFromInt(mStateGenerationInfo.getSpareUsageIndex(spareId), mStateGenerationInfo.usageInfoBits(), mDft.getMaxSpareChildCount());
         }
 
         template<typename ValueType>

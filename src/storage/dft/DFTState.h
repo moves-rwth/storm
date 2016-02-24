@@ -93,9 +93,10 @@ namespace storm {
             }
            
             /**
-             * This method gets the usage information for a spare
+             * This method returns the id of the used child for a spare. If no element is used, it returns the given id.
              * @param id Id of the spare
-             * @return The child that currently is used.
+             * @return The id of the currently used child or if non is used (because of spare failure) the id of
+             * the spare.
              */
             uint_fast64_t uses(size_t id) const;
             
@@ -119,6 +120,12 @@ namespace storm {
              * @param child Id of the child which is now used
              */
             void setUses(size_t spareId, size_t child);
+            
+            /**
+             * Sets the use for the spare to a default value to gain consistent states after failures.
+             * @param spareId Id of the spare
+             */
+            void finalizeUses(size_t spareId);
             
             bool claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children);
             
