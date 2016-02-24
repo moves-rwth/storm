@@ -242,7 +242,7 @@ namespace storm {
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, InternalStateInformation& internalStateInformation, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression);
+            boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression);
             
             /*!
              * Explores the state space of the given program and returns the components of the model as a result.
@@ -280,8 +280,9 @@ namespace storm {
             // successful build.
             boost::optional<StateInformation> stateInformation;
             
-            // A queue of states that still need to be explored.
-            std::queue<storm::storage::BitVector> statesToExplore;
+            // A queue of states that still need to be explored. The indices in this queue are the bucket indices in the
+            // bit vector hash map holding the compressed states.
+            std::queue<std::size_t> statesToExplore;
 
         };
         

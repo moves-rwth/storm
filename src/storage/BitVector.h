@@ -104,6 +104,11 @@ namespace storm {
              */
             BitVector();
             
+            /*
+             * Deconstructs a bit vector by deleting the underlying storage.
+             */
+            ~BitVector();
+            
             /*!
              * Constructs a bit vector which can hold the given number of bits and initializes all bits with the
              * provided truth value.
@@ -494,7 +499,7 @@ namespace storm {
             uint_fast64_t bitCount;
             
             // The underlying storage of 64-bit buckets for all bits of this bit vector.
-            std::vector<uint64_t> bucketVector;
+            uint64_t* buckets;
             
             // A bit mask that can be used to reduce a modulo 64 operation to a logical "and".
             static const uint_fast64_t mod64mask = (1 << 6) - 1;

@@ -15,12 +15,107 @@ namespace storm {
         template<typename ValueType, typename StateType>
         void PrismNextStateGenerator<ValueType, StateType>::addRewardModel(storm::prism::RewardModel const& rewardModel) {
             selectedRewardModels.push_back(rewardModel);
+            hasStateActionRewards |= rewardModel.hasStateActionRewards();
         }
         
         template<typename ValueType, typename StateType>
-        StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType>::expand(CompressedState const& state, typename NextStateGenerator<ValueType, StateType>::StateToIdCallback stateToIdCallback) {
-            // TODO
+        std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
+            // FIXME, TODO, whatever
         }
+        
+        template<typename ValueType, typename StateType>
+        StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType>::expand(CompressedState const& state, StateToIdCallback const& stateToIdCallback) {
+            // Start by unpacking the state into the evaluator so we can quickly evaluate expressions later.
+            unpackStateIntoEvaluator(state);
+            
+            // Prepare the result, in case we return early.
+            StateBehavior<ValueType, StateType> result;
+            
+            // First, construct the state rewards, as we may return early if there are no choices later and we already
+            // need the state rewards then.
+            for (auto const& rewardModel : selectedRewardModels) {
+                ValueType stateReward = storm::utility::zero<ValueType>();
+                if (rewardModel->hasStateRewards()) {
+                    for (auto const& stateReward : rewardModel->getStateRewards()) {
+                        if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
+                            stateReward += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
+                        }
+                    }
+                }
+                result.addStateReward(stateReward);
+            }
+            
+            // Get all choices for the state.
+            std::vector<Choice<ValueType>> allChoices = getUnlabeledChoices(state, stateToIdCallback);
+            std::vector<Choice<ValueType>> allLabeledChoices = getLabeledChoices(state, stateToIdCallback);
+            for (auto& choice : allLabeledChoices) {
+                allChoices.push_back(std::move(choice));
+            }
+            
+            std::size_t totalNumberOfChoices = allChoices.size();
+            
+            // If there is not a single choice, we return immediately, because the state has no behavior (other than
+            // the state reward).
+            if (totalNumberOfChoices == 0) {
+                return result;
+            }
+            
+            // If the model is a deterministic model, we need to fuse the choices into one.
+            if (program.isDeterministicModel() && totalNumberOfChoices > 1) {
+                Choice<ValueType> globalChoice;
+                
+                // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
+                // this is equal to the number of choices, which is why we initialize it like this here.
+                ValueType totalExitRate = static_cast<ValueType>(totalNumberOfChoices);
+                
+                // Iterate over all choices and combine the probabilities/rates into one choice.
+                for (auto const& choice : allChoices) {
+                    for (auto const& stateProbabilityPair : choice) {
+                        if (program.isDiscreteTimeModel()) {
+                            globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second / totalNumberOfChoices;
+                            if (hasStateActionRewards) {
+                                totalExitRate += choice.getTotalMass();
+                            }
+                        } else {
+                            globalChoice.getOrAddEntry(stateProbabilityPair.first) += stateProbabilityPair.second;
+                        }
+                    }
+                    
+                    if (buildChoiceLabeling) {
+                        globalChoice.addChoiceLabels(choice.getChoiceLabels());
+                    }
+                }
+                
+                // Now construct the state-action reward for all selected reward models.
+                for (auto const& rewardModel : selectedRewardModels) {
+                    ValueType stateActionReward = storm::utility::zero<ValueType>();
+                    if (rewardModel->hasStateActionRewards()) {
+                        for (auto const& stateActionReward : rewardModel->getStateActionRewards()) {
+                            for (auto const& choice : allChoices) {
+                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                    stateActionReward += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) / totalExitRate;
+                                }
+                            }
+                            
+                        }
+                    }
+                    globalChoice.addChoiceReward(stateActionReward);
+                }
+                
+                // Move the newly fused choice in place.
+                allChoices.clear();
+                allChoices.push_back(std::move(globalChoice));
+            }
+            
+            // Move all remaining choices in place.
+            for (auto& choice : allChoices) {
+                result.addChoice(std::move(choice));
+            }
+            
+            return result;
+        }
+        
+        
         
         template<typename ValueType, typename StateType>
         void PrismNextStateGenerator<ValueType, StateType>::unpackStateIntoEvaluator(storm::storage::BitVector const& state) {
@@ -31,7 +126,7 @@ namespace storm {
                 evaluator.setIntegerValue(integerVariable.variable, state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
             }
         }
-
+        
         template<typename ValueType, typename StateType>
         CompressedState PrismNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::prism::Update const& update) {
             CompressedState newState(state);
@@ -110,7 +205,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getUnlabeledTransitions(CompressedState const& state, StateToIdCallback stateToIdCallback) {
+        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getUnlabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
             
             // Iterate over all modules.
@@ -129,7 +224,7 @@ namespace storm {
                         continue;
                     }
                     
-                    result.push_back(Choice<ValueType>(0, buildChoiceLabeling));
+                    result.push_back(Choice<ValueType>(command.getActionIndex()));
                     Choice<ValueType>& choice = result.back();
                     
                     // Remember the command labels only if we were asked to.
@@ -152,6 +247,19 @@ namespace storm {
                         probabilitySum += probability;
                     }
                     
+                    // Create the state-action reward for the newly created choice.
+                    for (auto const& rewardModel : selectedRewardModels) {
+                        ValueType stateActionReward = storm::utility::zero<ValueType>();
+                        if (rewardModel->hasStateActionRewards()) {
+                            for (auto const& stateActionReward : rewardModel->getStateActionRewards()) {
+                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                    stateActionReward += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass();
+                                }
+                            }
+                        }
+                        choice.addChoiceReward(stateActionReward);
+                    }
+                    
                     // Check that the resulting distribution is in fact a distribution.
                     STORM_LOG_THROW(!program.isDiscreteTimeModel() || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
                 }
@@ -161,7 +269,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getLabeledTransitions(CompressedState const& state, StateToIdCallback stateToIdCallback) {
+        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
             
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
@@ -208,7 +316,7 @@ namespace storm {
                         // At this point, we applied all commands of the current command combination and newTargetStates
                         // contains all target states and their respective probabilities. That means we are now ready to
                         // add the choice to the list of transitions.
-                        result.push_back(Choice<ValueType>(actionIndex, buildChoiceLabeling));
+                        result.push_back(Choice<ValueType>(actionIndex));
                         
                         // Now create the actual distribution.
                         Choice<ValueType>& choice = result.back();
@@ -221,6 +329,7 @@ namespace storm {
                             }
                         }
                         
+                        // Add the probabilities/rates to the newly created choice.
                         ValueType probabilitySum = storm::utility::zero<ValueType>();
                         for (auto const& stateProbabilityPair : *newTargetStates) {
                             StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
@@ -230,6 +339,19 @@ namespace storm {
                         
                         // Check that the resulting distribution is in fact a distribution.
                         STORM_LOG_THROW(!program.isDiscreteTimeModel() || !comparator.isConstant(probabilitySum) || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        
+                        // Create the state-action reward for the newly created choice.
+                        for (auto const& rewardModel : selectedRewardModels) {
+                            ValueType stateActionReward = storm::utility::zero<ValueType>();
+                            if (rewardModel->hasStateActionRewards()) {
+                                for (auto const& stateActionReward : rewardModel->getStateActionRewards()) {
+                                    if (stateActionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                        stateActionReward += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass();
+                                    }
+                                }
+                            }
+                            choice.addChoiceReward(stateActionReward);
+                        }
                         
                         // Dispose of the temporary maps.
                         delete currentTargetStates;

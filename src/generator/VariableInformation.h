@@ -5,6 +5,7 @@
 #include <boost/container/flat_map.hpp>
 
 #include "src/storage/expressions/Variable.h"
+#include "src/storage/prism/Program.h"
 
 namespace storm {
     namespace generator {
@@ -48,11 +49,15 @@ namespace storm {
         
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
-            VariableInformation(storm::expressions::ExpressionManager const& manager);
+            VariableInformation(storm::prism::Program const& program);
+            uint_fast64_t getTotalBitOffset() const;
             
             // Provide methods to access the bit offset and width of variables in the compressed state.
             uint_fast64_t getBitOffset(storm::expressions::Variable const& variable) const;
             uint_fast64_t getBitWidth(storm::expressions::Variable const& variable) const;
+            
+            // The total bit offset over all variables.
+            uint_fast64_t totalBitOffset;
             
             // The known boolean variables.
             boost::container::flat_map<storm::expressions::Variable, uint_fast64_t> booleanVariableToIndexMap;
@@ -61,8 +66,6 @@ namespace storm {
             // The known integer variables.
             boost::container::flat_map<storm::expressions::Variable, uint_fast64_t> integerVariableToIndexMap;
             std::vector<IntegerVariableInformation> integerVariables;
-            
-            storm::expressions::ExpressionManager const& manager;
         };
         
     }

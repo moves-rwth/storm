@@ -16,10 +16,10 @@ namespace storm {
         template<typename ValueType, typename StateType = uint32_t>
         class NextStateGenerator {
         public:
-            typedef StateType (*StateToIdCallback)(CompressedState const&);
-
-            virtual std::vector<StateType> getInitialStates(StateToIdCallback stateToIdCallback) = 0;
-            virtual StateBehavior<ValueType, StateType> expand(CompressedState const& state, StateToIdCallback stateToIdCallback) = 0;
+            typedef std::function<StateType (CompressedState const&)> StateToIdCallback;
+            
+            virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
+            virtual StateBehavior<ValueType, StateType> expand(CompressedState const& state, StateToIdCallback const& stateToIdCallback) = 0;
         };
     }
 }

@@ -22,8 +22,8 @@ namespace storm {
              */
             void addRewardModel(storm::prism::RewardModel const& rewardModel);
             
-            virtual std::vector<StateType> getInitialStates(StateToIdCallback stateToIdCallback) = 0;
-            virtual StateBehavior<ValueType, StateType> expand(CompressedState const& state, StateToIdCallback stateToIdCallback) override;
+            virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
+            virtual StateBehavior<ValueType, StateType> expand(CompressedState const& state, StateToIdCallback const& stateToIdCallback) override;
                         
         private:
             /*!
@@ -81,6 +81,9 @@ namespace storm {
             
             // The reward models that need to be considered.
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
+            
+            // A flag that stores whether at least one of the selected reward models has state-action rewards.
+            bool hasStateActionRewards;
             
             // A flag that stores whether or not to build the choice labeling.
             bool buildChoiceLabeling;
