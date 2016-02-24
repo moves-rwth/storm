@@ -16,11 +16,7 @@
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/DdManager.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace utility {

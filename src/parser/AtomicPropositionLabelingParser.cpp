@@ -16,10 +16,6 @@
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
 namespace storm {
 	namespace parser {
 

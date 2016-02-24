@@ -16,10 +16,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/ConversionHelper.h"
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
+#include "src/utility/macros.h"
 
 namespace storm {
 

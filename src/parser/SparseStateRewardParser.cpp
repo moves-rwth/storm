@@ -8,11 +8,7 @@
 #include "src/parser/MappedFile.h"
 
 #include "src/adapters/CarlAdapter.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
+#include "src/utility/macros.h"
 namespace storm {
     namespace parser {
 

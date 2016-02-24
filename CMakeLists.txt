@@ -28,6 +28,7 @@ option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache" ON)
+option(STORM_LOGGING_FRAMEWORK "Use a framework for logging" OFF)
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
@@ -573,20 +574,21 @@ endif()
 ##	Log4CPlus
 ##
 #############################################################
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
-set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
-set(LOG4CPLUS_BUILD_TESTING OFF)
-set(LOG4CPLUS_USE_UNICODE OFF)
-set(LOG4CPLUS_DEFINE_INSTALL_TARGET OFF)
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
-include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
+if(STORM_LOGGING_FRAMEWORK) 
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+    set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
+    set(LOG4CPLUS_BUILD_TESTING OFF)
+    set(LOG4CPLUS_USE_UNICODE OFF)
+    set(LOG4CPLUS_DEFINE_INSTALL_TARGET OFF)
+    add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
+    include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
+    include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
 
-list(APPEND STORM_LINK_LIBRARIES log4cplusS)
-if (UNIX AND NOT APPLE)
-    list(APPEND STORM_LINK_LIBRARIES rt)
-endif(UNIX AND NOT APPLE)
-
+    list(APPEND STORM_LINK_LIBRARIES log4cplusS)
+    if (UNIX AND NOT APPLE)
+        list(APPEND STORM_LINK_LIBRARIES rt)
+    endif(UNIX AND NOT APPLE)
+endif()
 #############################################################
 ##
 ##	Intel Threading Building Blocks (optional)

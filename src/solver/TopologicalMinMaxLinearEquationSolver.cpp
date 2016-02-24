@@ -13,11 +13,7 @@
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
+#include "src/utility/macros.h"
 #include "storm-config.h"
 #ifdef STORM_HAVE_CUDA
 #	include "cudaForStorm.h"
