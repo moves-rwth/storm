@@ -41,7 +41,7 @@ namespace storm {
             std::map<size_t, size_t> mSpareUsageIndex; // id spare -> index first bit in state
             std::map<size_t, size_t> mSpareActivationIndex; // id spare representative -> index in state
             std::vector<size_t> mIdToStateIndex; // id -> index first bit in state
-            
+            std::map<size_t, size_t> mRestrictedItems;
         public:
             
             DFTStateGenerationInfo(size_t nrElements) : mUsageInfoBits(nrElements > 1 ? storm::utility::math::uint64_log2(nrElements-1) + 1 : 1), mIdToStateIndex(nrElements) {

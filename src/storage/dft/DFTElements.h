@@ -200,6 +200,40 @@ namespace storm {
                 return mOutgoingDependencies.size();
             }
             
+            std::set<DFTElement<ValueType>> restrictedItems() const {
+                std::set<DFTElement<ValueType>> result;
+                for(auto const& restr : mRestrictions) {
+                    bool foundThis = false;
+                    for(auto const& child : restr->children()) {
+                        if(!foundThis) {
+                            if(child->id() == mId) {
+                                foundThis = true;
+                            }
+                        } else if(result.count(child) == 0) {
+                            result.insert(child);
+                        }
+                    }
+                }
+            }
+            
+            std::set<DFTElement<ValueType>> restrictedItemsTC() const {
+                std::set<DFTElement<ValueType>> result;
+                for(auto const& restr : mRestrictions) {
+                    bool foundThis = false;
+                    for(auto const& child : restr->children()) {
+                        if(!foundThis) {
+                            if(child->id() == mId) {
+                                foundThis = true;
+                            }
+                        } else if(result.count(child) == 0) {
+                            result.insert(child);
+                            std::set<DFTElement<ValueType>> tmpRes = child->restrictedItemsTC();
+                            result.insert(tmpRes.begin(), tmpRes.end());
+                        }
+                    }
+                }
+            }
+            
             DFTDependencyVector const& outgoingDependencies() const {
                 return mOutgoingDependencies;
             }
@@ -783,9 +817,6 @@ namespace storm {
         inline std::ostream& operator<<(std::ostream& os, DFTOr<ValueType> const& gate) {
             return os << gate.toString();
         }
-
-
-
 
         template<typename ValueType>
         class DFTPand : public DFTGate<ValueType> {

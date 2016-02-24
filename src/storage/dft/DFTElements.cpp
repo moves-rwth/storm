@@ -24,9 +24,6 @@ namespace storm {
                 }
             }
             
-            
-        
-
             state.setDontCare(mId);
             return true;
         }
@@ -85,6 +82,14 @@ namespace storm {
                 }
 
             }
+            
+            for(auto const& restr : mRestrictions) {
+                restr->extendSubDft(elemsInSubtree, parentsOfSubRoot);
+                if(elemsInSubtree.empty()) {
+                    return;
+                }
+            }
+            
         }
 
 
