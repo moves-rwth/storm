@@ -81,8 +81,8 @@ namespace storm {
                 return mSpareActivationIndex.at(id);
             }
             
-            size_t addSymmetry(size_t lenght, std::vector<size_t>& startingIndices) {
-                mSymmetries.push_back(std::make_pair(lenght, startingIndices));
+            void addSymmetry(size_t length, std::vector<size_t>& startingIndices) {
+                mSymmetries.push_back(std::make_pair(length, startingIndices));
             }
             
             size_t getSymmetrySize() const {
