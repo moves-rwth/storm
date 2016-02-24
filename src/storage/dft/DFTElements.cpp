@@ -1,6 +1,7 @@
 #include <src/exceptions/NotImplementedException.h>
 #include <src/utility/macros.h>
 #include "DFTElements.h"
+#include "elements/DFTRestriction.h"
 
 namespace storm {
     namespace storage {

@@ -207,6 +207,7 @@ namespace storage {
         }
 
         void colourize(std::shared_ptr<const DFTGate<ValueType>> const& gate) {
+             std::cout <<  "Colour " << gate->id() << ": "  << gate->type() << " " << gate->nrChildren() << " " << gate->rank() << "." << std::endl;
              gateColour[gate->id()] = gateColourizer(gate->type(), gate->nrChildren(), gate->nrParents(), 0, gate->rank());
         }
         

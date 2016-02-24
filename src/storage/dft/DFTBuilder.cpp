@@ -116,8 +116,7 @@ namespace storm {
             DFTRestrictionPointer restr;
             switch (tp) {
                 case DFTElementType::SEQ:
-                    restr = std::make_shared<DFTSeq < ValueType>>
-                    (mNextId++, name);
+                    restr = std::make_shared<DFTSeq<ValueType>>(mNextId++, name);
                     break;
                 case DFTElementType::MUTEX:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not supported.");

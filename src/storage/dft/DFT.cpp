@@ -333,6 +333,7 @@ namespace storm {
                     for(auto it1 = colourClass.second.cbegin(); it1 != colourClass.second.cend(); ++it1) {
                         std::vector<std::vector<size_t>> symClass;
                         if(foundEqClassFor.count(*it1) > 0) {
+                            // This item is already in a class.
                             continue;
                         }
                         if(!getGate(*it1)->hasOnlyStaticParents()) {
