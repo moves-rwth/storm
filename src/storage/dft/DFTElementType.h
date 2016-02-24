@@ -6,7 +6,6 @@ namespace storm {
 
         enum class DFTElementType : int {AND = 0, OR = 2, VOT = 3, BE = 4, CONSTF = 5, CONSTS = 6, PAND = 7, SPARE = 8, POR = 9, PDEP = 10, SEQ = 11, MUTEX=12};
 
-        
         inline bool isGateType(DFTElementType const& tp) {
             switch(tp) {
                 case DFTElementType::AND:
@@ -29,7 +28,6 @@ namespace storm {
             }
         }
 
-        
         inline bool isStaticGateType(DFTElementType const& tp) {
             if(!isGateType(tp)) return false;
             switch(tp) {
@@ -46,7 +44,39 @@ namespace storm {
                     return false;
             }
         }
-        
+
+        inline std::string toString(DFTElementType const& tp) {
+            switch(tp) {
+                case DFTElementType::BE:
+                    return "BE";
+                case DFTElementType::OR:
+                    return "OR";
+                case DFTElementType::AND:
+                    return "AND";
+                case DFTElementType::VOT:
+                    return "VOT";
+                case DFTElementType::POR:
+                    return "POR";
+                case DFTElementType::PAND:
+                    return "PAND";
+                case DFTElementType::SPARE:
+                    return "SPARE";
+                case DFTElementType::SEQ:
+                    return "SEQ";
+                case DFTElementType::MUTEX:
+                    return "MUTEX";
+                case DFTElementType::PDEP:
+                    return "PDEP";
+                default:
+                    assert(false);
+            }
+        }
+
+        inline std::ostream& operator<<(std::ostream& os, DFTElementType const& tp) {
+            return os << toString(tp) << std::endl;
+        }
+
+
         
     }
 }
