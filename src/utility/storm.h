@@ -307,7 +307,7 @@ namespace storm {
         // TODO: add checks.
         filestream << "!Parameters: ";
         std::set<storm::Variable> vars = result.gatherVariables();
-        std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::Variable>(filestream, ", "));
+        std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::Variable>(filestream, "; "));
         filestream << std::endl;
         filestream << "!Result: " << result << std::endl;
         filestream << "!Well-formed Constraints: " << std::endl;
