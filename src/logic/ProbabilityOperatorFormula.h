@@ -17,13 +17,9 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            virtual bool isPctlStateFormula() const override;
-            virtual bool isCslStateFormula() const override;
-            virtual bool isPltlFormula() const override;
-            virtual bool containsProbabilityOperator() const override;
-            virtual bool containsNestedProbabilityOperators() const override;
-            
             virtual bool isProbabilityOperatorFormula() const override;
+
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             

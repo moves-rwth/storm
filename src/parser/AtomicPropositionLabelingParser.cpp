@@ -16,10 +16,6 @@
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
 namespace storm {
 	namespace parser {
 
@@ -29,7 +25,7 @@ namespace storm {
 
 			// Open the given file.
 			if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": The supplied Labeling input file does not exist or is not readable by this process.");
+				STORM_LOG_ERROR("Error while parsing " << filename << ": The supplied Labeling input file does not exist or is not readable by this process.");
 				throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": The supplied Labeling input file does not exist or is not readable by this process.";
 			}
 
@@ -68,9 +64,9 @@ namespace storm {
 
 			// If #DECLARATION or #END have not been found, the file format is wrong.
 			if (!(foundDecl && foundEnd)) {
-				LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File header is corrupted (#DECLARATION or #END missing - case sensitive).");
-				if (!foundDecl) LOG4CPLUS_ERROR(logger, "\tDid not find #DECLARATION token.");
-				if (!foundEnd) LOG4CPLUS_ERROR(logger, "\tDid not find #END token.");
+				STORM_LOG_ERROR("Error while parsing " << filename << ": File header is corrupted (#DECLARATION or #END missing - case sensitive).");
+				if (!foundDecl) STORM_LOG_ERROR("\tDid not find #DECLARATION token.");
+				if (!foundEnd) STORM_LOG_ERROR("\tDid not find #END token.");
 				throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": File header is corrupted (#DECLARATION or #END missing - case sensitive).";
 			}
 
@@ -99,7 +95,7 @@ namespace storm {
 				if (cnt >= sizeof(proposition)) {
 
 					// if token is longer than our buffer, the following strncpy code might get risky...
-					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.");
+					STORM_LOG_ERROR("Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.");
 					throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": Atomic proposition with length > " << (sizeof(proposition) - 1) << " was found.";
 
 				} else if (cnt > 0) {
@@ -138,7 +134,7 @@ namespace storm {
 
 				// If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
 				if (state <= lastState && lastState != startIndexComparison) {
-					LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
+					STORM_LOG_ERROR("Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
 					throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.";
 				}
 
@@ -159,7 +155,7 @@ namespace storm {
 
 						// Has the label been declared in the header?
 						if(!labeling.containsLabel(proposition)) {
-							LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
+							STORM_LOG_ERROR("Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.");
 							throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": Atomic proposition" << proposition << " was found but not declared.";
 						}
 						labeling.addLabelToState(proposition, state);

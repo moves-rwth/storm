@@ -17,6 +17,8 @@ namespace storm {
             
             virtual bool isUnaryBooleanStateFormula() const override;
 
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
+            
             OperatorType getOperator() const;
             
             virtual bool isNot() const;

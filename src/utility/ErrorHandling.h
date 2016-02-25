@@ -49,7 +49,7 @@ std::string demangle(char const* symbol) {
 	if (!SymInitialize(hProcess, NULL, TRUE)) {
 		// SymInitialize failed
 		error = GetLastError();
-		LOG4CPLUS_ERROR(logger, "SymInitialize returned error : " << error);
+		STORM_LOG_ERROR("SymInitialize returned error : " << error);
 		return FALSE;
 	} else {
 		char demangled[1024];
@@ -58,7 +58,7 @@ std::string demangle(char const* symbol) {
 		} else {
 			// UnDecorateSymbolName failed
 			DWORD error = GetLastError();
-			LOG4CPLUS_ERROR(logger, "UnDecorateSymbolName returned error: " << error);
+			STORM_LOG_ERROR("UnDecorateSymbolName returned error: " << error);
 		}
 	}
 #endif
@@ -87,7 +87,7 @@ void printUsage();
  * @param sig The code of the signal that needs to be handled.
  */
 void signalHandler(int sig) {
-	LOG4CPLUS_FATAL(logger, "The program received signal " << sig << ". The following backtrace shows the status upon reception of the signal.");
+	STORM_LOG_ERROR("The program received signal " << sig << ". The following backtrace shows the status upon reception of the signal.");
     printUsage();
 #ifndef WINDOWS
 #	define SIZE 128
@@ -106,13 +106,13 @@ void signalHandler(int sig) {
     // Starting this for-loop at j=2 means that we skip the handler itself. Currently this is not
     // done.
 	for (int j = 1; j < nptrs; j++) {
-		LOG4CPLUS_FATAL(logger, nptrs-j << ": " << demangle(strings[j]));
+		STORM_LOG_ERROR(nptrs-j << ": " << demangle(strings[j]));
 	}
 	free(strings);
 #else
-	LOG4CPLUS_WARN(logger, "No Backtrace Support available on Platform Windows!");
+	STORM_LOG_WARN("No Backtrace Support available on Platform Windows!");
 #endif
-	LOG4CPLUS_FATAL(logger, "Exiting.");
+	STORM_LOG_ERROR("Exiting.");
 	exit(2);
 }
 

@@ -12,6 +12,8 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/NotImplementedException.h"
 
@@ -30,7 +32,9 @@ namespace storm {
         template<typename SparseMarkovAutomatonModelType>
         bool SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isCslStateFormula() || formula.isCslPathFormula() || (formula.isRewardPathFormula() && formula.isReachabilityRewardFormula()) || formula.isExpectedTimeOperatorFormula();
+            storm::logic::FragmentSpecification fragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setReachabilityRewardFormulasAllowed(true);
+            fragment.setExpectedTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true);
+            return formula.isInFragment(fragment);
         }
         
         template<typename SparseMarkovAutomatonModelType>
@@ -59,11 +63,11 @@ namespace storm {
         }
                 
         template<typename SparseMarkovAutomatonModelType>
-        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) {
-            storm::logic::ReachabilityRewardFormula const& rewardPathFormula = checkTask.getFormula();
+        std::unique_ptr<CheckResult> SparseMarkovAutomatonCslModelChecker<SparseMarkovAutomatonModelType>::computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+            storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException, "Unable to compute reachability rewards in non-closed Markov automaton.");
-            std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
+            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
             std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeReachabilityRewards(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *minMaxLinearEquationSolverFactory);

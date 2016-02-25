@@ -3,11 +3,11 @@
 
 #include <boost/variant.hpp>
 
-#include "src/logic/RewardPathFormula.h"
+#include "src/logic/PathFormula.h"
 
 namespace storm {
     namespace logic {
-        class InstantaneousRewardFormula : public RewardPathFormula {
+        class InstantaneousRewardFormula : public PathFormula {
         public:
             InstantaneousRewardFormula(uint_fast64_t timeBound);
             
@@ -18,6 +18,10 @@ namespace storm {
             }
             
             virtual bool isInstantaneousRewardFormula() const override;
+
+            virtual bool isRewardPathFormula() const override;
+            
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             

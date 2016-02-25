@@ -81,7 +81,6 @@ int main(int argc, char** argv) {
     // Parse cli arguments
     bool parametric = false;
     bool symred = false;
-    log4cplus::LogLevel level = log4cplus::WARN_LOG_LEVEL;
     std::string filename = argv[1];
     std::string pctlFormula = "";
     for (int i = 2; i < argc; ++i) {
@@ -109,9 +108,9 @@ int main(int argc, char** argv) {
             stream << "P=? [F<=" << timeBound << " \"failed\"]";
             pctlFormula = stream.str();
         } else if (option == "--trace") {
-            level = log4cplus::TRACE_LOG_LEVEL;
+            STORM_GLOBAL_LOGLEVEL_TRACE();
         } else if (option == "--debug") {
-            level = log4cplus::DEBUG_LOG_LEVEL;
+            STORM_GLOBAL_LOGLEVEL_DEBUG();
         } else if (option == "--prop") {
             assert(pctlFormula.empty());
             ++i;
@@ -127,9 +126,6 @@ int main(int argc, char** argv) {
     assert(!pctlFormula.empty());
 
     storm::utility::setUp();
-    logger.setLogLevel(level);
-    logger.getAppender("mainConsoleAppender")->setThreshold(level);
-
     std::cout << "Running " << (parametric ? "parametric " : "") << "DFT analysis on file " << filename << " with property " << pctlFormula << std::endl;
 
     if (parametric) {

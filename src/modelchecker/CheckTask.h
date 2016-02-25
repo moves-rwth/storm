@@ -16,6 +16,10 @@ namespace storm {
     
     namespace modelchecker {
         
+        enum class CheckType {
+            Probabilities, Rewards
+        };
+        
         /*
          * This class is used to customize the checking process of a formula.
          */
@@ -75,7 +79,7 @@ namespace storm {
              * changes the formula type of the check task object.
              */
             template<typename NewFormulaType>
-            CheckTask<NewFormulaType, ValueType> replaceFormula(NewFormulaType const& newFormula) const {
+            CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
                 return CheckTask<NewFormulaType, ValueType>(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers);
             }
             

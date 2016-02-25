@@ -1,6 +1,9 @@
 #include "src/logic/Formulas.h"
 #include <sstream>
 
+#include "src/logic/FragmentChecker.h"
+#include "src/logic/FormulaInformationVisitor.h"
+
 namespace storm {
     namespace logic {
         bool Formula::isPathFormula() const {
@@ -71,7 +74,23 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isConditionalPathFormula() const {
+        bool Formula::isConditionalProbabilityFormula() const {
+            return false;
+        }
+        
+        bool Formula::isConditionalRewardFormula() const {
+            return false;
+        }
+        
+        bool Formula::isProbabilityPathFormula() const {
+            return false;
+        }
+        
+        bool Formula::isRewardPathFormula() const {
+            return false;
+        }
+        
+        bool Formula::isExpectedTimePathFormula() const {
             return false;
         }
         
@@ -84,10 +103,6 @@ namespace storm {
         }
         
         bool Formula::isExpectedTimeOperatorFormula() const {
-            return false;
-        }
-        
-        bool Formula::isRewardPathFormula() const {
             return false;
         }
         
@@ -107,6 +122,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isReachbilityExpectedTimeFormula() const {
+            return false;
+        }
+        
         bool Formula::isProbabilityOperatorFormula() const {
             return false;
         }
@@ -119,56 +138,14 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isPctlPathFormula() const {
-            return false;
+        bool Formula::isInFragment(FragmentSpecification const& fragment) const {
+            FragmentChecker checker;
+            return checker.conformsToSpecification(*this, fragment);
         }
         
-        bool Formula::isPctlStateFormula() const {
-            return false;
-        }
-        
-        bool Formula::isCslPathFormula() const {
-            return this->isPctlPathFormula();
-        }
-        
-        bool Formula::isCslStateFormula() const {
-            return this->isPctlStateFormula();
-        }
-        
-        bool Formula::isPltlFormula() const {
-            return false;
-        }
-        
-        bool Formula::isLtlFormula() const {
-            return false;
-        }
-        
-        bool Formula::isPropositionalFormula() const {
-            return false;
-        }
-        
-        bool Formula::containsBoundedUntilFormula() const {
-            return false;
-        }
-        
-        bool Formula::containsNextFormula() const {
-            return false;
-        }
-        
-        bool Formula::containsProbabilityOperator() const {
-            return false;
-        }
-        
-        bool Formula::containsNestedProbabilityOperators() const {
-            return false;
-        }
-        
-        bool Formula::containsRewardOperator() const {
-            return false;
-        }
-        
-        bool Formula::containsNestedRewardOperators() const {
-            return false;
+        FormulaInformation Formula::info() const {
+            FormulaInformationVisitor visitor;
+            return visitor.getInformation(*this);
         }
         
         std::shared_ptr<Formula const> Formula::getTrueFormula() {
@@ -207,12 +184,12 @@ namespace storm {
             return dynamic_cast<UnaryStateFormula const&>(*this);
         }
         
-        ConditionalPathFormula& Formula::asConditionalPathFormula() {
-            return dynamic_cast<ConditionalPathFormula&>(*this);
+        ConditionalFormula& Formula::asConditionalFormula() {
+            return dynamic_cast<ConditionalFormula&>(*this);
         }
         
-        ConditionalPathFormula const& Formula::asConditionalPathFormula() const {
-            return dynamic_cast<ConditionalPathFormula const&>(*this);
+        ConditionalFormula const& Formula::asConditionalFormula() const {
+            return dynamic_cast<ConditionalFormula const&>(*this);
         }
         
         BinaryBooleanStateFormula& Formula::asBinaryBooleanStateFormula() {
@@ -279,6 +256,14 @@ namespace storm {
             return dynamic_cast<EventuallyFormula const&>(*this);
         }
         
+        EventuallyFormula& Formula::asReachabilityRewardFormula() {
+            return dynamic_cast<EventuallyFormula&>(*this);
+        }
+        
+        EventuallyFormula const& Formula::asReachabilityRewardFormula() const {
+            return dynamic_cast<EventuallyFormula const&>(*this);
+        }
+        
         GloballyFormula& Formula::asGloballyFormula() {
             return dynamic_cast<GloballyFormula&>(*this);
         }
@@ -327,14 +312,6 @@ namespace storm {
             return dynamic_cast<ExpectedTimeOperatorFormula const&>(*this);
         }
         
-        RewardPathFormula& Formula::asRewardPathFormula() {
-            return dynamic_cast<RewardPathFormula&>(*this);
-        }
-        
-        RewardPathFormula const& Formula::asRewardPathFormula() const {
-            return dynamic_cast<RewardPathFormula const&>(*this);
-        }
-        
         CumulativeRewardFormula& Formula::asCumulativeRewardFormula() {
             return dynamic_cast<CumulativeRewardFormula&>(*this);
         }
@@ -350,15 +327,7 @@ namespace storm {
         InstantaneousRewardFormula const& Formula::asInstantaneousRewardFormula() const {
             return dynamic_cast<InstantaneousRewardFormula const&>(*this);
         }
-        
-        ReachabilityRewardFormula& Formula::asReachabilityRewardFormula() {
-            return dynamic_cast<ReachabilityRewardFormula&>(*this);
-        }
-        
-        ReachabilityRewardFormula const& Formula::asReachabilityRewardFormula() const {
-            return dynamic_cast<ReachabilityRewardFormula const&>(*this);
-        }
-        
+                
         LongRunAverageRewardFormula& Formula::asLongRunAverageRewardFormula() {
             return dynamic_cast<LongRunAverageRewardFormula&>(*this);
         }
@@ -421,7 +390,7 @@ namespace storm {
             return;
         }
         
-        void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicExpressionFormulas) const {
+        void Formula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const {
             return;
         }
         

@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/parser/FormulaParser.h"
+#include "src/logic/FragmentSpecification.h"
 #include "src/exceptions/WrongFormatException.h"
 
 TEST(FormulaParserTest, LabelTest) {
@@ -20,7 +21,7 @@ TEST(FormulaParserTest, ComplexLabelTest) {
     std::shared_ptr<const storm::logic::Formula> formula(nullptr);
 	ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
 
-    EXPECT_TRUE(formula->isPropositionalFormula());
+    EXPECT_TRUE(formula->isInFragment(storm::logic::propositional()));
     EXPECT_TRUE(formula->isBinaryBooleanStateFormula());
 }
 
@@ -35,7 +36,7 @@ TEST(FormulaParserTest, ExpressionTest) {
     std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     
-    EXPECT_TRUE(formula->isPropositionalFormula());
+    EXPECT_TRUE(formula->isInFragment(storm::logic::propositional()));
     EXPECT_TRUE(formula->isUnaryBooleanStateFormula());
 }
 
@@ -50,11 +51,11 @@ TEST(FormulaParserTest, LabelAndExpressionTest) {
     std::shared_ptr<const storm::logic::Formula> formula(nullptr);
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     
-    EXPECT_TRUE(formula->isPropositionalFormula());
+    EXPECT_TRUE(formula->isInFragment(storm::logic::propositional()));
     
     input = "x | y > 3 | !\"a\"";
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
-    EXPECT_TRUE(formula->isPropositionalFormula());
+    EXPECT_TRUE(formula->isInFragment(storm::logic::propositional()));
 }
 
 TEST(FormulaParserTest, ProbabilityOperatorTest) {
@@ -98,7 +99,7 @@ TEST(FormulaParserTest, ConditionalProbabilityTest) {
     
     EXPECT_TRUE(formula->isProbabilityOperatorFormula());
     storm::logic::ProbabilityOperatorFormula const& probFormula = formula->asProbabilityOperatorFormula();
-    EXPECT_TRUE(probFormula.getSubformula().isConditionalPathFormula());
+    EXPECT_TRUE(probFormula.getSubformula().isConditionalProbabilityFormula());
 }
 
 TEST(FormulaParserTest, NestedPathFormulaTest) {
