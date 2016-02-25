@@ -10,12 +10,13 @@
 
 #include <unordered_map>
 #include <memory>
+#include <type_traits>
 
 #include "src/utility/region.h"
 #include "src/logic/Formulas.h"
 #include "src/models/sparse/Model.h"
-#include "src/storage/SparseMatrix.h"
 #include "src/solver/SolveGoal.h"
+#include "src/utility/ModelInstantiator.h"
 
 namespace storm {
     namespace modelchecker{
@@ -26,6 +27,10 @@ namespace storm {
                 typedef typename ParametricSparseModelType::ValueType ParametricType;
                 typedef typename storm::utility::region::VariableType<ParametricType> VariableType;
                 typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
+                typedef typename std::conditional<(std::is_same<ParametricSparseModelType, storm::models::sparse::Dtmc<ParametricType>>::value),
+                        storm::models::sparse::Dtmc<ConstantType>, 
+                        storm::models::sparse::Mdp<ConstantType>
+                >::type ConstantSparseModelType;
                 
                 /*!
                  * Creates a sampling model.
@@ -56,13 +61,9 @@ namespace storm {
                 bool checkFormulaOnSamplingPoint(std::map<VariableType, CoefficientType>const& point);
 
             private:
-                typedef typename std::unordered_map<ParametricType, ConstantType>::value_type FunctionEntry;
                 typedef std::vector<storm::storage::sparse::state_type> Policy;
                 
-                void initializeProbabilities(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
-                void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
-                void instantiate(std::map<VariableType, CoefficientType>const& point);
-                void invokeSolver(bool allowEarlyTermination);
+                void invokeSolver(ConstantSparseModelType const& instantiatedModel, bool allowEarlyTermination);
                 
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
@@ -81,28 +82,7 @@ namespace storm {
                     Policy lastPolicy; //best policy from the previous instantiation. Serves as first guess for the next call.
                 } solverData;
                 
-
-                /* The data required for the equation system, i.e., a matrix and a vector.
-                 * 
-                 * We use a map to store one (unique) entry for every occurring function. 
-                 * The map points to some ConstantType value which serves as placeholder. 
-                 * When instantiating the model, the evaluated result of every function is stored in the corresponding placeholder.
-                 * Finally, there is an assignment that connects every non-constant matrix (or: vector) entry
-                 * with a pointer to the value that, on instantiation, needs to be written in that entry.
-                 * 
-                 * This way, it is avoided that the same function is evaluated multiple times.
-                 */
-                std::unordered_map<ParametricType, ConstantType> functions; // the occurring functions together with the corresponding placeholders for the result
-                struct MatrixData {
-                    storm::storage::SparseMatrix<ConstantType> matrix; //The matrix itself.
-                    std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>> assignment; // Connection of matrix entries with placeholders
-                    storm::storage::BitVector targetChoices; //indicate which rows of the matrix have a positive value to a target state
-                } matrixData;
-                struct VectorData {
-                    std::vector<ConstantType> vector; //The vector itself.
-                    std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType*>> assignment; // Connection of vector entries with placeholders
-                } vectorData;
-                
+                storm::utility::ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType> modelInstantiator;
 
             };
         } //namespace region

@@ -36,7 +36,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseDtmcRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
-                    AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
+                    SparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
                 //intentionally left empty
             }
 
@@ -633,7 +633,7 @@ namespace storm {
 
 
 #ifdef STORM_HAVE_CARL
-            template class SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+            template class SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
 #endif
         } // namespace region 
     } // namespace modelchecker

@@ -1,6 +1,6 @@
 #!/bin/bash
 executable="timeout 3600 ../build/src/storm"
-arguments=" -i 1000000 --parametric --parametricRegion --region:refinement 0.05 --region:samplemode off"
+arguments=" -i 1000000 --parametric --parametricRegion"
 mkdir fractions
 # pdtmcs
 $executable -s ./pdtmc/crowds/crowds.pm -const CrowdSize=15,TotalRuns=5 --prop ./pdtmc/crowds/crowds.prctl --region:regionfile ./pdtmc/crowds/crowds_regions.txt $arguments | tee ./fractions/pdtmc_crowds.pm-constCrowdSize_15_TotalRuns_5.log 

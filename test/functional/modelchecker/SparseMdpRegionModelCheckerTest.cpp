@@ -11,7 +11,7 @@
 
 #include "utility/storm.h"
 #include "src/models/sparse/Model.h"
-#include "modelchecker/region/AbstractSparseRegionModelChecker.h"
+#include "modelchecker/region/SparseRegionModelChecker.h"
 #include "modelchecker/region/ParameterRegion.h"
 
 TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
@@ -20,7 +20,7 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     std::string const& formulaFile = STORM_CPP_BASE_PATH "/examples/pmdp/two_dice/two_dice.prctl"; //P<=0.17 [F \"doubles\" ]";
     std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
-    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaFile, constantsAsString));
     
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.495<=p1<=0.5,0.5<=p2<=0.505");
@@ -78,7 +78,7 @@ TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     std::string const& formulaAsString = "P>0.25 [F \"finished\"&\"all_coins_equal_1\" ]";
     std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
-    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
     
     //start testing

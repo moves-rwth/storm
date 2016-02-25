@@ -321,7 +321,7 @@ namespace storm {
      * @param constantsString can be used to specify constants for certain parameters, e.g., "p=0.9,R=42"
      * @return true when initialization was successful
      */
-    inline bool initializeRegionModelChecker(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>& regionModelChecker,
+    inline bool initializeRegionModelChecker(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>>& regionModelChecker,
                                       std::string const& programFilePath,
                                       std::string const& formulaString,
                                       std::string const& constantsString=""){
@@ -342,9 +342,9 @@ namespace storm {
         preprocessModel(model,formulas);
         // ModelChecker
         if(model->isOfType(storm::models::ModelType::Dtmc)){
-            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(model);
+            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
         } else if (model->isOfType(storm::models::ModelType::Mdp)){
-            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(model);
+            regionModelChecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Mdp<storm::RationalFunction>>());
         } else {
             STORM_LOG_ERROR("The type of the given model is not supported (only Dtmcs or Mdps are supported");
             return false;
@@ -365,7 +365,7 @@ namespace storm {
      * @param point the valuation of the different variables
      * @return true iff the specified formula is satisfied (i.e., iff the reachability value is within the bound of the formula)
      */
-    inline bool checkSamplingPoint(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> regionModelChecker,
+    inline bool checkSamplingPoint(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
                                    std::map<storm::Variable, storm::RationalNumber> const& point){
         return regionModelChecker->valueIsInBoundOfFormula(regionModelChecker->getReachabilityValue(point));
     }
@@ -385,7 +385,7 @@ namespace storm {
      * proveAllSat=false, return=true  ==> the property is VIOLATED for all parameters in the given region
      * proveAllSat=false, return=false ==> the approximative value IS within the bound of the formula (either the approximation is too bad or there are points in the region that satisfy the property)
      */
-    inline bool checkRegionApproximation(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> regionModelChecker,
+    inline bool checkRegionApproximation(std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> regionModelChecker,
                                          std::map<storm::Variable, storm::RationalNumber> const& lowerBoundaries,
                                          std::map<storm::Variable, storm::RationalNumber> const& upperBoundaries,
                                          bool proveAllSat){

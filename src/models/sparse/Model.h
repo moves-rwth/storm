@@ -17,6 +17,11 @@ namespace storm {
         class BitVector;
     }
     
+    namespace utility {
+        template<typename ParametricModelType, typename ConstantModelType>
+        class ModelInstantiator;
+    }
+    
     namespace models {
         namespace sparse {
             
@@ -31,6 +36,9 @@ namespace storm {
              */
             template<class CValueType, class CRewardModelType = StandardRewardModel<CValueType>>
             class Model : public storm::models::ModelBase {
+                template<typename ParametricModelType, typename ConstantModelType>
+                friend class storm::utility::ModelInstantiator;
+                
             public:
                 typedef CValueType ValueType;
                 typedef CRewardModelType RewardModelType;

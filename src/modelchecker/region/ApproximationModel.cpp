@@ -407,7 +407,8 @@ namespace storm {
             
 
 #ifdef STORM_HAVE_CARL
-            template class ApproximationModel<storm::models::sparse::Model<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+            template class ApproximationModel<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
+            template class ApproximationModel<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 #endif
         } //namespace region
     }

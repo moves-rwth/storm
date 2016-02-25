@@ -1,11 +1,11 @@
 /* 
- * File:   AbstractSparseRegionModelChecker.cpp
+ * File:   SparseRegionModelChecker.cpp
  * Author: tim
  * 
  * Created on September 9, 2015, 12:34 PM
  */
 
-#include "src/modelchecker/region/AbstractSparseRegionModelChecker.h"
+#include "src/modelchecker/region/SparseRegionModelChecker.h"
 
 #include "src/adapters/CarlAdapter.h"
 #include "src/modelchecker/region/RegionCheckResult.h"
@@ -33,59 +33,59 @@ namespace storm {
         namespace region {
                                 
             template<typename ParametricSparseModelType, typename ConstantType>
-            AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::AbstractSparseRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
+            SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
                     model(model),
                     specifiedFormula(nullptr){
                 STORM_LOG_THROW(model->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Model is required to have exactly one initial state.");
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::~AbstractSparseRegionModelChecker() {
+            SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::~SparseRegionModelChecker() {
                 //Intentionally left empty
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<ParametricSparseModelType> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getModel() const {
+            std::shared_ptr<ParametricSparseModelType> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getModel() const {
                 return this->model;
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<storm::logic::OperatorFormula> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormula() const {
+            std::shared_ptr<storm::logic::OperatorFormula> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormula() const {
                 return this->specifiedFormula;
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            ConstantType AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormulaBound() const {
+            ConstantType SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormulaBound() const {
                 return storm::utility::region::convertNumber<ConstantType>(this->getSpecifiedFormula()->getBound());
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifiedFormulaHasLowerBound() const {
+            bool SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifiedFormulaHasLowerBound() const {
                 return storm::logic::isLowerBound(this->getSpecifiedFormula()->getComparisonType());
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::isComputeRewards() const {
+            bool const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::isComputeRewards() const {
                 return computeRewards;
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool const AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::isResultConstant() const {
+            bool const SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::isResultConstant() const {
                 return this->constantResult.operator bool();
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<ParametricSparseModelType> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSimpleModel() const {
+            std::shared_ptr<ParametricSparseModelType> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSimpleModel() const {
                 return this->simpleModel;
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<storm::logic::OperatorFormula> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSimpleFormula() const {
+            std::shared_ptr<storm::logic::OperatorFormula> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSimpleFormula() const {
                 return this->simpleFormula;
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifyFormula(std::shared_ptr<storm::logic::Formula> formula) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifyFormula(std::shared_ptr<storm::logic::Formula> formula) {
                 std::chrono::high_resolution_clock::time_point timeSpecifyFormulaStart = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Specifying the formula " << *formula.get());
                 STORM_LOG_THROW(this->canHandle(*formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");
@@ -156,7 +156,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeApproximationModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
                 std::chrono::high_resolution_clock::time_point timeInitApproxModelStart = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Initializing the Approximation Model...");
                 STORM_LOG_THROW(this->isApproximationApplicable, storm::exceptions::UnexpectedException, "Approximation model requested but approximation is not applicable");
@@ -167,7 +167,7 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::initializeSamplingModel(ParametricSparseModelType const& model, std::shared_ptr<storm::logic::OperatorFormula> formula) {
                 STORM_LOG_DEBUG("Initializing the Sampling Model....");
                 std::chrono::high_resolution_clock::time_point timeInitSamplingModelStart = std::chrono::high_resolution_clock::now();
                 this->samplingModel=std::make_shared<SamplingModel<ParametricSparseModelType, ConstantType>>(model, formula);
@@ -178,7 +178,7 @@ namespace storm {
             
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkRegions(std::vector<ParameterRegion<ParametricType>>& regions) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkRegions(std::vector<ParameterRegion<ParametricType>>& regions) {
                 STORM_LOG_DEBUG("Checking " << regions.size() << "regions.");
                 std::cout << "Checking " << regions.size() << " regions. Progress: ";
                 std::cout.flush();
@@ -196,7 +196,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::refineAndCheckRegion(std::vector<ParameterRegion<ParametricType>>& regions, double const& refinementThreshold) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::refineAndCheckRegion(std::vector<ParameterRegion<ParametricType>>& regions, double const& refinementThreshold) {
                 STORM_LOG_DEBUG("Applying refinement on region: " << regions.front().toString() << ".");
                 std::cout << "Applying refinement on region: " << regions.front().toString() << std::endl;
                 std::cout.flush();
@@ -232,7 +232,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkRegion(ParameterRegion<ParametricType>& region) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkRegion(ParameterRegion<ParametricType>& region) {
                 std::chrono::high_resolution_clock::time_point timeCheckRegionStart = std::chrono::high_resolution_clock::now();
                 ++this->numOfCheckedRegions;
 
@@ -312,9 +312,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkApproximativeValues(ParameterRegion<ParametricType>& region) {
-                std::chrono::high_resolution_clock::time_point timeMDPBuildStart = std::chrono::high_resolution_clock::now();
-
+            bool SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkApproximativeValues(ParameterRegion<ParametricType>& region) {
                 // Decide whether to prove allsat or allviolated. 
                 bool proveAllSat;
                 switch (region.getCheckResult()){
@@ -380,7 +378,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkRegionWithApproximation(ParameterRegion<ParametricType> const& region, bool proveAllSat){
+            bool SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkRegionWithApproximation(ParameterRegion<ParametricType> const& region, bool proveAllSat){
                 if(this->isResultConstant()){
                     return (proveAllSat==this->checkFormulaOnSamplingPoint(region.getSomePoint()));
                 }
@@ -390,7 +388,7 @@ namespace storm {
             }
                 
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getApproximationModel() {
+            std::shared_ptr<ApproximationModel<ParametricSparseModelType, ConstantType>> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getApproximationModel() {
                 if(this->approximationModel==nullptr){
                     STORM_LOG_WARN("Approximation model requested but it has not been initialized when specifying the formula. Will initialize it now.");
                     initializeApproximationModel(*this->getSimpleModel(), this->getSimpleFormula());
@@ -399,7 +397,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkSamplePoints(ParameterRegion<ParametricType>& region) {
+            bool SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkSamplePoints(ParameterRegion<ParametricType>& region) {
                 auto samplingPoints = region.getVerticesOfRegion(region.getVariables()); //test the 4 corner points
                 for (auto const& point : samplingPoints){
                     if(checkPoint(region, point)){
@@ -410,7 +408,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            ConstantType AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getReachabilityValue(std::map<VariableType, CoefficientType> const& point) {
+            ConstantType SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getReachabilityValue(std::map<VariableType, CoefficientType> const& point) {
                 if(this->isResultConstant()){
                     return this->constantResult.get();
                 }
@@ -418,7 +416,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkFormulaOnSamplingPoint(std::map<VariableType, CoefficientType> const& point) {
+            bool SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::checkFormulaOnSamplingPoint(std::map<VariableType, CoefficientType> const& point) {
                 if(this->isResultConstant()){
                     return this->valueIsInBoundOfFormula(this->constantResult.get());
                 }
@@ -426,7 +424,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            std::shared_ptr<SamplingModel<ParametricSparseModelType, ConstantType>> const& AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSamplingModel() {
+            std::shared_ptr<SamplingModel<ParametricSparseModelType, ConstantType>> const& SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSamplingModel() {
                 if(this->samplingModel==nullptr){
                     STORM_LOG_WARN("Sampling model requested but it has not been initialized when specifying the formula. Will initialize it now.");
                     initializeSamplingModel(*this->getSimpleModel(), this->getSimpleFormula());
@@ -435,7 +433,7 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::valueIsInBoundOfFormula(ConstantType const& value){
+            bool SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::valueIsInBoundOfFormula(ConstantType const& value){
                 STORM_LOG_THROW(this->getSpecifiedFormula()!=nullptr, storm::exceptions::InvalidStateException, "Tried to compare a value to the bound of a formula, but no formula specified.");
                 switch (this->getSpecifiedFormula()->getComparisonType()) {
                     case storm::logic::ComparisonType::Greater:
@@ -452,12 +450,12 @@ namespace storm {
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
-            bool AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::valueIsInBoundOfFormula(CoefficientType const& value){
+            bool SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::valueIsInBoundOfFormula(CoefficientType const& value){
                 return valueIsInBoundOfFormula(storm::utility::region::convertNumber<ConstantType>(value));
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>::printStatisticsToStream(std::ostream& outstream) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::printStatisticsToStream(std::ostream& outstream) {
                 STORM_LOG_DEBUG("Printing statistics");
 
                 if(this->getSpecifiedFormula()==nullptr){
@@ -524,7 +522,8 @@ namespace storm {
         
         //note: for other template instantiations, add rules for the typedefs of VariableType and CoefficientType in utility/regions.h
 #ifdef STORM_HAVE_CARL
-        template class AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+        template class SparseRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
+        template class SparseRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 #endif
         } // namespace region
     } //namespace modelchecker

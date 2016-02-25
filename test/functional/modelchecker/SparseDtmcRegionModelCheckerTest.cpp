@@ -11,7 +11,7 @@
 
 #include "utility/storm.h"
 #include "src/models/sparse/Model.h"
-#include "modelchecker/region/AbstractSparseRegionModelChecker.h"
+#include "modelchecker/region/SparseRegionModelChecker.h"
 #include "modelchecker/region/SparseDtmcRegionModelChecker.h"
 #include "modelchecker/region/ParameterRegion.h"
 
@@ -21,9 +21,10 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     std::string const& formulaAsString = "P<=0.84 [F s=5 ]";
     std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
-    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
-    auto dtmcModelchecker = std::static_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(modelchecker);
+    auto dtmcModelchecker = std::dynamic_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(modelchecker);
+    ASSERT_FALSE(dtmcModelchecker==nullptr);
     
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pL<=0.9,0.75<=pK<=0.95");
@@ -82,9 +83,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
     std::string const& formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string const& constantsAsString = "pL=0.9,TOAck=0.5";
     
-    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
-    auto dtmcModelchecker = std::static_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(modelchecker);
+    auto dtmcModelchecker = std::dynamic_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(modelchecker);
     
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.875,0.75<=TOMsg<=0.95");
@@ -167,9 +168,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     std::string const& formulaAsString = "R>2.5 [F (s=0&srep=3) ]";
     std::string const& constantsAsString = "";
     
-    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
-    auto dtmcModelchecker = std::static_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(modelchecker);
+    auto dtmcModelchecker = std::dynamic_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(modelchecker);
     
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("");
@@ -204,9 +205,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     std::string const& formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
     std::string const& constantsAsString = ""; //!! this model will have 4 parameters
     
-    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
-    auto dtmcModelchecker = std::static_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(modelchecker);
+    auto dtmcModelchecker = std::dynamic_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(modelchecker);
     
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.7<=pK<=0.9,0.6<=pL<=0.85,0.9<=TOMsg<=0.95,0.85<=TOAck<=0.9");
@@ -260,9 +261,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     std::string const& formulaAsString = "P<0.5 [F \"observe0Greater1\" ]";
     std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
-    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
-    auto dtmcModelchecker = std::static_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(modelchecker);
+    auto dtmcModelchecker = std::dynamic_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(modelchecker);
     
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.1<=PF<=0.75,0.15<=badC<=0.2");
@@ -341,9 +342,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     std::string const& formulaAsString = "P>0.75 [F \"observe0Greater1\" ]";
     std::string const& constantsAsString = "badC=0.3"; //e.g. pL=0.9,TOACK=0.5
     
-    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
-    auto dtmcModelchecker = std::static_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(modelchecker);
+    auto dtmcModelchecker = std::dynamic_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(modelchecker);
     
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("0.9<=PF<=0.99");
@@ -399,9 +400,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     std::string const& formulaAsString = "P>0.6 [F \"observe0Greater1\" ]";
     std::string const& constantsAsString = "PF=0.9,badC=0.2";
     
-    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>> modelchecker;
+    std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
-    auto dtmcModelchecker = std::static_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction>, double>>(modelchecker);
+    auto dtmcModelchecker = std::dynamic_pointer_cast<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(modelchecker);
     
     //start testing
     auto allSatRegion=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::parseRegion("");
