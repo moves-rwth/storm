@@ -4,7 +4,11 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/DebugSettings.h"
 
+
 #ifdef STORM_LOGGING_FRAMEWORK
+#include "log4cplus/consoleappender.h"
+#include "log4cplus/fileappender.h"
+
 log4cplus::Logger logger;
 log4cplus::Logger printer;
 #else 
