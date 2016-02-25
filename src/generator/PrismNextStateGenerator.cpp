@@ -19,15 +19,38 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        void PrismNextStateGenerator<ValueType, StateType>::setTerminalExpression(storm::expressions::Expression const& terminalExpression) {
+            this->terminalExpression = terminalExpression;
+        }
+        
+        template<typename ValueType, typename StateType>
+        bool PrismNextStateGenerator<ValueType, StateType>::isDeterministicModel() const {
+            return program.isDeterministicModel();
+        }
+        
+        template<typename ValueType, typename StateType>
         std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
-            // FIXME, TODO, whatever
+            // FIXME: This only works for models with exactly one initial state. We should make this more general.
+            CompressedState initialState(variableInformation.getTotalBitOffset());
+            
+            // We need to initialize the values of the variables to their initial value.
+            for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                initialState.set(booleanVariable.bitOffset, booleanVariable.initialValue);
+            }
+            for (auto const& integerVariable : variableInformation.integerVariables) {
+                initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(integerVariable.initialValue - integerVariable.lowerBound));
+            }
+
+            // Register initial state and return it.
+            StateType id = stateToIdCallback(initialState);
+            return {id};
         }
         
         template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType>::expand(CompressedState const& state, StateToIdCallback const& stateToIdCallback) {
-            // Start by unpacking the state into the evaluator so we can quickly evaluate expressions later.
-            unpackStateIntoEvaluator(state);
-            
+            // Since almost all subsequent operations are based on the evaluator, we load the state into it now.
+            unpackStateIntoEvaluator(state, variableInformation, evaluator);
+
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;
             
@@ -43,6 +66,11 @@ namespace storm {
                     }
                 }
                 result.addStateReward(stateReward);
+            }
+            
+            // If a terminal expression was set and we must not expand this state, return now.
+            if (terminalExpression && evaluator.asBool(terminalExpression.get())) {
+                return result;
             }
             
             // Get all choices for the state.
@@ -112,19 +140,8 @@ namespace storm {
                 result.addChoice(std::move(choice));
             }
             
+            result.setExpanded();
             return result;
-        }
-        
-        
-        
-        template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::unpackStateIntoEvaluator(storm::storage::BitVector const& state) {
-            for (auto const& booleanVariable : variableInformation.booleanVariables) {
-                evaluator.setBooleanValue(booleanVariable.variable, state.get(booleanVariable.bitOffset));
-            }
-            for (auto const& integerVariable : variableInformation.integerVariables) {
-                evaluator.setIntegerValue(integerVariable.variable, state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
-            }
         }
         
         template<typename ValueType, typename StateType>

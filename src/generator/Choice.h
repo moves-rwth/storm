@@ -125,6 +125,11 @@ namespace storm {
             void addChoiceReward(ValueType const& value);
             
             /*!
+             * Retrieves the rewards for this choice under selected reward models.
+             */
+            std::vector<ValueType> const& getChoiceRewards() const;
+            
+            /*!
              * Retrieves the size of the distribution associated with this choice.
              */
             std::size_t size() const;

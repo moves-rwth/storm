@@ -4,7 +4,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
-#include <queue>
+#include <deque>
 #include <cstdint>
 #include <boost/functional/hash.hpp>
 #include <boost/container/flat_set.hpp>
@@ -22,9 +22,9 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/settings/SettingsManager.h"
 
-
 #include "src/utility/prism.h"
 
+#include "src/generator/CompressedState.h"
 #include "src/generator/VariableInformation.h"
 
 namespace storm {
@@ -35,6 +35,7 @@ namespace storm {
     namespace builder {
         
         using namespace storm::utility::prism;
+        using namespace storm::generator;
         
         // Forward-declare classes.
         template <typename ValueType> struct RewardModelBuilder;
@@ -42,8 +43,6 @@ namespace storm {
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename StateType = uint32_t>
         class ExplicitPrismModelBuilder {
         public:
-            typedef storm::storage::BitVector CompressedState;
-            
             // A structure holding information about the reachable state space while building it.
             struct InternalStateInformation {
                 InternalStateInformation(uint64_t bitsPerState);
@@ -271,7 +270,7 @@ namespace storm {
             Options options;
             
             // The variable information.
-            storm::generator::VariableInformation variableInformation;
+            VariableInformation variableInformation;
             
             // Internal information about the states that were explored.
             InternalStateInformation internalStateInformation;
@@ -280,9 +279,12 @@ namespace storm {
             // successful build.
             boost::optional<StateInformation> stateInformation;
             
-            // A queue of states that still need to be explored. The indices in this queue are the bucket indices in the
-            // bit vector hash map holding the compressed states.
-            std::queue<std::size_t> statesToExplore;
+            // A set of states that still need to be explored.
+            std::deque<CompressedState> statesToExplore;
+            
+            // An optional mapping from row groups to the indices of the states that they reflect. This needs to be built
+            // in case the exploration order is not BFS.
+//            boost::optional<std::vector<StateType, StateType>> rowGroupToIndexMapping;
 
         };
         

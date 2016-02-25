@@ -93,6 +93,11 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        std::vector<ValueType> const& Choice<ValueType, StateType>::getChoiceRewards() const {
+            return choiceRewards;
+        }
+        
+        template<typename ValueType, typename StateType>
         std::size_t Choice<ValueType, StateType>::size() const {
             return distribution.size();
         }

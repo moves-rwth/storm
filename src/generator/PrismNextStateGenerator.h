@@ -22,17 +22,16 @@ namespace storm {
              */
             void addRewardModel(storm::prism::RewardModel const& rewardModel);
             
+            /*!
+             * Sets an expression such that if it evaluates to true in a state, prevents the exploration.
+             */
+            void setTerminalExpression(storm::expressions::Expression const& terminalExpression);
+            
+            virtual bool isDeterministicModel() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
             virtual StateBehavior<ValueType, StateType> expand(CompressedState const& state, StateToIdCallback const& stateToIdCallback) override;
-                        
+
         private:
-            /*!
-             * Unpacks the compressed state into the evaluator.
-             *
-             * @param state The state to unpack.
-             */
-            void unpackStateIntoEvaluator(CompressedState const& state);
-            
             /*!
              * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
              * the given compressed state.
@@ -87,6 +86,9 @@ namespace storm {
             
             // A flag that stores whether or not to build the choice labeling.
             bool buildChoiceLabeling;
+            
+            // An optional expression that governs which states must not be explored.
+            boost::optional<storm::expressions::Expression> terminalExpression;
 
             // Information about how the variables are packed
             VariableInformation const& variableInformation;
