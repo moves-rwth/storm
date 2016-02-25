@@ -21,13 +21,19 @@ extern int storm_runtime_loglevel;
 #endif
 
 
+#define __SHORT_FORM_OF_FILE__ \
+(strrchr(__FILE__,'/') \
+? strrchr(__FILE__,'/')+1 \
+: __FILE__ \
+)
+
 #ifndef STORM_LOG_DISABLE_DEBUG
 #define STORM_LOG_DEBUG(message)                                    \
 do {                                                                \
     if(storm_runtime_loglevel >= STORM_LOGLEVEL_DEBUG) {            \
         std::stringstream __ss;                                     \
         __ss << message;                                            \
-        std::cout << "LOG DBG: " << __ss.str() << std::endl;        \
+        std::cout << "DEBUG (" << __SHORT_FORM_OF_FILE__ << ":" << __LINE__ << "): " <<  __ss.str() << std::endl;        \
     }                                                               \
 } while (false)
 #else
@@ -42,7 +48,7 @@ do {                                                            \
     if(storm_runtime_loglevel >= STORM_LOGLEVEL_TRACE) {        \
         std::stringstream __ss;                                 \
         __ss << message;                                        \
-        std::cout << "LOG TRC: " << __ss.str() << std::endl;       \
+        std::cout << "TRACE (" << __SHORT_FORM_OF_FILE__ << ":" << __LINE__ << "): " <<  __ss.str() << std::endl;       \
     }                                                           \
 } while(false)  
 #else
@@ -57,7 +63,7 @@ do {                                                            \
 #define STORM_LOG_ASSERT(cond, message)                     \
 do {                                                        \
 if (!(cond)) {                                              \
-std::cout << "ASSERT FAILED: " << message << std::endl;     \
+std::cout << "ASSERT FAILED (" << __SHORT_FORM_OF_FILE__ << ":" << __LINE__ << "): " <<  message << std::endl;     \
 assert(cond);                                               \
 }                                                           \
 } while (false)                                 
@@ -69,7 +75,7 @@ assert(cond);                                               \
 #define STORM_LOG_THROW(cond, exception, message)               \
 do {                                                            \
     if (!(cond)) {                                              \
-        std::cout << "LOG ERR: " << message << std::endl;       \
+        std::cout << "ERROR (" << __SHORT_FORM_OF_FILE__ << ":" << __LINE__ << "): " <<  message << std::endl;       \
         throw exception() << message;                           \
     }                                                           \
 } while (false)                                
@@ -81,7 +87,7 @@ do {                                                           \
     if(storm_runtime_loglevel >= STORM_LOGLEVEL_WARN) {        \
         std::stringstream __ss;                                \
         __ss << message;                                       \
-        std::cout << "LOG WRN: " << message << std::endl;      \
+        std::cout << "WARN  (" << __SHORT_FORM_OF_FILE__ << ":" << __LINE__ << "): " <<  __ss.str() << std::endl;      \
     }                                                          \
 } while (false)                               
 
@@ -97,7 +103,7 @@ do {                                                            \
     if(storm_runtime_loglevel >= STORM_LOGLEVEL_INFO) {         \
         std::stringstream __ss;                                 \
         __ss << message;                                        \
-        std::cout << "LOG INF: " << message << std::endl;       \
+        std::cout << "INFO  (" << __SHORT_FORM_OF_FILE__ << ":" << __LINE__ << "): " << __ss.str() << std::endl;       \
     }                                                           \
 } while (false)                                 
 
@@ -113,7 +119,7 @@ do {                                                            \
     if(storm_runtime_loglevel >= STORM_LOGLEVEL_ERROR) {        \
         std::stringstream __ss;                                 \
         __ss << message;                                        \
-        std::cout << "LOG ERR: " << message << std::endl;       \
+        std::cout << "ERROR (" << __SHORT_FORM_OF_FILE__  << ":" << __LINE__ << "): " << __ss.str() << std::endl;       \
     }                                                           \
 } while (false)                                                 \
 
