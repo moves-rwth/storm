@@ -16,6 +16,12 @@ extern int storm_runtime_loglevel;
 #define STORM_LOGLEVEL_DEBUG 3
 #define STORM_LOGLEVEL_TRACE 4
 
+#ifdef STORM_LOG_DISABLE_DEBUG
+#define STORM_LOG_DISABLE_TRACE
+#endif
+
+
+#ifndef STORM_LOG_DISABLE_DEBUG
 #define STORM_LOG_DEBUG(message)                                    \
 do {                                                                \
     if(storm_runtime_loglevel >= STORM_LOGLEVEL_DEBUG) {            \
@@ -24,15 +30,26 @@ do {                                                                \
         std::cout << "LOG DBG: " << __ss.str() << std::endl;        \
     }                                                               \
 } while (false)
+#else
+#define STORM_LOG_DEBUG(message)                                    \
+do {                                                                \
+} while (false)                                                        
+#endif
 
+#ifndef STORM_LOG_DISABLE_TRACE
 #define STORM_LOG_TRACE(message)                                \
 do {                                                            \
     if(storm_runtime_loglevel >= STORM_LOGLEVEL_TRACE) {        \
         std::stringstream __ss;                                 \
         __ss << message;                                        \
-        std::cout << "LOG TRC: " << message << std::endl;       \
+        std::cout << "LOG TRC: " << __ss.str() << std::endl;       \
     }                                                           \
 } while(false)  
+#else
+#define STORM_LOG_TRACE(message)                                \
+do {                                                            \
+} while (false)    
+#endif
 
 
 // Define STORM_LOG_ASSERT which is only checked when NDEBUG is not set.
@@ -112,15 +129,26 @@ do {                                                \
 storm_runtime_loglevel = STORM_LOGLEVEL_INFO;       \
 } while (false)
 
+#ifndef STORM_LOG_DISABLE_DEBUG
 #define STORM_GLOBAL_LOGLEVEL_DEBUG()               \
 do {                                                \
 storm_runtime_loglevel = STORM_LOGLEVEL_DEBUG;      \
 } while(false)
-    
+#else 
+#define STORM_GLOBAL_LOGLEVEL_DEBUG()               \
+std::cout << "***** warning ***** loglevel debug is not compiled\n"
+#endif 
+
+#ifndef STORM_LOG_DISABLE_TRACE
 #define STORM_GLOBAL_LOGLEVEL_TRACE()               \
 do {                                                \
 storm_runtime_loglevel = STORM_LOGLEVEL_TRACE;      \
 } while(false)
+#else
+#define STORM_GLOBAL_LOGLEVEL_TRACE()               \
+std::cout << "***** warning ***** loglevel trace is not compiled\n"
+#endif
+
 
 #else 
 // Include the parts necessary for Log4cplus.
