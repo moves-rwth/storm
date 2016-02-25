@@ -87,9 +87,9 @@ namespace storm {
                 storm::storage::BitVector statesWithProbability0 = std::move(statesWithProbability01.first);
                 storm::storage::BitVector statesWithProbability1 = std::move(statesWithProbability01.second);
                 storm::storage::BitVector maybeStates = ~(statesWithProbability0 | statesWithProbability1);
-                LOG4CPLUS_INFO(logger, "Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
-                LOG4CPLUS_INFO(logger, "Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
-                LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+                STORM_LOG_INFO("Found " << statesWithProbability0.getNumberOfSetBits() << " 'no' states.");
+                STORM_LOG_INFO("Found " << statesWithProbability1.getNumberOfSetBits() << " 'yes' states.");
+                STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
                 // Create resulting vector.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount());
@@ -287,16 +287,16 @@ namespace storm {
                 }
                 infinityStates.complement();
                 storm::storage::BitVector maybeStates = ~targetStates & ~infinityStates;
-                LOG4CPLUS_INFO(logger, "Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
-                LOG4CPLUS_INFO(logger, "Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
-                LOG4CPLUS_INFO(logger, "Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
+                STORM_LOG_INFO("Found " << infinityStates.getNumberOfSetBits() << " 'infinity' states.");
+                STORM_LOG_INFO("Found " << targetStates.getNumberOfSetBits() << " 'target' states.");
+                STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
                 // Create resulting vector.
                 std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                 
                 // Check whether we need to compute exact rewards for some states.
                 if (qualitative) {
-                    LOG4CPLUS_INFO(logger, "The rewards for the initial states were determined in a preprocessing step. No exact rewards were computed.");
+                    STORM_LOG_INFO("The rewards for the initial states were determined in a preprocessing step. No exact rewards were computed.");
                     // Set the values for all maybe-states to 1 to indicate that their reward values
                     // are neither 0 nor infinity.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::one<ValueType>());

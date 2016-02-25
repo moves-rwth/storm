@@ -100,7 +100,7 @@ public:
 			}
 		}
 
-		LOG4CPLUS_DEBUG(logger, "Initialized.");
+		STORM_LOG_DEBUG("Initialized.");
 
 		//Now find the shortest distances to all states
 		while(!activeSet.empty()) {
@@ -151,7 +151,7 @@ public:
 			}
 		}
 
-		LOG4CPLUS_DEBUG(logger, "Discovery done.");
+		STORM_LOG_DEBUG("Discovery done.");
 	}
 
 	/*!
@@ -215,7 +215,7 @@ public:
 			}
 		}
 
-		LOG4CPLUS_DEBUG(logger, "Initialized.");
+		STORM_LOG_DEBUG("Initialized.");
 
 		//Now find the shortest distances to all states
 		while(!activeSet.empty()) {
@@ -269,7 +269,7 @@ public:
 			}
 		}
 
-		LOG4CPLUS_DEBUG(logger, "Discovery done.");
+		STORM_LOG_DEBUG("Discovery done.");
 	}
 
 	/*!
@@ -324,7 +324,7 @@ public:
 		if(distances[bestIndex].second == (T) -1){
 			shortestPath.push_back(bestIndex);
 			probability = (T) 0;
-			LOG4CPLUS_DEBUG(logger, "Terminal state not viable!");
+			STORM_LOG_DEBUG("Terminal state not viable!");
 			return;
 		}
 
@@ -338,8 +338,8 @@ public:
 			bestIndex = distances[bestIndex].first;
 		}
 
-		LOG4CPLUS_DEBUG(logger, "Found best state: " << bestIndex);
-		LOG4CPLUS_DEBUG(logger, "Value: " << bestValue);
+		STORM_LOG_DEBUG("Found best state: " << bestIndex);
+		STORM_LOG_DEBUG("Value: " << bestValue);
 
 		shortestPath.push_back(bestIndex);
 		bestIndex = distances[bestIndex].first;
@@ -382,9 +382,9 @@ public:
 		//-------------------------------------------------------------
 
 #ifdef BENCHMARK
-		LOG4CPLUS_INFO(logger, "Formula: " << stateFormula.toString());
+		STORM_LOG_INFO("Formula: " << stateFormula.toString());
 #endif
-		LOG4CPLUS_INFO(logger, "Start finding critical subsystem.");
+		STORM_LOG_INFO("Start finding critical subsystem.");
 
 		// make model checker
 		// TODO: Implement and use generic Model Checker factory.
@@ -397,7 +397,7 @@ public:
 		std::shared_ptr<storm::properties::prctl::ProbabilisticBoundOperator<T>> boundOperator = std::dynamic_pointer_cast<storm::properties::prctl::ProbabilisticBoundOperator<T>>(stateFormula);
 
 		if(boundOperator == nullptr){
-			LOG4CPLUS_ERROR(logger, "No path bound operator at formula root.");
+			STORM_LOG_ERROR("No path bound operator at formula root.");
 			return model.getSubDtmc(subSys);
 		}
 		T bound = boundOperator->getBound();
@@ -440,7 +440,7 @@ public:
 			targetStates = until->getRight()->check(modelCheck);
 		}
 		else {
-			LOG4CPLUS_ERROR(logger, "Strange path formula. Can't decipher.");
+			STORM_LOG_ERROR("Strange path formula. Can't decipher.");
 			return model.getSubDtmc(subSys);
 		}
 
@@ -476,11 +476,11 @@ public:
 		if((initStates & targetStates).getNumberOfSetBits() != 0) {
 			subSys.set(*(initStates & targetStates).begin());
 
-			LOG4CPLUS_INFO(logger, "Critical subsystem found.");
-			LOG4CPLUS_INFO(logger, "Paths needed: " << pathCount);
-			LOG4CPLUS_INFO(logger, "State count of critical subsystem: " << subSys.getNumberOfSetBits());
-			LOG4CPLUS_INFO(logger, "Prob: " << 1);
-			LOG4CPLUS_INFO(logger, "Model checks: " << mcCount);
+			STORM_LOG_INFO("Critical subsystem found.");
+			STORM_LOG_INFO("Paths needed: " << pathCount);
+			STORM_LOG_INFO("State count of critical subsystem: " << subSys.getNumberOfSetBits());
+			STORM_LOG_INFO("Prob: " << 1);
+			STORM_LOG_INFO("Model checks: " << mcCount);
 
 			return model.getSubDtmc(subSys);
 		}
@@ -555,11 +555,11 @@ public:
 			}
 		}
 
-		LOG4CPLUS_INFO(logger, "Critical subsystem found.");
-		LOG4CPLUS_INFO(logger, "Paths needed: " << pathCount);
-		LOG4CPLUS_INFO(logger, "State count of critical subsystem: " << subSys.getNumberOfSetBits());
-		LOG4CPLUS_INFO(logger, "Prob: " << subSysProb);
-		LOG4CPLUS_INFO(logger, "Model checks: " << mcCount);
+		STORM_LOG_INFO("Critical subsystem found.");
+		STORM_LOG_INFO("Paths needed: " << pathCount);
+		STORM_LOG_INFO("State count of critical subsystem: " << subSys.getNumberOfSetBits());
+		STORM_LOG_INFO("Prob: " << subSysProb);
+		STORM_LOG_INFO("Model checks: " << mcCount);
 
 		return model.getSubDtmc(subSys);
 	}

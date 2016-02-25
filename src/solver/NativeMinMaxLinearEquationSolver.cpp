@@ -65,9 +65,9 @@ namespace storm {
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
-					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+					STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
 				} else {
-					LOG4CPLUS_WARN(logger, "Iterative solver did not converge after " << iterations << " iterations.");
+					STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations.");
 				}
 
 				// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
@@ -147,9 +147,9 @@ namespace storm {
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
-					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+					STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
 				} else {
-					LOG4CPLUS_WARN(logger, "Iterative solver did not converge after " << iterations << " iterations.");
+					STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations.");
 				}
 
                 // If requested, we store the scheduler for retrieval.
