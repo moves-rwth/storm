@@ -57,16 +57,7 @@ namespace storm {
                 dependentEvent->addIngoingDependency(dependency);
             }
 
-//            for (auto& restriction : mRestrictions) {
-//                std::set<DFTGatePointer> parentsOfRestrictedElements;
-//                for (auto& child : restriction->children()) {
-//                    for(DFTGatePointer& parent : child->parents()) {
-//                        parentsOfRestrictedElements.insert(parent);
-//                    }
-//                }
-//
-//
-//            }
+
 
             // Sort elements topologically
             // compute rank

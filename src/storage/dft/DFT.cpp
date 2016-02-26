@@ -321,7 +321,7 @@ namespace storm {
         template <typename ValueType>
         std::vector<size_t> DFT<ValueType>::getIndependentSubDftRoots(size_t index) const {
             auto elem = getElement(index);
-            auto ISD = elem->independentSubDft();
+            auto ISD = elem->independentSubDft(false);
             return ISD;
         }
 
@@ -373,8 +373,8 @@ namespace storm {
                             if(influencedElem1Ids == getSortedParentAndOutDepIds(*it2)) {
                                 std::cout << "Considering ids " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
                                 bool isSymmetry = false;
-                                std::vector<size_t> isubdft1 = getGate(*it1)->independentSubDft();
-                                std::vector<size_t> isubdft2 = getGate(*it2)->independentSubDft();
+                                std::vector<size_t> isubdft1 = getGate(*it1)->independentSubDft(false);
+                                std::vector<size_t> isubdft2 = getGate(*it2)->independentSubDft(false);
                                 if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
                                     continue;
                                 }
