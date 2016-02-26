@@ -8,6 +8,7 @@
 #include <set>
 #include <vector>
 #include <memory>
+#include <map>
 
 
 
@@ -204,7 +205,7 @@ namespace storm {
                 return mOutgoingDependencies.size();
             }
             
-            std::set<DFTElement<ValueType>> restrictedItems() const {
+            /*std::set<DFTElement<ValueType>> restrictedItems() const {
                 std::set<DFTElement<ValueType>> result;
                 for(auto const& restr : mRestrictions) {
                     bool foundThis = false;
@@ -236,7 +237,7 @@ namespace storm {
                         }
                     }
                 }
-            }
+            }*/
             
             DFTDependencyVector const& outgoingDependencies() const {
                 return mOutgoingDependencies;

@@ -93,7 +93,13 @@ namespace storm {
                 return (mActiveFailureRate == otherBE.mActiveFailureRate) && (mPassiveFailureRate == otherBE.mPassiveFailureRate);
             }
             
-            virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override;
+            virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+                if(DFTElement<ValueType>::checkDontCareAnymore(state, queues)) {
+                    state.beNoLongerFailable(this->mId);
+                    return true;
+                }
+                return false;
+            }
         };
 
         template<typename ValueType>

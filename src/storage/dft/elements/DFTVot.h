@@ -1,4 +1,5 @@
 #pragma once 
+#include "DFTGate.h"
 namespace storm {
     namespace storage {
         
