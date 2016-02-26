@@ -77,12 +77,22 @@ namespace storm {
             // TODO make recursive to use for nested subtrees
 
             DFTStateGenerationInfo generationInfo(nrElements(), mMaxSpareChildCount);
+            
+            // Generate Pre and Post info for restrictions
+            for(auto const& elem : mElements) {
+                if(!elem->isDependency() && !elem->isRestriction()) {
+                    generationInfo.setRestrictionPreElements(elem->id(), elem->seqRestrictionPres());
+                    generationInfo.setRestrictionPostElements(elem->id(), elem->seqRestrictionPosts());
+                }
+            }
+            
 
             // Perform DFS and insert all elements of subtree sequentially
             size_t stateIndex = 0;
             std::queue<size_t> visitQueue;
             storm::storage::BitVector visited(nrElements(), false);
 
+            // TODO make subfunction for this?
             if (symmetries.groups.empty()) {
                 // Perform DFS for whole tree
                 visitQueue.push(mTopLevelIndex);

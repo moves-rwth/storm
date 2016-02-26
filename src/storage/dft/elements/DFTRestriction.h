@@ -32,6 +32,10 @@ namespace storm {
             virtual bool isRestriction() const override {
                 return true;
             }
+            
+            virtual bool isSeqEnforcer() const {
+                return false;
+            }
 
 
             virtual std::string typestring() const = 0;
@@ -162,6 +166,12 @@ namespace storm {
                     DFTRestriction<ValueType>(id, name, children)
             {}
 
+            virtual bool isSeqEnforcer() const override {
+                return true;
+            }
+
+
+            
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 assert(queues.failurePropagationDone());
                 bool childOperationalBefore = false;

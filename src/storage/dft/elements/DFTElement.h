@@ -205,39 +205,55 @@ namespace storm {
                 return mOutgoingDependencies.size();
             }
             
-            /*std::set<DFTElement<ValueType>> restrictedItems() const {
-                std::set<DFTElement<ValueType>> result;
-                for(auto const& restr : mRestrictions) {
-                    bool foundThis = false;
-                    for(auto const& child : restr->children()) {
-                        if(!foundThis) {
-                            if(child->id() == mId) {
-                                foundThis = true;
-                            }
-                        } else if(result.count(child) == 0) {
-                            result.insert(child);
+            /**
+             * Obtains ids of elements which are the direct successor in the list of children of a restriction
+             * @return A vector of ids
+             */
+            std::vector<size_t> seqRestrictionPosts() const {
+                std::vector<size_t> res;
+                for (auto const& restr : mRestrictions) {
+                    if(!restr->isSeqEnforcer()) {
+                        continue;
+                    }
+                    auto it = restr->children().cbegin();
+                    for(; it != restr->children().cend(); ++it) {
+                        if((*it)->id() == mId) {
+                            break;
                         }
                     }
+                    assert(it != restr->children().cend());
+                    ++it;
+                    if(it != restr->children().cend()) {
+                        res.push_back((*it)->id());
+                    }
                 }
+                return res;
             }
             
-            std::set<DFTElement<ValueType>> restrictedItemsTC() const {
-                std::set<DFTElement<ValueType>> result;
-                for(auto const& restr : mRestrictions) {
-                    bool foundThis = false;
-                    for(auto const& child : restr->children()) {
-                        if(!foundThis) {
-                            if(child->id() == mId) {
-                                foundThis = true;
-                            }
-                        } else if(result.count(child) == 0) {
-                            result.insert(child);
-                            std::set<DFTElement<ValueType>> tmpRes = child->restrictedItemsTC();
-                            result.insert(tmpRes.begin(), tmpRes.end());
+            /**
+             * Obtains ids of elements which are the direct predecessor in the list of children of a restriction
+             * @return A vector of ids
+             */
+            std::vector<size_t> seqRestrictionPres() const {
+                std::vector<size_t> res;
+                for (auto const& restr : mRestrictions) {
+                    if(!restr->isSeqEnforcer()) {
+                        continue;
+                    }
+                    auto it = restr->children().cbegin();
+                    for(++it; it != restr->children().cend(); ++it) {
+                        if((*it)->id() == mId) {
+                            break;
                         }
                     }
+                    assert(it != restr->children().cend());
+                    if(it != restr->children().cbegin()) {
+                        --it;
+                        res.push_back((*it)->id());
+                    }
                 }
-            }*/
+                return res;
+            }
             
             DFTDependencyVector const& outgoingDependencies() const {
                 return mOutgoingDependencies;

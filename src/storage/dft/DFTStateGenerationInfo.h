@@ -8,12 +8,16 @@ namespace storm {
             std::map<size_t, size_t> mSpareUsageIndex; // id spare -> index first bit in state
             std::map<size_t, size_t> mSpareActivationIndex; // id spare representative -> index in state
             std::vector<size_t> mIdToStateIndex; // id -> index first bit in state
-            std::map<size_t, size_t> mRestrictedItems;
+            std::map<size_t, std::vector<size_t>> mSeqRestrictionPreElements; // id -> list of restriction pre elements;
+            std::map<size_t, std::vector<size_t>> mSeqRestrictionPostElements; // id -> list of restriction post elements;
             std::vector<std::pair<size_t, std::vector<size_t>>> mSymmetries; // pair (lenght of symmetry group, vector indicating the starting points of the symmetry groups)
 
         public:
 
-            DFTStateGenerationInfo(size_t nrElements, size_t maxSpareChildCount) : mUsageInfoBits(storm::utility::math::uint64_log2(maxSpareChildCount) + 1), mIdToStateIndex(nrElements) {
+            DFTStateGenerationInfo(size_t nrElements, size_t maxSpareChildCount) :
+                mUsageInfoBits(storm::utility::math::uint64_log2(maxSpareChildCount) + 1), 
+                mIdToStateIndex(nrElements)
+            {
                 assert(maxSpareChildCount < pow(2, mUsageInfoBits));
             }
 
@@ -26,6 +30,14 @@ namespace storm {
                 mIdToStateIndex[id] = index;
             }
 
+            void setRestrictionPreElements(size_t id, std::vector<size_t> const& elems) {
+                mSeqRestrictionPreElements[id] = elems;
+            }
+            
+            void setRestrictionPostElements(size_t id, std::vector<size_t> const& elems) {
+                mSeqRestrictionPostElements[id] = elems;
+            }
+            
             void addSpareActivationIndex(size_t id, size_t index) {
                 mSpareActivationIndex[id] = index;
             }
