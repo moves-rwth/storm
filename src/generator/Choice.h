@@ -97,24 +97,6 @@ namespace storm {
             ValueType getTotalMass() const;
             
             /*!
-             * Retrieves the entry in the choice that is associated with the given state and creates one if none exists,
-             * yet.
-             *
-             * @param state The state for which to add the entry.
-             * @return A reference to the entry that is associated with the given state.
-             */
-            ValueType& getOrAddEntry(StateType const& state);
-            
-            /*!
-             * Retrieves the entry in the choice that is associated with the given state and creates one if none exists,
-             * yet.
-             *
-             * @param state The state for which to add the entry.
-             * @return A reference to the entry that is associated with the given state.
-             */
-            ValueType const& getOrAddEntry(StateType const& state) const;
-            
-            /*!
              * Adds the given probability value to the given state in the underlying distribution.
              */
             void addProbability(StateType const& state, ValueType const& value);
@@ -128,6 +110,11 @@ namespace storm {
              * Retrieves the rewards for this choice under selected reward models.
              */
             std::vector<ValueType> const& getChoiceRewards() const;
+            
+            /*!
+             * Retrieves whether the choice is Markovian.
+             */
+            bool isMarkovian() const;
             
             /*!
              * Retrieves the size of the distribution associated with this choice.

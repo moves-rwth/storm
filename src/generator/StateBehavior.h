@@ -29,7 +29,7 @@ namespace storm {
             /*!
              * Sets whether the state was expanded.
              */
-            bool setExpanded(bool newValue = true);
+            void setExpanded(bool newValue = true);
             
             /*!
              * Retrieves whether the state was expanded.

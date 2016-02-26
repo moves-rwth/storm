@@ -45,7 +45,7 @@ namespace storm {
         public:
             // A structure holding information about the reachable state space while building it.
             struct InternalStateInformation {
-                InternalStateInformation(uint64_t bitsPerState);
+                InternalStateInformation(uint64_t bitsPerState = 64);
 
                 // This member stores all the states and maps them to their unique indices.
                 storm::storage::BitVectorHashMap<StateType> stateStorage;

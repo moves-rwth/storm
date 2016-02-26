@@ -79,6 +79,11 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        typename Distribution<ValueType, StateType>::const_iterator Distribution<ValueType, StateType>::cbegin() const {
+            return this->begin();
+        }
+        
+        template<typename ValueType, typename StateType>
         typename Distribution<ValueType, StateType>::iterator Distribution<ValueType, StateType>::end() {
             return this->distribution.end();
         }
@@ -86,6 +91,11 @@ namespace storm {
         template<typename ValueType, typename StateType>
         typename Distribution<ValueType, StateType>::const_iterator Distribution<ValueType, StateType>::end() const {
             return this->distribution.end();
+        }
+
+        template<typename ValueType, typename StateType>
+        typename Distribution<ValueType, StateType>::const_iterator Distribution<ValueType, StateType>::cend() const {
+            return this->end();
         }
         
         template<typename ValueType, typename StateType>

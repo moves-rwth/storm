@@ -49,8 +49,9 @@ namespace storm {
         
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
+            VariableInformation() = default;
             VariableInformation(storm::prism::Program const& program);
-            uint_fast64_t getTotalBitOffset() const;
+            uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;
             
             // Provide methods to access the bit offset and width of variables in the compressed state.
             uint_fast64_t getBitOffset(storm::expressions::Variable const& variable) const;

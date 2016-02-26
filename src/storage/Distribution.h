@@ -17,7 +17,7 @@ namespace storm {
     
     namespace storage {
         
-        template<typename ValueType, typename StateType=storm::storage::sparse::state_type>
+        template<typename ValueType, typename StateType = uint32_t>
         class Distribution {
         public:
             typedef boost::container::flat_map<StateType, ValueType> container_type;
@@ -43,7 +43,7 @@ namespace storm {
              * @param other The distribution with which the current distribution is to be compared.
              * @return True iff the two distributions are equal.
              */
-            bool equals(Distribution<ValueType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator = storm::utility::ConstantsComparator<ValueType>()) const;
+            bool equals(Distribution<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator = storm::utility::ConstantsComparator<ValueType>()) const;
             
             /*!
              * Assigns the given state the given probability under this distribution.
@@ -73,7 +73,7 @@ namespace storm {
              * entry is removed.
              */
             void shiftProbability(StateType const& fromState, StateType const& toState, ValueType const& probability, storm::utility::ConstantsComparator<ValueType> const& comparator = storm::utility::ConstantsComparator<ValueType>());
-            
+                        
             /*!
              * Retrieves an iterator to the elements in this distribution.
              *
@@ -87,6 +87,13 @@ namespace storm {
              * @return The iterator to the elements in this distribution.
              */
             const_iterator begin() const;
+            
+            /*!
+             * Retrieves an iterator to the elements in this distribution.
+             *
+             * @return The iterator to the elements in this distribution.
+             */
+            const_iterator cbegin() const;
             
             /*!
              * Retrieves an iterator past the elements in this distribution.
@@ -103,6 +110,13 @@ namespace storm {
             const_iterator end() const;
             
             /*!
+             * Retrieves an iterator past the elements in this distribution.
+             *
+             * @return The iterator past the elements in this distribution.
+             */
+            const_iterator cend() const;
+            
+            /*!
              * Scales the distribution by multiplying all the probabilities with 1/p where p is the probability of moving
              * to the given state and sets the probability of moving to the given state to zero. If the probability is
              * already zero, this operation has no effect.
@@ -116,15 +130,15 @@ namespace storm {
              */
             std::size_t size() const;
             
-            bool less(Distribution<ValueType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
+            bool less(Distribution<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const;
             
         private:
             // A list of states and the probabilities that are assigned to them.
             container_type distribution;
         };
         
-        template<typename ValueType>
-        std::ostream& operator<<(std::ostream& out, Distribution<ValueType> const& distribution);
+        template<typename ValueType, typename StateType = uint32_t>
+        std::ostream& operator<<(std::ostream& out, Distribution<ValueType, StateType> const& distribution);
     }
 }
 

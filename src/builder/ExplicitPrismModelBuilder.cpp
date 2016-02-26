@@ -175,7 +175,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::ExplicitPrismModelBuilder(storm::prism::Program const& program, Options const& options) : program(program), options(options), variableInformation(program), internalStateInformation(variableInformation.getTotalBitOffset()) {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::ExplicitPrismModelBuilder(storm::prism::Program const& program, Options const& options) : program(program), options(options) {
             // Start by defining the undefined constants in the model.
             if (options.constantDefinitions) {
                 this->program = program.defineUndefinedConstants(options.constantDefinitions.get());
@@ -226,6 +226,12 @@ namespace storm {
             
             // Now that the program is fixed, we we need to substitute all constants with their concrete value.
             this->program = program.substituteConstants();
+            
+            // Create the variable information for the transformed program.
+            this->variableInformation = VariableInformation(this->program);
+            
+            // Create the internal state storage.
+            this->internalStateInformation = InternalStateInformation(variableInformation.getTotalBitOffset(true));
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
@@ -331,7 +337,7 @@ namespace storm {
             std::function<StateType (CompressedState const&)> stateToIdCallback = std::bind(&ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::getOrAddStateIndex, this, std::placeholders::_1);
             
             // Let the generator create all initial states.
-            generator.getInitialStates(stateToIdCallback);
+            this->internalStateInformation.initialStateIndices = generator.getInitialStates(stateToIdCallback);
             
             // Now explore the current state until there is no more reachable state.
             uint_fast64_t currentRow = 0;
@@ -403,13 +409,13 @@ namespace storm {
                         }
                         
                         // Add the probabilistic behavior to the matrix.
-                        for (auto const& stateProbabilityPair : behavior) {
+                        for (auto const& stateProbabilityPair : choice) {
                             transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
                         }
                         
                         // Add the rewards to the reward models.
                         auto builderIt = rewardModelBuilders.begin();
-                        auto choiceRewardIt = behavior.getChoiceRewards().begin();
+                        auto choiceRewardIt = choice.getChoiceRewards().begin();
                         for (auto const& rewardModel : selectedRewardModels) {
                             if (rewardModel.get().hasStateActionRewards()) {
                                 builderIt->stateActionRewardVector.push_back(*choiceRewardIt);
@@ -437,7 +443,6 @@ namespace storm {
             // Determine whether we have to combine different choices to one or whether this model can have more than
             // one choice per state.
             bool deterministicModel = program.isDeterministicModel();
-            bool discreteTimeModel = program.isDiscreteTimeModel();
             
             // Prepare the transition matrix builder and the reward model builders.
             storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
@@ -477,7 +482,7 @@ namespace storm {
                 STORM_LOG_TRACE("Making the states satisfying " << terminalExpression.get() << " terminal.");
             }
             
-            modelComponents.choiceLabeling = buildMatrices(program, variableInformation, selectedRewardModels, internalStateInformation, options.buildCommandLabels, deterministicModel, discreteTimeModel, transitionMatrixBuilder, rewardModelBuilders, terminalExpression);
+            modelComponents.choiceLabeling = buildMatrices(selectedRewardModels, transitionMatrixBuilder, rewardModelBuilders, terminalExpression);
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();
             
             // Now finalize all reward models.

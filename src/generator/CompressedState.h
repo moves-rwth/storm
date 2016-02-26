@@ -22,7 +22,7 @@ namespace storm {
          * @param evaluator The evaluator into which to load the state.
          */
         template<typename ValueType>
-        static void unpackStateIntoEvaluator(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
+        void unpackStateIntoEvaluator(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator);
     }
 }
 

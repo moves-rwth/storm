@@ -40,7 +40,7 @@ namespace storm {
         std::pair<storm::storage::BitVector, ValueType> BitVectorHashMap<ValueType, Hash1, Hash2>::BitVectorHashMapIterator::operator*() const {
             return map.getBucketAndValue(*indexIt);
         }
-        
+                
         template<class ValueType, class Hash1, class Hash2>
         BitVectorHashMap<ValueType, Hash1, Hash2>::BitVectorHashMap(uint64_t bucketSize, uint64_t initialSize, double loadFactor) : loadFactor(loadFactor), bucketSize(bucketSize), numberOfElements(0) {
             STORM_LOG_ASSERT(bucketSize % 64 == 0, "Bucket size must be a multiple of 64.");

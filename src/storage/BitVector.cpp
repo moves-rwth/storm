@@ -64,7 +64,7 @@ namespace storm {
             // Intentionally left empty.
         }
 
-        BitVector::BitVector(uint_fast64_t length, bool init) : bitCount(length) {
+        BitVector::BitVector(uint_fast64_t length, bool init) : bitCount(length), buckets(nullptr) {
             // Compute the correct number of buckets needed to store the given number of bits.
             uint_fast64_t bucketCount = length >> 6;
             if ((length & mod64mask) != 0) {
@@ -96,12 +96,12 @@ namespace storm {
             // Intentionally left empty.
         }
 
-        BitVector::BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount) : bitCount(bitCount) {
+        BitVector::BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount) : bitCount(bitCount), buckets(nullptr) {
             STORM_LOG_ASSERT((bucketCount << 6) == bitCount, "Bit count does not match number of buckets.");
             buckets = new uint64_t[bucketCount]();
         }
 
-        BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount) {
+        BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount), buckets(nullptr) {
             buckets = new uint64_t[other.bucketCount()];
             std::copy_n(other.buckets, other.bucketCount(), buckets);
         }
@@ -135,6 +135,11 @@ namespace storm {
                 }
             }
             return false;
+        }
+        
+        BitVector::BitVector(BitVector&& other) : bitCount(other.bitCount), buckets(other.buckets) {
+            other.bitCount = 0;
+            other.buckets = nullptr;
         }
 
         BitVector& BitVector::operator=(BitVector&& other) {
@@ -202,11 +207,13 @@ namespace storm {
                     std::copy_n(buckets, this->bucketCount(), newBuckets);
                     if (init) {
                         newBuckets[this->bucketCount() - 1] |= ((1ull << (64 - (bitCount & mod64mask))) - 1ull);
-                        std::fill_n(newBuckets, newBucketCount - this->bucketCount(), -1ull);
+                        std::fill_n(newBuckets + this->bucketCount(), newBucketCount - this->bucketCount(), -1ull);
                     } else {
-                        std::fill_n(newBuckets, newBucketCount - this->bucketCount(), 0);
+                        std::fill_n(newBuckets + this->bucketCount(), newBucketCount - this->bucketCount(), 0);
                     }
-                    delete buckets;
+                    if (buckets != nullptr) {
+                        delete buckets;
+                    }
                     buckets = newBuckets;
                     bitCount = newLength;
                 } else {
@@ -228,7 +235,9 @@ namespace storm {
                 if (newBucketCount < this->bucketCount()) {
                     uint64_t* newBuckets = new uint64_t[newBucketCount];
                     std::copy_n(buckets, newBucketCount, newBuckets);
-                    delete buckets;
+                    if (buckets != nullptr) {
+                        delete buckets;
+                    }
                     buckets = newBuckets;
                     bitCount = newLength;
                 }
@@ -473,19 +482,19 @@ namespace storm {
 
         bool BitVector::empty() const {
             uint64_t* last = buckets + bucketCount();
-            uint64_t* it = std::find(buckets, last, 0);
-            return it != last;
+            uint64_t* it = std::find_if(buckets, last, [] (uint64_t const& a) { return a != 0; });
+            return it == last;
         }
 
         bool BitVector::full() const {
             // Check that all buckets except the last one have all bits set.
             uint64_t* last = buckets + bucketCount() - 1;
-            for (uint64_t const* it = buckets; it != last; ++it) {
+            for (uint64_t const* it = buckets; it < last; ++it) {
                 if (*it != -1ull) {
                     return false;
                 }
             }
-
+            
             // Now check whether the relevant bits are set in the last bucket.
             uint64_t mask = ~((1ull << (64 - (bitCount & mod64mask))) - 1ull);
             if ((*last & mask) != mask) {
@@ -627,7 +636,11 @@ namespace storm {
         }
 
         size_t BitVector::bucketCount() const {
-            return bitCount >> 6;
+            size_t result = (bitCount >> 6);
+            if ((bitCount & mod64mask) != 0) {
+                ++result;
+            }
+            return result;
         }
 
         std::ostream& operator<<(std::ostream& out, BitVector const& bitvector) {
@@ -670,7 +683,7 @@ namespace storm {
 
 namespace std {
 
-    std::size_t hash<storm::storage::BitVector>::operator()(storm::storage::BitVector const& bv) const {
-        return boost::hash_range(bv.bucketVector.begin(), bv.bucketVector.end());
+    std::size_t hash<storm::storage::BitVector>::operator()(storm::storage::BitVector const& bitvector) const {
+        return boost::hash_range(bitvector.buckets, bitvector.buckets + bitvector.bucketCount());
     }
 }

@@ -7,6 +7,8 @@
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/ExpressionEvaluator.h"
 
+#include "src/utility/ConstantsComparator.h"
+
 namespace storm {
     namespace generator {
         

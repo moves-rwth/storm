@@ -1,5 +1,7 @@
 #include "src/generator/Choice.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 #include "src/utility/constants.h"
 
 namespace storm {
@@ -62,29 +64,9 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        ValueType& Choice<ValueType, StateType>::getOrAddEntry(StateType const& state) {
-            auto stateProbabilityPair = distribution.find(state);
-            
-            if (stateProbabilityPair == distribution.end()) {
-                distribution[state] = ValueType();
-            }
-            return distribution.at(state);
-        }
-        
-        template<typename ValueType, typename StateType>
-        ValueType const& Choice<ValueType, StateType>::getOrAddEntry(StateType const& state) const {
-            auto stateProbabilityPair = distribution.find(state);
-            
-            if (stateProbabilityPair == distribution.end()) {
-                distribution[state] = ValueType();
-            }
-            return distribution.at(state);
-        }
-        
-        template<typename ValueType, typename StateType>
         void Choice<ValueType, StateType>::addProbability(StateType const& state, ValueType const& value) {
             totalMass += value;
-            distribution[state] += value;
+            distribution.addProbability(state, value);
         }
         
         template<typename ValueType, typename StateType>
@@ -95,6 +77,11 @@ namespace storm {
         template<typename ValueType, typename StateType>
         std::vector<ValueType> const& Choice<ValueType, StateType>::getChoiceRewards() const {
             return choiceRewards;
+        }
+        
+        template<typename ValueType, typename StateType>
+        bool Choice<ValueType, StateType>::isMarkovian() const {
+            return markovian;
         }
         
         template<typename ValueType, typename StateType>
@@ -112,5 +99,7 @@ namespace storm {
             return out;
         }
         
+        template class Choice<double>;
+        template class Choice<storm::RationalFunction>;
     }
 }

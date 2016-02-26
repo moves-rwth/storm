@@ -1,5 +1,7 @@
 #include "src/generator/StateBehavior.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace generator {
 
@@ -19,7 +21,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        bool StateBehavior<ValueType, StateType>::setExpanded(bool newValue) {
+        void StateBehavior<ValueType, StateType>::setExpanded(bool newValue) {
             this->expanded = newValue;
         }
         
@@ -47,6 +49,9 @@ namespace storm {
         std::vector<ValueType> const& StateBehavior<ValueType, StateType>::getStateRewards() const {
             return stateRewards;
         }
+        
+        template class StateBehavior<double>;
+        template class StateBehavior<storm::RationalFunction>;
 
     }
 }

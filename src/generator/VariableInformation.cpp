@@ -45,8 +45,12 @@ namespace storm {
             }
         }
         
-        uint_fast64_t VariableInformation::getTotalBitOffset() const {
-            return totalBitOffset;
+        uint_fast64_t VariableInformation::getTotalBitOffset(bool roundTo64Bit) const {
+            uint_fast64_t result = totalBitOffset;
+            if (roundTo64Bit) {
+                result = ((result >> 6) + 1) << 6;
+            }
+            return result;
         }
         
         uint_fast64_t VariableInformation::getBitOffset(storm::expressions::Variable const& variable) const {

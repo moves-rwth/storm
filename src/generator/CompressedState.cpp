@@ -7,7 +7,7 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType>
-        static void unpackStateIntoEvaluator(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) {
+        void unpackStateIntoEvaluator(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) {
             for (auto const& booleanVariable : variableInformation.booleanVariables) {
                 evaluator.setBooleanValue(booleanVariable.variable, state.get(booleanVariable.bitOffset));
             }
@@ -17,6 +17,7 @@ namespace storm {
 
         }
 
-        
+        template void unpackStateIntoEvaluator<double>(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<double>& evaluator);
+        template void unpackStateIntoEvaluator<storm::RationalFunction>(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionEvaluator<storm::RationalFunction>& evaluator);
     }
 }
