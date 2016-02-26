@@ -110,6 +110,7 @@ namespace storm {
                     restr = std::make_shared<DFTSeq<ValueType>>(mNextId++, name);
                     break;
                 case DFTElementType::MUTEX:
+                    // TODO notice that mutex state generation support is lacking anyway, as DONT CARE propagation would be broken for this.
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Gate type not supported.");
                     break;
                 default:
