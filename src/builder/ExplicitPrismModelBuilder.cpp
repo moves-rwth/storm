@@ -67,7 +67,12 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::InternalStateInformation::InternalStateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 10000000), bitsPerState(bitsPerState), numberOfStates() {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::InternalStateInformation::InternalStateInformation() : stateStorage(64, 10), initialStateIndices(), bitsPerState(64), numberOfStates() {
+            // Intentionally left empty.
+        }
+        
+        template <typename ValueType, typename RewardModelType, typename StateType>
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::InternalStateInformation::InternalStateInformation(uint64_t bitsPerState) : stateStorage(bitsPerState, 10000000), initialStateIndices(), bitsPerState(bitsPerState), numberOfStates() {
             // Intentionally left empty.
         }
         
@@ -349,7 +354,7 @@ namespace storm {
                 StateType currentIndex = internalStateInformation.stateStorage.getValue(currentState);
                 statesToExplore.pop_front();
                 
-                STORM_LOG_TRACE("Exploring state with id " << index << ".");
+                STORM_LOG_TRACE("Exploring state with id " << currentIndex << ".");
                 
                 storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(currentState, stateToIdCallback);
                 
@@ -423,7 +428,6 @@ namespace storm {
                             ++choiceRewardIt;
                             ++builderIt;
                         }
-                        
                         ++currentRow;
                     }
                 }
@@ -435,11 +439,7 @@ namespace storm {
         template <typename ValueType, typename RewardModelType, typename StateType>
         typename ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::ModelComponents ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::buildModelComponents(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels) {
             ModelComponents modelComponents;
-            
-            // Create the structure for storing the reachable state space.
-            uint64_t bitsPerState = ((variableInformation.getTotalBitOffset() / 64) + 1) * 64;
-            InternalStateInformation internalStateInformation(bitsPerState);
-            
+                        
             // Determine whether we have to combine different choices to one or whether this model can have more than
             // one choice per state.
             bool deterministicModel = program.isDeterministicModel();

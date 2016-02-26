@@ -106,8 +106,8 @@ namespace storm {
                 options.buildCommandLabels = true;
             }
 
-            storm::builder::ExplicitPrismModelBuilder<ValueType> builder;
-            result.model = builder.translateProgram(program, options);
+            storm::builder::ExplicitPrismModelBuilder<ValueType> builder(program, options);
+            result.model = builder.translate();
             translatedProgram = builder.getTranslatedProgram();
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
