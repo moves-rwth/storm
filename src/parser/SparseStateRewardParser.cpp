@@ -8,11 +8,7 @@
 #include "src/parser/MappedFile.h"
 
 #include "src/adapters/CarlAdapter.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
+#include "src/utility/macros.h"
 namespace storm {
     namespace parser {
 
@@ -22,7 +18,7 @@ namespace storm {
         std::vector<ValueType> SparseStateRewardParser<ValueType>::parseSparseStateReward(uint_fast64_t stateCount, std::string const& filename) {
             // Open file.
             if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-                LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
+                STORM_LOG_ERROR("Error while parsing " << filename << ": File does not exist or is not readable.");
                 throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
             }
 
@@ -47,12 +43,12 @@ namespace storm {
                 // If the state has already been read or skipped once there might be a problem with the file (doubled lines, or blocks).
                 // Note: The value -1 shows that lastState has not yet been set, i.e. this is the first run of the loop (state index (2^64)-1 is a really bad starting index).
                 if (state <= lastState && lastState != startIndexComparison) {
-                    LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
+                    STORM_LOG_ERROR("Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.");
                     throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": State " << state << " was found but has already been read or skipped previously.";
                 }
 
                 if (stateCount <= state) {
-                    LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\". The model has only " << stateCount << " states.");
+                    STORM_LOG_ERROR("Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\". The model has only " << stateCount << " states.");
                     throw storm::exceptions::OutOfRangeException() << "Error while parsing " << filename << ": Found reward for a state of an invalid index \"" << state << "\"";
                 }
 
@@ -60,7 +56,7 @@ namespace storm {
                 reward = checked_strtod(buf, &buf);
 
                 if (reward < 0.0) {
-                    LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": Expected positive reward value but got \"" << reward << "\".");
+                    STORM_LOG_ERROR("Error while parsing " << filename << ": Expected positive reward value but got \"" << reward << "\".");
                     throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": State reward file specifies illegal reward value.";
                 }
 

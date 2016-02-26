@@ -18,14 +18,24 @@ namespace storm {
                     return false;
                 }
             }
+            
+            bool hasParentSpare = false;
+
             // Check that no parent can fail anymore
             for(DFTGatePointer const& parent : mParents) {
                 if(state.isOperational(parent->id())) {
                     return false;
                 }
+                if (parent->isSpareGate()) {
+                    hasParentSpare = true;
+                }
             }
             
             state.setDontCare(mId);
+            if (hasParentSpare && !state.isActive(mId)) {
+                // Activate child for consistency in failed spares
+                state.activate(mId);
+            }
             return true;
         }
 

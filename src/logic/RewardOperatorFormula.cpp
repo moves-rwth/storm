@@ -1,5 +1,7 @@
 #include "src/logic/RewardOperatorFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         RewardOperatorFormula::RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::shared_ptr<Formula const> const& subformula) : RewardOperatorFormula(rewardModelName, boost::none, boost::none, subformula) {
@@ -22,24 +24,16 @@ namespace storm {
             return true;
         }
         
-        bool RewardOperatorFormula::isPctlStateFormula() const {
-            return this->getSubformula().isRewardPathFormula();
-        }
-        
-        bool RewardOperatorFormula::containsRewardOperator() const {
-            return true;
-        }
-        
-        bool RewardOperatorFormula::containsNestedRewardOperators() const {
-            return this->getSubformula().containsRewardOperator();
-        }
-        
-        bool RewardOperatorFormula::hasRewardModelName() const {
-            return static_cast<bool>(this->rewardModelName);
+        boost::any RewardOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         std::string const& RewardOperatorFormula::getRewardModelName() const {
             return this->rewardModelName.get();
+        }
+        
+        bool RewardOperatorFormula::hasRewardModelName() const {
+            return static_cast<bool>(rewardModelName);
         }
         
         boost::optional<std::string> const& RewardOperatorFormula::getOptionalRewardModelName() const {

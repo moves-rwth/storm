@@ -22,10 +22,6 @@
 
 #include "src/utility/macros.h"
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
 namespace storm {
     namespace storage {
         

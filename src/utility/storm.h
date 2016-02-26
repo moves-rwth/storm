@@ -26,6 +26,7 @@
 
 // Formula headers.
 #include "src/logic/Formulas.h"
+#include "src/logic/FragmentSpecification.h"
 
 // Model headers.
 #include "src/models/ModelBase.h"
@@ -357,9 +358,9 @@ namespace storm {
             // Hack to avoid instantiating the CTMC Model Checker which currently does not work for rational functions
             if (formula->isExpectedTimeOperatorFormula()) {
                 // Compute expected time for pCTMCs
-                STORM_LOG_THROW(formula->asExpectedTimeOperatorFormula().getSubformula().isEventuallyFormula(), storm::exceptions::NotSupportedException, "The parametric engine only supports Eventually formulas for this property");
+                STORM_LOG_THROW(formula->asExpectedTimeOperatorFormula().getSubformula().isReachbilityExpectedTimeFormula(), storm::exceptions::NotSupportedException, "The parametric engine only supports Eventually formulas for this property");
                 storm::logic::EventuallyFormula eventuallyFormula = formula->asExpectedTimeOperatorFormula().getSubformula().asEventuallyFormula();
-                STORM_LOG_THROW(eventuallyFormula.getSubformula().isPropositionalFormula(), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
+                STORM_LOG_THROW(eventuallyFormula.getSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
 
                 // Compute goal states
                 std::shared_ptr<storm::models::sparse::Ctmc<storm::RationalFunction>> ctmc = model->template as<storm::models::sparse::Ctmc<storm::RationalFunction>>();
@@ -383,8 +384,8 @@ namespace storm {
                 if (probOpFormula.getSubformula().isUntilFormula()) {
                     // Until formula
                     storm::logic::UntilFormula untilFormula = formula->asProbabilityOperatorFormula().getSubformula().asUntilFormula();
-                    STORM_LOG_THROW(untilFormula.getLeftSubformula().isPropositionalFormula(), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
-                    STORM_LOG_THROW(untilFormula.getRightSubformula().isPropositionalFormula(), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
+                    STORM_LOG_THROW(untilFormula.getLeftSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
+                    STORM_LOG_THROW(untilFormula.getRightSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
                     std::unique_ptr<storm::modelchecker::CheckResult> leftResultPointer = propositionalModelchecker.check(untilFormula.getLeftSubformula());
                     std::unique_ptr<storm::modelchecker::CheckResult> rightResultPointer = propositionalModelchecker.check(untilFormula.getRightSubformula());
                     phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
@@ -393,7 +394,7 @@ namespace storm {
                     // Eventually formula
                     assert(probOpFormula.getSubformula().isEventuallyFormula());
                     storm::logic::EventuallyFormula eventuallyFormula = probOpFormula.getSubformula().asEventuallyFormula();
-                    STORM_LOG_THROW(eventuallyFormula.getSubformula().isPropositionalFormula(), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
+                    STORM_LOG_THROW(eventuallyFormula.getSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
                     std::unique_ptr<storm::modelchecker::CheckResult> resultPointer = propositionalModelchecker.check(eventuallyFormula.getSubformula());
                     psiStates = resultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 }

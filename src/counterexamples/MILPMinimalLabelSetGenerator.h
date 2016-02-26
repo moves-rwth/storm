@@ -98,10 +98,10 @@ namespace storm {
                 result.relevantStates &= ~psiStates;
                 result.problematicStates = storm::utility::graph::performProb0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), labeledMdp.getBackwardTransitions(), phiStates, psiStates);
                 result.problematicStates &= result.relevantStates;
-                LOG4CPLUS_DEBUG(logger, "Found " << phiStates.getNumberOfSetBits() << " filter states.");
-                LOG4CPLUS_DEBUG(logger, "Found " << psiStates.getNumberOfSetBits() << " target states.");
-                LOG4CPLUS_DEBUG(logger, "Found " << result.relevantStates.getNumberOfSetBits() << " relevant states.");
-                LOG4CPLUS_DEBUG(logger, "Found " << result.problematicStates.getNumberOfSetBits() << " problematic states.");
+                STORM_LOG_DEBUG("Found " << phiStates.getNumberOfSetBits() << " filter states.");
+                STORM_LOG_DEBUG("Found " << psiStates.getNumberOfSetBits() << " target states.");
+                STORM_LOG_DEBUG("Found " << result.relevantStates.getNumberOfSetBits() << " relevant states.");
+                STORM_LOG_DEBUG("Found " << result.problematicStates.getNumberOfSetBits() << " problematic states.");
                 return result;
             }
             
@@ -158,7 +158,7 @@ namespace storm {
 
                 // Finally, determine the set of labels that are known to be taken.
                 result.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(labeledMdp, psiStates, result.allRelevantLabels);
-                LOG4CPLUS_DEBUG(logger, "Found " << result.allRelevantLabels.size() << " relevant labels and " << result.knownLabels.size() << " known labels.");
+                STORM_LOG_DEBUG("Found " << result.allRelevantLabels.size() << " relevant labels and " << result.knownLabels.size() << " known labels.");
 
                 return result;
             }
@@ -364,47 +364,47 @@ namespace storm {
                 std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> labelVariableResult = createLabelVariables(solver, choiceInformation.allRelevantLabels);
                 result.labelToVariableMap = std::move(labelVariableResult.first);
                 result.numberOfVariables += labelVariableResult.second;
-                LOG4CPLUS_DEBUG(logger, "Created variables for labels.");
+                STORM_LOG_DEBUG("Created variables for labels.");
                 
                 // Create scheduler variables for relevant states and their actions.
                 std::pair<std::unordered_map<uint_fast64_t, std::list<storm::expressions::Variable>>, uint_fast64_t> schedulerVariableResult = createSchedulerVariables(solver, stateInformation, choiceInformation);
                 result.stateToChoiceVariablesMap = std::move(schedulerVariableResult.first);
                 result.numberOfVariables += schedulerVariableResult.second;
-                LOG4CPLUS_DEBUG(logger, "Created variables for nondeterministic choices.");
+                STORM_LOG_DEBUG("Created variables for nondeterministic choices.");
 
                 // Create scheduler variables for nondeterministically choosing an initial state.
                 std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> initialChoiceVariableResult = createInitialChoiceVariables(solver, labeledMdp, stateInformation);
                 result.initialStateToChoiceVariableMap = std::move(initialChoiceVariableResult.first);
                 result.numberOfVariables += initialChoiceVariableResult.second;
-                LOG4CPLUS_DEBUG(logger, "Created variables for the nondeterministic choice of the initial state.");
+                STORM_LOG_DEBUG("Created variables for the nondeterministic choice of the initial state.");
                 
                 // Create variables for probabilities for all relevant states.
                 std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> probabilityVariableResult = createProbabilityVariables(solver, stateInformation);
                 result.stateToProbabilityVariableMap = std::move(probabilityVariableResult.first);
                 result.numberOfVariables += probabilityVariableResult.second;
-                LOG4CPLUS_DEBUG(logger, "Created variables for the reachability probabilities.");
+                STORM_LOG_DEBUG("Created variables for the reachability probabilities.");
 
                 // Create a probability variable for a virtual initial state that nondeterministically chooses one of the system's real initial states as its target state.
                 std::pair<storm::expressions::Variable, uint_fast64_t> virtualInitialStateVariableResult = createVirtualInitialStateVariable(solver);
                 result.virtualInitialStateVariable = virtualInitialStateVariableResult.first;
                 result.numberOfVariables += virtualInitialStateVariableResult.second;
-                LOG4CPLUS_DEBUG(logger, "Created variables for the virtual initial state.");
+                STORM_LOG_DEBUG("Created variables for the virtual initial state.");
 
                 // Create variables for problematic states.
                 std::pair<std::unordered_map<uint_fast64_t, storm::expressions::Variable>, uint_fast64_t> problematicStateVariableResult = createProblematicStateVariables(solver, labeledMdp, stateInformation, choiceInformation);
                 result.problematicStateToVariableMap = std::move(problematicStateVariableResult.first);
                 result.numberOfVariables += problematicStateVariableResult.second;
-                LOG4CPLUS_DEBUG(logger, "Created variables for the problematic states.");
+                STORM_LOG_DEBUG("Created variables for the problematic states.");
 
                 // Create variables for problematic choices.
                 std::pair<std::unordered_map<std::pair<uint_fast64_t, uint_fast64_t>, storm::expressions::Variable, PairHash>, uint_fast64_t> problematicTransitionVariableResult = createProblematicChoiceVariables(solver, labeledMdp, stateInformation, choiceInformation);
                 result.problematicTransitionToVariableMap = problematicTransitionVariableResult.first;
                 result.numberOfVariables += problematicTransitionVariableResult.second;
-                LOG4CPLUS_DEBUG(logger, "Created variables for the problematic choices.");
+                STORM_LOG_DEBUG("Created variables for the problematic choices.");
 
                 // Finally, we need to update the model to make the new variables usable.
                 solver.update();
-                LOG4CPLUS_INFO(logger, "Successfully created " << result.numberOfVariables << " MILP variables.");
+                STORM_LOG_INFO("Successfully created " << result.numberOfVariables << " MILP variables.");
                 
                 // Finally, return variable information struct.
                 return result;
@@ -816,43 +816,43 @@ namespace storm {
             static void buildConstraintSystem(storm::solver::LpSolver& solver, storm::models::sparse::Mdp<T> const& labeledMdp, storm::storage::BitVector const& psiStates, StateInformation const& stateInformation, ChoiceInformation const& choiceInformation, VariableInformation const& variableInformation, double probabilityThreshold, bool strictBound, bool includeSchedulerCuts = false) {
                 // Assert that the reachability probability in the subsystem exceeds the given threshold.
                 uint_fast64_t numberOfConstraints = assertProbabilityGreaterThanThreshold(solver, labeledMdp, variableInformation, probabilityThreshold, strictBound);
-                LOG4CPLUS_DEBUG(logger, "Asserted that reachability probability exceeds threshold.");
+                STORM_LOG_DEBUG("Asserted that reachability probability exceeds threshold.");
 
                 // Add constraints that assert the policy takes at most one action in each state.
                 numberOfConstraints += assertValidPolicy(solver, stateInformation, variableInformation);
-                LOG4CPLUS_DEBUG(logger, "Asserted that policy is valid.");
+                STORM_LOG_DEBUG("Asserted that policy is valid.");
 
                 // Add constraints that assert the labels that belong to some taken choices are taken as well.
                 numberOfConstraints += assertChoicesImplyLabels(solver, labeledMdp, stateInformation, choiceInformation, variableInformation);
-                LOG4CPLUS_DEBUG(logger, "Asserted that labels implied by choices are taken.");
+                STORM_LOG_DEBUG("Asserted that labels implied by choices are taken.");
 
                 // Add constraints that encode that the reachability probability from states which do not pick any action
                 // is zero.
                 numberOfConstraints += assertZeroProbabilityWithoutChoice(solver, stateInformation, choiceInformation, variableInformation);
-                LOG4CPLUS_DEBUG(logger, "Asserted that reachability probability is zero if no choice is taken.");
+                STORM_LOG_DEBUG("Asserted that reachability probability is zero if no choice is taken.");
 
                 // Add constraints that encode the reachability probabilities for states.
                 numberOfConstraints += assertReachabilityProbabilities(solver, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation);
-                LOG4CPLUS_DEBUG(logger, "Asserted constraints for reachability probabilities.");
+                STORM_LOG_DEBUG("Asserted constraints for reachability probabilities.");
 
                 // Add constraints that ensure the reachability of an unproblematic state from each problematic state.
                 numberOfConstraints += assertUnproblematicStateReachable(solver, labeledMdp, stateInformation, choiceInformation, variableInformation);
-                LOG4CPLUS_DEBUG(logger, "Asserted that unproblematic state reachable from problematic states.");
+                STORM_LOG_DEBUG("Asserted that unproblematic state reachable from problematic states.");
 
                 // Add constraints that express that certain labels are already known to be taken.
                 numberOfConstraints += assertKnownLabels(solver, labeledMdp, psiStates, choiceInformation, variableInformation);
-                LOG4CPLUS_DEBUG(logger, "Asserted known labels are taken.");
+                STORM_LOG_DEBUG("Asserted known labels are taken.");
                 
                 // If required, assert additional constraints that reduce the number of possible policies.
                 if (includeSchedulerCuts) {
                     numberOfConstraints += assertSchedulerCuts(solver, labeledMdp, psiStates, stateInformation, choiceInformation, variableInformation);
-                    LOG4CPLUS_DEBUG(logger, "Asserted scheduler cuts.");
+                    STORM_LOG_DEBUG("Asserted scheduler cuts.");
                 }
                 
                 // Finally, we can tell the solver to incorporate the latest changes.
                 solver.update();
                 
-                LOG4CPLUS_INFO(logger, "Successfully created " << numberOfConstraints << " MILP constraints.");
+                STORM_LOG_INFO("Successfully created " << numberOfConstraints << " MILP constraints.");
             }
             
             /*!

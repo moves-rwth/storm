@@ -19,7 +19,7 @@ namespace storm {
             
             virtual bool isBinaryBooleanStateFormula() const override;
             
-            virtual bool isPropositionalFormula() const override;
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             OperatorType getOperator() const;
             

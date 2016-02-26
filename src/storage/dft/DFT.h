@@ -46,7 +46,8 @@ namespace storm {
 
         public:
             
-            DFTStateGenerationInfo(size_t nrElements) : mUsageInfoBits(nrElements > 1 ? storm::utility::math::uint64_log2(nrElements-1) + 1 : 1), mIdToStateIndex(nrElements) {
+            DFTStateGenerationInfo(size_t nrElements, size_t maxSpareChildCount) : mUsageInfoBits(storm::utility::math::uint64_log2(maxSpareChildCount) + 1), mIdToStateIndex(nrElements) {
+                assert(maxSpareChildCount < pow(2, mUsageInfoBits));
             }
 
             size_t usageInfoBits() const {
@@ -81,8 +82,8 @@ namespace storm {
                 return mSpareActivationIndex.at(id);
             }
             
-            size_t addSymmetry(size_t lenght, std::vector<size_t>& startingIndices) {
-                mSymmetries.push_back(std::make_pair(lenght, startingIndices));
+            void addSymmetry(size_t length, std::vector<size_t>& startingIndices) {
+                mSymmetries.push_back(std::make_pair(length, startingIndices));
             }
             
             size_t getSymmetrySize() const {
@@ -145,6 +146,7 @@ namespace storm {
             size_t mNrOfSpares;
             size_t mTopLevelIndex;
             size_t mStateVectorSize;
+            size_t mMaxSpareChildCount;
             std::map<size_t, std::vector<size_t>> mSpareModules;
             std::vector<size_t> mDependencies;
             std::vector<size_t> mTopModule;
@@ -174,6 +176,10 @@ namespace storm {
             
             size_t getTopLevelIndex() const {
                 return mTopLevelIndex;
+            }
+            
+            size_t getMaxSpareChildCount() const {
+                return mMaxSpareChildCount;
             }
             
             std::vector<size_t> getSpareIndices() const {
@@ -288,6 +294,10 @@ namespace storm {
             bool isFailsafe(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo) const {
                 return storm::storage::DFTState<ValueType>::isFailsafe(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
             }
+            
+            size_t getChild(size_t spareId, size_t nrUsedChild) const;
+            
+            size_t getNrChild(size_t spareId, size_t childId) const;
             
             std::string getElementsString() const;
 

@@ -10,6 +10,8 @@
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 namespace storm {
     namespace modelchecker {
         template<storm::dd::DdType DdType, class ValueType>
@@ -25,7 +27,7 @@ namespace storm {
         template<storm::dd::DdType DdType, class ValueType>
         bool HybridCtmcCslModelChecker<DdType, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isCslStateFormula() || formula.isCslPathFormula() || formula.isRewardPathFormula();
+            return formula.isInFragment(storm::logic::csrl().setGloballyFormulasAllowed(false).setLongRunAverageRewardFormulasAllowed(false).setLongRunAverageProbabilitiesAllowed(true));
         }
                 
         template<storm::dd::DdType DdType, class ValueType>
@@ -54,9 +56,9 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, class ValueType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) {
-            storm::logic::ReachabilityRewardFormula const& rewardPathFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+            storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
+            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
 
             return storm::modelchecker::helper::HybridCtmcCslHelper<DdType, ValueType>::computeReachabilityRewards(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), subResult.getTruthValuesVector(), checkTask.isQualitativeSet(), *linearEquationSolverFactory);

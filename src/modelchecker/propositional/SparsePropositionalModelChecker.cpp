@@ -10,6 +10,8 @@
 
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidPropertyException.h"
 
@@ -23,7 +25,7 @@ namespace storm {
         template<typename SparseModelType>
         bool SparsePropositionalModelChecker<SparseModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isPropositionalFormula();
+            return formula.isInFragment(storm::logic::propositional());
         }
         
         template<typename SparseModelType>

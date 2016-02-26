@@ -1,5 +1,7 @@
 #include "src/logic/UnaryBooleanStateFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         UnaryBooleanStateFormula::UnaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula) : UnaryStateFormula(subformula), operatorType(operatorType) {
@@ -8,6 +10,10 @@ namespace storm {
         
         bool UnaryBooleanStateFormula::isUnaryBooleanStateFormula() const {
             return true;
+        }
+
+        boost::any UnaryBooleanStateFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         UnaryBooleanStateFormula::OperatorType UnaryBooleanStateFormula::getOperator() const {

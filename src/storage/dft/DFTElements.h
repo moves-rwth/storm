@@ -421,10 +421,6 @@ namespace storm {
                     queues.checkRestrictionLater(restr);
                 }
                 state.setFailed(this->mId);
-                // TODO can this be moved towards DFTSpare?
-                if (this->isSpareGate()) {
-                    this->finalizeSpare(state);
-                }
                 this->childrenDontCare(state, queues);
             }
 
@@ -435,28 +431,11 @@ namespace storm {
                     }
                 }
                 state.setFailsafe(this->mId);
-                if (this->isSpareGate()) {
-                    this->finalizeSpare(state);
-                }
                 this->childrenDontCare(state, queues);
             }
-
+            
             void childrenDontCare(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
                 queues.propagateDontCare(mChildren);
-            }
-
-            /**
-             * Finish failed/failsafe spare gate by activating the children and setting the useIndex to the spare id.
-             * This prevents multiple fail states with different usages or activations.
-             * @param state The current state.
-             */
-            void finalizeSpare(DFTState<ValueType>& state) const {
-                state.setUses(this->mId, this->mId);
-                for (auto child : this->children()) {
-                    if (!state.isActive(child->id())) {
-                        state.activate(child->id());
-                    }
-                }
             }
 
             bool hasFailsafeChild(DFTState<ValueType>& state) const {
@@ -990,6 +969,24 @@ namespace storm {
                 return true;
             }
             
+            void fail(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                DFTGate<ValueType>::fail(state, queues);
+                state.finalizeUses(this->mId);
+            }
+            
+            void failsafe(DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const {
+                DFTGate<ValueType>::failsafe(state, queues);
+                state.finalizeUses(this->mId);
+            }
+            
+            bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
+                if (DFTGate<ValueType>::checkDontCareAnymore(state, queues)) {
+                    state.finalizeUses(this->mId);
+                    return true;
+                }
+                return false;
+            }
+            
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if(state.isOperational(this->mId)) {
                     size_t uses = state.uses(this->mId);
@@ -1010,6 +1007,7 @@ namespace storm {
                     }
                 }
             }
+
         };
         
         template<typename ValueType>

@@ -39,8 +39,20 @@ namespace storm {
                 
                 static std::vector<ValueType> computeConditionalProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
                 
+                static std::vector<ValueType> computeConditionalRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, RewardModelType const& rewardModel, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                
             private:
                 static std::vector<ValueType> computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
+                
+                struct BaierTransformedModel {
+                    storm::storage::BitVector beforeStates;
+                    boost::optional<storm::storage::SparseMatrix<ValueType>> transitionMatrix;
+                    boost::optional<storm::storage::BitVector> targetStates;
+                    boost::optional<std::vector<ValueType>> stateRewards;
+                    bool noTargetStates;
+                };
+                
+                static BaierTransformedModel computeBaierTransformation(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& targetStates, storm::storage::BitVector const& conditionStates, boost::optional<std::vector<ValueType>> const& stateRewards, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory);
             };
             
         }

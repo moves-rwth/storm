@@ -26,7 +26,7 @@ namespace storm {
             // Create the environment.
             int error = GRBloadenv(&env, "");
             if (error || env == nullptr) {
-				LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				STORM_LOG_ERROR("Could not initialize Gurobi (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 				throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi environment (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
             
@@ -36,7 +36,7 @@ namespace storm {
             // Create the model.
             error = GRBnewmodel(env, &model, name.c_str(), 0, nullptr, nullptr, nullptr, nullptr, nullptr);
             if (error) {
-				LOG4CPLUS_ERROR(logger, "Could not initialize Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+				STORM_LOG_ERROR("Could not initialize Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 				throw storm::exceptions::InvalidStateException() << "Could not initialize Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ").";
             }
         }
@@ -346,7 +346,7 @@ namespace storm {
         void GurobiLpSolver::writeModelToFile(std::string const& filename) const {
             int error = GRBwrite(model, filename.c_str());
             if (error) {
-				LOG4CPLUS_ERROR(logger, "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ") to file.");
+				STORM_LOG_ERROR("Unable to write Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ") to file.");
 				throw storm::exceptions::InvalidStateException() << "Unable to write Gurobi model (" << GRBgeterrormsg(env) << ", error code " << error << ") to file.";
             }
         }

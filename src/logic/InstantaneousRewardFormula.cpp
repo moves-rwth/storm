@@ -1,5 +1,7 @@
 #include "src/logic/InstantaneousRewardFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         InstantaneousRewardFormula::InstantaneousRewardFormula(uint_fast64_t timeBound) : timeBound(timeBound) {
@@ -12,6 +14,14 @@ namespace storm {
         
         bool InstantaneousRewardFormula::isInstantaneousRewardFormula() const {
             return true;
+        }
+        
+        bool InstantaneousRewardFormula::isRewardPathFormula() const {
+            return true;
+        }
+        
+        boost::any InstantaneousRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         bool InstantaneousRewardFormula::hasDiscreteTimeBound() const {

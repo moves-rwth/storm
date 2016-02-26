@@ -11,6 +11,7 @@
 #include "src/parser/SparseChoiceLabelingParser.h"
 
 #include "src/adapters/CarlAdapter.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace parser {

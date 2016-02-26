@@ -56,9 +56,9 @@ namespace storm {
         
         template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
-            LOG4CPLUS_INFO(logger, "Using method '" << methodToString() << "' with preconditioner '" << preconditionerToString() << "' (max. " << maximalNumberOfIterations << " iterations).");
+            STORM_LOG_INFO("Using method '" << methodToString() << "' with preconditioner '" << preconditionerToString() << "' (max. " << maximalNumberOfIterations << " iterations).");
             if (method == SolutionMethod::Jacobi && preconditioner != Preconditioner::None) {
-                LOG4CPLUS_WARN(logger, "Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
+                STORM_LOG_WARN("Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
             }
             
             if (method == SolutionMethod::Bicgstab || method == SolutionMethod::Qmr || method == SolutionMethod::Gmres) {
@@ -93,18 +93,18 @@ namespace storm {
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
-                    LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iterations.");
                 } else {
-                    LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+                    STORM_LOG_WARN("Iterative solver did not converge.");
                 }
             } else if (method == SolutionMethod::Jacobi) {
                 uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(*originalA, x, b, multiplyResult);
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iterations < maximalNumberOfIterations) {
-                    LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+                    STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
                 } else {
-                    LOG4CPLUS_WARN(logger, "Iterative solver did not converge.");
+                    STORM_LOG_WARN("Iterative solver did not converge.");
                 }
             }
         }

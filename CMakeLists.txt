@@ -28,6 +28,8 @@ option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
 option(FORCE_COLOR "Force color output" OFF)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache" ON)
+option(STORM_LOGGING_FRAMEWORK "Use a framework for logging" OFF)
+option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
@@ -259,8 +261,6 @@ endif(STORM_HAVE_Z3)
 set(STORM_HAVE_GLPK 1)
 message (STATUS "StoRM - Linking with glpk")
 
-set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk${DYNAMIC_EXT})
-set(GLPK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/include)
 include_directories(${GLPK_INCLUDE_DIR})
 list(APPEND STORM_LINK_LIBRARIES ${GLPK_LIBRARIES})
 
@@ -537,28 +537,15 @@ endif()
 ##
 #############################################################
 
-set(STORM_SYLVAN_ROOT "${PROJECT_SOURCE_DIR}/resources/3rdparty/sylvan")
-ExternalProject_Add(
-    sylvan
-    DOWNLOAD_COMMAND ""
-    PREFIX "sylvan"
-    SOURCE_DIR "${STORM_SYLVAN_ROOT}"
-    CMAKE_ARGS -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
-    BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
-    INSTALL_COMMAND ""
-    INSTALL_DIR "${PROJECT_BINARY_DIR}/sylvan"
-)
-ExternalProject_Get_Property(sylvan binary_dir)
-set(Sylvan_INCLUDE_DIR "${STORM_SYLVAN_ROOT}/src")
 message(STATUS "Linking with shipped version of sylvan (in directory ${STORM_SYLVAN_ROOT}).")
 include_directories("${Sylvan_INCLUDE_DIR}")
-list(APPEND STORM_LINK_LIBRARIES "${binary_dir}/src/libsylvan.a")
+list(APPEND STORM_LINK_LIBRARIES ${Sylvan_LIBRARY})
 if(${OPERATING_SYSTEM} MATCHES "Linux")
 	find_package(Hwloc QUIET)
 	if(NOT Hwloc_FOUND)
-		message(SEND_ERROR "HWLOC is required but was not found.")
+            message(SEND_ERROR "HWLOC is required but was not found.")
 	else()
-		list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})	
+            list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})	
 	endif()
 endif()
 
@@ -573,20 +560,21 @@ endif()
 ##	Log4CPlus
 ##
 #############################################################
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
-set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
-set(LOG4CPLUS_BUILD_TESTING OFF)
-set(LOG4CPLUS_USE_UNICODE OFF)
-set(LOG4CPLUS_DEFINE_INSTALL_TARGET OFF)
-add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
-include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
-include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
+if(STORM_LOGGING_FRAMEWORK) 
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+    set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
+    set(LOG4CPLUS_BUILD_TESTING OFF)
+    set(LOG4CPLUS_USE_UNICODE OFF)
+    set(LOG4CPLUS_DEFINE_INSTALL_TARGET OFF)
+    add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
+    include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
+    include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
 
-list(APPEND STORM_LINK_LIBRARIES log4cplusS)
-if (UNIX AND NOT APPLE)
-    list(APPEND STORM_LINK_LIBRARIES rt)
-endif(UNIX AND NOT APPLE)
-
+    list(APPEND STORM_LINK_LIBRARIES log4cplusS)
+    if (UNIX AND NOT APPLE)
+        list(APPEND STORM_LINK_LIBRARIES rt)
+    endif(UNIX AND NOT APPLE)
+endif()
 #############################################################
 ##
 ##	Intel Threading Building Blocks (optional)
