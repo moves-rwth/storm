@@ -165,6 +165,11 @@ namespace storm {
                 assert(isDependency(index));
                 return std::static_pointer_cast<DFTDependency<ValueType> const>(mElements[index]);
             }
+            
+            std::shared_ptr<DFTRestriction<ValueType> const> getRestriction(size_t index) const {
+                assert(isRestriction(index));
+                return std::static_pointer_cast<DFTRestriction<ValueType> const>(mElements[index]);
+            }
 
             std::vector<std::shared_ptr<DFTBE<ValueType>>> getBasicElements() const {
                 std::vector<std::shared_ptr<DFTBE<ValueType>>> elements;
