@@ -233,6 +233,19 @@ namespace storm {
             assert(hasFailed(spareId));
             mStatus.setFromInt(mStateGenerationInfo.getSpareUsageIndex(spareId), mStateGenerationInfo.usageInfoBits(), mDft.getMaxSpareChildCount());
         }
+        
+        template<typename ValueType>
+        bool DFTState<ValueType>::hasOperationalPostSeqElements(size_t id) const {
+            assert(!mDft.isDependency(id));
+            assert(!mDft.isRestriction(id));
+            auto const& postIds =  mStateGenerationInfo.seqRestrictionPostElements(id);
+            for(size_t id : postIds) {
+                if(isOperational(id)) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         template<typename ValueType>
         bool DFTState<ValueType>::claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children) {

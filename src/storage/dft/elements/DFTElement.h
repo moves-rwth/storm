@@ -241,7 +241,7 @@ namespace storm {
                         continue;
                     }
                     auto it = restr->children().cbegin();
-                    for(++it; it != restr->children().cend(); ++it) {
+                    for(; it != restr->children().cend(); ++it) {
                         if((*it)->id() == mId) {
                             break;
                         }

@@ -38,6 +38,12 @@ namespace storm {
                 mSeqRestrictionPostElements[id] = elems;
             }
             
+            std::vector<size_t> const& seqRestrictionPostElements(size_t index) const {
+                assert(mSeqRestrictionPostElements.count(index) > 0);
+                return mSeqRestrictionPostElements.at(index);
+            }
+            
+            
             void addSpareActivationIndex(size_t id, size_t index) {
                 mSpareActivationIndex[id] = index;
             }

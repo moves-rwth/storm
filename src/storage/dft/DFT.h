@@ -146,6 +146,10 @@ namespace storm {
             bool isDependency(size_t index) const {
                 return getElement(index)->isDependency();
             }
+            
+            bool isRestriction(size_t index) const {
+                return getElement(index)->isRestriction();
+            }
 
             std::shared_ptr<DFTBE<ValueType> const> getBasicElement(size_t index) const {
                 assert(isBasicElement(index));

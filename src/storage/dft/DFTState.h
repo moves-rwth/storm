@@ -177,6 +177,13 @@ namespace storm {
              */
             bool orderBySymmetry();
             
+            /**
+             * Checks whether operational post seq elements are present
+             * @param id
+             * @return 
+             */
+            bool hasOperationalPostSeqElements(size_t id) const;
+            
             std::string getCurrentlyFailableString() const {
                 std::stringstream stream;
                 if (nrFailableDependencies() > 0) {

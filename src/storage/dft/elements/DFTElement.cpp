@@ -32,6 +32,10 @@ namespace storm {
                 }
             }
             
+            if(!mRestrictions.empty() && state.hasOperationalPostSeqElements(mId)) {
+                return false;
+            }
+            
             state.setDontCare(mId);
             if (hasParentSpare && !state.isActive(mId)) {
                 // Activate child for consistency in failed spares
@@ -65,7 +69,6 @@ namespace storm {
 
         template<typename ValueType>
         std::vector<size_t> DFTElement<ValueType>::independentSubDft(bool blockParents) const {
-            //std::cout << "INDEPENDENT SUBTREE CALL " << this->id() << std::endl;
             std::vector<size_t> res;
             res.push_back(this->id());
             return res;
