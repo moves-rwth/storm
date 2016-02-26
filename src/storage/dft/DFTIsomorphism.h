@@ -14,7 +14,7 @@ namespace storage {
 
     struct GateGroupToHash {
         static constexpr uint_fast64_t fivebitmask = (1 << 6) - 1;
-        static constexpr uint_fast64_t eightbitmaks = (1 << 8) - 1;
+        static constexpr uint_fast64_t eightbitmask = (1 << 8) - 1;
 
         /**
          * Hash function, which ensures that the colours are sorted according to their rank.
@@ -25,7 +25,7 @@ namespace storage {
             //Assumes 5 bits for the rank,
             groupHash |= (static_cast<uint_fast64_t>(rank) & fivebitmask) << (62 - 5);
             // 8 bits for the nrChildren,
-            groupHash |= (static_cast<uint_fast64_t>(nrChildren) & eightbitmaks) << (62 - 5 - 8);
+            groupHash |= (static_cast<uint_fast64_t>(nrChildren) & eightbitmask) << (62 - 5 - 8);
             // 5 bits for nrParents,
             groupHash |= (static_cast<uint_fast64_t>(nrParents) & fivebitmask) << (62 - 5 - 8 - 5);
             // 5 bits for nrPDEPs,
@@ -35,6 +35,20 @@ namespace storage {
             return groupHash;
         }
 
+    };
+    
+    struct RestrictionGroupToHash {
+        static constexpr uint_fast64_t fivebitmask = (1 << 6) - 1;
+        
+        static constexpr uint_fast64_t eightbitmask = (1 << 8) - 1;
+        
+        uint_fast64_t operator()(DFTElementType type, size_t nrChildren, size_t rank) const {
+            uint_fast64_t groupHash = static_cast<uint_fast64_t>(0);
+            groupHash |= (static_cast<uint_fast64_t>(rank) & fivebitmask) << (62 - 5);
+            groupHash |= (static_cast<uint_fast64_t>(nrChildren) & eightbitmask) << (62 - 5 - 8);
+            groupHash |= (static_cast<uint_fast64_t>(type) & fivebitmask) << (62 - 5 - 8 - 5);
+            return groupHash;
+        }
     };
 
 
@@ -53,8 +67,6 @@ namespace storage {
         return lhs.hash == rhs.hash && lhs.aRate == rhs.aRate && lhs.pRate == rhs.pRate;
     }
 
-
-
     /**
      *
      */
@@ -63,13 +75,14 @@ namespace storage {
         std::unordered_map<size_t, std::vector<size_t>> gateCandidates;
         std::unordered_map<BEColourClass<ValueType>, std::vector<size_t>> beCandidates;
         std::unordered_map<std::pair<ValueType, ValueType>, std::vector<size_t>> pdepCandidates;
+        std::unordered_map<size_t, std::vector<size_t>> restrictionCandidates;
         
         size_t nrGroups() const {
-            return gateCandidates.size() + beCandidates.size() + pdepCandidates.size();
+            return gateCandidates.size() + beCandidates.size() + pdepCandidates.size() + restrictionCandidates.size();
         }
         
         size_t size() const {
-            return nrGates() + nrBEs() + nrDeps();
+            return nrGates() + nrBEs() + nrDeps() + nrRestrictions();
         }
         
         size_t nrGates() const {
@@ -91,6 +104,14 @@ namespace storage {
         size_t nrDeps() const {
             size_t res = 0;
             for(auto const& x : pdepCandidates) {
+                res += x.second.size();
+            }
+            return res;
+        }
+        
+        size_t nrRestrictions() const {
+            size_t res = 0;
+            for(auto const& x : restrictionCandidates) {
                 res += x.second.size();
             }
             return res;
@@ -123,8 +144,18 @@ namespace storage {
             return false;
         }
         
+        bool hasRestriction(size_t index) const {
+            for(auto const& x : restrictionCandidates) {
+                for(auto const& ind : x.second) {
+                    if(index == ind) return true;
+                }
+            }
+            return false;
+        }
+        
+        
         bool has(size_t index) const {
-            return hasGate(index) || hasBE(index) || hasDep(index);
+            return hasGate(index) || hasBE(index) || hasDep(index) || hasRestriction(index);
         }
         
         
@@ -152,7 +183,9 @@ namespace storage {
         std::unordered_map<size_t, size_t> gateColour;
         std::unordered_map<size_t, BEColourClass<ValueType>> beColour;
         std::unordered_map<size_t, std::pair<ValueType, ValueType>> depColour;
+        std::unordered_map<size_t, size_t> restrictionColour;
         GateGroupToHash gateColourizer;
+        RestrictionGroupToHash restrColourizer;
 
     public:
         DFTColouring(DFT<ValueType> const& ft) : dft(ft) {
@@ -161,9 +194,11 @@ namespace storage {
                     colourize(dft.getBasicElement(id));
                 } else if(dft.isGate(id)) {
                     colourize(dft.getGate(id));
-                } else {
-                    assert(dft.isDependency(id));
+                } else if(dft.isDependency(id)) {
                     colourize(dft.getDependency(id));
+                } else {
+                    assert(dft.isRestriction(id));
+                    colourize(dft.getRestriction(id));
                 }
             }
         }
@@ -186,13 +221,20 @@ namespace storage {
                     } else {
                         res.gateCandidates[gateColour.at(index)] = std::vector<size_t>({index});
                     }
-                } else {
-                    assert(dft.isDependency(index));
+                } else if(dft.isDependency(index)) {
                     auto it = res.pdepCandidates.find(depColour.at(index));
                     if(it != res.pdepCandidates.end()) {
                         it->second.push_back(index);
                     } else {
                         res.pdepCandidates[depColour.at(index)] = std::vector<size_t>({index});
+                    }
+                } else {
+                    assert(dft.isRestriction(index));
+                    auto it = res.restrictionCandidates.find(restrictionColour.at(index));
+                    if(it != res.restrictionCandidates.end()) {
+                        it->second.push_back(index);
+                    } else {
+                        res.restrictionCandidates[restrictionColour.at(index)] = std::vector<size_t>({index});
                     }
                 }
 
@@ -213,6 +255,10 @@ namespace storage {
         
         void colourize(std::shared_ptr<const DFTDependency<ValueType>> const& dep) {
             depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), dep->dependentEvent()->activeFailureRate());
+        }
+        
+        void colourize(std::shared_ptr<const DFTRestriction<ValueType>> const& restr) {
+            restrictionColour[restr->id()] = restrColourizer(restr->type(), restr->nrChildren(), restr->rank());
         }
     };
 
@@ -289,6 +335,7 @@ namespace storage {
             initializePermutationsAndTreatTrivialGroups(bleft.beCandidates, bright.beCandidates, currentPermutations.beCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.gateCandidates, bright.gateCandidates, currentPermutations.gateCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.pdepCandidates, bright.pdepCandidates, currentPermutations.pdepCandidates);
+            initializePermutationsAndTreatTrivialGroups(bleft.restrictionCandidates, bright.restrictionCandidates, currentPermutations.restrictionCandidates);
             std::cout << bijection.size() << " vs. " << bleft.size() << " vs. " << bright.size() << std::endl;
             assert(bijection.size() == bleft.size());
             
@@ -323,6 +370,15 @@ namespace storage {
                     ++it;
                 }
             }
+            
+            if(!foundNext && !currentPermutations.restrictionCandidates.empty()) {
+                auto it = currentPermutations.restrictionCandidates.begin();
+                while(!foundNext && it != currentPermutations.restrictionCandidates.end()) {
+                    foundNext = std::next_permutation(it->second.begin(), it->second.end());
+                    ++it;
+                }
+            }
+            
 
             if(foundNext) {
                 for(auto const& colour : bleft.beCandidates) {
@@ -335,6 +391,10 @@ namespace storage {
 
                 for(auto const& colour : bleft.pdepCandidates) {
                     zipVectorsIntoMap(colour.second, currentPermutations.pdepCandidates.find(colour.first)->second, bijection);
+                }
+                
+                for(auto const& colour : bleft.restrictionCandidates) {
+                    zipVectorsIntoMap(colour.second, currentPermutations.restrictionCandidates.find(colour.first)->second, bijection);
                 }
             }
 
@@ -378,6 +438,23 @@ namespace storage {
                     if(bijection.at(lDep->dependentEvent()->id()) != rDep->dependentEvent()->id()) {
                         return false;
                     }
+                } else if(dft.isRestriction(indexpair.first)) {
+                    assert(dft.isRestriction(indexpair.second));
+                    auto const& lRestr = dft.getRestriction(indexpair.first);
+                    std::set<size_t> childrenLeftMapped;
+                    for(auto const& child : lRestr->children() ) {
+                        assert(bleft.has(child->id()));
+                        childrenLeftMapped.insert(bijection.at(child->id()));
+                    }
+                    auto const& rRestr = dft.getRestriction(indexpair.second);
+                    std::set<size_t> childrenRight;
+                    for(auto const& child : rRestr->children() ) {
+                        assert(bright.has(child->id()));
+                        childrenRight.insert(child->id());
+                    }
+                    if(childrenLeftMapped != childrenRight) {
+                        return false;
+                    }
                 }
                 else {
                     assert(dft.isBasicElement(indexpair.first));
@@ -405,10 +482,15 @@ namespace storage {
                 candidatesCompatible = false;
                 return;
             }
+            if(bleft.restrictionCandidates.size() != bright.restrictionCandidates.size()) {
+                candidatesCompatible = false;
+                return;
+            }
             
             for (auto const &gc : bleft.gateCandidates) {
                 if (bright.gateCandidates.count(gc.first) == 0) {
                     candidatesCompatible = false;
+                    return;
                 }
             }
             for(auto const& bc : bleft.beCandidates) {
@@ -420,6 +502,13 @@ namespace storage {
                
             for(auto const& dc : bleft.pdepCandidates) {
                 if(bright.pdepCandidates.count(dc.first) == 0) {
+                    candidatesCompatible = false;
+                    return;
+                }
+            }
+            
+            for(auto const& dc : bleft.restrictionCandidates) {
+                if(bright.restrictionCandidates.count(dc.first) == 0) {
                     candidatesCompatible = false;
                     return;
                 }
