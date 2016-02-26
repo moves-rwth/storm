@@ -183,7 +183,8 @@ namespace storm {
             }
             
             virtual bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
-                
+                // Actually, it doesnt matter what we return here..
+                return false;
             }
 
             virtual DFTElementType type() const override {
