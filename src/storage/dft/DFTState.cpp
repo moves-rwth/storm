@@ -265,17 +265,12 @@ namespace storm {
                 std::vector<size_t> symmetryIndices = mStateGenerationInfo.getSymmetryIndices(pos);
                 // Sort symmetry group in decreasing order by bubble sort
                 // TODO use better algorithm?
-                size_t tmp, elem1, elem2;
+                size_t tmp;
                 size_t n = symmetryIndices.size();
                 do {
                     tmp = 0;
                     for (size_t i = 1; i < n; ++i) {
-                        elem1 = mStatus.getAsInt(symmetryIndices[i-1], length);
-                        elem2 = mStatus.getAsInt(symmetryIndices[i], length);
-                        if (elem1 < elem2) {
-                            // Swap elements
-                            mStatus.setFromInt(symmetryIndices[i-1], length, elem2);
-                            mStatus.setFromInt(symmetryIndices[i], length, elem1);
+                        if (mStatus.compareAndSwap(symmetryIndices[i-1], symmetryIndices[i], length)) {
                             tmp = i;
                             changed = true;
                         }
