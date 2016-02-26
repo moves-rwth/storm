@@ -15,6 +15,7 @@
 #include "SymmetricUnits.h"
 #include "../../utility/math.h"
 #include "src/utility/macros.h"
+#include "DFTStateGenerationInfo.h"
 
 namespace storm {
     namespace storage {
@@ -35,96 +36,6 @@ namespace storm {
         template<typename T> class DFTColouring;
 
         
-        class DFTStateGenerationInfo {
-        private:
-            const size_t mUsageInfoBits;
-            std::map<size_t, size_t> mSpareUsageIndex; // id spare -> index first bit in state
-            std::map<size_t, size_t> mSpareActivationIndex; // id spare representative -> index in state
-            std::vector<size_t> mIdToStateIndex; // id -> index first bit in state
-            std::map<size_t, size_t> mRestrictedItems;
-            std::vector<std::pair<size_t, std::vector<size_t>>> mSymmetries; // pair (lenght of symmetry group, vector indicating the starting points of the symmetry groups)
-
-        public:
-            
-            DFTStateGenerationInfo(size_t nrElements, size_t maxSpareChildCount) : mUsageInfoBits(storm::utility::math::uint64_log2(maxSpareChildCount) + 1), mIdToStateIndex(nrElements) {
-                assert(maxSpareChildCount < pow(2, mUsageInfoBits));
-            }
-
-            size_t usageInfoBits() const {
-                return mUsageInfoBits;
-            }
-            
-            void addStateIndex(size_t id, size_t index) {
-                assert(id < mIdToStateIndex.size());
-                mIdToStateIndex[id] = index;
-            }
-
-            void addSpareActivationIndex(size_t id, size_t index) {
-                mSpareActivationIndex[id] = index;
-            }
-
-            void addSpareUsageIndex(size_t id, size_t index) {
-                mSpareUsageIndex[id] = index;
-            }
-
-            size_t getStateIndex(size_t id) const {
-                assert(id < mIdToStateIndex.size());
-                return mIdToStateIndex[id];
-            }
-            
-            size_t getSpareUsageIndex(size_t id) const {
-                assert(mSpareUsageIndex.count(id) > 0);
-                return mSpareUsageIndex.at(id);
-            }
-            
-            size_t getSpareActivationIndex(size_t id) const {
-                assert(mSpareActivationIndex.count(id) > 0);
-                return mSpareActivationIndex.at(id);
-            }
-            
-            void addSymmetry(size_t length, std::vector<size_t>& startingIndices) {
-                mSymmetries.push_back(std::make_pair(length, startingIndices));
-            }
-            
-            size_t getSymmetrySize() const {
-                return mSymmetries.size();
-            }
-            
-            size_t getSymmetryLength(size_t pos) const {
-                assert(pos < mSymmetries.size());
-                return mSymmetries[pos].first;
-            }
-            
-            std::vector<size_t> const& getSymmetryIndices(size_t pos) const {
-                assert(pos < mSymmetries.size());
-                return mSymmetries[pos].second;
-            }
-            
-            friend std::ostream& operator<<(std::ostream& os, DFTStateGenerationInfo const& info) {
-                os << "Id to state index:" << std::endl;
-                for (size_t id = 0; id < info.mIdToStateIndex.size(); ++id) {
-                    os << id << " -> " << info.getStateIndex(id) << std::endl;
-                }
-                os << "Spare usage index with usage InfoBits of size " << info.mUsageInfoBits << ":" << std::endl;
-                for (auto pair : info.mSpareUsageIndex) {
-                    os << pair.first << " -> " << pair.second << std::endl;
-                }
-                os << "Spare activation index:" << std::endl;
-                for (auto pair : info.mSpareActivationIndex) {
-                    os << pair.first << " -> " << pair.second << std::endl;
-                }
-                os << "Symmetries:" << std::endl;
-                for (auto pair : info.mSymmetries) {
-                    os << "Length: " << pair.first << ", starting indices: ";
-                    for (size_t index : pair.second) {
-                        os << index << ", ";
-                    }
-                    os << std::endl;
-                }
-                return os;
-            }
-            
-        };
         
 
         /**
