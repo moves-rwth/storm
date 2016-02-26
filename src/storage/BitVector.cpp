@@ -10,6 +10,12 @@
 #include "src/utility/Hash.h"
 #include "src/utility/macros.h"
 
+#include <bitset>
+
+#ifndef NDEBUG
+//#define ASSERT_BITVECTOR
+#endif
+
 namespace storm {
     namespace storage {
 
@@ -413,6 +419,7 @@ namespace storm {
         }
 
         uint_fast64_t BitVector::getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const {
+            assert(numberOfBits <= 64);
             uint64_t bucket = bitIndex >> 6;
             uint64_t bitIndexInBucket = bitIndex & mod64mask;
 
@@ -662,6 +669,103 @@ namespace storm {
             }
             return endIndex;
         }
+        
+        BitVector BitVector::getAsBitVector(uint_fast64_t start, uint_fast64_t length) {
+            BitVector result(length);
+            
+            uint_fast64_t index = 0;
+            for ( ; index + 63 <= length; index += 63) {
+                result.setFromInt(index, 63, getAsInt(start + index, 63));
+            }
+            // Insert remaining bits
+            result.setFromInt(index, length-index, getAsInt(start+index, length-index));
+            
+#ifdef ASSERT_BITVECTOR
+            // Check correctness of getter
+            for (uint_fast64_t i = 0; i < length; ++i) {
+                STORM_LOG_ASSERT(result.get(i) == get(start + i), "Getting of bits not correct for index " << i);
+            }
+#endif
+            return result;
+        }
+        
+        void BitVector::setFromBitVector(uint_fast64_t start, BitVector const& other) {
+            uint_fast64_t index = 0;
+            for ( ; index + 63 <= other.bitCount; index += 63) {
+                setFromInt(start+index, 63, other.getAsInt(index, 63));
+            }
+            // Insert remaining bits
+            setFromInt(start+index, other.bitCount-index, other.getAsInt(index, other.bitCount-index));
+            
+#ifdef ASSERT_BITVECTOR
+            // Check correctness of setter
+            for (uint_fast64_t i = 0; i < other.bitCount; ++i) {
+                STORM_LOG_ASSERT(other.get(i) == get(start + i), "Setting of bits not correct for index " << i);
+            }
+#endif
+        }
+        
+        bool BitVector::compareAndSwap(uint_fast64_t start1, uint_fast64_t start2, uint_fast64_t length) {
+            if (length < 64) {
+                uint_fast64_t elem1 = getAsInt(start1, length);
+                uint_fast64_t elem2 = getAsInt(start2, length);
+                if (elem1 < elem2) {
+                    // Swap elements
+                    setFromInt(start1, length, elem2);
+                    setFromInt(start2, length, elem1);
+                    return true;
+                }
+                return false;
+            } else {
+                //TODO improve performance
+                BitVector elem1 = getAsBitVector(start1, length);
+                BitVector elem2 = getAsBitVector(start2, length);
+                
+                if (!(elem1 < elem2)) {
+                    // Elements already sorted
+#ifdef ASSERT_BITVECTOR
+                    // Check that sorted
+                    for (uint_fast64_t i = 0; i < length; ++i) {
+                        if (get(start1 + i) > get(start2 + i)) {
+                            break;
+                        }
+                        STORM_LOG_ASSERT(get(start1 + i) >= get(start2 + i), "Bit vector not sorted for indices " << start1+i << " and " << start2+i);
+                    }
+#endif
+                    return false;
+                }
+                
+#ifdef ASSERT_BITVECTOR
+                BitVector check(*this);
+#endif
+                
+                // Swap elements
+                setFromBitVector(start1, elem2);
+                setFromBitVector(start2, elem1);
+                
+#ifdef ASSERT_BITVECTOR
+                // Check correctness of swapping
+                bool tmp;
+                for (uint_fast64_t i = 0; i < length; ++i) {
+                    tmp = check.get(i + start1);
+                    check.set(i + start1, check.get(i + start2));
+                    check.set(i + start2, tmp);
+                }
+                STORM_LOG_ASSERT(*this == check, "Swapping not correct");
+                
+                // Check that sorted
+                for (uint_fast64_t i = 0; i < length; ++i) {
+                    if (get(start1 + i) > get(start2 + i)) {
+                        break;
+                    }
+                    STORM_LOG_ASSERT(get(start1 + i) >= get(start2 + i), "Bit vector not sorted for indices " << start1+i << " and " << start2+i);
+                }
+#endif
+
+                return true;
+            }
+        }
+
 
         void BitVector::truncateLastBucket() {
             if ((bitCount & mod64mask) != 0) {
@@ -681,6 +785,26 @@ namespace storm {
             out << "]";
 
             return out;
+        }
+        
+        void BitVector::printBits(std::ostream& out) {
+            out << "bit vector(" << getNumberOfSetBits() << "/" << bitCount << ") ";
+            uint_fast64_t index = 0;
+            for ( ; index * 64 <= bitCount; ++index) {
+                std::bitset<64> tmp(bucketVector[index]);
+                out << tmp << "|";
+            }
+            
+            --index;
+            // Print last bits
+            if (index * 64 < bitCount) {
+                assert(index == bucketVector.size() - 1);
+                std::bitset<64> tmp(bucketVector[index]);
+                for (size_t i = 0; i + index * 64 < bitCount; ++i) {
+                    out << tmp[i];
+                }
+            }
+            out << std::endl;
         }
 
         std::size_t NonZeroBitVectorHash::operator()(storm::storage::BitVector const& bv) const {
