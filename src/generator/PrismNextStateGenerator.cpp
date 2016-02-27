@@ -1,5 +1,7 @@
 #include "src/generator/PrismNextStateGenerator.h"
 
+#include <boost/container/flat_map.hpp>
+
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -306,8 +308,9 @@ namespace storm {
                     // As long as there is one feasible combination of commands, keep on expanding it.
                     bool done = false;
                     while (!done) {
-                        std::unordered_map<CompressedState, ValueType>* currentTargetStates = new std::unordered_map<CompressedState, ValueType>();
-                        std::unordered_map<CompressedState, ValueType>* newTargetStates = new std::unordered_map<CompressedState, ValueType>();
+                        boost::container::flat_map<CompressedState, ValueType>* currentTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                        boost::container::flat_map<CompressedState, ValueType>* newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                        
                         currentTargetStates->emplace(state, storm::utility::one<ValueType>());
                         
                         for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
@@ -327,7 +330,7 @@ namespace storm {
                             if (i < iteratorList.size() - 1) {
                                 delete currentTargetStates;
                                 currentTargetStates = newTargetStates;
-                                newTargetStates = new std::unordered_map<CompressedState, ValueType>();
+                                newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
                             }
                         }
                         
