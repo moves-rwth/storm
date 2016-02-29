@@ -35,6 +35,10 @@ namespace storm {
                 return true;
             }
             
+            bool isDynamicGate() const {
+                return !isStaticGateType(this->type());
+            }
+            
             
             virtual std::string typestring() const = 0;
 

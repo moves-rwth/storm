@@ -414,20 +414,38 @@ namespace storage {
                 if(dft.isGate(indexpair.first)) {
                     assert(dft.isGate(indexpair.second));
                     auto const& lGate = dft.getGate(indexpair.first);
-                    std::set<size_t> childrenLeftMapped;
-                    for(auto const& child : lGate->children() ) {
-                        assert(bleft.has(child->id()));
-                        childrenLeftMapped.insert(bijection.at(child->id()));
-                    }
                     auto const& rGate = dft.getGate(indexpair.second);
-                    std::set<size_t> childrenRight;
-                    for(auto const& child : rGate->children() ) {
-                        assert(bright.has(child->id()));
-                        childrenRight.insert(child->id());
+                    if(lGate->isDynamicGate()) {
+                        std::vector<size_t> childrenLeftMapped;
+                        for(auto const& child : lGate->children() ) {
+                            assert(bleft.has(child->id()));
+                            childrenLeftMapped.push_back(bijection.at(child->id()));
+                        }
+                        std::vector<size_t> childrenRight;
+                        for(auto const& child : rGate->children() ) {
+                            assert(bright.has(child->id()));
+                            childrenRight.push_back(child->id());
+                        }
+                        if(childrenLeftMapped != childrenRight) {
+                            return false;
+                        } 
+                    } else {
+                        std::set<size_t> childrenLeftMapped;
+                        for(auto const& child : lGate->children() ) {
+                            assert(bleft.has(child->id()));
+                            childrenLeftMapped.insert(bijection.at(child->id()));
+                        }
+                        std::set<size_t> childrenRight;
+                        for(auto const& child : rGate->children() ) {
+                            assert(bright.has(child->id()));
+                            childrenRight.insert(child->id());
+                        }
+                        if(childrenLeftMapped != childrenRight) {
+                            return false;
+                        } 
                     }
-                    if(childrenLeftMapped != childrenRight) {
-                        return false;
-                    }
+                
+                    
                 } else if(dft.isDependency(indexpair.first)) {
                     assert(dft.isDependency(indexpair.second));
                     auto const& lDep = dft.getDependency(indexpair.first);
