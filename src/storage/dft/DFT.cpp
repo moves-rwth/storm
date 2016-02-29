@@ -56,14 +56,24 @@ namespace storm {
                     topModuleSet.insert(elem->id());
                 }
             }
-
+            // Erase spare modules
             for(auto const& module : mSpareModules) {
                 for(auto const& index : module.second) {
                     topModuleSet.erase(index);
                 }
             }
+            // Extend top module and insert those elements which are part of the top module and a spare module
+            mElements[mTopLevelIndex]->extendSpareModule(topModuleSet);
             mTopModule = std::vector<size_t>(topModuleSet.begin(), topModuleSet.end());
-            
+            // Clear all spare modules where at least one element is also in the top module
+            if (!mTopModule.empty()) {
+                for (auto& module : mSpareModules) {
+                    if (std::find(module.second.begin(), module.second.end(), mTopModule.front()) != module.second.end()) {
+                        module.second.clear();
+                    }
+                }
+            }
+
             //Reserve space for failed spares
             ++mMaxSpareChildCount;
             size_t usageInfoBits = storm::utility::math::uint64_log2(mMaxSpareChildCount) + 1;
@@ -240,6 +250,10 @@ namespace storm {
             std::stringstream stream;
             stream << "[" << mElements[mTopLevelIndex]->id() << "] {";
             std::vector<size_t>::const_iterator it = mTopModule.begin();
+            if (it == mTopModule.end()) {
+                stream << "}" << std::endl;
+                return stream.str();
+            }
             assert(it != mTopModule.end());
             stream << mElements[(*it)]->name();
             ++it;
@@ -251,13 +265,15 @@ namespace storm {
 
             for(auto const& spareModule : mSpareModules) {
                 stream << "[" << mElements[spareModule.first]->name() << "] = {";
-                std::vector<size_t>::const_iterator it = spareModule.second.begin();
-                assert(it != spareModule.second.end());
-                stream << mElements[(*it)]->name();
-                ++it;
-                while(it != spareModule.second.end()) {
-                    stream <<  ", " << mElements[(*it)]->name();
+                if (!spareModule.second.empty()) {
+                    std::vector<size_t>::const_iterator it = spareModule.second.begin();
+                    assert(it != spareModule.second.end());
+                    stream << mElements[(*it)]->name();
                     ++it;
+                    while(it != spareModule.second.end()) {
+                        stream <<  ", " << mElements[(*it)]->name();
+                        ++it;
+                    }
                 }
                 stream << "}" << std::endl;
             }

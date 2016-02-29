@@ -129,15 +129,16 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTState<ValueType>::updateFailableDependencies(size_t id) {
-            assert(hasFailed(id));
-            for (size_t i = 0; i < mDft.getDependencies().size(); ++i) {
-                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mDft.getDependencies()[i]);
-                if (dependency->triggerEvent()->id() == id) {
-                    if (getElementState(dependency->dependentEvent()->id()) == DFTElementState::Operational) {
-                        assert(!isFailsafe(dependency->dependentEvent()->id()));
-                        mFailableDependencies.push_back(dependency->id());
-                        STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
-                    }
+            if (!hasFailed(id)) {
+                return false;
+            }
+            
+            for (auto dependency : mDft.getElement(id)->outgoingDependencies()) {
+                assert(dependency->triggerEvent()->id() == id);
+                if (getElementState(dependency->dependentEvent()->id()) == DFTElementState::Operational) {
+                    assert(!isFailsafe(dependency->dependentEvent()->id()));
+                    mFailableDependencies.push_back(dependency->id());
+                    STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
                 }
             }
             return nrFailableDependencies() > 0;

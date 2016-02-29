@@ -196,12 +196,14 @@ namespace storm {
                     while (!queues.failurePropagationDone()) {
                         DFTGatePointer next = queues.nextFailurePropagation();
                         next->checkFails(*newState, queues);
+                        newState->updateFailableDependencies(next->id());
                     }
                     
                     while(!queues.restrictionChecksDone()) {
                         DFTRestrictionPointer next = queues.nextRestrictionCheck();
                         next->checkFails(*newState, queues);
-                    } 
+                        newState->updateFailableDependencies(next->id());
+                    }
                     
                     if(newState->isInvalid()) {
                         continue;
