@@ -192,6 +192,10 @@ namespace storm {
         template bool isZero(storm::storage::sparse::state_type const& value);
         template bool isConstant(storm::storage::sparse::state_type const& value);
 
+        template uint32_t one();
+        template uint32_t zero();
+        template uint32_t infinity();
+                
         template storm::storage::sparse::state_type one();
         template storm::storage::sparse::state_type zero();
         template storm::storage::sparse::state_type infinity();

@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <unordered_map>
 
 #include "src/storage/BitVector.h"
 
@@ -122,6 +123,13 @@ namespace storm {
              * @return The capacity of the underlying container.
              */
             std::size_t capacity() const;
+            
+            /*!
+             * Performs a remapping of all values stored by applying the given remapping.
+             *
+             * @param remapping The remapping to apply.
+             */
+            void remap(std::unordered_map<ValueType, ValueType> const& remapping);
             
         private:
             /*!

@@ -233,6 +233,16 @@ namespace storm {
             return std::make_pair(buckets.get(bucket * bucketSize, bucketSize), values[bucket]);
         }
         
+        template<class ValueType, class Hash1, class Hash2>
+        void BitVectorHashMap<ValueType, Hash1, Hash2>::remap(std::unordered_map<ValueType, ValueType> const& remapping) {
+            for (auto pos : occupied) {
+                auto it = remapping.find(values[pos]);
+                if (it != remapping.end()) {
+                    values[pos] = it->second;
+                }
+            }
+        }
+        
         template class BitVectorHashMap<uint_fast64_t>;
         template class BitVectorHashMap<uint32_t>;
     }

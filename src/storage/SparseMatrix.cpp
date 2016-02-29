@@ -143,12 +143,12 @@ namespace storm {
             STORM_LOG_THROW(startingRow >= lastRow, storm::exceptions::InvalidStateException, "Illegal row group with negative size.");
             rowGroupIndices.push_back(startingRow);
             ++currentRowGroup;
-
+            
             // Close all rows from the most recent one to the starting row.
             for (index_type i = lastRow + 1; i <= startingRow; ++i) {
                 rowIndications.push_back(currentEntryCount);
             }
-
+            
             // Reset the most recently seen row/column to allow for proper insertion of the following elements.
             lastRow = startingRow;
             lastColumn = 0;
@@ -162,7 +162,7 @@ namespace storm {
                 rowCount = std::max(rowCount, initialRowCount);
             }
             rowCount = std::max(rowCount, overriddenRowCount);
-
+            
             // If the current row count was overridden, we may need to add empty rows.
             for (index_type i = lastRow + 1; i < rowCount; ++i) {
                 rowIndications.push_back(currentEntryCount);
@@ -202,7 +202,7 @@ namespace storm {
                     rowGroupIndices.push_back(rowCount);
                 }
             }
-
+            
             return SparseMatrix<ValueType>(columnCount, std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices), hasCustomRowGrouping);
         }
         
@@ -214,6 +214,72 @@ namespace storm {
         template<typename ValueType>
         typename SparseMatrixBuilder<ValueType>::index_type SparseMatrixBuilder<ValueType>::getLastColumn() const {
             return lastColumn;
+        }
+        
+        template<typename ValueType>
+        bool SparseMatrixBuilder<ValueType>::replaceColumns(std::vector<index_type> const& replacements, index_type offset) {
+            bool changed = false;
+            
+            // Sort columns per row.
+            typename SparseMatrix<ValueType>::index_type endGroups;
+            typename SparseMatrix<ValueType>::index_type endRows;
+            for (index_type group = 0; group < rowGroupIndices.size(); ++group) {
+                endGroups = group < rowGroupIndices.size()-1 ? rowGroupIndices[group+1] : rowIndications.size();
+                for (index_type i = rowGroupIndices[group]; i < endGroups; ++i) {
+                    bool changedRow = false;
+                    endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
+                    
+                    for (auto it = columnsAndValues.begin() + rowIndications[i], ite = columnsAndValues.begin() + endRows; it != ite; ++it) {
+                        if (it->getColumn() >= offset) {
+                            it->setColumn(replacements[it->getColumn() - offset]);
+                            changedRow = true;
+                        }
+                        // Update highest column in a way that only works if the highest appearing index does not become
+                        // lower during performing the replacement.
+                        highestColumn = std::max(highestColumn, it->getColumn());
+                    }
+                    
+                    if (changedRow) {
+                        changed = true;
+                        
+                        // Sort the row.
+                        std::sort(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                                  [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
+                                      return a.getColumn() < b.getColumn();
+                                  });
+                        // Assert no equal elements
+                        STORM_LOG_ASSERT(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                                                        [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
+                                                            return a.getColumn() <= b.getColumn();
+                                                        }), "Must not have different elements with the same column in a row.");
+                    }
+                }
+            }
+            
+            return changed;
+        }
+        
+        template<typename ValueType>
+        void SparseMatrixBuilder<ValueType>::fixColumns() {
+            // Sort columns per row.
+            typename SparseMatrix<ValueType>::index_type endGroups;
+            typename SparseMatrix<ValueType>::index_type endRows;
+            for (index_type group = 0; group < rowGroupIndices.size(); ++group) {
+                endGroups = group < rowGroupIndices.size()-1 ? rowGroupIndices[group+1] : rowIndications.size();
+                for (index_type i = rowGroupIndices[group]; i < endGroups; ++i) {
+                    endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
+                    // Sort the row.
+                    std::sort(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                              [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
+                                  return a.getColumn() < b.getColumn();
+                              });
+                    // Assert no equal elements
+                    STORM_LOG_ASSERT(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                                                    [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
+                                                        return a.getColumn() <= b.getColumn();
+                                                    }), "Must not have different elements with the same column in a row.");
+                }
+            }
         }
         
         template<typename ValueType>
@@ -532,12 +598,12 @@ namespace storm {
                     *it = i;
                 }
                 auto res = getSubmatrix(rowConstraint, columnConstraint, fakeRowGroupIndices, insertDiagonalElements);
-
+                
                 // Create a new row grouping that reflects the new sizes of the row groups.
                 std::vector<uint_fast64_t> newRowGroupIndices;
                 newRowGroupIndices.push_back(0);
                 auto selectedRowIt = rowConstraint.begin();
-
+                
                 // For this, we need to count how many rows were preserved in every group.
                 for (uint_fast64_t group = 0; group < this->getRowGroupCount(); ++group) {
                     uint_fast64_t newRowCount = 0;
@@ -1172,7 +1238,7 @@ namespace storm {
                 assert(this->getRowGroupSize(group) == 1);
                 for (typename SparseMatrix<ValueType>::index_type i = this->getRowGroupIndices()[group]; i < this->getRowGroupIndices()[group + 1]; ++i) {
                     typename SparseMatrix<ValueType>::index_type nextIndex = this->rowIndications[i];
-
+                    
                     // Print the actual row.
                     out << i << "\t(";
                     typename SparseMatrix<ValueType>::index_type currentRealIndex = 0;
@@ -1226,7 +1292,7 @@ namespace storm {
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
         template std::vector<double> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<double> const& otherMatrix) const;
         template bool SparseMatrix<double>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
-
+        
         // float
         template class MatrixEntry<typename SparseMatrix<float>::index_type, float>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<float>::index_type, float> const& entry);
@@ -1235,7 +1301,7 @@ namespace storm {
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<float> const& matrix);
         template std::vector<float> SparseMatrix<float>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<float> const& otherMatrix) const;
         template bool SparseMatrix<float>::isSubmatrixOf(SparseMatrix<float> const& matrix) const;
-
+        
         // int
         template class MatrixEntry<typename SparseMatrix<int>::index_type, int>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<int>::index_type, int> const& entry);
@@ -1243,7 +1309,7 @@ namespace storm {
         template class SparseMatrix<int>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<int> const& matrix);
         template bool SparseMatrix<int>::isSubmatrixOf(SparseMatrix<int> const& matrix) const;
-
+        
         // state_type
         template class MatrixEntry<typename SparseMatrix<storm::storage::sparse::state_type>::index_type, storm::storage::sparse::state_type>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<typename SparseMatrix<storm::storage::sparse::state_type>::index_type, storm::storage::sparse::state_type> const& entry);
@@ -1251,7 +1317,7 @@ namespace storm {
         template class SparseMatrix<storm::storage::sparse::state_type>;
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<storm::storage::sparse::state_type> const& matrix);
         template bool SparseMatrix<int>::isSubmatrixOf(SparseMatrix<storm::storage::sparse::state_type> const& matrix) const;
-
+        
 #ifdef STORM_HAVE_CARL
         // Rat Function
         template class MatrixEntry<typename SparseMatrix<RationalFunction>::index_type, RationalFunction>;
@@ -1264,7 +1330,7 @@ namespace storm {
         template std::vector<storm::RationalFunction> SparseMatrix<float>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
         template std::vector<storm::RationalFunction> SparseMatrix<int>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::RationalFunction> const& otherMatrix) const;
         template bool SparseMatrix<storm::RationalFunction>::isSubmatrixOf(SparseMatrix<storm::RationalFunction> const& matrix) const;
-
+        
         // Intervals
         template std::vector<storm::Interval> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
         template class MatrixEntry<typename SparseMatrix<Interval>::index_type, Interval>;
@@ -1274,7 +1340,7 @@ namespace storm {
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<Interval> const& matrix);
         template std::vector<storm::Interval> SparseMatrix<Interval>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<storm::Interval> const& otherMatrix) const;
         template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<storm::Interval> const& matrix) const;
-
+        
         template bool SparseMatrix<storm::Interval>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
 #endif
         

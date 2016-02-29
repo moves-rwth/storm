@@ -1,5 +1,5 @@
-#ifndef STORM_ADAPTERS_EXPLICITPRISMMODELBUILDER_H
-#define	STORM_ADAPTERS_EXPLICITPRISMMODELBUILDER_H
+#ifndef STORM_BUILDER_EXPLICITPRISMMODELBUILDER_H
+#define	STORM_BUILDER_EXPLICITPRISMMODELBUILDER_H
 
 #include <memory>
 #include <utility>
@@ -23,6 +23,8 @@
 #include "src/settings/SettingsManager.h"
 
 #include "src/utility/prism.h"
+
+#include "src/builder/ExplorationOrder.h"
 
 #include "src/generator/CompressedState.h"
 #include "src/generator/VariableInformation.h"
@@ -102,6 +104,11 @@ namespace storm {
                  */
                 Options();
                 
+                /*!
+                 * Copies the given set of options.
+                 */
+                Options(Options const& other) = default;
+                
                 /*! Creates an object representing the suggested building options assuming that the given formula is the
                  * only one to check. Additional formulas may be preserved by calling <code>preserveFormula</code>.
                  *
@@ -143,6 +150,9 @@ namespace storm {
                  * model.
                  */
                 void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
+                
+                // The order in which to explore the model.
+                ExplorationOrder explorationOrder;
                 
                 // A flag that indicates whether or not command labels are to be built.
                 bool buildCommandLabels;
@@ -286,13 +296,13 @@ namespace storm {
             // A set of states that still need to be explored.
             std::deque<CompressedState> statesToExplore;
             
-            // An optional mapping from row groups to the indices of the states that they reflect. This needs to be built
-            // in case the exploration order is not BFS.
-//            boost::optional<std::vector<StateType, StateType>> rowGroupToIndexMapping;
+            // An optional mapping from state indices to the row groups in which they actually reside. This needs to be
+            // built in case the exploration order is not BFS.
+            boost::optional<std::vector<uint_fast64_t>> stateRemapping;
 
         };
         
     } // namespace adapters
 } // namespace storm
 
-#endif	/* STORM_ADAPTERS_EXPLICITPRISMMODELBUILDER_H */
+#endif	/* STORM_BUILDER_EXPLICITPRISMMODELBUILDER_H */

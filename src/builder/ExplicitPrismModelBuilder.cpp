@@ -24,6 +24,7 @@
 
 namespace storm {
     namespace builder {
+       
         /*!
          * A structure that is used to keep track of a reward model currently being built.
          */
@@ -82,17 +83,17 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : buildCommandLabels(false), buildAllRewardModels(true), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::generalSettings().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(true), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(storm::logic::Formula const& formula) : buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(storm::logic::Formula const& formula) : explorationOrder(storm::settings::generalSettings().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
             this->preserveFormula(formula);
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : explorationOrder(storm::settings::generalSettings().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -253,6 +254,7 @@ namespace storm {
         template <typename ValueType, typename RewardModelType, typename StateType>
         std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::translate() {
             STORM_LOG_DEBUG("Building representation of program:" << std::endl << program << std::endl);
+            STORM_LOG_DEBUG("Exploration order is: " << options.explorationOrder);
             
             // Select the appropriate reward models (after the constants have been substituted).
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
@@ -314,7 +316,16 @@ namespace storm {
             std::pair<uint32_t, std::size_t> actualIndexBucketPair = internalStateInformation.stateStorage.findOrAddAndGetBucket(state, newIndex);
             
             if (actualIndexBucketPair.first == newIndex) {
-                statesToExplore.push_back(state);
+                if (options.explorationOrder == ExplorationOrder::Dfs) {
+                    statesToExplore.push_front(state);
+
+                    // Reserve one slot for the new state in the remapping.
+                    stateRemapping.get().push_back(storm::utility::zero<StateType>());
+                } else if (options.explorationOrder == ExplorationOrder::Bfs) {
+                    statesToExplore.push_back(state);
+                } else {
+                    STORM_LOG_ASSERT(false, "Invalid exploration order.");
+                }
                 ++internalStateInformation.numberOfStates;
             }
             
@@ -341,10 +352,18 @@ namespace storm {
             // Create a callback for the next-state generator to enable it to request the index of states.
             std::function<StateType (CompressedState const&)> stateToIdCallback = std::bind(&ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::getOrAddStateIndex, this, std::placeholders::_1);
             
+            // If the exploration order is something different from breadth-first, we need to keep track of the remapping
+            // from state ids to row groups. For this, we actually store the reversed mapping of row groups to state-ids
+            // and later reverse it.
+            if (options.explorationOrder != ExplorationOrder::Bfs) {
+                stateRemapping = std::vector<uint_fast64_t>();
+            }
+            
             // Let the generator create all initial states.
             this->internalStateInformation.initialStateIndices = generator.getInitialStates(stateToIdCallback);
             
             // Now explore the current state until there is no more reachable state.
+            uint_fast64_t currentRowGroup = 0;
             uint_fast64_t currentRow = 0;
 
             // Perform a search through the model.
@@ -353,6 +372,12 @@ namespace storm {
                 CompressedState currentState = statesToExplore.front();
                 StateType currentIndex = internalStateInformation.stateStorage.getValue(currentState);
                 statesToExplore.pop_front();
+                
+                // If the exploration order differs from breadth-first, we remember that this row group was actually
+                // filled with the transitions of a different state.
+                if (options.explorationOrder != ExplorationOrder::Bfs) {
+                    stateRemapping.get()[currentIndex] = currentRowGroup;
+                }
                 
                 STORM_LOG_TRACE("Exploring state with id " << currentIndex << ".");
                 
@@ -384,6 +409,7 @@ namespace storm {
                         }
                         
                         ++currentRow;
+                        ++currentRowGroup;
                     } else {
                         std::cout << unpackStateIntoValuation(currentState).toString(true) << std::endl;
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
@@ -430,9 +456,40 @@ namespace storm {
                         }
                         ++currentRow;
                     }
+                    ++currentRowGroup;
                 }
             }
 
+            // If the exploration order was not breadth-first, we need to fix the entries in the matrix according to
+            // (reversed) mapping of row groups to indices.
+            if (options.explorationOrder != ExplorationOrder::Bfs) {
+                STORM_LOG_ASSERT(stateRemapping, "Unable to fix columns without mapping.");
+                std::vector<uint_fast64_t> const& remapping = stateRemapping.get();
+                
+                // We need to fix the following entities:
+                // (a) the transition matrix
+                // (b) the initial states
+                // (c) the hash map storing the mapping states -> ids
+                
+                // Fix (a).
+                transitionMatrixBuilder.replaceColumns(remapping, 0);
+
+                // Fix (b).
+                std::vector<StateType> newInitialStateIndices(this->internalStateInformation.initialStateIndices.size());
+                std::transform(this->internalStateInformation.initialStateIndices.begin(), this->internalStateInformation.initialStateIndices.end(), newInitialStateIndices.begin(), [&remapping] (StateType const& state) { return remapping[state]; } );
+                std::sort(newInitialStateIndices.begin(), newInitialStateIndices.end());
+                this->internalStateInformation.initialStateIndices = std::move(newInitialStateIndices);
+                
+                // Fix (c).
+                std::unordered_map<StateType, StateType> valueRemapping;
+                for (StateType index = 0; index < remapping.size(); ++index) {
+                    if (remapping[index] != index) {
+                        valueRemapping.emplace(index, static_cast<StateType>(remapping[index]));
+                    }
+                }
+                this->internalStateInformation.stateStorage.remap(valueRemapping);
+            }
+            
             return choiceLabels;
         }
         

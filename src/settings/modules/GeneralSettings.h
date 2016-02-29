@@ -4,6 +4,8 @@
 #include "storm-config.h"
 #include "src/settings/modules/ModuleSettings.h"
 
+#include "src/builder/ExplorationOrder.h"
+
 namespace storm {
     namespace solver {
         enum class EquationSolverType;
@@ -25,7 +27,6 @@ namespace storm {
             class GeneralSettings : public ModuleSettings {
             public:
                 // An enumeration of all engines.
-
                 enum class Engine {
                     Sparse, Hybrid, Dd, AbstractionRefinement
                 };
@@ -138,6 +139,20 @@ namespace storm {
                  * @return The name of the file that contains the symbolic model specification.
                  */
                 std::string getSymbolicModelFilename() const;
+                
+                /*!
+                 * Retrieves whether the model exploration order was set.
+                 *
+                 * @return True if the model exploration option was set.
+                 */
+                bool isExplorationOrderSet() const;
+                
+                /*!
+                 * Retrieves the exploration order if it was set.
+                 *
+                 * @return The chosen exploration order.
+                 */
+                storm::builder::ExplorationOrder getExplorationOrder() const;
 
                 /*!
                  * Retrieves whether the property option was set.
@@ -389,6 +404,8 @@ namespace storm {
                 static const std::string explicitOptionShortName;
                 static const std::string symbolicOptionName;
                 static const std::string symbolicOptionShortName;
+                static const std::string explorationOrderOptionName;
+                static const std::string explorationOrderOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
                 static const std::string transitionRewardsOptionName;
