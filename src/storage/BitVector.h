@@ -508,7 +508,7 @@ namespace storm {
              * @param length The number of bits to get.
              * @return A new bit vector holding the selected bits.
              */
-            BitVector getAsBitVector(uint_fast64_t start, uint_fast64_t length);
+            BitVector getAsBitVector(uint_fast64_t start, uint_fast64_t length) const;
             
             /*!
              * Sets the exact bit pattern of the given bit vector starting at the given bit index. Note: the given bit
@@ -524,7 +524,7 @@ namespace storm {
              *
              * @param out Stream to print to.
              */
-            void printBits(std::ostream& out);
+            void printBits(std::ostream& out) const;
             
             /*!
              * Retrieves the number of buckets of the underlying storage.

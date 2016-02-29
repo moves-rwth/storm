@@ -670,16 +670,60 @@ namespace storm {
             return endIndex;
         }
         
-        BitVector BitVector::getAsBitVector(uint_fast64_t start, uint_fast64_t length) {
-            BitVector result(length);
+        storm::storage::BitVector BitVector::getAsBitVector(uint_fast64_t start, uint_fast64_t length) const {
+            assert(start + length <= bitCount);
+            storm::storage::BitVector result(length, false);
             
-            uint_fast64_t index = 0;
-            for ( ; index + 63 <= length; index += 63) {
-                result.setFromInt(index, 63, getAsInt(start + index, 63));
+            uint_fast64_t offset = start % 64;
+            uint_fast64_t bucketIndex = start / 64;
+            uint_fast64_t insertBucket = 0;
+            uint_fast64_t getValue;
+            uint_fast64_t writeValue = 0;
+            uint_fast64_t noBits = 0;
+            if (offset == 0) {
+                // Copy complete buckets
+                for ( ; noBits + 64 <= length; ++bucketIndex, ++insertBucket, noBits += 64) {
+                    result.bucketVector[insertBucket] = bucketVector[bucketIndex];
+                }
+            } else {
+                //Get first bits up until next bucket
+                getValue = bucketVector[bucketIndex];
+                writeValue = (getValue << offset);
+                noBits += (64-offset);
+                ++bucketIndex;
+                
+                //Get complete buckets
+                for ( ; noBits + 64 <= length; ++bucketIndex, ++insertBucket, noBits += 64) {
+                    getValue = bucketVector[bucketIndex];
+                    // Get bits till write bucket is full
+                    writeValue |= (getValue >> (64-offset));
+                    result.bucketVector[insertBucket] = writeValue;
+                    // Get bits up until next bucket
+                    writeValue = (getValue << offset);
+                }
             }
-            // Insert remaining bits
-            result.setFromInt(index, length-index, getAsInt(start+index, length-index));
             
+            // Write last bits
+            uint_fast64_t remainingBits = length - noBits;
+            assert(bucketIndex < bucketCount());
+            // Get remaining bits
+            getValue = (bucketVector[bucketIndex] >> (64-remainingBits)) << (64-remainingBits);
+            assert(remainingBits < 64);
+            if (remainingBits <= offset || offset == 0) {
+                // Write completely
+                assert(insertBucket == result.bucketCount()-1);
+                writeValue = getValue;
+                result.bucketVector[insertBucket] = writeValue;
+            } else {
+                // Remaining bits do not fit in value -> need new value
+                assert(insertBucket == result.bucketCount() - 2);
+                writeValue |= (getValue >> (64-offset));
+                result.bucketVector[insertBucket] = writeValue;
+                // Write last bits
+                writeValue = (getValue << (remainingBits-offset));
+                result.bucketVector[++insertBucket] = writeValue;
+            }
+
 #ifdef ASSERT_BITVECTOR
             // Check correctness of getter
             for (uint_fast64_t i = 0; i < length; ++i) {
@@ -690,13 +734,62 @@ namespace storm {
         }
         
         void BitVector::setFromBitVector(uint_fast64_t start, BitVector const& other) {
-            uint_fast64_t index = 0;
-            for ( ; index + 63 <= other.bitCount; index += 63) {
-                setFromInt(start+index, 63, other.getAsInt(index, 63));
-            }
-            // Insert remaining bits
-            setFromInt(start+index, other.bitCount-index, other.getAsInt(index, other.bitCount-index));
+            assert(start + other.bitCount <= bitCount);
             
+            uint_fast64_t offset = start % 64;
+            uint_fast64_t bucketIndex = start / 64;
+            uint_fast64_t getBucket = 0;
+            uint_fast64_t getValue;
+            uint_fast64_t writeValue = 0;
+            uint_fast64_t noBits = 0;
+            if (offset == 0) {
+                // Copy complete buckets
+                for ( ; noBits + 64 <= other.bitCount; ++bucketIndex, ++getBucket, noBits += 64) {
+                    bucketVector[bucketIndex] = other.bucketVector[getBucket];
+                }
+            } else {
+                //Get first bits up until next bucket
+                getValue = other.bucketVector[getBucket];
+                writeValue = (bucketVector[bucketIndex] >> (64-offset)) << (64-offset);
+                writeValue |= (getValue >> offset);
+                bucketVector[bucketIndex] = writeValue;
+                noBits += (64-offset);
+                ++bucketIndex;
+                
+                //Get complete buckets
+                for ( ; noBits + 64 <= other.bitCount; ++bucketIndex, noBits += 64) {
+                    // Get all remaining bits from other bucket
+                    writeValue = getValue << (64-offset);
+                    // Get bits from next bucket
+                    getValue = other.bucketVector[++getBucket];
+                    writeValue |= getValue >> offset;
+                    bucketVector[bucketIndex] = writeValue;
+                }
+            }
+            
+            // Write last bits
+            uint_fast64_t remainingBits = other.bitCount - noBits;
+            assert(bucketIndex < bucketCount());
+            assert(getBucket < other.bucketCount());
+            // Get remaining bits
+            getValue = other.bucketVector[getBucket] << (64-offset);
+            assert(remainingBits < 64);
+            if (remainingBits <= offset || offset == 0) {
+                // Write completely
+                assert(getBucket == other.bucketCount()-1);
+                getValue = (getValue >> (64-offset-remainingBits)) << (64-offset-remainingBits);
+                writeValue = (bucketVector[bucketIndex] << (offset+remainingBits)) >> (offset+remainingBits);
+                writeValue |= getValue;
+                bucketVector[bucketIndex] = writeValue;
+            } else {
+                // Remaining bits do not come from one bucket -> consider two buckets
+                assert(getBucket == other.bucketCount() - 2);
+                getValue |= other.bucketVector[++getBucket] >> offset;
+                writeValue = (bucketVector[bucketIndex] << (offset+remainingBits)) >> (offset+remainingBits);
+                writeValue |= getValue;
+                bucketVector[bucketIndex] = writeValue;
+            }
+     
 #ifdef ASSERT_BITVECTOR
             // Check correctness of setter
             for (uint_fast64_t i = 0; i < other.bitCount; ++i) {
@@ -707,6 +800,7 @@ namespace storm {
         
         bool BitVector::compareAndSwap(uint_fast64_t start1, uint_fast64_t start2, uint_fast64_t length) {
             if (length < 64) {
+                // Just use one number
                 uint_fast64_t elem1 = getAsInt(start1, length);
                 uint_fast64_t elem2 = getAsInt(start2, length);
                 if (elem1 < elem2) {
@@ -717,7 +811,7 @@ namespace storm {
                 }
                 return false;
             } else {
-                //TODO improve performance
+                // Use bit vectors
                 BitVector elem1 = getAsBitVector(start1, length);
                 BitVector elem2 = getAsBitVector(start2, length);
                 
@@ -787,21 +881,21 @@ namespace storm {
             return out;
         }
         
-        void BitVector::printBits(std::ostream& out) {
+        void BitVector::printBits(std::ostream& out) const {
             out << "bit vector(" << getNumberOfSetBits() << "/" << bitCount << ") ";
             uint_fast64_t index = 0;
-            for ( ; index * 64 <= bitCount; ++index) {
+            for ( ; index * 64 + 64 <= bitCount; ++index) {
                 std::bitset<64> tmp(bucketVector[index]);
                 out << tmp << "|";
             }
             
-            --index;
             // Print last bits
             if (index * 64 < bitCount) {
                 assert(index == bucketVector.size() - 1);
                 std::bitset<64> tmp(bucketVector[index]);
                 for (size_t i = 0; i + index * 64 < bitCount; ++i) {
-                    out << tmp[i];
+                    // Bits are counted from rightmost in bitset
+                    out << tmp[63-i];
                 }
             }
             out << std::endl;
