@@ -231,8 +231,8 @@ namespace storm {
             }
             
             // Now that the program is fixed, we we need to substitute all constants with their concrete value.
-            this->program = program.substituteConstants();
-            
+            this->program = this->program.substituteConstants();
+
             // Create the variable information for the transformed program.
             this->variableInformation = VariableInformation(this->program);
             
@@ -481,13 +481,7 @@ namespace storm {
                 this->internalStateInformation.initialStateIndices = std::move(newInitialStateIndices);
                 
                 // Fix (c).
-                std::unordered_map<StateType, StateType> valueRemapping;
-                for (StateType index = 0; index < remapping.size(); ++index) {
-                    if (remapping[index] != index) {
-                        valueRemapping.emplace(index, static_cast<StateType>(remapping[index]));
-                    }
-                }
-                this->internalStateInformation.stateStorage.remap(valueRemapping);
+                this->internalStateInformation.stateStorage.remap([&remapping] (StateType const& state) { return remapping[state]; } );
             }
             
             return choiceLabels;

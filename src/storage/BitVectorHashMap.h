@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <functional>
-#include <unordered_map>
 
 #include "src/storage/BitVector.h"
 
@@ -129,7 +128,7 @@ namespace storm {
              *
              * @param remapping The remapping to apply.
              */
-            void remap(std::unordered_map<ValueType, ValueType> const& remapping);
+            void remap(std::function<ValueType(ValueType const&)> const& remapping);
             
         private:
             /*!

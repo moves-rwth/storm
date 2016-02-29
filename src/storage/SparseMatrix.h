@@ -288,11 +288,6 @@ namespace storm {
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
             index_type currentRowGroup;
-            
-            /*!
-             * Fixes the matrix by sorting the columns to gain increasing order again.
-             */
-            void fixColumns();
         };
         
         /*!

@@ -234,12 +234,9 @@ namespace storm {
         }
         
         template<class ValueType, class Hash1, class Hash2>
-        void BitVectorHashMap<ValueType, Hash1, Hash2>::remap(std::unordered_map<ValueType, ValueType> const& remapping) {
+        void BitVectorHashMap<ValueType, Hash1, Hash2>::remap(std::function<ValueType(ValueType const&)> const& remapping) {
             for (auto pos : occupied) {
-                auto it = remapping.find(values[pos]);
-                if (it != remapping.end()) {
-                    values[pos] = it->second;
-                }
+                values[pos] = remapping(values[pos]);
             }
         }
         
