@@ -46,7 +46,8 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
 
     
     model->printModelInformationToStream(std::cout);
-    
+    std::cout << "No. states (Explored): " << model->getNumberOfStates() << std::endl;
+    std::cout << "No. transitions (Explored): " << model->getNumberOfTransitions() << std::endl;
     std::cout << "Bisimulation..." << std::endl;
     
     if (model->getNumberOfStates() > 500 && model->isOfType(storm::models::ModelType::Ctmc)) {
@@ -54,6 +55,8 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     }
     
     model->printModelInformationToStream(std::cout);
+    std::cout << "No. states (Bisimulation): " << model->getNumberOfStates() << std::endl;
+    std::cout << "No. transitions (Bisimulation): " << model->getNumberOfTransitions() << std::endl;
     
     // Model checking
     std::cout << "Model checking..." << std::endl;
