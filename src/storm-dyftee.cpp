@@ -15,7 +15,7 @@
  * @param property PCTC formula capturing the property to check.
  */
 template <typename ValueType>
-void analyzeDFT(std::string filename, std::string property, bool symred = false) {
+void analyzeDFT(std::string filename, std::string property, bool symred = false, bool bisimulation = true) {
     storm::settings::SettingsManager& manager = storm::settings::mutableManager();
     manager.setFromString("");
 
@@ -49,7 +49,7 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     std::cout << "No. states (Explored): " << model->getNumberOfStates() << std::endl;
     std::cout << "No. transitions (Explored): " << model->getNumberOfTransitions() << std::endl;
     
-    if (model->isOfType(storm::models::ModelType::Ctmc)) {
+    if (bisimulation && model->isOfType(storm::models::ModelType::Ctmc)) {
         std::cout << "Bisimulation..." << std::endl;
         model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
         model->printModelInformationToStream(std::cout);
@@ -149,8 +149,8 @@ int main(int argc, char** argv) {
     std::cout << "Running " << (parametric ? "parametric " : "") << "DFT analysis on file " << filename << " with property " << pctlFormula << std::endl;
 
     if (parametric) {
-        analyzeDFT<storm::RationalFunction>(filename, pctlFormula, symred);
+        analyzeDFT<storm::RationalFunction>(filename, pctlFormula, symred, false);
     } else {
-        analyzeDFT<double>(filename, pctlFormula, symred);
+        analyzeDFT<double>(filename, pctlFormula, symred, true);
     }
 }
