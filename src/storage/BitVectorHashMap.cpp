@@ -1,6 +1,7 @@
 #include "src/storage/BitVectorHashMap.h"
 
 #include <iostream>
+#include <algorithm>
 
 #include "src/utility/macros.h"
 

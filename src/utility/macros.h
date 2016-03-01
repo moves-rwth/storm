@@ -2,6 +2,7 @@
 #define STORM_UTILITY_MACROS_H_
 
 #include <cassert>
+#include <cstring>
 #include "storm-config.h"
 
 #ifndef STORM_LOGGING_FRAMEWORK
