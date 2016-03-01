@@ -47,13 +47,11 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     
     model->printModelInformationToStream(std::cout);
     
-    std::cout << "Bisimulation..." << std::endl;
-    
     if (model->getNumberOfStates() > 500 && model->isOfType(storm::models::ModelType::Ctmc)) {
-            model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
+        std::cout << "Bisimulation..." << std::endl;
+        model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
+        model->printModelInformationToStream(std::cout);
     }
-    
-    model->printModelInformationToStream(std::cout);
     
     // Model checking
     std::cout << "Model checking..." << std::endl;
@@ -81,20 +79,25 @@ int main(int argc, char** argv) {
     // Parse cli arguments
     bool parametric = false;
     bool symred = false;
+    bool minimal = true;
     std::string filename = argv[1];
+    std::string operatorType = "";
+    std::string targetFormula = "";
     std::string pctlFormula = "";
     for (int i = 2; i < argc; ++i) {
         std::string option = argv[i];
         if (option == "--parametric") {
             parametric = true;
         } else if (option == "--expectedtime") {
-            assert(pctlFormula.empty());
-            pctlFormula = "ET=?[F \"failed\"]";
+            assert(targetFormula.empty());
+            operatorType = "ET";
+            targetFormula = "F \"failed\"";
         } else if (option == "--probability") {
-            assert(pctlFormula.empty());
-            pctlFormula = "P=? [F \"failed\"]";
+            assert(targetFormula.empty());
+            operatorType = "P";;
+            targetFormula = "F \"failed\"";
         } else if (option == "--timebound") {
-            assert(pctlFormula.empty());
+            assert(targetFormula.empty());
             ++i;
             assert(i < argc);
             double timeBound;
@@ -105,8 +108,9 @@ int main(int argc, char** argv) {
                 return 2;
             }
             std::stringstream stream;
-            stream << "P=? [F<=" << timeBound << " \"failed\"]";
-            pctlFormula = stream.str();
+            stream << "F<=" << timeBound << " \"failed\"";
+            operatorType = "P";
+            targetFormula = stream.str();
         } else if (option == "--trace") {
             STORM_GLOBAL_LOGLEVEL_TRACE();
         } else if (option == "--debug") {
@@ -118,11 +122,22 @@ int main(int argc, char** argv) {
             pctlFormula = argv[i];
         } else if (option == "--symred") {
             symred = true;
+        } else if (option == "--min") {
+            minimal = true;
+        } else if (option == "--max") {
+            minimal = false;
         } else {
             std::cout << "Option '" << option << "' not recognized." << std::endl;
             return 1;
         }
     }
+    
+    // Construct pctlFormula
+    if (!targetFormula.empty()) {
+        assert(pctlFormula.empty());
+        pctlFormula = operatorType + (minimal ? "min" : "max") + "=?[" + targetFormula + "]";
+    }
+    
     assert(!pctlFormula.empty());
 
     storm::utility::setUp();
