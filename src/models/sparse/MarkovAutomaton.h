@@ -157,6 +157,13 @@ namespace storm {
                  */
                 void turnRatesToProbabilities();
                 
+                /*!
+                 * Check if at least one hybrid state exists.
+                 *
+                 * @return True, if at least one hybrid state exists, false if none exists.
+                 */
+                bool hasHybridState() const;
+                
                 // A bit vector representing the set of Markovian states.
                 storm::storage::BitVector markovianStates;
                 

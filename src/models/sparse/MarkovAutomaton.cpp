@@ -19,8 +19,9 @@ namespace storm {
                                                         std::vector<ValueType> const& exitRates,
                                                         std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                                         boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(false) {
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates) {
                 this->turnRatesToProbabilities();
+                closed = !hasHybridState();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -30,8 +31,9 @@ namespace storm {
                                                         std::vector<ValueType> const& exitRates,
                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)) {
                 this->turnRatesToProbabilities();
+                closed = !hasHybridState();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -42,9 +44,10 @@ namespace storm {
                                                                          bool probabilities,
                                                                          std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                                          boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(false) {
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)) {
                 assert(probabilities);
                 assert(this->getTransitionMatrix().isProbabilistic());
+                closed = !hasHybridState();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -65,6 +68,16 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isProbabilisticState(storm::storage::sparse::state_type state) const {
                 return !this->markovianStates.get(state);
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::hasHybridState() const {
+                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    if (this->isHybridState(state)) {
+                        return true;
+                    }
+                }
+                return false;
             }
             
             template <typename ValueType, typename RewardModelType>
