@@ -34,6 +34,8 @@ namespace storm {
 
         // Forward declarations
         template<typename T> class DFTColouring;
+        
+        template<typename T> class DFTBuilder;
 
         
         
@@ -72,6 +74,10 @@ namespace storm {
             size_t generateStateInfo(DFTStateGenerationInfo& generationInfo, size_t id, storm::storage::BitVector& visited, size_t stateIndex) const;
 
             size_t performStateGenerationInfoDFS(DFTStateGenerationInfo& generationInfo, std::queue<size_t>& visitQueue, storm::storage::BitVector& visited, size_t stateIndex) const;
+        
+            DFT<ValueType> optimize() const;
+            
+            void copyElements(std::vector<size_t> elements, DFTBuilder<ValueType> builder) const;
             
             size_t stateVectorSize() const {
                 return mStateVectorSize;
@@ -238,6 +244,7 @@ namespace storm {
             std::vector<size_t> immediateFailureCauses(size_t index) const;
             
             std::vector<size_t> findModularisationRewrite() const;
+        
         private:
             std::pair<std::vector<size_t>, std::vector<size_t>> getSortedParentAndOutDepIds(size_t index) const;
             

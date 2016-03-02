@@ -29,13 +29,8 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
     assert(formulas.size() == 1);
     std::cout << "Parsed formula." << std::endl;
-    auto modIdea = dft.findModularisationRewrite();
-    std::cout << "Modularisation idea: " << std::endl;
     
-    for( auto const& i  : modIdea ) {
-        std::cout << i << ", ";
-    }
-    std::cout << std::endl;
+    dft = dft.optimize();
     
     std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
     storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);

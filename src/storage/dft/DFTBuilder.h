@@ -26,7 +26,8 @@ namespace storm {
 
         private:
             std::size_t mNextId = 0;
-            std::string topLevelIdentifier;
+            std::size_t mUniqueOffset = 0;
+            std::string mTopLevelIdentifier;
             std::unordered_map<std::string, DFTElementPointer> mElements;
             std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;
             std::unordered_map<DFTRestrictionPointer, std::vector<std::string>> mRestrictionChildNames;
@@ -140,18 +141,36 @@ namespace storm {
             }
             
             bool setTopLevel(std::string const& tle) {
-                topLevelIdentifier = tle;
+                mTopLevelIdentifier = tle;
                 return mElements.count(tle) > 0;
             }
             
+            std::string getUniqueName(std::string name);
+            
             DFT<ValueType> build();
+            
+            /**
+             * Copy element and insert it again in the builder.
+             *
+             * @param element Element to copy.
+             */
+            void copyElement(DFTElementPointer element);
 
-         
+            /**
+             * Copy gate with given children and insert it again in the builder. The current children of the element
+             * are discarded.
+             *
+             * @param gate Gate to copy.
+             * @param children New children of copied element.
+             */
+            void copyGate(DFTGatePointer gate, std::vector<std::string> const& children);
+
         private:
             
             unsigned computeRank(DFTElementPointer const& elem);
             
             bool addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementType tp);
+
             bool addRestriction(std::string const& name, std::vector<std::string> const& children, DFTElementType tp);
 
             enum class topoSortColour {WHITE, BLACK, GREY}; 

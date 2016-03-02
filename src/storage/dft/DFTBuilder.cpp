@@ -70,7 +70,8 @@ namespace storm {
             for(DFTElementPointer e : elems) {
                 e->setId(id++);
             }
-            return DFT<ValueType>(elems, mElements[topLevelIdentifier]);
+            assert(!mTopLevelIdentifier.empty());
+            return DFT<ValueType>(elems, mElements[mTopLevelIdentifier]);
         }
 
         template<typename ValueType>
@@ -180,7 +181,6 @@ namespace storm {
             }
         }
 
-        // TODO Matthias: use typedefs
         template<typename ValueType>
         std::vector<std::shared_ptr<DFTElement<ValueType>>> DFTBuilder<ValueType>::topoSort() {
             std::map<DFTElementPointer, topoSortColour, OrderElementsById<ValueType>> visited;
@@ -195,6 +195,87 @@ namespace storm {
             //std::reverse(L.begin(), L.end()); 
             return L;
         }
+        
+        template<typename ValueType>
+        std::string DFTBuilder<ValueType>::getUniqueName(std::string name) {
+            return name + "_" + std::to_string(++mUniqueOffset);
+        }
+        
+        template<typename ValueType>
+        void DFTBuilder<ValueType>::copyElement(DFTElementPointer element) {
+            std::vector<std::string> children;
+            switch (element->type()) {
+                case DFTElementType::AND:
+                case DFTElementType::OR:
+                case DFTElementType::PAND:
+                case DFTElementType::POR:
+                case DFTElementType::SPARE:
+                case DFTElementType::VOT:
+                {
+                    for (DFTElementPointer const& elem : std::static_pointer_cast<DFTGate<ValueType>>(element)->children()) {
+                        children.push_back(elem->name());
+                    }
+                    copyGate(std::static_pointer_cast<DFTGate<ValueType>>(element), children);
+                    break;
+                }
+                case DFTElementType::BE:
+                {
+                    std::shared_ptr<DFTBE<ValueType>> be = std::static_pointer_cast<DFTBE<ValueType>>(element);
+                    ValueType dormancyFactor = storm::utility::zero<ValueType>();
+                    if (!storm::utility::isZero(be->passiveFailureRate())) {
+                        dormancyFactor = be->activeFailureRate() / be->passiveFailureRate();
+                    }
+                    addBasicElement(be->name(), be->activeFailureRate(), dormancyFactor);
+                    break;
+                }
+                case DFTElementType::CONSTF:
+                case DFTElementType::CONSTS:
+                    // TODO
+                    assert(false);
+                    break;
+                case DFTElementType::PDEP:
+                {
+                    DFTDependencyPointer dependency = std::static_pointer_cast<DFTDependency<ValueType>>(element);
+                    children.push_back(dependency->triggerEvent()->name());
+                    children.push_back(dependency->dependentEvent()->name());
+                    addDepElement(element->name(), children, dependency->probability());
+                    break;
+                }
+                case DFTElementType::SEQ:
+                case DFTElementType::MUTEX:
+                {
+                    for (DFTElementPointer const& elem : std::static_pointer_cast<DFTRestriction<ValueType>>(element)->children()) {
+                        children.push_back(elem->name());
+                    }
+                    addRestriction(element->name(), children, element->type());
+                    break;
+                }
+                default:
+                    assert(false);
+                    break;
+            }
+        }
+
+        template<typename ValueType>
+        void DFTBuilder<ValueType>::copyGate(DFTGatePointer gate, std::vector<std::string> const& children) {
+            switch (gate->type()) {
+                case DFTElementType::AND:
+                case DFTElementType::OR:
+                case DFTElementType::PAND:
+                case DFTElementType::POR:
+                case DFTElementType::SPARE:
+                    addStandardGate(gate->name(), children, gate->type());
+                    break;
+                case DFTElementType::VOT:
+                    addVotElement(gate->name(), std::static_pointer_cast<DFTVot<ValueType>>(gate)->threshold(), children);
+                    break;
+                default:
+                    assert(false);
+                    break;
+            }
+        }
+
+
 
         // Explicitly instantiate the class.
         template class DFTBuilder<double>;
