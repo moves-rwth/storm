@@ -243,8 +243,8 @@ namespace storm {
 
             std::vector<size_t> immediateFailureCauses(size_t index) const;
             
-            std::vector<std::vector<size_t>> findModulesRewrite() const;
-            
+            std::vector<size_t> findModularisationRewrite() const;
+        
         private:
             std::pair<std::vector<size_t>, std::vector<size_t>> getSortedParentAndOutDepIds(size_t index) const;
             
