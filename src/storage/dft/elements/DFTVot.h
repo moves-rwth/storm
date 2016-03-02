@@ -51,6 +51,10 @@ namespace storm {
                     }
                 }
             }
+            
+            unsigned threshold() const {
+                return mThreshold;
+            }
 
             virtual DFTElementType type() const override {
                 return DFTElementType::VOT;

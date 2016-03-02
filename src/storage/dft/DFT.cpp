@@ -2,6 +2,7 @@
 
 #include <map>
 #include "DFT.h"
+#include "DFTBuilder.h"
 #include "src/exceptions/NotSupportedException.h"
 
 #include "DFTIsomorphism.h"
@@ -228,7 +229,87 @@ namespace storm {
             }
             return stateIndex;
         }
-
+        
+        template<typename ValueType>
+        DFT<ValueType> DFT<ValueType>::optimize() const {
+            std::vector<std::vector<size_t>> rewriteIds = findModulesRewrite();
+            if (rewriteIds.empty()) {
+                // No rewrite needed
+                return *this;
+            }
+            
+            DFTBuilder<ValueType> builder;
+            
+            // Accumulate elements which must be rewritten
+            std::set<size_t> rewriteSet;
+            for (std::vector<size_t> rewrites : rewriteIds) {
+                rewriteSet.insert(rewrites.front());
+            }
+            // Copy all other elements which do not change
+            for (auto elem : mElements) {
+                if (rewriteSet.count(elem->id()) == 0) {
+                    builder.copyElement(elem);
+                }
+            }
+            
+            // Add rewritten elements
+            for (std::vector<size_t> rewrites : rewriteIds) {
+                assert(rewrites.size() > 1);
+                assert(mElements[rewrites[1]]->hasParents());
+                assert(mElements[rewrites[1]]->parents().front()->isGate());
+                DFTGatePointer originalParent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[rewrites[1]]->parents().front());
+                std::string newParentName = builder.getUniqueName(originalParent->name());
+                
+                // Accumulate children names
+                std::vector<std::string> childrenNames;
+                for (size_t i = 1; i < rewrites.size(); ++i) {
+                    assert(mElements[rewrites[i]]->parents().front()->id() == originalParent->id()); // Children have the same father
+                    childrenNames.push_back(mElements[rewrites[i]]->name());
+                }
+                
+                // Add element inbetween parent and children
+                switch (originalParent->type()) {
+                    case DFTElementType::AND:
+                        builder.addAndElement(newParentName, childrenNames);
+                        break;
+                    case DFTElementType::OR:
+                        builder.addOrElement(newParentName, childrenNames);
+                        break;
+                    case DFTElementType::BE:
+                    case DFTElementType::CONSTF:
+                    case DFTElementType::CONSTS:
+                    case DFTElementType::VOT:
+                    case DFTElementType::PAND:
+                    case DFTElementType::SPARE:
+                    case DFTElementType::POR:
+                    case DFTElementType::PDEP:
+                    case DFTElementType::SEQ:
+                    case DFTElementType::MUTEX:
+                        // Other elements are not supported
+                        assert(false);
+                        break;
+                    default:
+                        assert(false);
+                }
+                
+                // Add parent with the new child newParent and all its remaining children
+                childrenNames.clear();
+                childrenNames.push_back(newParentName);
+                for (auto const& child : originalParent->children()) {
+                    if (std::find(rewrites.begin()+1, rewrites.end(), child->id()) == rewrites.end()) {
+                        // Child was not rewritten and must be kept
+                        childrenNames.push_back(child->name());
+                    }
+                }
+                builder.copyGate(originalParent, childrenNames);
+            }
+            
+            builder.setTopLevel(mElements[mTopLevelIndex]->name());
+            // TODO use reference?
+            DFT<ValueType> newDft = builder.build();
+            return newDft.optimize();
+        }
+        
         template<typename ValueType>
         std::string DFT<ValueType>::getElementsString() const {
             std::stringstream stream;
@@ -447,6 +528,13 @@ namespace storm {
             }
             std::sort(res.second.begin(), res.second.end());
             return res;
+        }
+        
+        template<typename ValueType>
+        std::vector<std::vector<size_t>> DFT<ValueType>::findModulesRewrite() const {
+            std::vector<std::vector<size_t>> modulesRewrite;
+            // TODO write
+            return modulesRewrite;
         }
         
 
