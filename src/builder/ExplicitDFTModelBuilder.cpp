@@ -57,9 +57,13 @@ namespace storm {
             modelComponents.markovianStates = storm::storage::BitVector(stateSize, tmpMarkovianStates);
             // Build transition matrix
             modelComponents.transitionMatrix = transitionMatrixBuilder.build(stateSize, stateSize);
-            STORM_LOG_DEBUG("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
-            STORM_LOG_DEBUG("Exit rates: " << modelComponents.exitRates);
-            STORM_LOG_DEBUG("Markovian states: " << modelComponents.markovianStates);
+            if (stateSize <= 15) {
+                STORM_LOG_TRACE("Transition matrix: " << std::endl << modelComponents.transitionMatrix);
+            } else {
+                STORM_LOG_TRACE("Transition matrix: too big to print");
+            }
+            STORM_LOG_TRACE("Exit rates: " << modelComponents.exitRates);
+            STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
             
             // Build state labeling
             modelComponents.stateLabeling = storm::models::sparse::StateLabeling(mStates.size() + (mergeFailedStates ? 1 : 0));
