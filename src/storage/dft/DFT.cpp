@@ -461,7 +461,7 @@ namespace storm {
                                rewrite.push_back(isdElemId);
                            }
                        }
-                       if(rewrite.size() > 2) {
+                       if(rewrite.size() > 2 && rewrite.size() < e->children().size() - 1) {
                            return rewrite;
                        }
                        
