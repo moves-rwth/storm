@@ -663,8 +663,8 @@ namespace storm {
                 // Initialize rewards.
                 std::vector<ValueType> totalRewardVector;
                 for (size_t i = 0; i < exitRateVector.size(); ++i) {
-                    if (targetStates[i]) {
-                        // Set reward for target states to 0.
+                    if (targetStates[i] || storm::utility::isZero(exitRateVector[i])) {
+                        // Set reward for target states or states without outgoing transitions to 0.
                         totalRewardVector.push_back(storm::utility::zero<ValueType>());
                     } else {
                         // Reward is (1 / exitRate).
@@ -685,8 +685,8 @@ namespace storm {
                 // Initialize rewards.
                 std::vector<ValueType> totalRewardVector;
                 for (size_t i = 0; i < exitRateVector.size(); ++i) {
-                    if (targetStates[i]) {
-                        // Set reward for target states to 0.
+                    if (targetStates[i] || storm::utility::isZero(exitRateVector[i])) {
+                        // Set reward for target states or states without outgoing transitions to 0.
                         totalRewardVector.push_back(storm::utility::zero<ValueType>());
                     } else {
                         // Reward is (1 / exitRate).
