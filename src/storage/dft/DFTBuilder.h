@@ -26,7 +26,7 @@ namespace storm {
 
         private:
             std::size_t mNextId = 0;
-            std::size_t mUniqueOffset = 0;
+            static std::size_t mUniqueOffset;
             std::string mTopLevelIdentifier;
             std::unordered_map<std::string, DFTElementPointer> mElements;
             std::unordered_map<DFTElementPointer, std::vector<std::string>> mChildNames;

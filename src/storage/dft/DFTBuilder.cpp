@@ -12,6 +12,9 @@
 
 namespace storm {
     namespace storage {
+        
+        template<typename ValueType>
+        std::size_t DFTBuilder<ValueType>::mUniqueOffset = 0;
 
         template<typename ValueType>
         DFT<ValueType> DFTBuilder<ValueType>::build() {
