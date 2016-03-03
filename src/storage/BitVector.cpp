@@ -406,6 +406,7 @@ namespace storm {
         }
 
         uint_fast64_t BitVector::getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const {
+            STORM_LOG_ASSERT(numberOfBits <= 64, "Number of bits must be <= 64.");
             uint64_t bucket = bitIndex >> 6;
             uint64_t bitIndexInBucket = bitIndex & mod64mask;
 
@@ -445,7 +446,8 @@ namespace storm {
         }
 
         void BitVector::setFromInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits, uint64_t value) {
-            STORM_LOG_ASSERT((value >> numberOfBits) == 0, "Integer value too large to fit in the given number of bits.");
+            STORM_LOG_ASSERT(numberOfBits <= 64, "Number of bits must be <= 64.");
+            STORM_LOG_ASSERT(numberOfBits == 64 || (value >> numberOfBits) == 0, "Integer value too large to fit in the given number of bits.");
 
             uint64_t bucket = bitIndex >> 6;
             uint64_t bitIndexInBucket = bitIndex & mod64mask;

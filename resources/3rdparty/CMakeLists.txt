@@ -71,6 +71,7 @@ ExternalProject_Get_Property(sylvan binary_dir)
 set(Sylvan_INCLUDE_DIR "${STORM_SYLVAN_ROOT}/src" PARENT_SCOPE)
 set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan.a" PARENT_SCOPE)
 
+add_dependencies(resources sylvan)
 
 ExternalProject_Add(
         googletest
