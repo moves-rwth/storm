@@ -716,10 +716,10 @@ namespace storm {
             std::string toString(std::vector<ValueType> vector) {
                 std::stringstream stream;
                 stream << "vector (" << vector.size() << ") [ ";
-                for (uint_fast64_t i = 0; i < vector.size() - 1; ++i) {
-                    stream << vector[i] << ", ";
-                }
                 if (!vector.empty()) {
+                    for (uint_fast64_t i = 0; i < vector.size() - 1; ++i) {
+                        stream << vector[i] << ", ";
+                    }
                     stream << vector.back();
                 }
                 stream << " ]";
