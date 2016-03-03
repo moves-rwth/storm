@@ -249,7 +249,7 @@ namespace storage {
         }
 
         void colourize(std::shared_ptr<const DFTGate<ValueType>> const& gate) {
-             std::cout <<  "Colour " << gate->id() << ": "  << gate->type() << " " << gate->nrChildren() << " " << gate->rank() << "." << std::endl;
+             STORM_LOG_TRACE("Colour " << gate->id() << ": "  << gate->type() << " " << gate->nrChildren() << " " << gate->rank() << ".");
              gateColour[gate->id()] = gateColourizer(gate->type(), gate->nrChildren(), gate->nrParents(), 0, gate->rank());
         }
         
@@ -336,7 +336,7 @@ namespace storage {
             initializePermutationsAndTreatTrivialGroups(bleft.gateCandidates, bright.gateCandidates, currentPermutations.gateCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.pdepCandidates, bright.pdepCandidates, currentPermutations.pdepCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.restrictionCandidates, bright.restrictionCandidates, currentPermutations.restrictionCandidates);
-            std::cout << bijection.size() << " vs. " << bleft.size() << " vs. " << bright.size() << std::endl;
+            STORM_LOG_TRACE(bijection.size() << " vs. " << bleft.size() << " vs. " << bright.size());
             assert(bijection.size() == bleft.size());
             
         }

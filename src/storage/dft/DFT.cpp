@@ -7,6 +7,7 @@
 
 #include "DFTIsomorphism.h"
 #include "utility/iota_n.h"
+#include "utility/vector.h"
 
 namespace storm {
     namespace storage {
@@ -233,12 +234,8 @@ namespace storm {
         template<typename ValueType>
         DFT<ValueType> DFT<ValueType>::optimize() const {
             std::vector<size_t> modIdea = findModularisationRewrite();
-            std::cout << "Modularisation idea: " << std::endl;
-    
-            for( auto const& i  : modIdea ) {
-                std::cout << i << ", ";
-            }
-
+            STORM_LOG_DEBUG("Modularisation idea: " << storm::utility::vector::toString(modIdea));
+            
             if (modIdea.empty()) {
                 // No rewrite needed
                 return *this;
@@ -316,6 +313,7 @@ namespace storm {
             builder.setTopLevel(mElements[mTopLevelIndex]->name());
             // TODO use reference?
             DFT<ValueType> newDft = builder.build();
+            STORM_LOG_TRACE(newDft.getElementsString());
             return newDft.optimize();
         }
         
@@ -487,20 +485,20 @@ namespace storm {
                             std::sort(sortedParent2Ids.begin(), sortedParent2Ids.end());
                             
                             if(influencedElem1Ids == getSortedParentAndOutDepIds(*it2)) {
-                                std::cout << "Considering ids " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
+                                STORM_LOG_TRACE("Considering ids " << *it1 << ", " << *it2 << " for isomorphism.");
                                 bool isSymmetry = false;
                                 std::vector<size_t> isubdft1 = getGate(*it1)->independentSubDft(false);
                                 std::vector<size_t> isubdft2 = getGate(*it2)->independentSubDft(false);
                                 if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
                                     continue;
                                 }
-                                std::cout << "Checking subdfts from " << *it1 << ", " << *it2 << " for isomorphism." << std::endl;
+                                STORM_LOG_TRACE("Checking subdfts from " << *it1 << ", " << *it2 << " for isomorphism.");
                                 auto LHS = colouring.colourSubdft(isubdft1);
                                 auto RHS = colouring.colourSubdft(isubdft2);
                                 auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
                                 isSymmetry = IsoCheck.findIsomorphism();
                                 if(isSymmetry) {
-                                    std::cout << "subdfts are symmetric" << std::endl;
+                                    STORM_LOG_TRACE("Subdfts are symmetric");
                                     foundEqClassFor.insert(*it2);
                                     if(symClass.empty()) {
                                         for(auto const& i : isubdft1) {
@@ -534,20 +532,13 @@ namespace storm {
                    // suitable parent gate! - Lets check the independent submodules of the children
                    auto const& children = std::static_pointer_cast<DFTGate<ValueType>>(e)->children();
                    for(auto const& child : children) {
-                       //std::cout << "check idea for: " << child->id() << std::endl;;
                        auto ISD = std::static_pointer_cast<DFTGate<ValueType>>(child)->independentSubDft(true);
                        // In the ISD, check for other children:
-                       //std::cout << "** subdft = ";
-                       for(auto const& isdelemid : ISD) {
-                           std::cout << isdelemid << " ";
-                       }
-                       std::cout << std::endl;
                        
                        std::vector<size_t> rewrite = {e->id(), child->id()};
                        for(size_t isdElemId : ISD) {
                            if(isdElemId == child->id()) continue;
                            if(std::find_if(children.begin(), children.end(), [&isdElemId](std::shared_ptr<DFTElement<ValueType>> const& e) { return e->id() == isdElemId; } ) != children.end()) {
-                               //std::cout << "** found child in subdft: " <<  isdElemId << std::endl;
                                rewrite.push_back(isdElemId);
                            }
                        }

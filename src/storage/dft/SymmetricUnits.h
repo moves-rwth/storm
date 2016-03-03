@@ -12,16 +12,14 @@ namespace storm {
         
         inline std::ostream& operator<<(std::ostream& os, DFTIndependentSymmetries const& s)  {
             for(auto const& cl : s.groups) {
-                std::cout << "SYM GROUP FOR " << cl.first << std::endl;
+                os << "Symmetry group for " << cl.first << std::endl;
                 for(auto const& eqClass : cl.second) {
                     for(auto const& i : eqClass) {
-                        std::cout << i << " ";
+                        os << i << " ";
                     }
-                    std::cout << std::endl;
+                    os << std::endl;
                 }
             }
-            
-            
             return os;
         }
     }

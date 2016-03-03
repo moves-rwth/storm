@@ -20,53 +20,65 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     manager.setFromString("");
 
     // Parsing DFT
-    std::cout << "Parsing DFT file..." << std::endl;
+    std::chrono::high_resolution_clock::time_point parsingStart = std::chrono::high_resolution_clock::now();
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    std::cout << "Built data structure" << std::endl;
-    std::cout << "Parse formula..." << std::endl;
     std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas = storm::parseFormulasForExplicit(property);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
     assert(formulas.size() == 1);
-    std::cout << "Parsed formula." << std::endl;
     
+    // Optimize DFT
     dft = dft.optimize();
-    
     std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
     storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
     if(symred) {
         auto colouring = dft.colourDFT();
         symmetries = dft.findSymmetries(colouring);
-        std::cout << "Symmetries: " << symmetries << std::endl;
+        std::cout << "Found " << symmetries.groups.size() << " symmetries." << std::endl;
+        STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
     }
-        
+    std::chrono::high_resolution_clock::time_point parsingEnd = std::chrono::high_resolution_clock::now();
+    
     // Building Markov Automaton
     std::cout << "Building Model..." << std::endl;
     storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
     typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
     std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel(labeloptions);
-    std::cout << "Built Model" << std::endl;
-
-    
-    model->printModelInformationToStream(std::cout);
+    //model->printModelInformationToStream(std::cout);
     std::cout << "No. states (Explored): " << model->getNumberOfStates() << std::endl;
     std::cout << "No. transitions (Explored): " << model->getNumberOfTransitions() << std::endl;
+    std::chrono::high_resolution_clock::time_point explorationEnd = std::chrono::high_resolution_clock::now();
     
+    // Bisimulation
     if (model->isOfType(storm::models::ModelType::Ctmc)) {
         std::cout << "Bisimulation..." << std::endl;
         model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
-        model->printModelInformationToStream(std::cout);
+        //model->printModelInformationToStream(std::cout);
     }
-    
     std::cout << "No. states (Bisimulation): " << model->getNumberOfStates() << std::endl;
     std::cout << "No. transitions (Bisimulation): " << model->getNumberOfTransitions() << std::endl;
+    std::chrono::high_resolution_clock::time_point bisimulationEnd = std::chrono::high_resolution_clock::now();
     
     // Model checking
     std::cout << "Model checking..." << std::endl;
     std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formulas[0]));
     assert(result);
-    std::cout << "Result: ";
     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+    
+    // Times
+    std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> parsingTime = parsingEnd - parsingStart;
+    std::chrono::duration<double> explorationTime = explorationEnd - parsingEnd;
+    std::chrono::duration<double> bisimulationTime = bisimulationEnd - explorationEnd;
+    std::chrono::duration<double> modelCheckingTime = modelCheckingEnd - bisimulationEnd;
+    std::chrono::duration<double> totalTime = modelCheckingEnd - parsingStart;
+    std::cout << "Times:" << std::endl;
+    std::cout << "Parsing:\t" << parsingTime.count() << std::endl;
+    std::cout << "Exploration:\t" << explorationTime.count() << std::endl;
+    std::cout << "Bisimulaton:\t" << bisimulationTime.count() << std::endl;
+    std::cout << "Modelchecking:\t" << modelCheckingTime.count() << std::endl;
+    std::cout << "Total:\t\t" << totalTime.count() << std::endl;
+    std::cout << "Result: ";
     std::cout << *result << std::endl;
 }
 

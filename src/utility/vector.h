@@ -705,6 +705,26 @@ namespace storm {
                 assert(result.size() == filter.getNumberOfSetBits());
                 return result;
             }
+            
+            /*!
+             * Output vector as string.
+             *
+             * @param vector Vector to output.
+             * @return String containing the representation of the vector.
+             */
+            template<typename ValueType>
+            std::string toString(std::vector<ValueType> vector) {
+                std::stringstream stream;
+                stream << "vector (" << vector.size() << ") [ ";
+                for (uint_fast64_t i = 0; i < vector.size() - 1; ++i) {
+                    stream << vector[i] << ", ";
+                }
+                if (!vector.empty()) {
+                    stream << vector.back();
+                }
+                stream << " ]";
+                return stream.str();
+            }
         } // namespace vector
     } // namespace utility
 } // namespace storm

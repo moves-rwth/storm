@@ -1233,6 +1233,8 @@ namespace storm {
         
         template class StatePriorityQueue<double>;
         template class SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<double>>;
+        template uint_fast64_t estimateComplexity(double const& value);
+            
             
 #ifdef STORM_HAVE_CARL
         template class StatePriorityQueue<storm::RationalFunction>;
