@@ -21,4 +21,4 @@ namespace storm {
     }
 }
 
-#endif
+#endif /* STORM_GENERATOR_NEXTSTATEGENERATOR_H_ */

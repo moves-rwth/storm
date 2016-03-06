@@ -12,6 +12,7 @@
 #include "src/settings/modules/GeneralSettings.h"
 
 #include "src/generator/PrismNextStateGenerator.h"
+#include "src/generator/PrismStateLabelingGenerator.h"
 
 #include "src/utility/prism.h"
 #include "src/utility/constants.h"
@@ -558,33 +559,8 @@ namespace storm {
         
         template <typename ValueType, typename RewardModelType, typename StateType>
         storm::models::sparse::StateLabeling ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::buildStateLabeling() {
-            std::vector<storm::prism::Label> const& labels = program.getLabels();
-            
-            storm::expressions::ExpressionEvaluator<ValueType> evaluator(program.getManager());
-            storm::models::sparse::StateLabeling result(internalStateInformation.numberOfStates);
-            
-            // Initialize labeling.
-            for (auto const& label : labels) {
-                result.addLabel(label.getName());
-            }
-            for (auto const& stateIndexPair : internalStateInformation.stateStorage) {
-                unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, evaluator);
-
-                for (auto const& label : labels) {
-                    // Add label to state, if the corresponding expression is true.
-                    if (evaluator.asBool(label.getStatePredicateExpression())) {
-                        result.addLabelToState(label.getName(), stateIndexPair.second);
-                    }
-                }
-            }
-            
-            // Also label the initial state with the special label "init".
-            result.addLabel("init");
-            for (auto index : internalStateInformation.initialStateIndices) {
-                result.addLabelToState("init", index);
-            }
-            
-            return result;
+            storm::generator::PrismStateLabelingGenerator<ValueType, StateType> generator(program, variableInformation);
+            return generator.generate(internalStateInformation.stateStorage, internalStateInformation.initialStateIndices);
         }
         
         // Explicitly instantiate the class.

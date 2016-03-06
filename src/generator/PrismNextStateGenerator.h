@@ -92,7 +92,7 @@ namespace storm {
             // An optional expression that governs which states must not be explored.
             boost::optional<storm::expressions::Expression> terminalExpression;
 
-            // Information about how the variables are packed
+            // Information about how the variables are packed.
             VariableInformation const& variableInformation;
             
             // An evaluator used to evaluate expressions.
