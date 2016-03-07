@@ -19,15 +19,15 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     storm::settings::SettingsManager& manager = storm::settings::mutableManager();
     manager.setFromString("");
 
-    // Parsing DFT
-    std::chrono::high_resolution_clock::time_point parsingStart = std::chrono::high_resolution_clock::now();
+    // Building DFT
+    std::chrono::high_resolution_clock::time_point buildingStart = std::chrono::high_resolution_clock::now();
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
     std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas = storm::parseFormulasForExplicit(property);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
     assert(formulas.size() == 1);
     
-    // Optimize DFT
+    // Optimizing DFT
     dft = dft.optimize();
     std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
     storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
@@ -37,7 +37,7 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
         std::cout << "Found " << symmetries.groups.size() << " symmetries." << std::endl;
         STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
     }
-    std::chrono::high_resolution_clock::time_point parsingEnd = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::time_point buildingEnd = std::chrono::high_resolution_clock::now();
     
     // Building Markov Automaton
     std::cout << "Building Model..." << std::endl;
@@ -67,15 +67,15 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false)
     
     // Times
     std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> parsingTime = parsingEnd - parsingStart;
-    std::chrono::duration<double> explorationTime = explorationEnd - parsingEnd;
+    std::chrono::duration<double> buildingTime = buildingEnd - buildingStart;
+    std::chrono::duration<double> explorationTime = explorationEnd - buildingEnd;
     std::chrono::duration<double> bisimulationTime = bisimulationEnd - explorationEnd;
     std::chrono::duration<double> modelCheckingTime = modelCheckingEnd - bisimulationEnd;
-    std::chrono::duration<double> totalTime = modelCheckingEnd - parsingStart;
+    std::chrono::duration<double> totalTime = modelCheckingEnd - buildingStart;
     std::cout << "Times:" << std::endl;
-    std::cout << "Parsing:\t" << parsingTime.count() << std::endl;
+    std::cout << "Building:\t" << buildingTime.count() << std::endl;
     std::cout << "Exploration:\t" << explorationTime.count() << std::endl;
-    std::cout << "Bisimulaton:\t" << bisimulationTime.count() << std::endl;
+    std::cout << "Bisimulation:\t" << bisimulationTime.count() << std::endl;
     std::cout << "Modelchecking:\t" << modelCheckingTime.count() << std::endl;
     std::cout << "Total:\t\t" << totalTime.count() << std::endl;
     std::cout << "Result: ";
