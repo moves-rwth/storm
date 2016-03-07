@@ -710,25 +710,26 @@ namespace storm {
             // Get remaining bits
             getValue = (bucketVector[bucketIndex] >> (64-remainingBits)) << (64-remainingBits);
             assert(remainingBits < 64);
-            if (remainingBits <= offset || offset == 0) {
-                // Write completely
-                assert(insertBucket == result.bucketCount()-1);
-                writeValue = getValue;
-                result.bucketVector[insertBucket] = writeValue;
-            } else {
-                // Remaining bits do not fit in value -> need new value
-                assert(insertBucket == result.bucketCount() - 2);
-                writeValue |= (getValue >> (64-offset));
-                result.bucketVector[insertBucket] = writeValue;
-                // Write last bits
-                writeValue = (getValue << (remainingBits-offset));
+            // Write bucket
+            assert(insertBucket <= result.bucketCount()-1);
+            writeValue |= getValue >> (64-offset);
+            result.bucketVector[insertBucket] = writeValue;
+            if (remainingBits >= offset) {
+                // Write last bits in new value
+                writeValue = (getValue << offset);
                 result.bucketVector[++insertBucket] = writeValue;
             }
 
 #ifdef ASSERT_BITVECTOR
             // Check correctness of getter
             for (uint_fast64_t i = 0; i < length; ++i) {
-                STORM_LOG_ASSERT(result.get(i) == get(start + i), "Getting of bits not correct for index " << i);
+                if (result.get(i) != get(start + i)) {
+                    std::cout << "Getting of bits not correct for index " << i << std::endl;
+                    std::cout << "Getting from " << start << " with length " << length << std::endl;
+                    printBits(std::cout);
+                    result.printBits(std::cout);
+                    assert(false);
+                }
             }
 #endif
             return result;
@@ -775,26 +776,36 @@ namespace storm {
             // Get remaining bits
             getValue = other.bucketVector[getBucket] << (64-offset);
             assert(remainingBits < 64);
-            if (remainingBits <= offset || offset == 0) {
+            if (remainingBits <= offset) {
                 // Write completely
                 assert(getBucket == other.bucketCount()-1);
-                getValue = (getValue >> (64-offset-remainingBits)) << (64-offset-remainingBits);
-                writeValue = (bucketVector[bucketIndex] << (offset+remainingBits)) >> (offset+remainingBits);
+                writeValue = (bucketVector[bucketIndex] << (offset+remainingBits)) >> remainingBits;
                 writeValue |= getValue;
                 bucketVector[bucketIndex] = writeValue;
             } else {
                 // Remaining bits do not come from one bucket -> consider two buckets
                 assert(getBucket == other.bucketCount() - 2);
-                getValue |= other.bucketVector[++getBucket] >> offset;
-                writeValue = (bucketVector[bucketIndex] << (offset+remainingBits)) >> (offset+remainingBits);
-                writeValue |= getValue;
+                writeValue = getValue;
+                getValue = other.bucketVector[++getBucket];
+                writeValue |= getValue >> offset;
+                bucketVector[bucketIndex] = writeValue;
+                remainingBits = remainingBits + offset - 64;
+                // Write last bucket
+                writeValue = (bucketVector[++bucketIndex] << remainingBits) >> remainingBits;
+                writeValue |= getValue << (64-offset);
                 bucketVector[bucketIndex] = writeValue;
             }
      
 #ifdef ASSERT_BITVECTOR
             // Check correctness of setter
             for (uint_fast64_t i = 0; i < other.bitCount; ++i) {
-                STORM_LOG_ASSERT(other.get(i) == get(start + i), "Setting of bits not correct for index " << i);
+                if (other.get(i) != get(start + i)) {
+                    std::cout << "Setting of bits not correct for index " << i << std::endl;
+                    std::cout << "Setting from " << start << " with length " << other.bitCount << std::endl;
+                    printBits(std::cout);
+                    other.printBits(std::cout);
+                    assert(false);
+                }
             }
 #endif
         }
