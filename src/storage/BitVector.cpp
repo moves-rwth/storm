@@ -673,6 +673,9 @@ namespace storm {
         
         storm::storage::BitVector BitVector::getAsBitVector(uint_fast64_t start, uint_fast64_t length) const {
             assert(start + length <= bitCount);
+#ifdef ASSERT_BITVECTOR
+            BitVector original(*this);
+#endif
             storm::storage::BitVector result(length, false);
             
             uint_fast64_t offset = start % 64;
@@ -711,13 +714,18 @@ namespace storm {
             getValue = (bucketVector[bucketIndex] >> (64-remainingBits)) << (64-remainingBits);
             assert(remainingBits < 64);
             // Write bucket
-            assert(insertBucket <= result.bucketCount()-1);
-            writeValue |= getValue >> (64-offset);
-            result.bucketVector[insertBucket] = writeValue;
-            if (remainingBits >= offset) {
-                // Write last bits in new value
-                writeValue = (getValue << offset);
-                result.bucketVector[++insertBucket] = writeValue;
+            assert(insertBucket < result.bucketCount());
+            if (offset == 0) {
+                result.bucketVector[insertBucket]= getValue;
+            } else {
+                writeValue |= getValue >> (64-offset);
+                result.bucketVector[insertBucket] = writeValue;
+                if (remainingBits > offset) {
+                    // Write last bits in new value
+                    writeValue = (getValue << offset);
+                    assert(insertBucket+1 < result.bucketCount());
+                    result.bucketVector[++insertBucket] = writeValue;
+                }
             }
 
 #ifdef ASSERT_BITVECTOR
@@ -731,11 +739,26 @@ namespace storm {
                     assert(false);
                 }
             }
+            for (uint_fast64_t i = 0; i < bitCount; ++i) {
+                if (i < start || i >= start+length) {
+                    if (original.get(i) != get(i)) {
+                        std::cout << "Getting did change bitvector at index " << i << std::endl;
+                        std::cout << "Getting from " << start << " with length " << length << std::endl;
+                        printBits(std::cout);
+                        original.printBits(std::cout);
+                        assert(false);
+                    }
+                }
+            }
+
 #endif
             return result;
         }
         
         void BitVector::setFromBitVector(uint_fast64_t start, BitVector const& other) {
+#ifdef ASSERT_BITVECTOR
+            BitVector original(*this);
+#endif
             assert(start + other.bitCount <= bitCount);
             
             uint_fast64_t offset = start % 64;
@@ -771,30 +794,24 @@ namespace storm {
             
             // Write last bits
             uint_fast64_t remainingBits = other.bitCount - noBits;
+            assert(remainingBits < 64);
             assert(bucketIndex < bucketCount());
             assert(getBucket < other.bucketCount());
-            // Get remaining bits
-            getValue = other.bucketVector[getBucket] << (64-offset);
-            assert(remainingBits < 64);
-            if (remainingBits <= offset) {
-                // Write completely
-                assert(getBucket == other.bucketCount()-1);
-                writeValue = (bucketVector[bucketIndex] << (offset+remainingBits)) >> remainingBits;
-                writeValue |= getValue;
-                bucketVector[bucketIndex] = writeValue;
-            } else {
-                // Remaining bits do not come from one bucket -> consider two buckets
-                assert(getBucket == other.bucketCount() - 2);
-                writeValue = getValue;
-                getValue = other.bucketVector[++getBucket];
-                writeValue |= getValue >> offset;
-                bucketVector[bucketIndex] = writeValue;
-                remainingBits = remainingBits + offset - 64;
-                // Write last bucket
-                writeValue = (bucketVector[++bucketIndex] << remainingBits) >> remainingBits;
-                writeValue |= getValue << (64-offset);
-                bucketVector[bucketIndex] = writeValue;
+            // Get remaining bits of bucket
+            getValue = other.bucketVector[getBucket];
+            if (offset > 0) {
+                getValue = getValue << (64-offset);
             }
+            // Get unchanged part of bucket
+            writeValue = (bucketVector[bucketIndex] << remainingBits) >> remainingBits;
+            if (remainingBits > offset && offset > 0) {
+                // Remaining bits do not come from one bucket -> consider next bucket
+                assert(getBucket == other.bucketCount() - 2);
+                getValue |= other.bucketVector[++getBucket] >> offset;
+            }
+            // Write completely
+            writeValue |= getValue;
+            bucketVector[bucketIndex] = writeValue;
      
 #ifdef ASSERT_BITVECTOR
             // Check correctness of setter
@@ -805,6 +822,17 @@ namespace storm {
                     printBits(std::cout);
                     other.printBits(std::cout);
                     assert(false);
+                }
+            }
+            for (uint_fast64_t i = 0; i < bitCount; ++i) {
+                if (i < start || i >= start+other.bitCount) {
+                    if (original.get(i) != get(i)) {
+                        std::cout << "Setting did change bitvector at index " << i << std::endl;
+                        std::cout << "Setting from " << start << " with length " << other.bitCount << std::endl;
+                        printBits(std::cout);
+                        original.printBits(std::cout);
+                        assert(false);
+                    }
                 }
             }
 #endif
