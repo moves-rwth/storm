@@ -805,7 +805,7 @@ namespace storm {
              * Returns an object representing the consecutive rows given by the parameters.
              *
              * @param startRow The starting row.
-             * @param endRow The ending row (which is included in the result).
+             * @param endRow The ending row (which is *not* included in the result).
              * @return An object representing the consecutive rows given by the parameters.
              */
             const_rows getRows(index_type startRow, index_type endRow) const;
@@ -814,7 +814,7 @@ namespace storm {
              * Returns an object representing the consecutive rows given by the parameters.
              *
              * @param startRow The starting row.
-             * @param endRow The ending row (which is included in the result).
+             * @param endRow The ending row (which is *not* included in the result).
              * @return An object representing the consecutive rows given by the parameters.
              */
             rows getRows(index_type startRow, index_type endRow);

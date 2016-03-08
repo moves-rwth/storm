@@ -1067,22 +1067,22 @@ namespace storm {
         
         template<typename ValueType>
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRows(index_type startRow, index_type endRow) const {
-            return const_rows(this->columnsAndValues.begin() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
+            return const_rows(this->columnsAndValues.begin() + this->rowIndications[startRow], this->rowIndications[endRow] - this->rowIndications[startRow]);
         }
         
         template<typename ValueType>
         typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRows(index_type startRow, index_type endRow) {
-            return rows(this->columnsAndValues.begin() + this->rowIndications[startRow], this->rowIndications[endRow + 1] - this->rowIndications[startRow]);
+            return rows(this->columnsAndValues.begin() + this->rowIndications[startRow], this->rowIndications[endRow] - this->rowIndications[startRow]);
         }
         
         template<typename ValueType>
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRow(index_type row) const {
-            return getRows(row, row);
+            return getRows(row, row + 1);
         }
         
         template<typename ValueType>
         typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRow(index_type row) {
-            return getRows(row, row);
+            return getRows(row, row + 1);
         }
         
         template<typename ValueType>
@@ -1096,7 +1096,6 @@ namespace storm {
             }
         }
         
-        
         template<typename ValueType>
         typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) {
             STORM_LOG_ASSERT(rowGroup < this->getRowGroupCount(), "Row group is out-of-bounds.");
@@ -1104,6 +1103,7 @@ namespace storm {
             if (!this->hasTrivialRowGrouping()) {
                 return getRow(this->getRowGroupIndices()[rowGroup] + offset);
             } else {
+                STORM_LOG_ASSERT(offset == 0, "Invalid offset.");
                 return getRow(rowGroup + offset);
             }
         }
@@ -1113,7 +1113,7 @@ namespace storm {
         typename SparseMatrix<ValueType>::const_rows SparseMatrix<ValueType>::getRowGroup(index_type rowGroup) const {
             STORM_LOG_ASSERT(rowGroup < this->getRowGroupCount(), "Row group is out-of-bounds.");
             if (!this->hasTrivialRowGrouping()) {
-                return getRows(this->getRowGroupIndices()[rowGroup], this->getRowGroupIndices()[rowGroup + 1] - 1);
+                return getRows(this->getRowGroupIndices()[rowGroup], this->getRowGroupIndices()[rowGroup + 1]);
             } else {
                 return getRows(rowGroup, rowGroup + 1);
             }
@@ -1123,7 +1123,7 @@ namespace storm {
         typename SparseMatrix<ValueType>::rows SparseMatrix<ValueType>::getRowGroup(index_type rowGroup) {
             STORM_LOG_ASSERT(rowGroup < this->getRowGroupCount(), "Row group is out-of-bounds.");
             if (!this->hasTrivialRowGrouping()) {
-                return getRows(this->getRowGroupIndices()[rowGroup], this->getRowGroupIndices()[rowGroup + 1] - 1);
+                return getRows(this->getRowGroupIndices()[rowGroup], this->getRowGroupIndices()[rowGroup + 1]);
             } else {
                 return getRows(rowGroup, rowGroup + 1);
             }
