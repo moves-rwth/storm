@@ -62,6 +62,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isReachabilityProbabilityFormula() const {
+            return false;
+        }
+        
         bool Formula::isGloballyFormula() const {
             return false;
         }
@@ -122,7 +126,7 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isReachbilityExpectedTimeFormula() const {
+        bool Formula::isReachabilityExpectedTimeFormula() const {
             return false;
         }
         
@@ -261,6 +265,22 @@ namespace storm {
         }
         
         EventuallyFormula const& Formula::asReachabilityRewardFormula() const {
+            return dynamic_cast<EventuallyFormula const&>(*this);
+        }
+        
+        EventuallyFormula& Formula::asReachabilityProbabilityFormula() {
+            return dynamic_cast<EventuallyFormula&>(*this);
+        }
+        
+        EventuallyFormula const& Formula::asReachabilityProbabilityFormula() const {
+            return dynamic_cast<EventuallyFormula const&>(*this);
+        }
+        
+        EventuallyFormula& Formula::asReachabilityExpectedTimeFormula() {
+            return dynamic_cast<EventuallyFormula&>(*this);
+        }
+
+        EventuallyFormula const& Formula::asReachabilityExpectedTimeFormula() const {
             return dynamic_cast<EventuallyFormula const&>(*this);
         }
         

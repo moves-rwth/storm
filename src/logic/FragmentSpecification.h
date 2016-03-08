@@ -28,8 +28,8 @@ namespace storm {
             bool areGloballyFormulasAllowed() const;
             FragmentSpecification& setGloballyFormulasAllowed(bool newValue);
 
-            bool areEventuallyFormulasAllowed() const;
-            FragmentSpecification& setEventuallyFormulasAllowed(bool newValue);
+            bool areReachabilityProbabilityFormulasAllowed() const;
+            FragmentSpecification& setReachabilityProbabilityFormulasAllowed(bool newValue);
 
             bool areNextFormulasAllowed() const;
             FragmentSpecification& setNextFormulasAllowed(bool newValue);
@@ -91,6 +91,9 @@ namespace storm {
             bool areTimeBoundedUntilFormulasAllowed() const;
             FragmentSpecification& setTimeBoundedUntilFormulasAllowed(bool newValue);
             
+            bool isVarianceMeasureTypeAllowed() const;
+            FragmentSpecification& setVarianceMeasureTypeAllowed(bool newValue);
+            
             FragmentSpecification& setOperatorsAllowed(bool newValue);
             FragmentSpecification& setExpectedTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
@@ -103,7 +106,7 @@ namespace storm {
             bool longRunAverageOperator;
             
             bool globallyFormula;
-            bool eventuallyFormula;
+            bool reachabilityProbabilityFormula;
             bool nextFormula;
             bool untilFormula;
             bool boundedUntilFormula;
@@ -130,6 +133,7 @@ namespace storm {
             bool onlyEventuallyFormuluasInConditionalFormulas;
             bool stepBoundedUntilFormulas;
             bool timeBoundedUntilFormulas;
+            bool varianceAsMeasureType;
         };
         
         // Propositional.

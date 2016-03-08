@@ -9,11 +9,7 @@ namespace storm {
     namespace logic {
         class ExpectedTimeOperatorFormula : public OperatorFormula {
         public:
-            ExpectedTimeOperatorFormula(std::shared_ptr<Formula const> const& subformula);
-            ExpectedTimeOperatorFormula(Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
-            ExpectedTimeOperatorFormula(OptimizationDirection optimalityType, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
-            ExpectedTimeOperatorFormula(OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula);
-            ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula);
+            ExpectedTimeOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation = OperatorInformation());
             
             virtual ~ExpectedTimeOperatorFormula() {
                 // Intentionally left empty.

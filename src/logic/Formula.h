@@ -65,8 +65,9 @@ namespace storm {
             virtual bool isNextFormula() const;
             virtual bool isUntilFormula() const;
             virtual bool isBoundedUntilFormula() const;
-            virtual bool isEventuallyFormula() const;
             virtual bool isGloballyFormula() const;
+            virtual bool isEventuallyFormula() const;
+            virtual bool isReachabilityProbabilityFormula() const;
 
             // Reward formulas.
             virtual bool isCumulativeRewardFormula() const;
@@ -75,7 +76,7 @@ namespace storm {
             virtual bool isLongRunAverageRewardFormula() const;
             
             // Expected time formulas.
-            virtual bool isReachbilityExpectedTimeFormula() const;
+            virtual bool isReachabilityExpectedTimeFormula() const;
             
             // Type checks for abstract intermediate classes.
             virtual bool isBinaryPathFormula() const;
@@ -126,8 +127,14 @@ namespace storm {
             EventuallyFormula& asEventuallyFormula();
             EventuallyFormula const& asEventuallyFormula() const;
             
+            EventuallyFormula& asReachabilityProbabilityFormula();
+            EventuallyFormula const& asReachabilityProbabilityFormula() const;
+            
             EventuallyFormula& asReachabilityRewardFormula();
             EventuallyFormula const& asReachabilityRewardFormula() const;
+
+            EventuallyFormula& asReachabilityExpectedTimeFormula();
+            EventuallyFormula const& asReachabilityExpectedTimeFormula() const;
             
             GloballyFormula& asGloballyFormula();
             GloballyFormula const& asGloballyFormula() const;

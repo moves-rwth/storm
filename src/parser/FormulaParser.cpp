@@ -88,6 +88,18 @@ namespace storm {
             // A parser used for recognizing the optimality operators.
             optimalityOperatorStruct optimalityOperator_;
             
+            struct measureTypeStruct : qi::symbols<char, storm::logic::MeasureType> {
+                measureTypeStruct() {
+                    add
+                    ("val", storm::logic::MeasureType::Value)
+                    ("exp", storm::logic::MeasureType::Expectation)
+                    ("var", storm::logic::MeasureType::Variance);
+                }
+            };
+
+            // A parser used for recognizing the measure types.
+            measureTypeStruct measureType_;
+            
             // Parser and manager used for recognizing expressions.
             storm::parser::ExpressionParser expressionParser;
             
@@ -97,7 +109,8 @@ namespace storm {
             
             qi::rule<Iterator, std::vector<std::shared_ptr<storm::logic::Formula>>(), Skipper> start;
             
-            qi::rule<Iterator, std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>>(), qi::locals<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>, Skipper> operatorInformation;
+            qi::rule<Iterator, storm::logic::OperatorInformation(storm::logic::MeasureType), qi::locals<storm::logic::MeasureType, boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>, Skipper> operatorInformation;
+            qi::rule<Iterator, storm::logic::MeasureType(), Skipper> measureType;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> probabilityOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> rewardOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> expectedTimeOperator;
@@ -147,11 +160,11 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> createNextFormula(std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& rightSubformula);
             std::shared_ptr<storm::logic::Formula> createConditionalFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::FormulaContext context) const;
-            std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const;
-            std::shared_ptr<storm::logic::Formula> createLongRunAverageOperatorFormula(std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createExpectedTimeOperatorFormula(std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createProbabilityOperatorFormula(std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula);
+            storm::logic::OperatorInformation createOperatorInformation(storm::logic::MeasureType const& measureType, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const;
+            std::shared_ptr<storm::logic::Formula> createLongRunAverageOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<storm::logic::Formula> createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<storm::logic::Formula> createExpectedTimeOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<storm::logic::Formula> createProbabilityOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula);
             std::shared_ptr<storm::logic::Formula> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
             std::shared_ptr<storm::logic::Formula> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
             
@@ -301,22 +314,25 @@ namespace storm {
             pathFormula = conditionalFormula(qi::_r1);
             pathFormula.name("path formula");
             
-            operatorInformation = (-optimalityOperator_[qi::_a = qi::_1] >> ((relationalOperator_[qi::_b = qi::_1] > qi::double_[qi::_c = qi::_1]) | (qi::lit("=") > qi::lit("?"))))[qi::_val = phoenix::bind(&FormulaParserGrammar::createOperatorInformation, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
+            measureType = qi::lit("[") >> measureType_ >> qi::lit("]");
+            measureType.name("measure type");
+            
+            operatorInformation = qi::eps[qi::_a = qi::_r1] >> (-measureType[qi::_a = qi::_1] >> -optimalityOperator_[qi::_b = qi::_1] >> ((relationalOperator_[qi::_c = qi::_1] > qi::double_[qi::_d = qi::_1]) | (qi::lit("=") > qi::lit("?"))))[qi::_val = phoenix::bind(&FormulaParserGrammar::createOperatorInformation, phoenix::ref(*this), qi::_a, qi::_b, qi::_c, qi::_d)];
             operatorInformation.name("operator information");
             
-            longRunAverageOperator = ((qi::lit("LRA") | qi::lit("S")) > operatorInformation > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            longRunAverageOperator = ((qi::lit("LRA") | qi::lit("S")) > operatorInformation(storm::logic::MeasureType::Value) > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             longRunAverageOperator.name("long-run average operator");
             
             rewardModelName = qi::lit("{\"") > label > qi::lit("\"}");
             rewardModelName.name("reward model name");
             
-            rewardOperator = (qi::lit("R") > -rewardModelName > operatorInformation > qi::lit("[") > rewardPathFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createRewardOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)];
+            rewardOperator = (qi::lit("R") > -rewardModelName > operatorInformation(storm::logic::MeasureType::Expectation) > qi::lit("[") > rewardPathFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createRewardOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)];
             rewardOperator.name("reward operator");
             
-            expectedTimeOperator = (qi::lit("ET") > operatorInformation > qi::lit("[") > eventuallyFormula(storm::logic::FormulaContext::ExpectedTime) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createExpectedTimeOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            expectedTimeOperator = (qi::lit("ET") > operatorInformation(storm::logic::MeasureType::Expectation) > qi::lit("[") > eventuallyFormula(storm::logic::FormulaContext::ExpectedTime) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createExpectedTimeOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             expectedTimeOperator.name("expected time operator");
             
-            probabilityOperator = (qi::lit("P") > operatorInformation > qi::lit("[") > pathFormula(storm::logic::FormulaContext::Probability) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProbabilityOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            probabilityOperator = (qi::lit("P") > operatorInformation(storm::logic::MeasureType::Value) > qi::lit("[") > pathFormula(storm::logic::FormulaContext::Probability) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProbabilityOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             probabilityOperator.name("probability operator");
             
             andStateFormula = notStateFormula[qi::_val = qi::_1] >> *(qi::lit("&") >> notStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::And)];
@@ -459,28 +475,28 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula>(new storm::logic::ConditionalFormula(leftSubformula, rightSubformula, context));
         }
         
-        std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> FormulaParserGrammar::createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const {
+        storm::logic::OperatorInformation FormulaParserGrammar::createOperatorInformation(storm::logic::MeasureType const& measureType, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const {
             if (comparisonType && threshold) {
-                return std::make_pair(optimizationDirection, storm::logic::Bound<double>(comparisonType.get(), threshold.get()));
+                return storm::logic::OperatorInformation(measureType, optimizationDirection, storm::logic::Bound<double>(comparisonType.get(), threshold.get()));
             } else {
-                return std::make_pair(optimizationDirection, boost::none);
+                return storm::logic::OperatorInformation(measureType, optimizationDirection, boost::none);
             }
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createLongRunAverageOperatorFormula(std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::LongRunAverageOperatorFormula(operatorInformation.first, operatorInformation.second, subformula));
+        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createLongRunAverageOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<storm::logic::Formula>(new storm::logic::LongRunAverageOperatorFormula(subformula, operatorInformation));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::RewardOperatorFormula(rewardModelName, operatorInformation.first, operatorInformation.second, subformula));
+        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<storm::logic::Formula>(new storm::logic::RewardOperatorFormula(subformula, rewardModelName, operatorInformation));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createExpectedTimeOperatorFormula(std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ExpectedTimeOperatorFormula(operatorInformation.first, operatorInformation.second, subformula));
+        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createExpectedTimeOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ExpectedTimeOperatorFormula(subformula, operatorInformation));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createProbabilityOperatorFormula(std::pair<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::Bound<double>>> const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ProbabilityOperatorFormula(operatorInformation.first, operatorInformation.second, subformula));
+        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createProbabilityOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) {
+            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ProbabilityOperatorFormula(subformula, operatorInformation));
         }
         
         std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType) {

@@ -2,24 +2,15 @@
 
 #include "src/logic/FormulaVisitor.h"
 
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidPropertyException.h"
+
 namespace storm {
     namespace logic {
-        LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(std::shared_ptr<Formula const> const& subformula) : LongRunAverageOperatorFormula(boost::none, boost::none, subformula) {
-            // Intentionally left empty.
+        LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation) : OperatorFormula(subformula, operatorInformation) {
+            STORM_LOG_THROW(this->getMeasureType() == MeasureType::Value, storm::exceptions::InvalidPropertyException, "Invalid measure type in LRA-operator.");
         }
         
-        LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula) : LongRunAverageOperatorFormula(boost::none, bound, subformula) {
-            // Intentionally left empty.
-        }
-        
-        LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(OptimizationDirection optimalityType, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula) : LongRunAverageOperatorFormula(boost::optional<OptimizationDirection>(optimalityType), bound, subformula) {
-            // Intentionally left empty.
-        }
-        
-        LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula) : LongRunAverageOperatorFormula(boost::optional<OptimizationDirection>(optimalityType), boost::none, subformula) {
-            // Intentionally left empty.
-        }
-                
         bool LongRunAverageOperatorFormula::isLongRunAverageOperatorFormula() const {
             return true;
         }
@@ -28,12 +19,8 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
-        LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, bound, subformula) {
-            // Intentionally left empty.
-        }
-        
         std::shared_ptr<Formula> LongRunAverageOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<LongRunAverageOperatorFormula>(this->optimalityType, this->bound, this->getSubformula().substitute(substitution));
+            return std::make_shared<LongRunAverageOperatorFormula>(this->getSubformula().substitute(substitution), this->operatorInformation);
         }
         
         std::ostream& LongRunAverageOperatorFormula::writeToStream(std::ostream& out) const {

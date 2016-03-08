@@ -73,7 +73,7 @@ namespace storm {
             }
             if (inherited.getSpecification().areOnlyEventuallyFormuluasInConditionalFormulasAllowed()) {
                 if (f.isConditionalProbabilityFormula()) {
-                    result = result && f.getSubformula().isEventuallyFormula() && f.getConditionFormula().isEventuallyFormula();
+                    result = result && f.getSubformula().isReachabilityProbabilityFormula() && f.getConditionFormula().isReachabilityProbabilityFormula();
                 } else if (f.isConditionalRewardFormula()) {
                     result = result && f.getSubformula().isReachabilityRewardFormula() && f.getConditionFormula().isEventuallyFormula();
                 }
@@ -91,15 +91,15 @@ namespace storm {
         boost::any FragmentChecker::visit(EventuallyFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = true;
-            if (f.isEventuallyFormula()) {
-                result = inherited.getSpecification().areEventuallyFormulasAllowed();
+            if (f.isReachabilityProbabilityFormula()) {
+                result = inherited.getSpecification().areReachabilityProbabilityFormulasAllowed();
                 if (!inherited.getSpecification().areNestedPathFormulasAllowed()) {
                     result = result && !f.getSubformula().isPathFormula();
                 }
             } else if (f.isReachabilityRewardFormula()) {
                 result = result && inherited.getSpecification().areReachabilityRewardFormulasAllowed();
                 result = result && f.getSubformula().isStateFormula();
-            } else if (f.isReachbilityExpectedTimeFormula()) {
+            } else if (f.isReachabilityExpectedTimeFormula()) {
                 result = result && inherited.getSpecification().areReachbilityExpectedTimeFormulasAllowed();
                 result = result && f.getSubformula().isStateFormula();
             }
@@ -111,6 +111,7 @@ namespace storm {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areExpectedTimeOperatorsAllowed();
             result = result && f.getSubformula().isExpectedTimePathFormula();
+            result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == MeasureType::Expectation);
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {
@@ -177,6 +178,7 @@ namespace storm {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areRewardOperatorsAllowed();
             result = result && (f.getSubformula().isRewardPathFormula() || f.getSubformula().isConditionalRewardFormula());
+            result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == MeasureType::Expectation);
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {

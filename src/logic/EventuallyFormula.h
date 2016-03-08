@@ -15,8 +15,9 @@ namespace storm {
             }
             
             virtual bool isEventuallyFormula() const override;
+            virtual bool isReachabilityProbabilityFormula() const override;
             virtual bool isReachabilityRewardFormula() const override;
-            virtual bool isReachbilityExpectedTimeFormula() const override;
+            virtual bool isReachabilityExpectedTimeFormula() const override;
             virtual bool isProbabilityPathFormula() const override;
             virtual bool isRewardPathFormula() const override;
             virtual bool isExpectedTimePathFormula() const override;

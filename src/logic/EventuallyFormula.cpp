@@ -11,6 +11,10 @@ namespace storm {
         }
         
         bool EventuallyFormula::isEventuallyFormula() const {
+            return true;
+        }
+        
+        bool EventuallyFormula::isReachabilityProbabilityFormula() const {
             return context == FormulaContext::Probability;
         }
         
@@ -18,7 +22,7 @@ namespace storm {
             return context == FormulaContext::Reward;
         }
         
-        bool EventuallyFormula::isReachbilityExpectedTimeFormula() const {
+        bool EventuallyFormula::isReachabilityExpectedTimeFormula() const {
             return context == FormulaContext::ExpectedTime;
         }
         
@@ -31,7 +35,7 @@ namespace storm {
         }
         
         bool EventuallyFormula::isExpectedTimePathFormula() const {
-            return this->isReachbilityExpectedTimeFormula();
+            return this->isReachabilityExpectedTimeFormula();
         }
         
         boost::any EventuallyFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {

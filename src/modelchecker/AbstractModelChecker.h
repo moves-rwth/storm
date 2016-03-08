@@ -38,7 +38,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeProbabilities(CheckTask<storm::logic::Formula> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeConditionalProbabilities(CheckTask<storm::logic::ConditionalFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(CheckTask<storm::logic::BoundedUntilFormula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> computeEventuallyProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeReachabilityProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeGloballyProbabilities(CheckTask<storm::logic::GloballyFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeNextProbabilities(CheckTask<storm::logic::NextFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask);

@@ -8,11 +8,7 @@ namespace storm {
     namespace logic {
         class RewardOperatorFormula : public OperatorFormula {
         public:
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula);
+            RewardOperatorFormula(std::shared_ptr<Formula const> const& subformula, boost::optional<std::string> const& rewardModelName = boost::none, OperatorInformation const& operatorInformation = OperatorInformation());
 
             virtual ~RewardOperatorFormula() {
                 // Intentionally left empty.

@@ -22,7 +22,7 @@ namespace storm {
             
             pctl.setProbabilityOperatorsAllowed(true);
             pctl.setGloballyFormulasAllowed(true);
-            pctl.setEventuallyFormulasAllowed(true);
+            pctl.setReachabilityProbabilityFormulasAllowed(true);
             pctl.setNextFormulasAllowed(true);
             pctl.setUntilFormulasAllowed(true);
             pctl.setBoundedUntilFormulasAllowed(true);
@@ -70,7 +70,7 @@ namespace storm {
             longRunAverageOperator = false;
             
             globallyFormula = false;
-            eventuallyFormula = false;
+            reachabilityProbabilityFormula = false;
             nextFormula = false;
             untilFormula = false;
             boundedUntilFormula = false;
@@ -96,6 +96,7 @@ namespace storm {
             onlyEventuallyFormuluasInConditionalFormulas = true;
             stepBoundedUntilFormulas = false;
             timeBoundedUntilFormulas = false;
+            varianceAsMeasureType = false;
         }
         
         FragmentSpecification FragmentSpecification::copy() const {
@@ -147,12 +148,12 @@ namespace storm {
             return *this;
         }
         
-        bool FragmentSpecification::areEventuallyFormulasAllowed() const {
-            return eventuallyFormula;
+        bool FragmentSpecification::areReachabilityProbabilityFormulasAllowed() const {
+            return reachabilityProbabilityFormula;
         }
         
-        FragmentSpecification& FragmentSpecification::setEventuallyFormulasAllowed(bool newValue) {
-            this->eventuallyFormula = newValue;
+        FragmentSpecification& FragmentSpecification::setReachabilityProbabilityFormulasAllowed(bool newValue) {
+            this->reachabilityProbabilityFormula = newValue;
             return *this;
         }
         
@@ -352,6 +353,15 @@ namespace storm {
         
         FragmentSpecification& FragmentSpecification::setLongRunAverageProbabilitiesAllowed(bool newValue) {
             this->setLongRunAverageOperatorsAllowed(newValue);
+            return *this;
+        }
+        
+        bool FragmentSpecification::isVarianceMeasureTypeAllowed() const {
+            return varianceAsMeasureType;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setVarianceMeasureTypeAllowed(bool newValue) {
+            this->varianceAsMeasureType = newValue;
             return *this;
         }
         

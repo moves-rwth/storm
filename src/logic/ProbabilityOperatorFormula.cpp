@@ -2,22 +2,13 @@
 
 #include "src/logic/FormulaVisitor.h"
 
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidPropertyException.h"
+
 namespace storm {
     namespace logic {
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(std::shared_ptr<Formula const> const& subformula) : ProbabilityOperatorFormula(boost::none, boost::none, subformula) {
-            // Intentionally left empty.
-        }
-        
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula) : ProbabilityOperatorFormula(boost::none, bound, subformula) {
-            // Intentionally left empty.
-        }
-        
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(OptimizationDirection optimalityType, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimizationDirection>(optimalityType), bound, subformula) {
-            // Intentionally left empty.
-        }
-        
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula) : ProbabilityOperatorFormula(boost::optional<OptimizationDirection>(optimalityType), boost::none, subformula) {
-            // Intentionally left empty.
+        ProbabilityOperatorFormula::ProbabilityOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation) : OperatorFormula(subformula, operatorInformation) {
+            STORM_LOG_THROW(this->getMeasureType() == MeasureType::Value, storm::exceptions::InvalidPropertyException, "Invalid measure type in P-operator.");
         }
         
         bool ProbabilityOperatorFormula::isProbabilityOperatorFormula() const {
@@ -27,13 +18,9 @@ namespace storm {
         boost::any ProbabilityOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-                
-        ProbabilityOperatorFormula::ProbabilityOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, bound, subformula) {
-            // Intentionally left empty.
-        }
         
         std::shared_ptr<Formula> ProbabilityOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<ProbabilityOperatorFormula>(this->optimalityType, this->bound, this->getSubformula().substitute(substitution));
+            return std::make_shared<ProbabilityOperatorFormula>(this->getSubformula().substitute(substitution), this->operatorInformation);
         }
         
         std::ostream& ProbabilityOperatorFormula::writeToStream(std::ostream& out) const {
