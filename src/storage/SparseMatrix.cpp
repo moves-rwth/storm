@@ -498,7 +498,7 @@ namespace storm {
             if (!this->rowGroupIndices) {
                 STORM_LOG_ASSERT(trivialRowGrouping, "Only trivial row-groupings can be constructed on-the-fly.");
                 this->rowGroupIndices = std::vector<index_type>(this->getRowCount() + 1);
-                for (uint_fast64_t group = 0; group < this->getRowCount(); ++group) {
+                for (uint_fast64_t group = 0; group <= this->getRowCount(); ++group) {
                     this->rowGroupIndices.get()[group] = group;
                 }
             }
@@ -1224,7 +1224,10 @@ namespace storm {
             // Iterate over all row groups.
             for (typename SparseMatrix<ValueType>::index_type group = 0; group < matrix.getRowGroupCount(); ++group) {
                 out << "\t---- group " << group << "/" << (matrix.getRowGroupCount() - 1) << " ---- " << std::endl;
-                for (typename SparseMatrix<ValueType>::index_type i = matrix.hasTrivialRowGrouping() ? group : matrix.getRowGroupIndices()[group]; i < matrix.hasTrivialRowGrouping() ? group + 1 : matrix.getRowGroupIndices()[group + 1]; ++i) {
+                typename SparseMatrix<ValueType>::index_type start = matrix.hasTrivialRowGrouping() ? group : matrix.getRowGroupIndices()[group];
+                typename SparseMatrix<ValueType>::index_type end = matrix.hasTrivialRowGrouping() ? group + 1 : matrix.getRowGroupIndices()[group + 1];
+                
+                for (typename SparseMatrix<ValueType>::index_type i = start; i < end; ++i) {
                     typename SparseMatrix<ValueType>::index_type nextIndex = matrix.rowIndications[i];
                     
                     // Print the actual row.
