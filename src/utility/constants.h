@@ -50,6 +50,9 @@ namespace storm {
 
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType>&& simplify(storm::storage::MatrixEntry<IndexType, ValueType>&& matrixEntry);
+        
+        template<typename TargetType, typename SourceType>
+        TargetType convertNumber(SourceType const& number);
     }
 }
 
