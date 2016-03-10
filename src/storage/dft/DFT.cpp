@@ -113,10 +113,11 @@ namespace storm {
                 for (auto const& symmetryGroup : symmetries.groups) {
                     assert(!symmetryGroup.second.empty());
 
-                    // Perform DFS for first subtree of each symmetry
-                    visitQueue.push(symmetryGroup.first);
+                    // Insert all elements of first subtree of each symmetry
                     size_t groupIndex = stateIndex;
-                    stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
+                    for (std::vector<size_t> const& symmetryElement : symmetryGroup.second) {
+                        stateIndex = generateStateInfo(generationInfo, symmetryElement[0], visited, stateIndex);
+                    }
                     size_t offset = stateIndex - groupIndex;
                     
                     // Mirror symmetries
