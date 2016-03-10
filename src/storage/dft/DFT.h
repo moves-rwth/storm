@@ -238,6 +238,8 @@ namespace storm {
             std::vector<size_t> getIndependentSubDftRoots(size_t index) const;
 
             DFTColouring<ValueType> colourDFT() const;
+            
+            std::map<size_t, size_t> findBijection(size_t index1, size_t index2, DFTColouring<ValueType> const& colouring, bool sparesAsLeaves) const;
 
             DFTIndependentSymmetries findSymmetries(DFTColouring<ValueType> const& colouring) const;
 

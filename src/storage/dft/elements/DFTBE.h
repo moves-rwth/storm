@@ -71,15 +71,15 @@ namespace storm {
                 return storm::utility::isZero(mPassiveFailureRate);
             }
             
-            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents) const override {
+            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override {
                  if(elemsInSubtree.count(this->id())) return;
-                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
+                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 if(elemsInSubtree.empty()) {
                     // Parent in the subdft, ie it is *not* a subdft
                     return;
                 }
                 for(auto const& incDep : mIngoingDependencies) {
-                    incDep->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
+                    incDep->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                     if(elemsInSubtree.empty()) {
                         // Parent in the subdft, ie it is *not* a subdft
                         return;

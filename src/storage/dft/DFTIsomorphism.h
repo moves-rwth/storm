@@ -202,6 +202,10 @@ namespace storage {
                 }
             }
         }
+        
+        bool hasSameColour(size_t index1, size_t index2) const {
+            return beColour.at(index1) == beColour.at(index2);
+        }
 
 
         BijectionCandidates<ValueType> colourSubdft(std::vector<size_t> const& subDftIndices) const {
@@ -308,13 +312,21 @@ namespace storage {
         }
 
         /**
-         * Check whether an isomorphism exists.
+         * Check whether another isomorphism exists.
          *
-         * @return true iff an isomorphism exists.
+         * @return true iff another isomorphism exists.
          */
-        bool findIsomorphism() {
-            if(!candidatesCompatible) return false;
-            constructInitialBijection();
+        bool findNextIsomorphism() {
+            if(!candidatesCompatible){
+                return false;
+            }
+            if (bijection.empty()) {
+                constructInitialBijection();
+            } else {
+                if (!findNextBijection()) {
+                    return false;
+                }
+            }
             while(!check()) {
                 // continue our search
                 if(!findNextBijection()) {
@@ -382,19 +394,31 @@ namespace storage {
 
             if(foundNext) {
                 for(auto const& colour : bleft.beCandidates) {
-                    zipVectorsIntoMap(colour.second, currentPermutations.beCandidates.find(colour.first)->second, bijection);
+                    if (colour.second.size() > 1) {
+                        assert(currentPermutations.beCandidates.find(colour.first) != currentPermutations.beCandidates.end());
+                        zipVectorsIntoMap(colour.second, currentPermutations.beCandidates.find(colour.first)->second, bijection);
+                    }
                 }
 
                 for(auto const& colour : bleft.gateCandidates) {
-                    zipVectorsIntoMap(colour.second, currentPermutations.gateCandidates.find(colour.first)->second, bijection);
+                    if (colour.second.size() > 1) {
+                        assert(currentPermutations.gateCandidates.find(colour.first) != currentPermutations.gateCandidates.end());
+                        zipVectorsIntoMap(colour.second, currentPermutations.gateCandidates.find(colour.first)->second, bijection);
+                    }
                 }
 
                 for(auto const& colour : bleft.pdepCandidates) {
-                    zipVectorsIntoMap(colour.second, currentPermutations.pdepCandidates.find(colour.first)->second, bijection);
+                    if (colour.second.size() > 1) {
+                        assert(currentPermutations.pdepCandidates.find(colour.first) != currentPermutations.pdepCandidates.end());
+                        zipVectorsIntoMap(colour.second, currentPermutations.pdepCandidates.find(colour.first)->second, bijection);
+                    }
                 }
                 
                 for(auto const& colour : bleft.restrictionCandidates) {
-                    zipVectorsIntoMap(colour.second, currentPermutations.restrictionCandidates.find(colour.first)->second, bijection);
+                    if (colour.second.size() > 1) {
+                        assert(currentPermutations.restrictionCandidates.find(colour.first) != currentPermutations.restrictionCandidates.end());
+                        zipVectorsIntoMap(colour.second, currentPermutations.restrictionCandidates.find(colour.first)->second, bijection);
+                    }
                 }
             }
 
@@ -405,7 +429,7 @@ namespace storage {
         /**
          *
          */
-        bool check() {
+        bool check() const {
             assert(bijection.size() == bleft.size());
             // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
             for(auto const& indexpair : bijection) {
@@ -418,13 +442,23 @@ namespace storage {
                     if(lGate->isDynamicGate()) {
                         std::vector<size_t> childrenLeftMapped;
                         for(auto const& child : lGate->children() ) {
-                            assert(bleft.has(child->id()));
-                            childrenLeftMapped.push_back(bijection.at(child->id()));
+                            if (bleft.has(child->id())) {
+                                childrenLeftMapped.push_back(bijection.at(child->id()));
+                            } else {
+                                // Indicate shared child which is not part of the symmetry
+                                // For dynamic gates the order is important
+                                childrenLeftMapped.push_back(-1);
+                            }
                         }
                         std::vector<size_t> childrenRight;
                         for(auto const& child : rGate->children() ) {
-                            assert(bright.has(child->id()));
-                            childrenRight.push_back(child->id());
+                            if (bright.has(child->id())) {
+                                childrenRight.push_back(child->id());
+                            } else {
+                                // Indicate shared child which is not part of the symmetry
+                                // For dynamic gates the order is important
+                                childrenRight.push_back(-1);
+                            }
                         }
                         if(childrenLeftMapped != childrenRight) {
                             return false;
@@ -432,13 +466,15 @@ namespace storage {
                     } else {
                         std::set<size_t> childrenLeftMapped;
                         for(auto const& child : lGate->children() ) {
-                            assert(bleft.has(child->id()));
-                            childrenLeftMapped.insert(bijection.at(child->id()));
+                            if (bleft.has(child->id())) {
+                                childrenLeftMapped.insert(bijection.at(child->id()));
+                            }
                         }
                         std::set<size_t> childrenRight;
                         for(auto const& child : rGate->children() ) {
-                            assert(bright.has(child->id()));
-                            childrenRight.insert(child->id());
+                            if (bright.has(child->id())) {
+                                childrenRight.insert(child->id());
+                            }
                         }
                         if(childrenLeftMapped != childrenRight) {
                             return false;
@@ -459,16 +495,26 @@ namespace storage {
                 } else if(dft.isRestriction(indexpair.first)) {
                     assert(dft.isRestriction(indexpair.second));
                     auto const& lRestr = dft.getRestriction(indexpair.first);
-                    std::set<size_t> childrenLeftMapped;
+                    std::vector<size_t> childrenLeftMapped;
                     for(auto const& child : lRestr->children() ) {
-                        assert(bleft.has(child->id()));
-                        childrenLeftMapped.insert(bijection.at(child->id()));
+                        if (bleft.has(child->id())) {
+                            childrenLeftMapped.push_back(bijection.at(child->id()));
+                        } else {
+                            // Indicate shared child which is not part of the symmetry
+                            // For dynamic gates the order is important
+                            childrenLeftMapped.push_back(-1);
+                        }
                     }
                     auto const& rRestr = dft.getRestriction(indexpair.second);
-                    std::set<size_t> childrenRight;
+                    std::vector<size_t> childrenRight;
                     for(auto const& child : rRestr->children() ) {
-                        assert(bright.has(child->id()));
-                        childrenRight.insert(child->id());
+                        if (bright.has(child->id())) {
+                            childrenRight.push_back(child->id());
+                        } else {
+                            // Indicate shared child which is not part of the symmetry
+                            // For dynamic gates the order is important
+                            childrenRight.push_back(-1);
+                        }
                     }
                     if(childrenLeftMapped != childrenRight) {
                         return false;
@@ -487,50 +533,51 @@ namespace storage {
         /**
          * Returns true if the colours are compatible.
          */
-        void checkCompatibility() {
+        bool checkCompatibility() {
             if(bleft.gateCandidates.size() != bright.gateCandidates.size()) {
                 candidatesCompatible = false;
-                return;
+                return false;
             }
             if(bleft.beCandidates.size() != bright.beCandidates.size()) {
                 candidatesCompatible = false;
-                return;
+                return false;
             }
             if(bleft.beCandidates.size() != bright.beCandidates.size()) {
                 candidatesCompatible = false;
-                return;
+                return false;
             }
             if(bleft.restrictionCandidates.size() != bright.restrictionCandidates.size()) {
                 candidatesCompatible = false;
-                return;
+                return false;
             }
             
             for (auto const &gc : bleft.gateCandidates) {
                 if (bright.gateCandidates.count(gc.first) == 0) {
                     candidatesCompatible = false;
-                    return;
+                    return false;
                 }
             }
             for(auto const& bc : bleft.beCandidates) {
                 if(bright.beCandidates.count(bc.first) == 0) {
                     candidatesCompatible = false;
-                    return;
+                    return false;
                 }
             }
                
             for(auto const& dc : bleft.pdepCandidates) {
                 if(bright.pdepCandidates.count(dc.first) == 0) {
                     candidatesCompatible = false;
-                    return;
+                    return false;
                 }
             }
             
             for(auto const& dc : bleft.restrictionCandidates) {
                 if(bright.restrictionCandidates.count(dc.first) == 0) {
                     candidatesCompatible = false;
-                    return;
+                    return false;
                 }
             }
+            return true;
         }
 
         /**

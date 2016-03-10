@@ -286,12 +286,12 @@ namespace storm {
              *  - a probabilistic dependency
              *  such that there exists a  path from x to a child of this does not go through this.
              */
-            virtual std::vector<size_t> independentSubDft(bool blockParents) const;
+            virtual std::vector<size_t> independentSubDft(bool blockParents, bool sparesAsLeaves = false) const;
             /**
              * Helper to the independent subtree computation
              * @see independentSubDft
              */
-            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents) const;
+            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const;
 
             virtual bool isTypeEqualTo(DFTElement<ValueType> const& other) const {
                 return type() == other.type();

@@ -68,14 +68,14 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<size_t> DFTElement<ValueType>::independentSubDft(bool blockParents) const {
+        std::vector<size_t> DFTElement<ValueType>::independentSubDft(bool blockParents, bool sparesAsLeaves) const {
             std::vector<size_t> res;
             res.push_back(this->id());
             return res;
         }
 
         template<typename ValueType>
-        void DFTElement<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents) const {
+        void DFTElement<ValueType>::extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const {
             if(elemsInSubtree.count(this->id()) > 0) return;
             if(std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), mId) != parentsOfSubRoot.end()) {
                 // This is a parent of the suspected root, thus it is not a subdft.
@@ -87,13 +87,13 @@ namespace storm {
                 if(blockParents && std::find(parentsOfSubRoot.begin(), parentsOfSubRoot.end(), parent->id()) != parentsOfSubRoot.end()) {
                     continue;
                 }
-                parent->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
+                parent->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 if(elemsInSubtree.empty()) {
                     return;
                 }
             }
             for(auto const& dep : mOutgoingDependencies) {
-                dep->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
+                dep->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 if(elemsInSubtree.empty()) {
                     return;
                 }
@@ -101,7 +101,7 @@ namespace storm {
             }
             
             for(auto const& restr : mRestrictions) {
-                restr->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
+                restr->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 if(elemsInSubtree.empty()) {
                     return;
                 }

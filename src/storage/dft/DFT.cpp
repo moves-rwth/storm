@@ -454,6 +454,98 @@ namespace storm {
             return DFTColouring<ValueType>(*this);
         }
 
+        template<typename ValueType>
+        std::map<size_t, size_t> DFT<ValueType>::findBijection(size_t index1, size_t index2, DFTColouring<ValueType> const& colouring, bool sparesAsLeaves) const {
+            STORM_LOG_TRACE("Considering ids " << index1 << ", " << index2 << " for isomorphism.");
+            bool sharedSpareMode = false;
+            std::map<size_t, size_t> bijection;
+            
+            if (isBasicElement(index1)) {
+                if (!isBasicElement(index2)) {
+                    return {};
+                }
+                if (colouring.hasSameColour(index1, index2)) {
+                    bijection[index1] = index2;
+                    return bijection;
+                } else {
+                    return {};
+                }
+            }
+            
+            assert(isGate(index1));
+            assert(isGate(index2));
+            std::vector<size_t> isubdft1 = getGate(index1)->independentSubDft(false);
+            std::vector<size_t> isubdft2 = getGate(index2)->independentSubDft(false);
+            if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
+                if (isubdft1.empty() && isubdft2.empty() && sparesAsLeaves) {
+                    // Check again for shared spares
+                    sharedSpareMode = true;
+                    isubdft1 = getGate(index1)->independentSubDft(false, true);
+                    isubdft2 = getGate(index2)->independentSubDft(false, true);
+                    if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
+                        return {};
+                    }
+                } else {
+                    return {};
+                }
+            }
+            STORM_LOG_TRACE("Checking subdfts from " << index1 << ", " << index2 << " for isomorphism.");
+            auto LHS = colouring.colourSubdft(isubdft1);
+            auto RHS = colouring.colourSubdft(isubdft2);
+            auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
+            
+            while (IsoCheck.findNextIsomorphism()) {
+                bijection = IsoCheck.getIsomorphism();
+                if (sharedSpareMode) {
+                    bool bijectionSpareCompatible = true;
+                    for (size_t elementId : isubdft1) {
+                        if (getElement(elementId)->isSpareGate()) {
+                            std::shared_ptr<DFTSpare<ValueType>> spareLeft = std::static_pointer_cast<DFTSpare<ValueType>>(mElements[elementId]);
+                            std::shared_ptr<DFTSpare<ValueType>> spareRight = std::static_pointer_cast<DFTSpare<ValueType>>(mElements[bijection.at(elementId)]);
+                            
+                            if (spareLeft->nrChildren() != spareRight->nrChildren()) {
+                                bijectionSpareCompatible = false;
+                                break;
+                            }
+                            // Check bijection for spare children
+                            for (size_t i = 0; i < spareLeft->nrChildren(); ++i) {
+                                size_t childLeftId = spareLeft->children().at(i)->id();
+                                size_t childRightId = spareRight->children().at(i)->id();
+
+                                assert(bijection.count(childLeftId) == 0);
+                                if (childLeftId == childRightId) {
+                                    // Ignore shared child
+                                    continue;
+                                }
+                                
+                                // TODO generalize for more than one parent
+                                if (spareLeft->children().at(i)->nrParents() != 1 || spareRight->children().at(i)->nrParents() != 1) {
+                                    bijectionSpareCompatible = false;
+                                    break;
+                                }
+                                
+                                std::map<size_t, size_t> tmpBijection = findBijection(childLeftId, childRightId, colouring, false);
+                                if (!tmpBijection.empty()) {
+                                    bijection.insert(tmpBijection.begin(), tmpBijection.end());
+                                } else {
+                                    bijectionSpareCompatible = false;
+                                    break;
+                                }
+                            }
+                            if (!bijectionSpareCompatible) {
+                                break;
+                            }
+                        }
+                    }
+                    if (bijectionSpareCompatible) {
+                        return bijection;
+                    }
+                } else {
+                    return bijection;
+                }
+            } // end while
+            return {};
+        }
 
         template<typename ValueType>
         DFTIndependentSymmetries DFT<ValueType>::findSymmetries(DFTColouring<ValueType> const& colouring) const {
@@ -486,33 +578,21 @@ namespace storm {
                             std::sort(sortedParent2Ids.begin(), sortedParent2Ids.end());
                             
                             if(influencedElem1Ids == getSortedParentAndOutDepIds(*it2)) {
-                                STORM_LOG_TRACE("Considering ids " << *it1 << ", " << *it2 << " for isomorphism.");
-                                bool isSymmetry = false;
-                                std::vector<size_t> isubdft1 = getGate(*it1)->independentSubDft(false);
-                                std::vector<size_t> isubdft2 = getGate(*it2)->independentSubDft(false);
-                                if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
-                                    continue;
-                                }
-                                STORM_LOG_TRACE("Checking subdfts from " << *it1 << ", " << *it2 << " for isomorphism.");
-                                auto LHS = colouring.colourSubdft(isubdft1);
-                                auto RHS = colouring.colourSubdft(isubdft2);
-                                auto IsoCheck = DFTIsomorphismCheck<ValueType>(LHS, RHS, *this);
-                                isSymmetry = IsoCheck.findIsomorphism();
-                                if(isSymmetry) {
+                                std::map<size_t, size_t> bijection = findBijection(*it1, *it2, colouring, true);
+                                if (!bijection.empty()) {
                                     STORM_LOG_TRACE("Subdfts are symmetric");
                                     foundEqClassFor.insert(*it2);
                                     if(symClass.empty()) {
-                                        for(auto const& i : isubdft1) {
-                                            symClass.push_back(std::vector<size_t>({i}));
+                                        for(auto const& i : bijection) {
+                                            symClass.push_back(std::vector<size_t>({i.first}));
                                         }
                                     }
                                     auto symClassIt = symClass.begin();
-                                    for(auto const& i : isubdft1) {
-                                        symClassIt->emplace_back(IsoCheck.getIsomorphism().at(i));
+                                    for(auto const& i : bijection) {
+                                        symClassIt->emplace_back(i.second);
                                         ++symClassIt;
                                         
                                     }
-                                    
                                 }
                             }
                         }

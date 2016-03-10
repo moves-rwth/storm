@@ -83,20 +83,19 @@ namespace storm {
                 return std::vector<size_t>(unit.begin(), unit.end());
             }
 
-            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents) const override {
-                 if(elemsInSubtree.count(this->id())) return;
-                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
+            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override {
+                if(elemsInSubtree.count(this->id())) return;
+                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 if(elemsInSubtree.empty()) {
                     // Parent in the subdft, ie it is *not* a subdft
                     return;
                 }
-                mDependentEvent->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
+                mDependentEvent->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 if(elemsInSubtree.empty()) {
                     // Parent in the subdft, ie it is *not* a subdft
                     return;
                 }
-                mTriggerEvent->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
-                
+                mTriggerEvent->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 
             }
             

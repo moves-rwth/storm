@@ -64,6 +64,45 @@ namespace storm {
                     }
                 }
             }
+            
+            std::vector<size_t> independentSubDft(bool blockParents, bool sparesAsLeaves = false) const override {
+                auto prelRes = DFTElement<ValueType>::independentSubDft(blockParents);
+                if(prelRes.empty()) {
+                    // No elements (especially not this->id) in the prelimanry result, so we know already that it is not a subdft.
+                    return prelRes;
+                }
+                std::set<size_t> unit(prelRes.begin(), prelRes.end());
+                std::vector<size_t> pids = this->parentIds();
+                if (!sparesAsLeaves) {
+                    for(auto const& child : this->mChildren) {
+                        child->extendSubDft(unit, pids, blockParents, sparesAsLeaves);
+                        if(unit.empty()) {
+                            // Parent in the subdft, ie it is *not* a subdft
+                            break;
+                        }
+                    }
+                }
+                return std::vector<size_t>(unit.begin(), unit.end());
+            }
+            
+            void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override {
+                if(elemsInSubtree.count(this->id()) > 0) return;
+                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
+                if(elemsInSubtree.empty()) {
+                    // Parent in the subdft, ie it is *not* a subdft
+                    return;
+                }
+                if (!sparesAsLeaves) {
+                    for(auto const& child : this->mChildren) {
+                        child->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
+                        if(elemsInSubtree.empty()) {
+                            // Parent in the subdft, ie it is *not* a subdft
+                            return;
+                        }
+                    }
+                }
+            }
+
 
         };
     }

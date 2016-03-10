@@ -73,7 +73,7 @@ namespace storm {
                 }
             }
 
-            virtual std::vector<size_t> independentSubDft(bool blockParents) const override {
+            virtual std::vector<size_t> independentSubDft(bool blockParents, bool sparesAsLeaves = false) const override {
                 auto prelRes = DFTElement<ValueType>::independentSubDft(blockParents);
                 if(prelRes.empty()) {
                     // No elements (especially not this->id) in the prelimanry result, so we know already that it is not a subdft.
@@ -82,7 +82,7 @@ namespace storm {
                 std::set<size_t> unit(prelRes.begin(), prelRes.end());
                 std::vector<size_t> pids = this->parentIds();
                 for(auto const& child : mChildren) {
-                    child->extendSubDft(unit, pids, blockParents);
+                    child->extendSubDft(unit, pids, blockParents, sparesAsLeaves);
                     if(unit.empty()) {
                         // Parent in the subdft, ie it is *not* a subdft
                         break;
@@ -91,15 +91,15 @@ namespace storm {
                 return std::vector<size_t>(unit.begin(), unit.end());
             }
 
-            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents) const override {
+            virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override {
                 if(elemsInSubtree.count(this->id()) > 0) return;
-                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
+                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 if(elemsInSubtree.empty()) {
                     // Parent in the subdft, ie it is *not* a subdft
                     return;
                 }
                 for(auto const& child : mChildren) {
-                    child->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents);
+                    child->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                     if(elemsInSubtree.empty()) {
                         // Parent in the subdft, ie it is *not* a subdft
                         return;
