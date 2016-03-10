@@ -110,6 +110,8 @@ namespace storm {
         boost::any FragmentChecker::visit(TimeOperatorFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areTimeOperatorsAllowed();
+            result = result && (!f.hasQualitativeResult() || inherited.getSpecification().areQualitativeOperatorResultsAllowed());
+            result = result && (!f.hasQuantitativeResult() || inherited.getSpecification().areQuantitativeOperatorResultsAllowed());
             result = result && f.getSubformula().isTimePathFormula();
             result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == MeasureType::Expectation);
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
@@ -165,6 +167,8 @@ namespace storm {
         boost::any FragmentChecker::visit(ProbabilityOperatorFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areProbabilityOperatorsAllowed();
+            result = result && (!f.hasQualitativeResult() || inherited.getSpecification().areQualitativeOperatorResultsAllowed());
+            result = result && (!f.hasQuantitativeResult() || inherited.getSpecification().areQuantitativeOperatorResultsAllowed());
             result = result && (f.getSubformula().isProbabilityPathFormula() || f.getSubformula().isConditionalProbabilityFormula());
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
@@ -177,6 +181,8 @@ namespace storm {
         boost::any FragmentChecker::visit(RewardOperatorFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areRewardOperatorsAllowed();
+            result = result && (!f.hasQualitativeResult() || inherited.getSpecification().areQualitativeOperatorResultsAllowed());
+            result = result && (!f.hasQuantitativeResult() || inherited.getSpecification().areQuantitativeOperatorResultsAllowed());
             result = result && (f.getSubformula().isRewardPathFormula() || f.getSubformula().isConditionalRewardFormula());
             result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == MeasureType::Expectation);
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {

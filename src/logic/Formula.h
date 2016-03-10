@@ -84,6 +84,10 @@ namespace storm {
             virtual bool isUnaryPathFormula() const;
             virtual bool isUnaryStateFormula() const;
 
+            // Accessors for the return type of a formula.
+            virtual bool hasQualitativeResult() const;
+            virtual bool hasQuantitativeResult() const;
+            
             bool isInFragment(FragmentSpecification const& fragment) const;
             FormulaInformation info() const;
             

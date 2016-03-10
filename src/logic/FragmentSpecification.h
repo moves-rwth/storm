@@ -94,6 +94,12 @@ namespace storm {
             bool isVarianceMeasureTypeAllowed() const;
             FragmentSpecification& setVarianceMeasureTypeAllowed(bool newValue);
             
+            bool areQuantitativeOperatorResultsAllowed() const;
+            FragmentSpecification& setQuantitativeOperatorResultsAllowed(bool newValue);
+
+            bool areQualitativeOperatorResultsAllowed() const;
+            FragmentSpecification& setQualitativeOperatorResultsAllowed(bool newValue);
+            
             FragmentSpecification& setOperatorsAllowed(bool newValue);
             FragmentSpecification& setTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
@@ -134,6 +140,8 @@ namespace storm {
             bool stepBoundedUntilFormulas;
             bool timeBoundedUntilFormulas;
             bool varianceAsMeasureType;
+            bool quantitativeOperatorResults;
+            bool qualitativeOperatorResults;
         };
         
         // Propositional.

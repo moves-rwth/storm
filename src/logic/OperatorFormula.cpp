@@ -69,6 +69,14 @@ namespace storm {
             return true;
         }
         
+        bool OperatorFormula::hasQualitativeResult() const {
+            return this->hasBound();
+        }
+        
+        bool OperatorFormula::hasQuantitativeResult() const {
+            return !this->hasBound();
+        }
+        
         std::ostream& OperatorFormula::writeToStream(std::ostream& out) const {
             out << "[" << this->operatorInformation.measureType << "]";
             if (hasOptimalityType()) {

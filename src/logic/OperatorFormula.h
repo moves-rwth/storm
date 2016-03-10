@@ -46,6 +46,9 @@ namespace storm {
             // Measure-type-related accessors.
             MeasureType getMeasureType() const;
             
+            virtual bool hasQualitativeResult() const override;
+            virtual bool hasQuantitativeResult() const override;
+            
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
         protected:

@@ -97,6 +97,9 @@ namespace storm {
             stepBoundedUntilFormulas = false;
             timeBoundedUntilFormulas = false;
             varianceAsMeasureType = false;
+            
+            qualitativeOperatorResults = true;
+            quantitativeOperatorResults = true;
         }
         
         FragmentSpecification FragmentSpecification::copy() const {
@@ -364,6 +367,25 @@ namespace storm {
             this->varianceAsMeasureType = newValue;
             return *this;
         }
+     
+        bool FragmentSpecification::areQuantitativeOperatorResultsAllowed() const {
+            return this->quantitativeOperatorResults;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setQuantitativeOperatorResultsAllowed(bool newValue) {
+            this->quantitativeOperatorResults = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areQualitativeOperatorResultsAllowed() const {
+            return this->qualitativeOperatorResults;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setQualitativeOperatorResultsAllowed(bool newValue) {
+            this->qualitativeOperatorResults = newValue;
+            return *this;
+        }
+
         
     }
 }

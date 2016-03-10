@@ -142,6 +142,14 @@ namespace storm {
             return false;
         }
         
+        bool Formula::hasQualitativeResult() const {
+            return true;
+        }
+        
+        bool Formula::hasQuantitativeResult() const {
+            return false;
+        }
+        
         bool Formula::isInFragment(FragmentSpecification const& fragment) const {
             FragmentChecker checker;
             return checker.conformsToSpecification(*this, fragment);
