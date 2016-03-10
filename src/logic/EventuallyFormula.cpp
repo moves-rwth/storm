@@ -7,7 +7,7 @@
 namespace storm {
     namespace logic {
         EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subformula, FormulaContext context) : UnaryPathFormula(subformula), context(context) {
-            STORM_LOG_THROW(context == FormulaContext::Probability || context == FormulaContext::Reward || context == FormulaContext::ExpectedTime, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
+            STORM_LOG_THROW(context == FormulaContext::Probability || context == FormulaContext::Reward || context == FormulaContext::Time, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
         }
         
         bool EventuallyFormula::isEventuallyFormula() const {
@@ -22,8 +22,8 @@ namespace storm {
             return context == FormulaContext::Reward;
         }
         
-        bool EventuallyFormula::isReachabilityExpectedTimeFormula() const {
-            return context == FormulaContext::ExpectedTime;
+        bool EventuallyFormula::isReachabilityTimeFormula() const {
+            return context == FormulaContext::Time;
         }
         
         bool EventuallyFormula::isProbabilityPathFormula() const {
@@ -34,8 +34,8 @@ namespace storm {
             return this->isReachabilityRewardFormula();
         }
         
-        bool EventuallyFormula::isExpectedTimePathFormula() const {
-            return this->isReachabilityExpectedTimeFormula();
+        bool EventuallyFormula::isTimePathFormula() const {
+            return this->isReachabilityTimeFormula();
         }
         
         boost::any EventuallyFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {

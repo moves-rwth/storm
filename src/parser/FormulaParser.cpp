@@ -113,7 +113,7 @@ namespace storm {
             qi::rule<Iterator, storm::logic::MeasureType(), Skipper> measureType;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> probabilityOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> rewardOperator;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> expectedTimeOperator;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> timeOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> longRunAverageOperator;
             
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> simpleFormula;
@@ -163,7 +163,7 @@ namespace storm {
             storm::logic::OperatorInformation createOperatorInformation(storm::logic::MeasureType const& measureType, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const;
             std::shared_ptr<storm::logic::Formula> createLongRunAverageOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
-            std::shared_ptr<storm::logic::Formula> createExpectedTimeOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
+            std::shared_ptr<storm::logic::Formula> createTimeOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createProbabilityOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula);
             std::shared_ptr<storm::logic::Formula> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
             std::shared_ptr<storm::logic::Formula> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
@@ -329,8 +329,8 @@ namespace storm {
             rewardOperator = (qi::lit("R") > -rewardModelName > operatorInformation(storm::logic::MeasureType::Expectation) > qi::lit("[") > rewardPathFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createRewardOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)];
             rewardOperator.name("reward operator");
             
-            expectedTimeOperator = (qi::lit("ET") > operatorInformation(storm::logic::MeasureType::Expectation) > qi::lit("[") > eventuallyFormula(storm::logic::FormulaContext::ExpectedTime) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createExpectedTimeOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
-            expectedTimeOperator.name("expected time operator");
+            timeOperator = (qi::lit("T") > operatorInformation(storm::logic::MeasureType::Expectation) > qi::lit("[") > eventuallyFormula(storm::logic::FormulaContext::Time) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            timeOperator.name("time operator");
             
             probabilityOperator = (qi::lit("P") > operatorInformation(storm::logic::MeasureType::Value) > qi::lit("[") > pathFormula(storm::logic::FormulaContext::Probability) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProbabilityOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             probabilityOperator.name("probability operator");
@@ -491,8 +491,8 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula>(new storm::logic::RewardOperatorFormula(subformula, rewardModelName, operatorInformation));
         }
         
-        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createExpectedTimeOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
-            return std::shared_ptr<storm::logic::Formula>(new storm::logic::ExpectedTimeOperatorFormula(subformula, operatorInformation));
+        std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createTimeOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const {
+            return std::shared_ptr<storm::logic::Formula>(new storm::logic::TimeOperatorFormula(subformula, operatorInformation));
         }
         
         std::shared_ptr<storm::logic::Formula> FormulaParserGrammar::createProbabilityOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) {

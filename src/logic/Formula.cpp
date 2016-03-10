@@ -94,7 +94,7 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isExpectedTimePathFormula() const {
+        bool Formula::isTimePathFormula() const {
             return false;
         }
         
@@ -106,7 +106,7 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isExpectedTimeOperatorFormula() const {
+        bool Formula::isTimeOperatorFormula() const {
             return false;
         }
         
@@ -126,7 +126,7 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isReachabilityExpectedTimeFormula() const {
+        bool Formula::isReachabilityTimeFormula() const {
             return false;
         }
         
@@ -276,11 +276,11 @@ namespace storm {
             return dynamic_cast<EventuallyFormula const&>(*this);
         }
         
-        EventuallyFormula& Formula::asReachabilityExpectedTimeFormula() {
+        EventuallyFormula& Formula::asReachabilityTimeFormula() {
             return dynamic_cast<EventuallyFormula&>(*this);
         }
 
-        EventuallyFormula const& Formula::asReachabilityExpectedTimeFormula() const {
+        EventuallyFormula const& Formula::asReachabilityTimeFormula() const {
             return dynamic_cast<EventuallyFormula const&>(*this);
         }
         
@@ -324,12 +324,12 @@ namespace storm {
             return dynamic_cast<LongRunAverageOperatorFormula const&>(*this);
         }
         
-        ExpectedTimeOperatorFormula& Formula::asExpectedTimeOperatorFormula() {
-            return dynamic_cast<ExpectedTimeOperatorFormula&>(*this);
+        TimeOperatorFormula& Formula::asTimeOperatorFormula() {
+            return dynamic_cast<TimeOperatorFormula&>(*this);
         }
         
-        ExpectedTimeOperatorFormula const& Formula::asExpectedTimeOperatorFormula() const {
-            return dynamic_cast<ExpectedTimeOperatorFormula const&>(*this);
+        TimeOperatorFormula const& Formula::asTimeOperatorFormula() const {
+            return dynamic_cast<TimeOperatorFormula const&>(*this);
         }
         
         CumulativeRewardFormula& Formula::asCumulativeRewardFormula() {

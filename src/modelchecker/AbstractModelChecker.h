@@ -51,9 +51,10 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(CheckTask<storm::logic::LongRunAverageRewardFormula> const& checkTask);
             
-            // The methods to compute the long-run average and expected time.
+            // The methods to compute the long-run average probabilities and timing measures.
             virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> computeExpectedTimes(CheckTask<storm::logic::EventuallyFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeTimes(CheckTask<storm::logic::Formula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeReachabilityTimes(CheckTask<storm::logic::EventuallyFormula> const& checkTask);
             
             // The methods to check state formulas.
             virtual std::unique_ptr<CheckResult> checkStateFormula(CheckTask<storm::logic::StateFormula> const& stateFormula);
@@ -63,7 +64,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> checkProbabilityOperatorFormula(CheckTask<storm::logic::ProbabilityOperatorFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> checkRewardOperatorFormula(CheckTask<storm::logic::RewardOperatorFormula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> checkExpectedTimeOperatorFormula(CheckTask<storm::logic::ExpectedTimeOperatorFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> checkTimeOperatorFormula(CheckTask<storm::logic::TimeOperatorFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> checkLongRunAverageOperatorFormula(CheckTask<storm::logic::LongRunAverageOperatorFormula> const& checkTask);
             virtual std::unique_ptr<CheckResult> checkUnaryBooleanStateFormula(CheckTask<storm::logic::UnaryBooleanStateFormula> const& checkTask);
         };

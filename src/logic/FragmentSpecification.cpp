@@ -89,7 +89,7 @@ namespace storm {
             conditionalProbabilityFormula = false;
             conditionalRewardFormula = false;
             
-            reachabilityExpectedTimeFormula = false;
+            reachabilityTimeFormula = false;
             
             nestedOperators = true;
             nestedPathFormulas = false;
@@ -121,11 +121,11 @@ namespace storm {
             return *this;
         }
         
-        bool FragmentSpecification::areExpectedTimeOperatorsAllowed() const {
+        bool FragmentSpecification::areTimeOperatorsAllowed() const {
             return expectedTimeOperator;
         }
         
-        FragmentSpecification& FragmentSpecification::setExpectedTimeOperatorsAllowed(bool newValue) {
+        FragmentSpecification& FragmentSpecification::setTimeOperatorsAllowed(bool newValue) {
             this->expectedTimeOperator = newValue;
             return *this;
         }
@@ -283,12 +283,12 @@ namespace storm {
             return *this;
         }
         
-        bool FragmentSpecification::areReachbilityExpectedTimeFormulasAllowed() const {
-            return reachabilityExpectedTimeFormula;
+        bool FragmentSpecification::areReachbilityTimeFormulasAllowed() const {
+            return reachabilityTimeFormula;
         }
             
-        FragmentSpecification& FragmentSpecification::setReachbilityExpectedTimeFormulasAllowed(bool newValue) {
-            this->reachabilityExpectedTimeFormula = newValue;
+        FragmentSpecification& FragmentSpecification::setReachbilityTimeFormulasAllowed(bool newValue) {
+            this->reachabilityTimeFormula = newValue;
             return *this;
         }
         
@@ -341,13 +341,13 @@ namespace storm {
             this->setProbabilityOperatorsAllowed(newValue);
             this->setRewardOperatorsAllowed(newValue);
             this->setLongRunAverageOperatorsAllowed(newValue);
-            this->setExpectedTimeOperatorsAllowed(newValue);
+            this->setTimeOperatorsAllowed(newValue);
             return *this;
         }
         
-        FragmentSpecification& FragmentSpecification::setExpectedTimeAllowed(bool newValue) {
-            this->setExpectedTimeOperatorsAllowed(newValue);
-            this->setReachbilityExpectedTimeFormulasAllowed(newValue);
+        FragmentSpecification& FragmentSpecification::setTimeAllowed(bool newValue) {
+            this->setTimeOperatorsAllowed(newValue);
+            this->setReachbilityTimeFormulasAllowed(newValue);
             return *this;
         }
         

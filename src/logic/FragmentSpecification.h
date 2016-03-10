@@ -19,8 +19,8 @@ namespace storm {
             bool areRewardOperatorsAllowed() const;
             FragmentSpecification& setRewardOperatorsAllowed(bool newValue);
             
-            bool areExpectedTimeOperatorsAllowed() const;
-            FragmentSpecification& setExpectedTimeOperatorsAllowed(bool newValue);
+            bool areTimeOperatorsAllowed() const;
+            FragmentSpecification& setTimeOperatorsAllowed(bool newValue);
 
             bool areLongRunAverageOperatorsAllowed() const;
             FragmentSpecification& setLongRunAverageOperatorsAllowed(bool newValue);
@@ -73,8 +73,8 @@ namespace storm {
             bool areConditionalRewardFormulasFormulasAllowed() const;
             FragmentSpecification& setConditionalRewardFormulasAllowed(bool newValue);
 
-            bool areReachbilityExpectedTimeFormulasAllowed() const;
-            FragmentSpecification& setReachbilityExpectedTimeFormulasAllowed(bool newValue);
+            bool areReachbilityTimeFormulasAllowed() const;
+            FragmentSpecification& setReachbilityTimeFormulasAllowed(bool newValue);
 
             bool areNestedOperatorsAllowed() const;
             FragmentSpecification& setNestedOperatorsAllowed(bool newValue);
@@ -95,7 +95,7 @@ namespace storm {
             FragmentSpecification& setVarianceMeasureTypeAllowed(bool newValue);
             
             FragmentSpecification& setOperatorsAllowed(bool newValue);
-            FragmentSpecification& setExpectedTimeAllowed(bool newValue);
+            FragmentSpecification& setTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
             
         private:
@@ -125,7 +125,7 @@ namespace storm {
             bool conditionalProbabilityFormula;
             bool conditionalRewardFormula;
             
-            bool reachabilityExpectedTimeFormula;
+            bool reachabilityTimeFormula;
             
             // Members that indicate certain restrictions.
             bool nestedOperators;

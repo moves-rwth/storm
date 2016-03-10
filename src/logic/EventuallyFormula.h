@@ -17,10 +17,10 @@ namespace storm {
             virtual bool isEventuallyFormula() const override;
             virtual bool isReachabilityProbabilityFormula() const override;
             virtual bool isReachabilityRewardFormula() const override;
-            virtual bool isReachabilityExpectedTimeFormula() const override;
+            virtual bool isReachabilityTimeFormula() const override;
             virtual bool isProbabilityPathFormula() const override;
             virtual bool isRewardPathFormula() const override;
-            virtual bool isExpectedTimePathFormula() const override;
+            virtual bool isTimePathFormula() const override;
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
 

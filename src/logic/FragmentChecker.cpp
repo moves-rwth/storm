@@ -99,18 +99,18 @@ namespace storm {
             } else if (f.isReachabilityRewardFormula()) {
                 result = result && inherited.getSpecification().areReachabilityRewardFormulasAllowed();
                 result = result && f.getSubformula().isStateFormula();
-            } else if (f.isReachabilityExpectedTimeFormula()) {
-                result = result && inherited.getSpecification().areReachbilityExpectedTimeFormulasAllowed();
+            } else if (f.isReachabilityTimeFormula()) {
+                result = result && inherited.getSpecification().areReachbilityTimeFormulasAllowed();
                 result = result && f.getSubformula().isStateFormula();
             }
             result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             return result;
         }
         
-        boost::any FragmentChecker::visit(ExpectedTimeOperatorFormula const& f, boost::any const& data) const {
+        boost::any FragmentChecker::visit(TimeOperatorFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
-            bool result = inherited.getSpecification().areExpectedTimeOperatorsAllowed();
-            result = result && f.getSubformula().isExpectedTimePathFormula();
+            bool result = inherited.getSpecification().areTimeOperatorsAllowed();
+            result = result && f.getSubformula().isTimePathFormula();
             result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == MeasureType::Expectation);
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));

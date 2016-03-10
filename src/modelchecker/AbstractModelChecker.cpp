@@ -21,6 +21,8 @@ namespace storm {
                     return this->computeProbabilities(checkTask);
                 } else if (formula.isRewardPathFormula()) {
                     return this->computeRewards(checkTask);
+                } else if (formula.isTimePathFormula()) {
+                    return this->computeTimes(checkTask);
                 }
             } else if (formula.isConditionalProbabilityFormula()) {
                 return this->computeConditionalProbabilities(checkTask.substituteFormula(formula.asConditionalFormula()));
@@ -114,7 +116,15 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
         
-        std::unique_ptr<CheckResult> AbstractModelChecker::computeExpectedTimes(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeTimes(CheckTask<storm::logic::Formula> const& checkTask) {
+            storm::logic::Formula const& timeFormula = checkTask.getFormula();
+            if (timeFormula.isReachabilityTimeFormula()) {
+                return this->computeReachabilityTimes(checkTask.substituteFormula(timeFormula.asReachabilityTimeFormula()));
+            }
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
+        }
+        
+        std::unique_ptr<CheckResult> AbstractModelChecker::computeReachabilityTimes(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
         
@@ -130,8 +140,8 @@ namespace storm {
                 return this->checkProbabilityOperatorFormula(checkTask.substituteFormula(stateFormula.asProbabilityOperatorFormula()));
             } else if (stateFormula.isRewardOperatorFormula()) {
                 return this->checkRewardOperatorFormula(checkTask.substituteFormula(stateFormula.asRewardOperatorFormula()));
-            } else if (stateFormula.isExpectedTimeOperatorFormula()) {
-                return this->checkExpectedTimeOperatorFormula(checkTask.substituteFormula(stateFormula.asExpectedTimeOperatorFormula()));
+            } else if (stateFormula.isTimeOperatorFormula()) {
+                return this->checkTimeOperatorFormula(checkTask.substituteFormula(stateFormula.asTimeOperatorFormula()));
             } else if (stateFormula.isLongRunAverageOperatorFormula()) {
                 return this->checkLongRunAverageOperatorFormula(checkTask.substituteFormula(stateFormula.asLongRunAverageOperatorFormula()));
             } else if (stateFormula.isAtomicExpressionFormula()) {
@@ -203,11 +213,11 @@ namespace storm {
             }
         }
         
-		std::unique_ptr<CheckResult> AbstractModelChecker::checkExpectedTimeOperatorFormula(CheckTask<storm::logic::ExpectedTimeOperatorFormula> const& checkTask) {
-            storm::logic::ExpectedTimeOperatorFormula const& stateFormula = checkTask.getFormula();
-			STORM_LOG_THROW(stateFormula.getSubformula().isReachabilityExpectedTimeFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
+		std::unique_ptr<CheckResult> AbstractModelChecker::checkTimeOperatorFormula(CheckTask<storm::logic::TimeOperatorFormula> const& checkTask) {
+            storm::logic::TimeOperatorFormula const& stateFormula = checkTask.getFormula();
+			STORM_LOG_THROW(stateFormula.getSubformula().isReachabilityTimeFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
             
-            std::unique_ptr<CheckResult> result = this->computeExpectedTimes(checkTask.substituteFormula(stateFormula.getSubformula().asEventuallyFormula()));
+            std::unique_ptr<CheckResult> result = this->computeTimes(checkTask.substituteFormula(stateFormula.getSubformula()));
             
             if (checkTask.isBoundSet()) {
                 STORM_LOG_THROW(result->isQuantitative(), storm::exceptions::InvalidOperationException, "Unable to perform comparison operation on non-quantitative result.");

@@ -7,15 +7,15 @@
 
 namespace storm {
     namespace logic {
-        class ExpectedTimeOperatorFormula : public OperatorFormula {
+        class TimeOperatorFormula : public OperatorFormula {
         public:
-            ExpectedTimeOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation = OperatorInformation());
+            TimeOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation = OperatorInformation());
             
-            virtual ~ExpectedTimeOperatorFormula() {
+            virtual ~TimeOperatorFormula() {
                 // Intentionally left empty.
             }
             
-            virtual bool isExpectedTimeOperatorFormula() const override;
+            virtual bool isTimeOperatorFormula() const override;
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
