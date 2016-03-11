@@ -30,7 +30,7 @@ namespace storm {
             template<>
             struct VariableType<storm::RationalFunction> { typedef storm::Variable type; };
             template<>
-            struct CoefficientType<storm::RationalFunction> { typedef storm::RationalNumber type; };
+            struct CoefficientType<storm::RationalFunction> { typedef storm::CarlRationalNumber type; };
 #endif
             
             /*!

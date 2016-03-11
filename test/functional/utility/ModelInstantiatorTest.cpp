@@ -39,13 +39,13 @@ TEST(ModelInstantiatorTest, Brp_Prob) {
     EXPECT_FALSE(dtmc->hasRewardModel());
     
     {
-        std::map<storm::Variable, storm::RationalNumber> valuation;
+        std::map<storm::Variable, storm::CarlRationalNumber> valuation;
         storm::Variable const& pL = carl::VariablePool::getInstance().findVariableWithName("pL");
         ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
         storm::Variable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        valuation.insert(std::make_pair(pL,carl::rationalize<storm::RationalNumber>(0.8)));
-        valuation.insert(std::make_pair(pK,carl::rationalize<storm::RationalNumber>(0.9)));
+        valuation.insert(std::make_pair(pL,carl::rationalize<storm::CarlRationalNumber>(0.8)));
+        valuation.insert(std::make_pair(pK,carl::rationalize<storm::CarlRationalNumber>(0.9)));
 
         storm::models::sparse::Dtmc<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
@@ -72,13 +72,13 @@ TEST(ModelInstantiatorTest, Brp_Prob) {
     }
     
     {
-        std::map<storm::Variable, storm::RationalNumber> valuation;
+        std::map<storm::Variable, storm::CarlRationalNumber> valuation;
         storm::Variable const& pL = carl::VariablePool::getInstance().findVariableWithName("pL");
         ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
         storm::Variable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        valuation.insert(std::make_pair(pL,carl::rationalize<storm::RationalNumber>(1)));
-        valuation.insert(std::make_pair(pK,carl::rationalize<storm::RationalNumber>(1)));
+        valuation.insert(std::make_pair(pL,carl::rationalize<storm::CarlRationalNumber>(1)));
+        valuation.insert(std::make_pair(pK,carl::rationalize<storm::CarlRationalNumber>(1)));
 
         storm::models::sparse::Dtmc<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
@@ -105,13 +105,13 @@ TEST(ModelInstantiatorTest, Brp_Prob) {
     }
     
     {
-        std::map<storm::Variable, storm::RationalNumber> valuation;
+        std::map<storm::Variable, storm::CarlRationalNumber> valuation;
         storm::Variable const& pL = carl::VariablePool::getInstance().findVariableWithName("pL");
         ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
         storm::Variable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        valuation.insert(std::make_pair(pL,carl::rationalize<storm::RationalNumber>(1)));
-        valuation.insert(std::make_pair(pK,carl::rationalize<storm::RationalNumber>(0.9)));
+        valuation.insert(std::make_pair(pL,carl::rationalize<storm::CarlRationalNumber>(1)));
+        valuation.insert(std::make_pair(pK,carl::rationalize<storm::CarlRationalNumber>(0.9)));
 
         storm::models::sparse::Dtmc<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
@@ -159,7 +159,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
     storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>> modelInstantiator(*dtmc);
     
     {
-        std::map<storm::Variable, storm::RationalNumber> valuation;
+        std::map<storm::Variable, storm::CarlRationalNumber> valuation;
         storm::Variable const& pL = carl::VariablePool::getInstance().findVariableWithName("pL");
         ASSERT_NE(pL, carl::Variable::NO_VARIABLE);
         storm::Variable const& pK = carl::VariablePool::getInstance().findVariableWithName("pK");
@@ -168,10 +168,10 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
         storm::Variable const& TOAck = carl::VariablePool::getInstance().findVariableWithName("TOAck");
         ASSERT_NE(pK, carl::Variable::NO_VARIABLE);
-        valuation.insert(std::make_pair(pL,carl::rationalize<storm::RationalNumber>(0.9)));
-        valuation.insert(std::make_pair(pK,carl::rationalize<storm::RationalNumber>(0.3)));
-        valuation.insert(std::make_pair(TOMsg,carl::rationalize<storm::RationalNumber>(0.3)));
-        valuation.insert(std::make_pair(TOAck,carl::rationalize<storm::RationalNumber>(0.5)));
+        valuation.insert(std::make_pair(pL,carl::rationalize<storm::CarlRationalNumber>(0.9)));
+        valuation.insert(std::make_pair(pK,carl::rationalize<storm::CarlRationalNumber>(0.3)));
+        valuation.insert(std::make_pair(TOMsg,carl::rationalize<storm::CarlRationalNumber>(0.3)));
+        valuation.insert(std::make_pair(TOAck,carl::rationalize<storm::CarlRationalNumber>(0.5)));
 
         storm::models::sparse::Dtmc<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
@@ -231,13 +231,13 @@ TEST(ModelInstantiatorTest, consensus) {
 
     storm::utility::ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<double>> modelInstantiator(*mdp);
     
-    std::map<storm::Variable, storm::RationalNumber> valuation;
+    std::map<storm::Variable, storm::CarlRationalNumber> valuation;
     storm::Variable const& p1 = carl::VariablePool::getInstance().findVariableWithName("p1");
     ASSERT_NE(p1, carl::Variable::NO_VARIABLE);
     storm::Variable const& p2 = carl::VariablePool::getInstance().findVariableWithName("p2");
     ASSERT_NE(p2, carl::Variable::NO_VARIABLE);
-    valuation.insert(std::make_pair(p1,carl::rationalize<storm::RationalNumber>(0.51)));
-    valuation.insert(std::make_pair(p2,carl::rationalize<storm::RationalNumber>(0.49)));
+    valuation.insert(std::make_pair(p1,carl::rationalize<storm::CarlRationalNumber>(0.51)));
+    valuation.insert(std::make_pair(p2,carl::rationalize<storm::CarlRationalNumber>(0.49)));
     storm::models::sparse::Mdp<double> const& instantiated(modelInstantiator.instantiate(valuation));
 
     ASSERT_EQ(mdp->getTransitionMatrix().getRowGroupIndices(), instantiated.getTransitionMatrix().getRowGroupIndices());

@@ -133,13 +133,13 @@ namespace storm {
         }
         
         template<>
-        double convertNumber(RationalNumber const& number){
+        double convertNumber(CarlRationalNumber const& number){
             return carl::toDouble(number);
         }
         
         template<>
-        RationalNumber convertNumber(double const& number){
-            return carl::rationalize<RationalNumber>(number);
+        CarlRationalNumber convertNumber(double const& number){
+            return carl::rationalize<CarlRationalNumber>(number);
         }
 
 #endif
@@ -241,7 +241,7 @@ namespace storm {
         template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);
         
-        /*template Polynomial one();
+        template Polynomial one();
         template Polynomial zero();
         
         template bool isOne(CarlRationalNumber const& value);
@@ -249,10 +249,10 @@ namespace storm {
         template bool isConstant(CarlRationalNumber const& value);
         
         template CarlRationalNumber one();
-        template CarlRationalNumber zero();*/
+        template CarlRationalNumber zero();
        
-        template double convertNumber(RationalNumber const& number);
-        template RationalNumber convertNumber(double const& number);
+        template double convertNumber(CarlRationalNumber const& number);
+        template CarlRationalNumber convertNumber(double const& number);
         
         template bool isOne(Interval const& value);
         template bool isZero(Interval const& value);
