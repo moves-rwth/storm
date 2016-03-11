@@ -10,7 +10,7 @@ namespace storm {
             std::vector<size_t> mIdToStateIndex; // id -> index first bit in state
             std::map<size_t, std::vector<size_t>> mSeqRestrictionPreElements; // id -> list of restriction pre elements;
             std::map<size_t, std::vector<size_t>> mSeqRestrictionPostElements; // id -> list of restriction post elements;
-            std::vector<std::pair<size_t, std::vector<size_t>>> mSymmetries; // pair (lenght of symmetry group, vector indicating the starting points of the symmetry groups)
+            std::vector<std::pair<size_t, std::vector<size_t>>> mSymmetries; // pair (length of symmetry group, vector indicating the starting points of the symmetry groups)
 
         public:
 
@@ -69,6 +69,32 @@ namespace storm {
 
             void addSymmetry(size_t length, std::vector<size_t>& startingIndices) {
                 mSymmetries.push_back(std::make_pair(length, startingIndices));
+            }
+            
+            /**
+             * Generate more symmetries by combining two symmetries
+             */
+            void generateSymmetries(storm::storage::DFTIndependentSymmetries const& symmetries) {
+                for (size_t i = 0; i < mSymmetries.size(); ++i) {
+                    size_t childStart = mSymmetries[i].second[0];
+                    size_t childLength = mSymmetries[i].first;
+                    for (size_t j = i+1; j < mSymmetries.size(); ++j) {
+                        size_t parentStart = mSymmetries[j].second[0];
+                        size_t parentLength = mSymmetries[j].first;
+                        // Check if child lies in parent
+                        if (parentStart <= childStart && childStart + childLength < parentStart + parentLength) {
+                            // Get symmetric start by applying the bijection
+                            std::vector<size_t> newStarts;
+                            for (size_t symmetryStarts : mSymmetries[i].second) {
+                                newStarts.push_back(symmetryStarts + parentLength);
+                            }
+                            // Insert after child
+                            mSymmetries.insert(mSymmetries.begin() + i + 1, std::make_pair(childLength, newStarts));
+                            ++i;
+                            break;
+                        }
+                    }
+                }
             }
 
             size_t getSymmetrySize() const {

@@ -110,22 +110,35 @@ namespace storm {
                 visitQueue.push(mTopLevelIndex);
                 stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
             } else {
-                for (auto const& symmetryGroup : symmetries.groups) {
-                    assert(!symmetryGroup.second.empty());
+                for (size_t symmetryIndex : symmetries.sortedSymmetries) {
+                    assert(!visited[symmetryIndex]);
+                    auto const& symmetryGroup = symmetries.groups.at(symmetryIndex);
+                    assert(!symmetryGroup.empty());
 
                     // Insert all elements of first subtree of each symmetry
                     size_t groupIndex = stateIndex;
-                    for (std::vector<size_t> const& symmetryElement : symmetryGroup.second) {
-                        stateIndex = generateStateInfo(generationInfo, symmetryElement[0], visited, stateIndex);
+                    for (std::vector<size_t> const& symmetryElement : symmetryGroup) {
+                        if (visited[symmetryElement[0]]) {
+                            groupIndex = std::min(groupIndex, generationInfo.getStateIndex(symmetryElement[0]));
+                        } else {
+                            stateIndex = generateStateInfo(generationInfo, symmetryElement[0], visited, stateIndex);
+                        }
                     }
                     size_t offset = stateIndex - groupIndex;
                     
                     // Mirror symmetries
-                    size_t noSymmetricElements = symmetryGroup.second.front().size();
+                    size_t noSymmetricElements = symmetryGroup.front().size();
                     assert(noSymmetricElements > 1);
 
-                    for (std::vector<size_t> symmetricElements : symmetryGroup.second) {
+                    for (std::vector<size_t> symmetricElements : symmetryGroup) {
                         assert(symmetricElements.size() == noSymmetricElements);
+                        if (visited[symmetricElements[1]]) {
+                            // Elements already mirrored
+                            for (size_t index : symmetricElements) {
+                                assert(visited[index]);
+                            }
+                            continue;
+                        }
 
                         // Initialize for original element
                         size_t originalElement = symmetricElements[0];
@@ -181,6 +194,8 @@ namespace storm {
                     stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
                 }
             }
+            
+            generationInfo.generateSymmetries(symmetries);
 
             STORM_LOG_TRACE(generationInfo);
             assert(stateIndex == mStateVectorSize);
