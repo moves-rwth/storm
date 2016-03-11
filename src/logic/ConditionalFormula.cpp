@@ -49,6 +49,14 @@ namespace storm {
             this->getConditionFormula().gatherReferencedRewardModels(referencedRewardModels);
         }
         
+        bool ConditionalFormula::hasQualitativeResult() const {
+            return false;
+        }
+        
+        bool ConditionalFormula::hasQuantitativeResult() const {
+            return true;
+        }
+        
         std::ostream& ConditionalFormula::writeToStream(std::ostream& out) const {
             this->getSubformula().writeToStream(out);
             out << " || ";

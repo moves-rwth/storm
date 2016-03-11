@@ -41,7 +41,7 @@ namespace storm {
             return f.getSubformula().accept(*this);
         }
         
-        boost::any FormulaInformationVisitor::visit(ExpectedTimeOperatorFormula const& f, boost::any const& data) const {
+        boost::any FormulaInformationVisitor::visit(TimeOperatorFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this);
         }
         

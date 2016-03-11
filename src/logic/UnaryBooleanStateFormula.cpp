@@ -2,10 +2,13 @@
 
 #include "src/logic/FormulaVisitor.h"
 
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidPropertyException.h"
+
 namespace storm {
     namespace logic {
         UnaryBooleanStateFormula::UnaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula) : UnaryStateFormula(subformula), operatorType(operatorType) {
-            // Intentionally left empty.
+            STORM_LOG_THROW(this->getSubformula().hasQualitativeResult(), storm::exceptions::InvalidPropertyException, "Boolean formula must have subformulas with qualitative result.");
         }
         
         bool UnaryBooleanStateFormula::isUnaryBooleanStateFormula() const {

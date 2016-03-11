@@ -4,7 +4,7 @@
 namespace storm {
     namespace logic {
         
-        enum class FormulaContext { Undefined, Probability, Reward, LongRunAverage, ExpectedTime };
+        enum class FormulaContext { Undefined, Probability, Reward, LongRunAverage, Time };
         
     }
 }

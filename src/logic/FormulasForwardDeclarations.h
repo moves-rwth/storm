@@ -15,7 +15,7 @@ namespace storm {
         class ConditionalFormula;
         class CumulativeRewardFormula;
         class EventuallyFormula;
-        class ExpectedTimeOperatorFormula;
+        class TimeOperatorFormula;
         class GloballyFormula;
         class InstantaneousRewardFormula;
         class LongRunAverageOperatorFormula;
