@@ -203,6 +203,7 @@ namespace storm {
         
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::increaseProbabilityToSplitter(storm::storage::sparse::state_type predecessor, bisimulation::Block<BlockDataType> const& predecessorBlock, ValueType const& value) {
+            STORM_LOG_TRACE("Increasing probability of " << predecessor << " to splitter by " << value << ".");
             storm::storage::sparse::state_type predecessorPosition = this->partition.getPosition(predecessor);
             
             // If the position of the state is to the right of marker1, we have not seen it before.
@@ -269,6 +270,12 @@ namespace storm {
                         continue;
                     }
 
+                    // If we are computing a weak bisimulation on CTMCs and the predecessor block is the splitter, we
+                    // need to ignore it and proceed to the next predecessor.
+                    if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Ctmc && predecessorBlock == splitter) {
+                        continue;
+                    }
+                    
                     // We keep track of the probability of the predecessor moving to the splitter.
                     increaseProbabilityToSplitter(predecessor, predecessorBlock, predecessorEntry.getValue());
                     
@@ -278,7 +285,10 @@ namespace storm {
                         moveStateToMarker1(predecessor, predecessorBlock);
                     }
                     
-                    insertIntoPredecessorList(predecessorBlock, predecessorBlocks);
+                    // We must not insert the the splitter itself if we are not computing a weak bisimulation on CTMCs.
+                    if (this->options.getType() != BisimulationType::Weak || this->model.getType() != storm::models::ModelType::Ctmc || predecessorBlock != splitter) {
+                        insertIntoPredecessorList(predecessorBlock, predecessorBlocks);
+                    }
                 }
             }
             
@@ -431,7 +441,7 @@ namespace storm {
         template<typename ModelType>
         void DeterministicModelBisimulationDecomposition<ModelType>::refinePartitionBasedOnSplitter(bisimulation::Block<BlockDataType>& splitter, std::deque<bisimulation::Block<BlockDataType>*>& splitterQueue) {
             STORM_LOG_TRACE("Refining partition based on splitter " << splitter.getId());
-            
+
             // The outline of the refinement is as follows.
             //
             // We iterate over all states of the splitter and determine for each predecessor the state the probability
@@ -461,6 +471,12 @@ namespace storm {
                     
                     // If the block does not need to be refined, we skip it.
                     if (!possiblyNeedsRefinement(predecessorBlock)) {
+                        continue;
+                    }
+                    
+                    // If we are computing a weak bisimulation on CTMCs and the predecessor block is the splitter, we
+                    // need to ignore it and proceed to the next predecessor.
+                    if (this->options.getType() == BisimulationType::Weak && this->model.getType() == storm::models::ModelType::Ctmc && predecessorBlock == splitter) {
                         continue;
                     }
                     
@@ -495,6 +511,8 @@ namespace storm {
             
             // Finally, we split the block based on the precomputed probabilities and the chosen bisimulation type.
             if (this->options.getType() == BisimulationType::Strong || this->model.getType() == storm::models::ModelType::Ctmc) {
+                // In the case of CTMCs and weak bisimulation, we still call the "splitStrong" method, but we already have
+                // taken care of not adding the splitter to the predecessor blocks, so this is safe.
                 refinePredecessorBlocksOfSplitterStrong(predecessorBlocks, splitterQueue);
             } else {
                 // If the splitter is a predecessor of we can use the computed probabilities to update the silent
