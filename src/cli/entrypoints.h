@@ -53,6 +53,11 @@ namespace storm {
         void verifySymbolicModelWithAbstractionRefinementEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Abstraction Refinement is not yet implemented.");
         }
+        
+        template<typename ValueType>
+        void verifySymbolicModelWithLearningEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Abstraction Refinement is not yet implemented.");
+        }
 
         template<storm::dd::DdType DdType>
         void verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
@@ -120,6 +125,8 @@ namespace storm {
 
             if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement) {
                 verifySymbolicModelWithAbstractionRefinementEngine<LibraryType>(program, formulas, onlyInitialStatesRelevant);
+            } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Learning) {
+                verifySymbolicModelWithLearningEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
             } else {
                 storm::storage::ModelFormulasPair modelFormulasPair = buildSymbolicModel<ValueType, LibraryType>(program, formulas);
                 STORM_LOG_THROW(modelFormulasPair.model != nullptr, storm::exceptions::InvalidStateException,
@@ -136,7 +143,7 @@ namespace storm {
                     if (modelFormulasPair.model->isSparseModel()) {
                         if (storm::settings::generalSettings().isCounterexampleSet()) {
                             // If we were requested to generate a counterexample, we now do so for each formula.
-                            for (auto const &formula : modelFormulasPair.formulas) {
+                            for (auto const& formula : modelFormulasPair.formulas) {
                                 generateCounterexample<ValueType>(program, modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), formula);
                             }
                         } else {
