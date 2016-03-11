@@ -25,10 +25,32 @@ namespace storm {
         
         template<typename ValueType>
         DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
-            // TODO implement
-            assert(false);
+            
+            for(size_t index = 0; index < mDft.nrElements(); ++index) {
+                // Initialize currently failable BE
+                if (mDft.isBasicElement(index) && isOperational(index)) {
+                    if (!mDft.getBasicElement(index)->isColdBasicElement() || !mDft.hasRepresentant(index) || isActive(mDft.getRepresentant(index)->id())) {
+                        mIsCurrentlyFailableBE.push_back(index);
+                        STORM_LOG_TRACE("Currently failable: " << mDft.getBasicElement(index)->toString());
+                    }
+                } else if (mDft.getElement(index)->isSpareGate()) {
+                    // Initialize used representants
+                    uint_fast64_t useId = uses(index);
+                    mUsedRepresentants.push_back(useId);
+                    STORM_LOG_TRACE("Spare " << index << " uses " << useId);
+                }
+            }
+            
+            // Initialize failable dependencies
+            for (size_t dependencyId : mDft.getDependencies()) {
+                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(dependencyId);
+                assert(dependencyId == dependency->id());
+                if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvent()->id()) == DFTElementState::Operational) {
+                    mFailableDependencies.push_back(dependencyId);
+                    STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
+                }
+            }
         }
-        
 
         template<typename ValueType>
         DFTElementState DFTState<ValueType>::getElementState(size_t id) const {
