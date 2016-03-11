@@ -115,6 +115,13 @@ namespace storm {
                 std::vector<ValueType> const& getExitRates() const;
                 
                 /*!
+                 * Retrieves the vector representing the exit rates of the states.
+                 *
+                 * @return The exit rate vector of the model.
+                 */
+                std::vector<ValueType>& getExitRates();
+                
+                /*!
                  * Retrieves the exit rate of the given state.
                  *
                  * @param state The state for which retrieve the exit rate.

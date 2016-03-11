@@ -86,6 +86,11 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
+            std::vector<ValueType>& MarkovAutomaton<ValueType, RewardModelType>::getExitRates() {
+                return this->exitRates;
+            }
+            
+            template <typename ValueType, typename RewardModelType>
             ValueType const& MarkovAutomaton<ValueType, RewardModelType>::getExitRate(storm::storage::sparse::state_type state) const {
                 return this->exitRates[state];
             }

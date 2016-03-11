@@ -211,7 +211,7 @@ namespace storm {
             template<typename DataType>
             std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> Partition<DataType>::splitBlock(Block<DataType>& block, storm::storage::sparse::state_type position) {
                 STORM_LOG_THROW(position >= block.getBeginIndex() && position <= block.getEndIndex(), storm::exceptions::InvalidArgumentException, "Cannot split block at illegal position.");
-                STORM_LOG_TRACE("Splitting " << block.getId() << " at position " << position << " (begin was " << block.getBeginIndex() << ".");
+                STORM_LOG_TRACE("Splitting " << block.getId() << " at position " << position << " (begin was " << block.getBeginIndex() << ").");
 
                 // In case one of the resulting blocks would be empty, we simply return the current block and do not create
                 // a new one.
@@ -230,7 +230,7 @@ namespace storm {
                 
                 // Update the mapping of the states in the newly created block.
                 this->mapStatesToBlock(**newBlockIt, this->begin(**newBlockIt), this->end(**newBlockIt));
-                
+
                 return std::make_pair(newBlockIt, true);
             }
             

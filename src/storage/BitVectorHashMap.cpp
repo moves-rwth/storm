@@ -1,5 +1,6 @@
 #include "src/storage/BitVectorHashMap.h"
 
+#include <algorithm>
 #include <iostream>
 #include <algorithm>
 
