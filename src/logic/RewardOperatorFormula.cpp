@@ -7,8 +7,8 @@
 
 namespace storm {
     namespace logic {
-        RewardOperatorFormula::RewardOperatorFormula(std::shared_ptr<Formula const> const& subformula, boost::optional<std::string> const& rewardModelName, OperatorInformation const& operatorInformation) : OperatorFormula(subformula, operatorInformation), rewardModelName(rewardModelName) {
-            STORM_LOG_THROW(this->getMeasureType() == MeasureType::Expectation || this->getMeasureType() == MeasureType::Variance, storm::exceptions::InvalidPropertyException, "Invalid measure type in R-operator.");
+        RewardOperatorFormula::RewardOperatorFormula(std::shared_ptr<Formula const> const& subformula, boost::optional<std::string> const& rewardModelName, OperatorInformation const& operatorInformation, RewardMeasureType rewardMeasureType) : OperatorFormula(subformula, operatorInformation), rewardModelName(rewardModelName), rewardMeasureType(rewardMeasureType) {
+            // Intentionally left empty.
         }
         
         bool RewardOperatorFormula::isRewardOperatorFormula() const {
@@ -44,8 +44,13 @@ namespace storm {
             return std::make_shared<RewardOperatorFormula>(this->getSubformula().substitute(substitution), this->rewardModelName, this->operatorInformation);
         }
         
+        RewardMeasureType RewardOperatorFormula::getMeasureType() const {
+            return rewardMeasureType;
+        }
+        
         std::ostream& RewardOperatorFormula::writeToStream(std::ostream& out) const {
             out << "R";
+            out << "[" << rewardMeasureType << "]";
             if (this->hasRewardModelName()) {
                 out << "{\"" << this->getRewardModelName() << "\"}";
             }

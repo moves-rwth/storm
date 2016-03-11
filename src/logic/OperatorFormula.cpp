@@ -2,22 +2,7 @@
 
 namespace storm {
     namespace logic {
-        std::ostream& operator<<(std::ostream& out, MeasureType const& type) {
-            switch (type) {
-                case MeasureType::Value:
-                    out << "val";
-                    break;
-                case MeasureType::Expectation:
-                    out << "exp";
-                    break;
-                case MeasureType::Variance:
-                    out << "var";
-                    break;
-            }
-            return out;
-        }
-        
-        OperatorInformation::OperatorInformation(MeasureType const& measureType, boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection, boost::optional<Bound<double>> const& bound) : measureType(measureType), optimalityType(optimizationDirection), bound(bound) {
+        OperatorInformation::OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection, boost::optional<Bound<double>> const& bound) : optimalityType(optimizationDirection), bound(bound) {
             // Intentionally left empty.
         }
         
@@ -61,10 +46,6 @@ namespace storm {
             return operatorInformation.optimalityType.get();
         }
         
-        MeasureType OperatorFormula::getMeasureType() const {
-            return operatorInformation.measureType;
-        }
-        
         bool OperatorFormula::isOperatorFormula() const {
             return true;
         }
@@ -78,7 +59,6 @@ namespace storm {
         }
         
         std::ostream& OperatorFormula::writeToStream(std::ostream& out) const {
-            out << "[" << this->operatorInformation.measureType << "]";
             if (hasOptimalityType()) {
                 out << (getOptimalityType() == OptimizationDirection::Minimize ? "min" : "max");
             }

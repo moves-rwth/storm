@@ -11,6 +11,8 @@ namespace storm {
     namespace modelchecker {
         class CheckResult;
         
+        enum class RewardType { Expectation, Variance };
+        
         class AbstractModelChecker {
         public:
             virtual ~AbstractModelChecker() {
@@ -44,17 +46,17 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask);
             
             // The methods to compute the rewards for path formulas.
-            virtual std::unique_ptr<CheckResult> computeRewards(CheckTask<storm::logic::Formula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> computeConditionalRewards(CheckTask<storm::logic::ConditionalFormula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> computeCumulativeRewards(CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(CheckTask<storm::logic::LongRunAverageRewardFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::Formula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeConditionalRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::ConditionalFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeCumulativeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeInstantaneousRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula> const& checkTask);
             
             // The methods to compute the long-run average probabilities and timing measures.
             virtual std::unique_ptr<CheckResult> computeLongRunAverageProbabilities(CheckTask<storm::logic::StateFormula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> computeTimes(CheckTask<storm::logic::Formula> const& checkTask);
-            virtual std::unique_ptr<CheckResult> computeReachabilityTimes(CheckTask<storm::logic::EventuallyFormula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeTimes(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::Formula> const& checkTask);
+            virtual std::unique_ptr<CheckResult> computeReachabilityTimes(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula> const& checkTask);
             
             // The methods to check state formulas.
             virtual std::unique_ptr<CheckResult> checkStateFormula(CheckTask<storm::logic::StateFormula> const& stateFormula);

@@ -113,7 +113,7 @@ namespace storm {
             result = result && (!f.hasQualitativeResult() || inherited.getSpecification().areQualitativeOperatorResultsAllowed());
             result = result && (!f.hasQuantitativeResult() || inherited.getSpecification().areQuantitativeOperatorResultsAllowed());
             result = result && f.getSubformula().isTimePathFormula();
-            result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == MeasureType::Expectation);
+            result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == RewardMeasureType::Expectation);
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {
@@ -184,7 +184,7 @@ namespace storm {
             result = result && (!f.hasQualitativeResult() || inherited.getSpecification().areQualitativeOperatorResultsAllowed());
             result = result && (!f.hasQuantitativeResult() || inherited.getSpecification().areQuantitativeOperatorResultsAllowed());
             result = result && (f.getSubformula().isRewardPathFormula() || f.getSubformula().isConditionalRewardFormula());
-            result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == MeasureType::Expectation);
+            result = result && (inherited.getSpecification().isVarianceMeasureTypeAllowed() || f.getMeasureType() == RewardMeasureType::Expectation);
             if (!inherited.getSpecification().areNestedOperatorsAllowed()) {
                 result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, InheritedInformation(inherited.getSpecification().copy().setOperatorsAllowed(false))));
             } else {

@@ -8,7 +8,7 @@
 namespace storm {
     namespace logic {
         LongRunAverageOperatorFormula::LongRunAverageOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation) : OperatorFormula(subformula, operatorInformation) {
-            STORM_LOG_THROW(this->getMeasureType() == MeasureType::Value, storm::exceptions::InvalidPropertyException, "Invalid measure type in LRA-operator.");
+            // Intentionally left empty.
         }
         
         bool LongRunAverageOperatorFormula::isLongRunAverageOperatorFormula() const {

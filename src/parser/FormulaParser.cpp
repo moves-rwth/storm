@@ -88,17 +88,16 @@ namespace storm {
             // A parser used for recognizing the optimality operators.
             optimalityOperatorStruct optimalityOperator_;
             
-            struct measureTypeStruct : qi::symbols<char, storm::logic::MeasureType> {
-                measureTypeStruct() {
+            struct rewardMeasureTypeStruct : qi::symbols<char, storm::logic::RewardMeasureType> {
+                rewardMeasureTypeStruct() {
                     add
-                    ("val", storm::logic::MeasureType::Value)
-                    ("exp", storm::logic::MeasureType::Expectation)
-                    ("var", storm::logic::MeasureType::Variance);
+                    ("exp", storm::logic::RewardMeasureType::Expectation)
+                    ("var", storm::logic::RewardMeasureType::Variance);
                 }
             };
 
-            // A parser used for recognizing the measure types.
-            measureTypeStruct measureType_;
+            // A parser used for recognizing the reward measure types.
+            rewardMeasureTypeStruct rewardMeasureType_;
             
             // Parser and manager used for recognizing expressions.
             storm::parser::ExpressionParser expressionParser;
@@ -109,8 +108,8 @@ namespace storm {
             
             qi::rule<Iterator, std::vector<std::shared_ptr<storm::logic::Formula>>(), Skipper> start;
             
-            qi::rule<Iterator, storm::logic::OperatorInformation(storm::logic::MeasureType), qi::locals<storm::logic::MeasureType, boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>, Skipper> operatorInformation;
-            qi::rule<Iterator, storm::logic::MeasureType(), Skipper> measureType;
+            qi::rule<Iterator, storm::logic::OperatorInformation(), qi::locals<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<double>>, Skipper> operatorInformation;
+            qi::rule<Iterator, storm::logic::RewardMeasureType(), Skipper> rewardMeasureType;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> probabilityOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> rewardOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula>(), Skipper> timeOperator;
@@ -160,7 +159,7 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula> createNextFormula(std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createUntilFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, boost::optional<boost::variant<std::pair<double, double>, uint_fast64_t>> const& timeBound, std::shared_ptr<storm::logic::Formula> const& rightSubformula);
             std::shared_ptr<storm::logic::Formula> createConditionalFormula(std::shared_ptr<storm::logic::Formula> const& leftSubformula, std::shared_ptr<storm::logic::Formula> const& rightSubformula, storm::logic::FormulaContext context) const;
-            storm::logic::OperatorInformation createOperatorInformation(storm::logic::MeasureType const& measureType, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const;
+            storm::logic::OperatorInformation createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const;
             std::shared_ptr<storm::logic::Formula> createLongRunAverageOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createRewardOperatorFormula(boost::optional<std::string> const& rewardModelName, storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
             std::shared_ptr<storm::logic::Formula> createTimeOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula> const& subformula) const;
@@ -314,25 +313,25 @@ namespace storm {
             pathFormula = conditionalFormula(qi::_r1);
             pathFormula.name("path formula");
             
-            measureType = qi::lit("[") >> measureType_ >> qi::lit("]");
-            measureType.name("measure type");
+            rewardMeasureType = qi::lit("[") >> rewardMeasureType_ >> qi::lit("]");
+            rewardMeasureType.name("reward measure type");
             
-            operatorInformation = qi::eps[qi::_a = qi::_r1] >> (-measureType[qi::_a = qi::_1] >> -optimalityOperator_[qi::_b = qi::_1] >> ((relationalOperator_[qi::_c = qi::_1] > qi::double_[qi::_d = qi::_1]) | (qi::lit("=") > qi::lit("?"))))[qi::_val = phoenix::bind(&FormulaParserGrammar::createOperatorInformation, phoenix::ref(*this), qi::_a, qi::_b, qi::_c, qi::_d)];
+            operatorInformation = (-optimalityOperator_[qi::_a = qi::_1] >> ((relationalOperator_[qi::_b = qi::_1] > qi::double_[qi::_c = qi::_1]) | (qi::lit("=") > qi::lit("?"))))[qi::_val = phoenix::bind(&FormulaParserGrammar::createOperatorInformation, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
             operatorInformation.name("operator information");
             
-            longRunAverageOperator = ((qi::lit("LRA") | qi::lit("S")) > operatorInformation(storm::logic::MeasureType::Value) > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            longRunAverageOperator = ((qi::lit("LRA") | qi::lit("S")) > operatorInformation > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             longRunAverageOperator.name("long-run average operator");
             
             rewardModelName = qi::lit("{\"") > label > qi::lit("\"}");
             rewardModelName.name("reward model name");
             
-            rewardOperator = (qi::lit("R") > -rewardModelName > operatorInformation(storm::logic::MeasureType::Expectation) > qi::lit("[") > rewardPathFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createRewardOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)];
+            rewardOperator = (qi::lit("R") > -rewardModelName > operatorInformation > qi::lit("[") > rewardPathFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createRewardOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2, qi::_3)];
             rewardOperator.name("reward operator");
             
-            timeOperator = (qi::lit("T") > operatorInformation(storm::logic::MeasureType::Expectation) > qi::lit("[") > eventuallyFormula(storm::logic::FormulaContext::Time) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            timeOperator = (qi::lit("T") > operatorInformation > qi::lit("[") > eventuallyFormula(storm::logic::FormulaContext::Time) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             timeOperator.name("time operator");
             
-            probabilityOperator = (qi::lit("P") > operatorInformation(storm::logic::MeasureType::Value) > qi::lit("[") > pathFormula(storm::logic::FormulaContext::Probability) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProbabilityOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            probabilityOperator = (qi::lit("P") > operatorInformation > qi::lit("[") > pathFormula(storm::logic::FormulaContext::Probability) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProbabilityOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             probabilityOperator.name("probability operator");
             
             andStateFormula = notStateFormula[qi::_val = qi::_1] >> *(qi::lit("&") >> notStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::And)];
@@ -475,11 +474,11 @@ namespace storm {
             return std::shared_ptr<storm::logic::Formula>(new storm::logic::ConditionalFormula(leftSubformula, rightSubformula, context));
         }
         
-        storm::logic::OperatorInformation FormulaParserGrammar::createOperatorInformation(storm::logic::MeasureType const& measureType, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const {
+        storm::logic::OperatorInformation FormulaParserGrammar::createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<double> const& threshold) const {
             if (comparisonType && threshold) {
-                return storm::logic::OperatorInformation(measureType, optimizationDirection, storm::logic::Bound<double>(comparisonType.get(), threshold.get()));
+                return storm::logic::OperatorInformation(optimizationDirection, storm::logic::Bound<double>(comparisonType.get(), threshold.get()));
             } else {
-                return storm::logic::OperatorInformation(measureType, optimizationDirection, boost::none);
+                return storm::logic::OperatorInformation(optimizationDirection, boost::none);
             }
         }
         

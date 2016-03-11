@@ -8,7 +8,7 @@
 namespace storm {
     namespace logic {
         ProbabilityOperatorFormula::ProbabilityOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation) : OperatorFormula(subformula, operatorInformation) {
-            STORM_LOG_THROW(this->getMeasureType() == MeasureType::Value, storm::exceptions::InvalidPropertyException, "Invalid measure type in P-operator.");
+            // Intentionally left empty.
         }
         
         bool ProbabilityOperatorFormula::isProbabilityOperatorFormula() const {

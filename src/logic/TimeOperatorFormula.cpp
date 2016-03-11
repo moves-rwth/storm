@@ -7,8 +7,8 @@
 
 namespace storm {
     namespace logic {
-        TimeOperatorFormula::TimeOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation) : OperatorFormula(subformula, operatorInformation) {
-            STORM_LOG_THROW(this->getMeasureType() == MeasureType::Expectation || this->getMeasureType() == MeasureType::Variance, storm::exceptions::InvalidPropertyException, "Invalid measure type in ET-operator.");
+        TimeOperatorFormula::TimeOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation, RewardMeasureType rewardMeasureType) : OperatorFormula(subformula, operatorInformation), rewardMeasureType(rewardMeasureType) {
+            // Intentionally left empty.
         }
         
         bool TimeOperatorFormula::isTimeOperatorFormula() const {
@@ -23,8 +23,13 @@ namespace storm {
             return std::make_shared<TimeOperatorFormula>(this->getSubformula().substitute(substitution), this->operatorInformation);
         }
         
+        RewardMeasureType TimeOperatorFormula::getMeasureType() const {
+            return rewardMeasureType;
+        }
+        
         std::ostream& TimeOperatorFormula::writeToStream(std::ostream& out) const {
             out << "T";
+            out << "[" << rewardMeasureType << "]";
             OperatorFormula::writeToStream(out);
             return out;
         }

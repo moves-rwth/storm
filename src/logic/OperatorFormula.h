@@ -8,15 +8,10 @@
 #include "src/solver/OptimizationDirection.h"
 
 namespace storm {
-    namespace logic {
-        enum class MeasureType { Value, Expectation, Variance };
-        
-        std::ostream& operator<<(std::ostream& out, MeasureType const& type);
-        
+    namespace logic {        
         struct OperatorInformation {
-            OperatorInformation(MeasureType const& measureType = MeasureType::Value, boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection = boost::none, boost::optional<Bound<double>> const& bound = boost::none);
+            OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection = boost::none, boost::optional<Bound<double>> const& bound = boost::none);
 
-            MeasureType measureType;
             boost::optional<storm::solver::OptimizationDirection> optimalityType;
             boost::optional<Bound<double>> bound;
         };
@@ -42,10 +37,7 @@ namespace storm {
             bool hasOptimalityType() const;
             storm::solver::OptimizationDirection const& getOptimalityType() const;
             virtual bool isOperatorFormula() const override;
-            
-            // Measure-type-related accessors.
-            MeasureType getMeasureType() const;
-            
+                        
             virtual bool hasQualitativeResult() const override;
             virtual bool hasQuantitativeResult() const override;
             
