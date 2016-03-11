@@ -22,6 +22,13 @@ namespace storm {
             std::vector<size_t> alwaysActiveBEs = dft.nonColdBEs();
             mIsCurrentlyFailableBE.insert(mIsCurrentlyFailableBE.end(), alwaysActiveBEs.begin(), alwaysActiveBEs.end());
         }
+        
+        template<typename ValueType>
+        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+            // TODO implement
+            assert(false);
+        }
+        
 
         template<typename ValueType>
         DFTElementState DFTState<ValueType>::getElementState(size_t id) const {

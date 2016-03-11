@@ -52,7 +52,7 @@ namespace storm {
             storm::storage::DFT<ValueType> const& mDft;
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> mStateGenerationInfo;
             storm::storage::BitVectorHashMap<uint_fast64_t> mStates;
-            std::vector<uint_fast64_t> mPseudoStatesMapping;
+            std::vector<std::pair<uint_fast64_t, storm::storage::BitVector>> mPseudoStatesMapping; // vector of (id to concrete state, bitvector)
             size_t newIndex = 0;
             bool mergeFailedStates = true;
             size_t failedIndex = 0;

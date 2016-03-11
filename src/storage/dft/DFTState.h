@@ -36,6 +36,11 @@ namespace storm {
         public:
             DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
             
+            /**
+             * Construct state from underlying bitvector.
+             */
+            DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
+            
             DFTElementState getElementState(size_t id) const;
             
             DFTDependencyState getDependencyState(size_t id) const;

@@ -246,10 +246,11 @@ namespace storm {
                             if (!changed && newStateId >= OFFSET_PSEUDO_STATE) {
                                 newStateId = newStateId - OFFSET_PSEUDO_STATE;
                                 assert(newStateId < mPseudoStatesMapping.size());
-                                if (mPseudoStatesMapping[newStateId] == 0) {
+                                if (mPseudoStatesMapping[newStateId].first == 0) {
                                     // Create pseudo state now
+                                    assert(mPseudoStatesMapping[newStateId].second == newState->status());
                                     newState->setId(newIndex++);
-                                    mPseudoStatesMapping[newStateId] = newState->getId();
+                                    mPseudoStatesMapping[newStateId].first = newState->getId();
                                     newStateId = newState->getId();
                                     mStates.setOrAdd(newState->status(), newStateId);
                                     stateQueue.push(newState);
@@ -261,7 +262,7 @@ namespace storm {
                             if (changed) {
                                 // Remember to create state later on
                                 newState->setId(mPseudoStatesMapping.size() + OFFSET_PSEUDO_STATE);
-                                mPseudoStatesMapping.push_back(0);
+                                mPseudoStatesMapping.push_back(std::make_pair(0, newState->status()));
                                 newStateId = mStates.findOrAdd(newState->status(), newState->getId());
                                 STORM_LOG_TRACE("New state for later creation: " << mDft.getStateString(newState));
                             } else {
@@ -345,9 +346,9 @@ namespace storm {
                         if (it->first >= OFFSET_PSEUDO_STATE) {
                             uint_fast64_t newId = it->first - OFFSET_PSEUDO_STATE;
                             assert(newId < mPseudoStatesMapping.size());
-                            if (mPseudoStatesMapping[newId] > 0) {
+                            if (mPseudoStatesMapping[newId].first > 0) {
                                 // State exists already
-                                newId = mPseudoStatesMapping[newId];
+                                newId = mPseudoStatesMapping[newId].first;
                                 auto itFind = outgoingTransitions.find(newId);
                                 if (itFind != outgoingTransitions.end()) {
                                     // Add probability from pseudo state to instantiation
@@ -382,11 +383,35 @@ namespace storm {
                 exitRates.push_back(exitRate);
                 assert(exitRates.size()-1 == state->getId());
 
+                if (stateQueue.empty()) {
+                    // Before ending the exploration check for pseudo states which are no be initialized yet
+                    for (auto & pseudoStatePair : mPseudoStatesMapping) {
+                        if (pseudoStatePair.first == 0) {
+                            // Create state from pseudo state and explore
+                            assert(mStates.contains(pseudoStatePair.second));
+                            assert(mStates.getValue(pseudoStatePair.second) >= OFFSET_PSEUDO_STATE);
+                            STORM_LOG_TRACE("Create pseudo state from bit vector " << pseudoStatePair.second);
+                            DFTStatePointer pseudoState = std::make_shared<storm::storage::DFTState<ValueType>>(pseudoStatePair.second, mDft, *mStateGenerationInfo, newIndex++);
+                            assert(pseudoStatePair.second == pseudoState->status());
+                            pseudoStatePair.first = pseudoState->getId();
+                            mStates.setOrAdd(pseudoState->status(), pseudoState->getId());
+                            stateQueue.push(pseudoState);
+                            STORM_LOG_TRACE("Explore pseudo state " << mDft.getStateString(pseudoState) << " with id " << pseudoState->getId());
+                            break;
+                        }
+                    }
+                }
+                
             } // end while queue
-            assert(std::find(mPseudoStatesMapping.begin(), mPseudoStatesMapping.end(), 0) == mPseudoStatesMapping.end());
+            
+            std::vector<uint_fast64_t> pseudoStatesVector;
+            for (auto const& pseudoStatePair : mPseudoStatesMapping) {
+                pseudoStatesVector.push_back(pseudoStatePair.first);
+            }
+            assert(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end());
             
             // Replace pseudo states in matrix
-            transitionMatrixBuilder.replaceColumns(mPseudoStatesMapping, OFFSET_PSEUDO_STATE);
+            transitionMatrixBuilder.replaceColumns(pseudoStatesVector, OFFSET_PSEUDO_STATE);
             
             assert(!deterministic || rowOffset == 0);
             return deterministic;
