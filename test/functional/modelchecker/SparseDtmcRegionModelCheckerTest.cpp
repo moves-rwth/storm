@@ -17,9 +17,9 @@
 
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
     
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp/brp16_2.pm";
-    std::string const& formulaAsString = "P<=0.84 [F s=5 ]";
-    std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp/brp16_2.pm";
+    std::string formulaAsString = "P<=0.84 [F s=5 ]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
     std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
@@ -79,9 +79,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Prob) {
 }
 
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards4/brp_rewards16_2.pm";
-    std::string const& formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
-    std::string const& constantsAsString = "pL=0.9,TOAck=0.5";
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards4/brp_rewards16_2.pm";
+    std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
+    std::string constantsAsString = "pL=0.9,TOAck=0.5";
     
     std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
@@ -164,9 +164,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew) {
 
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
     
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards4/brp_rewards16_2.pm";
-    std::string const& formulaAsString = "R>2.5 [F (s=0&srep=3) ]";
-    std::string const& constantsAsString = "";
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards4/brp_rewards16_2.pm";
+    std::string formulaAsString = "R>2.5 [F (s=0&srep=3) ]";
+    std::string constantsAsString = "";
     
     std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
@@ -201,9 +201,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_Infty) {
 
 TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
     
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards4/brp_rewards16_2.pm";
-    std::string const& formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
-    std::string const& constantsAsString = ""; //!! this model will have 4 parameters
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/brp_rewards4/brp_rewards16_2.pm";
+    std::string formulaAsString = "R>2.5 [F ((s=5) | (s=0&srep=3)) ]";
+    std::string constantsAsString = ""; //!! this model will have 4 parameters
     
     std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
@@ -257,9 +257,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Brp_Rew_4Par) {
 
 TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
     
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/crowds/crowds3_5.pm";
-    std::string const& formulaAsString = "P<0.5 [F \"observe0Greater1\" ]";
-    std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/crowds/crowds3_5.pm";
+    std::string formulaAsString = "P<0.5 [F \"observe0Greater1\" ]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
     std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
@@ -338,9 +338,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob) {
 
 TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
     
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/crowds/crowds3_5.pm";
-    std::string const& formulaAsString = "P>0.75 [F \"observe0Greater1\" ]";
-    std::string const& constantsAsString = "badC=0.3"; //e.g. pL=0.9,TOACK=0.5
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/crowds/crowds3_5.pm";
+    std::string formulaAsString = "P>0.75 [F \"observe0Greater1\" ]";
+    std::string constantsAsString = "badC=0.3"; //e.g. pL=0.9,TOACK=0.5
     
     std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));
@@ -396,9 +396,9 @@ TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_1Par) {
 
 TEST(SparseDtmcRegionModelCheckerTest, Crowds_Prob_Const) {
     
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/crowds/crowds3_5.pm";
-    std::string const& formulaAsString = "P>0.6 [F \"observe0Greater1\" ]";
-    std::string const& constantsAsString = "PF=0.9,badC=0.2";
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/pdtmc/crowds/crowds3_5.pm";
+    std::string formulaAsString = "P>0.6 [F \"observe0Greater1\" ]";
+    std::string constantsAsString = "PF=0.9,badC=0.2";
     
     std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));

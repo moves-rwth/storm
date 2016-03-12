@@ -20,6 +20,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/solver/SolveGoal.h"
 #include "src/modelchecker/region/RegionBoundary.h"
+#include "src/storage/TotalScheduler.h"
 
 namespace storm {
     namespace modelchecker {
@@ -67,7 +68,6 @@ namespace storm {
             private:
 
                 typedef std::pair<ParametricType, std::size_t> FunctionSubstitution;
-                typedef std::vector<storm::storage::sparse::state_type> Policy;
                 class FuncSubHash{
                     public:
                         std::size_t operator()(FunctionSubstitution const& fs) const {
@@ -84,7 +84,7 @@ namespace storm {
                 void initializeRewards(ParametricSparseModelType const& parametricModel, std::vector<std::size_t> const& newIndices);
                 void initializePlayer1Matrix(ParametricSparseModelType const& parametricModel);
                 void instantiate(ParameterRegion<ParametricType> const& region, bool computeLowerBounds);
-                void invokeSolver(bool computeLowerBounds, Policy& policy, bool allowEarlyTermination);
+                void invokeSolver(bool computeLowerBounds, storm::storage::TotalScheduler& scheduler, bool allowEarlyTermination);
 
                 //A flag that denotes whether we compute probabilities or rewards
                 bool computeRewards;
@@ -97,12 +97,12 @@ namespace storm {
                 struct SolverData{
                     //The results from the previous instantiation. Serve as first guess for the next call.
                     std::vector<ConstantType> result; //Note: result.size==maybeStates.numberOfSetBits
-                    Policy lastMinimizingPolicy, lastMaximizingPolicy;
+                    storm::storage::TotalScheduler lastMinimizingScheduler, lastMaximizingScheduler;
                     std::size_t initialStateIndex; //The index which represents the result for the initial state in the result vector
                     //Player 1 represents the nondeterminism of the given mdp (so, this is irrelevant if we approximate values of a DTMC)
                     std::unique_ptr<storm::solver::BoundedGoal<ConstantType>> player1Goal;
                     storm::storage::SparseMatrix<storm::storage::sparse::state_type> player1Matrix;
-                    Policy lastPlayer1Policy;
+                    storm::storage::TotalScheduler lastPlayer1Scheduler;
                 } solverData;
                 
                 

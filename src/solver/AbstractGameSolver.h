@@ -2,15 +2,22 @@
 #define STORM_SOLVER_ABSTRACTGAMESOLVER_H_
 
 #include <cstdint>
+#include <memory>
+
+#include <boost/optional.hpp>
+
 #include "src/storage/sparse/StateType.h"
 #include "src/utility/vector.h"
+#include "src/solver/AbstractEquationSolver.h"
+#include "src/storage/TotalScheduler.h"
 
 namespace storm {
     namespace solver {
         /*!
          * The abstract base class for the game solvers.
          */
-        class AbstractGameSolver {
+        template< typename ValueType>
+        class AbstractGameSolver : public AbstractEquationSolver<ValueType>{
         public:
             /*!
              * Creates a game solver with the default parameters.
@@ -26,10 +33,13 @@ namespace storm {
              */
             AbstractGameSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative);
             
-            void setPolicyTracking(bool setToTrue=true);
+            void setTrackScheduler(bool trackScheduler = true);
+            bool isTrackSchedulerSet() const;
+            bool hasScheduler() const;
             
-            std::vector<storm::storage::sparse::state_type> getPlayer1Policy() const;
-            std::vector<storm::storage::sparse::state_type> getPlayer2Policy() const;
+            storm::storage::TotalScheduler const& getPlayer1Scheduler() const;
+            storm::storage::TotalScheduler const& getPlayer2Scheduler() const;
+            
             double getPrecision() const;
             bool getRelative() const;
 
@@ -43,13 +53,12 @@ namespace storm {
             // A flag indicating whether a relative or an absolute stopping criterion is to be used.
             bool relative;
             
-            // Whether we track the policies we generate.
-            bool trackPolicies;
+            // Whether we generate a scheduler during solving.
+            bool trackScheduler;
             
-            // The policies for the different players
-            mutable std::vector<storm::storage::sparse::state_type> player1Policy;
-            mutable std::vector<storm::storage::sparse::state_type> player2Policy;
-            
+            // The scheduler for the corresponding players (if it could be successfully generated).
+            mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> player1Scheduler;
+            mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> player2Scheduler;
         };
     }
 }

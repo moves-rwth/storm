@@ -16,9 +16,9 @@
 
 TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
     
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pmdp/two_dice/two_dice.nm";
-    std::string const& formulaFile = STORM_CPP_BASE_PATH "/examples/pmdp/two_dice/two_dice.prctl"; //P<=0.17 [F \"doubles\" ]";
-    std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/pmdp/two_dice/two_dice.nm";
+    std::string formulaFile = STORM_CPP_BASE_PATH "/examples/pmdp/two_dice/two_dice.prctl"; //P<=0.17 [F \"doubles\" ]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
     std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaFile, constantsAsString));
@@ -74,9 +74,9 @@ TEST(SparseMdpRegionModelCheckerTest, two_dice_Prob) {
 
 TEST(SparseMdpRegionModelCheckerTest, coin_Prob) {
     
-    std::string const& programFile = STORM_CPP_BASE_PATH "/examples/pmdp/coin2/coin2_2.pm";
-    std::string const& formulaAsString = "P>0.25 [F \"finished\"&\"all_coins_equal_1\" ]";
-    std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string programFile = STORM_CPP_BASE_PATH "/examples/pmdp/coin2/coin2_2.pm";
+    std::string formulaAsString = "P>0.25 [F \"finished\"&\"all_coins_equal_1\" ]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
     std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
     ASSERT_TRUE(storm::initializeRegionModelChecker(modelchecker, programFile, formulaAsString, constantsAsString));

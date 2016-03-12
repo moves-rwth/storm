@@ -171,6 +171,21 @@ namespace storm {
             }
             return result;
         }
+
+        std::string Program::getUndefinedConstantsAsString() const {
+            std::stringstream stream;
+            bool printComma = false;
+            for (auto const& constant : getUndefinedConstants()) {
+                if (printComma) {
+                    stream << ", ";
+                } else {
+                    printComma = true;
+                }
+                stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+            }
+            stream << ".";
+            return stream.str();
+        }
         
         bool Program::hasConstant(std::string const& constantName) const {
             return this->constantToIndexMap.find(constantName) != this->constantToIndexMap.end();
@@ -1202,7 +1217,7 @@ namespace storm {
             }
             return res;
 
-        };
+        }
         
         Command Program::synchronizeCommands(uint_fast64_t newCommandIndex, uint_fast64_t actionIndex, uint_fast64_t firstUpdateIndex, std::string const& actionName, std::vector<std::reference_wrapper<Command const>> const& commands) const {
             // To construct the synchronous product of the commands, we need to store a list of its updates.

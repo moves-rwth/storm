@@ -11,6 +11,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        TotalScheduler::TotalScheduler(std::vector<uint_fast64_t>&& choices) : choices(std::move(choices)) {
+            // Intentionally left empty.
+        }
+        
         void TotalScheduler::setChoice(uint_fast64_t state, uint_fast64_t choice) {
             if (state > choices.size()) {
                 throw storm::exceptions::InvalidArgumentException() << "Invalid call to TotalScheduler::setChoice: scheduler cannot not define a choice for state " << state << ".";

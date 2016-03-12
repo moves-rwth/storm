@@ -6,7 +6,6 @@
  */
 
 #include "src/utility/ModelInstantiator.h"
-
 #include "src/models/sparse/StandardRewardModel.h"
 
 namespace storm {
@@ -93,7 +92,7 @@ namespace storm {
                     STORM_LOG_ASSERT(parametricEntryIt->getColumn() == constantEntryIt->getColumn(), "Entries of parametric and constant matrix are not at the same position");
                     if(storm::utility::isConstant(parametricEntryIt->getValue())){
                         //Constant entries can be inserted directly
-                        constantEntryIt->setValue(storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(parametricEntryIt->getValue())));
+                        constantEntryIt->setValue(storm::utility::convertNumber<ConstantType>(storm::utility::parametric::getConstantPart(parametricEntryIt->getValue())));
                     } else {
                         //insert the new function and store that the current constantMatrix entry needs to be set to the value of this function
                         auto functionsIt = functions.insert(std::make_pair(parametricEntryIt->getValue(), dummyValue)).first;
@@ -119,7 +118,7 @@ namespace storm {
                 while(parametricEntryIt != parametricVector.end()){
                     if(storm::utility::isConstant(storm::utility::simplify(*parametricEntryIt))){
                         //Constant entries can be inserted directly
-                        *constantEntryIt = storm::utility::region::convertNumber<ConstantType>(storm::utility::region::getConstantPart(*parametricEntryIt));
+                        *constantEntryIt = storm::utility::convertNumber<ConstantType>(storm::utility::parametric::getConstantPart(*parametricEntryIt));
                     } else {
                         //insert the new function and store that the current constantVector entry needs to be set to the value of this function
                         auto functionsIt = functions.insert(std::make_pair(*parametricEntryIt, dummyValue)).first;
@@ -136,8 +135,8 @@ namespace storm {
             ConstantSparseModelType const& ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::instantiate(std::map<VariableType, CoefficientType>const& valuation){
                 //Write results into the placeholders
                 for(auto& functionResult : this->functions){
-                    functionResult.second=storm::utility::region::convertNumber<ConstantType>(
-                            storm::utility::region::evaluateFunction(functionResult.first, valuation));
+                    functionResult.second=storm::utility::convertNumber<ConstantType>(
+                            storm::utility::parametric::evaluate(functionResult.first, valuation));
                 }
                 
                 //Write the instantiated values to the matrices and vectors according to the stored mappings

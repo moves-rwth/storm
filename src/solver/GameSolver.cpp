@@ -9,12 +9,12 @@
 namespace storm {
     namespace solver {
         template <typename ValueType>
-        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) : AbstractGameSolver(), player1Matrix(player1Matrix), player2Matrix(player2Matrix), earlyTermination(new NoEarlyTerminationCondition<ValueType>()) {
+        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) : AbstractGameSolver<ValueType>(), player1Matrix(player1Matrix), player2Matrix(player2Matrix) {
             // Intentionally left empty.
         }
 
         template <typename ValueType>
-        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : AbstractGameSolver(precision, maximalNumberOfIterations, relative), player1Matrix(player1Matrix), player2Matrix(player2Matrix) , earlyTermination(new NoEarlyTerminationCondition<ValueType>()) {
+        GameSolver<ValueType>::GameSolver(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : AbstractGameSolver<ValueType>(precision, maximalNumberOfIterations, relative), player1Matrix(player1Matrix), player2Matrix(player2Matrix) {
             // Intentionally left empty.
         }
 
@@ -65,19 +65,20 @@ namespace storm {
                 }
 
                 // Check if the process converged and set up the new iteration in case we are not done.
-                converged = storm::utility::vector::equalModuloPrecision(x, tmpResult, precision, relative);
+                converged = storm::utility::vector::equalModuloPrecision(x, tmpResult, this->precision, this->relative);
                 std::swap(x, tmpResult);
 
                 ++iterations;
-            } while (!converged && iterations < maximalNumberOfIterations && !this->earlyTermination->terminateNow(x));
+            } while (!converged && iterations < this->maximalNumberOfIterations && !this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
             
-            STORM_LOG_WARN_COND(converged || this->earlyTermination->terminateNow(x), "Iterative solver for stochastic two player games did not converge after " << iterations << " iterations.");
+            STORM_LOG_WARN_COND(converged, "Iterative solver for stochastic two player games did not converge after " << iterations << " iterations.");
             
-            if(this->trackPolicies){
-                this->player2Policy = std::vector<storm::storage::sparse::state_type>(player2Matrix.getRowGroupCount());
-                storm::utility::vector::reduceVectorMinOrMax(player2Goal, nondetResult, player2Result, player2Matrix.getRowGroupIndices(), &this->player2Policy);
+            if(this->trackScheduler){
+                std::vector<uint_fast64_t> player2Choices(player2Matrix.getRowGroupCount());
+                storm::utility::vector::reduceVectorMinOrMax(player2Goal, nondetResult, player2Result, player2Matrix.getRowGroupIndices(), &player2Choices);
+                this->player2Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player2Choices));
 
-                this->player1Policy = std::vector<storm::storage::sparse::state_type>(numberOfPlayer1States, 0);
+                std::vector<uint_fast64_t> player1Choices(numberOfPlayer1States, 0);
                 for (uint_fast64_t pl1State = 0; pl1State < numberOfPlayer1States; ++pl1State) {
                     storm::storage::SparseMatrix<storm::storage::sparse::state_type>::const_rows relevantRows = player1Matrix.getRowGroup(pl1State);
                     if (relevantRows.getNumberOfEntries() > 0) {
@@ -92,14 +93,14 @@ namespace storm {
                             for (; it != ite; ++it, ++localChoice) {
                                 if(player2Result[it->getColumn()] < tmpResult[pl1State]){
                                     tmpResult[pl1State] = player2Result[it->getColumn()];
-                                    this->player1Policy[pl1State] = localChoice;
+                                    player1Choices[pl1State] = localChoice;
                                 }
                             }
                         } else {
                             for (; it != ite; ++it, ++localChoice) {
                                 if(player2Result[it->getColumn()] > tmpResult[pl1State]){
                                     tmpResult[pl1State] = player2Result[it->getColumn()];
-                                    this->player1Policy[pl1State] = localChoice;
+                                    player1Choices[pl1State] = localChoice;
                                 }
                             }
                         }
@@ -107,14 +108,10 @@ namespace storm {
                         STORM_LOG_ERROR("There is no choice for Player 1 at state " << pl1State << " in the stochastic two player game. This is not expected!");
                     }
                 }
+                this->player1Scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(player1Choices));
             }
         }
         
-        template <typename ValueType>
-        void GameSolver<ValueType>::setEarlyTerminationCriterion(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v) {
-                earlyTermination = std::move(v);
-        }
-
         template <typename ValueType>
         storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& GameSolver<ValueType>::getPlayer1Matrix() const {
             return player1Matrix;

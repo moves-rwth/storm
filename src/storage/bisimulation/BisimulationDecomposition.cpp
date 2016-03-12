@@ -15,6 +15,9 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 
+#include "src/logic/FormulaInformation.h"
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 #include "src/exceptions/InvalidOptionException.h"
@@ -30,7 +33,7 @@ namespace storm {
         }
         
         template<typename ModelType, typename BlockDataType>
-        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : Options() {
+        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options(ModelType const& model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : Options() {
             if (formulas.empty()) {
                 this->respectedAtomicPropositions = model.getStateLabeling().getLabels();
                 this->keepRewards = true;
@@ -44,7 +47,7 @@ namespace storm {
         }
         
         template<typename ModelType, typename BlockDataType>
-        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), keepRewards(false), type(BisimulationType::Strong), bounded(false), buildQuotient(true) {
+        BisimulationDecomposition<ModelType, BlockDataType>::Options::Options() : measureDrivenInitialPartition(false), phiStates(), psiStates(), respectedAtomicPropositions(), buildQuotient(true), keepRewards(false), type(BisimulationType::Strong), bounded(false) {
             // Intentionally left empty.
         }
         
@@ -55,11 +58,14 @@ namespace storm {
             phiStates = boost::none;
             psiStates = boost::none;
             
+            // Retrieve information about formula.
+            storm::logic::FormulaInformation info = formula.info();
+            
             // Preserve rewards if necessary.
-            keepRewards = keepRewards || formula.containsRewardOperator();
+            keepRewards = keepRewards || info.containsRewardOperator();
             
             // Preserve bounded properties if necessary.
-            bounded = bounded || (formula.containsBoundedUntilFormula() || formula.containsNextFormula());
+            bounded = bounded || (info.containsBoundedUntilFormula() || info.containsNextFormula());
             
             // Compute the relevant labels and expressions.
             this->addToRespectedAtomicPropositions(formula.getAtomicExpressionFormulas(), formula.getAtomicLabelFormulas());
@@ -67,10 +73,13 @@ namespace storm {
         
         template<typename ModelType, typename BlockDataType>
         void BisimulationDecomposition<ModelType, BlockDataType>::Options::preserveSingleFormula(ModelType const& model, storm::logic::Formula const& formula) {
-            keepRewards = formula.containsRewardOperator();
+            // Retrieve information about formula.
+            storm::logic::FormulaInformation info = formula.info();
+
+            keepRewards = info.containsRewardOperator();
             
             // We need to preserve bounded properties iff the formula contains a bounded until or a next subformula.
-            bounded = formula.containsBoundedUntilFormula() || formula.containsNextFormula();
+            bounded = info.containsBoundedUntilFormula() || info.containsNextFormula();
             
             // Compute the relevant labels and expressions.
             this->addToRespectedAtomicPropositions(formula.getAtomicExpressionFormulas(), formula.getAtomicLabelFormulas());
@@ -114,17 +123,12 @@ namespace storm {
             if (newFormula->isUntilFormula()) {
                 leftSubformula = newFormula->asUntilFormula().getLeftSubformula().asSharedPointer();
                 rightSubformula = newFormula->asUntilFormula().getRightSubformula().asSharedPointer();
-                if (leftSubformula->isPropositionalFormula() && rightSubformula->isPropositionalFormula()) {
+                if (leftSubformula->isInFragment(storm::logic::propositional()) && rightSubformula->isInFragment(storm::logic::propositional())) {
                     measureDrivenInitialPartition = true;
                 }
             } else if (newFormula->isEventuallyFormula()) {
                 rightSubformula = newFormula->asEventuallyFormula().getSubformula().asSharedPointer();
-                if (rightSubformula->isPropositionalFormula()) {
-                    measureDrivenInitialPartition = true;
-                }
-            } else if (newFormula->isReachabilityRewardFormula()) {
-                rightSubformula = newFormula->asReachabilityRewardFormula().getSubformula().asSharedPointer();
-                if (rightSubformula->isPropositionalFormula()) {
+                if (rightSubformula->isInFragment(storm::logic::propositional())) {
                     measureDrivenInitialPartition = true;
                 }
             }
@@ -163,9 +167,9 @@ namespace storm {
 
         template<typename ModelType, typename BlockDataType>
         BisimulationDecomposition<ModelType, BlockDataType>::BisimulationDecomposition(ModelType const& model, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, Options const& options) : model(model), backwardTransitions(backwardTransitions), options(options), partition(), comparator(), quotient(nullptr) {
-            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
-            STORM_LOG_THROW(!options.keepRewards || !model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
-            STORM_LOG_THROW(options.type != BisimulationType::Weak || !options.bounded, storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
+            STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || model.hasUniqueRewardModel(), storm::exceptions::IllegalFunctionCallException, "Bisimulation currently only supports models with at most one reward model.");
+            STORM_LOG_THROW(!options.getKeepRewards() || !model.hasRewardModel() || model.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::IllegalFunctionCallException, "Bisimulation is currently supported for models with state rewards only. Consider converting the transition rewards to state rewards (via suitable function calls).");
+            STORM_LOG_THROW(options.getType() != BisimulationType::Weak || !options.getBounded(), storm::exceptions::IllegalFunctionCallException, "Weak bisimulation cannot preserve bounded properties.");
             
             // Fix the respected atomic propositions if they were not explicitly given.
             if (!this->options.respectedAtomicPropositions) {
@@ -270,7 +274,7 @@ namespace storm {
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (options.keepRewards && model.hasRewardModel()) {
+            if (options.getKeepRewards() && model.hasRewardModel()) {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
         }
@@ -284,11 +288,11 @@ namespace storm {
                 representativePsiState = *options.psiStates.get().begin();
             }
             
-            partition = storm::storage::bisimulation::Partition<BlockDataType>(model.getNumberOfStates(), statesWithProbability01.first, options.bounded || options.keepRewards ? options.psiStates.get() : statesWithProbability01.second, representativePsiState);
+            partition = storm::storage::bisimulation::Partition<BlockDataType>(model.getNumberOfStates(), statesWithProbability01.first, options.getBounded() || options.getKeepRewards() ? options.psiStates.get() : statesWithProbability01.second, representativePsiState);
             
             // If the model has state rewards, we need to consider them, because otherwise reward properties are not
             // preserved.
-            if (options.keepRewards && model.hasRewardModel()) {
+            if (options.getKeepRewards() && model.hasRewardModel()) {
                 this->splitInitialPartitionBasedOnStateRewards();
             }
         }

@@ -51,7 +51,7 @@ namespace storm {
                     A.performSuccessiveOverRelaxationStep(omega, x, b);
                     
                     // Now check if the process already converged within our precision.
-                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(x, *tmpX, static_cast<ValueType>(precision), relative);
+                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(x, *tmpX, static_cast<ValueType>(precision), relative) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
                     
                     // If we did not yet converge, we need to copy the contents of x to *tmpX.
                     if (!converged) {
@@ -90,7 +90,7 @@ namespace storm {
                 uint_fast64_t iterationCount = 0;
                 bool converged = false;
                 
-                while (!converged && iterationCount < maximalNumberOfIterations) {
+                while (!converged && iterationCount < maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
                     // Compute D^-1 * (b - LU * x) and store result in nextX.
                     jacobiDecomposition.first.multiplyWithVector(*currentX, tmpX);
                     storm::utility::vector::subtractVectors(b, tmpX, tmpX);

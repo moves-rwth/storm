@@ -14,11 +14,7 @@
 #include "src/utility/cstring.h"
 
 #include "src/adapters/CarlAdapter.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
+#include "src/utility/macros.h"
 namespace storm {
     namespace parser {
 
@@ -44,7 +40,7 @@ namespace storm {
             setlocale(LC_NUMERIC, "C");
 
             if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-                LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
+                STORM_LOG_ERROR("Error while parsing " << filename << ": File does not exist or is not readable.");
                 throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
             }
 
@@ -57,7 +53,7 @@ namespace storm {
 
             // If first pass returned zero, the file format was wrong.
             if (firstPass.numberOfNonzeroEntries == 0) {
-                LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": erroneous file format.");
+                STORM_LOG_ERROR("Error while parsing " << filename << ": erroneous file format.");
                 throw storm::exceptions::WrongFormatException() << "Error while parsing " << filename << ": erroneous file format.";
             }
 
@@ -73,13 +69,13 @@ namespace storm {
             if (isRewardFile) {
                 // The reward matrix should match the size of the transition matrix.
                 if (firstPass.choices > modelInformation.getRowCount() || (uint_fast64_t) (firstPass.highestStateIndex + 1) > modelInformation.getColumnCount()) {
-                    LOG4CPLUS_ERROR(logger, "Reward matrix size exceeds transition matrix size.");
+                    STORM_LOG_ERROR("Reward matrix size exceeds transition matrix size.");
                     throw storm::exceptions::OutOfRangeException() << "Reward matrix size exceeds transition matrix size.";
                 } else if (firstPass.choices != modelInformation.getRowCount()) {
-                    LOG4CPLUS_ERROR(logger, "Reward matrix row count does not match transition matrix row count.");
+                    STORM_LOG_ERROR("Reward matrix row count does not match transition matrix row count.");
                     throw storm::exceptions::OutOfRangeException() << "Reward matrix row count does not match transition matrix row count.";
                 } else if (firstPass.numberOfNonzeroEntries > modelInformation.getEntryCount()) {
-                    LOG4CPLUS_ERROR(logger, "The reward matrix has more entries than the transition matrix. There must be a reward for a non existent transition");
+                    STORM_LOG_ERROR("The reward matrix has more entries than the transition matrix. There must be a reward for a non existent transition");
                     throw storm::exceptions::OutOfRangeException() << "The reward matrix has more entries than the transition matrix.";
                 } else {
                     firstPass.highestStateIndex = modelInformation.getColumnCount() - 1;
@@ -89,7 +85,7 @@ namespace storm {
             // Create the matrix builder.
             // The matrix to be build should have as many columns as we have nodes and as many rows as we have choices.
             // Those two values, as well as the number of nonzero elements, was been calculated in the first run.
-            LOG4CPLUS_INFO(logger, "Attempting to create matrix of size " << firstPass.choices << " x " << (firstPass.highestStateIndex + 1) << " with " << firstPass.numberOfNonzeroEntries << " entries.");
+            STORM_LOG_INFO("Attempting to create matrix of size " << firstPass.choices << " x " << (firstPass.highestStateIndex + 1) << " with " << firstPass.numberOfNonzeroEntries << " entries.");
             storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder;
             if (!isRewardFile) {
                 matrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(firstPass.choices, firstPass.highestStateIndex + 1, firstPass.numberOfNonzeroEntries, true, true, firstPass.highestStateIndex + 1);
@@ -155,9 +151,9 @@ namespace storm {
                             matrixBuilder.newRowGroup(curRow);
                             matrixBuilder.addNextValue(curRow, node, 1);
                             ++curRow;
-                            LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+                            STORM_LOG_WARN("Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
                         } else {
-                            LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
+                            STORM_LOG_ERROR("Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
                         }
                     }
                     if (source != lastSource) {
@@ -194,7 +190,7 @@ namespace storm {
 
             // Since we cannot check if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to do it afterwards.
             if (isRewardFile && !resultMatrix.isSubmatrixOf(modelInformation)) {
-                LOG4CPLUS_ERROR(logger, "There are rewards for non existent transitions given in the reward file.");
+                STORM_LOG_ERROR("There are rewards for non existent transitions given in the reward file.");
                 throw storm::exceptions::WrongFormatException() << "There are rewards for non existent transitions given in the reward file.";
             }
 
@@ -230,7 +226,7 @@ namespace storm {
                 choice = checked_strtol(buf, &buf);
 
                 if (source < lastSource) {
-                    LOG4CPLUS_ERROR(logger, "The current source state " << source << " is smaller than the last one " << lastSource << ".");
+                    STORM_LOG_ERROR("The current source state " << source << " is smaller than the last one " << lastSource << ".");
                     throw storm::exceptions::InvalidArgumentException() << "The current source state " << source << " is smaller than the last one " << lastSource << ".";
                 }
 
@@ -243,7 +239,7 @@ namespace storm {
 
                     // Make sure that the highest state index of the reward file is not higher than the highest state index of the corresponding model.
                     if (result.highestStateIndex > modelInformation.getColumnCount() - 1) {
-                        LOG4CPLUS_ERROR(logger, "State index " << result.highestStateIndex << " found. This exceeds the highest state index of the model, which is " << modelInformation.getColumnCount() - 1 << " .");
+                        STORM_LOG_ERROR("State index " << result.highestStateIndex << " found. This exceeds the highest state index of the model, which is " << modelInformation.getColumnCount() - 1 << " .");
                         throw storm::exceptions::OutOfRangeException() << "State index " << result.highestStateIndex << " found. This exceeds the highest state index of the model, which is " << modelInformation.getColumnCount() - 1 << " .";
                     }
 
@@ -292,18 +288,18 @@ namespace storm {
 
                 // Also, have we already seen this transition?
                 if (target == lastTarget && choice == lastChoice && source == lastSource) {
-                    LOG4CPLUS_ERROR(logger, "The same transition (" << source << ", " << choice << ", " << target << ") is given twice.");
+                    STORM_LOG_ERROR("The same transition (" << source << ", " << choice << ", " << target << ") is given twice.");
                     throw storm::exceptions::InvalidArgumentException() << "The same transition (" << source << ", " << choice << ", " << target << ") is given twice.";
                 }
 
                 // Read value and check whether it's positive.
                 val = checked_strtod(buf, &buf);
                 if (!isRewardFile && (val < 0.0 || val > 1.0)) {
-                    LOG4CPLUS_ERROR(logger, "Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
+                    STORM_LOG_ERROR("Expected a positive probability but got \"" << std::string(buf, 0, 16) << "\".");
                     NondeterministicSparseTransitionParser::FirstPassResult nullResult;
                     return nullResult;
                 } else if (val < 0.0) {
-                    LOG4CPLUS_ERROR(logger, "Expected a positive reward value but got \"" << std::string(buf, 0, 16) << "\".");
+                    STORM_LOG_ERROR("Expected a positive reward value but got \"" << std::string(buf, 0, 16) << "\".");
                     NondeterministicSparseTransitionParser::FirstPassResult nullResult;
                     return nullResult;
                 }

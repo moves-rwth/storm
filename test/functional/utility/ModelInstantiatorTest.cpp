@@ -34,7 +34,6 @@ TEST(ModelInstantiatorTest, Brp_Prob) {
     options.addConstantDefinitionsFromString(program, constantsAsString); 
     options.preserveFormula(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program, options)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::preprocessModel(dtmc,formulas);
     
     storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>> modelInstantiator(*dtmc);
     EXPECT_FALSE(dtmc->hasRewardModel());
@@ -156,8 +155,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
     options.addConstantDefinitionsFromString(program, constantsAsString); 
     options.preserveFormula(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program, options)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    storm::preprocessModel(dtmc,formulas);
-    
+
     storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>> modelInstantiator(*dtmc);
     
     {
@@ -230,8 +228,7 @@ TEST(ModelInstantiatorTest, consensus) {
     options.addConstantDefinitionsFromString(program, constantsAsString); 
     options.preserveFormula(*formulas[0]);
     std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program, options)->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
-    storm::preprocessModel(mdp,formulas);
-    
+
     storm::utility::ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<double>> modelInstantiator(*mdp);
     
     std::map<storm::Variable, storm::RationalNumber> valuation;

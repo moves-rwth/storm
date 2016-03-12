@@ -12,7 +12,7 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/models/ModelType.h"
 #include "src/models/sparse/StandardRewardModel.h"
-#include "src/solver/AllowEarlyTerminationCondition.h"
+#include "src/solver/TerminationCondition.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/solver/GameSolver.h"
 #include "src/utility/macros.h"
@@ -69,19 +69,18 @@ namespace storm {
                 this->vectorData.assignment.shrink_to_fit();
                 if(this->typeOfParametricModel==storm::models::ModelType::Mdp){
                     initializePlayer1Matrix(parametricModel);
-                    this->solverData.lastPlayer1Policy = Policy(this->solverData.player1Matrix.getRowGroupCount(), 0);
+                    this->solverData.lastPlayer1Scheduler = storm::storage::TotalScheduler(std::vector<uint_fast64_t>(this->solverData.player1Matrix.getRowGroupCount(), 0));
                 }
                 
                 this->solverData.result = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), this->computeRewards ? storm::utility::one<ConstantType>() : ConstantType(0.5));
                 this->solverData.initialStateIndex = newIndices[initialState];
-                this->solverData.lastMinimizingPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
-                this->solverData.lastMaximizingPolicy = Policy(this->matrixData.matrix.getRowGroupCount(), 0);
+                this->solverData.lastMinimizingScheduler = storm::storage::TotalScheduler(std::vector<uint_fast64_t>(this->matrixData.matrix.getRowGroupCount(), 0));
+                this->solverData.lastMaximizingScheduler = storm::storage::TotalScheduler(std::vector<uint_fast64_t>(this->matrixData.matrix.getRowGroupCount(), 0));
                 //this->solverData.player1Goal = storm::solver::SolveGoal(storm::logic::isLowerBound(formula->getComparisonType()));
                 storm::storage::BitVector filter(this->solverData.result.size(), false);
                 filter.set(this->solverData.initialStateIndex, true);
                 this->solverData.player1Goal = std::make_unique<storm::solver::BoundedGoal<ConstantType>>(
                             storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize,
-                            formula->getComparisonType(),
                             formula->getBound(),
                             filter
                         );
@@ -276,8 +275,8 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             std::vector<ConstantType>  ApproximationModel<ParametricSparseModelType, ConstantType>::computeValues(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
                 instantiate(region, computeLowerBounds);
-                Policy& policy = computeLowerBounds ? this->solverData.lastMinimizingPolicy : this->solverData.lastMaximizingPolicy;
-                invokeSolver(computeLowerBounds, policy, false);
+                storm::storage::TotalScheduler& scheduler = computeLowerBounds ? this->solverData.lastMinimizingScheduler : this->solverData.lastMaximizingScheduler;
+                invokeSolver(computeLowerBounds, scheduler, false);
                 
                 std::vector<ConstantType> result(this->maybeStates.size());
                 storm::utility::vector::setVectorValues(result, this->maybeStates, this->solverData.result);
@@ -290,16 +289,16 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantType>
             ConstantType  ApproximationModel<ParametricSparseModelType, ConstantType>::computeInitialStateValue(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
                 instantiate(region, computeLowerBounds);
-                Policy& policy = computeLowerBounds ? this->solverData.lastMinimizingPolicy : this->solverData.lastMaximizingPolicy;
-                invokeSolver(computeLowerBounds, policy, false);
+                storm::storage::TotalScheduler& scheduler = computeLowerBounds ? this->solverData.lastMinimizingScheduler : this->solverData.lastMaximizingScheduler;
+                invokeSolver(computeLowerBounds, scheduler, false);
                 return this->solverData.result[this->solverData.initialStateIndex];
             }
             
             template<typename ParametricSparseModelType, typename ConstantType>
             bool  ApproximationModel<ParametricSparseModelType, ConstantType>::checkFormulaOnRegion(ParameterRegion<ParametricType> const& region, bool computeLowerBounds) {
                 instantiate(region, computeLowerBounds);
-                Policy& policy = computeLowerBounds ? this->solverData.lastMinimizingPolicy : this->solverData.lastMaximizingPolicy;
-                invokeSolver(computeLowerBounds, policy, true); //allow early termination
+                storm::storage::TotalScheduler& scheduler = computeLowerBounds ? this->solverData.lastMinimizingScheduler : this->solverData.lastMaximizingScheduler;
+                invokeSolver(computeLowerBounds, scheduler, true); //allow early termination
                 return this->solverData.player1Goal->achieved(this->solverData.result);
             }
             
@@ -362,42 +361,53 @@ namespace storm {
             
                         
             template<typename ParametricSparseModelType, typename ConstantType>
-            void ApproximationModel<ParametricSparseModelType, ConstantType>::invokeSolver(bool computeLowerBounds, Policy& policy, bool allowEarlyTermination){
+            void ApproximationModel<ParametricSparseModelType, ConstantType>::invokeSolver(bool computeLowerBounds, storm::storage::TotalScheduler& scheduler, bool allowEarlyTermination){
                 storm::solver::SolveGoal player2Goal(computeLowerBounds);
+                std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> terminationCondition;
+                if(allowEarlyTermination){
+                    if(computeLowerBounds){
+                        //Take minimum
+                        //Note that value iteration will approach the minimum from above as we start it with values that correspond to some scheduler-induced DTMC
+                        terminationCondition = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>>(
+                                                                                                                                                 this->solverData.player1Goal->relevantValues(),
+                                                                                                                                                 this->solverData.player1Goal->thresholdValue(),
+                                                                                                                                                 this->solverData.player1Goal->boundIsStrict(),
+                                                                                                                                                 true
+                                                                                                                                                 );
+                    } else {
+                        //Take maximum
+                        terminationCondition = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>>(
+                                                                                                                                                   this->solverData.player1Goal->relevantValues(),
+                                                                                                                                                   this->solverData.player1Goal->thresholdValue(),
+                                                                                                                                                   this->solverData.player1Goal->boundIsStrict(),
+                                                                                                                                                   false
+                                                                                                                                                   );
+                    }
+                }
                 if(this->typeOfParametricModel == storm::models::ModelType::Dtmc){
                     //Invoke mdp model checking
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ConstantType>> solver = storm::solver::configureMinMaxLinearEquationSolver(player2Goal, storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(), this->matrixData.matrix);
-                    if(allowEarlyTermination){
-                        solver->setEarlyTerminationCriterion(std::make_unique<storm::solver::TerminateAfterFilteredExtremumBelowOrAboveThreshold<ConstantType>>(
-                                    this->solverData.player1Goal->relevantColumns(),
-                                    this->solverData.player1Goal->thresholdValue(),
-                                    computeLowerBounds
-                                ));
-                    }
+                    solver->setTerminationCondition(std::move(terminationCondition));
                     storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
                                 this->solverData.result, this->vectorData.vector,
                                 player2Goal.direction(),
-                                policy,
+                                scheduler,
                                 this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>())
                         );
                 } else if(this->typeOfParametricModel == storm::models::ModelType::Mdp){
                     //Invoke stochastic two player game model checking
                     std::unique_ptr<storm::solver::GameSolver<ConstantType>> solver = storm::utility::solver::GameSolverFactory<ConstantType>().create(this->solverData.player1Matrix, this->matrixData.matrix);
-                    if(allowEarlyTermination && this->solverData.player1Goal->minimize() == computeLowerBounds){
-                        //We play MIN-Min or Max-Max
-                    solver->setEarlyTerminationCriterion(std::make_unique<storm::solver::TerminateAfterFilteredExtremumBelowOrAboveThreshold<ConstantType>>(
-                                this->solverData.player1Goal->relevantColumnVector,
-                                this->solverData.player1Goal->thresholdValue(),
-                                computeLowerBounds
-                            ));
+                    if(this->solverData.player1Goal->minimize() == computeLowerBounds){
+                        //Early termination is only allowed if we play Min-Min or Max-Max!
+                        solver->setTerminationCondition(std::move(terminationCondition));
                     }
                     storm::utility::policyguessing::solveGame(*solver, 
                                 this->solverData.result, this->vectorData.vector,
                                 this->solverData.player1Goal->direction(), player2Goal.direction(), 
-                                this->solverData.lastPlayer1Policy, policy,
+                                this->solverData.lastPlayer1Scheduler, scheduler,
                                 this->matrixData.targetChoices, (this->computeRewards ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>())
                         );
-                   // Alternatively(without policy guessing) 
+                   // Alternatively(without Scheduler guessing) 
                    // this->solverData.result = std::vector<ConstantType>(this->solverData.result.size(), 0.0);
                    // solver->solveGame(this->solverData.player1Goal.direction(), player2Goal.direction(), this->solverData.result, this->vectorData.vector);
                 } else {

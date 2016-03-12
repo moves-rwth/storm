@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <sstream>
 #include <memory>
+#include <src/storage/ModelFormulasPair.h>
 
 #include "initialize.h"
 
@@ -46,7 +47,7 @@
 // Headers for model processing.
 #include "src/storage/bisimulation/DeterministicModelBisimulationDecomposition.h"
 #include "src/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
-#include "src/storage/ModelProgramPair.h"
+#include "src/storage/ModelFormulasPair.h"
 
 // Headers for model checking.
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
@@ -78,17 +79,19 @@
 namespace storm {
 
     template<typename ValueType>
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::optional<std::string>(), boost::optional<std::string> const& transitionRewardsFile = boost::optional<std::string>(), boost::optional<std::string> const& choiceLabelingFile = boost::optional<std::string>()) {
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::none, boost::optional<std::string> const& transitionRewardsFile = boost::none, boost::optional<std::string> const& choiceLabelingFile = boost::none) {
         return storm::parser::AutoParser<>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
     }
             
     storm::prism::Program parseProgram(std::string const& path);
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
-            
+
+
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
-    storm::storage::ModelProgramPair buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
-        storm::storage::ModelProgramPair result;
+    storm::storage::ModelFormulasPair buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) {
+        storm::storage::ModelFormulasPair result;
+        storm::prism::Program translatedProgram;
 
         storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
 
@@ -108,7 +111,7 @@ namespace storm {
 
             storm::builder::ExplicitPrismModelBuilder<ValueType> builder;
             result.model = builder.translateProgram(program, options);
-            result.program = builder.getTranslatedProgram();
+            translatedProgram = builder.getTranslatedProgram();
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
@@ -116,23 +119,33 @@ namespace storm {
 
             storm::builder::DdPrismModelBuilder<LibraryType> builder;
             result.model = builder.translateProgram(program, options);
-            result.program = builder.getTranslatedProgram();
+            translatedProgram = builder.getTranslatedProgram();
+        }
+        // There may be constants of the model appearing in the formulas, so we replace all their occurrences
+        // by their definitions in the translated program.
+
+        // Start by building a mapping from constants of the (translated) model to their defining expressions.
+        std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
+        for (auto const& constant : translatedProgram.getConstants()) {
+            if (constant.isDefined()) {
+                constantSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression());
+            }
         }
 
+        for (auto const& formula : formulas) {
+            result.formulas.emplace_back(formula->substitute(constantSubstitution));
+        }
         return result;
     }
     
     template<typename ModelType>
-    std::shared_ptr<ModelType> performDeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+    std::shared_ptr<ModelType> performDeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
         std::cout << "Performing bisimulation minimization... ";
         typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options options;
         if (!formulas.empty()) {
             options = typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
         }
-        if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
-            options.type = storm::storage::BisimulationType::Weak;
-            options.bounded = false;
-        }
+        options.setType(type);
         
         storm::storage::DeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
@@ -142,16 +155,14 @@ namespace storm {
     }
     
     template<typename ModelType>
-    std::shared_ptr<ModelType> performNondeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
+    std::shared_ptr<ModelType> performNondeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
         std::cout << "Performing bisimulation minimization... ";
         typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options options;
         if (!formulas.empty()) {
             options = typename storm::storage::NondeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
         }
-        if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
-            options.type = storm::storage::BisimulationType::Weak;
-            options.bounded = false;
-        }
+        options.setType(type);
+        
         
         storm::storage::NondeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
@@ -160,36 +171,46 @@ namespace storm {
         return model;
     }
     
-    template<typename ModelType, typename ValueType = typename ModelType::ValueType, typename std::enable_if<std::is_base_of<storm::models::sparse::Model<ValueType>, ModelType>::value, bool>::type = 0>
-    std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
-        if (storm::settings::generalSettings().isBisimulationSet()) {
-            std::cout << "Model before preprocessing: " << std::endl;
-            model->printModelInformationToStream(std::cout);
-            STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
-            STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
+    template<typename ModelType>
+    std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> const& model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, storm::storage::BisimulationType type) {
+        using ValueType = typename ModelType::ValueType;
+        
+        STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc) || model->isOfType(storm::models::ModelType::Ctmc) || model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for DTMCs, CTMCs and MDPs.");
+        model->reduceToStateBasedRewards();
 
-            model->reduceToStateBasedRewards();
-
-            if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Dtmc<ValueType>>(model->template as<storm::models::sparse::Dtmc<ValueType>>(), formulas);
-            } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
-                return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas);
-            } else {
-                return performNondeterministicSparseBisimulationMinimization<storm::models::sparse::Mdp<ValueType>>(model->template as<storm::models::sparse::Mdp<ValueType>>(), formulas);
+        if (model->isOfType(storm::models::ModelType::Dtmc)) {
+            return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Dtmc<ValueType>>(model->template as<storm::models::sparse::Dtmc<ValueType>>(), formulas, type);
+        } else if (model->isOfType(storm::models::ModelType::Ctmc)) {
+            return performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, type);
+        } else {
+            return performNondeterministicSparseBisimulationMinimization<storm::models::sparse::Mdp<ValueType>>(model->template as<storm::models::sparse::Mdp<ValueType>>(), formulas, type);
+        }       
+    }
+        
+    template<typename ModelType>
+    std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> performBisimulationMinimization(std::shared_ptr<storm::models::sparse::Model<typename ModelType::ValueType>> const& model, std::shared_ptr<const storm::logic::Formula> const& formula, storm::storage::BisimulationType type) {
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = { formula };
+        return performBisimulationMinimization<ModelType>(model, formulas , type);
+    }
+    
+    
+    template<typename ModelType>
+    std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) {
+        if (model->isSparseModel() && storm::settings::generalSettings().isBisimulationSet()) {
+            storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
+            if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
+                bisimType = storm::storage::BisimulationType::Weak;
             }
             
+            STORM_LOG_THROW(model->isSparseModel(), storm::exceptions::InvalidSettingsException, "Bisimulation minimization is currently only available for sparse models.");
+            return performBisimulationMinimization<ModelType>(model->template as<storm::models::sparse::Model<typename ModelType::ValueType>>(), formulas, bisimType);
         }
         return model;
     }
     
-    template<typename ModelType, storm::dd::DdType DdType = ModelType::DdType, typename std::enable_if< std::is_base_of< storm::models::symbolic::Model<DdType>, ModelType >::value, bool>::type = 0>
-    std::shared_ptr<storm::models::ModelBase> preprocessModel(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) {
-        // No preprocessing available yet.
-        return model;
-    }
     
     template<typename ValueType>
-    void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+    void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<const storm::logic::Formula> const& formula) {
         if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
             STORM_LOG_THROW(model->getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
             STORM_LOG_THROW(storm::settings::generalSettings().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
@@ -212,29 +233,29 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
     template<>
-    inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+    inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<const storm::logic::Formula> const& formula) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
     }
 #endif
 
     template<typename ValueType, storm::dd::DdType DdType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifyModel(std::shared_ptr<storm::models::ModelBase> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifyModel(std::shared_ptr<storm::models::ModelBase> model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant) {
         storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
         switch(settings.getEngine()) {
             case storm::settings::modules::GeneralSettings::Engine::Sparse: {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
                 STORM_LOG_THROW(sparseModel != nullptr, storm::exceptions::InvalidArgumentException, "Sparse engine requires a sparse input model");
-                return verifySparseModel(sparseModel, formula);
+                return verifySparseModel(sparseModel, formula, onlyInitialStatesRelevant);
             }
             case storm::settings::modules::GeneralSettings::Engine::Hybrid: {
                 std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
                 STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Hybrid engine requires a dd input model");
-                return verifySymbolicModelWithHybridEngine(ddModel, formula);
+                return verifySymbolicModelWithHybridEngine(ddModel, formula, onlyInitialStatesRelevant);
             }
             case storm::settings::modules::GeneralSettings::Engine::Dd: {
                 std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
                 STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Dd engine requires a dd input model");
-                return verifySymbolicModelWithDdEngine(ddModel, formula);
+                return verifySymbolicModelWithDdEngine(ddModel, formula, onlyInitialStatesRelevant);
             }
             case storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement: {
                 STORM_LOG_ASSERT(false, "This position should not be reached, as at this point no model has been built.");
@@ -243,18 +264,19 @@ namespace storm {
     }
 
     template<typename ValueType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant = false) {
 
         std::unique_ptr<storm::modelchecker::CheckResult> result;
+        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
             storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
-            if (modelchecker.canHandle(*formula)) {
-                result = modelchecker.check(*formula);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
             } else {
                 storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker2(*dtmc);
-                if (modelchecker2.canHandle(*formula)) {
-                    result = modelchecker2.check(*formula);
+                if (modelchecker2.canHandle(task)) {
+                    result = modelchecker2.check(task);
                 }
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
@@ -262,20 +284,20 @@ namespace storm {
 #ifdef STORM_HAVE_CUDA
             if (settings.isCudaSet()) {
                     storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
-                    result = modelchecker.check(*formula);
+                    result = modelchecker.check(task);
                 } else {
                     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
-                    result = modelchecker.check(*formula);
+                    result = modelchecker.check(task);
                 }
 #else
             storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
-            result = modelchecker.check(*formula);
+            result = modelchecker.check(task);
 #endif
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
 
             storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
-            result = modelchecker.check(*formula);
+            result = modelchecker.check(task);
         }
         return result;
 
@@ -288,7 +310,7 @@ namespace storm {
         // TODO: add checks.
         filestream << "!Parameters: ";
         std::set<storm::Variable> vars = result.gatherVariables();
-        std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::Variable>(filestream, ", "));
+        std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::Variable>(filestream, "; "));
         filestream << std::endl;
         filestream << "!Result: " << result << std::endl;
         filestream << "!Well-formed Constraints: " << std::endl;
@@ -299,13 +321,14 @@ namespace storm {
     }
 
     template<>
-    inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+    inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
         storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
-        if (modelchecker.canHandle(*formula)) {
-            result = modelchecker.check(*formula);
+        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(task);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "The parametric engine currently does not support this property.");
         }
@@ -329,7 +352,8 @@ namespace storm {
         // Program and formula
         storm::prism::Program program = parseProgram(programFilePath);
         program.checkValidity();
-        std::vector<std::shared_ptr<storm::logic::Formula>> formulas = parseFormulasForProgram(formulaString, program);
+        std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas = parseFormulasForProgram(formulaString, program);
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
         if(formulas.size()!=1){
             STORM_LOG_ERROR("The given formulaString does not specify exactly one formula");
             return false;
@@ -339,11 +363,12 @@ namespace storm {
         options.addConstantDefinitionsFromString(program, constantsString); 
         options.preserveFormula(*formulas[0]);
         std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program, options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
-        preprocessModel(model,formulas);
-        // ModelChecker
+        // Preprocessing and ModelChecker
         if(model->isOfType(storm::models::ModelType::Dtmc)){
+            preprocessModel<storm::models::sparse::Dtmc<storm::RationalFunction>>(model,formulas);
             regionModelChecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
         } else if (model->isOfType(storm::models::ModelType::Mdp)){
+            preprocessModel<storm::models::sparse::Mdp<storm::RationalFunction>>(model,formulas);
             regionModelChecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Mdp<storm::RationalFunction>>());
         } else {
             STORM_LOG_ERROR("The type of the given model is not supported (only Dtmcs or Mdps are supported");
@@ -397,25 +422,26 @@ namespace storm {
 #endif
 
     template<storm::dd::DdType DdType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant = false) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
+        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
             storm::modelchecker::HybridDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
-            if (modelchecker.canHandle(*formula)) {
-                result = modelchecker.check(*formula);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
             }
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             std::shared_ptr<storm::models::symbolic::Ctmc<DdType>> ctmc = model->template as<storm::models::symbolic::Ctmc<DdType>>();
             storm::modelchecker::HybridCtmcCslModelChecker<DdType, double> modelchecker(*ctmc);
-            if (modelchecker.canHandle(*formula)) {
-                result = modelchecker.check(*formula);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
             storm::modelchecker::HybridMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
-            if (modelchecker.canHandle(*formula)) {
-                result = modelchecker.check(*formula);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
             }
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");
@@ -425,19 +451,20 @@ namespace storm {
 
 
     template<storm::dd::DdType DdType>
-    std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant) {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
+        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::symbolic::Dtmc<DdType>> dtmc = model->template as<storm::models::symbolic::Dtmc<DdType>>();
             storm::modelchecker::SymbolicDtmcPrctlModelChecker<DdType, double> modelchecker(*dtmc);
-            if (modelchecker.canHandle(*formula)) {
-                result = modelchecker.check(*formula);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::symbolic::Mdp<DdType>> mdp = model->template as<storm::models::symbolic::Mdp<DdType>>();
             storm::modelchecker::SymbolicMdpPrctlModelChecker<DdType, double> modelchecker(*mdp);
-            if (modelchecker.canHandle(*formula)) {
-                result = modelchecker.check(*formula);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
             }
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This functionality is not yet implemented.");

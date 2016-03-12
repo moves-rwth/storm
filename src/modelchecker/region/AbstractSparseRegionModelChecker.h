@@ -39,7 +39,7 @@ namespace storm {
                  * 
                  * @param formula the formula to be considered.
                  */
-                virtual void specifyFormula(std::shared_ptr<storm::logic::Formula> formula) = 0;
+                virtual void specifyFormula(std::shared_ptr<const storm::logic::Formula> formula) = 0;
                 
                 /*!
                  * Checks for every given region whether the specified formula holds for all parameters that lie in that region.

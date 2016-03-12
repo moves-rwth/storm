@@ -8,7 +8,7 @@
 #include <iterator>
 
 #include "src/utility/OsDetection.h"
-
+#include "src/adapters/CarlAdapter.h"
 #include <boost/functional/hash.hpp>
 
 // Forward declaration for adapter classes.
@@ -999,7 +999,11 @@ namespace storm {
             std::vector<index_type> rowGroupIndices;
             
         };
-
+        
+#ifdef STORM_HAVE_CARL
+        std::set<storm::Variable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix);
+#endif
+        
     } // namespace storage
 } // namespace storm
 

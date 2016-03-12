@@ -16,11 +16,7 @@
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/DdManager.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace utility {
@@ -280,7 +276,7 @@ namespace storm {
                             }
                         }
                         if (allSuccessorsInStates) {
-                            result.setChoice(state, choice);
+                            result.setChoice(state, choice - nondeterministicChoiceIndices[state]);
                             break;
                         }
                     }
@@ -304,7 +300,7 @@ namespace storm {
                             }
                         }
                         if (oneSuccessorInStates) {
-                            result.setChoice(state, choice);
+                            result.setChoice(state, choice - nondeterministicChoiceIndices[state]);
                             break;
                         }
                     }
@@ -356,7 +352,7 @@ namespace storm {
                                 // If all successors for a given nondeterministic choice are in the prob1E state set, we
                                 // perform a backward search from that state.
                                 if (allSuccessorsInProb1EStates && hasSuccessorInCurrentStates) {
-                                    result.setChoice(predecessorEntryIt->getColumn(), row);
+                                    result.setChoice(predecessorEntryIt->getColumn(), row - nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]);
                                     currentStates.set(predecessorEntryIt->getColumn(), true);
                                     stack.push_back(predecessorEntryIt->getColumn());
                                     break;
@@ -829,7 +825,7 @@ namespace storm {
             template <typename T>
             std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) {
                 if (matrix.getRowCount() != matrix.getColumnCount()) {
-                    LOG4CPLUS_ERROR(logger, "Provided matrix is required to be square.");
+                    STORM_LOG_ERROR("Provided matrix is required to be square.");
                     throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
                 }
                 
@@ -903,7 +899,7 @@ namespace storm {
                                                                                   storm::storage::BitVector const& startingStates,
                                                                                   storm::storage::BitVector const* filterStates) {
                 
-                LOG4CPLUS_INFO(logger, "Performing Dijkstra search.");
+                STORM_LOG_INFO("Performing Dijkstra search.");
                 
                 const uint_fast64_t noPredecessorValue = storm::utility::zero<uint_fast64_t>();
                 std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::zero<T>());
@@ -949,7 +945,7 @@ namespace storm {
                 std::pair<std::vector<T>, std::vector<uint_fast64_t>> result;
                 result.first = std::move(probabilities);
                 result.second = std::move(predecessors);
-                LOG4CPLUS_INFO(logger, "Done performing Dijkstra search.");
+                STORM_LOG_INFO("Done performing Dijkstra search.");
                 return result;
             }
             
@@ -986,9 +982,10 @@ namespace storm {
             
             template storm::storage::BitVector performProb0A(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
-            template storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
-            template storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
-            
+            template storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+#ifdef STORM_HAVE_CARL
+            template storm::storage::BitVector performProb0A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+#endif
             
             template storm::storage::BitVector performProb1E(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
@@ -1004,19 +1001,24 @@ namespace storm {
             
             
             template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+#ifdef STORM_HAVE_CARL
             template storm::storage::BitVector performProb0E(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+#endif
             template storm::storage::BitVector performProb0E(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices,  storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
             template storm::storage::BitVector performProb1A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+#ifdef STORM_HAVE_CARL
             template storm::storage::BitVector performProb1A(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+#endif
             template storm::storage::BitVector performProb1A( storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) ;
             
             
             template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<double>> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
-            
+#ifdef STORM_HAVE_CARL
+			template std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::models::sparse::NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>> const& model, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
+#endif
             
             template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix) ;
             

@@ -16,10 +16,7 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/utility/ConversionHelper.h"
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
+#include "src/utility/macros.h"
 
 namespace storm {
 
@@ -34,7 +31,7 @@ public:
 	template<class T>
 	static std::unique_ptr<gmm::csr_matrix<T>> toGmmxxSparseMatrix(storm::storage::SparseMatrix<T> const& matrix) {
 		uint_fast64_t realNonZeros = matrix.getEntryCount();
-		LOG4CPLUS_DEBUG(logger, "Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
+		STORM_LOG_DEBUG("Converting matrix with " << realNonZeros << " non-zeros to gmm++ format.");
 
 		// Prepare the resulting matrix.
         std::unique_ptr<gmm::csr_matrix<T>> result(new gmm::csr_matrix<T>(matrix.getRowCount(), matrix.getColumnCount()));
@@ -58,7 +55,7 @@ public:
         std::swap(result->ir, columns);
         std::swap(result->pr, values);
         
-		LOG4CPLUS_DEBUG(logger, "Done converting matrix to gmm++ format.");
+		STORM_LOG_DEBUG("Done converting matrix to gmm++ format.");
 
 		return result;
 	}

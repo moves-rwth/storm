@@ -16,6 +16,7 @@
 #include "src/logic/Formulas.h"
 #include "src/models/sparse/Model.h"
 #include "src/solver/SolveGoal.h"
+#include "src/storage/TotalScheduler.h"
 #include "src/utility/ModelInstantiator.h"
 
 namespace storm {
@@ -61,7 +62,6 @@ namespace storm {
                 bool checkFormulaOnSamplingPoint(std::map<VariableType, CoefficientType>const& point);
 
             private:
-                typedef std::vector<storm::storage::sparse::state_type> Policy;
                 
                 void invokeSolver(ConstantSparseModelType const& instantiatedModel, bool allowEarlyTermination);
                 
@@ -79,7 +79,7 @@ namespace storm {
                     std::size_t initialStateIndex; //The index which represents the result for the initial state in the result vector
                     //The following is only relevant if we consider mdps:
                     std::unique_ptr<storm::solver::BoundedGoal<ConstantType>> solveGoal;
-                    Policy lastPolicy; //best policy from the previous instantiation. Serves as first guess for the next call.
+                    storm::storage::TotalScheduler lastScheduler; //best Scheduler from the previous instantiation. Serves as first guess for the next call.
                 } solverData;
                 
                 storm::utility::ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType> modelInstantiator;

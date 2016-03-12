@@ -2,7 +2,7 @@
 
 #include <utility>
 
-
+#include "src/storage/TotalScheduler.h"
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
@@ -14,19 +14,12 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique, bool trackPolicy) : 
-        MinMaxLinearEquationSolver<ValueType>(A, storm::settings::nativeEquationSolverSettings().getPrecision(), \
-            storm::settings::nativeEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative, \
-            storm::settings::nativeEquationSolverSettings().getMaximalIterationCount(), trackPolicy, preferredTechnique)
-        {
+        NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique, bool trackScheduler) :  MinMaxLinearEquationSolver<ValueType>(A, storm::settings::nativeEquationSolverSettings().getPrecision(), storm::settings::nativeEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative, storm::settings::nativeEquationSolverSettings().getMaximalIterationCount(), trackScheduler, preferredTechnique) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-		NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, MinMaxTechniqueSelection tech, bool relative, bool trackPolicy) : 
-        MinMaxLinearEquationSolver<ValueType>(A, precision, \
-            relative, \
-            maximalNumberOfIterations, trackPolicy, tech) {
+		NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, MinMaxTechniqueSelection tech, bool relative, bool trackScheduler) : MinMaxLinearEquationSolver<ValueType>(A, precision, relative, maximalNumberOfIterations, trackScheduler, tech) {
             // Intentionally left empty.
         }
         
@@ -54,7 +47,7 @@ namespace storm {
 
 				// Proceed with the iterations as long as the method did not converge or reach the
 				// user-specified maximum number of iterations.
-				while (!converged && iterations < this->maximalNumberOfIterations && !this->earlyTermination->terminateNow(*currentX)) {
+				while (!converged && iterations < this->maximalNumberOfIterations && (!this->hasCustomTerminationCondition() || this->getTerminationCondition().terminateNow(*currentX))) {
 					// Compute x' = A*x + b.
 					this->A.multiplyWithVector(*currentX, *multiplyResult);
 					storm::utility::vector::addVectors(*multiplyResult, b, *multiplyResult);
@@ -73,11 +66,9 @@ namespace storm {
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
-					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
-                                } else if (this->earlyTermination->terminateNow(*currentX)) {
-					LOG4CPLUS_INFO(logger, "Iterative solver stopped due to early termination. Performed " << iterations << " iterations.");
+					STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
 				} else {
-					LOG4CPLUS_WARN(logger, "Iterative solver did not converge after " << iterations << " iterations.");
+					STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations.");
 				}
 
 				// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
@@ -86,15 +77,16 @@ namespace storm {
 					std::swap(x, *currentX);
 				}
 
-                                if(this->trackPolicy){
-                                    if(iterations==0){ //may happen due to early termination. Then we need to compute x'= A*x+b
-                                        this->A.multiplyWithVector(x, *multiplyResult);
-					storm::utility::vector::addVectors(*multiplyResult, b, *multiplyResult);
-                                    }
-                                    this->policy = std::vector<storm::storage::sparse::state_type>(x.size());
-                                    storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices(), &(this->policy));
-                                }
-                                
+                if(this->trackScheduler){
+                    if(iterations==0){ //may happen due to early termination. Then we need to compute x'= A*x+b
+                        this->A.multiplyWithVector(x, *multiplyResult);
+                        storm::utility::vector::addVectors(*multiplyResult, b, *multiplyResult);
+                    }
+                    std::vector<uint_fast64_t> choices(x.size());
+                    storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices(), &(choices));
+                    this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(choices));
+                }
+                
 				if (!xMemoryProvided) {
 					delete copyX;
 				}
@@ -106,7 +98,7 @@ namespace storm {
 			} else {
 				// We will use Policy Iteration to solve the given system.
 				// We first guess an initial choice resolution which will be refined after each iteration.
-                                this->policy = std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupIndices().size() - 1);
+				std::vector<storm::storage::sparse::state_type> scheduler(this->A.getRowGroupIndices().size() - 1);
 
 				// Create our own multiplyResult for solving the deterministic sub-instances.
 				std::vector<ValueType> deterministicMultiplyResult(this->A.getRowGroupIndices().size() - 1);
@@ -134,13 +126,13 @@ namespace storm {
 
 				// Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
 				// of iterations.
-				while (!converged && iterations < this->maximalNumberOfIterations && !this->earlyTermination->terminateNow(*currentX)) {
+				while (!converged && iterations < this->maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
 					// Take the sub-matrix according to the current choices
-					storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(this->policy, true);
+					storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(scheduler, true);
 					submatrix.convertToEquationSystem();
 
 					NativeLinearEquationSolver<ValueType> nativeLinearEquationSolver(submatrix);
-					storm::utility::vector::selectVectorValues<ValueType>(subB, this->policy, this->A.getRowGroupIndices(), b);
+					storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A.getRowGroupIndices(), b);
 
 					// Copy X since we will overwrite it
 					std::copy(currentX->begin(), currentX->end(), newX->begin());
@@ -154,7 +146,7 @@ namespace storm {
 
 					// Reduce the vector x by applying min/max over all nondeterministic choices.
 					// Here, we capture which choice was taken in each state, thereby refining our initial guess.
-					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, this->A.getRowGroupIndices(), &(this->policy));
+					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, this->A.getRowGroupIndices(), &(scheduler));
 					
 
 					// Determine whether the method converged.
@@ -167,12 +159,16 @@ namespace storm {
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
-					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+					STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
 				} else {
-					LOG4CPLUS_WARN(logger, "Iterative solver did not converge after " << iterations << " iterations.");
+					STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations.");
 				}
-                
 
+                // If requested, we store the scheduler for retrieval.
+                if (this->isTrackSchedulerSet()) {
+                    this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(scheduler));
+                }
+                
 				// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
 				// is currently stored in currentX, but x is the output vector.
 				if (currentX == copyX) {

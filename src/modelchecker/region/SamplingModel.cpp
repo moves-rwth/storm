@@ -7,6 +7,7 @@
 
 #include "src/modelchecker/region/SamplingModel.h"
 
+#include "src/logic/FragmentSpecification.h"
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/models/sparse/Dtmc.h"
@@ -37,14 +38,14 @@ namespace storm {
                     this->computeRewards=false;
                     STORM_LOG_THROW(this->typeOfParametricModel==storm::models::ModelType::Dtmc || this->typeOfParametricModel==storm::models::ModelType::Mdp, storm::exceptions::InvalidArgumentException, "Sampling with probabilities is only implemented for Dtmcs and Mdps");
                     STORM_LOG_THROW(formula->getSubformula().isEventuallyFormula(), storm::exceptions::InvalidArgumentException, "The subformula should be an eventually formula");
-                    STORM_LOG_THROW(formula->getSubformula().asEventuallyFormula().getSubformula().isPropositionalFormula(), storm::exceptions::InvalidArgumentException, "The subsubformula should be a propositional formula");
+                    STORM_LOG_THROW(formula->getSubformula().asEventuallyFormula().getSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::InvalidArgumentException, "The subsubformula should be a propositional formula");
                 } else if(formula->isRewardOperatorFormula()){
                     this->computeRewards=true;
                     STORM_LOG_THROW(this->typeOfParametricModel==storm::models::ModelType::Dtmc, storm::exceptions::InvalidArgumentException, "Sampling with rewards is only implemented for Dtmcs");
                     STORM_LOG_THROW(parametricModel.hasUniqueRewardModel(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should be unique");
                     STORM_LOG_THROW(parametricModel.getUniqueRewardModel()->second.hasOnlyStateRewards(), storm::exceptions::InvalidArgumentException, "The rewardmodel of the sampling model should have state rewards only");
-                    STORM_LOG_THROW(formula->getSubformula().isReachabilityRewardFormula(), storm::exceptions::InvalidArgumentException, "The subformula should be a reachabilityreward formula");
-                    STORM_LOG_THROW(formula->getSubformula().asReachabilityRewardFormula().getSubformula().isPropositionalFormula(), storm::exceptions::InvalidArgumentException, "The subsubformula should be a propositional formula");
+                    STORM_LOG_THROW(formula->getSubformula().isEventuallyFormula(), storm::exceptions::InvalidArgumentException, "The subformula should be a reachabilityreward formula");
+                    STORM_LOG_THROW(formula->getSubformula().asEventuallyFormula().getSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::InvalidArgumentException, "The subsubformula should be a propositional formula");
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid formula: " << formula << ". Sampling model only supports eventually or reachability reward formulae.");
                 }
@@ -82,13 +83,12 @@ namespace storm {
 
                 this->solverData.result = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), this->computeRewards ? storm::utility::one<ConstantType>() : ConstantType(0.5));
                 this->solverData.initialStateIndex = newIndices[initialState];
-                this->solverData.lastPolicy = Policy(maybeStates.getNumberOfSetBits(), 0);
+                this->solverData.lastScheduler = storm::storage::TotalScheduler(std::vector<uint_fast64_t>(maybeStates.getNumberOfSetBits(), 0));
                 
                 storm::storage::BitVector filter(this->solverData.result.size(), false);
                 filter.set(this->solverData.initialStateIndex, true);
                 this->solverData.solveGoal = std::make_unique<storm::solver::BoundedGoal<ConstantType>>(
                             storm::logic::isLowerBound(formula->getComparisonType()) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize,
-                            formula->getComparisonType(),
                             formula->getBound(),
                             filter
                         );
@@ -147,16 +147,29 @@ namespace storm {
                     }
                     solver->setOptimizationDirection(this->solverData.solveGoal->direction());
                     if(allowEarlyTermination){
-                        solver->setEarlyTerminationCriterion(std::make_unique<storm::solver::TerminateAfterFilteredExtremumBelowOrAboveThreshold<ConstantType>>(
-                                    this->solverData.solveGoal->relevantColumns(),
-                                    this->solverData.solveGoal->thresholdValue(),
-                                    this->solverData.solveGoal->minimize()
-                                ));
+                        if(this->solverData.solveGoal->minimize()){
+                            //Take minimum
+                            //Note that value iteration will approach the minimum from above as we start it with values that correspond to some scheduler-induced DTMC
+                            solver->setTerminationCondition(std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>>(
+                                                                                                                                            this->solverData.solveGoal->relevantValues(),
+                                                                                                                                            this->solverData.solveGoal->thresholdValue(),
+                                                                                                                                            this->solverData.solveGoal->boundIsStrict(),
+                                                                                                                                            true
+                                                                                                                                            ));
+                        } else {
+                            //Take maximum
+                            solver->setTerminationCondition(std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>>(
+                                                                                                                                              this->solverData.solveGoal->relevantValues(),
+                                                                                                                                              this->solverData.solveGoal->thresholdValue(),
+                                                                                                                                              this->solverData.solveGoal->boundIsStrict(),
+                                                                                                                                              false
+                                                                                                                                              ));
+                        }
                     }
                     storm::utility::policyguessing::solveMinMaxLinearEquationSystem(*solver,
                                         this->solverData.result, b,
                                         this->solverData.solveGoal->direction(),
-                                        this->solverData.lastPolicy,
+                                        this->solverData.lastScheduler,
                                         targetChoices, (this->computeRewards ? storm::utility::infinity<ConstantType>() : storm::utility::zero<ConstantType>()));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected Type of model");

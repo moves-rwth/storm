@@ -17,7 +17,7 @@
 #include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StochasticTwoPlayerGame.h"
-#include "src/utility/region.h"
+#include "src/utility/parametric.h"
 #include "src/utility/constants.h"
 
 namespace storm {
@@ -33,8 +33,8 @@ namespace storm {
             class ModelInstantiator {
             public:
                 typedef typename ParametricSparseModelType::ValueType ParametricType;
-                typedef typename storm::utility::region::VariableType<ParametricType> VariableType;
-                typedef typename storm::utility::region::CoefficientType<ParametricType> CoefficientType;
+                typedef typename storm::utility::parametric::VariableType<ParametricType>::type VariableType;
+                typedef typename storm::utility::parametric::CoefficientType<ParametricType>::type CoefficientType;
                 typedef typename ConstantSparseModelType::ValueType ConstantType;
                 
                 /*!

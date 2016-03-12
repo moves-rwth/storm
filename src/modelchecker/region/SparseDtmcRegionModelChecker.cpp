@@ -28,7 +28,7 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/NotSupportedException.h"
-
+#include "src/logic/FragmentSpecification.h"
 
 namespace storm {
     namespace modelchecker {
@@ -56,12 +56,12 @@ namespace storm {
                     return rewardOperatorFormula.hasBound() && this->canHandle(rewardOperatorFormula.getSubformula());
                 } else if (formula.isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = formula.asEventuallyFormula();
-                    if (eventuallyFormula.getSubformula().isPropositionalFormula()) {
+                    if (eventuallyFormula.getSubformula().isInFragment(storm::logic::propositional())) {
                         return true;
                     }
                 } else if (formula.isReachabilityRewardFormula()) {
-                    storm::logic::ReachabilityRewardFormula reachabilityRewardFormula = formula.asReachabilityRewardFormula();
-                    if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
+                    storm::logic::EventuallyFormula reachabilityRewardFormula = formula.asReachabilityRewardFormula();
+                    if (reachabilityRewardFormula.getSubformula().isInFragment(storm::logic::propositional())) {
                         return true;
                     }
                 }
@@ -228,12 +228,11 @@ namespace storm {
                 // the corresponding formula
                 STORM_LOG_DEBUG("Building the resulting simplified formula.");
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
+                std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
                 if(this->isComputeRewards()){
-                    std::shared_ptr<storm::logic::ReachabilityRewardFormula> reachRewFormula(new storm::logic::ReachabilityRewardFormula(targetFormulaPtr));
-                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::RewardOperatorFormula(boost::optional<std::string>(), this->getSpecifiedFormula()->getComparisonType(), this->getSpecifiedFormulaBound(), reachRewFormula));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::RewardOperatorFormula(boost::optional<std::string>(), this->getSpecifiedFormula()->getBound(), eventuallyFormula));
                 } else {
-                    std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
-                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(this->getSpecifiedFormula()->getComparisonType(), this->getSpecifiedFormulaBound(), eventuallyFormula));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(this->getSpecifiedFormula()->getBound(), eventuallyFormula));
                 }
                 //Check if the reachability function needs to be computed
                 if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 

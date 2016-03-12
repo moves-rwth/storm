@@ -1,20 +1,22 @@
 #include "src/logic/ExpectedTimeOperatorFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
-        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(std::shared_ptr<Formula const> const& subformula) : ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection>(), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(std::shared_ptr<Formula const> const& subformula) : ExpectedTimeOperatorFormula(boost::none, boost::none, subformula) {
             // Intentionally left empty.
         }
         
-        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection>(), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula) : ExpectedTimeOperatorFormula(boost::none, bound, subformula) {
             // Intentionally left empty.
         }
         
-        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(OptimizationDirection optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula) : ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection>(optimalityType), boost::optional<ComparisonType>(comparisonType), boost::optional<double>(bound), subformula) {
+        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(OptimizationDirection optimalityType, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula) : ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection>(optimalityType), bound, subformula) {
             // Intentionally left empty.
         }
         
-        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula) : ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection>(optimalityType), boost::optional<ComparisonType>(), boost::optional<double>(), subformula) {
+        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula) : ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection>(optimalityType), boost::none, subformula) {
             // Intentionally left empty.
         }
         
@@ -22,24 +24,16 @@ namespace storm {
             return true;
         }
         
-        bool ExpectedTimeOperatorFormula::isPctlStateFormula() const {
-            return this->getSubformula().isPctlStateFormula();
+        boost::any ExpectedTimeOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
-        bool ExpectedTimeOperatorFormula::containsProbabilityOperator() const {
-            return this->getSubformula().containsProbabilityOperator();
-        }
-        
-        bool ExpectedTimeOperatorFormula::containsNestedProbabilityOperators() const {
-            return this->getSubformula().containsNestedProbabilityOperators();
-        }
-        
-        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, comparisonType, bound, subformula) {
+        ExpectedTimeOperatorFormula::ExpectedTimeOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula) : OperatorFormula(optimalityType, bound, subformula) {
             // Intentionally left empty.
         }
         
         std::shared_ptr<Formula> ExpectedTimeOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<ExpectedTimeOperatorFormula>(this->optimalityType, this->comparisonType, this->bound, this->getSubformula().substitute(substitution));
+            return std::make_shared<ExpectedTimeOperatorFormula>(this->optimalityType, this->bound, this->getSubformula().substitute(substitution));
         }
         
         std::ostream& ExpectedTimeOperatorFormula::writeToStream(std::ostream& out) const {

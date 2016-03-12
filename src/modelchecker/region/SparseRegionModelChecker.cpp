@@ -56,7 +56,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             ConstantType SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::getSpecifiedFormulaBound() const {
-                return storm::utility::region::convertNumber<ConstantType>(this->getSpecifiedFormula()->getBound());
+                return storm::utility::region::convertNumber<ConstantType>(this->getSpecifiedFormula()->getThreshold());
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -85,7 +85,7 @@ namespace storm {
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
-            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifyFormula(std::shared_ptr<storm::logic::Formula> formula) {
+            void SparseRegionModelChecker<ParametricSparseModelType, ConstantType>::specifyFormula(std::shared_ptr<const storm::logic::Formula> formula) {
                 std::chrono::high_resolution_clock::time_point timeSpecifyFormulaStart = std::chrono::high_resolution_clock::now();
                 STORM_LOG_DEBUG("Specifying the formula " << *formula.get());
                 STORM_LOG_THROW(this->canHandle(*formula), storm::exceptions::InvalidArgumentException, "Tried to specify a formula that can not be handled.");

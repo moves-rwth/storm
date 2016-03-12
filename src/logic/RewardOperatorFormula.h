@@ -9,10 +9,10 @@ namespace storm {
         class RewardOperatorFormula : public OperatorFormula {
         public:
             RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
+            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
+            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
             RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
+            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula);
 
             virtual ~RewardOperatorFormula() {
                 // Intentionally left empty.
@@ -20,10 +20,8 @@ namespace storm {
             
             virtual bool isRewardOperatorFormula() const override;
 
-            virtual bool isPctlStateFormula() const override;
-            virtual bool containsRewardOperator() const override;
-            virtual bool containsNestedRewardOperators() const override;
-            
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
+
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;

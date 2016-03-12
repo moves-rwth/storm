@@ -201,7 +201,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -227,10 +227,8 @@ namespace storm {
 
             // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {
-                if (formula.containsRewardOperator()) {
-                    std::set<std::string> referencedRewardModels = formula.getReferencedRewardModels();
-                    rewardModelsToBuild.insert(referencedRewardModels.begin(), referencedRewardModels.end());
-                }
+                std::set<std::string> referencedRewardModels = formula.getReferencedRewardModels();
+                rewardModelsToBuild.insert(referencedRewardModels.begin(), referencedRewardModels.end());
             }
             
             // Extract all the labels used in the formula.

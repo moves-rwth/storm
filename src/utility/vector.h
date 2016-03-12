@@ -423,54 +423,63 @@ namespace storm {
              */
             template<typename VT>
             VT sum_if(std::vector<VT> const& values, storm::storage::BitVector const& filter) {
-                assert(values.size() >= filter.size());
+                STORM_LOG_ASSERT(values.size() == filter.size(), "Vector sizes mismatch.");
                 VT sum = storm::utility::zero<VT>();
-                for(uint_fast64_t i : filter) {
-                    sum += values[i];
+                for(auto pos : filter) {
+                    sum += values[pos];
                 }    
                 return sum;
             }
             
             /**
-             * Computes the maximum of the entries from the values that are set to one in the filter vector
-             * @param values
-             * @param filter
-             * @param smallestPossibleValue A value which is not larger than any value in values. If the filter is empty, this value is returned.
-             * @return  The maximum over the subset of the values and the smallestPossibleValue.
+             * Computes the maximum of the entries from the values that are selected by the (non-empty) filter.
+             * @param values The values in which to search.
+             * @param filter The filter to use.
+             * @return The maximum over the selected values.
              */
             template<typename VT>
-            VT max_if(std::vector<VT> const& values, storm::storage::BitVector const& filter, VT const& smallestPossibleValue) {
-                assert(values.size() >= filter.size());
+            VT max_if(std::vector<VT> const& values, storm::storage::BitVector const& filter) {
+                STORM_LOG_ASSERT(values.size() == filter.size(), "Vector sizes mismatch.");
+                STORM_LOG_ASSERT(!filter.empty(), "Empty selection.");
+
+                auto it = filter.begin();
+                auto ite = filter.end();
+
+                VT current = values[*it];
+                ++it;
                 
-                VT max = smallestPossibleValue;
-                for(uint_fast64_t i : filter) {
-                    if(values[i] > max) { 
-                        max = values[i];
+                for (; it != ite; ++it) {
+                    if (values[*it] > current) {
+                        current = values[*it];
                     }
-                }    
-                return max;
+                }
+                return current;
             }
             
             /**
-             * Computes the minimum of the entries from the values that are set to one in the filter vector
-             * @param values
-             * @param filter
-             * @param largestPossibleValue A value which is not smaller than any value in values. If the filter is empty, this value is returned.
-             * @return  The minimum over the subset of the values and the largestPossibleValue.
+             * Computes the minimum of the entries from the values that are selected by the (non-empty) filter.
+             * @param values The values in which to search.
+             * @param filter The filter to use.
+             * @return The minimum over the selected values.
              */
             template<typename VT>
-            VT min_if(std::vector<VT> const& values, storm::storage::BitVector const& filter, VT const& largestPossibleValue) {
-                assert(values.size() >= filter.size());
-                VT min = largestPossibleValue;
-                for(uint_fast64_t i : filter) {
-                    if(values[i] < min) { 
-                        min = values[i];
+            VT min_if(std::vector<VT> const& values, storm::storage::BitVector const& filter) {
+                STORM_LOG_ASSERT(values.size() == filter.size(), "Vector sizes mismatch.");
+                STORM_LOG_ASSERT(!filter.empty(), "Empty selection.");
+                
+                auto it = filter.begin();
+                auto ite = filter.end();
+                
+                VT current = values[*it];
+                ++it;
+                
+                for (; it != ite; ++it) {
+                    if (values[*it] < current) {
+                        current = values[*it];
                     }
-                }    
-                return min;
+                }
+                return current;
             }
-            
-            
             
             /*!
              * Reduces the given source vector by selecting an element according to the given filter out of each row group.

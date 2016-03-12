@@ -17,5 +17,9 @@ namespace storm {
         bool ModelBase::isOfType(storm::models::ModelType const& modelType) const {
             return this->getType() == modelType;
         }
+        
+        bool ModelBase::isParametric() const { 
+            return false;
+        }
     }
 }

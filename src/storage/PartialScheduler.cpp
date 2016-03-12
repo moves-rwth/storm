@@ -22,6 +22,14 @@ namespace storm {
             return stateChoicePair->second;
         }
         
+        PartialScheduler::map_type::const_iterator PartialScheduler::begin() const {
+            return stateToChoiceMapping.begin();
+        }
+        
+        PartialScheduler::map_type::const_iterator PartialScheduler::end() const {
+            return stateToChoiceMapping.end();
+        }
+        
         std::ostream& operator<<(std::ostream& out, PartialScheduler const& scheduler) {
             out << "partial scheduler (defined on " << scheduler.stateToChoiceMapping.size() << " states) [ ";
             uint_fast64_t remainingEntries = scheduler.stateToChoiceMapping.size();

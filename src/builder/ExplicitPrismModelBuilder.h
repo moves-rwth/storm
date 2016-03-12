@@ -163,7 +163,7 @@ namespace storm {
                  *
                  * @param formula Thes formula based on which to choose the building options.
                  */
-                Options(std::vector<std::shared_ptr<storm::logic::Formula>> const& formulas);
+                Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas);
                 
                 /*!
                  * Sets the constants definitions from the given string. The string must be of the form 'X=a,Y=b,Z=c',
