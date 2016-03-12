@@ -48,9 +48,9 @@ namespace storm {
             
             std::vector<std::vector<size_t>> createSymmetry(std::vector<std::vector<size_t>> parentSymmetry, std::vector<std::vector<size_t>> childSymmetry, size_t index) {
                 std::vector<std::vector<size_t>> result;
-                for (std::vector<size_t> childSymmetry : childSymmetry) {
+                for (std::vector<size_t> childSym : childSymmetry) {
                     std::vector<size_t> symmetry;
-                    for (size_t child : childSymmetry) {
+                    for (size_t child : childSym) {
                         int bijectionValue = applySymmetry(parentSymmetry, child, index);
                         if (bijectionValue >= 0) {
                             symmetry.push_back(bijectionValue);
