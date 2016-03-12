@@ -69,7 +69,7 @@ namespace storm {
                 std::swap(x, tmpResult);
 
                 ++iterations;
-            } while (!converged && iterations < this->maximalNumberOfIterations && !this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
+            } while (!converged && iterations < this->maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x)));
             
             STORM_LOG_WARN_COND(converged, "Iterative solver for stochastic two player games did not converge after " << iterations << " iterations.");
             

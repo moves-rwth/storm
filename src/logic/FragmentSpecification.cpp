@@ -22,7 +22,7 @@ namespace storm {
             
             pctl.setProbabilityOperatorsAllowed(true);
             pctl.setGloballyFormulasAllowed(true);
-            pctl.setEventuallyFormulasAllowed(true);
+            pctl.setReachabilityProbabilityFormulasAllowed(true);
             pctl.setNextFormulasAllowed(true);
             pctl.setUntilFormulasAllowed(true);
             pctl.setBoundedUntilFormulasAllowed(true);
@@ -70,7 +70,7 @@ namespace storm {
             longRunAverageOperator = false;
             
             globallyFormula = false;
-            eventuallyFormula = false;
+            reachabilityProbabilityFormula = false;
             nextFormula = false;
             untilFormula = false;
             boundedUntilFormula = false;
@@ -89,13 +89,17 @@ namespace storm {
             conditionalProbabilityFormula = false;
             conditionalRewardFormula = false;
             
-            reachabilityExpectedTimeFormula = false;
+            reachabilityTimeFormula = false;
             
             nestedOperators = true;
             nestedPathFormulas = false;
             onlyEventuallyFormuluasInConditionalFormulas = true;
             stepBoundedUntilFormulas = false;
             timeBoundedUntilFormulas = false;
+            varianceAsMeasureType = false;
+            
+            qualitativeOperatorResults = true;
+            quantitativeOperatorResults = true;
         }
         
         FragmentSpecification FragmentSpecification::copy() const {
@@ -120,11 +124,11 @@ namespace storm {
             return *this;
         }
         
-        bool FragmentSpecification::areExpectedTimeOperatorsAllowed() const {
+        bool FragmentSpecification::areTimeOperatorsAllowed() const {
             return expectedTimeOperator;
         }
         
-        FragmentSpecification& FragmentSpecification::setExpectedTimeOperatorsAllowed(bool newValue) {
+        FragmentSpecification& FragmentSpecification::setTimeOperatorsAllowed(bool newValue) {
             this->expectedTimeOperator = newValue;
             return *this;
         }
@@ -147,12 +151,12 @@ namespace storm {
             return *this;
         }
         
-        bool FragmentSpecification::areEventuallyFormulasAllowed() const {
-            return eventuallyFormula;
+        bool FragmentSpecification::areReachabilityProbabilityFormulasAllowed() const {
+            return reachabilityProbabilityFormula;
         }
         
-        FragmentSpecification& FragmentSpecification::setEventuallyFormulasAllowed(bool newValue) {
-            this->eventuallyFormula = newValue;
+        FragmentSpecification& FragmentSpecification::setReachabilityProbabilityFormulasAllowed(bool newValue) {
+            this->reachabilityProbabilityFormula = newValue;
             return *this;
         }
         
@@ -282,12 +286,12 @@ namespace storm {
             return *this;
         }
         
-        bool FragmentSpecification::areReachbilityExpectedTimeFormulasAllowed() const {
-            return reachabilityExpectedTimeFormula;
+        bool FragmentSpecification::areReachbilityTimeFormulasAllowed() const {
+            return reachabilityTimeFormula;
         }
             
-        FragmentSpecification& FragmentSpecification::setReachbilityExpectedTimeFormulasAllowed(bool newValue) {
-            this->reachabilityExpectedTimeFormula = newValue;
+        FragmentSpecification& FragmentSpecification::setReachbilityTimeFormulasAllowed(bool newValue) {
+            this->reachabilityTimeFormula = newValue;
             return *this;
         }
         
@@ -340,13 +344,13 @@ namespace storm {
             this->setProbabilityOperatorsAllowed(newValue);
             this->setRewardOperatorsAllowed(newValue);
             this->setLongRunAverageOperatorsAllowed(newValue);
-            this->setExpectedTimeOperatorsAllowed(newValue);
+            this->setTimeOperatorsAllowed(newValue);
             return *this;
         }
         
-        FragmentSpecification& FragmentSpecification::setExpectedTimeAllowed(bool newValue) {
-            this->setExpectedTimeOperatorsAllowed(newValue);
-            this->setReachbilityExpectedTimeFormulasAllowed(newValue);
+        FragmentSpecification& FragmentSpecification::setTimeAllowed(bool newValue) {
+            this->setTimeOperatorsAllowed(newValue);
+            this->setReachbilityTimeFormulasAllowed(newValue);
             return *this;
         }
         
@@ -354,6 +358,34 @@ namespace storm {
             this->setLongRunAverageOperatorsAllowed(newValue);
             return *this;
         }
+        
+        bool FragmentSpecification::isVarianceMeasureTypeAllowed() const {
+            return varianceAsMeasureType;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setVarianceMeasureTypeAllowed(bool newValue) {
+            this->varianceAsMeasureType = newValue;
+            return *this;
+        }
+     
+        bool FragmentSpecification::areQuantitativeOperatorResultsAllowed() const {
+            return this->quantitativeOperatorResults;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setQuantitativeOperatorResultsAllowed(bool newValue) {
+            this->quantitativeOperatorResults = newValue;
+            return *this;
+        }
+        
+        bool FragmentSpecification::areQualitativeOperatorResultsAllowed() const {
+            return this->qualitativeOperatorResults;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setQualitativeOperatorResultsAllowed(bool newValue) {
+            this->qualitativeOperatorResults = newValue;
+            return *this;
+        }
+
         
     }
 }

@@ -17,12 +17,12 @@
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Mdp.h"
 
-TEST(ModelInstantiatorTest, Brp_Prob) {
+TEST(ModelInstantiatorTest, BrpProb) {
     carl::VariablePool::getInstance().clear();
     
-    std::string const& programFile = STORM_CPP_TESTS_BASE_PATH "/functional/utility/brp16_2.pm";
-    std::string const& formulaAsString = "P=? [F s=5 ]";
-    std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/functional/utility/brp16_2.pm";
+    std::string formulaAsString = "P=? [F s=5 ]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
     // Program and formula
     storm::prism::Program program = storm::parseProgram(programFile);
@@ -33,7 +33,7 @@ TEST(ModelInstantiatorTest, Brp_Prob) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program, constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program, options)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>(program, options).translate()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>> modelInstantiator(*dtmc);
     EXPECT_FALSE(dtmc->hasRewardModel());
@@ -141,9 +141,9 @@ TEST(ModelInstantiatorTest, Brp_Prob) {
 TEST(ModelInstantiatorTest, Brp_Rew) {
     carl::VariablePool::getInstance().clear();
     
-    std::string const& programFile = STORM_CPP_TESTS_BASE_PATH "/functional/utility/brp16_2.pm";
-    std::string const& formulaAsString = "R=? [F ((s=5) | (s=0&srep=3)) ]";
-    std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/functional/utility/brp16_2.pm";
+    std::string formulaAsString = "R=? [F ((s=5) | (s=0&srep=3)) ]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
     // Program and formula
     storm::prism::Program program = storm::parseProgram(programFile);
@@ -154,7 +154,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program, constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program, options)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>(program, options).translate()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>> modelInstantiator(*dtmc);
     
@@ -211,12 +211,12 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
 }
     
 
-TEST(ModelInstantiatorTest, consensus) {
+TEST(ModelInstantiatorTest, Consensus) {
     carl::VariablePool::getInstance().clear();
     
-    std::string const& programFile = STORM_CPP_TESTS_BASE_PATH "/functional/utility/coin2_2.pm";
-    std::string const& formulaAsString = "Pmin=? [F \"finished\"&\"all_coins_equal_1\" ]";
-    std::string const& constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/functional/utility/coin2_2.pm";
+    std::string formulaAsString = "Pmin=? [F \"finished\"&\"all_coins_equal_1\" ]";
+    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
     
     // Program and formula
     storm::prism::Program program = storm::parseProgram(programFile);
@@ -227,7 +227,7 @@ TEST(ModelInstantiatorTest, consensus) {
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program, constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program, options)->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>(program, options).translate()->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
 
     storm::utility::ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<double>> modelInstantiator(*mdp);
     
@@ -260,7 +260,6 @@ TEST(ModelInstantiatorTest, consensus) {
     std::unique_ptr<storm::modelchecker::CheckResult> chkResult = modelchecker.check(*formulas[0]);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeChkResult = chkResult->asExplicitQuantitativeCheckResult<double>();
     EXPECT_NEAR(0.3526577219, quantitativeChkResult[*instantiated.getInitialStates().begin()], storm::settings::generalSettings().getPrecision());
-    
 }
 
 #endif

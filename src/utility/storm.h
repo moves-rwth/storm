@@ -109,8 +109,8 @@ namespace storm {
                 options.buildCommandLabels = true;
             }
 
-            storm::builder::ExplicitPrismModelBuilder<ValueType> builder;
-            result.model = builder.translateProgram(program, options);
+            storm::builder::ExplicitPrismModelBuilder<ValueType> builder(program, options);
+            result.model = builder.translate();
             translatedProgram = builder.getTranslatedProgram();
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
@@ -362,7 +362,7 @@ namespace storm {
         typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
         options.addConstantDefinitionsFromString(program, constantsString); 
         options.preserveFormula(*formulas[0]);
-        std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>().translateProgram(program, options)->as<storm::models::sparse::Model<storm::RationalFunction>>();
+        std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>(program, options).translate()->as<storm::models::sparse::Model<storm::RationalFunction>>();
         // Preprocessing and ModelChecker
         if(model->isOfType(storm::models::ModelType::Dtmc)){
             preprocessModel<storm::models::sparse::Dtmc<storm::RationalFunction>>(model,formulas);

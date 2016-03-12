@@ -191,7 +191,7 @@ namespace storm {
                 //Get the simplified formula
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
                 std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
-                simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(this->getSpecifiedFormula()->getBound(), eventuallyFormula));
+                simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>

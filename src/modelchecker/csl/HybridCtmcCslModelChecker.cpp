@@ -56,7 +56,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, class ValueType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeReachabilityRewards(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
             storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
@@ -85,13 +85,13 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, class ValueType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeInstantaneousRewards(CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeInstantaneousRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::InstantaneousRewardFormula> const& checkTask) {
             storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
             return storm::modelchecker::helper::HybridCtmcCslHelper<DdType, ValueType>::computeInstantaneousRewards(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getContinuousTimeBound(), *linearEquationSolverFactory);
         }
 
         template<storm::dd::DdType DdType, class ValueType>
-        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeCumulativeRewards(CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<DdType, ValueType>::computeCumulativeRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula> const& checkTask) {
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
             return storm::modelchecker::helper::HybridCtmcCslHelper<DdType, ValueType>::computeCumulativeRewards(this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getContinuousTimeBound(), *linearEquationSolverFactory);
         }

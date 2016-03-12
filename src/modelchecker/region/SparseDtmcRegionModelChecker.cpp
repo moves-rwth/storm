@@ -228,11 +228,12 @@ namespace storm {
                 // the corresponding formula
                 STORM_LOG_DEBUG("Building the resulting simplified formula.");
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
-                std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
                 if(this->isComputeRewards()){
-                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::RewardOperatorFormula(boost::optional<std::string>(), this->getSpecifiedFormula()->getBound(), eventuallyFormula));
+                    std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr, storm::logic::FormulaContext::Reward));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::RewardOperatorFormula(eventuallyFormula, boost::none, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
                 } else {
-                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(this->getSpecifiedFormula()->getBound(), eventuallyFormula));
+                    std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
                 }
                 //Check if the reachability function needs to be computed
                 if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 

@@ -459,7 +459,7 @@ namespace storm {
             rowIndications[0] = 0;
             
             // Construct matrix and return result.
-            return storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(trivialRowGroupIndices), false);
+            return storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), boost::none);
         }
         
         template<DdType LibraryType, typename ValueType>
@@ -583,7 +583,7 @@ namespace storm {
             }
             rowIndications[0] = 0;
             
-            return storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices), true);
+            return storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices));
         }
 
         template<DdType LibraryType, typename ValueType>
@@ -708,7 +708,7 @@ namespace storm {
             }
             rowIndications[0] = 0;
             
-            return std::make_pair(storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices), true), std::move(explicitVector));
+            return std::make_pair(storm::storage::SparseMatrix<ValueType>(columnOdd.getTotalOffset(), std::move(rowIndications), std::move(columnsAndValues), std::move(rowGroupIndices)), std::move(explicitVector));
         }
 
         template<DdType LibraryType, typename ValueType>

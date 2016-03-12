@@ -11,7 +11,7 @@ namespace storm {
     namespace parser {
         storm::prism::Program PrismParser::parse(std::string const& filename) {
             // Open file and initialize result.
-            std::ifstream inputFileStream(filename, std::ios::in);
+            std::ifstream inputFileStream(filename);
             STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
             
             storm::prism::Program result;
@@ -35,7 +35,7 @@ namespace storm {
             PositionIteratorType first(input.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(input.end());
-            assert(first != last);
+            STORM_LOG_ASSERT(first != last, "Illegal input to PRISM parser.");
             
             // Create empty result;
             storm::prism::Program result;

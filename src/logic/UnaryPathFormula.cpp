@@ -25,5 +25,14 @@ namespace storm {
         void UnaryPathFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
             this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
+        
+        bool UnaryPathFormula::hasQualitativeResult() const {
+            return false;
+        }
+        
+        bool UnaryPathFormula::hasQuantitativeResult() const {
+            return true;
+        }
+
     }
 }

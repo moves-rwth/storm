@@ -197,7 +197,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program);
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
     EXPECT_EQ(4ul, model->getNumberOfStates());
     EXPECT_EQ(11ul, model->getNumberOfTransitions());
     
