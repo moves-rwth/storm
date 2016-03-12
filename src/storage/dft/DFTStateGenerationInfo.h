@@ -75,22 +75,30 @@ namespace storm {
              * Generate more symmetries by combining two symmetries
              */
             void generateSymmetries(storm::storage::DFTIndependentSymmetries const& symmetries) {
+                // Iterate over possible children
                 for (size_t i = 0; i < mSymmetries.size(); ++i) {
                     size_t childStart = mSymmetries[i].second[0];
                     size_t childLength = mSymmetries[i].first;
+                    // Iterate over possible parents
                     for (size_t j = i+1; j < mSymmetries.size(); ++j) {
                         size_t parentStart = mSymmetries[j].second[0];
                         size_t parentLength = mSymmetries[j].first;
                         // Check if child lies in parent
                         if (parentStart <= childStart && childStart + childLength < parentStart + parentLength) {
-                            // Get symmetric start by applying the bijection
-                            std::vector<size_t> newStarts;
-                            for (size_t symmetryStarts : mSymmetries[i].second) {
-                                newStarts.push_back(symmetryStarts + parentLength);
+                            std::vector<std::vector<size_t>> newSymmetries;
+                            for (size_t index = 1; index < mSymmetries[j].second.size(); ++index) {
+                                // Get symmetric start by applying the bijection
+                                std::vector<size_t> newStarts;
+                                for (size_t symmetryStarts : mSymmetries[i].second) {
+                                    newStarts.push_back(symmetryStarts + mSymmetries[j].second[index]);
+                                }
+                                newSymmetries.push_back(newStarts);
                             }
                             // Insert after child
-                            mSymmetries.insert(mSymmetries.begin() + i + 1, std::make_pair(childLength, newStarts));
-                            ++i;
+                            for (size_t index = 0; index < newSymmetries.size(); ++index) {
+                                mSymmetries.insert(mSymmetries.begin() + i + 1 + index, std::make_pair(childLength, newSymmetries[index]));
+                            }
+                            i += mSymmetries[j].second.size();
                             break;
                         }
                     }

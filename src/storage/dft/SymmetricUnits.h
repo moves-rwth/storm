@@ -64,6 +64,7 @@ namespace storm {
             }
             
             void sortHierarchical(size_t parent, std::vector<size_t>& candidates) {
+                // Find subsymmetries of current symmetry
                 std::vector<size_t> children;
                 for (int i = candidates.size() - 1; i >= 0; --i) {
                     size_t currentRoot = candidates[i];
@@ -74,16 +75,23 @@ namespace storm {
                         candidates.erase(candidates.begin()+i);
                     }
                 }
+                
+                // Find child symmetries which are created by parent and other child symmetries
                 for (size_t i = 0; i < children.size(); ++i) {
-                    std::vector<std::vector<size_t>> possibleSymmetry = createSymmetry(groups.at(parent), groups.at(children[i]), 1);
-                    for (size_t j = i + 1; j < children.size(); ++j) {
-                        if (possibleSymmetry == groups.at(children[j])) {
-                            STORM_LOG_TRACE("Child " << children[j] << " ignored as created by symmetries " << parent << " and " << children[j]);
-                            groups.erase(children[j]);
-                            children.erase(children.begin() + j);
+                    // Iterate over all possible symmetry groups
+                    for (size_t index = 1; index < groups.at(parent).front().size(); ++index) {
+                        std::vector<std::vector<size_t>> possibleSymmetry = createSymmetry(groups.at(parent), groups.at(children[i]), index);
+                        for (size_t j = i + 1; j < children.size(); ++j) {
+                            if (possibleSymmetry == groups.at(children[j])) {
+                                STORM_LOG_TRACE("Child " << children[j] << " ignored as created by symmetries " << parent << " and " << children[i]);
+                                groups.erase(children[j]);
+                                children.erase(children.begin() + j);
+                            }
                         }
                     }
                 }
+                
+                // Apply sorting recursively
                 while (!children.empty()) {
                     // Insert largest element
                     size_t largestChild = children.back();
@@ -98,9 +106,9 @@ namespace storm {
                 for (auto const& cl : groups) {
                     sortedGroups.push_back(cl.first);
                 }
-                // Sort by length of symmetry
+                // Sort by length of symmetry or (if equal) by lower first element
                 std::sort(sortedGroups.begin(), sortedGroups.end(), [&](const size_t left, const size_t right) {
-                    return groups.at(left).size() < groups.at(right).size();
+                    return groups.at(left).size() < groups.at(right).size() || (groups.at(left).size() == groups.at(right).size() && groups.at(left).front().front() < groups.at(left).front().front());
                 });
                 
                 // Sort hierarchical
