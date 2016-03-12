@@ -37,7 +37,7 @@ namespace storm {
             }
             
             state.setDontCare(mId);
-            if (hasParentSpare && !state.isActive(mId)) {
+            if (hasParentSpare) {
                 // Activate child for consistency in failed spares
                 state.activate(mId);
             }

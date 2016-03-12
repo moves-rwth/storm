@@ -123,16 +123,28 @@ namespace storm {
 
         template<typename ValueType>
         void DFTState<ValueType>::setFailed(size_t id) {
+            if (mDft.isRepresentative(id)) {
+                // Activate failed element
+                activate(id);
+            }
             mStatus.set(mStateGenerationInfo.getStateIndex(id));
         }
 
         template<typename ValueType>
         void DFTState<ValueType>::setFailsafe(size_t id) {
+            if (mDft.isRepresentative(id)) {
+                // Activate failed element
+                activate(id);
+            }
             mStatus.set(mStateGenerationInfo.getStateIndex(id)+1);
         }
 
         template<typename ValueType>
         void DFTState<ValueType>::setDontCare(size_t id) {
+            if (mDft.isRepresentative(id)) {
+                // Activate failed element
+                activate(id);
+            }
             mStatus.setFromInt(mStateGenerationInfo.getStateIndex(id), 2, static_cast<uint_fast64_t>(DFTElementState::DontCare) );
         }
         
@@ -207,7 +219,6 @@ namespace storm {
         template<typename ValueType>
         void DFTState<ValueType>::activate(size_t repr) {
             size_t activationIndex = mStateGenerationInfo.getSpareActivationIndex(repr);
-            assert(!mStatus[activationIndex]);
             mStatus.set(activationIndex);
         }
 
