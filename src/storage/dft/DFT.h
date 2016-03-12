@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <list>
 #include <map>
+#include <vector>
 
 #include <boost/iterator/counting_iterator.hpp>
 
@@ -93,6 +94,10 @@ namespace storm {
             
             size_t getTopLevelIndex() const {
                 return mTopLevelIndex;
+            }
+            
+            DFTElementType topLevelType() const {
+                return mElements[getTopLevelIndex()]->type();
             }
             
             size_t getMaxSpareChildCount() const {
@@ -186,6 +191,8 @@ namespace storm {
                 }
                 return elements;
             }
+            
+            std::vector<DFT<ValueType>> topModularisation() const;
             
             bool isRepresentative(size_t id) const {
                 for (auto const& parent : getElement(id)->parents()) {

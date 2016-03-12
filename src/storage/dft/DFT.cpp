@@ -248,6 +248,46 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::vector<DFT<ValueType>>  DFT<ValueType>::topModularisation() const {
+            assert(isGate(mTopLevelIndex));
+            auto const& children = getGate(mTopLevelIndex)->children();
+            std::map<size_t, std::vector<size_t>> subdfts;
+            for(auto const& child : children) {
+                std::vector<size_t> isubdft;
+                if(child->nrParents() > 1 || child->hasOutgoingDependencies()) {
+                    return {*this};
+                }
+                if (isGate(child->id())) {
+                    isubdft = getGate(child->id())->independentSubDft(false);
+                } else {
+                    assert(isBasicElement(child->id()));
+                    if(!getBasicElement(child->id())->hasIngoingDependencies()) {
+                        isubdft = {child->id()};
+                    }
+                    
+                }
+                if(isubdft.empty()) {
+                    return {*this};
+                } else {
+                    subdfts[child->id()] = isubdft;
+                }
+            }
+            
+            std::vector<DFT<ValueType>> res;
+            for(auto const& subdft : subdfts) {
+                DFTBuilder<ValueType> builder;
+            
+                for(size_t id : subdft.second) {
+                    builder.copyElement(mElements[id]);
+                }
+                builder.setTopLevel(mElements[subdft.first]->name());
+                res.push_back(builder.build());
+            }
+            return res;
+            
+        }
+        
+        template<typename ValueType>
         DFT<ValueType> DFT<ValueType>::optimize() const {
             std::vector<size_t> modIdea = findModularisationRewrite();
             STORM_LOG_DEBUG("Modularisation idea: " << storm::utility::vector::toString(modIdea));

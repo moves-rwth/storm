@@ -1,11 +1,7 @@
 #include "logic/Formula.h"
-#include "parser/DFTGalileoParser.h"
 #include "utility/initialize.h"
-#include "builder/ExplicitDFTModelBuilder.h"
-#include "modelchecker/results/CheckResult.h"
 #include "utility/storm.h"
-#include "storage/dft/DFTIsomorphism.h"
-
+#include "modelchecker/DFTAnalyser.h"
 #include <boost/lexical_cast.hpp>
 
 /*!
@@ -15,71 +11,20 @@
  * @param property PCTC formula capturing the property to check.
  */
 template <typename ValueType>
-void analyzeDFT(std::string filename, std::string property, bool symred = false) {
+void analyzeDFT(std::string filename, std::string property, bool symred = false, bool allowModularisation = false) {
     storm::settings::SettingsManager& manager = storm::settings::mutableManager();
     manager.setFromString("");
 
-    // Building DFT
-    std::chrono::high_resolution_clock::time_point buildingStart = std::chrono::high_resolution_clock::now();
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
     std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas = storm::parseFormulasForExplicit(property);
     std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
     assert(formulas.size() == 1);
     
-    // Optimizing DFT
-    dft = dft.optimize();
-    std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
-    storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
-    if(symred) {
-        auto colouring = dft.colourDFT();
-        symmetries = dft.findSymmetries(colouring);
-        std::cout << "Found " << symmetries.groups.size() << " symmetries." << std::endl;
-        STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
-    }
-    std::chrono::high_resolution_clock::time_point buildingEnd = std::chrono::high_resolution_clock::now();
-    
-    // Building Markov Automaton
-    std::cout << "Building Model..." << std::endl;
-    storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
-    typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel(labeloptions);
-    //model->printModelInformationToStream(std::cout);
-    std::cout << "No. states (Explored): " << model->getNumberOfStates() << std::endl;
-    std::cout << "No. transitions (Explored): " << model->getNumberOfTransitions() << std::endl;
-    std::chrono::high_resolution_clock::time_point explorationEnd = std::chrono::high_resolution_clock::now();
-    
-    // Bisimulation
-    if (model->isOfType(storm::models::ModelType::Ctmc)) {
-        std::cout << "Bisimulation..." << std::endl;
-        model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), formulas, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
-        //model->printModelInformationToStream(std::cout);
-    }
-    std::cout << "No. states (Bisimulation): " << model->getNumberOfStates() << std::endl;
-    std::cout << "No. transitions (Bisimulation): " << model->getNumberOfTransitions() << std::endl;
-    std::chrono::high_resolution_clock::time_point bisimulationEnd = std::chrono::high_resolution_clock::now();
-    
-    // Model checking
-    std::cout << "Model checking..." << std::endl;
-    std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formulas[0]));
-    assert(result);
-    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-    
-    // Times
-    std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> buildingTime = buildingEnd - buildingStart;
-    std::chrono::duration<double> explorationTime = explorationEnd - buildingEnd;
-    std::chrono::duration<double> bisimulationTime = bisimulationEnd - explorationEnd;
-    std::chrono::duration<double> modelCheckingTime = modelCheckingEnd - bisimulationEnd;
-    std::chrono::duration<double> totalTime = modelCheckingEnd - buildingStart;
-    std::cout << "Times:" << std::endl;
-    std::cout << "Building:\t" << buildingTime.count() << std::endl;
-    std::cout << "Exploration:\t" << explorationTime.count() << std::endl;
-    std::cout << "Bisimulation:\t" << bisimulationTime.count() << std::endl;
-    std::cout << "Modelchecking:\t" << modelCheckingTime.count() << std::endl;
-    std::cout << "Total:\t\t" << totalTime.count() << std::endl;
-    std::cout << "Result: ";
-    std::cout << *result << std::endl;
+    DFTAnalyser<ValueType> analyser;
+    analyser.check(dft, formulas[0], symred, allowModularisation);
+    analyser.printTimings();
+    analyser.printResult();
 }
 
 /*!
@@ -100,6 +45,8 @@ int main(int argc, char** argv) {
     bool parametric = false;
     bool symred = false;
     bool minimal = true;
+    bool allowModular = true;
+    bool enableModularisation = false;
     std::string filename = argv[1];
     std::string operatorType = "";
     std::string targetFormula = "";
@@ -112,6 +59,7 @@ int main(int argc, char** argv) {
             assert(targetFormula.empty());
             operatorType = "ET";
             targetFormula = "F \"failed\"";
+            allowModular = false;
         } else if (option == "--probability") {
             assert(targetFormula.empty());
             operatorType = "P";;
@@ -142,6 +90,8 @@ int main(int argc, char** argv) {
             pctlFormula = argv[i];
         } else if (option == "--symred") {
             symred = true;
+        } else if (option == "--modularisation") {
+            enableModularisation = true;
         } else if (option == "--min") {
             minimal = true;
         } else if (option == "--max") {
@@ -164,8 +114,8 @@ int main(int argc, char** argv) {
     std::cout << "Running " << (parametric ? "parametric " : "") << "DFT analysis on file " << filename << " with property " << pctlFormula << std::endl;
 
     if (parametric) {
-        analyzeDFT<storm::RationalFunction>(filename, pctlFormula, symred);
+        analyzeDFT<storm::RationalFunction>(filename, pctlFormula, symred, allowModular && enableModularisation );
     } else {
-        analyzeDFT<double>(filename, pctlFormula, symred);
+        analyzeDFT<double>(filename, pctlFormula, symred, allowModular && enableModularisation);
     }
 }
