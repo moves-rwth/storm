@@ -98,7 +98,7 @@ namespace storm {
                             for (size_t index = 0; index < newSymmetries.size(); ++index) {
                                 mSymmetries.insert(mSymmetries.begin() + i + 1 + index, std::make_pair(childLength, newSymmetries[index]));
                             }
-                            i += mSymmetries[j].second.size();
+                            i += newSymmetries.size();
                             break;
                         }
                     }
