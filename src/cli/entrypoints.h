@@ -56,7 +56,27 @@ namespace storm {
         
         template<typename ValueType>
         void verifySymbolicModelWithLearningEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Abstraction Refinement is not yet implemented.");
+            
+            for (auto const& formula : formulas) {
+                STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc || model->getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidSettingsException, "Currently learning-based verification is only available for DTMCs and MDPs.");
+                std::cout << std::endl << "Model checking property: " << *formula << " ...";
+                storm::modelchecker::CheckTask task(*formula, onlyInitialStatesRelevant);
+                storm::modelchecker::SparseLearningModelChecker<ValueType> checker(program);
+                std::unique_ptr<storm::modelchecker::CheckResult> result;
+                if (checker.canHandle(formula)) {
+                    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(task);
+                } else {
+                    std::cout << " skipped, because the formula cannot be handled by the selected engine/method." << std::endl;
+                }
+                if (result) {
+                    std::cout << " done." << std::endl;
+                    std::cout << "Result (initial states): ";
+                    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                    std::cout << *result << std::endl;
+                } else {
+                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                }
+            }
         }
 
         template<storm::dd::DdType DdType>
