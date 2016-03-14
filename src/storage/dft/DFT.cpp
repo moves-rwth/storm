@@ -250,6 +250,7 @@ namespace storm {
             for(auto const& child : children) {
                 std::vector<size_t> isubdft;
                 if(child->nrParents() > 1 || child->hasOutgoingDependencies()) {
+                    STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
                     return {*this};
                 }
                 if (isGate(child->id())) {
@@ -257,7 +258,10 @@ namespace storm {
                 } else {
                     assert(isBasicElement(child->id()));
                     if(getBasicElement(child->id())->hasIngoingDependencies()) {
+                        STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
                         return {*this};
+                    } else {
+                        isubdft = {child->id()};
                     }
                     
                 }
