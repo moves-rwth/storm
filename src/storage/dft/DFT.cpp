@@ -261,8 +261,8 @@ namespace storm {
                     isubdft = getGate(child->id())->independentSubDft(false);
                 } else {
                     assert(isBasicElement(child->id()));
-                    if(!getBasicElement(child->id())->hasIngoingDependencies()) {
-                        isubdft = {child->id()};
+                    if(getBasicElement(child->id())->hasIngoingDependencies()) {
+                        return {*this};
                     }
                     
                 }

@@ -1,0 +1,17 @@
+#pragma once
+
+inline size_t smallestIntWithNBitsSet(size_t n) {
+    assert(sizeof(size_t) == 8);
+    assert(n < 64); // TODO fix this for 32 bit architectures!
+    if(n==0) return static_cast<size_t>(0);
+    return (1 << n) - 1;
+}
+
+inline size_t nextBitPermutation(size_t v) {
+    if(v==0) return static_cast<size_t>(0);
+    // From https://graphics.stanford.edu/~seander/bithacks.html#NextBitPermutation
+    unsigned int t = (v | (v - 1)) + 1;  
+    return t | ((((t & -t) / (v & -v)) >> 1) - 1);  
+}
+        
+        

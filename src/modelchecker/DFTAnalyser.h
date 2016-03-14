@@ -6,6 +6,7 @@
 #include "modelchecker/results/CheckResult.h"
 #include "utility/storm.h"
 #include "storage/dft/DFTIsomorphism.h"
+#include "utility/bitoperations.h"
 
 
 #include <chrono>
@@ -42,27 +43,41 @@ private:
         bool invResults = false;
         std::vector<storm::storage::DFT<ValueType>> dfts = {dft};
         std::vector<ValueType> res;
+        size_t nrK = 0; // K out of M 
+        size_t nrM = 0; // K out of M
         
         if(allowModularisation) {
-            std::cout << dft.topLevelType() << std::endl;
             if(dft.topLevelType() == storm::storage::DFTElementType::AND) {
-                std::cout << "top modularisation called AND" << std::endl;
+                STORM_LOG_TRACE("top modularisation called AND");
                 dfts = dft.topModularisation();
-                if(dfts.size() > 1) {
-                    for(auto const ft : dfts) {
-                        res.push_back(checkHelper(ft, formula, symred, allowModularisation));
-                    }
-                }
+                STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                nrK = dfts.size();
+                nrM = dfts.size();
             }
             if(dft.topLevelType() == storm::storage::DFTElementType::OR) {
-                std::cout << "top modularisation called OR" << std::endl;
+                STORM_LOG_TRACE("top modularisation called OR");
                 dfts = dft.topModularisation();
-                if(dfts.size() > 1) {
-                    for(auto const ft : dfts) {
-                        res.push_back(checkHelper(ft, formula, symred, allowModularisation));
-                    }
-                }
+                STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                nrK = 0;
+                nrM = dfts.size();
                 invResults = true;
+            }
+            if(dft.topLevelType() == storm::storage::DFTElementType::VOT) {
+                STORM_LOG_TRACE("top modularisation called VOT");
+                dfts = dft.topModularisation();
+                STORM_LOG_TRACE("Modularsation into " << dfts.size() << " submodules.");
+                nrK = std::static_pointer_cast<storm::storage::DFTVot<ValueType> const>(dft.getTopLevelGate())->threshold();
+                nrM = dfts.size();
+                if(nrK <= nrM/2) {
+                    nrK -= 1;
+                    invResults = true;
+                }
+            }
+            if(dfts.size() > 1) {
+                STORM_LOG_TRACE("Recursive CHECK Call");
+                for(auto const ft : dfts) {
+                    res.push_back(checkHelper(ft, formula, symred, allowModularisation));
+                }
             }
         } 
         if(res.empty()) {
@@ -82,14 +97,33 @@ private:
                 res.push_back(result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second);
             }
         }
+        if(nrM <= 1) {
+            // No modularisation done.
+            assert(res.size()==1);
+            return res[0];
+        }
         
-        ValueType result = storm::utility::one<ValueType>();
-        for(auto const& r : res) {
-            if(invResults) {
-                result *= storm::utility::one<ValueType>() - r;
-            } else {
-                result *= r;
-            }
+        STORM_LOG_TRACE("Combining all results... K=" << nrK << "; M=" << nrM << "; invResults=" << (invResults?"On":"Off"));
+        ValueType result = storm::utility::zero<ValueType>();
+        int limK = invResults ? -1 : nrM+1;
+        int chK = invResults ? -1 : 1;
+        for(int cK = nrK; cK != limK; cK += chK ) {
+            assert(cK >= 0);
+            size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(cK));
+            do {
+                STORM_LOG_TRACE("Permutation="<<permutation);
+                ValueType permResult = storm::utility::one<ValueType>();
+                for(size_t i = 0; i < res.size(); ++i) {
+                    if(permutation & (1 << i)) {
+                        permResult *= res[i];
+                    } else {
+                        permResult *= storm::utility::one<ValueType>() - res[i];
+                    }
+                }
+                STORM_LOG_TRACE("Result for permutation:"<<permResult);
+                permutation = nextBitPermutation(permutation);
+                result += permResult;
+            } while(permutation < (1 << nrM) && permutation != 0);
         }
         if(invResults) {
             return storm::utility::one<ValueType>() - result;
