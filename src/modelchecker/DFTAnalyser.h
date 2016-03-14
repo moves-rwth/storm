@@ -21,7 +21,7 @@ class DFTAnalyser {
     std::chrono::duration<double> totalTime = std::chrono::duration<double>::zero();
     ValueType checkResult = storm::utility::zero<ValueType>();
 public:
-    void check(storm::storage::DFT<ValueType> dft , std::shared_ptr<const storm::logic::Formula> const& formula, bool symred = true, bool allowModularisation = true) {
+    void check(storm::storage::DFT<ValueType> dft , std::shared_ptr<const storm::logic::Formula> const& formula, bool symred = true, bool allowModularisation = true, bool enableDC = true) {
         
         // Building DFT
         std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
@@ -30,7 +30,7 @@ public:
         // Optimizing DFT
         dft = dft.optimize();
         std::vector<storm::storage::DFT<ValueType>> dfts;
-        checkResult = checkHelper(dft, formula, symred, allowModularisation);
+        checkResult = checkHelper(dft, formula, symred, allowModularisation, enableDC);
         totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
         
@@ -38,7 +38,7 @@ public:
     }
     
 private:
-    ValueType checkHelper(storm::storage::DFT<ValueType> const& dft , std::shared_ptr<const storm::logic::Formula> const& formula, bool symred = true, bool allowModularisation = true)  {
+    ValueType checkHelper(storm::storage::DFT<ValueType> const& dft , std::shared_ptr<const storm::logic::Formula> const& formula, bool symred = true, bool allowModularisation = true, bool enableDC = true)  {
         std::cout << "check helper called" << std::endl;
         bool invResults = false;
         std::vector<storm::storage::DFT<ValueType>> dfts = {dft};
@@ -82,7 +82,7 @@ private:
         } 
         if(res.empty()) {
             // Model based modularisation.
-            auto const& models = buildMarkovModels(dfts, formula, symred);
+            auto const& models = buildMarkovModels(dfts, formula, symred, enableDC);
 
 
             for (auto const& model : models) {
@@ -132,7 +132,7 @@ private:
     }
     
     
-    std::vector<std::shared_ptr<storm::models::sparse::Model<ValueType>>> buildMarkovModels(std::vector<storm::storage::DFT<ValueType>> const&  dfts,   std::shared_ptr<const storm::logic::Formula> const& formula, bool symred) {
+    std::vector<std::shared_ptr<storm::models::sparse::Model<ValueType>>> buildMarkovModels(std::vector<storm::storage::DFT<ValueType>> const&  dfts,   std::shared_ptr<const storm::logic::Formula> const& formula, bool symred, bool enableDC) {
         std::vector<std::shared_ptr<storm::models::sparse::Model<ValueType>>> models;
         for(auto& dft : dfts) {
             std::chrono::high_resolution_clock::time_point buildingStart = std::chrono::high_resolution_clock::now();
@@ -150,7 +150,7 @@ private:
             
             // Building Markov Automaton
             std::cout << "Building Model..." << std::endl;
-            storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
+            storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
             typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel(labeloptions);
             //model->printModelInformationToStream(std::cout);

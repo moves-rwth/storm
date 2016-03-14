@@ -15,7 +15,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        ExplicitDFTModelBuilder<ValueType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries) : mDft(dft), mStates(((mDft.stateVectorSize() / 64) + 1) * 64, INITIAL_BUCKETSIZE) {
+        ExplicitDFTModelBuilder<ValueType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC) : mDft(dft), mStates(((mDft.stateVectorSize() / 64) + 1) * 64, INITIAL_BUCKETSIZE), enableDC(enableDC) {
             // stateVectorSize is bound for size of bitvector
 
             mStateGenerationInfo = std::make_shared<storm::storage::DFTStateGenerationInfo>(mDft.buildStateGenerationInfo(symmetries));
@@ -218,7 +218,7 @@ namespace storm {
                         next->checkFailsafe(*newState, queues);
                     }
 
-                    while (!queues.dontCarePropagationDone()) {
+                    while (enableDC && !queues.dontCarePropagationDone()) {
                         DFTElementPointer next = queues.nextDontCarePropagation();
                         next->checkDontCareAnymore(*newState, queues);
                     }

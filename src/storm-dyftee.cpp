@@ -11,7 +11,7 @@
  * @param property PCTC formula capturing the property to check.
  */
 template <typename ValueType>
-void analyzeDFT(std::string filename, std::string property, bool symred = false, bool allowModularisation = false) {
+void analyzeDFT(std::string filename, std::string property, bool symred = false, bool allowModularisation = false, bool enableDC = true) {
     storm::settings::SettingsManager& manager = storm::settings::mutableManager();
     manager.setFromString("");
 
@@ -22,7 +22,7 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false,
     assert(formulas.size() == 1);
     
     DFTAnalyser<ValueType> analyser;
-    analyser.check(dft, formulas[0], symred, allowModularisation);
+    analyser.check(dft, formulas[0], symred, allowModularisation, enableDC);
     analyser.printTimings();
     analyser.printResult();
 }
@@ -47,6 +47,7 @@ int main(int argc, char** argv) {
     bool minimal = true;
     bool allowModular = true;
     bool enableModularisation = false;
+    bool disableDC = false;
     std::string filename = argv[1];
     std::string operatorType = "";
     std::string targetFormula = "";
@@ -92,6 +93,8 @@ int main(int argc, char** argv) {
             symred = true;
         } else if (option == "--modularisation") {
             enableModularisation = true;
+        } else if (option == "--disabledc") {
+            disableDC = true;
         } else if (option == "--min") {
             minimal = true;
         } else if (option == "--max") {
@@ -114,8 +117,8 @@ int main(int argc, char** argv) {
     std::cout << "Running " << (parametric ? "parametric " : "") << "DFT analysis on file " << filename << " with property " << pctlFormula << std::endl;
 
     if (parametric) {
-        analyzeDFT<storm::RationalFunction>(filename, pctlFormula, symred, allowModular && enableModularisation );
+        analyzeDFT<storm::RationalFunction>(filename, pctlFormula, symred, allowModular && enableModularisation, !disableDC );
     } else {
-        analyzeDFT<double>(filename, pctlFormula, symred, allowModular && enableModularisation);
+        analyzeDFT<double>(filename, pctlFormula, symred, allowModular && enableModularisation, !disableDC);
     }
 }
