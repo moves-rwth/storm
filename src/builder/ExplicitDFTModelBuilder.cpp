@@ -212,21 +212,23 @@ namespace storm {
                     if(newState->isInvalid()) {
                         continue;
                     }
-
-                    while (!queues.failsafePropagationDone()) {
+                    bool dftFailed = newState->hasFailed(mDft.getTopLevelIndex());
+                    
+                    while (!dftFailed && !queues.failsafePropagationDone()) {
                         DFTGatePointer next = queues.nextFailsafePropagation();
                         next->checkFailsafe(*newState, queues);
                     }
 
-                    while (enableDC && !queues.dontCarePropagationDone()) {
+                    while (!dftFailed && enableDC && !queues.dontCarePropagationDone()) {
                         DFTElementPointer next = queues.nextDontCarePropagation();
                         next->checkDontCareAnymore(*newState, queues);
                     }
                     
                     // Update failable dependencies
-                    newState->updateFailableDependencies(nextBE->id());
+                    if (!dftFailed) {
+                        newState->updateFailableDependencies(nextBE->id());
+                    }
                     
-                    bool dftFailed = newState->hasFailed(mDft.getTopLevelIndex());
                     uint_fast64_t newStateId;
                     if(dftFailed && mergeFailedStates) {
                         newStateId = failedIndex;
