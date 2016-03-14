@@ -21,15 +21,14 @@ class DFTAnalyser {
     std::chrono::duration<double> totalTime = std::chrono::duration<double>::zero();
     ValueType checkResult = storm::utility::zero<ValueType>();
 public:
-    void check(storm::storage::DFT<ValueType> dft , std::shared_ptr<const storm::logic::Formula> const& formula, bool symred = true, bool allowModularisation = true, bool enableDC = true) {
+    void check(storm::storage::DFT<ValueType> const& origDft , std::shared_ptr<const storm::logic::Formula> const& formula, bool symred = true, bool allowModularisation = true, bool enableDC = true) {
         
         // Building DFT
         std::chrono::high_resolution_clock::time_point totalStart = std::chrono::high_resolution_clock::now();
         
         
         // Optimizing DFT
-        dft = dft.optimize();
-        std::vector<storm::storage::DFT<ValueType>> dfts;
+        storm::storage::DFT<ValueType> dft = origDft.optimize();
         checkResult = checkHelper(dft, formula, symred, allowModularisation, enableDC);
         totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
