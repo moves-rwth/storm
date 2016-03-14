@@ -55,6 +55,7 @@ namespace storm {
             std::vector<std::pair<uint_fast64_t, storm::storage::BitVector>> mPseudoStatesMapping; // vector of (id to concrete state, bitvector)
             size_t newIndex = 0;
             bool mergeFailedStates = true;
+            bool enableDC = true;
             size_t failedIndex = 0;
             size_t initialStateIndex = 0;
 
@@ -65,7 +66,7 @@ namespace storm {
                 std::set<std::string> beLabels = {};
             };
             
-            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries);
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, bool enableDC);
 
             std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel(LabelOptions const& labelOpts);
 
