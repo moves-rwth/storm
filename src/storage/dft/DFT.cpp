@@ -26,23 +26,18 @@ namespace storm {
                 }
                 else if (elem->isSpareGate()) {
                     ++mNrOfSpares;
-                    bool firstChild = true;
                     mMaxSpareChildCount = std::max(mMaxSpareChildCount, std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children().size());
                     for(auto const& spareReprs : std::static_pointer_cast<DFTSpare<ValueType>>(elem)->children()) {
                         std::set<size_t> module = {spareReprs->id()};
                         spareReprs->extendSpareModule(module);
                         std::vector<size_t> sparesAndBes;
                         for(size_t modelem : module) {
-                            if (spareReprs->id() != modelem && (isRepresentative(modelem) || (!firstChild && mTopLevelIndex == modelem))) {
-                                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Module for '" << spareReprs->name() << "' contains more than one representative.");
-                            }
                             if(mElements[modelem]->isSpareGate() || mElements[modelem]->isBasicElement()) {
                                 sparesAndBes.push_back(modelem);
                                 mRepresentants.insert(std::make_pair(modelem, spareReprs->id()));
                             }
                         }
                         mSpareModules.insert(std::make_pair(spareReprs->id(), sparesAndBes));
-                        firstChild = false;
                     }
 
                 } else if (elem->isDependency()) {
