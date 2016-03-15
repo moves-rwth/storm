@@ -149,11 +149,11 @@ namespace storm {
             bool empty() const;
             
             /*!
-             * Retrieves whether the matrix has a (possibly) non-trivial row grouping.
+             * Retrieves whether the matrix has a (possibly) trivial row grouping.
              *
-             * @return True iff the matrix has a (possibly) non-trivial row grouping.
+             * @return True iff the matrix has a (possibly) trivial row grouping.
              */
-            bool hasNontrivialRowGrouping() const;
+            bool hasTrivialRowGrouping() const;
 
             /*!
              * Creates a submatrix of the current matrix in place by dropping all rows and columns whose bits are not
@@ -198,9 +198,9 @@ namespace storm {
             // The number of entries in the matrix.
             index_type nonzeroEntryCount;
             
-            // A flag that indicates whether the matrix has a non-trivial row-grouping, i.e. (possibly) more than one
-            // row per row group.
-            bool nontrivialRowGrouping;
+            // A flag indicating whether the matrix has a trivial row grouping. Note that this may be true and yet
+            // there may be row group indices, because they were requested from the outside.
+            bool trivialRowGrouping;
             
             // A vector indicating the row groups of the matrix.
             std::vector<index_type> rowGroupIndices;

@@ -13,8 +13,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        FlexibleSparseMatrix<ValueType>::FlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) : data(matrix.getRowCount()), columnCount(matrix.getColumnCount()), nonzeroEntryCount(matrix.getNonzeroEntryCount()), nontrivialRowGrouping(matrix.hasNontrivialRowGrouping()) {
-            if (nontrivialRowGrouping) {
+        FlexibleSparseMatrix<ValueType>::FlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) : data(matrix.getRowCount()), columnCount(matrix.getColumnCount()), nonzeroEntryCount(matrix.getNonzeroEntryCount()), trivialRowGrouping(matrix.hasTrivialRowGrouping()) {
+            if (!trivialRowGrouping) {
                 rowGroupIndices = matrix.getRowGroupIndices();
             }
             for (index_type rowIndex = 0; rowIndex < matrix.getRowCount(); ++rowIndex) {
@@ -130,8 +130,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool FlexibleSparseMatrix<ValueType>::hasNontrivialRowGrouping() const {
-            return nontrivialRowGrouping;
+        bool FlexibleSparseMatrix<ValueType>::hasTrivialRowGrouping() const {
+            return trivialRowGrouping;
         }
 
         template<typename ValueType>
@@ -208,7 +208,7 @@ namespace storm {
             }
             out << std::endl;
             
-            if (matrix.hasNontrivialRowGrouping()) {
+            if (!matrix.hasTrivialRowGrouping()) {
                 // Iterate over all row groups
                 FlexibleIndex rowGroupCount = matrix.getRowGroupCount();
                 for (FlexibleIndex rowGroup = 0; rowGroup < rowGroupCount; ++rowGroup) {

@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
             parametric = true;
         } else if (option == "--expectedtime") {
             assert(targetFormula.empty());
-            operatorType = "ET";
+            operatorType = "T";
             targetFormula = "F \"failed\"";
             allowModular = false;
         } else if (option == "--probability") {

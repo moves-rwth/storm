@@ -280,7 +280,7 @@ namespace storm {
             booleanLiteralFormula = (qi::lit("true")[qi::_a = true] | qi::lit("false")[qi::_a = false])[qi::_val = phoenix::bind(&FormulaParserGrammar::createBooleanLiteralFormula, phoenix::ref(*this), qi::_a)];
             booleanLiteralFormula.name("boolean literal formula");
             
-            operatorFormula = probabilityOperator | rewardOperator | longRunAverageOperator | expectedTimeOperator;
+            operatorFormula = probabilityOperator | rewardOperator | longRunAverageOperator | timeOperator;
             operatorFormula.name("operator formulas");
             
             atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | (qi::lit("(") > stateFormula > qi::lit(")")) | operatorFormula;
@@ -355,7 +355,7 @@ namespace storm {
             debug(probabilityOperator);
             debug(rewardOperator);
             debug(longRunAverageOperator);
-            debug(expectedTimeOperator);
+            debug(timeOperator);
             debug(pathFormulaWithoutUntil);
             debug(pathFormula);
 //            debug(conditionalFormula);
@@ -379,7 +379,7 @@ namespace storm {
             qi::on_error<qi::fail>(probabilityOperator, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(rewardOperator, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(longRunAverageOperator, handler(qi::_1, qi::_2, qi::_3, qi::_4));
-            qi::on_error<qi::fail>(expectedTimeOperator, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(timeOperator, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(operatorInformation, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(pathFormulaWithoutUntil, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(pathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));

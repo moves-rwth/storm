@@ -264,9 +264,26 @@ namespace storm {
             // Sort columns per row
             typename SparseMatrix<ValueType>::index_type endGroups;
             typename SparseMatrix<ValueType>::index_type endRows;
-            for (index_type group = 0; group < rowGroupIndices.size(); ++group) {
-                endGroups = group < rowGroupIndices.size()-1 ? rowGroupIndices[group+1] : rowIndications.size();
-                for (index_type i = rowGroupIndices[group]; i < endGroups; ++i) {
+            
+            if (hasCustomRowGrouping) {
+                for (index_type group = 0; group < rowGroupIndices.get().size(); ++group) {
+                    endGroups = group < rowGroupIndices.get().size()-1 ? rowGroupIndices.get()[group+1] : rowIndications.size();
+                    for (index_type i = rowGroupIndices.get()[group]; i < endGroups; ++i) {
+                        endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
+                        // Sort the row
+                        std::sort(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                                  [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
+                                      return a.getColumn() < b.getColumn();
+                                  });
+                        // Assert no equal elements
+                        assert(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                                              [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
+                                                  return a.getColumn() <= b.getColumn();
+                                              }));
+                    }
+                }
+            } else {
+                for (index_type i = 0; i < rowIndications.size(); ++i) {
                     endRows = i < rowIndications.size()-1 ? rowIndications[i+1] : columnsAndValues.size();
                     // Sort the row
                     std::sort(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
@@ -279,47 +296,10 @@ namespace storm {
                                               return a.getColumn() <= b.getColumn();
                                           }));
                 }
+
             }
         }
-        
-        template<typename ValueType>
-        bool SparseMatrixBuilder<ValueType>::replaceColumns(std::vector<index_type> const& replacements, index_type offset) {
-            bool matrixChanged = false;
-            
-            // Walk through all rows.
-            for (index_type row = 0; row < rowIndications.size(); ++row) {
-                bool rowChanged = false;
-                index_type rowEnd = row < rowIndications.size()-1 ? rowIndications[row+1] : columnsAndValues.size();
-                
-                for (auto it = columnsAndValues.begin() + rowIndications[row], ite = columnsAndValues.begin() + rowEnd; it != ite; ++it) {
-                    if (it->getColumn() >= offset && it->getColumn() != replacements[it->getColumn() - offset]) {
-                        it->setColumn(replacements[it->getColumn() - offset]);
-                        rowChanged = true;
-                    }
-                    // Update highest column in a way that only works if the highest appearing index does not become
-                    // lower during performing the replacement.
-                    highestColumn = std::max(highestColumn, it->getColumn());
-                }
-                
-                if (rowChanged) {
-                    matrixChanged = true;
-                    
-                    // Sort the row.
-                    std::sort(columnsAndValues.begin() + rowIndications[row], columnsAndValues.begin() + rowEnd,
-                              [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
-                                  return a.getColumn() < b.getColumn();
-                              });
-                    // Assert no equal elements
-                    STORM_LOG_ASSERT(std::is_sorted(columnsAndValues.begin() + rowIndications[row], columnsAndValues.begin() + rowEnd,
-                                                    [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
-                                                        return a.getColumn() <= b.getColumn();
-                                                    }), "Must not have different elements with the same column in a row.");
-                }
-            }
-            
-            return matrixChanged;
-        }
-        
+
         template<typename ValueType>
         SparseMatrix<ValueType>::rows::rows(iterator begin, index_type entryCount) : beginIterator(begin), entryCount(entryCount) {
             // Intentionally left empty.

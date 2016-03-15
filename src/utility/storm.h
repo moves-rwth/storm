@@ -356,10 +356,10 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support MDPs.");
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             // Hack to avoid instantiating the CTMC Model Checker which currently does not work for rational functions
-            if (formula->isExpectedTimeOperatorFormula()) {
+            if (formula->isTimeOperatorFormula()) {
                 // Compute expected time for pCTMCs
-                STORM_LOG_THROW(formula->asExpectedTimeOperatorFormula().getSubformula().isReachbilityExpectedTimeFormula(), storm::exceptions::NotSupportedException, "The parametric engine only supports Eventually formulas for this property");
-                storm::logic::EventuallyFormula eventuallyFormula = formula->asExpectedTimeOperatorFormula().getSubformula().asEventuallyFormula();
+                STORM_LOG_THROW(formula->asTimeOperatorFormula().getSubformula().isReachabilityTimeFormula(), storm::exceptions::NotSupportedException, "The parametric engine only supports reachability formulas for this property");
+                storm::logic::EventuallyFormula eventuallyFormula = formula->asTimeOperatorFormula().getSubformula().asReachabilityTimeFormula();
                 STORM_LOG_THROW(eventuallyFormula.getSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
 
                 // Compute goal states
@@ -368,7 +368,7 @@ namespace storm {
                 std::unique_ptr<storm::modelchecker::CheckResult> subResultPointer = propositionalModelchecker.check(eventuallyFormula.getSubformula());
                 storm::storage::BitVector const& targetStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
 
-                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeExpectedTimesElimination(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), targetStates, false);
+                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeReachabilityTimesElimination(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), targetStates, false);
                 result = std::unique_ptr<storm::modelchecker::CheckResult>(new storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>(std::move(numericResult)));
 
             } else if (formula->isProbabilityOperatorFormula()) {

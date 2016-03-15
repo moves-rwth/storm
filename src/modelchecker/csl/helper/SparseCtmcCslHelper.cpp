@@ -656,7 +656,7 @@ namespace storm {
             }
 
             template <typename ValueType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeExpectedTimes(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeReachabilityTimes(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Compute expected time on CTMC by reduction to DTMC with rewards.
                 storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
 
@@ -677,7 +677,7 @@ namespace storm {
 
             
             template <typename ValueType>
-            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeExpectedTimesElimination(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, bool qualitative) {
+            std::vector<ValueType> SparseCtmcCslHelper<ValueType>::computeReachabilityTimesElimination(storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, bool qualitative) {
                 // Use "normal" function again, if RationalFunction finally is supported.
                 // Compute expected time on CTMC by reduction to DTMC with rewards.
                 storm::storage::SparseMatrix<ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
@@ -704,7 +704,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
             template std::vector<storm::RationalFunction> SparseCtmcCslHelper<storm::RationalFunction>::computeUntilProbabilitiesElimination(storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative);
-            template std::vector<storm::RationalFunction> SparseCtmcCslHelper<storm::RationalFunction>::computeExpectedTimesElimination(storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, bool qualitative);
+            template std::vector<storm::RationalFunction> SparseCtmcCslHelper<storm::RationalFunction>::computeReachabilityTimesElimination(storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, bool qualitative);
 #endif
         }
     }
