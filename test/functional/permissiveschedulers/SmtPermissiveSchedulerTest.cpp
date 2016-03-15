@@ -31,7 +31,7 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
     options.addConstantDefinitionsFromString(program, "");
     options.buildCommandLabels = true;
     
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program, options)->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
     
 //    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms = storm::ps::computePermissiveSchedulerViaSMT<>(*mdp, formula02);
 //    EXPECT_NE(perms, boost::none);
