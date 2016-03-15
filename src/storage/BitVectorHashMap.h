@@ -55,7 +55,7 @@ namespace storm {
              * @param loadFactor The load factor that determines at which point the size of the underlying storage is
              * increased.
              */
-            BitVectorHashMap(uint64_t bucketSize, uint64_t initialSize, double loadFactor = 0.75);
+            BitVectorHashMap(uint64_t bucketSize = 64, uint64_t initialSize = 1000, double loadFactor = 0.75);
             
             /*!
              * Searches for the given key in the map. If it is found, the mapped-to value is returned. Otherwise, the
@@ -149,6 +149,13 @@ namespace storm {
              * @return The capacity of the underlying container.
              */
             std::size_t capacity() const;
+            
+            /*!
+             * Performs a remapping of all values stored by applying the given remapping.
+             *
+             * @param remapping The remapping to apply.
+             */
+            void remap(std::function<ValueType(ValueType const&)> const& remapping);
             
         private:
             /*!

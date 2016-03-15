@@ -42,7 +42,7 @@ namespace storm {
             
             virtual bool isProbabilityPathFormula() const;
             virtual bool isRewardPathFormula() const;
-            virtual bool isExpectedTimePathFormula() const;
+            virtual bool isTimePathFormula() const;
 
             virtual bool isBinaryBooleanStateFormula() const;
             virtual bool isUnaryBooleanStateFormula() const;
@@ -50,7 +50,7 @@ namespace storm {
             // Operator formulas.
             virtual bool isOperatorFormula() const;
             virtual bool isLongRunAverageOperatorFormula() const;
-            virtual bool isExpectedTimeOperatorFormula() const;
+            virtual bool isTimeOperatorFormula() const;
             virtual bool isProbabilityOperatorFormula() const;
             virtual bool isRewardOperatorFormula() const;
 
@@ -65,8 +65,9 @@ namespace storm {
             virtual bool isNextFormula() const;
             virtual bool isUntilFormula() const;
             virtual bool isBoundedUntilFormula() const;
-            virtual bool isEventuallyFormula() const;
             virtual bool isGloballyFormula() const;
+            virtual bool isEventuallyFormula() const;
+            virtual bool isReachabilityProbabilityFormula() const;
 
             // Reward formulas.
             virtual bool isCumulativeRewardFormula() const;
@@ -75,7 +76,7 @@ namespace storm {
             virtual bool isLongRunAverageRewardFormula() const;
             
             // Expected time formulas.
-            virtual bool isReachbilityExpectedTimeFormula() const;
+            virtual bool isReachabilityTimeFormula() const;
             
             // Type checks for abstract intermediate classes.
             virtual bool isBinaryPathFormula() const;
@@ -83,6 +84,10 @@ namespace storm {
             virtual bool isUnaryPathFormula() const;
             virtual bool isUnaryStateFormula() const;
 
+            // Accessors for the return type of a formula.
+            virtual bool hasQualitativeResult() const;
+            virtual bool hasQuantitativeResult() const;
+            
             bool isInFragment(FragmentSpecification const& fragment) const;
             FormulaInformation info() const;
             
@@ -126,8 +131,14 @@ namespace storm {
             EventuallyFormula& asEventuallyFormula();
             EventuallyFormula const& asEventuallyFormula() const;
             
+            EventuallyFormula& asReachabilityProbabilityFormula();
+            EventuallyFormula const& asReachabilityProbabilityFormula() const;
+            
             EventuallyFormula& asReachabilityRewardFormula();
             EventuallyFormula const& asReachabilityRewardFormula() const;
+
+            EventuallyFormula& asReachabilityTimeFormula();
+            EventuallyFormula const& asReachabilityTimeFormula() const;
             
             GloballyFormula& asGloballyFormula();
             GloballyFormula const& asGloballyFormula() const;
@@ -147,8 +158,8 @@ namespace storm {
             LongRunAverageOperatorFormula& asLongRunAverageOperatorFormula();
             LongRunAverageOperatorFormula const& asLongRunAverageOperatorFormula() const;
 
-            ExpectedTimeOperatorFormula& asExpectedTimeOperatorFormula();
-            ExpectedTimeOperatorFormula const& asExpectedTimeOperatorFormula() const;
+            TimeOperatorFormula& asTimeOperatorFormula();
+            TimeOperatorFormula const& asTimeOperatorFormula() const;
             
             CumulativeRewardFormula& asCumulativeRewardFormula();
             CumulativeRewardFormula const& asCumulativeRewardFormula() const;
