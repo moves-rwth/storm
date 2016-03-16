@@ -227,6 +227,7 @@ namespace storm {
                     // Update failable dependencies
                     if (!dftFailed) {
                         newState->updateFailableDependencies(nextBE->id());
+                        newState->updateDontCareDependencies(nextBE->id());
                     }
                     
                     uint_fast64_t newStateId;

@@ -142,14 +142,21 @@ namespace storm {
         
         template<typename ValueType>
         void DFTState<ValueType>::setDependencySuccessful(size_t id) {
-            // No distinction between successful dependency and no dependency at all
-            // => we do not set bit
-            //mStatus.set(mStateGenerationInfo.mIdToStateIndex(id));
+            // Only distinguish between passive and dont care dependencies
+            //mStatus.set(mStateGenerationInfo.getStateIndex(id));
+            setDependencyDontCare(id);
         }
 
         template<typename ValueType>
         void DFTState<ValueType>::setDependencyUnsuccessful(size_t id) {
-            mStatus.set(mStateGenerationInfo.getStateIndex(id)+1);
+            // Only distinguish between passive and dont care dependencies
+            //mStatus.set(mStateGenerationInfo.getStateIndex(id)+1);
+            setDependencyDontCare(id);
+        }
+        
+        template<typename ValueType>
+        void DFTState<ValueType>::setDependencyDontCare(size_t id) {
+            mStatus.setFromInt(mStateGenerationInfo.getStateIndex(id), 2, static_cast<uint_fast64_t>(DFTDependencyState::DontCare));
         }
 
         template<typename ValueType>
@@ -175,6 +182,17 @@ namespace storm {
                 }
             }
             return nrFailableDependencies() > 0;
+        }
+        
+        template<typename ValueType>
+        void DFTState<ValueType>::updateDontCareDependencies(size_t id) {
+            assert(mDft.isBasicElement(id));
+            assert(hasFailed(id));
+            
+            for (auto dependency : mDft.getBasicElement(id)->ingoingDependencies()) {
+                assert(dependency->dependentEvent()->id() == id);
+                setDependencyDontCare(dependency->id());
+            }
         }
 
         template<typename ValueType>

@@ -79,6 +79,8 @@ namespace storm {
 
             void setDependencyUnsuccessful(size_t id);
 
+            void setDependencyDontCare(size_t id);
+
             void beNoLongerFailable(size_t id);
             
             void activate(size_t repr);
@@ -162,6 +164,12 @@ namespace storm {
              * @return true if failable dependent events exist
              */
             bool updateFailableDependencies(size_t id);
+            
+            /**
+             * Sets all dependencies dont care whose dependent event is the newly failed BE.
+             * @param id Id of the newly failed element
+             */
+            void updateDontCareDependencies(size_t id);
 
             /**
              * Sets the next BE as failed
