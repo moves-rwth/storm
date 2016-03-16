@@ -1,0 +1,8 @@
+param x;
+param y;
+toplevel "A";
+"A" or "B" "Z";
+"B" pand "D" "S";
+"Z" lambda=y dorm=0;
+"D" lambda=100 dorm=0;
+"S" lambda=100*x dorm=0;
