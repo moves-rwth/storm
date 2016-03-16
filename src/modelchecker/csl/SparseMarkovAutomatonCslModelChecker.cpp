@@ -46,7 +46,17 @@ namespace storm {
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
 
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeBoundedUntilProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rightResult.getTruthValuesVector(), pathFormula.getIntervalBounds(), *minMaxLinearEquationSolverFactory);
+            double lowerBound = 0;
+            double upperBound = 0;
+            if (!pathFormula.hasDiscreteTimeBound()) {
+                std::pair<double, double> const& intervalBounds =  pathFormula.getIntervalBounds();
+                lowerBound = intervalBounds.first;
+                upperBound = intervalBounds.second;
+            } else {
+                upperBound = pathFormula.getDiscreteTimeBound();
+            }
+            
+            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper<ValueType>::computeBoundedUntilProbabilities(checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rightResult.getTruthValuesVector(), std::make_pair(lowerBound, upperBound), *minMaxLinearEquationSolverFactory);
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
         }
                 

@@ -6,6 +6,7 @@
 #include "src/exceptions/FileIoException.h"
 #include "src/parser/MappedFile.h"
 #include "src/utility/cstring.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 
 namespace storm {
@@ -152,6 +153,16 @@ namespace storm {
                     }
                 } while (!encounteredEOF && !encounteredNewDistribution);
             }
+            
+            // If there are some states with indices that are behind the last source for which no transition was specified,
+            // we need to reserve some space for introducing self-loops later.
+            if (!dontFixDeadlocks) {
+                result.numberOfNonzeroEntries += result.highestStateIndex - lastsource;
+                result.numberOfChoices += result.highestStateIndex - lastsource;
+            } else {
+                STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
+                throw storm::exceptions::WrongFormatException() << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
+            }
 
             return result;
         }
@@ -258,6 +269,21 @@ namespace storm {
                 } while (!encounteredEOF && !encounteredNewDistribution);
 
                 ++currentChoice;
+            }
+            
+            // If there are some states with indices that are behind the last source for which no transition was specified,
+            // we need to insert the self-loops now. Note that we assume all these states to be Markovian.
+            if (!dontFixDeadlocks) {
+                for (uint_fast64_t index = lastsource + 1; index <= firstPassResult.highestStateIndex; ++index) {
+                    result.markovianStates.set(index, true);
+                    result.exitRates[index] = storm::utility::one<ValueType>();
+                    result.transitionMatrixBuilder.newRowGroup(currentChoice);
+                    result.transitionMatrixBuilder.addNextValue(currentChoice, index, storm::utility::one<ValueType>());
+                    ++currentChoice;
+                }
+            } else {
+                STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
+                throw storm::exceptions::WrongFormatException() << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
             }
 
             return result;
