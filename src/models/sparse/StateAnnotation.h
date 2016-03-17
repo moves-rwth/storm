@@ -1,16 +1,19 @@
-#ifndef STORM_STATEANNOTATION_H
-#define STORM_STATEANNOTATION_H
+#ifndef STORM_MODELS_SPARSE_STATEANNOTATION_H_
+#define STORM_MODELS_SPARSE_STATEANNOTATION_H_
+
+#include "src/storage/sparse/StateType.h"
 
 namespace storm {
     namespace models {
         namespace sparse {
+            
             class StateAnnotation {
             public:
-                virtual std::string stateInfo(uint_fast64_t s) const = 0;
+                virtual std::string stateInfo(storm::storage::sparse::state_type const& state) const = 0;
             };
+            
         }
     }
-
 }
 
-#endif //STORM_STATEANNOTATION_H
+#endif /* STORM_MODELS_SPARSE_STATEANNOTATION_H_ */
