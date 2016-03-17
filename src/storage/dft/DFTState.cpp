@@ -67,6 +67,11 @@ namespace storm {
         int DFTState<ValueType>::getElementStateInt(size_t id) const {
             return mStatus.getAsInt(mStateGenerationInfo.getStateIndex(id), 2);
         }
+        
+        template<typename ValueType>
+        int DFTState<ValueType>::getElementStateInt(storm::storage::BitVector const& state, size_t indexId) {
+            return state.getAsInt(indexId, 2);
+        }
 
         template<typename ValueType>
         size_t DFTState<ValueType>::getId() const {
@@ -246,8 +251,11 @@ namespace storm {
                 activate(representativeId);
             }
             for(size_t elem : mDft.module(representativeId)) {
-                if(mDft.getElement(elem)->isColdBasicElement() && isOperational(elem) && mDft.getBasicElement(elem)->canFail()) {
-                    mIsCurrentlyFailableBE.push_back(elem);
+                if(mDft.isBasicElement(elem) && isOperational(elem)) {
+                    std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(elem);
+                    if (be->isColdBasicElement() && be->canFail()) {
+                        mIsCurrentlyFailableBE.push_back(elem);
+                    }
                 } else if (mDft.getElement(elem)->isSpareGate() && !isActive(uses(elem))) {
                     propagateActivation(uses(elem));
                 }

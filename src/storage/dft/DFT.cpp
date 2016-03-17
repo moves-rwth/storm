@@ -79,10 +79,6 @@ namespace storm {
 
         template<typename ValueType>
         DFTStateGenerationInfo DFT<ValueType>::buildStateGenerationInfo(storm::storage::DFTIndependentSymmetries const& symmetries) const {
-            // Use symmetry
-            // Collect all elements in the first subtree
-            // TODO make recursive to use for nested subtrees
-
             DFTStateGenerationInfo generationInfo(nrElements(), mMaxSpareChildCount);
             
             // Generate Pre and Post info for restrictions
@@ -92,19 +88,17 @@ namespace storm {
                     generationInfo.setRestrictionPostElements(elem->id(), elem->seqRestrictionPosts());
                 }
             }
-            
 
-            // Perform DFS and insert all elements of subtree sequentially
             size_t stateIndex = 0;
             std::queue<size_t> visitQueue;
             storm::storage::BitVector visited(nrElements(), false);
 
-            // TODO make subfunction for this?
             if (symmetries.groups.empty()) {
                 // Perform DFS for whole tree
                 visitQueue.push(mTopLevelIndex);
                 stateIndex = performStateGenerationInfoDFS(generationInfo, visitQueue, visited, stateIndex);
             } else {
+                // Generate information according to symmetries
                 for (size_t symmetryIndex : symmetries.sortedSymmetries) {
                     assert(!visited[symmetryIndex]);
                     auto const& symmetryGroup = symmetries.groups.at(symmetryIndex);
@@ -430,7 +424,7 @@ namespace storm {
                 stream << "[" << elem->id() << "]";
                 stream << elem->toString();
                 if (elem->isDependency()) {
-                    stream << "\t** " << storm::storage::toChar(state->getDependencyState(elem->id()));
+                    stream << "\t** " << storm::storage::toChar(state->getDependencyState(elem->id())) << "[dep]";
                 } else {
                     stream << "\t** " << storm::storage::toChar(state->getElementState(elem->id()));
                     if(elem->isSpareGate()) {
@@ -445,10 +439,9 @@ namespace storm {
             }
             return stream.str();
         }
-
-        // TODO rewrite to only use bitvector and id
+        
         template<typename ValueType>
-        std::string DFT<ValueType>::getStateString(DFTStatePointer const& state) const{
+        std::string DFT<ValueType>::getStateString(DFTStatePointer const& state) const {
             std::stringstream stream;
             stream << "(" << state->getId() << ") ";
             for (auto const& elem : mElements) {
@@ -460,6 +453,37 @@ namespace storm {
                         stream << "[";
                         size_t useId = state->uses(elem->id());
                         if(useId == elem->id() || state->isActive(useId)) {
+                            stream << "actively ";
+                        }
+                        stream << "using " << useId << "]";
+                    }
+                }
+            }
+            return stream.str();
+        }        
+
+        template<typename ValueType>
+        std::string DFT<ValueType>::getStateString(storm::storage::BitVector const& status, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const {
+            std::stringstream stream;
+            stream << "(" << id << ") ";
+            for (auto const& elem : mElements) {
+                size_t elemIndex = stateGenerationInfo.getStateIndex(elem->id());
+                int elementState = DFTState<ValueType>::getElementStateInt(status, elemIndex);
+                if (elem->isDependency()) {
+                    stream << storm::storage::toChar(static_cast<DFTDependencyState>(elementState)) << "[dep]";
+                } else {
+                    stream << storm::storage::toChar(static_cast<DFTElementState>(elementState));
+                    if(elem->isSpareGate()) {
+                        stream << "[";
+                        size_t nrUsedChild = status.getAsInt(stateGenerationInfo.getSpareUsageIndex(elem->id()), stateGenerationInfo.usageInfoBits());
+                        size_t useId;
+                        if (nrUsedChild == getMaxSpareChildCount()) {
+                            useId = elem->id();
+                        } else {
+                            useId = getChild(elem->id(), nrUsedChild);
+                        }
+                        bool isActive = status[stateGenerationInfo.getSpareActivationIndex(useId)];
+                        if(useId == elem->id() || isActive) {
                             stream << "actively ";
                         }
                         stream << "using " << useId << "]";

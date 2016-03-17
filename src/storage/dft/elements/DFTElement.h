@@ -93,10 +93,6 @@ namespace storm {
                 return false;
             }
             
-            virtual bool isColdBasicElement() const {
-                return false;
-            }
-
             /**
              * Returns true if the element is a spare gate
              */

@@ -67,11 +67,11 @@ namespace storm {
                 return stream.str();
             }
             
-            bool isBasicElement() const override{
+            bool isBasicElement() const override {
                 return true;
             }
             
-            bool isColdBasicElement() const override{
+            bool isColdBasicElement() const {
                 return storm::utility::isZero(mPassiveFailureRate);
             }
             

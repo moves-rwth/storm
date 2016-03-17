@@ -130,8 +130,11 @@ namespace storm {
             std::vector<size_t> nonColdBEs() const {
                 std::vector<size_t> result;
                 for(DFTElementPointer elem : mElements) {
-                    if(elem->isBasicElement() && std::static_pointer_cast<DFTBE<ValueType>>(elem)->canFail() && !elem->isColdBasicElement()) {
-                        result.push_back(elem->id());
+                    if(elem->isBasicElement()) {
+                        std::shared_ptr<DFTBE<ValueType>> be = std::static_pointer_cast<DFTBE<ValueType>>(elem);
+                        if (be->canFail() && !be->isColdBasicElement()) {
+                            result.push_back(be->id());
+                        }
                     }
                 }
                 return result;
@@ -245,6 +248,8 @@ namespace storm {
             std::string getElementsWithStateString(DFTStatePointer const& state) const;
 
             std::string getStateString(DFTStatePointer const& state) const;
+
+            std::string getStateString(storm::storage::BitVector const& status, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const;
 
             std::vector<size_t> getIndependentSubDftRoots(size_t index) const;
 

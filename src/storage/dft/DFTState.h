@@ -47,6 +47,8 @@ namespace storm {
 
             int getElementStateInt(size_t id) const;
 
+            static int getElementStateInt(storm::storage::BitVector const& state, size_t indexId);
+            
             size_t getId() const;
 
             void setId(size_t id);
