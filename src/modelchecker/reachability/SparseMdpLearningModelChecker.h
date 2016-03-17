@@ -5,7 +5,7 @@
 
 #include "src/storage/prism/Program.h"
 
-#include "src/generator/PrismNextStateGenerator.h"
+#include "src/generator/CompressedState.h"
 #include "src/generator/VariableInformation.h"
 
 #include "src/utility/constants.h"
@@ -32,9 +32,6 @@ namespace storm {
             
             // The variable information.
             storm::generator::VariableInformation variableInformation;
-            
-            // A generator used to explore the model.
-            storm::generator::PrismNextStateGenerator<ValueType, StateType> generator;
         };
     }
 }
