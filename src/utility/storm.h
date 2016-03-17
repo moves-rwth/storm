@@ -57,6 +57,7 @@
 #include "src/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "src/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "src/modelchecker/reachability/SparseMdpLearningModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"

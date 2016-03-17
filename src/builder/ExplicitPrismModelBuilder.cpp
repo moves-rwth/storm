@@ -182,57 +182,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::ExplicitPrismModelBuilder(storm::prism::Program const& program, Options const& options) : program(program), options(options) {
-            // Start by defining the undefined constants in the model.
-            if (options.constantDefinitions) {
-                this->program = program.defineUndefinedConstants(options.constantDefinitions.get());
-            } else {
-                this->program = program;
-            }
-            
-            // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
-            if (!std::is_same<ValueType, storm::RationalFunction>::value && this->program.hasUndefinedConstants()) {
-                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = this->program.getUndefinedConstants();
-                std::stringstream stream;
-                bool printComma = false;
-                for (auto const& constant : undefinedConstants) {
-                    if (printComma) {
-                        stream << ", ";
-                    } else {
-                        printComma = true;
-                    }
-                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
-                }
-                stream << ".";
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-            } else if (std::is_same<ValueType, storm::RationalFunction>::value && !this->program.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
-            }
-            
-            // If the set of labels we are supposed to built is restricted, we need to remove the other labels from the program.
-            if (options.labelsToBuild) {
-                if (!options.buildAllLabels) {
-                    this->program.filterLabels(options.labelsToBuild.get());
-                }
-            }
-            
-            // If we need to build labels for expressions that may appear in some formula, we need to add appropriate
-            // labels to the program.
-            if (options.expressionLabels) {
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = this->program.getConstantsSubstitution();
-                
-                for (auto const& expression : options.expressionLabels.get()) {
-                    std::stringstream stream;
-                    stream << expression.substitute(constantsSubstitution);
-                    std::string name = stream.str();
-                    if (!this->program.hasLabel(name)) {
-                        this->program.addLabel(name, expression);
-                    }
-                }
-            }
-            
-            // Now that the program is fixed, we we need to substitute all constants with their concrete value.
-            this->program = this->program.substituteConstants();
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::ExplicitPrismModelBuilder(storm::prism::Program const& program, Options const& options) : program(storm::utility::prism::preprocessProgram<ValueType>(program, options.constantDefinitions, !options.buildAllLabels ? options.labelsToBuild : boost::none, options.expressionLabels)), options(options) {
 
             // Create the variable information for the transformed program.
             this->variableInformation = VariableInformation(this->program);
