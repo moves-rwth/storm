@@ -160,7 +160,7 @@ namespace storm {
                 transitionMatrixBuilder.newRowGroup(state->getId() + rowOffset);
 
                 // Add self loop for target states
-                if (mDft.hasFailed(state) || mDft.isFailsafe(state)) {
+                if (mDft.hasFailed(state) || mDft.isFailsafe(state) || state->nrFailableBEs() == 0) {
                     transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, state->getId(), storm::utility::one<ValueType>());
                     STORM_LOG_TRACE("Added self loop for " << state->getId());
                     exitRates.push_back(storm::utility::one<ValueType>());
@@ -168,8 +168,6 @@ namespace storm {
                     markovianStates.push_back(state->getId());
                     // No further exploration required
                     continue;
-                } else {
-                    STORM_LOG_THROW(state->nrFailableBEs() > 0, storm::exceptions::UnexpectedException, "State " << state->getId() << " is no target state but behaves like one");
                 }
 
                 // Let BE fail
@@ -267,6 +265,7 @@ namespace storm {
                             isActive = state->isActive(mDft.getRepresentant(nextBE->id())->id());
                         }
                         ValueType rate = isActive ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
+                        assert(!storm::utility::isZero(rate));
                         auto resultFind = outgoingTransitions.find(newStateId);
                         if (resultFind != outgoingTransitions.end()) {
                             // Add to existing transition

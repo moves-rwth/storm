@@ -225,7 +225,7 @@ namespace storm {
                 {
                     std::shared_ptr<DFTBE<ValueType>> be = std::static_pointer_cast<DFTBE<ValueType>>(element);
                     ValueType dormancyFactor = storm::utility::zero<ValueType>();
-                    if (!storm::utility::isZero(be->passiveFailureRate())) {
+                    if (be->canFail()) {
                         dormancyFactor = be->passiveFailureRate() / be->activeFailureRate();
                     }
                     addBasicElement(be->name(), be->activeFailureRate(), dormancyFactor);

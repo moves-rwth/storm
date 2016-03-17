@@ -33,6 +33,10 @@ namespace storm {
                 return mPassiveFailureRate;
             }
             
+            bool canFail() const {
+                return !storm::utility::isZero(mActiveFailureRate);
+            }
+            
             bool addIngoingDependency(DFTDependencyPointer const& e) {
                 assert(e->dependentEvent()->id() == this->id());
                 if(std::find(mIngoingDependencies.begin(), mIngoingDependencies.end(), e) != mIngoingDependencies.end()) {
@@ -72,7 +76,9 @@ namespace storm {
             }
             
             virtual void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override {
-                 if(elemsInSubtree.count(this->id())) return;
+                if(elemsInSubtree.count(this->id())) {
+                    return;
+                }
                 DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
                 if(elemsInSubtree.empty()) {
                     // Parent in the subdft, ie it is *not* a subdft

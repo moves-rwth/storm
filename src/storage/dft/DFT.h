@@ -130,7 +130,7 @@ namespace storm {
             std::vector<size_t> nonColdBEs() const {
                 std::vector<size_t> result;
                 for(DFTElementPointer elem : mElements) {
-                    if(elem->isBasicElement() && !elem->isColdBasicElement()) {
+                    if(elem->isBasicElement() && std::static_pointer_cast<DFTBE<ValueType>>(elem)->canFail() && !elem->isColdBasicElement()) {
                         result.push_back(elem->id());
                     }
                 }

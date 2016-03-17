@@ -85,24 +85,32 @@ namespace storm {
                 //TODO Matthias: collect constraints for SMT solving
                 //0 <= probability <= 1
                 if (!storm::utility::isOne(probability) && children.size() > 2) {
-                    //TODO Matthias: introduce additional element for probability and then add pdeps with probability 1 to children
-                    STORM_LOG_ERROR("Probability != 1 for more than one child currently not supported.");
-                    return false;
-                }
-
-                for (size_t i = 1; i < children.size(); ++i) {
-                    std::string nameDep = name + "_" + std::to_string(i);
-                    if(mElements.count(nameDep) != 0) {
-                        // Element with that name already exists.
-                        STORM_LOG_ERROR("Element with name: " << nameDep << " already exists.");
-                        return false;
+                    // Introduce additional element for first capturing the proabilistic dependency
+                    std::string nameAdditional = name + "_additional";
+                    addBasicElement(nameAdditional, storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
+                    // First consider probabilistic dependency
+                    addDepElement(name + "_pdep", {children.front(), nameAdditional}, probability);
+                    // Then consider dependencies to the children if probabilistic dependency failed
+                    std::vector<std::string> newChildren = children;
+                    newChildren[0] = nameAdditional;
+                    addDepElement(name, newChildren, storm::utility::one<ValueType>());
+                    return true;
+                } else {
+                    // Add dependencies
+                    for (size_t i = 1; i < children.size(); ++i) {
+                        std::string nameDep = name + "_" + std::to_string(i);
+                        if(mElements.count(nameDep) != 0) {
+                            // Element with that name already exists.
+                            STORM_LOG_ERROR("Element with name: " << nameDep << " already exists.");
+                            return false;
+                        }
+                        assert(storm::utility::isOne(probability) || children.size() == 2);
+                        DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, nameDep, trigger, children[i], probability);
+                        mElements[element->name()] = element;
+                        mDependencies.push_back(element);
                     }
-                    assert(storm::utility::isOne(probability) || children.size() == 2);
-                    DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, nameDep, trigger, children[i], probability);
-                    mElements[element->name()] = element;
-                    mDependencies.push_back(element);
+                    return true;
                 }
-                return true;
             }
 
             bool addVotElement(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
