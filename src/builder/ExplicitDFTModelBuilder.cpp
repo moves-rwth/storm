@@ -124,7 +124,7 @@ namespace storm {
             } else {
                 std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.markovianStates), std::move(modelComponents.exitRates), true);
                 if (ma->hasOnlyTrivialNondeterminism()) {
-                 // Markov automaton can be converted into CTMC
+                    // Markov automaton can be converted into CTMC
                     model = ma->convertToCTMC();
                 } else {
                     model = ma;
@@ -287,8 +287,7 @@ namespace storm {
                 } else {
                     // Try to merge pseudo states with their instantiation
                     // TODO Matthias: improve?
-                    auto it = outgoingTransitions.begin();
-                    while (it != outgoingTransitions.end()) {
+                    for (auto it = outgoingTransitions.begin(); it != outgoingTransitions.end(); ) {
                         if (it->first >= OFFSET_PSEUDO_STATE) {
                             uint_fast64_t newId = it->first - OFFSET_PSEUDO_STATE;
                             assert(newId < mPseudoStatesMapping.size());
@@ -306,9 +305,7 @@ namespace storm {
                                     STORM_LOG_TRACE("Instantiated pseudo state " << newId << " with rate " << it->second);
                                 }
                                 // Remove pseudo state
-                                auto itErase = it;
-                                ++it;
-                                outgoingTransitions.erase(itErase);
+                                it = outgoingTransitions.erase(it);
                             } else {
                                 ++it;
                             }
