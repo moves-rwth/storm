@@ -72,6 +72,8 @@ namespace storm {
 
         private:
             bool exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates);
+            
+            uint_fast64_t addState(DFTStatePointer state, std::queue<DFTStatePointer>& stateQueue);
 
         };
     }

@@ -234,48 +234,7 @@ namespace storm {
                     if(dftFailed && mergeFailedStates) {
                         newStateId = failedIndex;
                     } else {
-                        // Order state by symmetry
-                        STORM_LOG_TRACE("Check for symmetry: " << mDft.getStateString(newState));
-                        bool changed = newState->orderBySymmetry();
-                        STORM_LOG_TRACE("State " << (changed ? "changed to " : "did not change") << (changed ? mDft.getStateString(newState) : ""));
-                        
-                        // Check if state already exists
-                        if (mStates.contains(newState->status())) {
-                            // State already exists
-                            newStateId = mStates.getValue(newState->status());
-                            STORM_LOG_TRACE("State " << mDft.getStateString(newState) << " with id " << newStateId << " already exists");
-                            
-                            // Check if possible pseudo state can be created now
-                            if (!changed && newStateId >= OFFSET_PSEUDO_STATE) {
-                                newStateId = newStateId - OFFSET_PSEUDO_STATE;
-                                assert(newStateId < mPseudoStatesMapping.size());
-                                if (mPseudoStatesMapping[newStateId].first == 0) {
-                                    // Create pseudo state now
-                                    assert(mPseudoStatesMapping[newStateId].second == newState->status());
-                                    newState->setId(newIndex++);
-                                    mPseudoStatesMapping[newStateId].first = newState->getId();
-                                    newStateId = newState->getId();
-                                    mStates.setOrAdd(newState->status(), newStateId);
-                                    stateQueue.push(newState);
-                                    STORM_LOG_TRACE("Now create state " << mDft.getStateString(newState) << " with id " << newStateId);
-                                }
-                            }
-                        } else {
-                            // New state
-                            if (changed) {
-                                // Remember to create state later on
-                                newState->setId(mPseudoStatesMapping.size() + OFFSET_PSEUDO_STATE);
-                                mPseudoStatesMapping.push_back(std::make_pair(0, newState->status()));
-                                newStateId = mStates.findOrAdd(newState->status(), newState->getId());
-                                STORM_LOG_TRACE("New state for later creation: " << mDft.getStateString(newState));
-                            } else {
-                                // Create new state
-                                newState->setId(newIndex++);
-                                newStateId = mStates.findOrAdd(newState->status(), newState->getId());
-                                STORM_LOG_TRACE("New state: " << mDft.getStateString(newState));
-                                stateQueue.push(newState);
-                            }
-                        }
+                        newStateId = addState(newState, stateQueue);
                     }
 
                     // Set transitions
@@ -286,25 +245,10 @@ namespace storm {
                         STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newStateId << " with probability " << dependency->probability());
 
                         if (!storm::utility::isOne(dependency->probability())) {
-                            // TODO Matthias: use symmetry as well
                             // Add transition to state where dependency was unsuccessful
                             DFTStatePointer unsuccessfulState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
                             unsuccessfulState->letDependencyBeUnsuccessful(smallest-1);
-                            uint_fast64_t unsuccessfulStateId;
-                            if (mStates.contains(unsuccessfulState->status())) {
-                                // Unsuccessful state already exists
-                                unsuccessfulStateId = mStates.getValue(unsuccessfulState->status());
-                                STORM_LOG_TRACE("State " << mDft.getStateString(unsuccessfulState) << " with id " << unsuccessfulStateId << " already exists");
-                            } else {
-                                // New unsuccessful state
-                                unsuccessfulState->setId(newIndex++);
-                                unsuccessfulStateId = mStates.findOrAdd(unsuccessfulState->status(), unsuccessfulState->getId());
-                                STORM_LOG_TRACE("New state " << mDft.getStateString(unsuccessfulState));
-                                
-                                // Add unsuccessful state to search queue
-                                stateQueue.push(unsuccessfulState);
-                            }
-
+                            uint_fast64_t unsuccessfulStateId = addState(unsuccessfulState, stateQueue);
                             ValueType remainingProbability = storm::utility::one<ValueType>() - dependency->probability();
                             transitionMatrixBuilder.addNextValue(state->getId() + rowOffset, unsuccessfulStateId, remainingProbability);
                             STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << unsuccessfulStateId << " with probability " << remainingProbability);
@@ -322,17 +266,16 @@ namespace storm {
                             // rate and not the new state we are going to
                             isActive = state->isActive(mDft.getRepresentant(nextBE->id())->id());
                         }
-                        STORM_LOG_TRACE("BE " << nextBE->name() << " is " << (isActive ? "active" : "not active"));
                         ValueType rate = isActive ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
                         auto resultFind = outgoingTransitions.find(newStateId);
                         if (resultFind != outgoingTransitions.end()) {
                             // Add to existing transition
                             resultFind->second += rate;
-                            STORM_LOG_TRACE("Updated transition from " << state->getId() << " to " << resultFind->first << " with rate " << rate << " to new rate " << resultFind->second);
+                            STORM_LOG_TRACE("Updated transition from " << state->getId() << " to " << resultFind->first << " with " << (isActive ? "active" : "passive") << " rate " << rate << " to new rate " << resultFind->second);
                         } else {
                             // Insert new transition
                             outgoingTransitions.insert(std::make_pair(newStateId, rate));
-                            STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newStateId << " with rate " << rate);
+                            STORM_LOG_TRACE("Added transition from " << state->getId() << " to " << newStateId << " with " << (isActive ? "active" : "passive") << " rate " << rate);
                         }
                         exitRate += rate;
                     }
@@ -419,6 +362,56 @@ namespace storm {
             assert(!deterministic || rowOffset == 0);
             return deterministic;
         }
+
+        template <typename ValueType>
+        uint_fast64_t ExplicitDFTModelBuilder<ValueType>::addState(DFTStatePointer state, std::queue<DFTStatePointer>& stateQueue) {
+            // Order state by symmetry
+            STORM_LOG_TRACE("Check for symmetry: " << mDft.getStateString(state));
+            bool changed = state->orderBySymmetry();
+            STORM_LOG_TRACE("State " << (changed ? "changed to " : "did not change") << (changed ? mDft.getStateString(state) : ""));
+            
+            uint_fast64_t stateId;
+            
+            // Check if state already exists
+            if (mStates.contains(state->status())) {
+                // State already exists
+                stateId = mStates.getValue(state->status());
+                STORM_LOG_TRACE("State " << mDft.getStateString(state) << " with id " << stateId << " already exists");
+                
+                // Check if possible pseudo state can be created now
+                if (!changed && stateId >= OFFSET_PSEUDO_STATE) {
+                    stateId -= OFFSET_PSEUDO_STATE;
+                    assert(stateId < mPseudoStatesMapping.size());
+                    if (mPseudoStatesMapping[stateId].first == 0) {
+                        // Create pseudo state now
+                        assert(mPseudoStatesMapping[stateId].second == state->status());
+                        state->setId(newIndex++);
+                        mPseudoStatesMapping[stateId].first = state->getId();
+                        stateId = state->getId();
+                        mStates.setOrAdd(state->status(), stateId);
+                        stateQueue.push(state);
+                        STORM_LOG_TRACE("Now create state " << mDft.getStateString(state) << " with id " << stateId);
+                    }
+                }
+            } else {
+                // New state
+                if (changed) {
+                    // Remember to create state later on
+                    state->setId(mPseudoStatesMapping.size() + OFFSET_PSEUDO_STATE);
+                    mPseudoStatesMapping.push_back(std::make_pair(0, state->status()));
+                    stateId = mStates.findOrAdd(state->status(), state->getId());
+                    STORM_LOG_TRACE("New state for later creation: " << mDft.getStateString(state));
+                } else {
+                    // Create new state
+                    state->setId(newIndex++);
+                    stateId = mStates.findOrAdd(state->status(), state->getId());
+                    STORM_LOG_TRACE("New state: " << mDft.getStateString(state));
+                    stateQueue.push(state);
+                }
+            }
+            return stateId;
+        }
+
 
         // Explicitly instantiate the class.
         template class ExplicitDFTModelBuilder<double>;
