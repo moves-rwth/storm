@@ -16,7 +16,7 @@ namespace storm {
             const std::string DebugSettings::logfileOptionName = "logfile";
             const std::string DebugSettings::logfileOptionShortName = "l";
  
-            DebugSettings::DebugSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
+            DebugSettings::DebugSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, false, "Print debug output.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, traceOptionName, false, "Print even more debug output.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, logfileOptionName, false, "If specified, the log output will also be written to this file.").setShortName(logfileOptionShortName)

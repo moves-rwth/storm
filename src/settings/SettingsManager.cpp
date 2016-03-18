@@ -35,19 +35,19 @@ namespace storm {
         
         SettingsManager::SettingsManager() : modules(), longNameToOptions(), shortNameToOptions(), moduleOptions() {
             // Register all known settings modules.
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GeneralSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::DebugSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::CounterexampleGeneratorSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::CuddSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SylvanSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GmmxxEquationSolverSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::NativeEquationSolverSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::BisimulationSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GlpkSettings(*this)));
-			this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GurobiSettings(*this)));
-			this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::TopologicalValueIterationEquationSolverSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::ParametricSettings(*this)));
-            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SparseDtmcEliminationModelCheckerSettings(*this)));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GeneralSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::DebugSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::CounterexampleGeneratorSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::CuddSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SylvanSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GmmxxEquationSolverSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::NativeEquationSolverSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::BisimulationSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GlpkSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::GurobiSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::TopologicalValueIterationEquationSolverSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::ParametricSettings()));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SparseDtmcEliminationModelCheckerSettings()));
         }
         
         SettingsManager::~SettingsManager() {

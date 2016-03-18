@@ -13,11 +13,9 @@ namespace storm {
             class DebugSettings : public ModuleSettings {
             public:
                 /*!
-                 * Creates a new set of debug settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of debug settings.
                  */
-                DebugSettings(storm::settings::SettingsManager& settingsManager);
+                DebugSettings();
                 
                 /*!
                  * Retrieves whether the debug option was set.

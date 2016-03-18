@@ -27,10 +27,9 @@ namespace storm {
                 /*!
                  * Constructs a new settings object.
                  *
-                 * @param settingsManager The manager responsible for these settings.
                  * @param moduleName The name of the module for which to build the settings.
                  */
-                ModuleSettings(storm::settings::SettingsManager& settingsManager, std::string const& moduleName);
+                ModuleSettings(std::string const& moduleName);
                 
                 /*!
                  * Checks whether the settings are consistent. If they are inconsistent, an exception is thrown.
@@ -77,12 +76,6 @@ namespace storm {
                 uint_fast64_t getPrintLengthOfLongestOption() const;
                 
             protected:
-                /*!
-                 * Retrieves the manager responsible for the settings.
-                 *
-                 * @return The manager responsible for the settings.
-                 */
-                storm::settings::SettingsManager const& getSettingsManager() const;
                 
                 /*!
                  * Retrieves the option with the given long name. If no such option exists, an exception is thrown.
@@ -132,8 +125,6 @@ namespace storm {
                 void addOption(std::shared_ptr<Option> const& option);
                 
             private:
-                // The settings manager responsible for the settings.
-                storm::settings::SettingsManager const& settingsManager;
                 
                 // The name of the module.
                 std::string moduleName;

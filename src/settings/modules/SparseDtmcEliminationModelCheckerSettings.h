@@ -23,11 +23,9 @@ namespace storm {
                 enum class EliminationMethod { State, Scc, Hybrid};
                 
                 /*!
-                 * Creates a new set of parametric model checking settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of parametric model checking settings.
                  */
-                SparseDtmcEliminationModelCheckerSettings(storm::settings::SettingsManager& settingsManager);
+                SparseDtmcEliminationModelCheckerSettings();
                 
                 /*!
                  * Retrieves the selected elimination method.

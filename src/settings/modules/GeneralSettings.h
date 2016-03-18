@@ -32,11 +32,9 @@ namespace storm {
                 };
 
                 /*!
-                 * Creates a new set of general settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of general settings.
                  */
-                GeneralSettings(storm::settings::SettingsManager& settingsManager);
+                GeneralSettings();
 
                 /*!
                  * Retrieves whether the help option was set.

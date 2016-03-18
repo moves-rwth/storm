@@ -13,11 +13,9 @@ namespace storm {
             class SylvanSettings : public ModuleSettings {
             public:
                 /*!
-                 * Creates a new set of CUDD settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of CUDD settings.
                  */
-                SylvanSettings(storm::settings::SettingsManager& settingsManager);
+                SylvanSettings();
                 
                 /*!
                  * Retrieves the maximal amount of memory (in megabytes) that Sylvan can occupy.

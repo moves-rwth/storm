@@ -19,7 +19,7 @@ namespace storm {
 			const std::string TopologicalValueIterationEquationSolverSettings::precisionOptionName = "precision";
 			const std::string TopologicalValueIterationEquationSolverSettings::absoluteOptionName = "absolute";
 
-			TopologicalValueIterationEquationSolverSettings::TopologicalValueIterationEquationSolverSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
+			TopologicalValueIterationEquationSolverSettings::TopologicalValueIterationEquationSolverSettings() : ModuleSettings(moduleName) {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").setDefaultValueUnsignedInteger(20000).build()).build());
                 

@@ -22,7 +22,7 @@ namespace storm {
             const std::string GmmxxEquationSolverSettings::precisionOptionName = "precision";
             const std::string GmmxxEquationSolverSettings::absoluteOptionName = "absolute";
 
-            GmmxxEquationSolverSettings::GmmxxEquationSolverSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
+            GmmxxEquationSolverSettings::GmmxxEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"bicgstab", "qmr", "gmres", "jacobi"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the gmm++ engine. Available are {bicgstab, qmr, gmres, jacobi}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("gmres").build()).build());
                 

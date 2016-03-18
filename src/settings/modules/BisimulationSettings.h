@@ -16,11 +16,9 @@ namespace storm {
                 enum class BisimulationType { Strong, Weak };
                 
                 /*!
-                 * Creates a new set of bisimulation settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of bisimulation settings.
                  */
-                BisimulationSettings(storm::settings::SettingsManager& settingsManager);
+                BisimulationSettings();
                 
                 /*!
                  * Retrieves whether strong bisimulation is to be used.
