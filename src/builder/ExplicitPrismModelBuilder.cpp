@@ -312,7 +312,8 @@ namespace storm {
                 
                 STORM_LOG_TRACE("Exploring state with id " << currentIndex << ".");
                 
-                storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(currentState, stateToIdCallback);
+                generator.load(currentState);
+                storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(stateToIdCallback);
                 
                 // If there is no behavior, we might have to introduce a self-loop.
                 if (behavior.empty()) {

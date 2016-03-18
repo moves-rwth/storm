@@ -1319,6 +1319,9 @@ namespace storm {
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
         template std::vector<double> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<double> const& otherMatrix) const;
         template bool SparseMatrix<double>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
+
+        template class MatrixEntry<uint32_t, double>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint32_t, double> const& entry);
         
         // float
         template class MatrixEntry<typename SparseMatrix<float>::index_type, float>;
