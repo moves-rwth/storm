@@ -29,7 +29,7 @@ TEST(NativeDtmcPrctlModelCheckerTest, Crowds) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.22968140721646868, quantitativeResult1[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.22968140721646868, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeIGreater1");
     eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -37,7 +37,7 @@ TEST(NativeDtmcPrctlModelCheckerTest, Crowds) {
     result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.05073232193, quantitativeResult2[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.05073232193, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("observeOnlyTrueSender");
     eventuallyFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula);
@@ -45,7 +45,7 @@ TEST(NativeDtmcPrctlModelCheckerTest, Crowds) {
     result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.22742305378217331, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.22742305378217331, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 
@@ -67,7 +67,7 @@ TEST(NativeDtmcPrctlModelCheckerTest, SynchronousLeader) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*eventuallyFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
     auto trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
@@ -76,7 +76,7 @@ TEST(NativeDtmcPrctlModelCheckerTest, SynchronousLeader) {
     result = checker.check(*boundedUntilFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.9993949793, quantitativeResult2[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.9993949793, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     labelFormula = std::make_shared<storm::logic::AtomicLabelFormula>("elected");
     auto reachabilityRewardFormula = std::make_shared<storm::logic::EventuallyFormula>(labelFormula, storm::logic::FormulaContext::Reward);
@@ -84,5 +84,5 @@ TEST(NativeDtmcPrctlModelCheckerTest, SynchronousLeader) {
     result = checker.check(*reachabilityRewardFormula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0252174454896057, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0252174454896057, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }

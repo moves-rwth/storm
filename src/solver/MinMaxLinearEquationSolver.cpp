@@ -12,7 +12,7 @@ namespace storm {
         AbstractMinMaxLinearEquationSolver<ValueType>::AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackScheduler, MinMaxTechniqueSelection prefTech) : precision(precision), relative(relativeError), maximalNumberOfIterations(maximalIterations), trackScheduler(trackScheduler) {
             
             if(prefTech == MinMaxTechniqueSelection::FROMSETTINGS) {
-                useValueIteration = (storm::settings::generalSettings().getMinMaxEquationSolvingTechnique() == storm::solver::MinMaxTechnique::ValueIteration);
+                useValueIteration = (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getMinMaxEquationSolvingTechnique() == storm::solver::MinMaxTechnique::ValueIteration);
             } else {
                 useValueIteration = (prefTech == MinMaxTechniqueSelection::ValueIteration);
             }

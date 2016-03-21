@@ -16,7 +16,7 @@ namespace storm {
         
         template<typename ValueType>
         GmmxxMinMaxLinearEquationSolver<ValueType>::GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique, bool trackScheduler) :
-        MinMaxLinearEquationSolver<ValueType>(A, storm::settings::gmmxxEquationSolverSettings().getPrecision(), storm::settings::gmmxxEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative, storm::settings::gmmxxEquationSolverSettings().getMaximalIterationCount(), trackScheduler, preferredTechnique), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()) {
+        MinMaxLinearEquationSolver<ValueType>(A, storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative, storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getMaximalIterationCount(), trackScheduler, preferredTechnique), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), rowGroupIndices(A.getRowGroupIndices()) {
                 // Intentionally left empty.
         }
         

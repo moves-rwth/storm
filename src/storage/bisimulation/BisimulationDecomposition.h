@@ -36,7 +36,7 @@ namespace storm {
                 case BisimulationTypeChoice::Weak:
                     return BisimulationType::Weak;
                 case BisimulationTypeChoice::FromSettings:
-                    if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
+                    if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
                         return BisimulationType::Weak;
                     } else {
                         return BisimulationType::Strong;

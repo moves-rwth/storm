@@ -88,7 +88,7 @@ namespace storm {
 
             uint_fast64_t row, col, lastRow = 0;
             double val;
-            bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isDontFixDeadlocksSet();
             bool hadDeadlocks = false;
             bool rowHadDiagonalEntry = false;
 

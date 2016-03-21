@@ -68,7 +68,7 @@ TEST(ModelInstantiatorTest, BrpProb) {
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> modelchecker(instantiated);
         std::unique_ptr<storm::modelchecker::CheckResult> chkResult = modelchecker.check(*formulas[0]);
         storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeChkResult = chkResult->asExplicitQuantitativeCheckResult<double>();
-        EXPECT_NEAR(0.2989278941, quantitativeChkResult[*instantiated.getInitialStates().begin()], storm::settings::generalSettings().getPrecision());
+        EXPECT_NEAR(0.2989278941, quantitativeChkResult[*instantiated.getInitialStates().begin()], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     }
     
     {
@@ -134,7 +134,7 @@ TEST(ModelInstantiatorTest, BrpProb) {
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> modelchecker(instantiated);
         std::unique_ptr<storm::modelchecker::CheckResult> chkResult = modelchecker.check(*formulas[0]);
         storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeChkResult = chkResult->asExplicitQuantitativeCheckResult<double>();
-        EXPECT_NEAR(0.01588055832, quantitativeChkResult[*instantiated.getInitialStates().begin()], storm::settings::generalSettings().getPrecision());
+        EXPECT_NEAR(0.01588055832, quantitativeChkResult[*instantiated.getInitialStates().begin()], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     }
 }
 
@@ -205,7 +205,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
         storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> modelchecker(instantiated);
         std::unique_ptr<storm::modelchecker::CheckResult> chkResult = modelchecker.check(*formulas[0]);
         storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeChkResult = chkResult->asExplicitQuantitativeCheckResult<double>();
-        EXPECT_NEAR(1.308324495, quantitativeChkResult[*instantiated.getInitialStates().begin()], storm::settings::generalSettings().getPrecision());
+        EXPECT_NEAR(1.308324495, quantitativeChkResult[*instantiated.getInitialStates().begin()], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
     }
     
 }
@@ -259,7 +259,7 @@ TEST(ModelInstantiatorTest, Consensus) {
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> modelchecker(instantiated);
     std::unique_ptr<storm::modelchecker::CheckResult> chkResult = modelchecker.check(*formulas[0]);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeChkResult = chkResult->asExplicitQuantitativeCheckResult<double>();
-    EXPECT_NEAR(0.3526577219, quantitativeChkResult[*instantiated.getInitialStates().begin()], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.3526577219, quantitativeChkResult[*instantiated.getInitialStates().begin()], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
 #endif

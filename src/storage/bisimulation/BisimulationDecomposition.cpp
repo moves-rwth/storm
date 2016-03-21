@@ -210,7 +210,7 @@ namespace storm {
             
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
-            if (storm::settings::generalSettings().isShowStatisticsSet()) {
+            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isShowStatisticsSet()) {
                 std::chrono::milliseconds initialPartitionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(initialPartitionTime);
                 std::chrono::milliseconds refinementTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime);
                 std::chrono::milliseconds extractionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime);

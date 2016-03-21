@@ -96,7 +96,7 @@ namespace storm {
             // Initialize variables for the parsing run.
             uint_fast64_t source = 0, target = 0, lastSource = 0, choice = 0, lastChoice = 0, curRow = 0;
             double val = 0.0;
-            bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isDontFixDeadlocksSet();
             bool hadDeadlocks = false;
 
             // The first state already starts a new row group of the matrix.

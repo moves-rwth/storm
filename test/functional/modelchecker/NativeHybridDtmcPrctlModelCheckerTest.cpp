@@ -49,8 +49,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
     
@@ -58,8 +58,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
     
@@ -67,8 +67,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
     
@@ -76,8 +76,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult4 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
@@ -110,8 +110,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult1 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult1.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
     
@@ -119,8 +119,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult2.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
     
@@ -128,8 +128,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult3.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
     
@@ -137,8 +137,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Die_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult4 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(3.6666646003723145, quantitativeResult4.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
@@ -163,8 +163,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(0.33288205191646525, quantitativeResult1.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0.33288205191646525, quantitativeResult1.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.33288205191646525, quantitativeResult1.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0.33288205191646525, quantitativeResult1.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeIGreater1\"]");
     
@@ -172,8 +172,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(0.15222066094730619, quantitativeResult2.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0.15222066094730619, quantitativeResult2.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.15222066094730619, quantitativeResult2.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0.15222066094730619, quantitativeResult2.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeOnlyTrueSender\"]");
     
@@ -181,8 +181,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
@@ -207,8 +207,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult1 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(0.33288205191646525, quantitativeResult1.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0.33288205191646525, quantitativeResult1.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.33288205191646525, quantitativeResult1.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0.33288205191646525, quantitativeResult1.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeIGreater1\"]");
     
@@ -216,8 +216,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(0.15222066094730619, quantitativeResult2.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0.15222066094730619, quantitativeResult2.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.15222066094730619, quantitativeResult2.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0.15222066094730619, quantitativeResult2.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeOnlyTrueSender\"]");
     
@@ -225,8 +225,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, Crowds_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0.32153900158185761, quantitativeResult3.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
@@ -259,8 +259,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(1.0, quantitativeResult1.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0, quantitativeResult1.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0, quantitativeResult1.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0, quantitativeResult1.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F<=20 \"elected\"]");
     
@@ -268,8 +268,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"elected\"]");
     
@@ -277,8 +277,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Cudd) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::CUDD>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::CUDD>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::CUDD, double>();
     
-    EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
@@ -311,8 +311,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::SymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult1 = result->asSymbolicQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(1.0, quantitativeResult1.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0, quantitativeResult1.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0, quantitativeResult1.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0, quantitativeResult1.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F<=20 \"elected\"]");
     
@@ -320,8 +320,8 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult2 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0.99999989760000074, quantitativeResult2.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"elected\"]");
     
@@ -329,6 +329,6 @@ TEST(NativeHybridDtmcPrctlModelCheckerTest, SynchronousLeader_Sylvan) {
     result->filter(storm::modelchecker::SymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>(model->getReachableStates(), model->getInitialStates()));
     storm::modelchecker::HybridQuantitativeCheckResult<storm::dd::DdType::Sylvan>& quantitativeResult3 = result->asHybridQuantitativeCheckResult<storm::dd::DdType::Sylvan, double>();
     
-    EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMin(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMax(), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMin(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1.0416666666666643, quantitativeResult3.getMax(), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }

@@ -22,7 +22,7 @@ namespace storm {
 
        void initializeLogger() {
 #ifdef STORM_LOGGING_FRAMEWORK
-            auto loglevel = storm::settings::debugSettings().isTraceSet() ? log4cplus::TRACE_LOG_LEVEL : storm::settings::debugSettings().isDebugSet() ? log4cplus::DEBUG_LOG_LEVEL : log4cplus::WARN_LOG_LEVEL;
+            auto loglevel = storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet() ? log4cplus::TRACE_LOG_LEVEL : storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet() ? log4cplus::DEBUG_LOG_LEVEL : log4cplus::WARN_LOG_LEVEL;
             initializeLogger(loglevel);
 #endif
        }
@@ -50,7 +50,7 @@ namespace storm {
 
         void initializeFileLogging() {
 #ifdef STORM_LOGGING_FRAMEWORK
-            log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(storm::settings::debugSettings().getLogfilename()));
+            log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender(storm::settings::getModule<storm::settings::modules::DebugSettings>().getLogfilename()));
             fileLogAppender->setName("mainFileAppender");
             fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M:%S} (%r ms) - %F:%L: %m%n")));
             logger.addAppender(fileLogAppender);

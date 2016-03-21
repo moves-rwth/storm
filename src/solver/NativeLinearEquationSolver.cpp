@@ -19,7 +19,7 @@ namespace storm {
         template<typename ValueType>
         NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSolutionMethod method) : A(A), method(method) {
             // Get the settings object to customize linear solving.
-            storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::nativeEquationSolverSettings();
+            storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>();
             
             // Get appropriate settings.
             maximalNumberOfIterations = settings.getMaximalIterationCount();
@@ -31,7 +31,7 @@ namespace storm {
         void NativeLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             if (method == NativeLinearEquationSolverSolutionMethod::SOR || method == NativeLinearEquationSolverSolutionMethod::GaussSeidel) {
                 // Define the omega used for SOR.
-                ValueType omega = method == NativeLinearEquationSolverSolutionMethod::SOR ? storm::settings::nativeEquationSolverSettings().getOmega() : storm::utility::one<ValueType>();
+                ValueType omega = method == NativeLinearEquationSolverSolutionMethod::SOR ? storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getOmega() : storm::utility::one<ValueType>();
                 
                 // To avoid copying the contents of the vector in the loop, we create a temporary x to swap with.
                 bool tmpXProvided = true;

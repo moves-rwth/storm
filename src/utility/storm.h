@@ -94,26 +94,24 @@ namespace storm {
         storm::storage::ModelFormulasPair result;
         storm::prism::Program translatedProgram;
 
-        storm::settings::modules::GeneralSettings settings = storm::settings::generalSettings();
-
         // Get the string that assigns values to the unknown currently undefined constants in the model.
-        std::string constants = settings.getConstantDefinitionString();
+        std::string constants = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getConstantDefinitionString();
 
         // Customize and perform model-building.
-        if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Sparse) {
+        if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine() == storm::settings::modules::GeneralSettings::Engine::Sparse) {
             typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options options;
             options = typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constants);
 
             // Generate command labels if we are going to build a counterexample later.
-            if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
+            if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
                 options.buildCommandLabels = true;
             }
 
             storm::builder::ExplicitPrismModelBuilder<ValueType> builder(program, options);
             result.model = builder.translate();
             translatedProgram = builder.getTranslatedProgram();
-        } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
+        } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constants);
@@ -206,9 +204,9 @@ namespace storm {
             } 
         }
         
-        if (model->isSparseModel() && storm::settings::generalSettings().isBisimulationSet()) {
+        if (model->isSparseModel() && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
             storm::storage::BisimulationType bisimType = storm::storage::BisimulationType::Strong;
-            if (storm::settings::bisimulationSettings().isWeakBisimulationSet()) {
+            if (storm::settings::getModule<storm::settings::modules::BisimulationSettings>().isWeakBisimulationSet()) {
                 bisimType = storm::storage::BisimulationType::Weak;
             }
             
@@ -222,19 +220,19 @@ namespace storm {
     
     template<typename ValueType>
     void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<const storm::logic::Formula> const& formula) {
-        if (storm::settings::counterexampleGeneratorSettings().isMinimalCommandSetGenerationSet()) {
+        if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
             STORM_LOG_THROW(model->getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
-            STORM_LOG_THROW(storm::settings::generalSettings().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
+            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
 
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
 
             // Determine whether we are required to use the MILP-version or the SAT-version.
-            bool useMILP = storm::settings::counterexampleGeneratorSettings().isUseMilpBasedMinimalCommandSetGenerationSet();
+            bool useMILP = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseMilpBasedMinimalCommandSetGenerationSet();
 
             if (useMILP) {
                 storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>::computeCounterexample(program, *mdp, formula);
             } else {
-                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::generalSettings().getConstantDefinitionString(), *mdp, formula);
+                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getConstantDefinitionString(), *mdp, formula);
             }
 
         } else {
@@ -251,8 +249,7 @@ namespace storm {
 
     template<typename ValueType, storm::dd::DdType DdType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifyModel(std::shared_ptr<storm::models::ModelBase> model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant) {
-        storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
-        switch(settings.getEngine()) {
+        switch(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine()) {
             case storm::settings::modules::GeneralSettings::Engine::Sparse: {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
                 STORM_LOG_THROW(sparseModel != nullptr, storm::exceptions::InvalidArgumentException, "Sparse engine requires a sparse input model");
@@ -295,7 +292,7 @@ namespace storm {
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
 #ifdef STORM_HAVE_CUDA
-            if (settings.isCudaSet()) {
+            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isCudaSet()) {
                     storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
                     result = modelchecker.check(task);
                 } else {

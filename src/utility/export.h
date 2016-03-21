@@ -19,7 +19,7 @@ namespace utility {
 
 template<typename ValueType>	
 void exportParametricMcResult(const ValueType& mcresult, storm::modelchecker::reachability::CollectConstraints<storm::RationalFunction> const& constraintCollector) {
-	std::string path = storm::settings::parametricSettings().exportResultPath();
+	std::string path = storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultPath();
 	std::ofstream filestream;
 	filestream.open(path);
 	// todo add checks.

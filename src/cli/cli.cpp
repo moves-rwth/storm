@@ -166,47 +166,46 @@ namespace storm {
             }
             
             bool parseOptions(const int argc, const char* argv[]) {
-                storm::settings::SettingsManager& manager = storm::settings::mutableManager();
                 try {
-                    manager.setFromCommandLine(argc, argv);
+                    storm::settings::mutableManager().setFromCommandLine(argc, argv);
                 } catch (storm::exceptions::OptionParserException& e) {
-                    manager.printHelp();
+                    storm::settings::manager().printHelp();
                     throw e;
                     return false;
                 }
                 
-                if (storm::settings::generalSettings().isHelpSet()) {
-                    storm::settings::manager().printHelp(storm::settings::generalSettings().getHelpModuleName());
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isHelpSet()) {
+                    storm::settings::manager().printHelp(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getHelpModuleName());
                     return false;
                 }
                 
-                if (storm::settings::generalSettings().isVersionSet()) {
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVersionSet()) {
                     storm::settings::manager().printVersion();
                     return false;
                 }
                 
-                if (storm::settings::generalSettings().isVerboseSet()) {
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
                     STORM_GLOBAL_LOGLEVEL_INFO();
                 }
-                if (storm::settings::debugSettings().isDebugSet()) {
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet()) {
                     STORM_GLOBAL_LOGLEVEL_DEBUG();
                     
                 }
-                if (storm::settings::debugSettings().isTraceSet()) {
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
                     STORM_GLOBAL_LOGLEVEL_TRACE();
                 }
-                if (storm::settings::debugSettings().isLogfileSet()) {
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
                     storm::utility::initializeFileLogging();
                 }
                 return true;
             }
             
             void processOptions() {
-                if (storm::settings::debugSettings().isLogfileSet()) {
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
                     storm::utility::initializeFileLogging();
                 }
                 
-                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+                storm::settings::modules::GeneralSettings const& settings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
                 
                 // If we have to build the model from a symbolic representation, we need to parse the representation first.
                 boost::optional<storm::prism::Program> program;

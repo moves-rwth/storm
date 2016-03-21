@@ -36,28 +36,28 @@ TEST(SparseDtmcPrctlModelCheckerTest, Die) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0/6.0, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0/6.0, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(3.6666650772094727, quantitativeResult4[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(3.6666650772094727, quantitativeResult4[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
 TEST(SparseDtmcPrctlModelCheckerTest, Crowds) {
@@ -80,21 +80,21 @@ TEST(SparseDtmcPrctlModelCheckerTest, Crowds) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.33288205191646525, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.33288205191646525, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeIGreater1\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.15222066094730619, quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.15222066094730619, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeOnlyTrueSender\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.32153900158185761, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.32153900158185761, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
 TEST(SparseDtmcPrctlModelCheckerTest, SynchronousLeader) {
@@ -117,21 +117,21 @@ TEST(SparseDtmcPrctlModelCheckerTest, SynchronousLeader) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F<=20 \"elected\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(0.9999965911265462636, quantitativeResult2[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.9999965911265462636, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"elected\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-    EXPECT_NEAR(1.0448979589010925, quantitativeResult3[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1.0448979589010925, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
 TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
@@ -160,8 +160,8 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
         std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
-		EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(.5, quantitativeResult1[1], storm::settings::nativeEquationSolverSettings().getPrecision());
+		EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(.5, quantitativeResult1[1], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 	}
 	{
 		matrixBuilder = storm::storage::SparseMatrixBuilder<double>(2, 2, 4);
@@ -184,8 +184,8 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
         std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
-		EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(.5, quantitativeResult1[1], storm::settings::nativeEquationSolverSettings().getPrecision());
+		EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(.5, quantitativeResult1[1], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 	}
 
 	{
@@ -208,9 +208,9 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
         std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
-		EXPECT_NEAR(1. / 3., quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(1. / 3., quantitativeResult1[1], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(1. / 3., quantitativeResult1[2], storm::settings::nativeEquationSolverSettings().getPrecision());
+		EXPECT_NEAR(1. / 3., quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(1. / 3., quantitativeResult1[1], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(1. / 3., quantitativeResult1[2], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 	}
 }
 
@@ -271,12 +271,12 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRA) {
         std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
 		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
-		EXPECT_NEAR(0.3 / 3., quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(0.0, quantitativeResult1[3], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(1. / 3., quantitativeResult1[6], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(0.0, quantitativeResult1[9], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(0.3/3., quantitativeResult1[12], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(.79 / 3., quantitativeResult1[13], storm::settings::nativeEquationSolverSettings().getPrecision());
-		EXPECT_NEAR(0.3 / 3., quantitativeResult1[14], storm::settings::nativeEquationSolverSettings().getPrecision());
+		EXPECT_NEAR(0.3 / 3., quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(0.0, quantitativeResult1[3], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(1. / 3., quantitativeResult1[6], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(0.0, quantitativeResult1[9], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(0.3/3., quantitativeResult1[12], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(.79 / 3., quantitativeResult1[13], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+		EXPECT_NEAR(0.3 / 3., quantitativeResult1[14], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 	}
 }

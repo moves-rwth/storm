@@ -35,7 +35,7 @@ namespace storm {
             
             bool GlpkSettings::check() const {
                 if (isOutputSet() || isIntegerToleranceSet()) {
-                    STORM_LOG_WARN_COND(storm::settings::generalSettings().getLpSolver() == storm::solver::LpSolverType::Glpk, "glpk is not selected as the preferred LP solver, so setting options for glpk might have no effect.");
+                    STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getLpSolver() == storm::solver::LpSolverType::Glpk, "glpk is not selected as the preferred LP solver, so setting options for glpk might have no effect.");
                 }
                 
                 return true;
