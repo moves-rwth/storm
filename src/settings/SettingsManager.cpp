@@ -488,5 +488,24 @@ namespace storm {
             return dynamic_cast<storm::settings::modules::GeneralSettings&>(mutableManager().getModule(storm::settings::modules::GeneralSettings::moduleName));
         }
         
+        void initializeAll(std::string const& name, std::string const& executableName) {
+            storm::settings::mutableManager().setName(name, executableName);
+            
+            // Register all known settings modules.
+            storm::settings::addModule<storm::settings::modules::GeneralSettings>();
+            storm::settings::addModule<storm::settings::modules::DebugSettings>();
+            storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
+            storm::settings::addModule<storm::settings::modules::CuddSettings>();
+            storm::settings::addModule<storm::settings::modules::SylvanSettings>();
+            storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
+            storm::settings::addModule<storm::settings::modules::GlpkSettings>();
+            storm::settings::addModule<storm::settings::modules::GurobiSettings>();
+            storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::ParametricSettings>();
+            storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
+        }
+
     }
 }

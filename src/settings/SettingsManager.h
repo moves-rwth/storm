@@ -102,6 +102,7 @@ namespace storm {
              * @return The only existing instance of a settings manager
              */
             static SettingsManager& manager();
+            
             /*!
              * Sets the name of the tool.
              * @param name Name of the tool.
@@ -256,6 +257,13 @@ namespace storm {
             static_assert(std::is_base_of<storm::settings::modules::ModuleSettings, SettingsType>::value, "Template argument must be derived from ModuleSettings");
             mutableManager().addModule(std::unique_ptr<modules::ModuleSettings>(new SettingsType()));
         }
+        
+        /*!
+         * Initialize the settings manager with all available modules.
+         * @param name Name of the tool.
+         * @param executableName Filename of the executable.
+         */
+        void initializeAll(std::string const& name, std::string const& executableName);
         
         /*!
          * Get module. The type of the module is given as a template argument.

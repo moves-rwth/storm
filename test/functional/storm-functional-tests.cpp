@@ -38,6 +38,7 @@ void setUpLogging() {
 
 int main(int argc, char* argv[]) {
 	setUpLogging();
+	storm::settings::initializeAll("StoRM (Functional) Testing Suite", "storm-functional-tests");
 	std::cout << "StoRM (Functional) Testing Suite" << std::endl;
 	
 	testing::InitGoogleTest(&argc, argv);

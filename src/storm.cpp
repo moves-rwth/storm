@@ -4,44 +4,7 @@
 #include "src/cli/cli.h"
 #include "src/utility/initialize.h"
 
-#include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/DebugSettings.h"
-#include "src/settings/modules/CounterexampleGeneratorSettings.h"
-#include "src/settings/modules/CuddSettings.h"
-#include "src/settings/modules/SylvanSettings.h"
-#include "src/settings/modules/GmmxxEquationSolverSettings.h"
-#include "src/settings/modules/NativeEquationSolverSettings.h"
-#include "src/settings/modules/BisimulationSettings.h"
-#include "src/settings/modules/GlpkSettings.h"
-#include "src/settings/modules/GurobiSettings.h"
-#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
-#include "src/settings/modules/ParametricSettings.h"
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
-
-
-/*!
- * Initialize the settings manager.
- */
-void initializeSettings() {
-    storm::settings::mutableManager().setName("SToRM", "storm");
-    
-    // Register all known settings modules.
-    storm::settings::addModule<storm::settings::modules::GeneralSettings>();
-    storm::settings::addModule<storm::settings::modules::DebugSettings>();
-    storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-    storm::settings::addModule<storm::settings::modules::CuddSettings>();
-    storm::settings::addModule<storm::settings::modules::SylvanSettings>();
-    storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
-    storm::settings::addModule<storm::settings::modules::GlpkSettings>();
-    storm::settings::addModule<storm::settings::modules::GurobiSettings>();
-    storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::ParametricSettings>();
-    storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
-}
-
-
+#include "src/settings/SettingsManager.h"
 
 /*!
  * Main entry point of the executable storm.
@@ -51,7 +14,7 @@ int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
         storm::cli::printHeader("SToRM", argc, argv);
-        initializeSettings();
+        storm::settings::initializeAll("SToRM", "storm");
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
         if (!optionsCorrect) {
             return -1;
