@@ -102,6 +102,12 @@ namespace storm {
              * @return The only existing instance of a settings manager
              */
             static SettingsManager& manager();
+            /*!
+             * Sets the name of the tool.
+             * @param name Name of the tool.
+             * @param executableName Filename of the executable.
+             */
+            void setName(std::string const& name, std::string const& executableName);
             
             /*!
              * Adds a new module with the given name. If the module could not be successfully added, an exception is
@@ -138,6 +144,10 @@ namespace storm {
 			 * This destructor is private, since we need to forbid explicit destruction of the manager.
 			 */
 			virtual ~SettingsManager();
+            
+            // The name of the tool
+            std::string name;
+            std::string executableName;
             
             // The registered modules.
             std::vector<std::string> moduleNames;

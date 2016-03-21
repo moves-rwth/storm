@@ -41,9 +41,9 @@ namespace storm {
                 return (GetCurrentDir(temp, 512 - 1) ? std::string(temp) : std::string(""));
             }
             
-            void printHeader(const int argc, const char* argv[]) {
-                 std::cout << "StoRM" << std::endl;
-                std::cout << "--------" << std::endl << std::endl;
+            void printHeader(const std::string name, const int argc, const char* argv[]) {
+                std::cout << name << std::endl;
+                std::cout << "---------------" << std::endl << std::endl;
                 
                 
                 std::cout << storm::utility::StormVersion::longVersionString() << std::endl;

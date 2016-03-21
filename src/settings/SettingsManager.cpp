@@ -34,20 +34,6 @@ namespace storm {
     namespace settings {
         
         SettingsManager::SettingsManager() : modules(), longNameToOptions(), shortNameToOptions(), moduleOptions() {
-            // Register all known settings modules.
-            storm::settings::addModule<storm::settings::modules::GeneralSettings>();
-            storm::settings::addModule<storm::settings::modules::DebugSettings>();
-            storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-            storm::settings::addModule<storm::settings::modules::CuddSettings>();
-            storm::settings::addModule<storm::settings::modules::SylvanSettings>();
-            storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
-            storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
-            storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
-            storm::settings::addModule<storm::settings::modules::GlpkSettings>();
-            storm::settings::addModule<storm::settings::modules::GurobiSettings>();
-            storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
-            storm::settings::addModule<storm::settings::modules::ParametricSettings>();
-            storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
         }
         
         SettingsManager::~SettingsManager() {
@@ -58,6 +44,12 @@ namespace storm {
             static SettingsManager settingsManager;
             return settingsManager;
         }
+        
+        void SettingsManager::setName(std::string const& name, std::string const& executableName) {
+            this->name = name;
+            this->executableName = executableName;
+        }
+
         
         void SettingsManager::setFromCommandLine(int const argc, char const * const argv[]) {
             // We convert the arguments to a vector of strings and strip off the first element since it refers to the
@@ -169,7 +161,7 @@ namespace storm {
         }
         
         void SettingsManager::printHelp(std::string const& hint) const {
-            STORM_PRINT("usage: storm [options]" << std::endl << std::endl);
+            STORM_PRINT("usage: " << executableName << " [options]" << std::endl << std::endl);
             
             if (hint == "all") {
                 // Find longest option name.
