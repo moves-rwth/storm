@@ -146,6 +146,7 @@ namespace storm {
                     }
                 }
                 
+                
                 // At this point, we can be sure that the state was expanded and that we can sample according to the probabilities.
                 // TODO: set action of topmost stack element
             }
