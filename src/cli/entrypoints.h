@@ -114,7 +114,7 @@ namespace storm {
     
         template<typename ValueType, storm::dd::DdType LibraryType>
         void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine() == storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement) {
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::AbstractionRefinement) {
                 verifySymbolicModelWithAbstractionRefinementEngine<LibraryType>(program, formulas, onlyInitialStatesRelevant);
             } else {
                 storm::storage::ModelFormulasPair modelFormulasPair = buildSymbolicModel<ValueType, LibraryType>(program, formulas);
@@ -130,7 +130,7 @@ namespace storm {
                 // Verify the model, if a formula was given.
                 if (!formulas.empty()) {
                     if (modelFormulasPair.model->isSparseModel()) {
-                        if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isCounterexampleSet()) {
+                        if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCounterexampleSet()) {
                             // If we were requested to generate a counterexample, we now do so for each formula.
                             for (auto const &formula : modelFormulasPair.formulas) {
                                 generateCounterexample<ValueType>(program, modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), formula);
@@ -139,7 +139,7 @@ namespace storm {
                             verifySparseModel<ValueType>(modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), modelFormulasPair.formulas, onlyInitialStatesRelevant);
                         }
                     } else if (modelFormulasPair.model->isSymbolicModel()) {
-                        if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
+                        if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
                             verifySymbolicModelWithHybridEngine(modelFormulasPair.model->as<storm::models::symbolic::Model<LibraryType>>(),
                                                                 modelFormulasPair.formulas, onlyInitialStatesRelevant);
                         } else {
@@ -155,18 +155,18 @@ namespace storm {
         
         template<typename ValueType>
         void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getDdLibraryType() == storm::dd::DdType::CUDD) {
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getDdLibraryType() == storm::dd::DdType::CUDD) {
                 buildAndCheckSymbolicModel<ValueType, storm::dd::DdType::CUDD>(program, formulas, onlyInitialStatesRelevant);
-            } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getDdLibraryType() == storm::dd::DdType::Sylvan) {
+            } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getDdLibraryType() == storm::dd::DdType::Sylvan) {
                 buildAndCheckSymbolicModel<ValueType, storm::dd::DdType::Sylvan>(program, formulas, onlyInitialStatesRelevant);
             }
         }
 
         template<typename ValueType>
         void buildAndCheckExplicitModel(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            storm::settings::modules::GeneralSettings const& settings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+            storm::settings::modules::MarkovChainSettings const& settings = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>();
 
-            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExplicitSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
+            STORM_LOG_THROW(settings.isExplicitSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
             std::shared_ptr<storm::models::ModelBase> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? boost::optional<std::string>(settings.getStateRewardsFilename()) : boost::none, settings.isTransitionRewardsSet() ? boost::optional<std::string>(settings.getTransitionRewardsFilename()) : boost::none, settings.isChoiceLabelingSet() ? boost::optional<std::string>(settings.getChoiceLabelingFilename()) : boost::none);
             
             // Preprocess the model if needed.

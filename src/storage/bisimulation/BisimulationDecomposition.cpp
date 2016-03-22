@@ -13,7 +13,7 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 
 #include "src/logic/FormulaInformation.h"
 #include "src/logic/FragmentSpecification.h"
@@ -210,7 +210,7 @@ namespace storm {
             
             std::chrono::high_resolution_clock::duration totalTime = std::chrono::high_resolution_clock::now() - totalStart;
             
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isShowStatisticsSet()) {
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isShowStatisticsSet()) {
                 std::chrono::milliseconds initialPartitionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(initialPartitionTime);
                 std::chrono::milliseconds refinementTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(refinementTime);
                 std::chrono::milliseconds extractionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(extractionTime);

@@ -20,6 +20,7 @@
 #include "src/settings/SettingsManager.h"
 
 
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
 
@@ -95,10 +96,10 @@ namespace storm {
         storm::prism::Program translatedProgram;
 
         // Get the string that assigns values to the unknown currently undefined constants in the model.
-        std::string constants = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getConstantDefinitionString();
+        std::string constants = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getConstantDefinitionString();
 
         // Customize and perform model-building.
-        if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine() == storm::settings::modules::GeneralSettings::Engine::Sparse) {
+        if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse) {
             typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options options;
             options = typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constants);
@@ -111,7 +112,7 @@ namespace storm {
             storm::builder::ExplicitPrismModelBuilder<ValueType> builder(program, options);
             result.model = builder.translate();
             translatedProgram = builder.getTranslatedProgram();
-        } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
+        } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Dd || storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constants);
@@ -222,7 +223,7 @@ namespace storm {
     void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<const storm::logic::Formula> const& formula) {
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
             STORM_LOG_THROW(model->getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
-            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
+            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
 
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
 
@@ -232,7 +233,7 @@ namespace storm {
             if (useMILP) {
                 storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>::computeCounterexample(program, *mdp, formula);
             } else {
-                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getConstantDefinitionString(), *mdp, formula);
+                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getConstantDefinitionString(), *mdp, formula);
             }
 
         } else {
@@ -249,23 +250,23 @@ namespace storm {
 
     template<typename ValueType, storm::dd::DdType DdType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifyModel(std::shared_ptr<storm::models::ModelBase> model, std::shared_ptr<const storm::logic::Formula> const& formula, bool onlyInitialStatesRelevant) {
-        switch(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getEngine()) {
-            case storm::settings::modules::GeneralSettings::Engine::Sparse: {
+        switch(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine()) {
+            case storm::settings::modules::MarkovChainSettings::Engine::Sparse: {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
                 STORM_LOG_THROW(sparseModel != nullptr, storm::exceptions::InvalidArgumentException, "Sparse engine requires a sparse input model");
                 return verifySparseModel(sparseModel, formula, onlyInitialStatesRelevant);
             }
-            case storm::settings::modules::GeneralSettings::Engine::Hybrid: {
+            case storm::settings::modules::MarkovChainSettings::Engine::Hybrid: {
                 std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
                 STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Hybrid engine requires a dd input model");
                 return verifySymbolicModelWithHybridEngine(ddModel, formula, onlyInitialStatesRelevant);
             }
-            case storm::settings::modules::GeneralSettings::Engine::Dd: {
+            case storm::settings::modules::MarkovChainSettings::Engine::Dd: {
                 std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
                 STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Dd engine requires a dd input model");
                 return verifySymbolicModelWithDdEngine(ddModel, formula, onlyInitialStatesRelevant);
             }
-            case storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement: {
+            case storm::settings::modules::MarkovChainSettings::Engine::AbstractionRefinement: {
                 STORM_LOG_ASSERT(false, "This position should not be reached, as at this point no model has been built.");
             }
         }
@@ -292,7 +293,7 @@ namespace storm {
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
 #ifdef STORM_HAVE_CUDA
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isCudaSet()) {
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCudaSet()) {
                     storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
                     result = modelchecker.check(task);
                 } else {

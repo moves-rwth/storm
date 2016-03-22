@@ -205,7 +205,7 @@ namespace storm {
                     storm::utility::initializeFileLogging();
                 }
                 
-                storm::settings::modules::GeneralSettings const& settings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+                storm::settings::modules::MarkovChainSettings const& settings = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>();
                 
                 // If we have to build the model from a symbolic representation, we need to parse the representation first.
                 boost::optional<storm::prism::Program> program;
@@ -216,8 +216,8 @@ namespace storm {
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
                 std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas;
-                if (settings.isPropertySet()) {
-                    std::string properties = settings.getProperty();
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
+                    std::string properties = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty();
                     
                     if(program) {
                         parsedFormulas = storm::parseFormulasForProgram(properties, program.get());
@@ -230,7 +230,7 @@ namespace storm {
                 
                 if (settings.isSymbolicSet()) {
 #ifdef STORM_HAVE_CARL
-                    if (settings.isParametricSet()) {
+                    if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
                         buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formulas, true);
                     } else {
 #endif

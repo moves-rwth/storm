@@ -6,7 +6,7 @@
 #include "src/settings/OptionBuilder.h"
 #include "src/settings/ArgumentBuilder.h"
 #include "src/settings/Argument.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 
 namespace storm {
     namespace settings {
@@ -48,7 +48,7 @@ namespace storm {
             
             bool CounterexampleGeneratorSettings::check() const {
                 // Ensure that the model was given either symbolically or explicitly.
-                STORM_LOG_THROW(!isMinimalCommandSetGenerationSet() || storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "For the generation of a minimal command set, the model has to be specified symbolically.");
+                STORM_LOG_THROW(!isMinimalCommandSetGenerationSet() || storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "For the generation of a minimal command set, the model has to be specified symbolically.");
                 
                 if (isMinimalCommandSetGenerationSet()) {
                     STORM_LOG_WARN_COND(isUseMaxSatBasedMinimalCommandSetGenerationSet() || !isEncodeReachabilitySet(), "Encoding reachability is only available for the MaxSat-based minimal command set generation, so selecting it has no effect.");

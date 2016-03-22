@@ -14,6 +14,7 @@
 #include "src/exceptions/OptionParserException.h"
 #include "src/utility/storm-version.h"
 #include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/CounterexampleGeneratorSettings.h"
 #include "src/settings/modules/CuddSettings.h"
@@ -484,8 +485,8 @@ namespace storm {
             return SettingsManager::manager();
         }
         
-        storm::settings::modules::GeneralSettings& mutableGeneralSettings() {
-            return dynamic_cast<storm::settings::modules::GeneralSettings&>(mutableManager().getModule(storm::settings::modules::GeneralSettings::moduleName));
+        storm::settings::modules::MarkovChainSettings& mutableMarkovChainSettings() {
+            return dynamic_cast<storm::settings::modules::MarkovChainSettings&>(mutableManager().getModule(storm::settings::modules::MarkovChainSettings::moduleName));
         }
         
         void initializeAll(std::string const& name, std::string const& executableName) {
@@ -493,6 +494,7 @@ namespace storm {
             
             // Register all known settings modules.
             storm::settings::addModule<storm::settings::modules::GeneralSettings>();
+            storm::settings::addModule<storm::settings::modules::MarkovChainSettings>();
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::settings::addModule<storm::settings::modules::CuddSettings>();

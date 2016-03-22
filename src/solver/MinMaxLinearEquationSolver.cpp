@@ -1,6 +1,6 @@
 #include "MinMaxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
@@ -12,7 +12,7 @@ namespace storm {
         AbstractMinMaxLinearEquationSolver<ValueType>::AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackScheduler, MinMaxTechniqueSelection prefTech) : precision(precision), relative(relativeError), maximalNumberOfIterations(maximalIterations), trackScheduler(trackScheduler) {
             
             if(prefTech == MinMaxTechniqueSelection::FROMSETTINGS) {
-                useValueIteration = (storm::settings::getModule<storm::settings::modules::GeneralSettings>().getMinMaxEquationSolvingTechnique() == storm::solver::MinMaxTechnique::ValueIteration);
+                useValueIteration = (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getMinMaxEquationSolvingTechnique() == storm::solver::MinMaxTechnique::ValueIteration);
             } else {
                 useValueIteration = (prefTech == MinMaxTechniqueSelection::ValueIteration);
             }

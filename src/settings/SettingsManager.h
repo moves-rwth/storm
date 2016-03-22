@@ -12,19 +12,7 @@
 namespace storm {
     namespace settings {
         namespace modules {
-            class GeneralSettings;
-            class DebugSettings;
-            class CounterexampleGeneratorSettings;
-            class CuddSettings;
-            class SylvanSettings;
-            class GmmxxEquationSolverSettings;
-            class NativeEquationSolverSettings;
-            class BisimulationSettings;
-            class GlpkSettings;
-            class GurobiSettings;
-            class TopologicalValueIterationEquationSolverSettings;
-            class ParametricSettings;
-            class SparseDtmcEliminationModelCheckerSettings;
+            class MarkovChainSettings;
             class ModuleSettings;
         }
         class Option;
@@ -277,12 +265,12 @@ namespace storm {
         }
         
         /*!
-         * Retrieves the general settings in a mutable form. This is only meant to be used for debug purposes or very
+         * Retrieves the markov chain settings in a mutable form. This is only meant to be used for debug purposes or very
          * rare cases where it is necessary.
          *
-         * @return An object that allows accessing and modifying the general settings.
+         * @return An object that allows accessing and modifying the markov chain settings.
          */
-        storm::settings::modules::GeneralSettings& mutableGeneralSettings();
+        storm::settings::modules::MarkovChainSettings& mutableMarkovChainSettings();
         
     } // namespace settings
 } // namespace storm

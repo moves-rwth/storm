@@ -12,7 +12,7 @@
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 
 #include "src/utility/counterexamples.h"
 #include "src/utility/prism.h"
@@ -1729,7 +1729,7 @@ namespace storm {
 
                 // Compute and emit the time measurements if the corresponding flag was set.
                 totalTime = std::chrono::high_resolution_clock::now() - totalClock;
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isShowStatisticsSet()) {
+                if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isShowStatisticsSet()) {
                     std::cout << std::endl;
                     std::cout << "Time breakdown:" << std::endl;
                     std::cout << "    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms" << std::endl;

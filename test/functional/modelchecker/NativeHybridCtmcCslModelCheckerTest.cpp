@@ -16,12 +16,13 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
@@ -118,7 +119,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster_Cudd) {
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Cluster_Sylvan) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
@@ -215,7 +216,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Cluster_Sylvan) {
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Embedded_Cudd) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
@@ -294,7 +295,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Embedded_Cudd) {
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Embedded_Sylvan) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
@@ -373,7 +374,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Embedded_Sylvan) {
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Polling_Cudd) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
@@ -409,7 +410,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Polling_Cudd) {
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Polling_Sylvan) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
@@ -445,14 +446,14 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Polling_Sylvan) {
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Fms) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
     
     // No properties to check at this point.
 }
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Tandem_Cudd) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");
@@ -542,7 +543,7 @@ TEST(NativeHybridCtmcCslModelCheckerTest, Tandem_Cudd) {
 
 TEST(NativeHybridCtmcCslModelCheckerTest, Tandem_Sylvan) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableGeneralSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
     
     // Parse the model description.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");

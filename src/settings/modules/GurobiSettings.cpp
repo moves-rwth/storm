@@ -5,7 +5,7 @@
 #include "src/settings/ArgumentBuilder.h"
 #include "src/settings/Argument.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/solver/SolverSelectionOptions.h"
 namespace storm {
     namespace settings {
@@ -46,7 +46,7 @@ namespace storm {
             
             bool GurobiSettings::check() const {
                 if (isOutputSet() || isIntegerToleranceSet() || isNumberOfThreadsSet()) {
-                    STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getLpSolver() == storm::solver::LpSolverType::Gurobi, "Gurobi is not selected as the preferred LP solver, so setting options for Gurobi might have no effect.");
+                    STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getLpSolver() == storm::solver::LpSolverType::Gurobi, "Gurobi is not selected as the preferred LP solver, so setting options for Gurobi might have no effect.");
                 }
                 
                 return true;

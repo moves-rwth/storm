@@ -7,7 +7,7 @@
 #include "src/adapters/CarlAdapter.h"
 
 #include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/SettingsManager.h"
 
 #include "src/storage/StronglyConnectedComponentDecomposition.h"
@@ -330,7 +330,7 @@ namespace storm {
             std::chrono::high_resolution_clock::time_point modelCheckingEnd = std::chrono::high_resolution_clock::now();
             std::chrono::high_resolution_clock::time_point totalTimeEnd = std::chrono::high_resolution_clock::now();
             
-            if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isShowStatisticsSet()) {
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isShowStatisticsSet()) {
                 std::chrono::high_resolution_clock::duration sccDecompositionTime = sccDecompositionEnd - sccDecompositionStart;
                 std::chrono::milliseconds sccDecompositionTimeInMilliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(sccDecompositionTime);
                 std::chrono::high_resolution_clock::duration conversionTime = conversionEnd - conversionStart;

@@ -6,7 +6,7 @@
 
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -56,7 +56,7 @@ namespace storm {
 
                 // If the model is supposed to be a CTMC, but contains probabilistic commands, we transform them to Markovian
                 // commands and issue a warning.
-                if (modelType == storm::prism::Program::ModelType::CTMC && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPrismCompatibilityEnabled()) {
+                if (modelType == storm::prism::Program::ModelType::CTMC && storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isPrismCompatibilityEnabled()) {
                     bool hasProbabilisticCommands = false;
                     for (auto& module : this->modules) {
                         for (auto& command : module.getCommands()) {
@@ -829,7 +829,7 @@ namespace storm {
             }
             
             if (hasLabeledMarkovianCommand) {
-                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPrismCompatibilityEnabled()) {
+                if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isPrismCompatibilityEnabled()) {
                     STORM_LOG_WARN_COND(false, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "The model uses synchronizing Markovian commands. This may lead to unexpected verification results, because of unclear semantics.");
