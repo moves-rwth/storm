@@ -2,7 +2,26 @@
 #include "utility/initialize.h"
 #include "utility/storm.h"
 #include "modelchecker/DFTAnalyser.h"
+#include "src/cli/cli.h"
+#include "src/exceptions/BaseException.h"
+#include "src/utility/macros.h"
 #include <boost/lexical_cast.hpp>
+
+#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/DFTSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/DebugSettings.h"
+//#include "src/settings/modules/CounterexampleGeneratorSettings.h"
+//#include "src/settings/modules/CuddSettings.h"
+//#include "src/settings/modules/SylvanSettings.h"
+#include "src/settings/modules/GmmxxEquationSolverSettings.h"
+#include "src/settings/modules/NativeEquationSolverSettings.h"
+//#include "src/settings/modules/BisimulationSettings.h"
+//#include "src/settings/modules/GlpkSettings.h"
+//#include "src/settings/modules/GurobiSettings.h"
+//#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+//#include "src/settings/modules/ParametricSettings.h"
+#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 
 /*!
  * Load DFT from filename, build corresponding Model and check against given property.
@@ -12,8 +31,7 @@
  */
 template <typename ValueType>
 void analyzeDFT(std::string filename, std::string property, bool symred = false, bool allowModularisation = false, bool enableDC = true) {
-    storm::settings::SettingsManager& manager = storm::settings::mutableManager();
-    manager.setFromString("");
+    std::cout << "Running DFT analysis on file " << filename << " with property " << property << std::endl;
 
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
@@ -28,97 +46,111 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false,
 }
 
 /*!
+ * Initialize the settings manager.
+ */
+void initializeSettings() {
+    storm::settings::mutableManager().setName("StoRM-DyFTeE", "storm-dft");
+    
+    // Register all known settings modules.
+    storm::settings::addModule<storm::settings::modules::GeneralSettings>();
+    storm::settings::addModule<storm::settings::modules::DFTSettings>();
+    storm::settings::addModule<storm::settings::modules::MarkovChainSettings>();
+    storm::settings::addModule<storm::settings::modules::DebugSettings>();
+    //storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
+    //storm::settings::addModule<storm::settings::modules::CuddSettings>();
+    //storm::settings::addModule<storm::settings::modules::SylvanSettings>();
+    storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
+    storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
+    //storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
+    //storm::settings::addModule<storm::settings::modules::GlpkSettings>();
+    //storm::settings::addModule<storm::settings::modules::GurobiSettings>();
+    //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
+    //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
+    storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
+}
+
+/*!
  * Entry point for the DyFTeE backend.
  *
  * @param argc The argc argument of main().
  * @param argv The argv argument of main().
  * @return Return code, 0 if successfull, not 0 otherwise.
  */
-int main(int argc, char** argv) {
-    if(argc < 2) {
-        std::cout << "Storm-DyFTeE should be called with a filename as argument." << std::endl;
-        std::cout << "./storm-dft <filename> <--prop pctl-formula> <--parametric>" << std::endl;
-        return 1;
-    }
-
-    // Parse cli arguments
-    bool parametric = false;
-    bool symred = false;
-    bool minimal = true;
-    bool allowModular = true;
-    bool enableModularisation = false;
-    bool disableDC = false;
-    std::string filename = argv[1];
-    std::string operatorType = "";
-    std::string targetFormula = "";
-    std::string pctlFormula = "";
-    for (int i = 2; i < argc; ++i) {
-        std::string option = argv[i];
-        if (option == "--parametric") {
-            parametric = true;
-        } else if (option == "--expectedtime") {
-            assert(targetFormula.empty());
+int main(const int argc, const char** argv) {
+    try {
+        storm::utility::setUp();
+        storm::cli::printHeader("StoRM-DyFTeE", argc, argv);
+        initializeSettings();
+        
+        bool optionsCorrect = storm::cli::parseOptions(argc, argv);
+        if (!optionsCorrect) {
+            return -1;
+        }
+        
+        storm::settings::modules::DFTSettings const& dftSettings = storm::settings::getModule<storm::settings::modules::DFTSettings>();
+        storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+        if (!dftSettings.isDftFileSet()) {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+        }
+        
+        // Set min or max
+        bool minimal = true;
+        if (dftSettings.isComputeMaximalValue()) {
+            assert(!dftSettings.isComputeMinimalValue());
+            minimal = false;
+        }
+        
+        // Construct pctlFormula
+        std::string pctlFormula = "";
+        bool allowModular = true;
+        std::string operatorType = "";
+        std::string targetFormula = "";
+        
+        if (generalSettings.isPropertySet()) {
+            STORM_LOG_THROW(!dftSettings.usePropExpectedTime() && !dftSettings.usePropProbability() && !dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
+            pctlFormula = generalSettings.getProperty();
+        } else if (dftSettings.usePropExpectedTime()) {
+            STORM_LOG_THROW(!dftSettings.usePropProbability() && !dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
             operatorType = "T";
             targetFormula = "F \"failed\"";
             allowModular = false;
-        } else if (option == "--probability") {
-            assert(targetFormula.empty());
+        } else if (dftSettings.usePropProbability()) {
+            STORM_LOG_THROW(!dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "More than one property given.");
             operatorType = "P";;
             targetFormula = "F \"failed\"";
-        } else if (option == "--timebound") {
-            assert(targetFormula.empty());
-            ++i;
-            assert(i < argc);
-            double timeBound;
-            try {
-                timeBound = boost::lexical_cast<double>(argv[i]);
-            } catch (boost::bad_lexical_cast e) {
-                std::cerr << "The time bound '" << argv[i] << "' is not valid." << std::endl;
-                return 2;
-            }
+        } else {
+            STORM_LOG_THROW(dftSettings.usePropTimebound(), storm::exceptions::InvalidSettingsException, "No property given.");
             std::stringstream stream;
-            stream << "F<=" << timeBound << " \"failed\"";
+            stream << "F<=" << dftSettings.getPropTimebound() << " \"failed\"";
             operatorType = "P";
             targetFormula = stream.str();
-        } else if (option == "--trace") {
-            STORM_GLOBAL_LOGLEVEL_TRACE();
-        } else if (option == "--debug") {
-            STORM_GLOBAL_LOGLEVEL_DEBUG();
-        } else if (option == "--prop") {
-            assert(pctlFormula.empty());
-            ++i;
-            assert(i < argc);
-            pctlFormula = argv[i];
-        } else if (option == "--symred") {
-            symred = true;
-        } else if (option == "--modularisation") {
-            enableModularisation = true;
-        } else if (option == "--disabledc") {
-            disableDC = true;
-        } else if (option == "--min") {
-            minimal = true;
-        } else if (option == "--max") {
-            minimal = false;
-        } else {
-            std::cout << "Option '" << option << "' not recognized." << std::endl;
-            return 1;
         }
-    }
-    
-    // Construct pctlFormula
-    if (!targetFormula.empty()) {
-        assert(pctlFormula.empty());
-        pctlFormula = operatorType + (minimal ? "min" : "max") + "=?[" + targetFormula + "]";
-    }
-    
-    assert(!pctlFormula.empty());
+        
+        if (!targetFormula.empty()) {
+            assert(pctlFormula.empty());
+            pctlFormula = operatorType + (minimal ? "min" : "max") + "=?[" + targetFormula + "]";
+        }
+        
+        assert(!pctlFormula.empty());
 
-    storm::utility::setUp();
-    std::cout << "Running " << (parametric ? "parametric " : "") << "DFT analysis on file " << filename << " with property " << pctlFormula << std::endl;
-
-    if (parametric) {
-        analyzeDFT<storm::RationalFunction>(filename, pctlFormula, symred, allowModular && enableModularisation, !disableDC );
-    } else {
-        analyzeDFT<double>(filename, pctlFormula, symred, allowModular && enableModularisation, !disableDC);
+        bool parametric = false;
+#ifdef STORM_HAVE_CARL
+        parametric = generalSettings.isParametricSet();
+#endif
+        
+        // From this point on we are ready to carry out the actual computations.
+        if (parametric) {
+            analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC() );
+        } else {
+            analyzeDFT<double>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC());
+        }
+        
+        // All operations have now been performed, so we clean up everything and terminate.
+        storm::utility::cleanUp();
+        return 0;
+    } catch (storm::exceptions::BaseException const& exception) {
+        STORM_LOG_ERROR("An exception caused StoRM-DyFTeE to terminate. The message of the exception is: " << exception.what());
+    } catch (std::exception const& exception) {
+        STORM_LOG_ERROR("An unexpected exception occurred and caused StoRM-DyFTeE to terminate. The message of this exception is: " << exception.what());
     }
 }

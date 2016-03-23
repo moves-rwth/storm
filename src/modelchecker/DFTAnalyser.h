@@ -159,7 +159,7 @@ private:
             explorationTime += explorationEnd -buildingEnd;
 
             // Bisimulation
-            if (model->isOfType(storm::models::ModelType::Ctmc)) {
+            if (model->isOfType(storm::models::ModelType::Ctmc) && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
                 std::cout << "Bisimulation..." << std::endl;
                 model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), {formula}, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
                 //model->printModelInformationToStream(std::cout);
