@@ -15,6 +15,7 @@
 #include "src/utility/storm-version.h"
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/CounterexampleGeneratorSettings.h"
 #include "src/settings/modules/CuddSettings.h"
@@ -489,12 +490,17 @@ namespace storm {
             return dynamic_cast<storm::settings::modules::MarkovChainSettings&>(mutableManager().getModule(storm::settings::modules::MarkovChainSettings::moduleName));
         }
         
+        storm::settings::modules::IOSettings& mutableIOSettings() {
+            return dynamic_cast<storm::settings::modules::IOSettings&>(mutableManager().getModule(storm::settings::modules::IOSettings::moduleName));
+        }
+        
         void initializeAll(std::string const& name, std::string const& executableName) {
             storm::settings::mutableManager().setName(name, executableName);
             
             // Register all known settings modules.
             storm::settings::addModule<storm::settings::modules::GeneralSettings>();
             storm::settings::addModule<storm::settings::modules::MarkovChainSettings>();
+            storm::settings::addModule<storm::settings::modules::IOSettings>();
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             storm::settings::addModule<storm::settings::modules::CuddSettings>();

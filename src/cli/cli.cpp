@@ -4,6 +4,8 @@
 #include "../utility/storm.h"
 
 #include "src/settings/modules/DebugSettings.h"
+#include "src/settings/modules/IOSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/exceptions/OptionParserException.h"
 
 #include "src/utility/storm-version.h"
@@ -205,12 +207,10 @@ namespace storm {
                     storm::utility::initializeFileLogging();
                 }
                 
-                storm::settings::modules::MarkovChainSettings const& settings = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>();
-                
                 // If we have to build the model from a symbolic representation, we need to parse the representation first.
                 boost::optional<storm::prism::Program> program;
-                if (settings.isSymbolicSet()) {
-                    std::string const& programFile = settings.getSymbolicModelFilename();
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet()) {
+                    std::string const& programFile = storm::settings::getModule<storm::settings::modules::IOSettings>().getSymbolicModelFilename();
                     program = storm::parseProgram(programFile);
                 }
                 
@@ -228,7 +228,7 @@ namespace storm {
                 }
                 std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
                 
-                if (settings.isSymbolicSet()) {
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet()) {
 #ifdef STORM_HAVE_CARL
                     if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
                         buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formulas, true);
@@ -238,7 +238,8 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
                     }
 #endif
-                } else if (settings.isExplicitSet()) {
+                } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
+                    STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use explicit input models with this engine.");
                     buildAndCheckExplicitModel<double>(formulas, true);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");

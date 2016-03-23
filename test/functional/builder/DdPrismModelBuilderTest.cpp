@@ -2,7 +2,7 @@
 #include "storm-config.h"
 #include "src/settings/SettingMemento.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/IOSettings.h"
 #include "src/models/symbolic/Dtmc.h"
 #include "src/models/symbolic/Ctmc.h"
 #include "src/models/symbolic/Mdp.h"
@@ -68,7 +68,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Dtmc) {
 
 TEST(DdPrismModelBuilderTest_Sylvan, Ctmc) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
     
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
     
@@ -99,7 +99,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Ctmc) {
 
 TEST(DdPrismModelBuilderTest_Cudd, Ctmc) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
     

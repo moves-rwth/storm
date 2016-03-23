@@ -21,6 +21,7 @@
 
 
 #include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
 
@@ -96,7 +97,7 @@ namespace storm {
         storm::prism::Program translatedProgram;
 
         // Get the string that assigns values to the unknown currently undefined constants in the model.
-        std::string constants = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getConstantDefinitionString();
+        std::string constants = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
 
         // Customize and perform model-building.
         if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse) {
@@ -223,7 +224,7 @@ namespace storm {
     void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<const storm::logic::Formula> const& formula) {
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
             STORM_LOG_THROW(model->getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidTypeException, "Minimal command set generation is only available for MDPs.");
-            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
+            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet(), storm::exceptions::InvalidSettingsException, "Minimal command set generation is only available for symbolic models.");
 
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
 
@@ -233,7 +234,7 @@ namespace storm {
             if (useMILP) {
                 storm::counterexamples::MILPMinimalLabelSetGenerator<ValueType>::computeCounterexample(program, *mdp, formula);
             } else {
-                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getConstantDefinitionString(), *mdp, formula);
+                storm::counterexamples::SMTMinimalCommandSetGenerator<ValueType>::computeCounterexample(program, storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString(), *mdp, formula);
             }
 
         } else {

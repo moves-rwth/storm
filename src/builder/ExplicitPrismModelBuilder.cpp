@@ -10,6 +10,7 @@
 #include "src/storage/expressions/ExpressionManager.h"
 
 #include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/IOSettings.h"
 
 #include "src/generator/PrismNextStateGenerator.h"
 #include "src/generator/PrismStateLabelingGenerator.h"
@@ -84,17 +85,17 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(true), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::IOSettings>().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(true), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(storm::logic::Formula const& formula) : explorationOrder(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(storm::logic::Formula const& formula) : explorationOrder(storm::settings::getModule<storm::settings::modules::IOSettings>().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), expressionLabels(std::vector<storm::expressions::Expression>()), terminalStates(), negatedTerminalStates() {
             this->preserveFormula(formula);
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : explorationOrder(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : explorationOrder(storm::settings::getModule<storm::settings::modules::IOSettings>().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(false), buildStateInformation(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;

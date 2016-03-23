@@ -5,7 +5,7 @@
 #include "src/parser/PrismParser.h"
 #include "src/builder/ExplicitPrismModelBuilder.h"
 
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/IOSettings.h"
 
 TEST(ExplicitPrismModelBuilderTest, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
@@ -37,7 +37,7 @@ TEST(ExplicitPrismModelBuilderTest, Dtmc) {
 
 TEST(ExplicitPrismModelBuilderTest, Ctmc) {
     // Set the PRISM compatibility mode temporarily. It is set to its old value once the returned object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableMarkovChainSettings().overridePrismCompatibilityMode(true);
+    std::unique_ptr<storm::settings::SettingMemento> enablePrismCompatibility = storm::settings::mutableIOSettings().overridePrismCompatibilityMode(true);
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
 
