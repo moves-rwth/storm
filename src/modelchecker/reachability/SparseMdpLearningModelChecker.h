@@ -27,6 +27,8 @@ namespace storm {
         private:
             void updateProbabilities(StateType const& sourceStateId, uint32_t action, StateType const& targetStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBounds, std::vector<ValueType>& upperBounds) const;
             
+            void updateProbabilitiesUsingStack(std::vector<std::pair<StateType, uint32_t>>& stateActionStack, StateType const& currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBounds, std::vector<ValueType>& upperBounds) const;
+            
             // The program that defines the model to check.
             storm::prism::Program program;
             
