@@ -34,7 +34,7 @@ namespace storm {
             uint32_t sampleFromMaxActions(StateType currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& upperBounds, StateType const& unexploredMarker);
             
             StateType sampleSuccessorFromAction(StateType currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping);
-            
+                        
             // The program that defines the model to check.
             storm::prism::Program program;
             
