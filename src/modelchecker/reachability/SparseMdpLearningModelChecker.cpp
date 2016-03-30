@@ -29,29 +29,124 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void SparseMdpLearningModelChecker<ValueType>::updateProbabilities(StateType const& sourceStateId, uint32_t action, StateType const& targetStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBounds, std::vector<ValueType>& upperBounds) const {
+        void SparseMdpLearningModelChecker<ValueType>::updateProbabilities(StateType const& sourceStateId, uint32_t action, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBoundsPerAction, std::vector<ValueType>& upperBoundsPerAction, std::vector<ValueType>& lowerBoundsPerState, std::vector<ValueType>& upperBoundsPerState, StateType const& unexploredMarker) const {
             // Find out which row of the matrix we have to consider for the given action.
             StateType sourceRowGroup = stateToRowGroupMapping[sourceStateId];
-            StateType sourceRow = sourceRowGroup + action;
+            StateType sourceRow = rowGroupIndices[sourceRowGroup] + action;
             
             // Compute the new lower/upper values of the action.
             ValueType newLowerValue = storm::utility::zero<ValueType>();
             ValueType newUpperValue = storm::utility::zero<ValueType>();
+            boost::optional<ValueType> loopProbability;
             for (auto const& element : transitionMatrix[sourceRow]) {
-                newLowerValue += element.getValue() * upperBounds[stateToRowGroupMapping[element.getColumn()]];
-                newUpperValue += element.getValue() * lowerBounds[stateToRowGroupMapping[element.getColumn()]];
+                // If the element is a self-loop, we treat the probability by a proper rescaling after the loop.
+                if (element.getColumn() == sourceStateId) {
+                    STORM_LOG_TRACE("Found self-loop with probability " << element.getValue() << ".");
+                    loopProbability = element.getValue();
+                    continue;
+                }
+                
+                newLowerValue += element.getValue() * (stateToRowGroupMapping[element.getColumn()] == unexploredMarker ? storm::utility::zero<ValueType>() : lowerBoundsPerState[stateToRowGroupMapping[element.getColumn()]]);
+                newUpperValue += element.getValue() * (stateToRowGroupMapping[element.getColumn()] == unexploredMarker ? storm::utility::one<ValueType>() : upperBoundsPerState[stateToRowGroupMapping[element.getColumn()]]);
+            }
+            
+            // If there was a self-loop with probability p, we scale the probabilities by 1/(1-p).
+            if (loopProbability) {
+                STORM_LOG_TRACE("Scaling values " << newLowerValue << " and " << newUpperValue << " with " << (storm::utility::one<ValueType>()/(storm::utility::one<ValueType>() - loopProbability.get())) << ".");
+                newLowerValue = newLowerValue / (storm::utility::one<ValueType>() - loopProbability.get());
+                newUpperValue = newUpperValue / (storm::utility::one<ValueType>() - loopProbability.get());
             }
             
             // And set them as the current value.
-            lowerBounds[stateToRowGroupMapping[sourceStateId]] = newLowerValue;
-            upperBounds[stateToRowGroupMapping[sourceStateId]] = newUpperValue;
+            lowerBoundsPerAction[rowGroupIndices[stateToRowGroupMapping[sourceStateId]] + action] = newLowerValue;
+            STORM_LOG_TRACE("Updating lower value of action " << action << " of state " << sourceStateId << " to " << newLowerValue << ".");
+            upperBoundsPerAction[rowGroupIndices[stateToRowGroupMapping[sourceStateId]] + action] = newUpperValue;
+            std::cout << "writing " << newUpperValue << " at index " << (rowGroupIndices[stateToRowGroupMapping[sourceStateId]] + action) << std::endl;
+            STORM_LOG_TRACE("Updating upper value of action " << action << " of state " << sourceStateId << " to " << newUpperValue << ".");
+            
+            // Check if we need to update the values for the states.
+            if (lowerBoundsPerState[stateToRowGroupMapping[sourceStateId]] < newLowerValue) {
+                lowerBoundsPerState[stateToRowGroupMapping[sourceStateId]] = newLowerValue;
+                STORM_LOG_TRACE("Got new lower bound for state " << sourceStateId << ": " << newLowerValue << ".");
+            }
+            if (upperBoundsPerState[stateToRowGroupMapping[sourceStateId]] > newUpperValue) {
+                upperBoundsPerState[stateToRowGroupMapping[sourceStateId]] = newUpperValue;
+                STORM_LOG_TRACE("Got new upper bound for state " << sourceStateId << ": " << newUpperValue << ".");
+            }
         }
         
         template<typename ValueType>
-        void SparseMdpLearningModelChecker<ValueType>::updateProbabilitiesUsingStack(std::vector<std::pair<StateType, uint32_t>>& stateActionStack, StateType const& currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBounds, std::vector<ValueType>& upperBounds) const {
-            while (!stateActionStack.empty()) {
-                updateProbabilities(stateActionStack.back().first, stateActionStack.back().second, currentStateId, transitionMatrix, rowGroupIndices, stateToRowGroupMapping, lowerBounds, upperBounds);
+        void SparseMdpLearningModelChecker<ValueType>::updateProbabilitiesUsingStack(std::vector<std::pair<StateType, uint32_t>>& stateActionStack, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBoundsPerAction, std::vector<ValueType>& upperBoundsPerAction, std::vector<ValueType>& lowerBoundsPerState, std::vector<ValueType>& upperBoundsPerState, StateType const& unexploredMarker) const {
+            
+            std::cout << "stack:" << std::endl;
+            for (auto const& entry : stateActionStack) {
+                std::cout << entry.first << " -[" << entry.second << "]-> ";
             }
+            std::cout << std::endl;
+            
+            while (stateActionStack.size() > 1) {
+                stateActionStack.pop_back();
+
+                updateProbabilities(stateActionStack.back().first, stateActionStack.back().second, transitionMatrix, rowGroupIndices, stateToRowGroupMapping, lowerBoundsPerAction, upperBoundsPerAction, lowerBoundsPerState, upperBoundsPerState, unexploredMarker);
+                
+            }
+        }
+        
+        template<typename ValueType>
+        uint32_t SparseMdpLearningModelChecker<ValueType>::sampleFromMaxActions(StateType currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& upperBoundsPerState, StateType const& unexploredMarker) {
+            
+            StateType rowGroup = stateToRowGroupMapping[currentStateId];
+            STORM_LOG_TRACE("Row group for action sampling is " << rowGroup << ".");
+            
+            // First, determine all maximizing actions.
+            std::vector<uint32_t> allMaxActions;
+            
+            // Determine the maximal value of any action.
+//            ValueType max = 0;
+//            for (uint32_t row = rowGroupIndices[rowGroup]; row < rowGroupIndices[rowGroup + 1]; ++row) {
+//                ValueType current = 0;
+//                for (auto const& element : transitionMatrix[row]) {
+//                    current += element.getValue() * upperBoundsPerState[stateToRowGroupMapping[element.getColumn()]];
+//                }
+//
+//                max = std::max(max, current);
+//            }
+            
+            STORM_LOG_TRACE("Looking for action with value " << upperBoundsPerState[stateToRowGroupMapping[currentStateId]] << ".");
+            for (uint32_t row = rowGroupIndices[rowGroup]; row < rowGroupIndices[rowGroup + 1]; ++row) {
+                ValueType current = 0;
+                for (auto const& element : transitionMatrix[row]) {
+                    std::cout << "+= " << element.getValue() << " * " << (stateToRowGroupMapping[element.getColumn()] == unexploredMarker ? storm::utility::one<ValueType>() : upperBoundsPerState[stateToRowGroupMapping[element.getColumn()]]) << " (col: " << element.getColumn() << " // row (grp) " << stateToRowGroupMapping[element.getColumn()] << ")" << std::endl;
+                    current += element.getValue() * (stateToRowGroupMapping[element.getColumn()] == unexploredMarker ? storm::utility::one<ValueType>() : upperBoundsPerState[stateToRowGroupMapping[element.getColumn()]]);
+                }
+                STORM_LOG_TRACE("Computed (upper) bound " << current << " for row " << row << ".");
+                
+                // If the action is one of the maximizing ones, insert it into our list.
+                // TODO: should this need to be an approximate check?
+                if (current == upperBoundsPerState[stateToRowGroupMapping[currentStateId]]) {
+                    allMaxActions.push_back(row);
+                    std::cout << "found maximizing action " << row << std::endl;
+                }
+            }
+            
+            STORM_LOG_ASSERT(!allMaxActions.empty(), "Must have at least one maximizing action.");
+            
+            // Now sample from all maximizing actions.
+            std::uniform_int_distribution<uint32_t> distribution(0, allMaxActions.size() - 1);
+            return allMaxActions[distribution(generator)] - rowGroupIndices[rowGroup];
+        }
+        
+        template<typename ValueType>
+        typename SparseMdpLearningModelChecker<ValueType>::StateType SparseMdpLearningModelChecker<ValueType>::sampleSuccessorFromAction(StateType currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping) {
+            uint32_t row = rowGroupIndices[stateToRowGroupMapping[currentStateId]];
+            
+            // TODO: this can be precomputed.
+            std::vector<ValueType> probabilities(transitionMatrix[row].size());
+            std::transform(transitionMatrix[row].begin(), transitionMatrix[row].end(), probabilities.begin(), [] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) { return entry.getValue(); } );
+            
+            // Now sample according to the probabilities.
+            std::discrete_distribution<StateType> distribution(probabilities.begin(), probabilities.end());
+            return transitionMatrix[row][distribution(generator)].getColumn();
         }
         
         template<typename ValueType>
@@ -74,22 +169,26 @@ namespace storm {
             
             // A container that stores the transitions found so far.
             std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> matrix;
-
+            
             // A vector storing where the row group of each state starts.
             std::vector<StateType> rowGroupIndices;
+            rowGroupIndices.push_back(0);
             
             // A vector storing the mapping from state ids to row groups.
             std::vector<StateType> stateToRowGroupMapping;
+            StateType unexploredMarker = std::numeric_limits<StateType>::max();
             
             // Vectors to store the lower/upper bounds for each action (in each state).
-            std::vector<ValueType> lowerBounds;
-            std::vector<ValueType> upperBounds;
-
+            std::vector<ValueType> lowerBoundsPerAction;
+            std::vector<ValueType> upperBoundsPerAction;
+            std::vector<ValueType> lowerBoundsPerState;
+            std::vector<ValueType> upperBoundsPerState;
+            
             // A mapping of unexplored IDs to their actual compressed states.
             std::unordered_map<StateType, storm::generator::CompressedState> unexploredStates;
             
             // Create a callback for the next-state generator to enable it to request the index of states.
-            std::function<StateType (storm::generator::CompressedState const&)> stateToIdCallback = [&stateStorage, &stateToRowGroupMapping, &unexploredStates] (storm::generator::CompressedState const& state) -> StateType {
+            std::function<StateType (storm::generator::CompressedState const&)> stateToIdCallback = [&stateStorage, &stateToRowGroupMapping, &unexploredStates, &unexploredMarker] (storm::generator::CompressedState const& state) -> StateType {
                 StateType newIndex = stateStorage.numberOfStates;
                 
                 // Check, if the state was already registered.
@@ -97,84 +196,171 @@ namespace storm {
                 
                 if (actualIndexBucketPair.first == newIndex) {
                     ++stateStorage.numberOfStates;
-                    stateToRowGroupMapping.push_back(0);
+                    stateToRowGroupMapping.push_back(unexploredMarker);
                     unexploredStates[newIndex] = state;
                 }
                 
                 return actualIndexBucketPair.first;
             };
-
+            
             stateStorage.initialStateIndices = generator.getInitialStates(stateToIdCallback);
             STORM_LOG_THROW(stateStorage.initialStateIndices.size() == 1, storm::exceptions::NotSupportedException, "Currently only models with one initial state are supported by the learning engine.");
             
             // Now perform the actual sampling.
             std::vector<std::pair<StateType, uint32_t>> stateActionStack;
-            stateActionStack.push_back(std::make_pair(stateStorage.initialStateIndices.front(), 0));
-            bool foundTargetState = false;
             
-            while (!foundTargetState) {
-                StateType const& currentStateId = stateActionStack.back().first;
-                STORM_LOG_TRACE("State on top of stack is: " << currentStateId << ".");
-                
-                // If the state is not yet expanded, we need to retrieve its behaviors.
-                auto unexploredIt = unexploredStates.find(currentStateId);
-                if (unexploredIt != unexploredStates.end()) {
-                    STORM_LOG_TRACE("State was not yet expanded.");
+            uint_fast64_t iteration = 0;
+            bool convergenceCriterionMet = false;
+            while (!convergenceCriterionMet) {
+                // Start the search from the initial state.
+                stateActionStack.push_back(std::make_pair(stateStorage.initialStateIndices.front(), 0));
 
-                    // First, we need to get the compressed state back from the id.
-                    STORM_LOG_ASSERT(unexploredIt != unexploredStates.end(), "Unable to find unexplored state " << currentStateId << ".");
-                    storm::storage::BitVector const& currentState = unexploredIt->second;
+                bool foundTargetState = false;
+                while (!foundTargetState) {
+                    StateType const& currentStateId = stateActionStack.back().first;
+                    STORM_LOG_TRACE("State on top of stack is: " << currentStateId << ".");
                     
-                    // Before generating the behavior of the state, we need to determine whether it's a target state that
-                    // does not need to be expanded.
-                    generator.load(currentState);
-                    if (generator.satisfies(targetStateExpression)) {
-                        STORM_LOG_TRACE("State does not need to be expanded, because it is a target state.");
-
-                        // If it's in fact a goal state, we need to go backwards in the stack and update the probabilities.
-                        foundTargetState = true;
-                        stateActionStack.pop_back();
+                    // If the state is not yet expanded, we need to retrieve its behaviors.
+                    auto unexploredIt = unexploredStates.find(currentStateId);
+                    if (unexploredIt != unexploredStates.end()) {
+                        STORM_LOG_TRACE("State was not yet expanded.");
                         
-                        STORM_LOG_TRACE("Updating probabilities along states in stack.");
-                        updateProbabilitiesUsingStack(stateActionStack, currentStateId, matrix, rowGroupIndices, stateToRowGroupMapping, lowerBounds, upperBounds);
-                    } else {
-                        STORM_LOG_TRACE("Expanding state.");
+                        // Map the unexplored state to a row group.
+                        stateToRowGroupMapping[currentStateId] = rowGroupIndices.size() - 1;
+                        STORM_LOG_TRACE("Assigning row group " << stateToRowGroupMapping[currentStateId] << " to state " << currentStateId << ".");
+                        lowerBoundsPerState.push_back(storm::utility::zero<ValueType>());
+                        upperBoundsPerState.push_back(storm::utility::one<ValueType>());
                         
-                        // If it needs to be expanded, we use the generator to retrieve the behavior of the new state.
-                        storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(stateToIdCallback);
-                        STORM_LOG_TRACE("State has " << behavior.getNumberOfChoices() << " choices.");
+                        // We need to get the compressed state back from the id to explore it.
+                        STORM_LOG_ASSERT(unexploredIt != unexploredStates.end(), "Unable to find unexplored state " << currentStateId << ".");
+                        storm::storage::BitVector const& currentState = unexploredIt->second;
                         
-                        stateToRowGroupMapping[currentStateId] = rowGroupIndices.size();
-                        rowGroupIndices.push_back(matrix.size());
-                        
-                        // Next, we insert the behavior into our matrix structure.
-                        for (auto const& choice : behavior) {
+                        // Before generating the behavior of the state, we need to determine whether it's a target state that
+                        // does not need to be expanded.
+                        generator.load(currentState);
+                        if (generator.satisfies(targetStateExpression)) {
+                            STORM_LOG_TRACE("State does not need to be expanded, because it is a target state.");
+                            
+                            // If it's in fact a goal state, we need to go backwards in the stack and update the probabilities.
+                            foundTargetState = true;
+                            lowerBoundsPerState.back() = storm::utility::one<ValueType>();
+                            
+                            // Set the lower/upper bounds for the only (dummy) action.
+                            lowerBoundsPerAction.push_back(storm::utility::one<ValueType>());
+                            upperBoundsPerAction.push_back(storm::utility::one<ValueType>());
+                            
+                            // Increase the size of the matrix, but leave the row empty.
                             matrix.resize(matrix.size() + 1);
-                            for (auto const& entry : choice) {
-                                matrix.back().push_back(storm::storage::MatrixEntry<StateType, ValueType>(entry.first, entry.second));
+                            
+                            STORM_LOG_TRACE("Updating probabilities along states in stack.");
+                            updateProbabilitiesUsingStack(stateActionStack, matrix, rowGroupIndices, stateToRowGroupMapping, lowerBoundsPerAction, upperBoundsPerAction, lowerBoundsPerState, upperBoundsPerState, unexploredMarker);
+                        } else {
+                            STORM_LOG_TRACE("Expanding state.");
+                            
+                            // If it needs to be expanded, we use the generator to retrieve the behavior of the new state.
+                            storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(stateToIdCallback);
+                            STORM_LOG_TRACE("State has " << behavior.getNumberOfChoices() << " choices.");
+                            
+                            // Clumsily check whether we have found a state that forms a trivial BMEC.
+                            bool isNonacceptingTerminalState = false;
+                            if (behavior.getNumberOfChoices() == 0) {
+                                isNonacceptingTerminalState = true;
+                            } else if (behavior.getNumberOfChoices() == 1) {
+                                auto const& onlyChoice = *behavior.begin();
+                                if (onlyChoice.size() == 1) {
+                                    auto const& onlyEntry = *onlyChoice.begin();
+                                    if (onlyEntry.first == currentStateId) {
+                                        isNonacceptingTerminalState = true;
+                                    }
+                                }
+                            }
+                            if (isNonacceptingTerminalState) {
+                                STORM_LOG_TRACE("State does not need to be expanded, because it forms a trivial BMEC.");
+                                
+                                foundTargetState = true;
+                                upperBoundsPerState.back() = storm::utility::zero<ValueType>();
+                                
+                                // Set the lower/upper bounds for the only (dummy) action.
+                                lowerBoundsPerAction.push_back(storm::utility::zero<ValueType>());
+                                upperBoundsPerAction.push_back(storm::utility::zero<ValueType>());
+                                
+                                // Increase the size of the matrix, but leave the row empty.
+                                matrix.resize(matrix.size() + 1);
+                                
+                                STORM_LOG_TRACE("Updating probabilities along states in stack.");
+                                updateProbabilitiesUsingStack(stateActionStack, matrix, rowGroupIndices, stateToRowGroupMapping, lowerBoundsPerAction, upperBoundsPerAction, lowerBoundsPerState, upperBoundsPerState, unexploredMarker);
+                            }
+                            
+                            // If the state was neither a trivial (non-accepting) BMEC nor a target state, we need to store
+                            // its behavior.
+                            if (!foundTargetState) {
+                                // Next, we insert the behavior into our matrix structure.
+                                matrix.resize(matrix.size() + behavior.getNumberOfChoices());
+                                uint32_t currentAction = 0;
+                                for (auto const& choice : behavior) {
+                                    for (auto const& entry : choice) {
+                                        std::cout << "got " << currentStateId << " (row group " << stateToRowGroupMapping[currentStateId] << ") " << " -> " << entry.first << " with prob " << entry.second << std::endl;
+                                        matrix.back().emplace_back(entry.first, entry.second);
+                                    }
+
+                                    lowerBoundsPerAction.push_back(storm::utility::zero<ValueType>());
+                                    upperBoundsPerAction.push_back(storm::utility::one<ValueType>());
+
+                                    // Update the bounds for the explored states to initially let them have the correct value.
+                                    updateProbabilities(currentStateId, currentAction, matrix, rowGroupIndices, stateToRowGroupMapping, lowerBoundsPerAction, upperBoundsPerAction, lowerBoundsPerState, upperBoundsPerState, unexploredMarker);
+                                    
+                                    ++currentAction;
+                                }
                             }
                         }
                         
                         // Now that we have explored the state, we can dispose of it.
                         unexploredStates.erase(unexploredIt);
+                        
+                        // Terminate the row group.
+                        rowGroupIndices.push_back(matrix.size());
+                    } else {
+                        // If the state was explored before, but determined to be a terminal state of the exploration,
+                        // we need to determine this now.
+                        if (matrix[rowGroupIndices[stateToRowGroupMapping[currentStateId]]].empty()) {
+                            foundTargetState = true;
+                        }
+                    }
+                    
+                    if (!foundTargetState) {
+                        // At this point, we can be sure that the state was expanded and that we can sample according to the
+                        // probabilities in the matrix.
+                        uint32_t chosenAction = sampleFromMaxActions(currentStateId, matrix, rowGroupIndices, stateToRowGroupMapping, upperBoundsPerAction, unexploredMarker);
+                        stateActionStack.back().second = chosenAction;
+                        STORM_LOG_TRACE("Sampled action " << chosenAction << " in state " << currentStateId << ".");
+                        
+                        StateType successor = sampleSuccessorFromAction(currentStateId, matrix, rowGroupIndices, stateToRowGroupMapping);
+                        STORM_LOG_TRACE("Sampled successor " << successor << " according to action " << chosenAction << " of state " << currentStateId << ".");
+                        
+                        // Put the successor state and a dummy action on top of the stack.
+                        stateActionStack.emplace_back(successor, 0);
                     }
                 }
                 
-                if (!foundTargetState) {
-                    // At this point, we can be sure that the state was expanded and that we can sample according to the
-                    // probabilities in the matrix.
-                    STORM_LOG_TRACE("Sampling action in state.");
-                    uint32_t chosenAction = 0;
-
-                    STORM_LOG_TRACE("Sampling successor state according to action " << chosenAction << ".");
-                    break;
-                    
-                    // TODO: set action of topmost stack element
-                    // TOOD: determine if end component (state)
-                    
+                for (auto const& el : lowerBoundsPerState) {
+                    std::cout << el << " - ";
                 }
-            }
+                std::cout << std::endl;
 
+                for (auto const& el : upperBoundsPerState) {
+                    std::cout << el << " - ";
+                }
+                std::cout << std::endl;
+
+                STORM_LOG_TRACE("Lower bound is " << lowerBoundsPerState[0] << ".");
+                STORM_LOG_TRACE("Upper bound is " << upperBoundsPerState[0] << ".");
+                ValueType difference = upperBoundsPerState[0] - lowerBoundsPerState[0];
+                STORM_LOG_TRACE("Difference after iteration " << iteration << " is " << difference << ".");
+                convergenceCriterionMet = difference < 1e-6;
+                
+                ++iteration;
+            }
+            
             return nullptr;
         }
         
