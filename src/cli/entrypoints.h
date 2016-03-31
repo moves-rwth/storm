@@ -64,7 +64,7 @@ namespace storm {
                 storm::modelchecker::SparseMdpLearningModelChecker<ValueType> checker(program);
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
                 if (checker.canHandle(task)) {
-                    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(task);
+                    result = checker.check(task);
                 } else {
                     std::cout << " skipped, because the formula cannot be handled by the selected engine/method." << std::endl;
                 }
