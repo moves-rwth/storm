@@ -316,7 +316,6 @@ namespace storm {
                             //1. Is satisfied. Check 2.: There is another choice that leads to target
                             ValueType choiceValue = x[state];
                             for(uint_fast64_t otherChoice = 0; otherChoice < solver.getMatrix().getRowGroupSize(state); ++otherChoice){
-                                                std::cout << "b" <<  std::endl;
                                 if(otherChoice == scheduler.getChoice(state)) continue;
                                 if(rowLeadsToTarget(rowGroupIndex + otherChoice, solver.getMatrix(), targetChoices, probGreater0States)){
                                     //2. is satisfied. Check 3. The value of that choice is equal to the value of the choice given by the Scheduler
