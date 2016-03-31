@@ -140,6 +140,11 @@ namespace storm {
                  */
                 void turnRatesToProbabilities();
                 
+                /*!
+                 * Checks whether the automaton is closed by actually looking at the transition information.
+                 */
+                bool checkIsClosed() const;
+                
                 // A bit vector representing the set of Markovian states.
                 storm::storage::BitVector markovianStates;
                 

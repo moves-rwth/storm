@@ -62,6 +62,7 @@
 #include "src/modelchecker/region/ParameterRegion.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -297,6 +298,16 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
 
             storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
+            result = modelchecker.check(task);
+        } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
+            std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
+            
+            // Close the MA, if it is not already closed.
+            if (!ma->isClosed()) {
+                ma->close();
+            }
+            
+            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
             result = modelchecker.check(task);
         }
         return result;
