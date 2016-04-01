@@ -12,6 +12,8 @@
 
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
 
@@ -157,13 +159,14 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void SparseMdpLearningModelChecker<ValueType>::detectEndComponents(std::vector<std::pair<StateType, uint32_t>> const& stateActionStack, boost::container::flat_set<StateType> const& targetStates, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBoundsPerAction, std::vector<ValueType>& upperBoundsPerAction, std::vector<ValueType>& lowerBoundsPerState, std::vector<ValueType>& upperBoundsPerState, std::unordered_map<StateType, storm::generator::CompressedState>& unexploredStates, StateType const& unexploredMarker) const {
+        void SparseMdpLearningModelChecker<ValueType>::detectEndComponents(std::vector<std::pair<StateType, uint32_t>> const& stateActionStack, boost::container::flat_set<StateType> const& targetStates, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>>& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBoundsPerAction, std::vector<ValueType>& upperBoundsPerAction, std::vector<ValueType>& lowerBoundsPerState, std::vector<ValueType>& upperBoundsPerState, std::unordered_map<StateType, storm::generator::CompressedState>& unexploredStates, StateType const& unexploredMarker) const {
+            
+            STORM_LOG_TRACE("Starting EC detection.");
             
             // Outline:
             // 1. construct a sparse transition matrix of the relevant part of the state space.
             // 2. use this matrix to compute an MEC decomposition.
             // 3. if non-empty analyze the decomposition for accepting/rejecting MECs.
-            // 4. modify matrix to account for the findings of 3.
             
             // Start with 1.
             storm::storage::SparseMatrixBuilder<ValueType> builder(0, 0, 0, false, true, 0);
@@ -196,19 +199,52 @@ namespace storm {
                             unexpandedProbability += entry.getValue();
                         }
                     }
-                    builder.addNextValue(currentRow, unexploredState, unexpandedProbability);
+                    if (unexpandedProbability != storm::utility::zero<ValueType>()) {
+                        builder.addNextValue(currentRow, unexploredState, unexpandedProbability);
+                    }
                     ++currentRow;
                 }
             }
+            // Finally, make the unexpanded state absorbing.
             builder.newRowGroup(currentRow);
-            
+            builder.addNextValue(currentRow, unexploredState, storm::utility::one<ValueType>());
+            STORM_LOG_TRACE("Successfully built matrix for MEC decomposition.");
             
             // Go on to step 2.
-            storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition;
+            storm::storage::SparseMatrix<ValueType> relevantStatesMatrix = builder.build();
+            storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(relevantStatesMatrix, relevantStatesMatrix.transpose(true));
+            STORM_LOG_TRACE("Successfully computed MEC decomposition. Found " << (mecDecomposition.size() > 1 ? (mecDecomposition.size() - 1) : 0) << " MEC(s).");
             
             // 3. Analyze the MEC decomposition.
+            std::unordered_map<StateType, std::vector<StateType>> stateToOutgoingChoices;
+            for (auto const& mec : mecDecomposition) {
+                // Ignore the (expected) MEC of the unexplored state.
+                if (mec.containsState(unexploredState)) {
+                    continue;
+                }
+                
+                // Now we delete all choices that belong to the MEC.
+                for (auto const& stateAndChoices : mec) {
+                    // Compute the state of the original model that corresponds to the current state.
+                    StateType originalState = stateToRowGroupMapping[relevantStates[relevantStateToNewRowGroupMapping.at(stateAndChoices.first)]];
+                    
+                    auto includedChoicesIt = stateAndChoices.second.begin();
+                    auto includedChoicesIte = stateAndChoices.second.end();
+                    
+                    // Now iterate through all the choices and delete the ones included in the MEC and record outgoing
+                    // choices (to make them available in the other states of the EC).
+                    for (auto choice = rowGroupIndices[originalState]; choice < rowGroupIndices[originalState + 1]; ++choice) {
+                        if (includedChoicesIt != includedChoicesIte && choice - rowGroupIndices[originalState] == *includedChoicesIt - relevantStatesMatrix.getRowGroupIndices()[stateAndChoices.first]) {
+                            transitionMatrix[choice].clear();
+                            transitionMatrix[choice].shrink_to_fit();
+                        } else {
+                            
+                        }
+                    }
+                }
+            }
             
-            // 4. Finally modify the system
+            exit(-1);
         }
         
         template<typename ValueType>
