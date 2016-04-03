@@ -1,110 +1,59 @@
+#include <stdint.h>
 #include "src/storage/gspn/Marking.h"
 
 namespace storm {
     namespace gspn {
-        Marking::Marking(uint_fast64_t numberOfPlaces, uint_fast64_t maxNumberOfTokens) {
+        Marking::Marking(uint_fast64_t const& numberOfPlaces, std::map<uint_fast64_t, uint_fast64_t> const& numberOfBits, uint_fast64_t const& numberOfTotalBits) {
             this->numberOfPlaces = numberOfPlaces;
-            this->maxNumberOfTokens = maxNumberOfTokens;
-
-            this->numberOfBits = calculateNumberOfBits(maxNumberOfTokens);
-            this->marking = storm::storage::BitVector(numberOfBits * numberOfPlaces);
+            this->numberOfBits = numberOfBits;
+            this->marking = storm::storage::BitVector(numberOfTotalBits);
         }
 
-        uint_fast64_t Marking::getNumberOfPlaces() {
+        Marking::Marking(uint_fast64_t const& numberOfPlaces, std::map<uint_fast64_t, uint_fast64_t> const& numberOfBits, storm::storage::BitVector const& bitvector) {
+            this->numberOfPlaces = numberOfPlaces;
+            this->numberOfBits = numberOfBits;
+            this->marking = bitvector;
+        }
+
+        uint_fast64_t Marking::getNumberOfPlaces() const {
             return this->numberOfPlaces;
         }
 
-        uint_fast64_t  Marking::getMaxNumberOfTokens() {
-            return this->maxNumberOfTokens;
+        void Marking::setNumberOfTokensAt(uint_fast64_t const& place, uint_fast64_t const& numberOfTokens) {
+            uint_fast64_t index = 0;
+            for (uint_fast64_t i=0; i < place; ++i) {
+                index += numberOfBits[i];
+            }
+            marking.setFromInt(index, numberOfBits[place], numberOfTokens);
         }
 
-        void Marking::setNumberOfTokensAt(uint_fast64_t place, uint_fast64_t numberOfTokens) {
-            // TODO check range (place < getNumberOfPlaces(), numberOfTokens < getMaxNumberOfTokens())
-            for (uint_fast64_t i = place * numberOfBits; i <(place * numberOfBits) + numberOfBits; ++i) {
-                if (numberOfTokens % 2 == 0) {
-                    marking.set(i, false);
-                } else {
-                    marking.set(i, true);
-                }
-                numberOfTokens /= 2;
+        uint_fast64_t Marking::getNumberOfTokensAt(uint_fast64_t const& place) const {
+            uint_fast64_t index = 0;
+            for (uint_fast64_t i=0; i < place; ++i) {
+                index += numberOfBits.at(i);
             }
+            return marking.getAsInt(index, numberOfBits.at(place));
         }
 
-        uint_fast64_t Marking::getNumberOfTokensAt(uint_fast64_t place) {
-            uint_fast64_t tokens = 0;
-            for (uint_fast64_t i = place * numberOfBits, mult = 0; i < (place * numberOfBits) + numberOfBits; ++i, ++mult) {
-                if (marking.get(i)) {
-                    tokens += std::pow(2, mult);
-                }
-            }
-            return tokens;
+        std::shared_ptr<storm::storage::BitVector> Marking::getBitVector() const {
+            auto result = std::make_shared<storm::storage::BitVector>();
+            *result = storm::storage::BitVector(marking);
+            return result;
         }
 
-        bool Marking::setNumberOfPlaces(uint_fast64_t numberOfPlaces) {
-            if (numberOfPlaces == this->numberOfPlaces) {
-                return true;
+        bool Marking::operator==(const Marking& other) const {
+            if (getNumberOfPlaces() != other.getNumberOfPlaces()) {
+                return false;
             }
-            if (numberOfPlaces > this->numberOfPlaces) {
-                marking.resize(numberOfPlaces * numberOfBits);
-                this->numberOfPlaces = numberOfPlaces;
-                return true;
-            } else {
-                auto diff = this->numberOfPlaces - numberOfPlaces;
-                for (uint64_t i = 0; i < diff; ++i) {
-                    if (getNumberOfTokensAt(numberOfPlaces-1-i) != 0) {
-                        // TODO error
-                        return false;
-                    }
-                }
-                marking.resize(numberOfPlaces * numberOfBits);
-                this->numberOfPlaces = numberOfPlaces;
-                return true;
+            if (&numberOfBits == &other.numberOfBits) {
+                return marking == other.marking;
             }
-        }
-
-        bool Marking::setMaxNumberOfTokens(uint_fast64_t maxNumberOfTokens) {
-            for (uint64_t i = 0; i < getNumberOfPlaces(); ++i) {
-                if (getNumberOfTokensAt(i) > maxNumberOfTokens) {
+            for (uint_fast64_t i=0; i < getNumberOfPlaces(); ++i) {
+                if (getNumberOfTokensAt(i) != other.getNumberOfTokensAt(i)) {
                     return false;
                 }
             }
-
-            if (maxNumberOfTokens == getMaxNumberOfTokens()) {
-                return true;
-            }
-
-            uint_fast64_t newNumberOfBits = calculateNumberOfBits(maxNumberOfTokens);
-            if (maxNumberOfTokens < getMaxNumberOfTokens()) {
-                for (uint_fast64_t i = 0; i < getNumberOfPlaces(); ++i) {
-                    for (uint_fast64_t j = 0; j < numberOfBits; ++j) {
-                        marking.set(i*newNumberOfBits + j , marking.get(i*numberOfBits + j));
-                    }
-                }
-                marking.resize(getNumberOfPlaces() * newNumberOfBits);
-            } else {
-                marking.resize(getNumberOfPlaces() * newNumberOfBits);
-                for (int_fast64_t i = getNumberOfPlaces()-1; i >= 0; --i) {
-                    for (int_fast64_t j = numberOfBits-1; j >= 0; --j) {
-                        for (uint_fast64_t diff = 0; diff < newNumberOfBits-numberOfBits; ++diff) {
-                            marking.set(i*newNumberOfBits+j+diff+1, 0);
-                        }
-                        marking.set(i*newNumberOfBits+j, marking.get(i*numberOfBits+j));
-                    }
-                }
-            }
-            numberOfBits = newNumberOfBits;
             return true;
-        }
-
-        void Marking::incNumberOfPlaces() {
-            setNumberOfPlaces(getNumberOfPlaces()+1);
-        }
-
-        uint_fast64_t Marking::calculateNumberOfBits(uint_fast64_t maxNumber) {
-            if (maxNumber == 0) {
-                return 1;
-            }
-            return std::floor(std::log2(maxNumber)) + 1;
         }
     }
 }

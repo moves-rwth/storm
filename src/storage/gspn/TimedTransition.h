@@ -1,5 +1,5 @@
-#ifndef STORM_TIMEDTRANSITION_H
-#define STORM_TIMEDTRANSITION_H
+#ifndef STORM_STORAGE_GSPN_TIMEDTRANSITION_H_
+#define STORM_STORAGE_GSPN_TIMEDTRANSITION_H_
 
 #include "src/storage/gspn/Transition.h"
 
@@ -13,7 +13,7 @@ namespace storm {
              *
              * @param rate The new rate for this transition.
              */
-            void setRate(RateType rate) {
+            void setRate(RateType const& rate) {
                 this->rate = rate;
             }
 
@@ -22,7 +22,7 @@ namespace storm {
              *
              * @return The rate of this transition.
              */
-            RateType getRate() {
+            RateType getRate() const {
                 return this->rate;
             }
 
@@ -33,4 +33,4 @@ namespace storm {
     }
 }
 
-#endif //STORM_TIMEDTRANSITION_H
+#endif //STORM_STORAGE_GSPN_TIMEDTRANSITION_H_

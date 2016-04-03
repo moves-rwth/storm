@@ -1,134 +1,155 @@
-#ifndef STORM_GSPNPARSER_H
-#define STORM_GSPNPARSER_H
+#ifndef STORM_PARSER_GSPNPARSER_H_
+#define STORM_PARSER_GSPNPARSER_H_
 
-#include <iostream>
 #include <string>
+
 #include <xercesc/parsers/XercesDOMParser.hpp>
-#include <xercesc/dom/DOM.hpp>
-#include <xercesc/sax/HandlerBase.hpp>
 #include <xercesc/util/XMLString.hpp>
-#include <xercesc/util/PlatformUtils.hpp>
+
 #include "src/storage/gspn/GSPN.h"
 
 namespace storm {
     namespace parser {
-        // Parses a GSPN in xml format
+
+        /* Parses a pnml-file to a gspn.
+           IMPORTANT: The names of places, transitions and arcs must differ from each other.
+         */
         class GspnParser {
         public:
+
             /*!
-             * Parses the given file into the GSPN storage class assuming it complies with the PNML.
+             * Parses the given file into the GSPN.
              *
-             * @param filename The name of the file to parse
+             * @param filename The name of the file to parse.
              * @return The resulting GSPN.
              */
-            storm::gspn::GSPN parse(std::string const& filename);
-
-            /*!
-             * Transforms the given XML String to a normal string.
-             *
-             * @param xmlString The given String in the XML format
-             * @return The corresponding standard string.
-             */
-            static std::string XMLtoString(const XMLCh* xmlString);
+            storm::gspn::GSPN const& parse(std::string const& filename);
         private:
-            // maps the original name of the state to its numerical representation
-            std::map<std::string,uint64_t> stringToState;
-
-            // maps the transition id to a pointer to the transition
-            std::map<std::string,std::shared_ptr<storm::gspn::Transition>> stringToTransition;
-
-            // the constructed gspn
-            storm::gspn::GSPN gspn;
-
-            // has the new id for a new node
-            uint64_t newNode;
 
             /*!
-             * Parses the root element.
+             * Traverse the root element.
              *
-             * @param element The root element.
+             * @param element The root element of the DOM object.
              */
-            void parsePNML(xercesc::DOMElement* element);
+            void traversePnmlElement(xercesc::DOMElement const* const element);
 
             /*!
-             * Parses a net node.
+             * Traverse a net or page node.
              *
-             * @param node The net node.
+             * @param node The net or page node.
              */
-            void parseNet(xercesc::DOMNode* node);
+            void traverseNetOrPage(xercesc::DOMNode const* const node);
 
             /*!
-             * Parses a page node.
-             *
-             * @param node The page node.
-a            */
-            void parsePage(xercesc::DOMNode* node);
-
-            /*!
-             * Parses a place node.
+             * Traverse a place node.
              *
              * @param node The place node.
              */
-            void parsePlace(xercesc::DOMNode* node);
+            void traversePlace(xercesc::DOMNode const* const node);
 
             /*!
-             * Parses a transition node.
+             * Traverse a transition node.
              *
              * @param node The transition node.
              */
-            void parseTransition(xercesc::DOMNode* node);
+            void traverseTransition(xercesc::DOMNode const* const node);
 
             /*!
-             * Parses an arc node.
+             * Traverse an arc node.
              *
              * @param node The arc node.
              */
-            void parseArc(xercesc::DOMNode* node);
+            void traverseArc(xercesc::DOMNode const* const node);
 
             /*!
-             * Parses an initial marking node .
+             * Traverse an initial marking node.
              *
              * @param node the initial marking node.
-             * @return The number of tokens.
+             * @return The number of initial tokens.
              */
-            uint64_t parseInitialMarking(xercesc::DOMNode* node);
+            uint_fast64_t traverseInitialMarking(xercesc::DOMNode const* const node);
 
             /*!
-             * Adds a new entry in the mapping from string to places.
+             * Traverse a capacity node.
              *
-             * @param id The string id for the new place
-             * @return The new place.
+             * @param node The capacity node.
+             * @return The capacity for the place.
              */
-            uint64_t addNewPlace(std::string id);
+            int_fast64_t traverseCapacity(xercesc::DOMNode const* const node);
+
+            /*!
+             * Traverse a inscription node.
+             *
+             * @param node The inscription node.
+             * @return The multiplicty for the arc.
+             */
+            uint_fast64_t traverseMultiplicity(xercesc::DOMNode const* const node);
+
+            /*!
+             * Traverse a rate node.
+             *
+             * @param node The rate node.
+             * @return The rate or weight of the transition.
+             */
+            std::string traverseTransitionValue(xercesc::DOMNode const* const node);
+
+            /*!
+             * Traverse a timed node.
+             *
+             * @param node The timed node.
+             * @return False if the tranisition is immediate
+             */
+            bool traverseTransitionType(xercesc::DOMNode const* const node);
+
+            /*!
+             * Traverse a type node.
+             *
+             * @param node The type node.
+             * @return Returns a string with the arc type.
+             */
+            std::string traverseArcType(xercesc::DOMNode const* const node);
 
             /*!
              * Gives the name of the current node.
-             * @param node Current node.
-             * @return The name.
+             *
+             * @param node The node.
+             * @return The name of the node.
              */
             std::string getName(xercesc::DOMNode* node);
 
             /*!
-             * Parses a rate node.
-             */
-            std::string parseRate(xercesc::DOMNode* node);
+            * Transforms the given XML String to a std::string.
+            *
+            * @param xmlString The given String in the XML format
+            * @return The corresponding std::string.
+            */
+            static std::string XMLtoString(const XMLCh* xmlString);
 
-            /*!
-             * Parse a timed node.
-             */
-            bool parseTimed(xercesc::DOMNode* node);
+            // the constructed gspn
+            storm::gspn::GSPN gspn;
 
-            /*!
-             * Parse a type node.
-             */
-            std::string parseType(xercesc::DOMNode* node);
+            // contains the id for a new node
+            uint_fast64_t newNode = 0;
 
-            /*!
-             * Parse a capacity node.
-             */
-            uint64_t parseCapacity(xercesc::DOMNode* node);
+            // default value for initial tokens
+            uint_fast64_t defaultNumberOfInitialTokens = 0;
+
+            // default value for capacities
+            int_fast64_t defaultCapacity = -1;
+
+            // default value for the transition type (false == immediate transition)
+            bool defaultTransitionType = false;
+
+            // default value for the transition weight or rate
+            std::string defaultTransitionValue = "1"; // TODO set to 0
+
+            // default value for the arc type
+            std::string defaultArcType = "normal";
+
+            // default multiplicity for arcs
+            uint_fast64_t defaultMultiplicity = 1;
         };
     }
 }
 
-#endif //STORM_GSPNPARSER_H
+#endif //STORM_PARSER_GSPNPARSER_H_

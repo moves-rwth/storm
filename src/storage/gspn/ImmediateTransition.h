@@ -1,5 +1,5 @@
-#ifndef STORM_IMMEDIATETRANSITION_H
-#define STORM_IMMEDIATETRANSITION_H
+#ifndef STORM_STORAGE_GSPN_IMMEDIATETRANSITION_H_
+#define STORM_STORAGE_GSPN_IMMEDIATETRANSITION_H_
 
 #include "src/storage/gspn/Transition.h"
 
@@ -13,7 +13,7 @@ namespace storm {
              *
              * @param weight The new weight for this transition.
              */
-            void setWeight(WeightType weight) {
+            void setWeight(WeightType const& weight) {
                 this->weight = weight;
             }
 
@@ -22,7 +22,7 @@ namespace storm {
              *
              * @return The weight of this transition.
              */
-            WeightType getWeight() {
+            WeightType getWeight() const {
                 return this->weight;
             }
         private:
@@ -32,4 +32,4 @@ namespace storm {
     }
 }
 
-#endif //STORM_IMMEDIATETRANSITION_H
+#endif //STORM_STORAGE_GSPN_IMMEDIATETRANSITION_H_
