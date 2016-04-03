@@ -32,8 +32,10 @@ namespace storm {
         class SparseMdpLearningModelChecker : public AbstractModelChecker {
         public:
             typedef uint32_t StateType;
+            typedef boost::container::flat_set<StateType> ChoiceSet;
+            typedef std::shared_ptr<ChoiceSet> ChoiceSetPointer;
             
-            SparseMdpLearningModelChecker(storm::prism::Program const& program);
+            SparseMdpLearningModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions);
             
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
 
@@ -46,11 +48,15 @@ namespace storm {
             
             void updateProbabilitiesUsingStack(std::vector<std::pair<StateType, uint32_t>>& stateActionStack, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBounds, std::vector<ValueType>& upperBounds, std::vector<ValueType>& lowerBoundsPerState, std::vector<ValueType>& upperBoundsPerState, StateType const& unexploredMarker) const;
             
-            uint32_t sampleFromMaxActions(StateType currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& upperBounds, StateType const& unexploredMarker);
+            uint32_t sampleFromMaxActions(StateType currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType> const& upperBoundsPerState, std::unordered_map<StateType, ChoiceSetPointer> const& stateToLeavingChoicesOfEndComponent, StateType const& unexploredMarker);
             
-            StateType sampleSuccessorFromAction(StateType currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping);
+            StateType sampleSuccessorFromAction(StateType chosenAction, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping);
             
-            void detectEndComponents(std::vector<std::pair<StateType, uint32_t>> const& stateActionStack, boost::container::flat_set<StateType> const& targetStates, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>>& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBoundsPerAction, std::vector<ValueType>& upperBoundsPerAction, std::vector<ValueType>& lowerBoundsPerState, std::vector<ValueType>& upperBoundsPerState, std::unordered_map<StateType, storm::generator::CompressedState>& unexploredStates, StateType const& unexploredMarker) const;
+            void detectEndComponents(std::vector<std::pair<StateType, uint32_t>> const& stateActionStack, boost::container::flat_set<StateType>& terminalStates, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>>& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType>& lowerBoundsPerAction, std::vector<ValueType>& upperBoundsPerAction, std::vector<ValueType>& lowerBoundsPerState, std::vector<ValueType>& upperBoundsPerState, std::unordered_map<StateType, ChoiceSetPointer>& stateToLeavingChoicesOfEndComponent, StateType const& unexploredMarker) const;
+            
+            std::pair<ValueType, ValueType> computeValuesOfChoice(uint32_t action, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType> const& lowerBoundsPerState, std::vector<ValueType> const& upperBoundsPerState, StateType const& unexploredMarker);
+            
+            std::pair<ValueType, ValueType> computeValuesOfState(StateType currentStateId, std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> const& transitionMatrix, std::vector<StateType> const& rowGroupIndices, std::vector<StateType> const& stateToRowGroupMapping, std::vector<ValueType> const& lowerBounds, std::vector<ValueType> const& upperBounds, std::vector<ValueType> const& lowerBoundsPerState, std::vector<ValueType> const& upperBoundsPerState, StateType const& unexploredMarker);
             
             storm::expressions::Expression getTargetStateExpression(storm::logic::Formula const& subformula);
                 

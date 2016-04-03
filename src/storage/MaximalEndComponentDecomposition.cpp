@@ -98,7 +98,7 @@ namespace storm {
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 bool choiceContainedInMEC = true;
                                 for (auto const& entry : transitionMatrix.getRow(choice)) {
-                                    if (entry.getValue() != storm::utility::zero<ValueType>()) {
+                                    if (entry.getValue() == storm::utility::zero<ValueType>()) {
                                         continue;
                                     }
                                         
@@ -179,6 +179,7 @@ namespace storm {
                         }
                     }
                     
+                    STORM_LOG_ASSERT(!containedChoices.empty(), "The contained choices of any state in an MEC must be non-empty.");
                     newMec.addState(state, std::move(containedChoices));
                 }
                 

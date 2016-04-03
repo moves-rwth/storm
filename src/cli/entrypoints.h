@@ -61,7 +61,7 @@ namespace storm {
                 STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently learning-based verification is only available for DTMCs and MDPs.");
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
-                storm::modelchecker::SparseMdpLearningModelChecker<ValueType> checker(program);
+                storm::modelchecker::SparseMdpLearningModelChecker<ValueType> checker(program, storm::utility::prism::parseConstantDefinitionString(program, storm::settings::generalSettings().getConstantDefinitionString()));
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
                 if (checker.canHandle(task)) {
                     result = checker.check(task);
