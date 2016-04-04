@@ -59,6 +59,7 @@
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -106,8 +107,8 @@ namespace storm {
                 options.buildCommandLabels = true;
             }
 
-            storm::builder::ExplicitPrismModelBuilder<ValueType> builder;
-            result.model = builder.translateProgram(program, options);
+            storm::builder::ExplicitPrismModelBuilder<ValueType> builder(program, options);
+            result.model = builder.translate();
             translatedProgram = builder.getTranslatedProgram();
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
@@ -294,6 +295,16 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();
 
             storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
+            result = modelchecker.check(task);
+        } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
+            std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
+            
+            // Close the MA, if it is not already closed.
+            if (!ma->isClosed()) {
+                ma->close();
+            }
+            
+            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
             result = modelchecker.check(task);
         }
         return result;

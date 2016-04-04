@@ -77,6 +77,14 @@ namespace storm {
             return modelType;
         }
         
+        bool Program::isDiscreteTimeModel() const {
+            return modelType == ModelType::DTMC || modelType == ModelType::MDP;
+        }
+        
+        bool Program::isDeterministicModel() const {
+            return modelType == ModelType::DTMC || modelType == ModelType::CTMC;
+        }
+        
         bool Program::hasUndefinedConstants() const {
             for (auto const& constant : this->getConstants()) {
                 if (!constant.isDefined()) {

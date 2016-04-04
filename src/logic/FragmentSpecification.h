@@ -19,8 +19,8 @@ namespace storm {
             bool areRewardOperatorsAllowed() const;
             FragmentSpecification& setRewardOperatorsAllowed(bool newValue);
             
-            bool areExpectedTimeOperatorsAllowed() const;
-            FragmentSpecification& setExpectedTimeOperatorsAllowed(bool newValue);
+            bool areTimeOperatorsAllowed() const;
+            FragmentSpecification& setTimeOperatorsAllowed(bool newValue);
 
             bool areLongRunAverageOperatorsAllowed() const;
             FragmentSpecification& setLongRunAverageOperatorsAllowed(bool newValue);
@@ -28,8 +28,8 @@ namespace storm {
             bool areGloballyFormulasAllowed() const;
             FragmentSpecification& setGloballyFormulasAllowed(bool newValue);
 
-            bool areEventuallyFormulasAllowed() const;
-            FragmentSpecification& setEventuallyFormulasAllowed(bool newValue);
+            bool areReachabilityProbabilityFormulasAllowed() const;
+            FragmentSpecification& setReachabilityProbabilityFormulasAllowed(bool newValue);
 
             bool areNextFormulasAllowed() const;
             FragmentSpecification& setNextFormulasAllowed(bool newValue);
@@ -73,8 +73,8 @@ namespace storm {
             bool areConditionalRewardFormulasFormulasAllowed() const;
             FragmentSpecification& setConditionalRewardFormulasAllowed(bool newValue);
 
-            bool areReachbilityExpectedTimeFormulasAllowed() const;
-            FragmentSpecification& setReachbilityExpectedTimeFormulasAllowed(bool newValue);
+            bool areReachbilityTimeFormulasAllowed() const;
+            FragmentSpecification& setReachbilityTimeFormulasAllowed(bool newValue);
 
             bool areNestedOperatorsAllowed() const;
             FragmentSpecification& setNestedOperatorsAllowed(bool newValue);
@@ -91,8 +91,17 @@ namespace storm {
             bool areTimeBoundedUntilFormulasAllowed() const;
             FragmentSpecification& setTimeBoundedUntilFormulasAllowed(bool newValue);
             
+            bool isVarianceMeasureTypeAllowed() const;
+            FragmentSpecification& setVarianceMeasureTypeAllowed(bool newValue);
+            
+            bool areQuantitativeOperatorResultsAllowed() const;
+            FragmentSpecification& setQuantitativeOperatorResultsAllowed(bool newValue);
+
+            bool areQualitativeOperatorResultsAllowed() const;
+            FragmentSpecification& setQualitativeOperatorResultsAllowed(bool newValue);
+            
             FragmentSpecification& setOperatorsAllowed(bool newValue);
-            FragmentSpecification& setExpectedTimeAllowed(bool newValue);
+            FragmentSpecification& setTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
             
         private:
@@ -103,7 +112,7 @@ namespace storm {
             bool longRunAverageOperator;
             
             bool globallyFormula;
-            bool eventuallyFormula;
+            bool reachabilityProbabilityFormula;
             bool nextFormula;
             bool untilFormula;
             bool boundedUntilFormula;
@@ -122,7 +131,7 @@ namespace storm {
             bool conditionalProbabilityFormula;
             bool conditionalRewardFormula;
             
-            bool reachabilityExpectedTimeFormula;
+            bool reachabilityTimeFormula;
             
             // Members that indicate certain restrictions.
             bool nestedOperators;
@@ -130,6 +139,9 @@ namespace storm {
             bool onlyEventuallyFormuluasInConditionalFormulas;
             bool stepBoundedUntilFormulas;
             bool timeBoundedUntilFormulas;
+            bool varianceAsMeasureType;
+            bool quantitativeOperatorResults;
+            bool qualitativeOperatorResults;
         };
         
         // Propositional.

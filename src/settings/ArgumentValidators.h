@@ -18,6 +18,7 @@
 #include "src/exceptions/IllegalArgumentValueException.h"
 #include "src/exceptions/IllegalFunctionCallException.h"
 
+#include <sys/stat.h>
 
 namespace storm {
 	namespace settings {
@@ -97,11 +98,16 @@ namespace storm {
              */
 			static std::function<bool (std::string const&)> existingReadableFileValidator() {
 				return [] (std::string const fileName) -> bool {
-					std::ifstream targetFile(fileName);
-					bool isFileGood = targetFile.good();
-
-                    STORM_LOG_THROW(isFileGood, storm::exceptions::IllegalArgumentValueException, "The file " << fileName << " does not exist or is not readable.");
-					return isFileGood;
+                    // First check existence as ifstream::good apparently als returns true for directories.
+                    struct stat info;
+                    stat(fileName.c_str(), &info);
+                    STORM_LOG_THROW(info.st_mode & S_IFREG, storm::exceptions::IllegalArgumentValueException, "Unable to read from non-existing file '" << fileName << "'.");
+                    
+                    // Now that we know it's a file, we can check its readability.
+                    std::ifstream istream(fileName);
+                    STORM_LOG_THROW(istream.good(), storm::exceptions::IllegalArgumentValueException, "Unable to read from file '" << fileName << "'.");
+                    
+                    return true;
 				};
 			}
 

@@ -32,5 +32,13 @@ namespace storm {
             this->getLeftSubformula().gatherReferencedRewardModels(referencedRewardModels);
             this->getRightSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
+        
+        bool BinaryPathFormula::hasQualitativeResult() const {
+            return false;
+        }
+        
+        bool BinaryPathFormula::hasQuantitativeResult() const {
+            return true;
+        }
     }
 }

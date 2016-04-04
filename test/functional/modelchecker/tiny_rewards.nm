@@ -1,0 +1,17 @@
+mdp
+
+module mod1
+
+s : [0..2] init 0;
+[] s=0 -> true;
+[] s=0 -> (s'=1);
+[] s=1 -> (s'=2);
+[] s=2 -> (s'=2);
+
+endmodule
+
+rewards
+ [] s=1 : 1;
+endrewards
+
+label "target" = s=2;

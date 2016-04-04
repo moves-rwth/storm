@@ -140,6 +140,21 @@ namespace storm {
                  */
                 storm::storage::SparseMatrix<ValueType>& getTransitionMatrix();
 
+                
+                /*!
+                 * Retrieves the reward models.
+                 *
+                 * @return A mapping from reward model names to the reward models.
+                 */
+                std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
+                
+                /*!
+                 * Retrieves the reward models.
+                 *
+                 * @return A mapping from reward model names to the reward models.
+                 */
+                std::unordered_map<std::string, RewardModelType>& getRewardModels();
+                
                 /*!
                  * Retrieves whether the model has a reward model with the given name.
                  *
@@ -317,20 +332,6 @@ namespace storm {
                  * @param out The stream the information is to be printed to.
                  */
                 void printRewardModelsInformationToStream(std::ostream& out) const;
-                
-                /*!
-                 * Retrieves the reward models.
-                 *
-                 * @return A mapping from reward model names to the reward models.
-                 */
-                std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
-                
-                /*!
-                 * Retrieves the reward models.
-                 *
-                 * @return A mapping from reward model names to the reward models.
-                 */
-                std::unordered_map<std::string, RewardModelType>& getRewardModels();
                 
             private:
                 //  A matrix representing transition relation.

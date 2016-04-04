@@ -32,6 +32,9 @@ namespace storm {
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
             
+            virtual bool hasQualitativeResult() const override;
+            virtual bool hasQuantitativeResult() const override;
+
         private:
             std::shared_ptr<Formula const> subformula;
             std::shared_ptr<Formula const> conditionFormula;

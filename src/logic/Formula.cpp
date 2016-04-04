@@ -62,6 +62,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isReachabilityProbabilityFormula() const {
+            return false;
+        }
+        
         bool Formula::isGloballyFormula() const {
             return false;
         }
@@ -90,7 +94,7 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isExpectedTimePathFormula() const {
+        bool Formula::isTimePathFormula() const {
             return false;
         }
         
@@ -102,7 +106,7 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isExpectedTimeOperatorFormula() const {
+        bool Formula::isTimeOperatorFormula() const {
             return false;
         }
         
@@ -122,7 +126,7 @@ namespace storm {
             return false;
         }
         
-        bool Formula::isReachbilityExpectedTimeFormula() const {
+        bool Formula::isReachabilityTimeFormula() const {
             return false;
         }
         
@@ -135,6 +139,14 @@ namespace storm {
         }
         
         bool Formula::isOperatorFormula() const {
+            return false;
+        }
+        
+        bool Formula::hasQualitativeResult() const {
+            return true;
+        }
+        
+        bool Formula::hasQuantitativeResult() const {
             return false;
         }
         
@@ -264,6 +276,22 @@ namespace storm {
             return dynamic_cast<EventuallyFormula const&>(*this);
         }
         
+        EventuallyFormula& Formula::asReachabilityProbabilityFormula() {
+            return dynamic_cast<EventuallyFormula&>(*this);
+        }
+        
+        EventuallyFormula const& Formula::asReachabilityProbabilityFormula() const {
+            return dynamic_cast<EventuallyFormula const&>(*this);
+        }
+        
+        EventuallyFormula& Formula::asReachabilityTimeFormula() {
+            return dynamic_cast<EventuallyFormula&>(*this);
+        }
+
+        EventuallyFormula const& Formula::asReachabilityTimeFormula() const {
+            return dynamic_cast<EventuallyFormula const&>(*this);
+        }
+        
         GloballyFormula& Formula::asGloballyFormula() {
             return dynamic_cast<GloballyFormula&>(*this);
         }
@@ -304,12 +332,12 @@ namespace storm {
             return dynamic_cast<LongRunAverageOperatorFormula const&>(*this);
         }
         
-        ExpectedTimeOperatorFormula& Formula::asExpectedTimeOperatorFormula() {
-            return dynamic_cast<ExpectedTimeOperatorFormula&>(*this);
+        TimeOperatorFormula& Formula::asTimeOperatorFormula() {
+            return dynamic_cast<TimeOperatorFormula&>(*this);
         }
         
-        ExpectedTimeOperatorFormula const& Formula::asExpectedTimeOperatorFormula() const {
-            return dynamic_cast<ExpectedTimeOperatorFormula const&>(*this);
+        TimeOperatorFormula const& Formula::asTimeOperatorFormula() const {
+            return dynamic_cast<TimeOperatorFormula const&>(*this);
         }
         
         CumulativeRewardFormula& Formula::asCumulativeRewardFormula() {

@@ -66,6 +66,18 @@ namespace storm {
              * @return The type of the model.
              */
             ModelType getModelType() const;
+            
+            /*!
+             * Retrieves whether the model is a discrete-time model, i.e. a DTMC or an MDP.
+             *
+             * @return True iff the model is a discrete-time model.
+             */
+            bool isDiscreteTimeModel() const;
+            
+            /*!
+             * Retrieves whether the model is one without nondeterministic choices, i.e. a DTMC or a CTMC.
+             */
+            bool isDeterministicModel() const;
 
             /*!
              * Retrieves whether there are undefined constants of any type in the program.

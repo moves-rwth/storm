@@ -310,8 +310,46 @@ namespace storm {
             }
             
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::BitVector const& probGreater0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix) {
-                return computeSchedulerWithOneSuccessorInStates(probGreater0EStates, transitionMatrix);
+            storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& rowFilter) {
+                //Perform backwards DFS from psiStates and find a valid choice for each visited state.
+                
+                storm::storage::PartialScheduler result;
+                std::vector<uint_fast64_t> stack;
+                storm::storage::BitVector currentStates(psiStates); //the states that are either psiStates or for which we have found a valid choice.
+                stack.insert(stack.end(), currentStates.begin(), currentStates.end());
+                uint_fast64_t currentState = 0;
+                
+                while (!stack.empty()) {
+                    currentState = stack.back();
+                    stack.pop_back();
+                    
+                    for (typename storm::storage::SparseMatrix<T>::const_iterator predecessorEntryIt = backwardTransitions.begin(currentState), predecessorEntryIte = backwardTransitions.end(currentState); predecessorEntryIt != predecessorEntryIte; ++predecessorEntryIt) {
+                        uint_fast64_t const& predecessor = predecessorEntryIt->getColumn();
+                        if (phiStates.get(predecessor) && !currentStates.get(predecessor)) {
+                            //The predecessor is a probGreater0E state that has not been considered yet. Let's find the right choice that leads to a state in currentStates.
+                            bool foundValidChoice = false;
+                            for (uint_fast64_t row = transitionMatrix.getRowGroupIndices()[predecessor]; row < transitionMatrix.getRowGroupIndices()[predecessor + 1]; ++row) {
+                                if(rowFilter && !rowFilter->get(row)){
+                                    continue;
+                                }
+                                for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
+                                    if(currentStates.get(successorEntryIt->getColumn())){
+                                        foundValidChoice = true;
+                                        break;
+                                    }
+                                }
+                                if(foundValidChoice){
+                                    result.setChoice(predecessor, row - transitionMatrix.getRowGroupIndices()[predecessor]);
+                                    currentStates.set(predecessor, true);
+                                    stack.push_back(predecessor);
+                                    break;
+                                }
+                            }
+                            STORM_LOG_INFO_COND(foundValidChoice, "Could not find a valid choice for ProbGreater0E state " << predecessor << ".");
+                        }
+                    }
+                }
+                return result;
             }
             
             template <typename T>
@@ -972,7 +1010,7 @@ namespace storm {
             
             
             
-            template storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::BitVector const& probGreater0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix);
+            template storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& rowFilter);
             
             template storm::storage::PartialScheduler computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix);
             

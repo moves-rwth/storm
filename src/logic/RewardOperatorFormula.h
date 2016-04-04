@@ -1,18 +1,14 @@
 #ifndef STORM_LOGIC_REWARDOPERATORFORMULA_H_
 #define STORM_LOGIC_REWARDOPERATORFORMULA_H_
 
-#include <set>
 #include "src/logic/OperatorFormula.h"
+#include "src/logic/RewardMeasureType.h"
 
 namespace storm {
     namespace logic {
         class RewardOperatorFormula : public OperatorFormula {
         public:
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, Bound<double> const& bound, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula);
-            RewardOperatorFormula(boost::optional<std::string> const& rewardModelName, boost::optional<OptimizationDirection> optimalityType, boost::optional<Bound<double>> bound, std::shared_ptr<Formula const> const& subformula);
+            RewardOperatorFormula(std::shared_ptr<Formula const> const& subformula, boost::optional<std::string> const& rewardModelName = boost::none, OperatorInformation const& operatorInformation = OperatorInformation(), RewardMeasureType rewardMeasureType = RewardMeasureType::Expectation);
 
             virtual ~RewardOperatorFormula() {
                 // Intentionally left empty.
@@ -48,11 +44,21 @@ namespace storm {
              */
             std::string const& getRewardModelName() const;
             
+            /*!
+             * Retrieves the measure type of the operator.
+             *
+             * @return The measure type.
+             */
+            RewardMeasureType getMeasureType() const;
+            
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             
         private:
             // The (optional) name of the reward model this property refers to.
             boost::optional<std::string> rewardModelName;
+            
+            // The measure type of the operator.
+            RewardMeasureType rewardMeasureType;
         };
     }
 }
