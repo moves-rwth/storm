@@ -165,11 +165,9 @@ namespace storm {
                 void turnRatesToProbabilities();
                 
                 /*!
-                 * Check if at least one hybrid state exists.
-                 *
-                 * @return True, if at least one hybrid state exists, false if none exists.
+                 * Checks whether the automaton is closed by actually looking at the transition information.
                  */
-                bool hasHybridState() const;
+                bool checkIsClosed() const;
                 
                 // A bit vector representing the set of Markovian states.
                 storm::storage::BitVector markovianStates;

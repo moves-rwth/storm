@@ -32,6 +32,7 @@ namespace storm {
 
             template<typename ValueType>
             void SparseMarkovAutomatonCslHelper<ValueType>::computeBoundedReachabilityProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint_fast64_t numberOfSteps, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+                
                 // Start by computing four sparse matrices:
                 // * a matrix aMarkovian with all (discretized) transitions from Markovian non-goal states to all Markovian non-goal states.
                 // * a matrix aMarkovianToProbabilistic with all (discretized) transitions from Markovian non-goal states to all probabilistic non-goal states.
@@ -116,12 +117,16 @@ namespace storm {
                 storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
                 solver->solveEquationSystem(dir, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
             }
-            
 
             template<typename ValueType>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper<ValueType>::computeBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, double lowerBound, double upperBound, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper<ValueType>::computeBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
+
                 uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
-                
+               
+                // 'Unpack' the bounds to make them more easily accessible.
+                double lowerBound = boundsPair.first;
+                double upperBound = boundsPair.second;
+
                 // (1) Compute the accuracy we need to achieve the required error bound.
                 ValueType maxExitRate = 0;
                 for (auto value : exitRateVector) {

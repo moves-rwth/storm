@@ -19,9 +19,8 @@ namespace storm {
                                                         std::vector<ValueType> const& exitRates,
                                                         std::unordered_map<std::string, RewardModelType> const& rewardModels,
                                                         boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates) {
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, transitionMatrix, stateLabeling, rewardModels, optionalChoiceLabeling), markovianStates(markovianStates), exitRates(exitRates), closed(this->checkIsClosed()) {
                 this->turnRatesToProbabilities();
-                closed = !hasHybridState();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -31,9 +30,8 @@ namespace storm {
                                                         std::vector<ValueType> const& exitRates,
                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)) {
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(this->checkIsClosed()) {
                 this->turnRatesToProbabilities();
-                closed = !hasHybridState();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -44,10 +42,9 @@ namespace storm {
                                                                          bool probabilities,
                                                                          std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                                          boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
-            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)) {
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(this->checkIsClosed()) {
                 assert(probabilities);
                 assert(this->getTransitionMatrix().isProbabilistic());
-                closed = !hasHybridState();
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -68,16 +65,6 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isProbabilisticState(storm::storage::sparse::state_type state) const {
                 return !this->markovianStates.get(state);
-            }
-            
-            template <typename ValueType, typename RewardModelType>
-            bool MarkovAutomaton<ValueType, RewardModelType>::hasHybridState() const {
-                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-                    if (this->isHybridState(state)) {
-                        return true;
-                    }
-                }
-                return false;
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -127,21 +114,19 @@ namespace storm {
                     // Now copy over all choices that need to be kept.
                     uint_fast64_t currentChoice = 0;
                     for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-                        // If the state is a hybrid state, closing it will make it a probabilistic state, so we remove the Markovian marking.
-                        if (this->isHybridState(state)) {
-                            this->markovianStates.set(state, false);
-                        }
-                        
                         // Record the new beginning of choices of this state.
                         newTransitionMatrixBuilder.newRowGroup(currentChoice);
-                        
-                        // If we are currently treating a hybrid state, we need to skip its first choice.
+
+                        // If the state is a hybrid state, closing it will make it a probabilistic state, so we remove the Markovian marking.
+                        // Additionally, we need to remember whether we need to skip the first choice of the state when
+                        // we assemble the new transition matrix.
+                        uint_fast64_t offset = 0;
                         if (this->isHybridState(state)) {
-                            // Remove the Markovian state marking.
                             this->markovianStates.set(state, false);
+                            offset = 1;
                         }
                         
-                        for (uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state] + (this->isHybridState(state) ? 1 : 0); row < this->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
+                        for (uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state] + offset; row < this->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
                             for (auto const& entry : this->getTransitionMatrix().getRow(row)) {
                                 newTransitionMatrixBuilder.addNextValue(currentChoice, entry.getColumn(), entry.getValue());
                             }
@@ -246,7 +231,7 @@ namespace storm {
             template <typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::turnRatesToProbabilities() {
                 for (auto state : this->markovianStates) {
-                    for (auto& transition : this->getTransitionMatrix().getRowGroup(state)) {
+                    for (auto& transition : this->getTransitionMatrix().getRow(this->getTransitionMatrix().getRowGroupIndices()[state])) {
                         transition.setValue(transition.getValue() / this->exitRates[state]);
                     }
                 }
@@ -263,6 +248,16 @@ namespace storm {
                     }
                     if (numberChoices > 1) {
                         assert(isProbabilisticState(state));
+                        return false;
+                    }
+                }
+                return true;
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::checkIsClosed() const {
+                for (auto state : markovianStates) {
+                    if (this->getTransitionMatrix().getRowGroupSize(state) > 1) {
                         return false;
                     }
                 }

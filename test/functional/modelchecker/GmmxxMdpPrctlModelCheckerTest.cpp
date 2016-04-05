@@ -240,3 +240,36 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     EXPECT_EQ(0, scheduler2.getChoice(2));
     EXPECT_EQ(0, scheduler2.getChoice(3));
 }
+
+TEST(GmmxxMdpPrctlModelCheckerTest, tiny_rewards) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/tiny_rewards.nm");
+
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser formulaParser;
+    
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    EXPECT_EQ(3ul, model->getNumberOfStates());
+    EXPECT_EQ(4ul, model->getNumberOfTransitions());
+    
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();
+
+    EXPECT_EQ(4ul, mdp->getNumberOfChoices());
+
+    auto solverFactory = std::make_unique<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(storm::solver::EquationSolverTypeSelection::Gmmxx);
+    solverFactory->setPreferredTechnique(storm::solver::MinMaxTechniqueSelection::ValueIteration);
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::move(solverFactory));
+    
+    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"target\"]");
+    
+    storm::modelchecker::CheckTask<storm::logic::Formula> checkTask(*formula);
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(checkTask);
+    
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    EXPECT_NEAR(1,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[0], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[1], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[2], storm::settings::nativeEquationSolverSettings().getPrecision());
+    
+}
