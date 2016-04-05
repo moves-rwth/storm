@@ -15,12 +15,14 @@ namespace storm {
             const std::string DebugSettings::traceOptionName = "trace";
             const std::string DebugSettings::logfileOptionName = "logfile";
             const std::string DebugSettings::logfileOptionShortName = "l";
+            const std::string DebugSettings::testOptionName = "test";
  
             DebugSettings::DebugSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, false, "Print debug output.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, traceOptionName, false, "Print even more debug output.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, logfileOptionName, false, "If specified, the log output will also be written to this file.").setShortName(logfileOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to write the log.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, testOptionName, false, "Activate a test setting.").build());
             }
             
             bool DebugSettings::isDebugSet() const {
@@ -37,6 +39,10 @@ namespace storm {
             
             std::string DebugSettings::getLogfilename() const {
                 return this->getOption(traceOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool DebugSettings::isTestSet() const {
+                return this->getOption(testOptionName).getHasOptionBeenSet();
             }
             
         } // namespace modules
