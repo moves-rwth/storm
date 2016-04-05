@@ -268,8 +268,8 @@ TEST(GmmxxMdpPrctlModelCheckerTest, tiny_rewards) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(checkTask);
     
     ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
-    EXPECT_NEAR(1,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[0], storm::settings::nativeEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(1,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[1], storm::settings::nativeEquationSolverSettings().getPrecision());
-    EXPECT_NEAR(0,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[2], storm::settings::nativeEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(1,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[0], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(1,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[1], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    EXPECT_NEAR(0,result->asExplicitQuantitativeCheckResult<double>().getValueVector()[2], storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
 }
