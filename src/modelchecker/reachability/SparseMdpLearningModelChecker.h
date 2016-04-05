@@ -62,7 +62,7 @@ namespace storm {
             
             // A struct containing the data required for state exploration.
             struct StateGeneration {
-                StateGeneration(storm::generator::PrismNextStateGenerator<ValueType, StateType>&& generator, storm::expressions::Expression const& targetStateExpression) : generator(std::move(generator)), targetStateExpression(targetStateExpression) {
+                StateGeneration(storm::prism::Program const& program, storm::generator::VariableInformation const& variableInformation, storm::expressions::Expression const& targetStateExpression) : generator(program, variableInformation, false), targetStateExpression(targetStateExpression) {
                     // Intentionally left empty.
                 }
                 
@@ -125,8 +125,9 @@ namespace storm {
                     stateToRowGroupMapping[state] = rowGroup;
                 }
                 
-                void assignStateToNextRowGroup(StateType const& state) {
+                StateType assignStateToNextRowGroup(StateType const& state) {
                     stateToRowGroupMapping[state] = rowGroupIndices.size() - 1;
+                    return stateToRowGroupMapping[state];
                 }
                 
                 void newRowGroup(ActionType const& action) {
@@ -154,7 +155,7 @@ namespace storm {
                 }
                 
                 bool isUnexplored(StateType const& state) const {
-                    return unexploredStates.find(state) == unexploredStates.end();
+                    return stateToRowGroupMapping[state] == unexploredMarker;
                 }
                 
                 bool isTerminal(StateType const& state) const {
@@ -163,6 +164,10 @@ namespace storm {
                 
                 ActionType const& getStartRowOfGroup(StateType const& group) const {
                     return rowGroupIndices[group];
+                }
+                
+                std::size_t getRowGroupSize(StateType const& group) const {
+                    return rowGroupIndices[group + 1] - rowGroupIndices[group];
                 }
                 
                 void addTerminalState(StateType const& state) {
@@ -216,11 +221,11 @@ namespace storm {
                     if (index == explorationInformation.getUnexploredMarker()) {
                         return storm::utility::one<ValueType>();
                     } else {
-                        return getUpperBoundForRowGroup(index, explorationInformation);
+                        return getUpperBoundForRowGroup(index);
                     }
                 }
                 
-                ValueType getUpperBoundForRowGroup(StateType const& rowGroup, ExplorationInformation const& explorationInformation) const {
+                ValueType const& getUpperBoundForRowGroup(StateType const& rowGroup) const {
                     return upperBoundsPerState[rowGroup];
                 }
                 
@@ -241,12 +246,12 @@ namespace storm {
                     return bounds.second - bounds.first;
                 }
                 
-                void initializeStateBoundsForNextState(std::pair<ValueType, ValueType> const& vals = std::pair<ValueType, ValueType>(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>())) {
+                void initializeBoundsForNextState(std::pair<ValueType, ValueType> const& vals = std::pair<ValueType, ValueType>(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>())) {
                     lowerBoundsPerState.push_back(vals.first);
                     upperBoundsPerState.push_back(vals.second);
                 }
                 
-                void initializeActionBoundsForNextAction(std::pair<ValueType, ValueType> const& vals = std::pair<ValueType, ValueType>(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>())) {
+                void initializeBoundsForNextAction(std::pair<ValueType, ValueType> const& vals = std::pair<ValueType, ValueType>(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>())) {
                     lowerBoundsPerAction.push_back(vals.first);
                     upperBoundsPerAction.push_back(vals.second);
                 }
@@ -274,14 +279,18 @@ namespace storm {
                     StateType const& rowGroup = explorationInformation.getRowGroup(state);
                     if (lowerBoundsPerState[rowGroup] < newLowerValue) {
                         lowerBoundsPerState[rowGroup] = newLowerValue;
+                        return true;
                     }
+                    return false;
                 }
 
                 bool setNewUpperBoundOfStateIfLessThanOld(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& newUpperValue) {
                     StateType const& rowGroup = explorationInformation.getRowGroup(state);
                     if (newUpperValue < upperBoundsPerState[rowGroup]) {
                         upperBoundsPerState[rowGroup] = newUpperValue;
+                        return true;
                     }
+                    return false;
                 }
             };
             
@@ -306,6 +315,7 @@ namespace storm {
             void updateProbabilityOfAction(StateType const& state, ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues& bounds) const;
             
             std::pair<ValueType, ValueType> computeBoundsOfAction(ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
+            ValueType computeUpperBoundOverAllOtherActions(StateType const& state, ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
             std::pair<ValueType, ValueType> computeBoundsOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
             ValueType computeLowerBoundOfAction(ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
             ValueType computeUpperBoundOfAction(ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
@@ -319,7 +329,7 @@ namespace storm {
             storm::generator::VariableInformation variableInformation;
             
             // The random number generator.
-            std::default_random_engine randomGenerator;
+            mutable std::default_random_engine randomGenerator;
             
             // A comparator used to determine whether values are equal.
             storm::utility::ConstantsComparator<ValueType> comparator;

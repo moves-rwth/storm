@@ -21,7 +21,7 @@ namespace storm {
             
             virtual void load(CompressedState const& state) = 0;
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
-            virtual bool satisfies(storm::expressions::Expression const& expression) = 0;
+            virtual bool satisfies(storm::expressions::Expression const& expression) const = 0;
         };
     }
 }

@@ -18,7 +18,7 @@ namespace storm {
             typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
             
             PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling);
-            
+                        
             /*!
              * Adds a reward model to the list of selected reward models ()
              */
@@ -34,7 +34,7 @@ namespace storm {
 
             virtual void load(CompressedState const& state) override;
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
-            virtual bool satisfies(storm::expressions::Expression const& expression) override;
+            virtual bool satisfies(storm::expressions::Expression const& expression) const override;
 
         private:
             /*!

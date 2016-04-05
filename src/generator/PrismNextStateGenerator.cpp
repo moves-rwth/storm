@@ -13,7 +13,7 @@ namespace storm {
         PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling) : program(program), selectedRewardModels(), buildChoiceLabeling(buildChoiceLabeling), variableInformation(variableInformation), evaluator(program.getManager()), state(nullptr), comparator() {
             // Intentionally left empty.
         }
-        
+                
         template<typename ValueType, typename StateType>
         void PrismNextStateGenerator<ValueType, StateType>::addRewardModel(storm::prism::RewardModel const& rewardModel) {
             selectedRewardModels.push_back(rewardModel);
@@ -58,7 +58,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        bool PrismNextStateGenerator<ValueType, StateType>::satisfies(storm::expressions::Expression const& expression) {
+        bool PrismNextStateGenerator<ValueType, StateType>::satisfies(storm::expressions::Expression const& expression) const {
             return evaluator.asBool(expression);
         }
         
