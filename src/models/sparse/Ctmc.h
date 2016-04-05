@@ -38,6 +38,20 @@ namespace storm {
                      std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                      boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
+                /*!
+                 * Constructs a model from the given data.
+                 *
+                 * @param rateMatrix The matrix representing the transitions in the model.
+                 * @param exitRates The exit rates of all states.
+                 * @param stateLabeling The labeling of the states.
+                 * @param rewardModels A mapping of reward model names to reward models.
+                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
+                 */
+                Ctmc(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates, storm::models::sparse::StateLabeling const& stateLabeling,
+                     std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(),
+                     boost::optional<std::vector<LabelSet>> const& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+
+                
                 Ctmc(Ctmc<ValueType, RewardModelType> const& ctmc) = default;
                 Ctmc& operator=(Ctmc<ValueType, RewardModelType> const& ctmc) = default;
                 
