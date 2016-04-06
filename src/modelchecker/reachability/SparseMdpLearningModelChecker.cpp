@@ -216,17 +216,16 @@ namespace storm {
                 STORM_LOG_TRACE("State has " << behavior.getNumberOfChoices() << " choices.");
                 
                 // Clumsily check whether we have found a state that forms a trivial BMEC.
-                if (behavior.getNumberOfChoices() == 0) {
-                    isTerminalState = true;
-                } else if (behavior.getNumberOfChoices() == 1) {
-                    auto const& onlyChoice = *behavior.begin();
-                    if (onlyChoice.size() == 1) {
-                        auto const& onlyEntry = *onlyChoice.begin();
-                        if (onlyEntry.first == currentStateId) {
-                            isTerminalState = true;
+                bool otherSuccessor = false;
+                for (auto const& choice : behavior) {
+                    for (auto const& entry : choice) {
+                        if (entry.first != currentStateId) {
+                            otherSuccessor = true;
+                            break;
                         }
                     }
                 }
+                isTerminalState = !otherSuccessor;
                 
                 // If the state was neither a trivial (non-accepting) terminal state nor a target state, we
                 // need to store its behavior.
