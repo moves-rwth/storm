@@ -33,7 +33,7 @@ namespace storm {
             double getContinuousTimeBound() const;
             
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
-            
+
         private:
             boost::variant<uint_fast64_t, double> timeBound;
         };

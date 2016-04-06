@@ -10,6 +10,10 @@ namespace storm {
             STORM_LOG_THROW(context == FormulaContext::Probability || context == FormulaContext::Reward || context == FormulaContext::Time, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
         }
         
+        FormulaContext const& EventuallyFormula::getContext() const {
+            return context;
+        }
+        
         bool EventuallyFormula::isEventuallyFormula() const {
             return true;
         }

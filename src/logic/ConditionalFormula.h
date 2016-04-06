@@ -7,9 +7,7 @@
 namespace storm {
     namespace logic {
         class ConditionalFormula : public Formula {
-        public:
-            enum class Context { Probability, Reward };
-            
+        public:            
             ConditionalFormula(std::shared_ptr<Formula const> const& subformula, std::shared_ptr<Formula const> const& conditionFormula, FormulaContext context = FormulaContext::Probability);
             
             virtual ~ConditionalFormula() {
@@ -18,6 +16,7 @@ namespace storm {
             
             Formula const& getSubformula() const;
             Formula const& getConditionFormula() const;
+            FormulaContext const& getContext() const;
 
             virtual bool isConditionalProbabilityFormula() const override;
             virtual bool isConditionalRewardFormula() const override;
@@ -27,7 +26,7 @@ namespace storm {
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
-            
+
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;

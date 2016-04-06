@@ -18,6 +18,10 @@ namespace storm {
             return *conditionFormula;
         }
         
+        FormulaContext const& ConditionalFormula::getContext() const {
+            return context;
+        }
+        
         bool ConditionalFormula::isConditionalProbabilityFormula() const {
             return context == FormulaContext::Probability;
         }

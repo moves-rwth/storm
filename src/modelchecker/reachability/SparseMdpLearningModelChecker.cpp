@@ -38,7 +38,6 @@ namespace storm {
             storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
             storm::logic::Formula const& subformula = eventuallyFormula.getSubformula();
             STORM_LOG_THROW(program.isDeterministicModel() || checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "For nondeterministic systems, an optimization direction (min/max) must be given in the property.");
-            STORM_LOG_THROW(subformula.isAtomicExpressionFormula() || subformula.isAtomicLabelFormula(), storm::exceptions::NotSupportedException, "Learning engine can only deal with formulas of the form 'F \"label\"' or 'F expression'.");
             
             StateGeneration stateGeneration(program, variableInformation, getTargetStateExpression(subformula));
             
@@ -58,13 +57,8 @@ namespace storm {
         
         template<typename ValueType>
         storm::expressions::Expression SparseMdpLearningModelChecker<ValueType>::getTargetStateExpression(storm::logic::Formula const& subformula) const {
-            storm::expressions::Expression result;
-            if (subformula.isAtomicExpressionFormula()) {
-                result = subformula.asAtomicExpressionFormula().getExpression();
-            } else {
-                result = program.getLabelExpression(subformula.asAtomicLabelFormula().getLabel());
-            }
-            return result;
+            std::shared_ptr<storm::logic::Formula> preparedSubformula = subformula.substitute(program.getLabelToExpressionMapping());
+            return preparedSubformula->toExpression();
         }
         
         template<typename ValueType>
@@ -101,7 +95,7 @@ namespace storm {
             Statistics stats;
             bool convergenceCriterionMet = false;
             while (!convergenceCriterionMet) {
-                bool result = samplePathFromState(stateGeneration, explorationInformation, stack, bounds, stats);
+                bool result = samplePathFromInitialState(stateGeneration, explorationInformation, stack, bounds, stats);
                 
                 // If a terminal state was found, we update the probabilities along the path contained in the stack.
                 if (result) {
@@ -125,7 +119,7 @@ namespace storm {
             
             if (storm::settings::generalSettings().isShowStatisticsSet()) {
                 std::cout << std::endl << "Learning summary -------------------------" << std::endl;
-                std::cout << "Discovered states: " << explorationInformation.getNumberOfDiscoveredStates() << " (" << stats.numberOfExploredStates << " explored, " << explorationInformation.getNumberOfUnexploredStates() << " unexplored, " << stats.numberOfTargetStates << " target states)" << std::endl;
+                std::cout << "Discovered states: " << explorationInformation.getNumberOfDiscoveredStates() << " (" << stats.numberOfExploredStates << " explored, " << explorationInformation.getNumberOfUnexploredStates() << " unexplored, " << stats.numberOfTargetStates << " target)" << std::endl;
                 std::cout << "Sampling iterations: " << stats.iterations << std::endl;
                 std::cout << "Maximal path length: " << stats.maxPathLength << std::endl;
             }
@@ -134,11 +128,11 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool SparseMdpLearningModelChecker<ValueType>::samplePathFromState(StateGeneration& stateGeneration, ExplorationInformation& explorationInformation, StateActionStack& stack, BoundValues& bounds, Statistics& stats) const {
-            
+        bool SparseMdpLearningModelChecker<ValueType>::samplePathFromInitialState(StateGeneration& stateGeneration, ExplorationInformation& explorationInformation, StateActionStack& stack, BoundValues& bounds, Statistics& stats) const {
             // Start the search from the initial state.
             stack.push_back(std::make_pair(explorationInformation.getFirstInitialState(), 0));
             
+            // As long as we didn't find a terminal (accepting or rejecting) state in the search, sample a new successor.
             bool foundTerminalState = false;
             while (!foundTerminalState) {
                 StateType const& currentStateId = stack.back().first;
@@ -165,7 +159,7 @@ namespace storm {
                 if (!foundTerminalState) {
                     // At this point, we can be sure that the state was expanded and that we can sample according to the
                     // probabilities in the matrix.
-                    uint32_t chosenAction = sampleMaxAction(currentStateId, explorationInformation, bounds);
+                    uint32_t chosenAction = sampleActionOfState(currentStateId, explorationInformation, bounds);
                     stack.back().second = chosenAction;
                     STORM_LOG_TRACE("Sampled action " << chosenAction << " in state " << currentStateId << ".");
                     
@@ -242,7 +236,9 @@ namespace storm {
                     explorationInformation.addRowsToMatrix(behavior.getNumberOfChoices());
                     
                     ActionType currentAction = 0;
-                    std::pair<ValueType, ValueType> stateBounds(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
+                    
+                    // Retrieve the lowest state bounds (wrt. to the current optimization direction).
+                    std::pair<ValueType, ValueType> stateBounds = getLowestBounds(explorationInformation.optimizationDirection);
                     
                     for (auto const& choice : behavior) {
                         for (auto const& entry : choice) {
@@ -251,7 +247,7 @@ namespace storm {
                         
                         std::pair<ValueType, ValueType> actionBounds = computeBoundsOfAction(startRow + currentAction, explorationInformation, bounds);
                         bounds.initializeBoundsForNextAction(actionBounds);
-                        stateBounds = std::make_pair(std::max(stateBounds.first, actionBounds.first), std::max(stateBounds.second, actionBounds.second));
+                        stateBounds = combineBounds(explorationInformation.optimizationDirection, stateBounds, actionBounds);
 
                         STORM_LOG_TRACE("Initializing bounds of action " << (startRow + currentAction) << " to " << bounds.getLowerBoundForAction(startRow + currentAction) << " and " << bounds.getUpperBoundForAction(startRow + currentAction) << ".");
                         
@@ -289,16 +285,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        uint32_t SparseMdpLearningModelChecker<ValueType>::sampleMaxAction(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues& bounds) const {
-            StateType rowGroup = explorationInformation.getRowGroup(currentStateId);
-            
-            // First, determine all maximizing actions.
-            std::vector<ActionType> allMaxActions;
-            
+        uint32_t SparseMdpLearningModelChecker<ValueType>::sampleActionOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues& bounds) const {
             // Determine the values of all available actions.
             std::vector<std::pair<ActionType, ValueType>> actionValues;
-            auto choicesInEcIt = explorationInformation.stateToLeavingChoicesOfEndComponent.find(currentStateId);
-            if (choicesInEcIt != explorationInformation.stateToLeavingChoicesOfEndComponent.end()) {
+            StateType rowGroup = explorationInformation.getRowGroup(currentStateId);
+            auto choicesInEcIt = explorationInformation.stateToLeavingActionsOfEndComponent.find(currentStateId);
+            if (choicesInEcIt != explorationInformation.stateToLeavingActionsOfEndComponent.end()) {
                 STORM_LOG_TRACE("Sampling from actions leaving the previously detected EC.");
                 for (auto const& row : *choicesInEcIt->second) {
                     actionValues.push_back(std::make_pair(row, computeUpperBoundOfAction(row, explorationInformation, bounds)));
@@ -313,8 +305,14 @@ namespace storm {
             
             STORM_LOG_ASSERT(!actionValues.empty(), "Values for actions must not be empty.");
             
-            std::sort(actionValues.begin(), actionValues.end(), [] (std::pair<ActionType, ValueType> const& a, std::pair<ActionType, ValueType> const& b) { return a.second > b.second; } );
+            // Sort the actions wrt. to the optimization direction.
+            if (explorationInformation.optimizationDirection == storm::OptimizationDirection::Maximize) {
+                std::sort(actionValues.begin(), actionValues.end(), [] (std::pair<ActionType, ValueType> const& a, std::pair<ActionType, ValueType> const& b) { return a.second > b.second; } );
+            } else {
+                std::sort(actionValues.begin(), actionValues.end(), [] (std::pair<ActionType, ValueType> const& a, std::pair<ActionType, ValueType> const& b) { return a.second < b.second; } );
+            }
             
+            // Determine the first elements of the sorted range that agree on their value.
             auto end = ++actionValues.begin();
             while (end != actionValues.end() && comparator.isEqual(actionValues.begin()->second, end->second)) {
                 ++end;
@@ -416,14 +414,14 @@ namespace storm {
                     StateType originalState = relevantStates[stateAndChoices.first];
                     uint32_t originalRowGroup = explorationInformation.getRowGroup(originalState);
                     
-                    // TODO: This checks for a target state is a bit hackish and only works for max probabilities.
-                    if (!containsTargetState && comparator.isOne(bounds.getLowerBoundForRowGroup(originalRowGroup, explorationInformation))) {
+                    // Check whether a target state is contained in the MEC.
+                    if (!containsTargetState && comparator.isOne(bounds.getLowerBoundForRowGroup(originalRowGroup))) {
                         containsTargetState = true;
                     }
-                    
+
+                    // For each state, compute the actions that leave the MEC.
                     auto includedChoicesIt = stateAndChoices.second.begin();
                     auto includedChoicesIte = stateAndChoices.second.end();
-                    
                     for (auto action = explorationInformation.getStartRowOfGroup(originalRowGroup); action < explorationInformation.getStartRowOfGroup(originalRowGroup + 1); ++action) {
                         if (includedChoicesIt != includedChoicesIte) {
                             STORM_LOG_TRACE("Next (local) choice contained in MEC is " << (*includedChoicesIt - relevantStatesMatrix.getRowGroupIndices()[stateAndChoices.first]));
@@ -441,7 +439,7 @@ namespace storm {
                         }
                     }
                     
-                    explorationInformation.stateToLeavingChoicesOfEndComponent[originalState] = leavingChoices;
+                    explorationInformation.stateToLeavingActionsOfEndComponent[originalState] = leavingChoices;
                 }
                 
                 // If one of the states of the EC is a target state, all states in the EC have probability 1.
@@ -489,28 +487,6 @@ namespace storm {
         }
         
         template<typename ValueType>
-        ValueType SparseMdpLearningModelChecker<ValueType>::computeLowerBoundOfState(StateType const& state, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const {
-            StateType group = explorationInformation.getRowGroup(state);
-            ValueType result = storm::utility::zero<ValueType>();
-            for (ActionType action = explorationInformation.getStartRowOfGroup(group); action < explorationInformation.getStartRowOfGroup(group + 1); ++action) {
-                ValueType actionValue = computeLowerBoundOfAction(action, explorationInformation, bounds);
-                result = std::max(actionValue, result);
-            }
-            return result;
-        }
-    
-        template<typename ValueType>
-        ValueType SparseMdpLearningModelChecker<ValueType>::computeUpperBoundOfState(StateType const& state, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const {
-            StateType group = explorationInformation.getRowGroup(state);
-            ValueType result = storm::utility::zero<ValueType>();
-            for (ActionType action = explorationInformation.getStartRowOfGroup(group); action < explorationInformation.getStartRowOfGroup(group + 1); ++action) {
-                ValueType actionValue = computeUpperBoundOfAction(action, explorationInformation, bounds);
-                result = std::max(actionValue, result);
-            }
-            return result;
-        }
-        
-        template<typename ValueType>
         std::pair<ValueType, ValueType> SparseMdpLearningModelChecker<ValueType>::computeBoundsOfAction(ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const {
             // TODO: take into account self-loops?
             std::pair<ValueType, ValueType> result = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
@@ -524,11 +500,10 @@ namespace storm {
         template<typename ValueType>
         std::pair<ValueType, ValueType> SparseMdpLearningModelChecker<ValueType>::computeBoundsOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const {
             StateType group = explorationInformation.getRowGroup(currentStateId);
-            std::pair<ValueType, ValueType> result = std::make_pair(storm::utility::zero<ValueType>(), storm::utility::zero<ValueType>());
+            std::pair<ValueType, ValueType> result = getLowestBounds(explorationInformation.optimizationDirection);
             for (ActionType action = explorationInformation.getStartRowOfGroup(group); action < explorationInformation.getStartRowOfGroup(group + 1); ++action) {
                 std::pair<ValueType, ValueType> actionValues = computeBoundsOfAction(action, explorationInformation, bounds);
-                result.first = std::max(actionValues.first, result.first);
-                result.second = std::max(actionValues.second, result.second);
+                result = combineBounds(explorationInformation.optimizationDirection, result, actionValues);
             }
             return result;
         }
@@ -541,22 +516,6 @@ namespace storm {
                 stack.pop_back();
             }
         }
-
-        template<typename ValueType>
-        ValueType SparseMdpLearningModelChecker<ValueType>::computeUpperBoundOverAllOtherActions(StateType const& state, ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const {
-            ValueType max = storm::utility::zero<ValueType>();
-            
-            ActionType group = explorationInformation.getRowGroup(state);
-            for (auto currentAction = explorationInformation.getStartRowOfGroup(group); currentAction < explorationInformation.getStartRowOfGroup(group + 1); ++currentAction) {
-                if (currentAction == action) {
-                    continue;
-                }
-                
-                max = std::max(max, computeUpperBoundOfAction(currentAction, explorationInformation, bounds));
-            }
-            
-            return max;
-        }
         
         template<typename ValueType>
         void SparseMdpLearningModelChecker<ValueType>::updateProbabilityOfAction(StateType const& state, ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues& bounds) const {
@@ -567,15 +526,71 @@ namespace storm {
             bounds.setBoundsForAction(action, newBoundsForAction);
             
             // Check if we need to update the values for the states.
-            bounds.setNewLowerBoundOfStateIfGreaterThanOld(state, explorationInformation, newBoundsForAction.first);
-            
-            StateType rowGroup = explorationInformation.getRowGroup(state);
-            if (newBoundsForAction.second < bounds.getUpperBoundForRowGroup(rowGroup)) {
-                if (explorationInformation.getRowGroupSize(rowGroup) > 1) {
-                    newBoundsForAction.second = std::max(newBoundsForAction.second, computeUpperBoundOverAllOtherActions(state, action, explorationInformation, bounds));
-                }
+            if (explorationInformation.optimizationDirection == storm::OptimizationDirection::Maximize) {
+                bounds.setLowerBoundOfStateIfGreaterThanOld(state, explorationInformation, newBoundsForAction.first);
 
-                bounds.setUpperBoundForState(state, explorationInformation, newBoundsForAction.second);
+                StateType rowGroup = explorationInformation.getRowGroup(state);
+                if (newBoundsForAction.second < bounds.getUpperBoundForRowGroup(rowGroup)) {
+                    if (explorationInformation.getRowGroupSize(rowGroup) > 1) {
+                        newBoundsForAction.second = std::max(newBoundsForAction.second, computeBoundOverAllOtherActions(storm::OptimizationDirection::Maximize, state, action, explorationInformation, bounds));
+                    }
+                    
+                    bounds.setUpperBoundForRowGroup(rowGroup, newBoundsForAction.second);
+                }
+            } else {
+                bounds.setUpperBoundOfStateIfLessThanOld(state, explorationInformation, newBoundsForAction.second);
+
+                StateType rowGroup = explorationInformation.getRowGroup(state);
+                if (bounds.getLowerBoundForRowGroup(rowGroup) < newBoundsForAction.first) {
+                    if (explorationInformation.getRowGroupSize(rowGroup) > 1) {
+                        newBoundsForAction.first = std::min(newBoundsForAction.first, computeBoundOverAllOtherActions(storm::OptimizationDirection::Maximize, state, action, explorationInformation, bounds));
+                    }
+                    
+                    bounds.setLowerBoundForRowGroup(rowGroup, newBoundsForAction.first);
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        ValueType SparseMdpLearningModelChecker<ValueType>::computeBoundOverAllOtherActions(storm::OptimizationDirection const& direction, StateType const& state, ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const {
+            ValueType bound = getLowestBound(explorationInformation.optimizationDirection);
+            
+            ActionType group = explorationInformation.getRowGroup(state);
+            for (auto currentAction = explorationInformation.getStartRowOfGroup(group); currentAction < explorationInformation.getStartRowOfGroup(group + 1); ++currentAction) {
+                if (currentAction == action) {
+                    continue;
+                }
+                
+                if (direction == storm::OptimizationDirection::Maximize) {
+                    bound = std::max(bound, computeUpperBoundOfAction(currentAction, explorationInformation, bounds));
+                } else {
+                    bound = std::min(bound, computeLowerBoundOfAction(currentAction, explorationInformation, bounds));
+                }
+            }
+            return bound;
+        }
+        
+        template<typename ValueType>
+        std::pair<ValueType, ValueType> SparseMdpLearningModelChecker<ValueType>::getLowestBounds(storm::OptimizationDirection const& direction) const {
+            ValueType val = getLowestBound(direction);
+            return std::make_pair(val, val);
+        }
+        
+        template<typename ValueType>
+        ValueType SparseMdpLearningModelChecker<ValueType>::getLowestBound(storm::OptimizationDirection const& direction) const {
+            if (direction == storm::OptimizationDirection::Maximize) {
+                return storm::utility::zero<ValueType>();
+            } else {
+                return storm::utility::one<ValueType>();
+            }
+        }
+        
+        template<typename ValueType>
+        std::pair<ValueType, ValueType> SparseMdpLearningModelChecker<ValueType>::combineBounds(storm::OptimizationDirection const& direction, std::pair<ValueType, ValueType> const& bounds1, std::pair<ValueType, ValueType> const& bounds2) const {
+            if (direction == storm::OptimizationDirection::Maximize) {
+                return std::make_pair(std::max(bounds1.first, bounds2.first), std::max(bounds1.second, bounds2.second));
+            } else {
+                return std::make_pair(std::min(bounds1.first, bounds2.first), std::min(bounds1.second, bounds2.second));
             }
         }
         

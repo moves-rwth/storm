@@ -14,6 +14,8 @@ namespace storm {
                 // Intentionally left empty.
             }
             
+            FormulaContext const& getContext() const;
+            
             virtual bool isEventuallyFormula() const override;
             virtual bool isReachabilityProbabilityFormula() const override;
             virtual bool isReachabilityRewardFormula() const override;

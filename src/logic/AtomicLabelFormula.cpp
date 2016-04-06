@@ -1,5 +1,6 @@
 #include "src/logic/AtomicLabelFormula.h"
 
+#include "src/logic/AtomicExpressionFormula.h"
 #include "src/logic/FormulaVisitor.h"
 
 namespace storm {

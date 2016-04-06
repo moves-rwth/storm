@@ -187,6 +187,15 @@ namespace storm {
             std::shared_ptr<Formula const> asSharedPointer() const;
             
             virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const = 0;
+            virtual std::shared_ptr<Formula> substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const;
+
+            /*!
+             * Takes the formula and converts it to an equivalent expression assuming that only atomic expression formulas
+             * and boolean connectives appear in the formula.
+             *
+             * @return An equivalent expression.
+             */
+            storm::expressions::Expression toExpression() const;
             
             std::string toString() const;
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;

@@ -101,7 +101,7 @@ namespace storm {
                 storm::OptimizationDirection optimizationDirection;
                 StateSet terminalStates;
                 
-                std::unordered_map<StateType, ActionSetPointer> stateToLeavingChoicesOfEndComponent;
+                std::unordered_map<StateType, ActionSetPointer> stateToLeavingActionsOfEndComponent;
                 
                 void setInitialStates(std::vector<StateType> const& initialStates) {
                     stateStorage.initialStateIndices = initialStates;
@@ -208,11 +208,11 @@ namespace storm {
                     if (index == explorationInformation.getUnexploredMarker()) {
                         return storm::utility::zero<ValueType>();
                     } else {
-                        return getLowerBoundForRowGroup(index, explorationInformation);
+                        return getLowerBoundForRowGroup(index);
                     }
                 }
                 
-                ValueType getLowerBoundForRowGroup(StateType const& rowGroup, ExplorationInformation const& explorationInformation) const {
+                ValueType const& getLowerBoundForRowGroup(StateType const& rowGroup) const {
                     return lowerBoundsPerState[rowGroup];
                 }
                 
@@ -257,11 +257,19 @@ namespace storm {
                 }
                 
                 void setLowerBoundForState(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& value) {
-                    lowerBoundsPerState[explorationInformation.getRowGroup(state)] = value;
+                    setLowerBoundForRowGroup(explorationInformation.getRowGroup(state), value);
+                }
+                
+                void setLowerBoundForRowGroup(StateType const& group, ValueType const& value) {
+                    lowerBoundsPerState[group] = value;
                 }
                 
                 void setUpperBoundForState(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& value) {
-                    upperBoundsPerState[explorationInformation.getRowGroup(state)] = value;
+                    setUpperBoundForRowGroup(explorationInformation.getRowGroup(state), value);
+                }
+                
+                void setUpperBoundForRowGroup(StateType const& group, ValueType const& value) {
+                    upperBoundsPerState[group] = value;
                 }
                 
                 void setBoundsForAction(ActionType const& action, std::pair<ValueType, ValueType> const& values) {
@@ -275,7 +283,7 @@ namespace storm {
                     upperBoundsPerState[rowGroup] = values.second;
                 }
                 
-                bool setNewLowerBoundOfStateIfGreaterThanOld(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& newLowerValue) {
+                bool setLowerBoundOfStateIfGreaterThanOld(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& newLowerValue) {
                     StateType const& rowGroup = explorationInformation.getRowGroup(state);
                     if (lowerBoundsPerState[rowGroup] < newLowerValue) {
                         lowerBoundsPerState[rowGroup] = newLowerValue;
@@ -284,7 +292,7 @@ namespace storm {
                     return false;
                 }
 
-                bool setNewUpperBoundOfStateIfLessThanOld(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& newUpperValue) {
+                bool setUpperBoundOfStateIfLessThanOld(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& newUpperValue) {
                     StateType const& rowGroup = explorationInformation.getRowGroup(state);
                     if (newUpperValue < upperBoundsPerState[rowGroup]) {
                         upperBoundsPerState[rowGroup] = newUpperValue;
@@ -300,11 +308,11 @@ namespace storm {
             
             std::tuple<StateType, ValueType, ValueType> performLearningProcedure(StateGeneration& stateGeneration, ExplorationInformation& explorationInformation) const;
 
-            bool samplePathFromState(StateGeneration& stateGeneration, ExplorationInformation& explorationInformation, StateActionStack& stack, BoundValues& bounds, Statistics& stats) const;
+            bool samplePathFromInitialState(StateGeneration& stateGeneration, ExplorationInformation& explorationInformation, StateActionStack& stack, BoundValues& bounds, Statistics& stats) const;
             
             bool exploreState(StateGeneration& stateGeneration, StateType const& currentStateId, storm::generator::CompressedState const& currentState, ExplorationInformation& explorationInformation, BoundValues& bounds, Statistics& stats) const;
             
-            uint32_t sampleMaxAction(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues& bounds) const;
+            uint32_t sampleActionOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues& bounds) const;
 
             StateType sampleSuccessorFromAction(ActionType const& chosenAction, ExplorationInformation const& explorationInformation) const;
             
@@ -315,12 +323,14 @@ namespace storm {
             void updateProbabilityOfAction(StateType const& state, ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues& bounds) const;
             
             std::pair<ValueType, ValueType> computeBoundsOfAction(ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
-            ValueType computeUpperBoundOverAllOtherActions(StateType const& state, ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
+            ValueType computeBoundOverAllOtherActions(storm::OptimizationDirection const& direction, StateType const& state, ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
             std::pair<ValueType, ValueType> computeBoundsOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
             ValueType computeLowerBoundOfAction(ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
             ValueType computeUpperBoundOfAction(ActionType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
-            ValueType computeLowerBoundOfState(StateType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
-            ValueType computeUpperBoundOfState(StateType const& action, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
+            
+            std::pair<ValueType, ValueType> getLowestBounds(storm::OptimizationDirection const& direction) const;
+            ValueType getLowestBound(storm::OptimizationDirection const& direction) const;
+            std::pair<ValueType, ValueType> combineBounds(storm::OptimizationDirection const& direction, std::pair<ValueType, ValueType> const& bounds1, std::pair<ValueType, ValueType> const& bounds2) const;
             
             // The program that defines the model to check.
             storm::prism::Program program;

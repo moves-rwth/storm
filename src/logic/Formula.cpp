@@ -3,6 +3,8 @@
 
 #include "src/logic/FragmentChecker.h"
 #include "src/logic/FormulaInformationVisitor.h"
+#include "src/logic/LabelSubstitutionVisitor.h"
+#include "src/logic/ToExpressionVisitor.h"
 
 namespace storm {
     namespace logic {
@@ -404,6 +406,16 @@ namespace storm {
             std::set<std::string> referencedRewardModels;
             this->gatherReferencedRewardModels(referencedRewardModels);
             return referencedRewardModels;
+        }
+        
+        std::shared_ptr<Formula> Formula::substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const {
+            LabelSubstitutionVisitor visitor(labelSubstitution);
+            return visitor.substitute(*this);
+        }
+        
+        storm::expressions::Expression Formula::toExpression() const {
+            ToExpressionVisitor visitor;
+            return visitor.toExpression(*this);
         }
         
         std::shared_ptr<Formula const> Formula::asSharedPointer() {
