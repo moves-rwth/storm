@@ -882,7 +882,7 @@ namespace storm {
                     }
                 }
             }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Illlegal elimination order selected.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Illegal elimination order selected.");
         }
         
         template<typename SparseDtmcModelType>
