@@ -21,6 +21,8 @@ namespace storm {
             template<typename StateType>
             class StateStorage;
         }
+        
+        class MaximalEndComponent;
     }
     
     namespace generator {
@@ -49,7 +51,7 @@ namespace storm {
         private:
             // A struct that keeps track of certain statistics during the computation.
             struct Statistics {
-                Statistics() : iterations(0), maxPathLength(0), numberOfTargetStates(0), numberOfExploredStates(0), pathLengthUntilEndComponentDetection(27) {
+                Statistics() : iterations(0), maxPathLength(0), numberOfTargetStates(0), numberOfExploredStates(0), pathLengthUntilEndComponentDetection(10000) {
                     // Intentionally left empty.
                 }
                 
@@ -170,6 +172,10 @@ namespace storm {
                     return rowGroupIndices[group + 1] - rowGroupIndices[group];
                 }
                 
+                bool onlyOneActionAvailable(StateType const& group) const {
+                    return getRowGroupSize(group) == 1;
+                }
+                
                 void addTerminalState(StateType const& state) {
                     terminalStates.insert(state);
                 }
@@ -184,6 +190,14 @@ namespace storm {
                 
                 void addRowsToMatrix(std::size_t const& count) {
                     matrix.resize(matrix.size() + count);
+                }
+                
+                bool maximize() const {
+                    return optimizationDirection == storm::OptimizationDirection::Maximize;
+                }
+                
+                bool minimize() const {
+                    return !maximize();
                 }
             };
             
@@ -239,6 +253,14 @@ namespace storm {
 
                 ValueType const& getUpperBoundForAction(ActionType const& action) const {
                     return upperBoundsPerAction[action];
+                }
+                
+                ValueType const& getBoundForAction(storm::OptimizationDirection const& direction, ActionType const& action) const {
+                    if (direction == storm::OptimizationDirection::Maximize) {
+                        return getUpperBoundForAction(action);
+                    } else {
+                        return getLowerBoundForAction(action);
+                    }
                 }
                 
                 ValueType getDifferenceOfStateBounds(StateType const& state, ExplorationInformation const& explorationInformation) {
@@ -312,11 +334,15 @@ namespace storm {
             
             bool exploreState(StateGeneration& stateGeneration, StateType const& currentStateId, storm::generator::CompressedState const& currentState, ExplorationInformation& explorationInformation, BoundValues& bounds, Statistics& stats) const;
             
-            uint32_t sampleActionOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues& bounds) const;
+            ActionType sampleActionOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues& bounds) const;
 
             StateType sampleSuccessorFromAction(ActionType const& chosenAction, ExplorationInformation const& explorationInformation) const;
             
             void detectEndComponents(StateActionStack const& stack, ExplorationInformation& explorationInformation, BoundValues& bounds) const;
+            
+            void analyzeMecForMaximalProbabilities(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation& explorationInformation, BoundValues& bounds) const;
+
+            void analyzeMecForMinimalProbabilities(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation& explorationInformation, BoundValues& bounds) const;
             
             void updateProbabilityBoundsAlongSampledPath(StateActionStack& stack, ExplorationInformation const& explorationInformation, BoundValues& bounds) const;
 

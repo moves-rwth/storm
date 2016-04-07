@@ -18,11 +18,7 @@ namespace storm {
         boost::any LongRunAverageOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
-        std::shared_ptr<Formula> LongRunAverageOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<LongRunAverageOperatorFormula>(this->getSubformula().substitute(substitution), this->operatorInformation);
-        }
-        
+                
         std::ostream& LongRunAverageOperatorFormula::writeToStream(std::ostream& out) const {
             out << "LRA";
             OperatorFormula::writeToStream(out);

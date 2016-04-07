@@ -15,6 +15,7 @@
 #include "src/settings/modules/GeneralSettings.h"
 
 #include "src/utility/macros.h"
+#include "src/exceptions/InvalidOperationException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/NotSupportedException.h"
 
@@ -58,7 +59,13 @@ namespace storm {
         template<typename ValueType>
         storm::expressions::Expression SparseMdpLearningModelChecker<ValueType>::getTargetStateExpression(storm::logic::Formula const& subformula) const {
             std::shared_ptr<storm::logic::Formula> preparedSubformula = subformula.substitute(program.getLabelToExpressionMapping());
-            return preparedSubformula->toExpression();
+            storm::expressions::Expression result;
+            try {
+                result = preparedSubformula->toExpression();
+            } catch(storm::exceptions::InvalidOperationException const& e) {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The property refers to unknown labels.");
+            }
+            return result;
         }
         
         template<typename ValueType>
@@ -284,28 +291,41 @@ namespace storm {
         }
         
         template<typename ValueType>
-        uint32_t SparseMdpLearningModelChecker<ValueType>::sampleActionOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues& bounds) const {
+        typename SparseMdpLearningModelChecker<ValueType>::ActionType SparseMdpLearningModelChecker<ValueType>::sampleActionOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues& bounds) const {
             // Determine the values of all available actions.
             std::vector<std::pair<ActionType, ValueType>> actionValues;
             StateType rowGroup = explorationInformation.getRowGroup(currentStateId);
             auto choicesInEcIt = explorationInformation.stateToLeavingActionsOfEndComponent.find(currentStateId);
+            
+            // Check for cases in which we do not need to perform more work.
+            if (choicesInEcIt == explorationInformation.stateToLeavingActionsOfEndComponent.end()) {
+                if (explorationInformation.onlyOneActionAvailable(rowGroup)) {
+                    return explorationInformation.getStartRowOfGroup(rowGroup);
+                }
+            } else {
+                if (choicesInEcIt->second->size() == 1) {
+                    return *choicesInEcIt->second->begin();
+                }
+            }
+            
+            // If there are more choices to consider, start by gathering the values of relevant actions.
             if (choicesInEcIt != explorationInformation.stateToLeavingActionsOfEndComponent.end()) {
                 STORM_LOG_TRACE("Sampling from actions leaving the previously detected EC.");
                 for (auto const& row : *choicesInEcIt->second) {
-                    actionValues.push_back(std::make_pair(row, computeUpperBoundOfAction(row, explorationInformation, bounds)));
+                    actionValues.push_back(std::make_pair(row, bounds.getBoundForAction(explorationInformation.optimizationDirection, row)));
                 }
             } else {
                 STORM_LOG_TRACE("Sampling from actions leaving the state.");
                 
                 for (uint32_t row = explorationInformation.getStartRowOfGroup(rowGroup); row < explorationInformation.getStartRowOfGroup(rowGroup + 1); ++row) {
-                    actionValues.push_back(std::make_pair(row, computeUpperBoundOfAction(row, explorationInformation, bounds)));
+                    actionValues.push_back(std::make_pair(row, bounds.getBoundForAction(explorationInformation.optimizationDirection, row)));
                 }
             }
             
             STORM_LOG_ASSERT(!actionValues.empty(), "Values for actions must not be empty.");
             
             // Sort the actions wrt. to the optimization direction.
-            if (explorationInformation.optimizationDirection == storm::OptimizationDirection::Maximize) {
+            if (explorationInformation.maximize()) {
                 std::sort(actionValues.begin(), actionValues.end(), [] (std::pair<ActionType, ValueType> const& a, std::pair<ActionType, ValueType> const& b) { return a.second > b.second; } );
             } else {
                 std::sort(actionValues.begin(), actionValues.end(), [] (std::pair<ActionType, ValueType> const& a, std::pair<ActionType, ValueType> const& b) { return a.second < b.second; } );
@@ -349,14 +369,13 @@ namespace storm {
             // Determine the set of states that was expanded.
             std::vector<StateType> relevantStates;
             for (StateType state = 0; state < explorationInformation.stateStorage.numberOfStates; ++state) {
-                if (!explorationInformation.isUnexplored(state)) {
+                // Add the state to the relevant states if it's unexplored. Additionally, if we are computing minimal
+                // probabilities, we only consider it relevant if it's not a target state.
+                if (!explorationInformation.isUnexplored(state) && (explorationInformation.maximize() || !comparator.isOne(bounds.getLowerBoundForState(state, explorationInformation)))) {
                     relevantStates.push_back(state);
                 }
             }
-
-            // Sort according to the actual row groups so we can insert the elements in order later.
-            std::sort(relevantStates.begin(), relevantStates.end(), [&explorationInformation] (StateType const& a, StateType const& b) { return explorationInformation.getRowGroup(a) < explorationInformation.getRowGroup(b); });
-            StateType unexploredState = relevantStates.size();
+            StateType sink = relevantStates.size();
             
             // Create a mapping for faster look-up during the translation of flexible matrix to the real sparse matrix.
             std::unordered_map<StateType, StateType> relevantStateToNewRowGroupMapping;
@@ -382,14 +401,14 @@ namespace storm {
                         }
                     }
                     if (unexpandedProbability != storm::utility::zero<ValueType>()) {
-                        builder.addNextValue(currentRow, unexploredState, unexpandedProbability);
+                        builder.addNextValue(currentRow, sink, unexpandedProbability);
                     }
                     ++currentRow;
                 }
             }
             // Then, make the unexpanded state absorbing.
             builder.newRowGroup(currentRow);
-            builder.addNextValue(currentRow, unexploredState, storm::utility::one<ValueType>());
+            builder.addNextValue(currentRow, sink, storm::utility::one<ValueType>());
             STORM_LOG_TRACE("Successfully built matrix for MEC decomposition.");
             
             // Go on to step 2.
@@ -399,71 +418,99 @@ namespace storm {
             
             // 3. Analyze the MEC decomposition.
             for (auto const& mec : mecDecomposition) {
-                // Ignore the (expected) MEC of the unexplored state.
-                if (mec.containsState(unexploredState)) {
+                // Ignore the (expected) MEC of the sink state.
+                if (mec.containsState(sink)) {
                     continue;
                 }
                 
-                bool containsTargetState = false;
+                if (explorationInformation.maximize()) {
+                    analyzeMecForMaximalProbabilities(mec, relevantStates, relevantStatesMatrix, explorationInformation, bounds);
+                } else {
+                    analyzeMecForMinimalProbabilities(mec, relevantStates, relevantStatesMatrix, explorationInformation, bounds);
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        void SparseMdpLearningModelChecker<ValueType>::analyzeMecForMaximalProbabilities(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation& explorationInformation, BoundValues& bounds) const {
+            // For maximal probabilities, we check (a) which MECs contain a target state, because the associated states
+            // have a probability of 1 (and we can therefore set their lower bounds to 1) and (b) which of the remaining
+            // MECs have no outgoing action, because the associated states have a probability of 0 (and we can therefore
+            // set their upper bounds to 0).
+            
+            bool containsTargetState = false;
+            
+            // Now we record all choices leaving the EC.
+            ActionSetPointer leavingChoices = std::make_shared<ActionSet>();
+            for (auto const& stateAndChoices : mec) {
+                // Compute the state of the original model that corresponds to the current state.
+                StateType originalState = relevantStates[stateAndChoices.first];
+                StateType originalRowGroup = explorationInformation.getRowGroup(originalState);
                 
-                // Now we record all choices leaving the EC.
-                ActionSetPointer leavingChoices = std::make_shared<ActionSet>();
+                // Check whether a target state is contained in the MEC.
+                if (!containsTargetState && comparator.isOne(bounds.getLowerBoundForRowGroup(originalRowGroup))) {
+                    containsTargetState = true;
+                }
+                
+                // For each state, compute the actions that leave the MEC.
+                auto includedChoicesIt = stateAndChoices.second.begin();
+                auto includedChoicesIte = stateAndChoices.second.end();
+                for (auto action = explorationInformation.getStartRowOfGroup(originalRowGroup); action < explorationInformation.getStartRowOfGroup(originalRowGroup + 1); ++action) {
+                    if (includedChoicesIt != includedChoicesIte) {
+                        STORM_LOG_TRACE("Next (local) choice contained in MEC is " << (*includedChoicesIt - relevantStatesMatrix.getRowGroupIndices()[stateAndChoices.first]));
+                        STORM_LOG_TRACE("Current (local) choice iterated is " << (action - explorationInformation.getStartRowOfGroup(originalRowGroup)));
+                        if (action - explorationInformation.getStartRowOfGroup(originalRowGroup) != *includedChoicesIt - relevantStatesMatrix.getRowGroupIndices()[stateAndChoices.first]) {
+                            STORM_LOG_TRACE("Choice leaves the EC.");
+                            leavingChoices->insert(action);
+                        } else {
+                            STORM_LOG_TRACE("Choice stays in the EC.");
+                            ++includedChoicesIt;
+                        }
+                    } else {
+                        STORM_LOG_TRACE("Choice leaves the EC, because there is no more choice staying in the EC.");
+                        leavingChoices->insert(action);
+                    }
+                }
+                
+                explorationInformation.stateToLeavingActionsOfEndComponent[originalState] = leavingChoices;
+            }
+            
+            // If one of the states of the EC is a target state, all states in the EC have probability 1.
+            if (containsTargetState) {
+                STORM_LOG_TRACE("MEC contains a target state.");
                 for (auto const& stateAndChoices : mec) {
                     // Compute the state of the original model that corresponds to the current state.
-                    StateType originalState = relevantStates[stateAndChoices.first];
-                    uint32_t originalRowGroup = explorationInformation.getRowGroup(originalState);
+                    StateType const& originalState = relevantStates[stateAndChoices.first];
                     
-                    // Check whether a target state is contained in the MEC.
-                    if (!containsTargetState && comparator.isOne(bounds.getLowerBoundForRowGroup(originalRowGroup))) {
-                        containsTargetState = true;
-                    }
-
-                    // For each state, compute the actions that leave the MEC.
-                    auto includedChoicesIt = stateAndChoices.second.begin();
-                    auto includedChoicesIte = stateAndChoices.second.end();
-                    for (auto action = explorationInformation.getStartRowOfGroup(originalRowGroup); action < explorationInformation.getStartRowOfGroup(originalRowGroup + 1); ++action) {
-                        if (includedChoicesIt != includedChoicesIte) {
-                            STORM_LOG_TRACE("Next (local) choice contained in MEC is " << (*includedChoicesIt - relevantStatesMatrix.getRowGroupIndices()[stateAndChoices.first]));
-                            STORM_LOG_TRACE("Current (local) choice iterated is " << (action - explorationInformation.getStartRowOfGroup(originalRowGroup)));
-                            if (action - explorationInformation.getStartRowOfGroup(originalRowGroup) != *includedChoicesIt - relevantStatesMatrix.getRowGroupIndices()[stateAndChoices.first]) {
-                                STORM_LOG_TRACE("Choice leaves the EC.");
-                                leavingChoices->insert(action);
-                            } else {
-                                STORM_LOG_TRACE("Choice stays in the EC.");
-                                ++includedChoicesIt;
-                            }
-                        } else {
-                            STORM_LOG_TRACE("Choice leaves the EC, because there is no more choice staying in the EC.");
-                            leavingChoices->insert(action);
-                        }
-                    }
-                    
-                    explorationInformation.stateToLeavingActionsOfEndComponent[originalState] = leavingChoices;
+                    STORM_LOG_TRACE("Setting lower bound of state in row group " << explorationInformation.getRowGroup(originalState) << " to 1.");
+                    bounds.setLowerBoundForState(originalState, explorationInformation, storm::utility::one<ValueType>());
+                    explorationInformation.addTerminalState(originalState);
                 }
+            } else if (leavingChoices->empty()) {
+                STORM_LOG_TRACE("MEC's leaving choices are empty.");
+                // If there is no choice leaving the EC, but it contains no target state, all states have probability 0.
+                for (auto const& stateAndChoices : mec) {
+                    // Compute the state of the original model that corresponds to the current state.
+                    StateType const& originalState = relevantStates[stateAndChoices.first];
+                    
+                    STORM_LOG_TRACE("Setting upper bound of state in row group " << explorationInformation.getRowGroup(originalState) << " to 0.");
+                    bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
+                    explorationInformation.addTerminalState(originalState);
+                }
+            }
+        }
+        
+        template<typename ValueType>
+        void SparseMdpLearningModelChecker<ValueType>::analyzeMecForMinimalProbabilities(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation& explorationInformation, BoundValues& bounds) const {
+            // For minimal probabilities, all found MECs are guaranteed to not contain a target state. Hence, in all
+            // associated states, the probability is 0 and we can set the upper bounds of the states to 0).
+            
+            for (auto const& stateAndChoices : mec) {
+                // Compute the state of the original model that corresponds to the current state.
+                StateType originalState = relevantStates[stateAndChoices.first];
                 
-                // If one of the states of the EC is a target state, all states in the EC have probability 1.
-                if (containsTargetState) {
-                    STORM_LOG_TRACE("MEC contains a target state.");
-                    for (auto const& stateAndChoices : mec) {
-                        // Compute the state of the original model that corresponds to the current state.
-                        StateType const& originalState = relevantStates[stateAndChoices.first];
-                        
-                        STORM_LOG_TRACE("Setting lower bound of state in row group " << explorationInformation.getRowGroup(originalState) << " to 1.");
-                        bounds.setLowerBoundForState(originalState, explorationInformation, storm::utility::one<ValueType>());
-                        explorationInformation.addTerminalState(originalState);
-                    }
-                } else if (leavingChoices->empty()) {
-                    STORM_LOG_TRACE("MEC's leaving choices are empty.");
-                    // If there is no choice leaving the EC, but it contains no target state, all states have probability 0.
-                    for (auto const& stateAndChoices : mec) {
-                        // Compute the state of the original model that corresponds to the current state.
-                        StateType const& originalState = relevantStates[stateAndChoices.first];
-                        
-                        STORM_LOG_TRACE("Setting upper bound of state in row group " << explorationInformation.getRowGroup(originalState) << " to 0.");
-                        bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
-                        explorationInformation.addTerminalState(originalState);
-                    }
-                }
+                bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
+                explorationInformation.addTerminalState(originalState);
             }
         }
         
@@ -525,7 +572,7 @@ namespace storm {
             bounds.setBoundsForAction(action, newBoundsForAction);
             
             // Check if we need to update the values for the states.
-            if (explorationInformation.optimizationDirection == storm::OptimizationDirection::Maximize) {
+            if (explorationInformation.maximize()) {
                 bounds.setLowerBoundOfStateIfGreaterThanOld(state, explorationInformation, newBoundsForAction.first);
 
                 StateType rowGroup = explorationInformation.getRowGroup(state);
@@ -542,7 +589,8 @@ namespace storm {
                 StateType rowGroup = explorationInformation.getRowGroup(state);
                 if (bounds.getLowerBoundForRowGroup(rowGroup) < newBoundsForAction.first) {
                     if (explorationInformation.getRowGroupSize(rowGroup) > 1) {
-                        newBoundsForAction.first = std::min(newBoundsForAction.first, computeBoundOverAllOtherActions(storm::OptimizationDirection::Maximize, state, action, explorationInformation, bounds));
+                        ValueType min = computeBoundOverAllOtherActions(storm::OptimizationDirection::Minimize, state, action, explorationInformation, bounds);
+                        newBoundsForAction.first = std::min(newBoundsForAction.first, min);
                     }
                     
                     bounds.setLowerBoundForRowGroup(rowGroup, newBoundsForAction.first);

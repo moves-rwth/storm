@@ -21,7 +21,6 @@ namespace storm {
             } else {
                 return std::static_pointer_cast<Formula>(std::make_shared<AtomicLabelFormula>(f));
             }
-        }
-        
+        }        
     }
 }

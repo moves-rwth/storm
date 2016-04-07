@@ -33,11 +33,7 @@ namespace storm {
         boost::any ConditionalFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
-        std::shared_ptr<Formula> ConditionalFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<ConditionalFormula>(this->getSubformula().substitute(substitution), this->getConditionFormula().substitute(substitution), context);
-        }
-        
+                
         void ConditionalFormula::gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const {
             this->getSubformula().gatherAtomicExpressionFormulas(atomicExpressionFormulas);
             this->getConditionFormula().gatherAtomicExpressionFormulas(atomicExpressionFormulas);

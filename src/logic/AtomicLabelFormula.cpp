@@ -25,10 +25,6 @@ namespace storm {
             atomicExpressionFormulas.push_back(std::dynamic_pointer_cast<AtomicLabelFormula const>(this->shared_from_this()));
         }
         
-        std::shared_ptr<Formula> AtomicLabelFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<AtomicLabelFormula>(*this);
-        }
-        
         std::ostream& AtomicLabelFormula::writeToStream(std::ostream& out) const {
             out << "\"" << label << "\"";
             return out;
