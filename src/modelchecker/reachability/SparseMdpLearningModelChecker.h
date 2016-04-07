@@ -87,7 +87,7 @@ namespace storm {
             
             // A structure containing the data assembled during exploration.
             struct ExplorationInformation {
-                ExplorationInformation(uint_fast64_t bitsPerBucket, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker) {
+                ExplorationInformation(uint_fast64_t bitsPerBucket, bool localECDetection, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), localECDetection(localECDetection) {
                     // Intentionally left empty.
                 }
                 
@@ -104,6 +104,7 @@ namespace storm {
                 StateSet terminalStates;
                 
                 std::unordered_map<StateType, ActionSetPointer> stateToLeavingActionsOfEndComponent;
+                bool localECDetection;
                 
                 void setInitialStates(std::vector<StateType> const& initialStates) {
                     stateStorage.initialStateIndices = initialStates;
@@ -198,6 +199,14 @@ namespace storm {
                 
                 bool minimize() const {
                     return !maximize();
+                }
+                
+                bool useLocalECDetection() const {
+                    return localECDetection;
+                }
+
+                bool useGlobalECDetection() const {
+                    return !useLocalECDetection();
                 }
             };
             

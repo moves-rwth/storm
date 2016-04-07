@@ -26,6 +26,7 @@
 #include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+#include "src/settings/modules/LearningSettings.h"
 #include "src/utility/macros.h"
 #include "src/settings/Option.h"
 
@@ -546,6 +547,10 @@ namespace storm {
 
         storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const& sparseDtmcEliminationModelCheckerSettings() {
             return dynamic_cast<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const&>(manager().getModule(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::moduleName));
+        }
+        
+        storm::settings::modules::LearningSettings const& learningSettings() {
+            return dynamic_cast<storm::settings::modules::LearningSettings const&>(manager().getModule(storm::settings::modules::LearningSettings::moduleName));
         }
     }
 }

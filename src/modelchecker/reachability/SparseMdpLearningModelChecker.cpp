@@ -13,6 +13,7 @@
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/LearningSettings.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
@@ -42,7 +43,7 @@ namespace storm {
             
             StateGeneration stateGeneration(program, variableInformation, getTargetStateExpression(subformula));
             
-            ExplorationInformation explorationInformation(variableInformation.getTotalBitOffset(true));
+            ExplorationInformation explorationInformation(variableInformation.getTotalBitOffset(true), storm::settings::learningSettings().isLocalECDetectionSet());
             explorationInformation.optimizationDirection = checkTask.isOptimizationDirectionSet() ? checkTask.getOptimizationDirection() : storm::OptimizationDirection::Maximize;
             
             // The first row group starts at action 0.
@@ -361,18 +362,29 @@ namespace storm {
             // Outline:
             // 1. construct a sparse transition matrix of the relevant part of the state space.
             // 2. use this matrix to compute an MEC decomposition.
-            // 3. if non-empty analyze the decomposition for accepting/rejecting MECs.
+            // 3. if non-empty, analyze the decomposition for accepting/rejecting MECs.
             
             // Start with 1.
             storm::storage::SparseMatrixBuilder<ValueType> builder(0, 0, 0, false, true, 0);
             
             // Determine the set of states that was expanded.
             std::vector<StateType> relevantStates;
-            for (StateType state = 0; state < explorationInformation.stateStorage.numberOfStates; ++state) {
-                // Add the state to the relevant states if it's unexplored. Additionally, if we are computing minimal
-                // probabilities, we only consider it relevant if it's not a target state.
-                if (!explorationInformation.isUnexplored(state) && (explorationInformation.maximize() || !comparator.isOne(bounds.getLowerBoundForState(state, explorationInformation)))) {
-                    relevantStates.push_back(state);
+            if (explorationInformation.useLocalECDetection()) {
+                for (auto const& stateActionPair : stack) {
+                    if (explorationInformation.maximize() || !comparator.isOne(bounds.getLowerBoundForState(stateActionPair.first, explorationInformation))) {
+                        relevantStates.push_back(stateActionPair.first);
+                    }
+                }
+                std::sort(relevantStates.begin(), relevantStates.end());
+                auto newEnd = std::unique(relevantStates.begin(), relevantStates.end());
+                relevantStates.resize(std::distance(relevantStates.begin(), newEnd));
+            } else {
+                for (StateType state = 0; state < explorationInformation.stateStorage.numberOfStates; ++state) {
+                    // Add the state to the relevant states if it's unexplored. Additionally, if we are computing minimal
+                    // probabilities, we only consider it relevant if it's not a target state.
+                    if (!explorationInformation.isUnexplored(state) && (explorationInformation.maximize() || !comparator.isOne(bounds.getLowerBoundForState(state, explorationInformation)))) {
+                        relevantStates.push_back(state);
+                    }
                 }
             }
             StateType sink = relevantStates.size();
