@@ -235,6 +235,11 @@ namespace storm {
             
         private:
             void propagateActivation(size_t representativeId);
+            
+            /*!
+             * Sort failable BEs in decreasing order of their active failure rate.
+             */
+            void sortFailableBEs();
 
         };
 

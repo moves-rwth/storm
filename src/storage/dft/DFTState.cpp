@@ -21,6 +21,7 @@ namespace storm {
 
             std::vector<size_t> alwaysActiveBEs = dft.nonColdBEs();
             mIsCurrentlyFailableBE.insert(mIsCurrentlyFailableBE.end(), alwaysActiveBEs.begin(), alwaysActiveBEs.end());
+            sortFailableBEs();
         }
         
         template<typename ValueType>
@@ -41,6 +42,7 @@ namespace storm {
                     STORM_LOG_TRACE("Spare " << index << " uses " << useId);
                 }
             }
+            sortFailableBEs();
             
             // Initialize failable dependencies
             for (size_t dependencyId : mDft.getDependencies()) {
@@ -208,7 +210,7 @@ namespace storm {
             if (nrFailableDependencies() > 0) {
                 // Consider failure due to dependency
                 assert(index < nrFailableDependencies());
-                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(getDependencyId(index));
+                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mFailableDependencies[index]);
                 std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvent()->id()), true);
                 mFailableDependencies.erase(mFailableDependencies.begin() + index);
                 setFailed(res.first->id());
@@ -260,6 +262,7 @@ namespace storm {
                     propagateActivation(uses(elem));
                 }
             }
+            sortFailableBEs();
         }
 
         template<typename ValueType>
@@ -353,6 +356,16 @@ namespace storm {
                 } while (n > 0);
             }
             return changed;
+        }
+        
+        template<typename ValueType>
+        void DFTState<ValueType>::sortFailableBEs() {
+            std::sort( mIsCurrentlyFailableBE.begin( ), mIsCurrentlyFailableBE.end( ), [&](size_t const& lhs, size_t const& rhs) {
+                ValueType leftRate = mDft.getBasicElement(lhs)->activeFailureRate();
+                ValueType rightRate = mDft.getBasicElement(rhs)->activeFailureRate();
+                // Sort decreasing
+                return rightRate < leftRate;
+            });
         }
 
 
