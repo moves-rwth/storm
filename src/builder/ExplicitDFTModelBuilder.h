@@ -71,9 +71,24 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Model<ValueType>> buildModel(LabelOptions const& labelOpts);
 
         private:
-            bool exploreStates(std::queue<DFTStatePointer>& stateQueue, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates);
+            std::pair<uint_fast64_t, bool> exploreStates(DFTStatePointer const& state, size_t& rowOffset, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates);
             
-            uint_fast64_t addState(DFTStatePointer state, std::queue<DFTStatePointer>& stateQueue);
+            /*!
+             * Adds a state to the explored states and handles pseudo states.
+             *
+             * @param state The state to add.
+             * @return Id of added state.
+             */
+            uint_fast64_t addState(DFTStatePointer const& state);
+            
+            /*!
+             * Check if state needs an exploration and remember pseudo states for later creation.
+             *
+             * @param state State which might need exploration.
+             * @return Pair of flag indicating whether the state needs exploration now and the state id if the state already
+             * exists.
+             */
+            std::pair<bool, uint_fast64_t> checkForExploration(DFTStatePointer const& state);
 
         };
     }

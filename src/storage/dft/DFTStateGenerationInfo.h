@@ -108,6 +108,10 @@ namespace storm {
             size_t getSymmetrySize() const {
                 return mSymmetries.size();
             }
+            
+            bool hasSymmetries() const {
+                return !mSymmetries.empty();
+            }
 
             size_t getSymmetryLength(size_t pos) const {
                 assert(pos < mSymmetries.size());
