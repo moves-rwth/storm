@@ -49,6 +49,7 @@ namespace storm {
 			this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::TopologicalValueIterationEquationSolverSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::ParametricSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SparseDtmcEliminationModelCheckerSettings(*this)));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::LearningSettings(*this)));
         }
         
         SettingsManager::~SettingsManager() {

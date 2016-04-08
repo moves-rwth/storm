@@ -23,8 +23,7 @@
 namespace storm {
     namespace modelchecker {
         template<typename ValueType>
-        SparseMdpLearningModelChecker<ValueType>::SparseMdpLearningModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions) : program(storm::utility::prism::preprocessProgram<ValueType>(program, constantDefinitions)), variableInformation(this->program), //randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()),
-        comparator(1e-9) {
+        SparseMdpLearningModelChecker<ValueType>::SparseMdpLearningModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions) : program(storm::utility::prism::preprocessProgram<ValueType>(program, constantDefinitions)), variableInformation(this->program), randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()), comparator() {
             // Intentionally left empty.
         }
         
@@ -120,7 +119,7 @@ namespace storm {
                 STORM_LOG_DEBUG("Value of initial state is in [" << bounds.getLowerBoundForState(initialStateIndex, explorationInformation) << ", " << bounds.getUpperBoundForState(initialStateIndex, explorationInformation) << "].");
                 ValueType difference = bounds.getDifferenceOfStateBounds(initialStateIndex, explorationInformation);
                 STORM_LOG_DEBUG("Difference after iteration " << stats.iterations << " is " << difference << ".");
-                convergenceCriterionMet = difference < 1e-6;
+                convergenceCriterionMet = comparator.isZero(difference);
                 
                 ++stats.iterations;
             }
@@ -128,8 +127,9 @@ namespace storm {
             if (storm::settings::generalSettings().isShowStatisticsSet()) {
                 std::cout << std::endl << "Learning summary -------------------------" << std::endl;
                 std::cout << "Discovered states: " << explorationInformation.getNumberOfDiscoveredStates() << " (" << stats.numberOfExploredStates << " explored, " << explorationInformation.getNumberOfUnexploredStates() << " unexplored, " << stats.numberOfTargetStates << " target)" << std::endl;
-                std::cout << "Sampling iterations: " << stats.iterations << std::endl;
+                std::cout << "Sampled paths: " << stats.iterations << std::endl;
                 std::cout << "Maximal path length: " << stats.maxPathLength << std::endl;
+                std::cout << "EC detections: " << stats.ecDetections << " (" << stats.failedEcDetections << " failed, " << stats.totalNumberOfEcDetected << " EC(s) detected)" << std::endl;
             }
             
             return std::make_tuple(initialStateIndex, bounds.getLowerBoundForState(initialStateIndex, explorationInformation), bounds.getUpperBoundForState(initialStateIndex, explorationInformation));
@@ -180,13 +180,16 @@ namespace storm {
                     
                     // If the current path length exceeds the threshold and the model is a nondeterministic one, we
                     // perform an EC detection.
-                    if (stack.size() > stats.pathLengthUntilEndComponentDetection && !program.isDeterministicModel()) {
-                        detectEndComponents(stack, explorationInformation, bounds);
+                    if (stack.size() > explorationInformation.getPathLengthUntilEndComponentDetection()) {
+                        bool success = detectEndComponents(stack, explorationInformation, bounds, stats);
                         
-                        // Abort the current search.
-                        STORM_LOG_TRACE("Aborting the search after EC detection.");
-                        stack.clear();
-                        break;
+                        // Only if the detection found an EC, we abort the search.
+                        if (success) {
+                            // Abort the current search.
+                            STORM_LOG_TRACE("Aborting the search after succesful EC detection.");
+                            stack.clear();
+                            break;
+                        }
                     }
                 }
             }
@@ -296,31 +299,17 @@ namespace storm {
             // Determine the values of all available actions.
             std::vector<std::pair<ActionType, ValueType>> actionValues;
             StateType rowGroup = explorationInformation.getRowGroup(currentStateId);
-            auto choicesInEcIt = explorationInformation.stateToLeavingActionsOfEndComponent.find(currentStateId);
             
             // Check for cases in which we do not need to perform more work.
-            if (choicesInEcIt == explorationInformation.stateToLeavingActionsOfEndComponent.end()) {
-                if (explorationInformation.onlyOneActionAvailable(rowGroup)) {
-                    return explorationInformation.getStartRowOfGroup(rowGroup);
-                }
-            } else {
-                if (choicesInEcIt->second->size() == 1) {
-                    return *choicesInEcIt->second->begin();
-                }
+            if (explorationInformation.onlyOneActionAvailable(rowGroup)) {
+                return explorationInformation.getStartRowOfGroup(rowGroup);
             }
             
             // If there are more choices to consider, start by gathering the values of relevant actions.
-            if (choicesInEcIt != explorationInformation.stateToLeavingActionsOfEndComponent.end()) {
-                STORM_LOG_TRACE("Sampling from actions leaving the previously detected EC.");
-                for (auto const& row : *choicesInEcIt->second) {
-                    actionValues.push_back(std::make_pair(row, bounds.getBoundForAction(explorationInformation.optimizationDirection, row)));
-                }
-            } else {
-                STORM_LOG_TRACE("Sampling from actions leaving the state.");
-                
-                for (uint32_t row = explorationInformation.getStartRowOfGroup(rowGroup); row < explorationInformation.getStartRowOfGroup(rowGroup + 1); ++row) {
-                    actionValues.push_back(std::make_pair(row, bounds.getBoundForAction(explorationInformation.optimizationDirection, row)));
-                }
+            STORM_LOG_TRACE("Sampling from actions leaving the state.");
+            
+            for (uint32_t row = explorationInformation.getStartRowOfGroup(rowGroup); row < explorationInformation.getStartRowOfGroup(rowGroup + 1); ++row) {
+                actionValues.push_back(std::make_pair(row, bounds.getBoundForAction(explorationInformation.optimizationDirection, row)));
             }
             
             STORM_LOG_ASSERT(!actionValues.empty(), "Values for actions must not be empty.");
@@ -356,8 +345,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void SparseMdpLearningModelChecker<ValueType>::detectEndComponents(StateActionStack const& stack, ExplorationInformation& explorationInformation, BoundValues& bounds) const {
-            STORM_LOG_TRACE("Starting EC detection.");
+        bool SparseMdpLearningModelChecker<ValueType>::detectEndComponents(StateActionStack const& stack, ExplorationInformation& explorationInformation, BoundValues& bounds, Statistics& stats) const {
+            STORM_LOG_TRACE("Starting " << (explorationInformation.useLocalECDetection() ? "local" : "global") << "EC detection.");
+            ++stats.ecDetections;
             
             // Outline:
             // 1. construct a sparse transition matrix of the relevant part of the state space.
@@ -428,19 +418,29 @@ namespace storm {
             storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(relevantStatesMatrix, relevantStatesMatrix.transpose(true));
             STORM_LOG_TRACE("Successfully computed MEC decomposition. Found " << (mecDecomposition.size() > 1 ? (mecDecomposition.size() - 1) : 0) << " MEC(s).");
             
-            // 3. Analyze the MEC decomposition.
-            for (auto const& mec : mecDecomposition) {
-                // Ignore the (expected) MEC of the sink state.
-                if (mec.containsState(sink)) {
-                    continue;
-                }
+            // If the decomposition contains only the MEC consisting of the sink state, we count it as 'failed'.
+            if (mecDecomposition.size() <= 1) {
+                ++stats.failedEcDetections;
+//                explorationInformation.increasePathLengthUntilEndComponentDetection();
+                return false;
+            } else {
+                stats.totalNumberOfEcDetected += mecDecomposition.size() - 1;
                 
-                if (explorationInformation.maximize()) {
-                    analyzeMecForMaximalProbabilities(mec, relevantStates, relevantStatesMatrix, explorationInformation, bounds);
-                } else {
-                    analyzeMecForMinimalProbabilities(mec, relevantStates, relevantStatesMatrix, explorationInformation, bounds);
+                // 3. Analyze the MEC decomposition.
+                for (auto const& mec : mecDecomposition) {
+                    // Ignore the (expected) MEC of the sink state.
+                    if (mec.containsState(sink)) {
+                        continue;
+                    }
+                    
+                    if (explorationInformation.maximize()) {
+                        analyzeMecForMaximalProbabilities(mec, relevantStates, relevantStatesMatrix, explorationInformation, bounds);
+                    } else {
+                        analyzeMecForMinimalProbabilities(mec, relevantStates, relevantStatesMatrix, explorationInformation, bounds);
+                    }
                 }
             }
+            return true;
         }
         
         template<typename ValueType>
@@ -453,7 +453,7 @@ namespace storm {
             bool containsTargetState = false;
             
             // Now we record all choices leaving the EC.
-            ActionSetPointer leavingChoices = std::make_shared<ActionSet>();
+            std::vector<ActionType> leavingActions;
             for (auto const& stateAndChoices : mec) {
                 // Compute the state of the original model that corresponds to the current state.
                 StateType originalState = relevantStates[stateAndChoices.first];
@@ -473,18 +473,16 @@ namespace storm {
                         STORM_LOG_TRACE("Current (local) choice iterated is " << (action - explorationInformation.getStartRowOfGroup(originalRowGroup)));
                         if (action - explorationInformation.getStartRowOfGroup(originalRowGroup) != *includedChoicesIt - relevantStatesMatrix.getRowGroupIndices()[stateAndChoices.first]) {
                             STORM_LOG_TRACE("Choice leaves the EC.");
-                            leavingChoices->insert(action);
+                            leavingActions.push_back(action);
                         } else {
                             STORM_LOG_TRACE("Choice stays in the EC.");
                             ++includedChoicesIt;
                         }
                     } else {
                         STORM_LOG_TRACE("Choice leaves the EC, because there is no more choice staying in the EC.");
-                        leavingChoices->insert(action);
+                        leavingActions.push_back(action);
                     }
                 }
-                
-                explorationInformation.stateToLeavingActionsOfEndComponent[originalState] = leavingChoices;
             }
             
             // If one of the states of the EC is a target state, all states in the EC have probability 1.
@@ -498,7 +496,7 @@ namespace storm {
                     bounds.setLowerBoundForState(originalState, explorationInformation, storm::utility::one<ValueType>());
                     explorationInformation.addTerminalState(originalState);
                 }
-            } else if (leavingChoices->empty()) {
+            } else if (leavingActions.empty()) {
                 STORM_LOG_TRACE("MEC's leaving choices are empty.");
                 // If there is no choice leaving the EC, but it contains no target state, all states have probability 0.
                 for (auto const& stateAndChoices : mec) {
@@ -509,6 +507,32 @@ namespace storm {
                     bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
                     explorationInformation.addTerminalState(originalState);
                 }
+            } else {
+                // In this case, no target state is contained in the MEC, but there are actions leaving the MEC. To
+                // prevent the simulation getting stuck in this MEC again, we replace all states in the MEC by a new
+                // state whose outgoing actions are the ones leaving the MEC. We do this, by assigning all states in the
+                // MEC to a new row group, which will then hold all the outgoing choices.
+
+                // Remap all contained states to the new row group.
+                StateType nextRowGroup = explorationInformation.getNextRowGroup();
+                for (auto const& stateAndChoices : mec) {
+                    explorationInformation.assignStateToRowGroup(stateAndChoices.first, nextRowGroup);
+                }
+                
+                bounds.initializeBoundsForNextState();
+                
+                // Add to the new row group all leaving actions of contained states and set the appropriate bounds for
+                // the actions and the new state.
+                std::pair<ValueType, ValueType> stateBounds = getLowestBounds(explorationInformation.optimizationDirection);
+                for (auto const& action : leavingActions) {
+                    explorationInformation.matrix.emplace_back(std::move(explorationInformation.matrix[action]));
+                    std::pair<ValueType, ValueType> const& actionBounds = bounds.getBoundsForAction(action);
+                    bounds.initializeBoundsForNextAction(actionBounds);
+                    stateBounds = combineBounds(explorationInformation.optimizationDirection, stateBounds, actionBounds);
+                }
+                
+                // Terminate the row group of the newly introduced state.
+                explorationInformation.rowGroupIndices.push_back(explorationInformation.matrix.size());
             }
         }
         

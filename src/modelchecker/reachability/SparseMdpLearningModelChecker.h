@@ -51,7 +51,7 @@ namespace storm {
         private:
             // A struct that keeps track of certain statistics during the computation.
             struct Statistics {
-                Statistics() : iterations(0), maxPathLength(0), numberOfTargetStates(0), numberOfExploredStates(0), pathLengthUntilEndComponentDetection(10000) {
+                Statistics() : iterations(0), maxPathLength(0), numberOfTargetStates(0), numberOfExploredStates(0), ecDetections(0), failedEcDetections(0), totalNumberOfEcDetected(0) {
                     // Intentionally left empty.
                 }
                 
@@ -59,7 +59,9 @@ namespace storm {
                 std::size_t maxPathLength;
                 std::size_t numberOfTargetStates;
                 std::size_t numberOfExploredStates;
-                std::size_t pathLengthUntilEndComponentDetection;
+                std::size_t ecDetections;
+                std::size_t failedEcDetections;
+                std::size_t totalNumberOfEcDetected;
             };
             
             // A struct containing the data required for state exploration.
@@ -87,7 +89,7 @@ namespace storm {
             
             // A structure containing the data assembled during exploration.
             struct ExplorationInformation {
-                ExplorationInformation(uint_fast64_t bitsPerBucket, bool localECDetection, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), localECDetection(localECDetection) {
+                ExplorationInformation(uint_fast64_t bitsPerBucket, bool localECDetection, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), localECDetection(localECDetection), pathLengthUntilEndComponentDetection(10000) {
                     // Intentionally left empty.
                 }
                 
@@ -103,8 +105,8 @@ namespace storm {
                 storm::OptimizationDirection optimizationDirection;
                 StateSet terminalStates;
                 
-                std::unordered_map<StateType, ActionSetPointer> stateToLeavingActionsOfEndComponent;
                 bool localECDetection;
+                uint_fast64_t pathLengthUntilEndComponentDetection;
                 
                 void setInitialStates(std::vector<StateType> const& initialStates) {
                     stateStorage.initialStateIndices = initialStates;
@@ -131,6 +133,10 @@ namespace storm {
                 StateType assignStateToNextRowGroup(StateType const& state) {
                     stateToRowGroupMapping[state] = rowGroupIndices.size() - 1;
                     return stateToRowGroupMapping[state];
+                }
+                
+                StateType getNextRowGroup() const {
+                    return rowGroupIndices.size() - 1;
                 }
                 
                 void newRowGroup(ActionType const& action) {
@@ -199,6 +205,14 @@ namespace storm {
                 
                 bool minimize() const {
                     return !maximize();
+                }
+                
+                uint_fast64_t getPathLengthUntilEndComponentDetection() const {
+                    return pathLengthUntilEndComponentDetection;
+                }
+                
+                void increasePathLengthUntilEndComponentDetection() {
+                    pathLengthUntilEndComponentDetection += 100;
                 }
                 
                 bool useLocalECDetection() const {
@@ -347,7 +361,7 @@ namespace storm {
 
             StateType sampleSuccessorFromAction(ActionType const& chosenAction, ExplorationInformation const& explorationInformation) const;
             
-            void detectEndComponents(StateActionStack const& stack, ExplorationInformation& explorationInformation, BoundValues& bounds) const;
+            bool detectEndComponents(StateActionStack const& stack, ExplorationInformation& explorationInformation, BoundValues& bounds, Statistics& stats) const;
             
             void analyzeMecForMaximalProbabilities(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation& explorationInformation, BoundValues& bounds) const;
 
