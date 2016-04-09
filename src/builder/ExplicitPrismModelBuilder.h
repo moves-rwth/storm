@@ -190,8 +190,6 @@ namespace storm {
             storm::prism::Program const& getTranslatedProgram() const;
             
         private:
-            storm::expressions::SimpleValuation unpackStateIntoValuation(storm::storage::BitVector const& currentState);
-            
             /*!
              * Retrieves the state id of the given state. If the state has not been encountered yet, it will be added to
              * the lists of all states with a new id. If the state was already known, the object that is pointed to by

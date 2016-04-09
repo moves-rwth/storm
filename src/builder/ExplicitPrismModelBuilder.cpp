@@ -228,18 +228,6 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        storm::expressions::SimpleValuation ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::unpackStateIntoValuation(storm::storage::BitVector const& currentState) {
-            storm::expressions::SimpleValuation result(program.getManager().getSharedPointer());
-            for (auto const& booleanVariable : variableInformation.booleanVariables) {
-                result.setBooleanValue(booleanVariable.variable, currentState.get(booleanVariable.bitOffset));
-            }
-            for (auto const& integerVariable : variableInformation.integerVariables) {
-                result.setIntegerValue(integerVariable.variable, currentState.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
-            }
-            return result;
-        }
-        
-        template <typename ValueType, typename RewardModelType, typename StateType>
         StateType ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::getOrAddStateIndex(CompressedState const& state) {
             uint32_t newIndex = stateStorage.numberOfStates;
             
@@ -343,7 +331,7 @@ namespace storm {
                         ++currentRow;
                         ++currentRowGroup;
                     } else {
-                        std::cout << unpackStateIntoValuation(currentState).toString(true) << std::endl;
+                        std::cout << storm::generator::unpackStateIntoValuation(currentState, variableInformation, program.getManager()).toString(true) << std::endl;
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
                                         "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
                     }
@@ -481,7 +469,7 @@ namespace storm {
             if (options.buildStateValuations) {
                 stateValuations = storm::storage::sparse::StateValuations(stateStorage.numberOfStates);
                 for (auto const& bitVectorIndexPair : stateStorage.stateToId) {
-                    stateValuations.get().valuations[bitVectorIndexPair.second] = unpackStateIntoValuation(bitVectorIndexPair.first);
+                    stateValuations.get().valuations[bitVectorIndexPair.second] = unpackStateIntoValuation(bitVectorIndexPair.first, variableInformation, program.getManager());
                 }
             }
             

@@ -51,11 +51,12 @@ namespace storm {
         private:
             // A struct that keeps track of certain statistics during the computation.
             struct Statistics {
-                Statistics() : iterations(0), maxPathLength(0), numberOfTargetStates(0), numberOfExploredStates(0), ecDetections(0), failedEcDetections(0), totalNumberOfEcDetected(0) {
+                Statistics() : pathsSampled(0), explorationSteps(0), maxPathLength(0), numberOfTargetStates(0), numberOfExploredStates(0), ecDetections(0), failedEcDetections(0), totalNumberOfEcDetected(0) {
                     // Intentionally left empty.
                 }
                 
-                std::size_t iterations;
+                std::size_t pathsSampled;
+                std::size_t explorationSteps;
                 std::size_t maxPathLength;
                 std::size_t numberOfTargetStates;
                 std::size_t numberOfExploredStates;
@@ -89,7 +90,7 @@ namespace storm {
             
             // A structure containing the data assembled during exploration.
             struct ExplorationInformation {
-                ExplorationInformation(uint_fast64_t bitsPerBucket, bool localECDetection, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), localECDetection(localECDetection), pathLengthUntilEndComponentDetection(10000) {
+                ExplorationInformation(uint_fast64_t bitsPerBucket, bool localPrecomputation, uint_fast64_t numberOfExplorationStepsUntilPrecomputation, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), localPrecomputation(localPrecomputation), numberOfExplorationStepsUntilPrecomputation(numberOfExplorationStepsUntilPrecomputation) {
                     // Intentionally left empty.
                 }
                 
@@ -105,8 +106,8 @@ namespace storm {
                 storm::OptimizationDirection optimizationDirection;
                 StateSet terminalStates;
                 
-                bool localECDetection;
-                uint_fast64_t pathLengthUntilEndComponentDetection;
+                bool localPrecomputation;
+                uint_fast64_t numberOfExplorationStepsUntilPrecomputation;
                 
                 void setInitialStates(std::vector<StateType> const& initialStates) {
                     stateStorage.initialStateIndices = initialStates;
@@ -207,20 +208,21 @@ namespace storm {
                     return !maximize();
                 }
                 
-                uint_fast64_t getPathLengthUntilEndComponentDetection() const {
-                    return pathLengthUntilEndComponentDetection;
+                bool performPrecomputation(std::size_t& performedExplorationSteps) const {
+                    bool result = performedExplorationSteps > numberOfExplorationStepsUntilPrecomputation;
+                    if (result) {
+                        std::cout << "triggering precomp" << std::endl;
+                        performedExplorationSteps = 0;
+                    }
+                    return result;
                 }
                 
-                void increasePathLengthUntilEndComponentDetection() {
-                    pathLengthUntilEndComponentDetection += 100;
-                }
-                
-                bool useLocalECDetection() const {
-                    return localECDetection;
+                bool useLocalPrecomputation() const {
+                    return localPrecomputation;
                 }
 
-                bool useGlobalECDetection() const {
-                    return !useLocalECDetection();
+                bool useGlobalPrecomputation() const {
+                    return !useLocalPrecomputation();
                 }
             };
             
@@ -286,7 +288,7 @@ namespace storm {
                     }
                 }
                 
-                ValueType getDifferenceOfStateBounds(StateType const& state, ExplorationInformation const& explorationInformation) {
+                ValueType getDifferenceOfStateBounds(StateType const& state, ExplorationInformation const& explorationInformation) const {
                     std::pair<ValueType, ValueType> bounds = getBoundsForState(state, explorationInformation);
                     return bounds.second - bounds.first;
                 }
@@ -324,6 +326,10 @@ namespace storm {
 
                 void setBoundsForState(StateType const& state, ExplorationInformation const& explorationInformation, std::pair<ValueType, ValueType> const& values) {
                     StateType const& rowGroup = explorationInformation.getRowGroup(state);
+                    setBoundsForRowGroup(rowGroup, values);
+                }
+                
+                void setBoundsForRowGroup(StateType const& rowGroup, std::pair<ValueType, ValueType> const& values) {
                     lowerBoundsPerState[rowGroup] = values.first;
                     upperBoundsPerState[rowGroup] = values.second;
                 }
@@ -359,13 +365,11 @@ namespace storm {
             
             ActionType sampleActionOfState(StateType const& currentStateId, ExplorationInformation const& explorationInformation, BoundValues& bounds) const;
 
-            StateType sampleSuccessorFromAction(ActionType const& chosenAction, ExplorationInformation const& explorationInformation) const;
+            StateType sampleSuccessorFromAction(ActionType const& chosenAction, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const;
             
-            bool detectEndComponents(StateActionStack const& stack, ExplorationInformation& explorationInformation, BoundValues& bounds, Statistics& stats) const;
+            bool performPrecomputation(StateActionStack const& stack, ExplorationInformation& explorationInformation, BoundValues& bounds, Statistics& stats) const;
             
-            void analyzeMecForMaximalProbabilities(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation& explorationInformation, BoundValues& bounds) const;
-
-            void analyzeMecForMinimalProbabilities(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation& explorationInformation, BoundValues& bounds) const;
+            void collapseMec(storm::storage::MaximalEndComponent const& mec, std::vector<StateType> const& relevantStates, storm::storage::SparseMatrix<ValueType> const& relevantStatesMatrix, ExplorationInformation& explorationInformation, BoundValues& bounds) const;
             
             void updateProbabilityBoundsAlongSampledPath(StateActionStack& stack, ExplorationInformation const& explorationInformation, BoundValues& bounds) const;
 

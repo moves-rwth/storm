@@ -12,8 +12,8 @@ namespace storm {
              */
             class LearningSettings : public ModuleSettings {
             public:
-                // An enumeration of all available EC-detection types.
-                enum class ECDetectionType { Local, Global };
+                // An enumeration of all available precomputation types.
+                enum class PrecomputationType { Local, Global };
                 
                 /*!
                  * Creates a new set of learning settings that is managed by the given manager.
@@ -23,25 +23,32 @@ namespace storm {
                 LearningSettings(storm::settings::SettingsManager& settingsManager);
                 
                 /*!
-                 * Retrieves whether local EC-detection is to be used.
+                 * Retrieves whether local precomputation is to be used.
                  *
-                 * @return True iff local EC-detection is to be used.
+                 * @return True iff local precomputation is to be used.
                  */
-                bool isLocalECDetectionSet() const;
+                bool isLocalPrecomputationSet() const;
                 
                 /*!
-                 * Retrieves whether global EC-detection is to be used.
+                 * Retrieves whether global precomputation is to be used.
                  *
-                 * @return True iff global EC-detection is to be used.
+                 * @return True iff global precomputation is to be used.
                  */
-                bool isGlobalECDetectionSet() const;
+                bool isGlobalPrecomputationSet() const;
                 
                 /*!
-                 * Retrieves the selected EC-detection type.
+                 * Retrieves the selected precomputation type.
                  *
-                 * @return The selected EC-detection type.
+                 * @return The selected precomputation type.
                  */
-                ECDetectionType getECDetectionType() const;
+                PrecomputationType getPrecomputationType() const;
+                
+                /*!
+                 * Retrieves the number of exploration steps to perform until a precomputation is triggered.
+                 *
+                 * @return The number of exploration steps to perform until a precomputation is triggered.
+                 */
+                uint_fast64_t getNumberOfExplorationStepsUntilPrecomputation() const;
                 
                 virtual bool check() const override;
                 
@@ -50,7 +57,8 @@ namespace storm {
                 
             private:
                 // Define the string names of the options as constants.
-                static const std::string ecDetectionTypeOptionName;
+                static const std::string precomputationTypeOptionName;
+                static const std::string numberOfExplorationStepsUntilPrecomputationOptionName;
             };
         } // namespace modules
     } // namespace settings
