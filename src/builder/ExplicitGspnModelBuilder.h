@@ -130,6 +130,14 @@ namespace storm {
              */
             uint_fast64_t findOrAddBitvectorToMarkings(storm::storage::BitVector const& bitvector);
 
+            /*!
+             * Computes the state labeling and returns it.
+             * Every state is labeled with its name.
+             *
+             * @return The computed state labeling.
+             */
+            storm::models::sparse::StateLabeling getStateLabeling() const;
+
 
             // contains the number of bits which are used the store the number of tokens at each place
             std::map<uint_fast64_t, uint_fast64_t> numberOfBits;

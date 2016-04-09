@@ -70,7 +70,7 @@ namespace storm {
             }
 
             auto matrix = builder.build();
-            const storm::models::sparse::StateLabeling labeling; // TODO
+            auto labeling = getStateLabeling();
 
             return storm::models::sparse::MarkovAutomaton<double>(matrix, labeling, markovianStates, exitRates);
         }
@@ -242,6 +242,31 @@ namespace storm {
                 todo.push_back(std::make_shared<storm::storage::BitVector>(bitvector));
             }
             return index;
+        }
+
+        template<typename ValueType>
+        storm::models::sparse::StateLabeling ExplicitGspnModelBuilder<ValueType>::getStateLabeling() const {
+            storm::models::sparse::StateLabeling labeling(markings.size());
+
+            std::map<uint_fast64_t , std::string> idToName;
+            for (auto& place : gspn.getPlaces()) {
+                idToName[place.getID()] = place.getName();
+                labeling.addLabel(place.getName());
+            }
+
+            auto it = markings.begin();
+            for ( ; it != markings.end() ; ++it) {
+                auto bitvector = std::get<0>(*it);
+                storm::gspn::Marking marking(gspn.getNumberOfPlaces(), numberOfBits, bitvector);
+                for (auto i = 0; i < marking.getNumberOfPlaces(); i++) {
+                    if (marking.getNumberOfTokensAt(i) > 0) {
+                        std::cout << i << std::endl;
+                        labeling.addLabelToState(idToName.at(i), i);
+                    }
+                }
+            }
+
+            return labeling;
         }
 
         template class ExplicitGspnModelBuilder<double>;
