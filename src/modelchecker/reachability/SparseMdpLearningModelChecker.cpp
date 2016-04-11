@@ -373,14 +373,6 @@ namespace storm {
             // 3. use MEC decomposition to collapse MECs.
             STORM_LOG_TRACE("Starting " << (explorationInformation.useLocalPrecomputation() ? "local" : "global") << " precomputation.");
 
-            for (int row = 0; row < explorationInformation.matrix.size(); ++row) {
-                std::cout << "row " << row << ":";
-                for (auto const& el : explorationInformation.matrix[row]) {
-                    std::cout << el.getColumn() << ", " << el.getValue() << " [" << bounds.getLowerBoundForState(el.getColumn(), explorationInformation) << ", " << bounds.getUpperBoundForState(el.getColumn(), explorationInformation) << "]" << "  ";
-                }
-                std::cout << std::endl;
-            }
-            
             // Construct the matrix that represents the fragment of the system contained in the currently sampled path.
             storm::storage::SparseMatrixBuilder<ValueType> builder(0, 0, 0, false, true, 0);
             
@@ -413,7 +405,6 @@ namespace storm {
             for (StateType index = 0; index < relevantStates.size(); ++index) {
                 relevantStateToNewRowGroupMapping.emplace(relevantStates[index], index);
                 if (storm::utility::isOne(bounds.getLowerBoundForState(relevantStates[index], explorationInformation))) {
-                    std::cout << "target states: " << targetStates << std::endl;
                     targetStates.set(index);
                 }
             }
@@ -491,9 +482,6 @@ namespace storm {
                 targetStates.set(sink, false);
                 statesWithProbability1 = storm::utility::graph::performProb1A(relevantStatesMatrix, relevantStatesMatrix.getRowGroupIndices(), transposedMatrix, allStates, targetStates);
             }
-            
-            std::cout << "prob0: " << statesWithProbability0 << std::endl;
-            std::cout << "prob1: " << statesWithProbability1 << std::endl;
             
             // Set the bounds of the identified states.
             for (auto state : statesWithProbability0) {
