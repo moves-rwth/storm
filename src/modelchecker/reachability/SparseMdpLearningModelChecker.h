@@ -12,6 +12,10 @@
 #include "src/generator/CompressedState.h"
 #include "src/generator/VariableInformation.h"
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/LearningSettings.h"
+
+#include "src/utility/macros.h"
 #include "src/utility/ConstantsComparator.h"
 #include "src/utility/constants.h"
 
@@ -49,49 +53,18 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeReachabilityProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) override;
             
         private:
-            // A struct that keeps track of certain statistics during the computation.
-            struct Statistics {
-                Statistics() : pathsSampled(0), explorationSteps(0), maxPathLength(0), numberOfTargetStates(0), numberOfExploredStates(0), ecDetections(0), failedEcDetections(0), totalNumberOfEcDetected(0) {
-                    // Intentionally left empty.
-                }
-                
-                std::size_t pathsSampled;
-                std::size_t explorationSteps;
-                std::size_t maxPathLength;
-                std::size_t numberOfTargetStates;
-                std::size_t numberOfExploredStates;
-                std::size_t ecDetections;
-                std::size_t failedEcDetections;
-                std::size_t totalNumberOfEcDetected;
-            };
-            
-            // A struct containing the data required for state exploration.
-            struct StateGeneration {
-                StateGeneration(storm::prism::Program const& program, storm::generator::VariableInformation const& variableInformation, storm::expressions::Expression const& targetStateExpression) : generator(program, variableInformation, false), targetStateExpression(targetStateExpression) {
-                    // Intentionally left empty.
-                }
-                
-                std::vector<StateType> getInitialStates() {
-                    return generator.getInitialStates(stateToIdCallback);
-                }
-                
-                storm::generator::StateBehavior<ValueType, StateType> expand() {
-                    return generator.expand(stateToIdCallback);
-                }
-                
-                bool isTargetState() const {
-                    return generator.satisfies(targetStateExpression);
-                }
-                
-                storm::generator::PrismNextStateGenerator<ValueType, StateType> generator;
-                std::function<StateType (storm::generator::CompressedState const&)> stateToIdCallback;
-                storm::expressions::Expression targetStateExpression;
-            };
-            
             // A structure containing the data assembled during exploration.
             struct ExplorationInformation {
-                ExplorationInformation(uint_fast64_t bitsPerBucket, bool localPrecomputation, uint_fast64_t numberOfExplorationStepsUntilPrecomputation, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), localPrecomputation(localPrecomputation), numberOfExplorationStepsUntilPrecomputation(numberOfExplorationStepsUntilPrecomputation) {
-                    // Intentionally left empty.
+                ExplorationInformation(uint_fast64_t bitsPerBucket, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), localPrecomputation(false), numberOfExplorationStepsUntilPrecomputation(100000), numberOfSampledPathsUntilPrecomputation(), nextStateHeuristic(storm::settings::modules::LearningSettings::NextStateHeuristic::DifferenceWeightedProbability) {
+                    
+                    storm::settings::modules::LearningSettings const& settings = storm::settings::learningSettings();
+                    localPrecomputation = settings.isLocalPrecomputationSet();
+                    if (settings.isNumberOfSampledPathsUntilPrecomputationSet()) {
+                        numberOfSampledPathsUntilPrecomputation = settings.getNumberOfSampledPathsUntilPrecomputation();
+                    }
+                    
+                    nextStateHeuristic = settings.getNextStateHeuristic();
+                    STORM_LOG_ASSERT(useDifferenceWeightedProbabilityHeuristic() || useProbabilityHeuristic(), "Illegal next-state heuristic.");
                 }
                 
                 storm::storage::sparse::StateStorage<StateType> stateStorage;
@@ -108,6 +81,9 @@ namespace storm {
                 
                 bool localPrecomputation;
                 uint_fast64_t numberOfExplorationStepsUntilPrecomputation;
+                boost::optional<uint_fast64_t> numberOfSampledPathsUntilPrecomputation;
+                
+                storm::settings::modules::LearningSettings::NextStateHeuristic nextStateHeuristic;
                 
                 void setInitialStates(std::vector<StateType> const& initialStates) {
                     stateStorage.initialStateIndices = initialStates;
@@ -208,22 +184,111 @@ namespace storm {
                     return !maximize();
                 }
                 
-                bool performPrecomputation(std::size_t& performedExplorationSteps) const {
-                    bool result = performedExplorationSteps > numberOfExplorationStepsUntilPrecomputation;
+                bool performPrecomputationExcessiveExplorationSteps(std::size_t& numberExplorationStepsSinceLastPrecomputation) const {
+                    bool result = numberExplorationStepsSinceLastPrecomputation > numberOfExplorationStepsUntilPrecomputation;
                     if (result) {
-                        std::cout << "triggering precomp" << std::endl;
-                        performedExplorationSteps = 0;
+                        numberExplorationStepsSinceLastPrecomputation = 0;
                     }
                     return result;
+                }
+                
+                bool performPrecomputationExcessiveSampledPaths(std::size_t& numberOfSampledPathsSinceLastPrecomputation) const {
+                    if (!numberOfSampledPathsUntilPrecomputation) {
+                        return false;
+                    } else {
+                        bool result = numberOfSampledPathsSinceLastPrecomputation > numberOfSampledPathsUntilPrecomputation.get();
+                        if (result) {
+                            numberOfSampledPathsSinceLastPrecomputation = 0;
+                        }
+                        return result;
+                    }
                 }
                 
                 bool useLocalPrecomputation() const {
                     return localPrecomputation;
                 }
-
+                
                 bool useGlobalPrecomputation() const {
                     return !useLocalPrecomputation();
                 }
+                
+                storm::settings::modules::LearningSettings::NextStateHeuristic const& getNextStateHeuristic() const {
+                    return nextStateHeuristic;
+                }
+                
+                bool useDifferenceWeightedProbabilityHeuristic() const {
+                    return nextStateHeuristic == storm::settings::modules::LearningSettings::NextStateHeuristic::DifferenceWeightedProbability;
+                }
+
+                bool useProbabilityHeuristic() const {
+                    return nextStateHeuristic == storm::settings::modules::LearningSettings::NextStateHeuristic::Probability;
+                }
+            };
+            
+            // A struct that keeps track of certain statistics during the computation.
+            struct Statistics {
+                Statistics() : pathsSampled(0), pathsSampledSinceLastPrecomputation(0), explorationSteps(0), explorationStepsSinceLastPrecomputation(0), maxPathLength(0), numberOfTargetStates(0), numberOfExploredStates(0), numberOfPrecomputations(0), ecDetections(0), failedEcDetections(0), totalNumberOfEcDetected(0) {
+                    // Intentionally left empty.
+                }
+                
+                void explorationStep() {
+                    ++explorationSteps;
+                    ++explorationStepsSinceLastPrecomputation;
+                }
+                
+                void sampledPath() {
+                    ++pathsSampled;
+                    ++pathsSampledSinceLastPrecomputation;
+                }
+                
+                void updateMaxPathLength(std::size_t const& currentPathLength) {
+                    maxPathLength = std::max(maxPathLength, currentPathLength);
+                }
+                
+                std::size_t pathsSampled;
+                std::size_t pathsSampledSinceLastPrecomputation;
+                std::size_t explorationSteps;
+                std::size_t explorationStepsSinceLastPrecomputation;
+                std::size_t maxPathLength;
+                std::size_t numberOfTargetStates;
+                std::size_t numberOfExploredStates;
+                std::size_t numberOfPrecomputations;
+                std::size_t ecDetections;
+                std::size_t failedEcDetections;
+                std::size_t totalNumberOfEcDetected;
+                
+                void printToStream(std::ostream& out, ExplorationInformation const& explorationInformation) const {
+                    out << std::endl << "Learning statistics:" << std::endl;
+                    out << "Discovered states: " << explorationInformation.getNumberOfDiscoveredStates() << " (" << numberOfExploredStates << " explored, " << explorationInformation.getNumberOfUnexploredStates() << " unexplored, " << numberOfTargetStates << " target)" << std::endl;
+                    out << "Exploration steps: " << explorationSteps << std::endl;
+                    out << "Sampled paths: " << pathsSampled << std::endl;
+                    out << "Maximal path length: " << maxPathLength << std::endl;
+                    out << "Precomputations: " << numberOfPrecomputations << std::endl;
+                    out << "EC detections: " << ecDetections << " (" << failedEcDetections << " failed, " << totalNumberOfEcDetected << " EC(s) detected)" << std::endl;
+                }
+            };
+            
+            // A struct containing the data required for state exploration.
+            struct StateGeneration {
+                StateGeneration(storm::prism::Program const& program, storm::generator::VariableInformation const& variableInformation, storm::expressions::Expression const& targetStateExpression) : generator(program, variableInformation, false), targetStateExpression(targetStateExpression) {
+                    // Intentionally left empty.
+                }
+                
+                std::vector<StateType> getInitialStates() {
+                    return generator.getInitialStates(stateToIdCallback);
+                }
+                
+                storm::generator::StateBehavior<ValueType, StateType> expand() {
+                    return generator.expand(stateToIdCallback);
+                }
+                
+                bool isTargetState() const {
+                    return generator.satisfies(targetStateExpression);
+                }
+                
+                storm::generator::PrismNextStateGenerator<ValueType, StateType> generator;
+                std::function<StateType (storm::generator::CompressedState const&)> stateToIdCallback;
+                storm::expressions::Expression targetStateExpression;
             };
             
             // A struct containg the lower and upper bounds per state and action.

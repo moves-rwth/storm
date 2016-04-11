@@ -12,13 +12,10 @@
 
 #include "src/models/sparse/StandardRewardModel.h"
 
-#include "src/settings/SettingsManager.h"
 #include "src/settings/modules/GeneralSettings.h"
-#include "src/settings/modules/LearningSettings.h"
 
 #include "src/utility/graph.h"
 
-#include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/NotSupportedException.h"
@@ -45,7 +42,7 @@ namespace storm {
             
             StateGeneration stateGeneration(program, variableInformation, getTargetStateExpression(subformula));
             
-            ExplorationInformation explorationInformation(variableInformation.getTotalBitOffset(true), storm::settings::learningSettings().isLocalPrecomputationSet(), storm::settings::learningSettings().getNumberOfExplorationStepsUntilPrecomputation());
+            ExplorationInformation explorationInformation(variableInformation.getTotalBitOffset(true), storm::settings::learningSettings().getNumberOfExplorationStepsUntilPrecomputation());
             explorationInformation.optimizationDirection = checkTask.isOptimizationDirectionSet() ? checkTask.getOptimizationDirection() : storm::OptimizationDirection::Maximize;
             
             // The first row group starts at action 0.
@@ -107,6 +104,9 @@ namespace storm {
             while (!convergenceCriterionMet) {
                 bool result = samplePathFromInitialState(stateGeneration, explorationInformation, stack, bounds, stats);
                 
+                stats.sampledPath();
+                stats.updateMaxPathLength(stack.size());
+                
                 // If a terminal state was found, we update the probabilities along the path contained in the stack.
                 if (result) {
                     // Update the bounds along the path to the terminal state.
@@ -124,15 +124,15 @@ namespace storm {
                 STORM_LOG_DEBUG("Difference after iteration " << stats.pathsSampled << " is " << difference << ".");
                 convergenceCriterionMet = comparator.isZero(difference);
                 
-                ++stats.pathsSampled;
+                // If the number of sampled paths exceeds a certain threshold, do a precomputation.
+                if (!convergenceCriterionMet && explorationInformation.performPrecomputationExcessiveSampledPaths(stats.pathsSampledSinceLastPrecomputation)) {
+                    performPrecomputation(stack, explorationInformation, bounds, stats);
+                }
             }
             
+            // Show statistics if required.
             if (storm::settings::generalSettings().isShowStatisticsSet()) {
-                std::cout << std::endl << "Learning summary -------------------------" << std::endl;
-                std::cout << "Discovered states: " << explorationInformation.getNumberOfDiscoveredStates() << " (" << stats.numberOfExploredStates << " explored, " << explorationInformation.getNumberOfUnexploredStates() << " unexplored, " << stats.numberOfTargetStates << " target)" << std::endl;
-                std::cout << "Sampled paths: " << stats.pathsSampled << std::endl;
-                std::cout << "Maximal path length: " << stats.maxPathLength << std::endl;
-                std::cout << "EC detections: " << stats.ecDetections << " (" << stats.failedEcDetections << " failed, " << stats.totalNumberOfEcDetected << " EC(s) detected)" << std::endl;
+                stats.printToStream(std::cout, explorationInformation);
             }
             
             return std::make_tuple(initialStateIndex, bounds.getLowerBoundForState(initialStateIndex, explorationInformation), bounds.getUpperBoundForState(initialStateIndex, explorationInformation));
@@ -169,8 +169,8 @@ namespace storm {
                     }
                 }
                 
-                // Increase the number of exploration steps to eventually trigger the precomputation.
-                ++stats.explorationSteps;
+                // Notify the stats about the performed exploration step.
+                stats.explorationStep();
                 
                 // If the state was not a terminal state, we continue the path search and sample the next state.
                 if (!foundTerminalState) {
@@ -185,10 +185,9 @@ namespace storm {
                     
                     // Put the successor state and a dummy action on top of the stack.
                     stack.emplace_back(successor, 0);
-                    stats.maxPathLength = std::max(stats.maxPathLength, stack.size());
                     
                     // If the number of exploration steps exceeds a certain threshold, do a precomputation.
-                    if (explorationInformation.performPrecomputation(stats.explorationSteps)) {
+                    if (explorationInformation.performPrecomputationExcessiveExplorationSteps(stats.explorationStepsSinceLastPrecomputation)) {
                         performPrecomputation(stack, explorationInformation, bounds, stats);
                         
                         STORM_LOG_TRACE("Aborting the search after precomputation.");
@@ -338,18 +337,36 @@ namespace storm {
         
         template<typename ValueType>
         typename SparseMdpLearningModelChecker<ValueType>::StateType SparseMdpLearningModelChecker<ValueType>::sampleSuccessorFromAction(ActionType const& chosenAction, ExplorationInformation const& explorationInformation, BoundValues const& bounds) const {
-            // TODO: precompute this?
-            std::vector<ValueType> probabilities(explorationInformation.getRowOfMatrix(chosenAction).size());
-            std::transform(explorationInformation.getRowOfMatrix(chosenAction).begin(), explorationInformation.getRowOfMatrix(chosenAction).end(), probabilities.begin(), [&bounds, &explorationInformation] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) { return entry.getValue() * bounds.getDifferenceOfStateBounds(entry.getColumn(), explorationInformation) ; } );
+            std::vector<storm::storage::MatrixEntry<StateType, ValueType>> const& row = explorationInformation.getRowOfMatrix(chosenAction);
+//            if (row.size() == 1) {
+//                return row.front().getColumn();
+//            }
+            
+            std::vector<ValueType> probabilities(row.size());
+            
+            // Depending on the selected next-state heuristic, we give the states other likelihoods of getting chosen.
+            if (explorationInformation.useDifferenceWeightedProbabilityHeuristic()) {
+                std::transform(row.begin(), row.end(), probabilities.begin(),
+                               [&bounds, &explorationInformation] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
+                                   return entry.getValue() * bounds.getDifferenceOfStateBounds(entry.getColumn(), explorationInformation);
+                               });
+            } else if (explorationInformation.useProbabilityHeuristic()) {
+                std::transform(row.begin(), row.end(), probabilities.begin(),
+                               [&bounds, &explorationInformation] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
+                                   return entry.getValue();
+                               });
+            }
             
             // Now sample according to the probabilities.
             std::discrete_distribution<StateType> distribution(probabilities.begin(), probabilities.end());
             StateType offset = distribution(randomGenerator);
-            return explorationInformation.getRowOfMatrix(chosenAction)[offset].getColumn();
+            return row[offset].getColumn();
         }
         
         template<typename ValueType>
         bool SparseMdpLearningModelChecker<ValueType>::performPrecomputation(StateActionStack const& stack, ExplorationInformation& explorationInformation, BoundValues& bounds, Statistics& stats) const {
+            ++stats.numberOfPrecomputations;
+            
             // Outline:
             // 1. construct a sparse transition matrix of the relevant part of the state space.
             // 2. use this matrix to compute states with probability 0/1 and an MEC decomposition (in the max case).
