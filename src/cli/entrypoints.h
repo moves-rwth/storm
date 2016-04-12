@@ -55,33 +55,33 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void verifySymbolicModelWithLearningEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void verifySymbolicModelWithExplorationEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
             
             for (auto const& formula : formulas) {
-                STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently learning-based verification is only available for DTMCs and MDPs.");
+                STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
-                storm::modelchecker::SparseMdpLearningModelChecker<ValueType> checker(program, storm::utility::prism::parseConstantDefinitionString(program, storm::settings::generalSettings().getConstantDefinitionString()));
+                storm::modelchecker::SparseMdpExplorationModelChecker<ValueType> checker(program, storm::utility::prism::parseConstantDefinitionString(program, storm::settings::generalSettings().getConstantDefinitionString()));
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
                 if (checker.canHandle(task)) {
                     result = checker.check(task);
+                    if (result) {
+                        std::cout << " done." << std::endl;
+                        std::cout << "Result (initial states): ";
+                        std::cout << *result << std::endl;
+                    } else {
+                        std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    }
                 } else {
                     std::cout << " skipped, because the formula cannot be handled by the selected engine/method." << std::endl;
-                }
-                if (result) {
-                    std::cout << " done." << std::endl;
-                    std::cout << "Result (initial states): ";
-                    std::cout << *result << std::endl;
-                } else {
-                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                 }
             }
         }
         
 #ifdef STORM_HAVE_CARL
         template<>
-        void verifySymbolicModelWithLearningEngine<storm::RationalFunction>(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant) {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Learning-based verification does currently not support parametric models.");
+        void verifySymbolicModelWithExplorationEngine<storm::RationalFunction>(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant) {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Exploration-based verification does currently not support parametric models.");
         }
 #endif
 
@@ -151,8 +151,8 @@ namespace storm {
 
             if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement) {
                 verifySymbolicModelWithAbstractionRefinementEngine<LibraryType>(program, formulas, onlyInitialStatesRelevant);
-            } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Learning) {
-                verifySymbolicModelWithLearningEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
+            } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Exploration) {
+                verifySymbolicModelWithExplorationEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
             } else {
                 storm::storage::ModelFormulasPair modelFormulasPair = buildSymbolicModel<ValueType, LibraryType>(program, formulas);
                 STORM_LOG_THROW(modelFormulasPair.model != nullptr, storm::exceptions::InvalidStateException,

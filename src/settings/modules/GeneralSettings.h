@@ -28,7 +28,7 @@ namespace storm {
             public:
                 // An enumeration of all engines.
                 enum class Engine {
-                    Sparse, Hybrid, Dd, Learning, AbstractionRefinement
+                    Sparse, Hybrid, Dd, Exploration, AbstractionRefinement
                 };
 
                 /*!

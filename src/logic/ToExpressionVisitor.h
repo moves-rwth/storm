@@ -10,7 +10,7 @@ namespace storm {
         
         class ToExpressionVisitor : public FormulaVisitor {
         public:
-            storm::expressions::Expression toExpression(Formula const& f) const;
+            storm::expressions::Expression toExpression(Formula const& f, storm::expressions::ExpressionManager const& manager) const;
             
             virtual boost::any visit(AtomicExpressionFormula const& f, boost::any const& data) const override;
             virtual boost::any visit(AtomicLabelFormula const& f, boost::any const& data) const override;

@@ -25,7 +25,7 @@ namespace storm {
             class TopologicalValueIterationEquationSolverSettings;
             class ParametricSettings;
             class SparseDtmcEliminationModelCheckerSettings;
-            class LearningSettings;
+            class ExplorationSettings;
             class ModuleSettings;
         }
         class Option;
@@ -332,11 +332,11 @@ namespace storm {
          */
         storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const& sparseDtmcEliminationModelCheckerSettings();
 
-        /* Retrieves the settings of the learning engine.
+        /* Retrieves the settings of the exploration engine.
          *
-         * @return An object that allows accessing the settings of the learning engine.
+         * @return An object that allows accessing the settings of the exploration engine.
          */
-        storm::settings::modules::LearningSettings const& learningSettings();
+        storm::settings::modules::ExplorationSettings const& explorationSettings();
         
     } // namespace settings
 } // namespace storm

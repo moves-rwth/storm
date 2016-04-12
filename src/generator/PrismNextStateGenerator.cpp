@@ -59,6 +59,9 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         bool PrismNextStateGenerator<ValueType, StateType>::satisfies(storm::expressions::Expression const& expression) const {
+            if (expression.isTrue()) {
+                return true;
+            }
             return evaluator.asBool(expression);
         }
         

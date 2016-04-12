@@ -419,9 +419,13 @@ namespace storm {
             return visitor.substitute(*this);
         }
         
-        storm::expressions::Expression Formula::toExpression() const {
+        storm::expressions::Expression Formula::toExpression(storm::expressions::ExpressionManager const& manager, std::map<std::string, storm::expressions::Expression> const& labelToExpressionMapping) const {
             ToExpressionVisitor visitor;
-            return visitor.toExpression(*this);
+            if (labelToExpressionMapping.empty()) {
+                return visitor.toExpression(*this, manager);
+            } else {
+                return visitor.toExpression(*this->substitute(labelToExpressionMapping), manager);
+            }
         }
         
         std::shared_ptr<Formula const> Formula::asSharedPointer() {

@@ -1,5 +1,5 @@
-#ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEMDPLEARNINGMODELCHECKER_H_
-#define STORM_MODELCHECKER_REACHABILITY_SPARSEMDPLEARNINGMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_EXPLORATION_SPARSEMDPEXPLORATIONMODELCHECKER_H_
+#define STORM_MODELCHECKER_EXPLORATION_SPARSEMDPEXPLORATIONMODELCHECKER_H_
 
 #include <random>
 
@@ -13,7 +13,7 @@
 #include "src/generator/VariableInformation.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/LearningSettings.h"
+#include "src/settings/modules/ExplorationSettings.h"
 
 #include "src/utility/macros.h"
 #include "src/utility/ConstantsComparator.h"
@@ -37,7 +37,7 @@ namespace storm {
     namespace modelchecker {
         
         template<typename ValueType>
-        class SparseMdpLearningModelChecker : public AbstractModelChecker {
+        class SparseMdpExplorationModelChecker : public AbstractModelChecker {
         public:
             typedef uint32_t StateType;
             typedef uint32_t ActionType;
@@ -46,18 +46,18 @@ namespace storm {
             typedef std::shared_ptr<ActionSet> ActionSetPointer;
             typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
             
-            SparseMdpLearningModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions);
+            SparseMdpExplorationModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions);
             
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
             
-            virtual std::unique_ptr<CheckResult> computeReachabilityProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) override;
             
         private:
             // A structure containing the data assembled during exploration.
             struct ExplorationInformation {
-                ExplorationInformation(uint_fast64_t bitsPerBucket, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), localPrecomputation(false), numberOfExplorationStepsUntilPrecomputation(100000), numberOfSampledPathsUntilPrecomputation(), nextStateHeuristic(storm::settings::modules::LearningSettings::NextStateHeuristic::DifferenceWeightedProbability) {
+                ExplorationInformation(uint_fast64_t bitsPerBucket, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max()) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), localPrecomputation(false), numberOfExplorationStepsUntilPrecomputation(100000), numberOfSampledPathsUntilPrecomputation(), nextStateHeuristic(storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceWeightedProbability) {
                     
-                    storm::settings::modules::LearningSettings const& settings = storm::settings::learningSettings();
+                    storm::settings::modules::ExplorationSettings const& settings = storm::settings::explorationSettings();
                     localPrecomputation = settings.isLocalPrecomputationSet();
                     if (settings.isNumberOfSampledPathsUntilPrecomputationSet()) {
                         numberOfSampledPathsUntilPrecomputation = settings.getNumberOfSampledPathsUntilPrecomputation();
@@ -83,7 +83,7 @@ namespace storm {
                 uint_fast64_t numberOfExplorationStepsUntilPrecomputation;
                 boost::optional<uint_fast64_t> numberOfSampledPathsUntilPrecomputation;
                 
-                storm::settings::modules::LearningSettings::NextStateHeuristic nextStateHeuristic;
+                storm::settings::modules::ExplorationSettings::NextStateHeuristic nextStateHeuristic;
                 
                 void setInitialStates(std::vector<StateType> const& initialStates) {
                     stateStorage.initialStateIndices = initialStates;
@@ -212,16 +212,16 @@ namespace storm {
                     return !useLocalPrecomputation();
                 }
                 
-                storm::settings::modules::LearningSettings::NextStateHeuristic const& getNextStateHeuristic() const {
+                storm::settings::modules::ExplorationSettings::NextStateHeuristic const& getNextStateHeuristic() const {
                     return nextStateHeuristic;
                 }
                 
                 bool useDifferenceWeightedProbabilityHeuristic() const {
-                    return nextStateHeuristic == storm::settings::modules::LearningSettings::NextStateHeuristic::DifferenceWeightedProbability;
+                    return nextStateHeuristic == storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceWeightedProbability;
                 }
 
                 bool useProbabilityHeuristic() const {
-                    return nextStateHeuristic == storm::settings::modules::LearningSettings::NextStateHeuristic::Probability;
+                    return nextStateHeuristic == storm::settings::modules::ExplorationSettings::NextStateHeuristic::Probability;
                 }
             };
             
@@ -258,7 +258,7 @@ namespace storm {
                 std::size_t totalNumberOfEcDetected;
                 
                 void printToStream(std::ostream& out, ExplorationInformation const& explorationInformation) const {
-                    out << std::endl << "Learning statistics:" << std::endl;
+                    out << std::endl << "Exploration statistics:" << std::endl;
                     out << "Discovered states: " << explorationInformation.getNumberOfDiscoveredStates() << " (" << numberOfExploredStates << " explored, " << explorationInformation.getNumberOfUnexploredStates() << " unexplored, " << numberOfTargetStates << " target)" << std::endl;
                     out << "Exploration steps: " << explorationSteps << std::endl;
                     out << "Sampled paths: " << pathsSampled << std::endl;
@@ -270,8 +270,12 @@ namespace storm {
             
             // A struct containing the data required for state exploration.
             struct StateGeneration {
-                StateGeneration(storm::prism::Program const& program, storm::generator::VariableInformation const& variableInformation, storm::expressions::Expression const& targetStateExpression) : generator(program, variableInformation, false), targetStateExpression(targetStateExpression) {
+                StateGeneration(storm::prism::Program const& program, storm::generator::VariableInformation const& variableInformation, storm::expressions::Expression const& conditionStateExpression, storm::expressions::Expression const& targetStateExpression) : generator(program, variableInformation, false), conditionStateExpression(conditionStateExpression), targetStateExpression(targetStateExpression) {
                     // Intentionally left empty.
+                }
+                
+                void load(storm::generator::CompressedState const& state) {
+                    generator.load(state);
                 }
                 
                 std::vector<StateType> getInitialStates() {
@@ -282,147 +286,23 @@ namespace storm {
                     return generator.expand(stateToIdCallback);
                 }
                 
+                bool isConditionState() const {
+                    return generator.satisfies(conditionStateExpression);
+                }
+
                 bool isTargetState() const {
                     return generator.satisfies(targetStateExpression);
                 }
                 
                 storm::generator::PrismNextStateGenerator<ValueType, StateType> generator;
                 std::function<StateType (storm::generator::CompressedState const&)> stateToIdCallback;
+                storm::expressions::Expression conditionStateExpression;
                 storm::expressions::Expression targetStateExpression;
             };
             
-            // A struct containg the lower and upper bounds per state and action.
-            struct BoundValues {
-                std::vector<ValueType> lowerBoundsPerState;
-                std::vector<ValueType> upperBoundsPerState;
-                std::vector<ValueType> lowerBoundsPerAction;
-                std::vector<ValueType> upperBoundsPerAction;
-                
-                std::pair<ValueType, ValueType> getBoundsForState(StateType const& state, ExplorationInformation const& explorationInformation) const {
-                    ActionType index = explorationInformation.getRowGroup(state);
-                    if (index == explorationInformation.getUnexploredMarker()) {
-                        return std::make_pair(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                    } else {
-                        return std::make_pair(lowerBoundsPerState[index], upperBoundsPerState[index]);
-                    }
-                }
-                
-                ValueType getLowerBoundForState(StateType const& state, ExplorationInformation const& explorationInformation) const {
-                    ActionType index = explorationInformation.getRowGroup(state);
-                    if (index == explorationInformation.getUnexploredMarker()) {
-                        return storm::utility::zero<ValueType>();
-                    } else {
-                        return getLowerBoundForRowGroup(index);
-                    }
-                }
-                
-                ValueType const& getLowerBoundForRowGroup(StateType const& rowGroup) const {
-                    return lowerBoundsPerState[rowGroup];
-                }
-                
-                ValueType getUpperBoundForState(StateType const& state, ExplorationInformation const& explorationInformation) const {
-                    ActionType index = explorationInformation.getRowGroup(state);
-                    if (index == explorationInformation.getUnexploredMarker()) {
-                        return storm::utility::one<ValueType>();
-                    } else {
-                        return getUpperBoundForRowGroup(index);
-                    }
-                }
-                
-                ValueType const& getUpperBoundForRowGroup(StateType const& rowGroup) const {
-                    return upperBoundsPerState[rowGroup];
-                }
-                
-                std::pair<ValueType, ValueType> getBoundsForAction(ActionType const& action) const {
-                    return std::make_pair(lowerBoundsPerAction[action], upperBoundsPerAction[action]);
-                }
-                
-                ValueType const& getLowerBoundForAction(ActionType const& action) const {
-                    return lowerBoundsPerAction[action];
-                }
-
-                ValueType const& getUpperBoundForAction(ActionType const& action) const {
-                    return upperBoundsPerAction[action];
-                }
-                
-                ValueType const& getBoundForAction(storm::OptimizationDirection const& direction, ActionType const& action) const {
-                    if (direction == storm::OptimizationDirection::Maximize) {
-                        return getUpperBoundForAction(action);
-                    } else {
-                        return getLowerBoundForAction(action);
-                    }
-                }
-                
-                ValueType getDifferenceOfStateBounds(StateType const& state, ExplorationInformation const& explorationInformation) const {
-                    std::pair<ValueType, ValueType> bounds = getBoundsForState(state, explorationInformation);
-                    return bounds.second - bounds.first;
-                }
-                
-                void initializeBoundsForNextState(std::pair<ValueType, ValueType> const& vals = std::pair<ValueType, ValueType>(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>())) {
-                    lowerBoundsPerState.push_back(vals.first);
-                    upperBoundsPerState.push_back(vals.second);
-                }
-                
-                void initializeBoundsForNextAction(std::pair<ValueType, ValueType> const& vals = std::pair<ValueType, ValueType>(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>())) {
-                    lowerBoundsPerAction.push_back(vals.first);
-                    upperBoundsPerAction.push_back(vals.second);
-                }
-                
-                void setLowerBoundForState(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& value) {
-                    setLowerBoundForRowGroup(explorationInformation.getRowGroup(state), value);
-                }
-                
-                void setLowerBoundForRowGroup(StateType const& group, ValueType const& value) {
-                    lowerBoundsPerState[group] = value;
-                }
-                
-                void setUpperBoundForState(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& value) {
-                    setUpperBoundForRowGroup(explorationInformation.getRowGroup(state), value);
-                }
-                
-                void setUpperBoundForRowGroup(StateType const& group, ValueType const& value) {
-                    upperBoundsPerState[group] = value;
-                }
-                
-                void setBoundsForAction(ActionType const& action, std::pair<ValueType, ValueType> const& values) {
-                    lowerBoundsPerAction[action] = values.first;
-                    upperBoundsPerAction[action] = values.second;
-                }
-
-                void setBoundsForState(StateType const& state, ExplorationInformation const& explorationInformation, std::pair<ValueType, ValueType> const& values) {
-                    StateType const& rowGroup = explorationInformation.getRowGroup(state);
-                    setBoundsForRowGroup(rowGroup, values);
-                }
-                
-                void setBoundsForRowGroup(StateType const& rowGroup, std::pair<ValueType, ValueType> const& values) {
-                    lowerBoundsPerState[rowGroup] = values.first;
-                    upperBoundsPerState[rowGroup] = values.second;
-                }
-                
-                bool setLowerBoundOfStateIfGreaterThanOld(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& newLowerValue) {
-                    StateType const& rowGroup = explorationInformation.getRowGroup(state);
-                    if (lowerBoundsPerState[rowGroup] < newLowerValue) {
-                        lowerBoundsPerState[rowGroup] = newLowerValue;
-                        return true;
-                    }
-                    return false;
-                }
-
-                bool setUpperBoundOfStateIfLessThanOld(StateType const& state, ExplorationInformation const& explorationInformation, ValueType const& newUpperValue) {
-                    StateType const& rowGroup = explorationInformation.getRowGroup(state);
-                    if (newUpperValue < upperBoundsPerState[rowGroup]) {
-                        upperBoundsPerState[rowGroup] = newUpperValue;
-                        return true;
-                    }
-                    return false;
-                }
-            };
-            
-            storm::expressions::Expression getTargetStateExpression(storm::logic::Formula const& subformula) const;
-            
             std::function<StateType (storm::generator::CompressedState const&)> createStateToIdCallback(ExplorationInformation& explorationInformation) const;
             
-            std::tuple<StateType, ValueType, ValueType> performLearningProcedure(StateGeneration& stateGeneration, ExplorationInformation& explorationInformation) const;
+            std::tuple<StateType, ValueType, ValueType> performExploration(StateGeneration& stateGeneration, ExplorationInformation& explorationInformation) const;
 
             bool samplePathFromInitialState(StateGeneration& stateGeneration, ExplorationInformation& explorationInformation, StateActionStack& stack, BoundValues& bounds, Statistics& stats) const;
             
@@ -465,4 +345,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_MODELCHECKER_REACHABILITY_SPARSEMDPLEARNINGMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_EXPLORATION_SPARSEMDPEXPLORATIONMODELCHECKER_H_ */

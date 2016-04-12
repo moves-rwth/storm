@@ -17,6 +17,18 @@ namespace storm {
             return propositional;
         }
         
+        FragmentSpecification reachability() {
+            FragmentSpecification reachability = propositional();
+            
+            reachability.setProbabilityOperatorsAllowed(true);
+            reachability.setUntilFormulasAllowed(true);
+            reachability.setReachabilityProbabilityFormulasAllowed(true);
+            reachability.setOperatorAtTopLevelRequired(true);
+            reachability.setNestedOperatorsAllowed(false);
+            
+            return reachability;
+        }
+        
         FragmentSpecification pctl() {
             FragmentSpecification pctl = propositional();
             
@@ -29,6 +41,14 @@ namespace storm {
             pctl.setStepBoundedUntilFormulasAllowed(true);
             
             return pctl;
+        }
+        
+        FragmentSpecification flatPctl() {
+            FragmentSpecification flatPctl = pctl();
+            
+            flatPctl.setNestedOperatorsAllowed(false);
+            
+            return flatPctl;
         }
         
         FragmentSpecification prctl() {
@@ -100,6 +120,8 @@ namespace storm {
             
             qualitativeOperatorResults = true;
             quantitativeOperatorResults = true;
+            
+            operatorAtTopLevelRequired = false;
         }
         
         FragmentSpecification FragmentSpecification::copy() const {
@@ -386,6 +408,13 @@ namespace storm {
             return *this;
         }
 
+        bool FragmentSpecification::isOperatorAtTopLevelRequired() const {
+            return operatorAtTopLevelRequired;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setOperatorAtTopLevelRequired(bool newValue) {
+            operatorAtTopLevelRequired = newValue;
+        }
         
     }
 }

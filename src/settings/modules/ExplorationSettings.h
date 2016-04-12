@@ -1,5 +1,5 @@
-#ifndef STORM_SETTINGS_MODULES_LEARNINGSETTINGS_H_
-#define STORM_SETTINGS_MODULES_LEARNINGSETTINGS_H_
+#ifndef STORM_SETTINGS_MODULES_EXPLORATIONSETTINGS_H_
+#define STORM_SETTINGS_MODULES_EXPLORATIONSETTINGS_H_
 
 #include "src/settings/modules/ModuleSettings.h"
 
@@ -8,9 +8,9 @@ namespace storm {
         namespace modules {
             
             /*!
-             * This class represents the learning settings.
+             * This class represents the exploration settings.
              */
-            class LearningSettings : public ModuleSettings {
+            class ExplorationSettings : public ModuleSettings {
             public:
                 // An enumeration of all available precomputation types.
                 enum class PrecomputationType { Local, Global };
@@ -19,11 +19,11 @@ namespace storm {
                 enum class NextStateHeuristic { DifferenceWeightedProbability, Probability };
                 
                 /*!
-                 * Creates a new set of learning settings that is managed by the given manager.
+                 * Creates a new set of exploration settings that is managed by the given manager.
                  *
                  * @param settingsManager The responsible manager.
                  */
-                LearningSettings(storm::settings::SettingsManager& settingsManager);
+                ExplorationSettings(storm::settings::SettingsManager& settingsManager);
                 
                 /*!
                  * Retrieves whether local precomputation is to be used.
@@ -90,4 +90,4 @@ namespace storm {
     } // namespace settings
 } // namespace storm
 
-#endif /* STORM_SETTINGS_MODULES_LEARNINGSETTINGS_H_ */
+#endif /* STORM_SETTINGS_MODULES_EXPLORATIONSETTINGS_H_ */

@@ -190,12 +190,15 @@ namespace storm {
             std::shared_ptr<Formula> substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const;
 
             /*!
-             * Takes the formula and converts it to an equivalent expression assuming that only atomic expression formulas
-             * and boolean connectives appear in the formula.
+             * Takes the formula and converts it to an equivalent expression. The formula may contain atomic labels, but
+             * then the given mapping must provide a corresponding expression. Other than that, only atomic expression
+             * formulas and boolean connectives may appear in the formula.
              *
+             * @param manager The manager responsible for the expressions in the formula and the resulting expression.
+             * @param A mapping from labels to the expressions that define them.
              * @return An equivalent expression.
              */
-            storm::expressions::Expression toExpression() const;
+            storm::expressions::Expression toExpression(storm::expressions::ExpressionManager const& manager, std::map<std::string, storm::expressions::Expression> const& labelToExpressionMapping = {}) const;
             
             std::string toString() const;
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;

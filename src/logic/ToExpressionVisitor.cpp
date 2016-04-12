@@ -2,14 +2,16 @@
 
 #include "src/logic/Formulas.h"
 
+#include "src/storage/expressions/ExpressionManager.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace logic {
         
-        storm::expressions::Expression ToExpressionVisitor::toExpression(Formula const& f) const {
-            boost::any result = f.accept(*this, boost::any());
+        storm::expressions::Expression ToExpressionVisitor::toExpression(Formula const& f, storm::expressions::ExpressionManager const& manager) const {
+            boost::any result = f.accept(*this, std::ref(manager));
             return boost::any_cast<storm::expressions::Expression>(result);
         }
         
@@ -18,7 +20,7 @@ namespace storm {
         }
         
         boost::any ToExpressionVisitor::visit(AtomicLabelFormula const& f, boost::any const& data) const {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression, because the undefined atomic label '" << f.getLabel() << "' appears in the formula.");
         }
         
         boost::any ToExpressionVisitor::visit(BinaryBooleanStateFormula const& f, boost::any const& data) const {
@@ -35,7 +37,13 @@ namespace storm {
         }
         
         boost::any ToExpressionVisitor::visit(BooleanLiteralFormula const& f, boost::any const& data) const {
-            return std::static_pointer_cast<Formula>(std::make_shared<BooleanLiteralFormula>(f));
+            storm::expressions::Expression result;
+            if (f.isTrueFormula()) {
+                result = boost::any_cast<std::reference_wrapper<storm::expressions::ExpressionManager const>>(data).get().boolean(true);
+            } else {
+                result = boost::any_cast<std::reference_wrapper<storm::expressions::ExpressionManager const>>(data).get().boolean(false);
+            }
+            return result;
         }
         
         boost::any ToExpressionVisitor::visit(BoundedUntilFormula const& f, boost::any const& data) const {
