@@ -54,7 +54,7 @@ namespace storm {
                     break;
                 }
                 default:
-                    LOG4CPLUS_WARN(logger, "Unknown/Unhandled Model Type which cannot be parsed."); // Unknown
+                    STORM_LOG_WARN("Unknown/Unhandled Model Type which cannot be parsed."); // Unknown
             }
 
             return model;

@@ -4,10 +4,6 @@
 
 
 
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-#include "log4cplus/consoleappender.h"
-#include "log4cplus/fileappender.h"
 #include "macros.h"
 
 #include "src/settings/SettingsManager.h"
@@ -19,8 +15,9 @@ namespace storm {
          * Initializes the logging framework and sets up logging to console.
          */
         void initializeLogger();
+#ifdef STORM_LOGGING_FRAMEWORK
         void initializeLogger(log4cplus::LogLevel const&);
-
+#endif
         /*!
          * Performs some necessary initializations.
          */

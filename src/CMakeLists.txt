@@ -11,6 +11,7 @@ file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
+file(GLOB_RECURSE STORM_GENERATOR_FILES ${PROJECT_SOURCE_DIR}/src/generator/*.h ${PROJECT_SOURCE_DIR}/src/generator/*.cpp)
 file(GLOB_RECURSE STORM_CLI_FILES ${PROJECT_SOURCE_DIR}/src/cli/*.h ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_EXCEPTIONS_FILES ${PROJECT_SOURCE_DIR}/src/exceptions/*.h ${PROJECT_SOURCE_DIR}/src/exceptions/*.cpp)
 file(GLOB_RECURSE STORM_LOGIC_FILES ${PROJECT_SOURCE_DIR}/src/logic/*.h ${PROJECT_SOURCE_DIR}/src/logic/*.cpp)
@@ -59,6 +60,7 @@ set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
 source_group(main FILES ${STORM_MAIN_FILE})
 source_group(adapters FILES ${STORM_ADAPTERS_FILES})
 source_group(builder FILES ${STORM_BUILDER_FILES})
+source_group(generator FILES ${STORM_GENERATOR_FILES})
 source_group(cli FILES ${STORM_CLI_FILES})
 source_group(exceptions FILES ${STORM_EXCEPTIONS_FILES})
 source_group(logic FILES ${STORM_LOGIC_FILES})
@@ -110,9 +112,9 @@ endif(ADDITIONAL_LINK_DIRS)
 ##  All link_directories() calls MUST be made before this point               #
 ##                                                                            #
 ###############################################################################
-add_library(storm ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS} ${STORM_GENERATED_SOURCES}) # Adding headers for xcode
-add_dependencies(storm xercesc)
+add_library(storm STATIC ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
 add_dependencies(storm sylvan)
+add_dependencies(storm resources)
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")

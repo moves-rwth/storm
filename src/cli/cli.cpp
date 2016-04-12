@@ -186,18 +186,14 @@ namespace storm {
                 }
                 
                 if (storm::settings::generalSettings().isVerboseSet()) {
-                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL);
-                    LOG4CPLUS_INFO(logger, "Enabled verbose mode, log output gets printed to console.");
+                    STORM_GLOBAL_LOGLEVEL_INFO();
                 }
                 if (storm::settings::debugSettings().isDebugSet()) {
-                    logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL);
-                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL);
-                    LOG4CPLUS_INFO(logger, "Enabled very verbose mode, log output gets printed to console.");
+                    STORM_GLOBAL_LOGLEVEL_DEBUG();
+                    
                 }
                 if (storm::settings::debugSettings().isTraceSet()) {
-                    logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL);
-                    logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::TRACE_LOG_LEVEL);
-                    LOG4CPLUS_INFO(logger, "Enabled trace mode, log output gets printed to console.");
+                    STORM_GLOBAL_LOGLEVEL_TRACE();
                 }
                 if (storm::settings::debugSettings().isLogfileSet()) {
                     storm::utility::initializeFileLogging();

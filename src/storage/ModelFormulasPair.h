@@ -1,6 +1,6 @@
 #pragma once
 #include "../models/ModelBase.h"
-
+#include <vector>
 
 namespace storm {
     namespace logic {

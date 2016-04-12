@@ -32,6 +32,8 @@ namespace storm {
             const std::string GeneralSettings::explicitOptionShortName = "exp";
             const std::string GeneralSettings::symbolicOptionName = "symbolic";
             const std::string GeneralSettings::symbolicOptionShortName = "s";
+            const std::string GeneralSettings::explorationOrderOptionName = "explorder";
+            const std::string GeneralSettings::explorationOrderOptionShortName = "eo";
             const std::string GeneralSettings::propertyOptionName = "prop";
             const std::string GeneralSettings::propertyOptionShortName = "prop";
             const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
@@ -86,6 +88,11 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, symbolicOptionName, false, "Parses the model given in a symbolic representation.").setShortName(symbolicOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+
+                std::vector<std::string> explorationOrders = {"dfs", "bfs"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the exploration order to choose. Available are: dfs and bfs.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(explorationOrders)).setDefaultValueString("bfs").build()).build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the formulas to be checked on the model.").setShortName(propertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula or filename", "The formula or the file containing the formulas.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
@@ -190,6 +197,20 @@ namespace storm {
             
             std::string GeneralSettings::getSymbolicModelFilename() const {
                 return this->getOption(symbolicOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool GeneralSettings::isExplorationOrderSet() const {
+                return this->getOption(explorationOrderOptionName).getHasOptionBeenSet();
+            }
+            
+            storm::builder::ExplorationOrder GeneralSettings::getExplorationOrder() const {
+                std::string explorationOrderAsString = this->getOption(explorationOrderOptionName).getArgumentByName("name").getValueAsString();
+                if (explorationOrderAsString == "dfs") {
+                    return storm::builder::ExplorationOrder::Dfs;
+                } else if (explorationOrderAsString == "bfs") {
+                    return storm::builder::ExplorationOrder::Bfs;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown exploration order '" << explorationOrderAsString << "'.");
             }
             
             bool GeneralSettings::isPropertySet() const {

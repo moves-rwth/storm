@@ -296,13 +296,13 @@ namespace storm {
             // If we are at the maximal level, the value to be set is stored as a constant in the DD.
             if (currentRowLevel == maxLevel) {
                 result.set(currentRowOffset, true);
-            } else if (ddRowVariableIndices[currentRowLevel] < dd->index) {
+            } else if (ddRowVariableIndices[currentRowLevel] < Cudd_NodeReadIndex(dd)) {
                 toVectorRec(dd, manager, result, rowOdd.getElseSuccessor(), complement, currentRowLevel + 1, maxLevel, currentRowOffset, ddRowVariableIndices);
                 toVectorRec(dd, manager, result, rowOdd.getThenSuccessor(), complement, currentRowLevel + 1, maxLevel, currentRowOffset + rowOdd.getElseOffset(), ddRowVariableIndices);
             } else {
                 // Otherwise, we compute the ODDs for both the then- and else successors.
-                DdNode* elseDdNode = Cudd_E(dd);
-                DdNode* thenDdNode = Cudd_T(dd);
+                DdNode const* elseDdNode = Cudd_E_const(dd);
+                DdNode const* thenDdNode = Cudd_T_const(dd);
                 
                 // Determine whether we have to evaluate the successors as if they were complemented.
                 bool elseComplemented = Cudd_IsComplement(elseDdNode) ^ complement;
@@ -356,7 +356,7 @@ namespace storm {
                     }
                     
                     return std::make_shared<Odd>(nullptr, elseOffset, nullptr, thenOffset);
-                } else if (ddVariableIndices[currentLevel] < static_cast<uint_fast64_t>(dd->index)) {
+                } else if (ddVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
                     // If we skipped the level in the DD, we compute the ODD just for the else-successor and use the same
                     // node for the then-successor as well.
                     std::shared_ptr<Odd> elseNode = createOddRec(dd, manager, currentLevel + 1, complement, maxLevel, ddVariableIndices, uniqueTableForLevels);
@@ -365,8 +365,8 @@ namespace storm {
                     return std::make_shared<Odd>(elseNode, totalOffset, thenNode, totalOffset);
                 } else {
                     // Otherwise, we compute the ODDs for both the then- and else successors.
-                    DdNode* thenDdNode = Cudd_T(dd);
-                    DdNode* elseDdNode = Cudd_E(dd);
+                    DdNode const* thenDdNode = Cudd_T_const(dd);
+                    DdNode const* elseDdNode = Cudd_E_const(dd);
                     
                     // Determine whether we have to evaluate the successors as if they were complemented.
                     bool elseComplemented = Cudd_IsComplement(elseDdNode) ^ complement;
@@ -397,15 +397,15 @@ namespace storm {
             
             if (currentLevel == maxLevel) {
                 result[currentIndex++] = values[currentOffset];
-            } else if (ddVariableIndices[currentLevel] < dd->index) {
+            } else if (ddVariableIndices[currentLevel] < Cudd_NodeReadIndex(dd)) {
                 // If we skipped a level, we need to enumerate the explicit entries for the case in which the bit is set
                 // and for the one in which it is not set.
                 filterExplicitVectorRec(dd, manager, currentLevel + 1, complement, maxLevel, ddVariableIndices, currentOffset, odd.getElseSuccessor(), result, currentIndex, values);
                 filterExplicitVectorRec(dd, manager, currentLevel + 1, complement, maxLevel, ddVariableIndices, currentOffset + odd.getElseOffset(), odd.getThenSuccessor(), result, currentIndex, values);
             } else {
                 // Otherwise, we compute the ODDs for both the then- and else successors.
-                DdNode* thenDdNode = Cudd_T(dd);
-                DdNode* elseDdNode = Cudd_E(dd);
+                DdNode const* thenDdNode = Cudd_T_const(dd);
+                DdNode const* elseDdNode = Cudd_E_const(dd);
                 
                 // Determine whether we have to evaluate the successors as if they were complemented.
                 bool elseComplemented = Cudd_IsComplement(elseDdNode) ^ complement;

@@ -17,11 +17,7 @@
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/DdManager.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-
-extern log4cplus::Logger logger;
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace utility {
@@ -281,7 +277,7 @@ namespace storm {
                             }
                         }
                         if (allSuccessorsInStates) {
-                            result.setChoice(state, choice);
+                            result.setChoice(state, choice - nondeterministicChoiceIndices[state]);
                             break;
                         }
                     }
@@ -305,7 +301,7 @@ namespace storm {
                             }
                         }
                         if (oneSuccessorInStates) {
-                            result.setChoice(state, choice);
+                            result.setChoice(state, choice - nondeterministicChoiceIndices[state]);
                             break;
                         }
                     }
@@ -315,8 +311,46 @@ namespace storm {
             }
             
             template <typename T>
-            storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::BitVector const& probGreater0EStates, storm::storage::SparseMatrix<T> const& transitionMatrix) {
-                return computeSchedulerWithOneSuccessorInStates(probGreater0EStates, transitionMatrix);
+            storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& rowFilter) {
+                //Perform backwards DFS from psiStates and find a valid choice for each visited state.
+                
+                storm::storage::PartialScheduler result;
+                std::vector<uint_fast64_t> stack;
+                storm::storage::BitVector currentStates(psiStates); //the states that are either psiStates or for which we have found a valid choice.
+                stack.insert(stack.end(), currentStates.begin(), currentStates.end());
+                uint_fast64_t currentState = 0;
+                
+                while (!stack.empty()) {
+                    currentState = stack.back();
+                    stack.pop_back();
+                    
+                    for (typename storm::storage::SparseMatrix<T>::const_iterator predecessorEntryIt = backwardTransitions.begin(currentState), predecessorEntryIte = backwardTransitions.end(currentState); predecessorEntryIt != predecessorEntryIte; ++predecessorEntryIt) {
+                        uint_fast64_t const& predecessor = predecessorEntryIt->getColumn();
+                        if (phiStates.get(predecessor) && !currentStates.get(predecessor)) {
+                            //The predecessor is a probGreater0E state that has not been considered yet. Let's find the right choice that leads to a state in currentStates.
+                            bool foundValidChoice = false;
+                            for (uint_fast64_t row = transitionMatrix.getRowGroupIndices()[predecessor]; row < transitionMatrix.getRowGroupIndices()[predecessor + 1]; ++row) {
+                                if(rowFilter && !rowFilter->get(row)){
+                                    continue;
+                                }
+                                for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
+                                    if(currentStates.get(successorEntryIt->getColumn())){
+                                        foundValidChoice = true;
+                                        break;
+                                    }
+                                }
+                                if(foundValidChoice){
+                                    result.setChoice(predecessor, row - transitionMatrix.getRowGroupIndices()[predecessor]);
+                                    currentStates.set(predecessor, true);
+                                    stack.push_back(predecessor);
+                                    break;
+                                }
+                            }
+                            STORM_LOG_INFO_COND(foundValidChoice, "Could not find a valid choice for ProbGreater0E state " << predecessor << ".");
+                        }
+                    }
+                }
+                return result;
             }
             
             template <typename T>
@@ -357,7 +391,7 @@ namespace storm {
                                 // If all successors for a given nondeterministic choice are in the prob1E state set, we
                                 // perform a backward search from that state.
                                 if (allSuccessorsInProb1EStates && hasSuccessorInCurrentStates) {
-                                    result.setChoice(predecessorEntryIt->getColumn(), row);
+                                    result.setChoice(predecessorEntryIt->getColumn(), row - nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]);
                                     currentStates.set(predecessorEntryIt->getColumn(), true);
                                     stack.push_back(predecessorEntryIt->getColumn());
                                     break;
@@ -998,7 +1032,7 @@ namespace storm {
             template <typename T>
             std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix) {
                 if (matrix.getRowCount() != matrix.getColumnCount()) {
-                    LOG4CPLUS_ERROR(logger, "Provided matrix is required to be square.");
+                    STORM_LOG_ERROR("Provided matrix is required to be square.");
                     throw storm::exceptions::InvalidArgumentException() << "Provided matrix is required to be square.";
                 }
                 
@@ -1072,7 +1106,7 @@ namespace storm {
                                                                                   storm::storage::BitVector const& startingStates,
                                                                                   storm::storage::BitVector const* filterStates) {
                 
-                LOG4CPLUS_INFO(logger, "Performing Dijkstra search.");
+                STORM_LOG_INFO("Performing Dijkstra search.");
                 
                 const uint_fast64_t noPredecessorValue = storm::utility::zero<uint_fast64_t>();
                 std::vector<T> probabilities(model.getNumberOfStates(), storm::utility::zero<T>());
@@ -1118,7 +1152,7 @@ namespace storm {
                 std::pair<std::vector<T>, std::vector<uint_fast64_t>> result;
                 result.first = std::move(probabilities);
                 result.second = std::move(predecessors);
-                LOG4CPLUS_INFO(logger, "Done performing Dijkstra search.");
+                STORM_LOG_INFO("Done performing Dijkstra search.");
                 return result;
             }
             
@@ -1145,7 +1179,7 @@ namespace storm {
             
             
             
-            template storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::BitVector const& probGreater0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix);
+            template storm::storage::PartialScheduler computeSchedulerProbGreater0E(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::optional<storm::storage::BitVector> const& rowFilter);
             
             template storm::storage::PartialScheduler computeSchedulerProb0E(storm::storage::BitVector const& prob0EStates, storm::storage::SparseMatrix<double> const& transitionMatrix);
             

@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <string>
+#include <algorithm>
 #include "ArgumentBase.h"
 #include "Argument.h"
 

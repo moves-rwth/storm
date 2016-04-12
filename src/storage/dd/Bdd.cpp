@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "src/storage/dd/Bdd.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Odd.h"

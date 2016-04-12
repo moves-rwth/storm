@@ -97,8 +97,8 @@ namespace storm {
             
             template<storm::dd::DdType Type, typename ValueType>
             std::size_t Model<Type, ValueType>::getSizeInBytes() const {
-                // FIXME: do not count DdNode, as this is CUDD specific.
-                return sizeof(*this) + sizeof(DdNode) * (reachableStates.getNodeCount() + initialStates.getNodeCount() + transitionMatrix.getNodeCount());
+                // FIXME: This assumes a fixed value of 16 bytes per node, which isn't necessarily true.
+                return sizeof(*this) + 16 * (reachableStates.getNodeCount() + initialStates.getNodeCount() + transitionMatrix.getNodeCount());
             }
             
             template<storm::dd::DdType Type, typename ValueType>

@@ -10,6 +10,8 @@
 
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidPropertyException.h"
 
@@ -23,7 +25,7 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         bool SymbolicPropositionalModelChecker<Type, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isPropositionalFormula();
+            return formula.isInFragment(storm::logic::propositional());
         }
         
         template<storm::dd::DdType Type, typename ValueType>

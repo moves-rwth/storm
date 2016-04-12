@@ -14,13 +14,13 @@
 namespace storm {
     namespace storage {
         
-        template<typename ValueType>
-        Distribution<ValueType>::Distribution() {
+        template<typename ValueType, typename StateType>
+        Distribution<ValueType, StateType>::Distribution() {
             // Intentionally left empty.
         }
         
-        template<typename ValueType>
-        bool Distribution<ValueType>::equals(Distribution<ValueType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
+        template<typename ValueType, typename StateType>
+        bool Distribution<ValueType, StateType>::equals(Distribution<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
             // We need to check equality by ourselves, because we need to account for epsilon differences.
             if (this->distribution.size() != other.distribution.size()) {
                 return false;
@@ -42,8 +42,8 @@ namespace storm {
             return true;
         }
         
-        template<typename ValueType>
-        void Distribution<ValueType>::addProbability(storm::storage::sparse::state_type const& state, ValueType const& probability) {
+        template<typename ValueType, typename StateType>
+        void Distribution<ValueType, StateType>::addProbability(StateType const& state, ValueType const& probability) {
             auto it = this->distribution.find(state);
             if (it == this->distribution.end()) {
                 this->distribution.emplace_hint(it, state, probability);
@@ -52,8 +52,8 @@ namespace storm {
             }
         }
         
-        template<typename ValueType>
-        void Distribution<ValueType>::removeProbability(storm::storage::sparse::state_type const& state, ValueType const& probability, storm::utility::ConstantsComparator<ValueType> const& comparator) {
+        template<typename ValueType, typename StateType>
+        void Distribution<ValueType, StateType>::removeProbability(StateType const& state, ValueType const& probability, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             auto it = this->distribution.find(state);
             STORM_LOG_ASSERT(it != this->distribution.end(), "Cannot remove probability, because the state is not in the support of the distribution.");
             it->second -= probability;
@@ -62,34 +62,44 @@ namespace storm {
             }
         }
         
-        template<typename ValueType>
-        void Distribution<ValueType>::shiftProbability(storm::storage::sparse::state_type const& fromState, storm::storage::sparse::state_type const& toState, ValueType const& probability, storm::utility::ConstantsComparator<ValueType> const& comparator) {
+        template<typename ValueType, typename StateType>
+        void Distribution<ValueType, StateType>::shiftProbability(StateType const& fromState, StateType const& toState, ValueType const& probability, storm::utility::ConstantsComparator<ValueType> const& comparator) {
             removeProbability(fromState, probability, comparator);
             addProbability(toState, probability);
         }
         
-        template<typename ValueType>
-        typename Distribution<ValueType>::iterator Distribution<ValueType>::begin() {
+        template<typename ValueType, typename StateType>
+        typename Distribution<ValueType, StateType>::iterator Distribution<ValueType, StateType>::begin() {
             return this->distribution.begin();
         }
 
-        template<typename ValueType>
-        typename Distribution<ValueType>::const_iterator Distribution<ValueType>::begin() const {
+        template<typename ValueType, typename StateType>
+        typename Distribution<ValueType, StateType>::const_iterator Distribution<ValueType, StateType>::begin() const {
             return this->distribution.begin();
         }
         
-        template<typename ValueType>
-        typename Distribution<ValueType>::iterator Distribution<ValueType>::end() {
+        template<typename ValueType, typename StateType>
+        typename Distribution<ValueType, StateType>::const_iterator Distribution<ValueType, StateType>::cbegin() const {
+            return this->begin();
+        }
+        
+        template<typename ValueType, typename StateType>
+        typename Distribution<ValueType, StateType>::iterator Distribution<ValueType, StateType>::end() {
             return this->distribution.end();
         }
         
-        template<typename ValueType>
-        typename Distribution<ValueType>::const_iterator Distribution<ValueType>::end() const {
+        template<typename ValueType, typename StateType>
+        typename Distribution<ValueType, StateType>::const_iterator Distribution<ValueType, StateType>::end() const {
             return this->distribution.end();
         }
+
+        template<typename ValueType, typename StateType>
+        typename Distribution<ValueType, StateType>::const_iterator Distribution<ValueType, StateType>::cend() const {
+            return this->end();
+        }
         
-        template<typename ValueType>
-        void Distribution<ValueType>::scale(storm::storage::sparse::state_type const& state) {
+        template<typename ValueType, typename StateType>
+        void Distribution<ValueType, StateType>::scale(StateType const& state) {
             auto probabilityIterator = this->distribution.find(state);
             if (probabilityIterator != this->distribution.end()) {
                 ValueType scaleValue = storm::utility::one<ValueType>() / probabilityIterator->second;
@@ -101,13 +111,13 @@ namespace storm {
             }
         }
                 
-        template<typename ValueType>
-        std::size_t Distribution<ValueType>::size() const {
+        template<typename ValueType, typename StateType>
+        std::size_t Distribution<ValueType, StateType>::size() const {
             return this->distribution.size();
         }
         
-        template<typename ValueType>
-        std::ostream& operator<<(std::ostream& out, Distribution<ValueType> const& distribution) {
+        template<typename ValueType, typename StateType>
+        std::ostream& operator<<(std::ostream& out, Distribution<ValueType, StateType> const& distribution) {
             out << "{";
             for (auto const& entry : distribution) {
                 out << "[" << entry.second << ": " << entry.first << "], ";
@@ -117,8 +127,8 @@ namespace storm {
             return out;
         }
         
-        template<typename ValueType>
-        bool Distribution<ValueType>::less(Distribution<ValueType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
+        template<typename ValueType, typename StateType>
+        bool Distribution<ValueType, StateType>::less(Distribution<ValueType, StateType> const& other, storm::utility::ConstantsComparator<ValueType> const& comparator) const {
             if (this->size() != other.size()) {
                 return this->size() < other.size();
             }

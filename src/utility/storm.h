@@ -60,6 +60,7 @@
 #include "src/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -107,8 +108,8 @@ namespace storm {
                 options.buildCommandLabels = true;
             }
 
-            storm::builder::ExplicitPrismModelBuilder<ValueType> builder;
-            result.model = builder.translateProgram(program, options);
+            storm::builder::ExplicitPrismModelBuilder<ValueType> builder(program, options);
+            result.model = builder.translate();
             translatedProgram = builder.getTranslatedProgram();
         } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Dd || settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
@@ -296,6 +297,16 @@ namespace storm {
 
             storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>> modelchecker(*ctmc);
             result = modelchecker.check(task);
+        } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
+            std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
+            
+            // Close the MA, if it is not already closed.
+            if (!ma->isClosed()) {
+                ma->close();
+            }
+            
+            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
+            result = modelchecker.check(task);
         }
         return result;
 
@@ -308,7 +319,7 @@ namespace storm {
         // TODO: add checks.
         filestream << "!Parameters: ";
         std::set<storm::Variable> vars = result.gatherVariables();
-        std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::Variable>(filestream, ", "));
+        std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::Variable>(filestream, "; "));
         filestream << std::endl;
         filestream << "!Result: " << result << std::endl;
         filestream << "!Well-formed Constraints: " << std::endl;

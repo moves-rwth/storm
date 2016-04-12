@@ -1,5 +1,6 @@
 #include "src/storage/BitVectorHashMap.h"
 
+#include <algorithm>
 #include <iostream>
 
 #include "src/utility/macros.h"
@@ -40,7 +41,7 @@ namespace storm {
         std::pair<storm::storage::BitVector, ValueType> BitVectorHashMap<ValueType, Hash1, Hash2>::BitVectorHashMapIterator::operator*() const {
             return map.getBucketAndValue(*indexIt);
         }
-        
+                
         template<class ValueType, class Hash1, class Hash2>
         BitVectorHashMap<ValueType, Hash1, Hash2>::BitVectorHashMap(uint64_t bucketSize, uint64_t initialSize, double loadFactor) : loadFactor(loadFactor), bucketSize(bucketSize), numberOfElements(0) {
             STORM_LOG_ASSERT(bucketSize % 64 == 0, "Bucket size must be a multiple of 64.");
@@ -231,6 +232,13 @@ namespace storm {
         template<class ValueType, class Hash1, class Hash2>
         std::pair<storm::storage::BitVector, ValueType> BitVectorHashMap<ValueType, Hash1, Hash2>::getBucketAndValue(std::size_t bucket) const {
             return std::make_pair(buckets.get(bucket * bucketSize, bucketSize), values[bucket]);
+        }
+        
+        template<class ValueType, class Hash1, class Hash2>
+        void BitVectorHashMap<ValueType, Hash1, Hash2>::remap(std::function<ValueType(ValueType const&)> const& remapping) {
+            for (auto pos : occupied) {
+                values[pos] = remapping(values[pos]);
+            }
         }
         
         template class BitVectorHashMap<uint_fast64_t>;
