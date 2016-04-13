@@ -374,6 +374,7 @@ namespace storm {
                         // Now compute reachability probabilities in the transformed model.
                         storm::storage::SparseMatrix<ValueType> const& newTransitionMatrix = transformedModel.transitionMatrix.get();
                         std::vector<ValueType> conditionalProbabilities = computeUntilProbabilities(newTransitionMatrix, newTransitionMatrix.transpose(), storm::storage::BitVector(newTransitionMatrix.getRowCount(), true), transformedModel.targetStates.get(), qualitative, linearEquationSolverFactory);
+                        
                         storm::utility::vector::setVectorValues(result, transformedModel.beforeStates, conditionalProbabilities);
                     }
                 }

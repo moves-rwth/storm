@@ -47,6 +47,10 @@ namespace storm {
                 static std::vector<ValueType> computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory, boost::optional<std::vector<ValueType>> resultHint = boost::none);
                 
                 struct BaierTransformedModel {
+                    BaierTransformedModel() : noTargetStates(false) {
+                        // Intentionally left empty.
+                    }
+                    
                     storm::storage::BitVector beforeStates;
                     boost::optional<storm::storage::SparseMatrix<ValueType>> transitionMatrix;
                     boost::optional<storm::storage::BitVector> targetStates;
