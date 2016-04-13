@@ -229,10 +229,10 @@ namespace storm {
         
         template <typename ValueType, typename RewardModelType, typename StateType>
         StateType ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::getOrAddStateIndex(CompressedState const& state) {
-            uint32_t newIndex = stateStorage.numberOfStates;
+            StateType newIndex = static_cast<StateType>(stateStorage.getNumberOfStates());
             
             // Check, if the state was already registered.
-            std::pair<uint32_t, std::size_t> actualIndexBucketPair = stateStorage.stateToId.findOrAddAndGetBucket(state, newIndex);
+            std::pair<StateType, std::size_t> actualIndexBucketPair = stateStorage.stateToId.findOrAddAndGetBucket(state, newIndex);
             
             if (actualIndexBucketPair.first == newIndex) {
                 if (options.explorationOrder == ExplorationOrder::Dfs) {
@@ -245,7 +245,6 @@ namespace storm {
                 } else {
                     STORM_LOG_ASSERT(false, "Invalid exploration order.");
                 }
-                ++stateStorage.numberOfStates;
             }
             
             return actualIndexBucketPair.first;
@@ -467,7 +466,7 @@ namespace storm {
             
             // Finally -- if requested -- build the state information that can be retrieved from the outside.
             if (options.buildStateValuations) {
-                stateValuations = storm::storage::sparse::StateValuations(stateStorage.numberOfStates);
+                stateValuations = storm::storage::sparse::StateValuations(stateStorage.getNumberOfStates());
                 for (auto const& bitVectorIndexPair : stateStorage.stateToId) {
                     stateValuations.get().valuations[bitVectorIndexPair.second] = unpackStateIntoValuation(bitVectorIndexPair.first, variableInformation, program.getManager());
                 }

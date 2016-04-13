@@ -52,45 +52,26 @@ namespace storm {
             storm::logic::Formula const& targetFormula = untilFormula.getRightSubformula();
             STORM_LOG_THROW(program.isDeterministicModel() || checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "For nondeterministic systems, an optimization direction (min/max) must be given in the property.");
             
-            std::map<std::string, storm::expressions::Expression> labelToExpressionMapping = program.getLabelToExpressionMapping();
-            StateGeneration<StateType, ValueType> stateGeneration(program, variableInformation, conditionFormula.toExpression(program.getManager(), labelToExpressionMapping), targetFormula.toExpression(program.getManager(), labelToExpressionMapping));
-            
-            ExplorationInformation<StateType, ValueType> explorationInformation(variableInformation.getTotalBitOffset(true), checkTask.isOptimizationDirectionSet() ? checkTask.getOptimizationDirection() : storm::OptimizationDirection::Maximize);
-            
+            ExplorationInformation<StateType, ValueType> explorationInformation(checkTask.isOptimizationDirectionSet() ? checkTask.getOptimizationDirection() : storm::OptimizationDirection::Maximize);
+
             // The first row group starts at action 0.
             explorationInformation.newRowGroup(0);
             
-            // Create a callback for the next-state generator to enable it to request the index of states.
-            stateGeneration.setStateToIdCallback(createStateToIdCallback(explorationInformation));
+            std::map<std::string, storm::expressions::Expression> labelToExpressionMapping = program.getLabelToExpressionMapping();
+            StateGeneration<StateType, ValueType> stateGeneration(program, variableInformation, explorationInformation, conditionFormula.toExpression(program.getManager(), labelToExpressionMapping), targetFormula.toExpression(program.getManager(), labelToExpressionMapping));
+            
             
             // Compute and return result.
             std::tuple<StateType, ValueType, ValueType> boundsForInitialState = performExploration(stateGeneration, explorationInformation);
             return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::get<0>(boundsForInitialState), std::get<1>(boundsForInitialState));
         }
-        
-        template<typename ValueType>
-        std::function<typename SparseMdpExplorationModelChecker<ValueType>::StateType (storm::generator::CompressedState const&)> SparseMdpExplorationModelChecker<ValueType>::createStateToIdCallback(ExplorationInformation<StateType, ValueType>& explorationInformation) const {
-            return [&explorationInformation,this] (storm::generator::CompressedState const& state) -> StateType {
-                StateType newIndex = explorationInformation.getNumberOfDiscoveredStates();
                 
-                // Check, if the state was already registered.
-                std::pair<uint32_t, std::size_t> actualIndexBucketPair = explorationInformation.stateStorage.stateToId.findOrAddAndGetBucket(state, newIndex);
-                
-                if (actualIndexBucketPair.first == newIndex) {
-                    explorationInformation.addUnexploredState(state);
-                }
-                
-                return actualIndexBucketPair.first;
-            };
-        }
-        
         template<typename ValueType>
         std::tuple<typename SparseMdpExplorationModelChecker<ValueType>::StateType, ValueType, ValueType> SparseMdpExplorationModelChecker<ValueType>::performExploration(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation) const {
-            
             // Generate the initial state so we know where to start the simulation.
-            explorationInformation.setInitialStates(stateGeneration.getInitialStates());
-            STORM_LOG_THROW(explorationInformation.getNumberOfInitialStates() == 1, storm::exceptions::NotSupportedException, "Currently only models with one initial state are supported by the exploration engine.");
-            StateType initialStateIndex = explorationInformation.getFirstInitialState();
+            stateGeneration.computeInitialStates();
+            STORM_LOG_THROW(stateGeneration.getNumberOfInitialStates() == 1, storm::exceptions::NotSupportedException, "Currently only models with one initial state are supported by the exploration engine.");
+            StateType initialStateIndex = stateGeneration.getFirstInitialState();
             
             // Create a structure that holds the bounds for the states and actions.
             Bounds<StateType, ValueType> bounds;
@@ -141,7 +122,7 @@ namespace storm {
         template<typename ValueType>
         bool SparseMdpExplorationModelChecker<ValueType>::samplePathFromInitialState(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation, StateActionStack& stack, Bounds<StateType, ValueType>& bounds, Statistics<StateType, ValueType>& stats) const {
             // Start the search from the initial state.
-            stack.push_back(std::make_pair(explorationInformation.getFirstInitialState(), 0));
+            stack.push_back(std::make_pair(stateGeneration.getFirstInitialState(), 0));
             
             // As long as we didn't find a terminal (accepting or rejecting) state in the search, sample a new successor.
             bool foundTerminalState = false;
@@ -150,8 +131,8 @@ namespace storm {
                 STORM_LOG_TRACE("State on top of stack is: " << currentStateId << ".");
                 
                 // If the state is not yet explored, we need to retrieve its behaviors.
-                auto unexploredIt = explorationInformation.unexploredStates.find(currentStateId);
-                if (unexploredIt != explorationInformation.unexploredStates.end()) {
+                auto unexploredIt = explorationInformation.findUnexploredState(currentStateId);
+                if (unexploredIt != explorationInformation.unexploredStatesEnd()) {
                     STORM_LOG_TRACE("State was not yet explored.");
                     
                     // Explore the previously unexplored state.
@@ -160,7 +141,7 @@ namespace storm {
                     if (foundTerminalState) {
                         STORM_LOG_TRACE("Aborting sampling of path, because a terminal state was reached.");
                     }
-                    explorationInformation.unexploredStates.erase(unexploredIt);
+                    explorationInformation.removeUnexploredState(unexploredIt);
                 } else {
                     // If the state was already explored, we check whether it is a terminal state or not.
                     if (explorationInformation.isTerminal(currentStateId)) {
@@ -245,30 +226,31 @@ namespace storm {
                 // need to store its behavior.
                 if (!isTerminalState) {
                     // Next, we insert the behavior into our matrix structure.
-                    StateType startRow = explorationInformation.matrix.size();
-                    explorationInformation.addRowsToMatrix(behavior.getNumberOfChoices());
+                    StateType startAction = explorationInformation.getActionCount();
+                    explorationInformation.addActionsToMatrix(behavior.getNumberOfChoices());
                     
-                    ActionType currentAction = 0;
+                    ActionType localAction = 0;
                     
                     // Retrieve the lowest state bounds (wrt. to the current optimization direction).
                     std::pair<ValueType, ValueType> stateBounds = getLowestBounds(explorationInformation.getOptimizationDirection());
                     
                     for (auto const& choice : behavior) {
                         for (auto const& entry : choice) {
-                            explorationInformation.getRowOfMatrix(startRow + currentAction).emplace_back(entry.first, entry.second);
+                            explorationInformation.getRowOfMatrix(startAction + localAction).emplace_back(entry.first, entry.second);
+                            std::cout << "adding " << (startAction + localAction) << "x" << entry.first << " -> " << entry.second << std::endl;
                         }
                         
-                        std::pair<ValueType, ValueType> actionBounds = computeBoundsOfAction(startRow + currentAction, explorationInformation, bounds);
+                        std::pair<ValueType, ValueType> actionBounds = computeBoundsOfAction(startAction + localAction, explorationInformation, bounds);
                         bounds.initializeBoundsForNextAction(actionBounds);
                         stateBounds = combineBounds(explorationInformation.getOptimizationDirection(), stateBounds, actionBounds);
 
-                        STORM_LOG_TRACE("Initializing bounds of action " << (startRow + currentAction) << " to " << bounds.getLowerBoundForAction(startRow + currentAction) << " and " << bounds.getUpperBoundForAction(startRow + currentAction) << ".");
+                        STORM_LOG_TRACE("Initializing bounds of action " << (startAction + localAction) << " to " << bounds.getLowerBoundForAction(startAction + localAction) << " and " << bounds.getUpperBoundForAction(startAction + localAction) << ".");
                         
-                        ++currentAction;
+                        ++localAction;
                     }
                     
                     // Terminate the row group.
-                    explorationInformation.rowGroupIndices.push_back(explorationInformation.matrix.size());
+                    explorationInformation.terminateCurrentRowGroup();
                     
                     bounds.setBoundsForState(currentStateId, explorationInformation, stateBounds);
                     STORM_LOG_TRACE("Initializing bounds of state " << currentStateId << " to " << bounds.getLowerBoundForState(currentStateId, explorationInformation) << " and " << bounds.getUpperBoundForState(currentStateId, explorationInformation) << ".");
@@ -292,7 +274,7 @@ namespace storm {
                 }
                 
                 // Increase the size of the matrix, but leave the row empty.
-                explorationInformation.addRowsToMatrix(1);
+                explorationInformation.addActionsToMatrix(1);
                 
                 // Terminate the row group.
                 explorationInformation.newRowGroup();
@@ -342,9 +324,9 @@ namespace storm {
         template<typename ValueType>
         typename SparseMdpExplorationModelChecker<ValueType>::StateType SparseMdpExplorationModelChecker<ValueType>::sampleSuccessorFromAction(ActionType const& chosenAction, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
             std::vector<storm::storage::MatrixEntry<StateType, ValueType>> const& row = explorationInformation.getRowOfMatrix(chosenAction);
-//            if (row.size() == 1) {
-//                return row.front().getColumn();
-//            }
+            if (row.size() == 1) {
+                return row.front().getColumn();
+            }
             
             std::vector<ValueType> probabilities(row.size());
             
@@ -352,6 +334,7 @@ namespace storm {
             if (explorationInformation.useDifferenceWeightedProbabilityHeuristic()) {
                 std::transform(row.begin(), row.end(), probabilities.begin(),
                                [&bounds, &explorationInformation] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
+                                   std::cout << entry.getColumn() << " with diff " << bounds.getDifferenceOfStateBounds(entry.getColumn(), explorationInformation) << std::endl;
                                    return entry.getValue() * bounds.getDifferenceOfStateBounds(entry.getColumn(), explorationInformation);
                                });
             } else if (explorationInformation.useProbabilityHeuristic()) {
@@ -393,9 +376,8 @@ namespace storm {
                 relevantStates.resize(std::distance(relevantStates.begin(), newEnd));
             } else {
                 for (StateType state = 0; state < explorationInformation.getNumberOfDiscoveredStates(); ++state) {
-                    // Add the state to the relevant states if they are not unexplored. Additionally, if we are
-                    // computing minimal probabilities, we only consider it relevant if it's not a target state.
-                    if (!explorationInformation.isUnexplored(state) && (explorationInformation.maximize() || !comparator.isOne(bounds.getLowerBoundForState(state, explorationInformation)))) {
+                    // Add the state to the relevant states if they are not unexplored.
+                    if (!explorationInformation.isUnexplored(state)) {
                         relevantStates.push_back(state);
                     }
                 }
@@ -408,8 +390,10 @@ namespace storm {
             storm::storage::BitVector targetStates(sink + 1);
             for (StateType index = 0; index < relevantStates.size(); ++index) {
                 relevantStateToNewRowGroupMapping.emplace(relevantStates[index], index);
+                std::cout << "lower bound for state " << relevantStates[index] << " is " << bounds.getLowerBoundForState(relevantStates[index], explorationInformation) << std::endl;
                 if (storm::utility::isOne(bounds.getLowerBoundForState(relevantStates[index], explorationInformation))) {
                     targetStates.set(index);
+                    std::cout << relevantStates[index] << " was identified as a target state" << std::endl;
                 }
             }
             
@@ -425,9 +409,11 @@ namespace storm {
                         if (it != relevantStateToNewRowGroupMapping.end()) {
                             // If the entry is a relevant state, we copy it over (and compensate for the offset change).
                             builder.addNextValue(currentRow, it->second, entry.getValue());
+                            std::cout << state << " to " << entry.getColumn() << " with prob " << entry.getValue() << std::endl;
                         } else {
                             // If the entry is an unexpanded state, we gather the probability to later redirect it to an unexpanded sink.
                             unexpandedProbability += entry.getValue();
+                            std::cout << state << " has unexpanded prob " << unexpandedProbability << " to succ " << entry.getColumn() << std::endl;
                         }
                     }
                     if (unexpandedProbability != storm::utility::zero<ValueType>()) {
@@ -487,9 +473,13 @@ namespace storm {
                 statesWithProbability1 = storm::utility::graph::performProb1A(relevantStatesMatrix, relevantStatesMatrix.getRowGroupIndices(), transposedMatrix, allStates, targetStates);
             }
             
+            std::cout << statesWithProbability0 << std::endl;
+            std::cout << statesWithProbability1 << std::endl;
+            
             // Set the bounds of the identified states.
             for (auto state : statesWithProbability0) {
                 StateType originalState = relevantStates[state];
+                std::cout << "determined " << originalState << " as a prob0 state" << std::endl;
                 bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
                 explorationInformation.addTerminalState(originalState);
             }
@@ -558,7 +548,7 @@ namespace storm {
                 // the actions and the new state.
                 std::pair<ValueType, ValueType> stateBounds = getLowestBounds(explorationInformation.getOptimizationDirection());
                 for (auto const& action : leavingActions) {
-                    explorationInformation.matrix.emplace_back(std::move(explorationInformation.matrix[action]));
+                    explorationInformation.moveActionToBackOfMatrix(action);
                     std::pair<ValueType, ValueType> const& actionBounds = bounds.getBoundsForAction(action);
                     bounds.initializeBoundsForNextAction(actionBounds);
                     stateBounds = combineBounds(explorationInformation.getOptimizationDirection(), stateBounds, actionBounds);
@@ -566,7 +556,7 @@ namespace storm {
                 bounds.setBoundsForRowGroup(nextRowGroup, stateBounds);
                 
                 // Terminate the row group of the newly introduced state.
-                explorationInformation.rowGroupIndices.push_back(explorationInformation.matrix.size());
+                explorationInformation.terminateCurrentRowGroup();
             }
         }
         

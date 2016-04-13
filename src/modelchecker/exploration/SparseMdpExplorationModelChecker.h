@@ -44,8 +44,6 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeUntilProbabilities(CheckTask<storm::logic::UntilFormula> const& checkTask) override;
             
         private:
-            std::function<StateType (storm::generator::CompressedState const&)> createStateToIdCallback(ExplorationInformation<StateType, ValueType>& explorationInformation) const;
-            
             std::tuple<StateType, ValueType, ValueType> performExploration(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation) const;
 
             bool samplePathFromInitialState(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation, StateActionStack& stack, Bounds<StateType, ValueType>& bounds, Statistics<StateType, ValueType>& stats) const;

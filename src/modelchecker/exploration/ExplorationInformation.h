@@ -13,7 +13,6 @@
 #include "src/generator/CompressedState.h"
 
 #include "src/storage/SparseMatrix.h"
-#include "src/storage/sparse/StateStorage.h"
 
 #include "src/settings/modules/ExplorationSettings.h"
 
@@ -25,16 +24,19 @@ namespace storm {
             public:
                 typedef StateType ActionType;
                 typedef boost::container::flat_set<StateType> StateSet;
+                typedef std::unordered_map<StateType, storm::generator::CompressedState> IdToStateMap;
+                typedef typename IdToStateMap::const_iterator const_iterator;
+                typedef std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> MatrixType;
                 
-                ExplorationInformation(uint_fast64_t bitsPerBucket, storm::OptimizationDirection const& direction, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max());
+                ExplorationInformation(storm::OptimizationDirection const& direction, ActionType const& unexploredMarker = std::numeric_limits<ActionType>::max());
                 
-                void setInitialStates(std::vector<StateType> const& initialStates);
+                const_iterator findUnexploredState(StateType const& state) const;
                 
-                StateType getFirstInitialState() const;
+                const_iterator unexploredStatesEnd() const;
                 
-                std::size_t getNumberOfInitialStates() const;
+                void removeUnexploredState(const_iterator it);
                 
-                void addUnexploredState(storm::generator::CompressedState const& compressedState);
+                void addUnexploredState(StateType const& stateId, storm::generator::CompressedState const& compressedState);
                 
                 void assignStateToRowGroup(StateType const& state, ActionType const& rowGroup);
                 
@@ -45,6 +47,12 @@ namespace storm {
                 void newRowGroup(ActionType const& action);
                 
                 void newRowGroup();
+                
+                void terminateCurrentRowGroup();
+                
+                void moveActionToBackOfMatrix(ActionType const& action);
+                
+                StateType getActionCount() const;
                 
                 std::size_t getNumberOfUnexploredStates() const;
                 
@@ -70,7 +78,7 @@ namespace storm {
                 
                 std::vector<storm::storage::MatrixEntry<StateType, ValueType>> const& getRowOfMatrix(ActionType const& row) const;
                 
-                void addRowsToMatrix(std::size_t const& count);
+                void addActionsToMatrix(std::size_t const& count);
                 
                 bool maximize() const;
                 
@@ -95,14 +103,12 @@ namespace storm {
                 void setOptimizationDirection(storm::OptimizationDirection const& direction);
                 
             private:
-                storm::storage::sparse::StateStorage<StateType> stateStorage;
-                
-                std::vector<std::vector<storm::storage::MatrixEntry<StateType, ValueType>>> matrix;
+                MatrixType matrix;
                 std::vector<StateType> rowGroupIndices;
                 
                 std::vector<StateType> stateToRowGroupMapping;
                 StateType unexploredMarker;
-                std::unordered_map<StateType, storm::generator::CompressedState> unexploredStates;
+                IdToStateMap unexploredStates;
                 
                 storm::OptimizationDirection optimizationDirection;
                 StateSet terminalStates;

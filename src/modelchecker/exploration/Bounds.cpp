@@ -10,18 +10,14 @@ namespace storm {
             std::pair<ValueType, ValueType> Bounds<StateType, ValueType>::getBoundsForState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation) const {
                 ActionType index = explorationInformation.getRowGroup(state);
                 if (index == explorationInformation.getUnexploredMarker()) {
+                    std::cout << "state " << state << " is unexplored! retuning zero/one" << std::endl;
                     return std::make_pair(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                 } else {
+                    std::cout << "accessing at index " << index << " out of " << boundsPerState.size() << std::endl;
                     return boundsPerState[index];
                 }
             }
-            
-            template<typename StateType, typename ValueType>
-            std::pair<ValueType, ValueType> const& Bounds<StateType, ValueType>::getBoundsForExploredState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation) const {
-                ActionType index = explorationInformation.getRowGroup(state);
-                return boundsPerState[index];
-            }
-            
+                        
             template<typename StateType, typename ValueType>
             ValueType Bounds<StateType, ValueType>::getLowerBoundForState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation) const {
                 ActionType index = explorationInformation.getRowGroup(state);
@@ -78,7 +74,7 @@ namespace storm {
             
             template<typename StateType, typename ValueType>
             ValueType Bounds<StateType, ValueType>::getDifferenceOfStateBounds(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation) const {
-                std::pair<ValueType, ValueType> const& bounds = getBoundsForExploredState(state, explorationInformation);
+                std::pair<ValueType, ValueType> bounds = getBoundsForState(state, explorationInformation);
                 return bounds.second - bounds.first;
             }
             
@@ -120,6 +116,7 @@ namespace storm {
             template<typename StateType, typename ValueType>
             void Bounds<StateType, ValueType>::setBoundsForState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation, std::pair<ValueType, ValueType> const& values) {
                 StateType const& rowGroup = explorationInformation.getRowGroup(state);
+                std::cout << "setting " << values.first << ", " << values.second << " for state " << state << std::endl;
                 setBoundsForRowGroup(rowGroup, values);
             }
             

@@ -10,7 +10,7 @@ namespace storm {
         namespace exploration_detail {
             
             template<typename StateType, typename ValueType>
-            ExplorationInformation<StateType, ValueType>::ExplorationInformation(uint_fast64_t bitsPerBucket, storm::OptimizationDirection const& direction, ActionType const& unexploredMarker) : stateStorage(bitsPerBucket), unexploredMarker(unexploredMarker), optimizationDirection(direction), localPrecomputation(false), numberOfExplorationStepsUntilPrecomputation(100000), numberOfSampledPathsUntilPrecomputation(), nextStateHeuristic(storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceWeightedProbability) {
+            ExplorationInformation<StateType, ValueType>::ExplorationInformation(storm::OptimizationDirection const& direction, ActionType const& unexploredMarker) : unexploredMarker(unexploredMarker), optimizationDirection(direction), localPrecomputation(false), numberOfExplorationStepsUntilPrecomputation(100000), numberOfSampledPathsUntilPrecomputation(), nextStateHeuristic(storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceWeightedProbability) {
                 
                 storm::settings::modules::ExplorationSettings const& settings = storm::settings::explorationSettings();
                 localPrecomputation = settings.isLocalPrecomputationSet();
@@ -24,25 +24,24 @@ namespace storm {
             }
             
             template<typename StateType, typename ValueType>
-            void ExplorationInformation<StateType, ValueType>::setInitialStates(std::vector<StateType> const& initialStates) {
-                stateStorage.initialStateIndices = initialStates;
+            typename ExplorationInformation<StateType, ValueType>::const_iterator ExplorationInformation<StateType, ValueType>::findUnexploredState(StateType const& state) const {
+                return unexploredStates.find(state);
             }
             
             template<typename StateType, typename ValueType>
-            StateType ExplorationInformation<StateType, ValueType>::getFirstInitialState() const {
-                return stateStorage.initialStateIndices.front();
+            typename ExplorationInformation<StateType, ValueType>::const_iterator ExplorationInformation<StateType, ValueType>::unexploredStatesEnd() const {
+                return unexploredStates.end();
             }
             
             template<typename StateType, typename ValueType>
-            std::size_t ExplorationInformation<StateType, ValueType>::getNumberOfInitialStates() const {
-                return stateStorage.initialStateIndices.size();
+            void ExplorationInformation<StateType, ValueType>::removeUnexploredState(const_iterator it) {
+                unexploredStates.erase(it);
             }
             
             template<typename StateType, typename ValueType>
-            void ExplorationInformation<StateType, ValueType>::addUnexploredState(storm::generator::CompressedState const& compressedState) {
+            void ExplorationInformation<StateType, ValueType>::addUnexploredState(StateType const& stateId, storm::generator::CompressedState const& compressedState) {
                 stateToRowGroupMapping.push_back(unexploredMarker);
-                unexploredStates[stateStorage.numberOfStates] = compressedState;
-                ++stateStorage.numberOfStates;
+                unexploredStates[stateId] = compressedState;
             }
             
             template<typename StateType, typename ValueType>
@@ -72,13 +71,28 @@ namespace storm {
             }
             
             template<typename StateType, typename ValueType>
+            void ExplorationInformation<StateType, ValueType>::terminateCurrentRowGroup() {
+                rowGroupIndices.push_back(matrix.size());
+            }
+            
+            template<typename StateType, typename ValueType>
+            void ExplorationInformation<StateType, ValueType>::moveActionToBackOfMatrix(ActionType const& action) {
+                matrix.emplace_back(std::move(matrix[action]));
+            }
+            
+            template<typename StateType, typename ValueType>
+            StateType ExplorationInformation<StateType, ValueType>::getActionCount() const {
+                return matrix.size();
+            }
+            
+            template<typename StateType, typename ValueType>
             std::size_t ExplorationInformation<StateType, ValueType>::getNumberOfUnexploredStates() const {
                 return unexploredStates.size();
             }
             
             template<typename StateType, typename ValueType>
             std::size_t ExplorationInformation<StateType, ValueType>::getNumberOfDiscoveredStates() const {
-                return stateStorage.numberOfStates;
+                return stateToRowGroupMapping.size();
             }
             
             template<typename StateType, typename ValueType>
@@ -132,7 +146,7 @@ namespace storm {
             }
             
             template<typename StateType, typename ValueType>
-            void ExplorationInformation<StateType, ValueType>::addRowsToMatrix(std::size_t const& count) {
+            void ExplorationInformation<StateType, ValueType>::addActionsToMatrix(std::size_t const& count) {
                 matrix.resize(matrix.size() + count);
             }
             

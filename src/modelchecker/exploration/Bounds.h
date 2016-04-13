@@ -21,8 +21,6 @@ namespace storm {
                 typedef StateType ActionType;
                 
                 std::pair<ValueType, ValueType> getBoundsForState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation) const;
-
-                std::pair<ValueType, ValueType> const& getBoundsForExploredState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation) const;
                 
                 ValueType getLowerBoundForState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation) const;
                 

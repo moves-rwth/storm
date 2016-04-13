@@ -25,7 +25,7 @@ namespace storm {
                 uint64_t bitsPerState;
                 
                 // The number of states that were found in the exploration so far.
-                uint_fast64_t numberOfStates;
+                uint_fast64_t getNumberOfStates() const;
             };
             
         }
