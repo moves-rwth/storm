@@ -94,9 +94,11 @@ namespace storm {
                 
                 storm::settings::modules::ExplorationSettings::NextStateHeuristic const& getNextStateHeuristic() const;
                 
-                bool useDifferenceWeightedProbabilityHeuristic() const;
+                bool useDifferenceProbabilitySumHeuristic() const;
                 
                 bool useProbabilityHeuristic() const;
+                
+                bool useUniformHeuristic() const;
                 
                 storm::OptimizationDirection const& getOptimizationDirection() const;
                 

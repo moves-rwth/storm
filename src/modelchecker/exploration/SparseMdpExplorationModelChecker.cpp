@@ -53,7 +53,7 @@ namespace storm {
             STORM_LOG_THROW(program.isDeterministicModel() || checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "For nondeterministic systems, an optimization direction (min/max) must be given in the property.");
             
             ExplorationInformation<StateType, ValueType> explorationInformation(checkTask.isOptimizationDirectionSet() ? checkTask.getOptimizationDirection() : storm::OptimizationDirection::Maximize);
-
+            
             // The first row group starts at action 0.
             explorationInformation.newRowGroup(0);
             
@@ -65,7 +65,7 @@ namespace storm {
             std::tuple<StateType, ValueType, ValueType> boundsForInitialState = performExploration(stateGeneration, explorationInformation);
             return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(std::get<0>(boundsForInitialState), std::get<1>(boundsForInitialState));
         }
-                
+        
         template<typename ValueType>
         std::tuple<typename SparseMdpExplorationModelChecker<ValueType>::StateType, ValueType, ValueType> SparseMdpExplorationModelChecker<ValueType>::performExploration(StateGeneration<StateType, ValueType>& stateGeneration, ExplorationInformation<StateType, ValueType>& explorationInformation) const {
             // Generate the initial state so we know where to start the simulation.
@@ -75,7 +75,7 @@ namespace storm {
             
             // Create a structure that holds the bounds for the states and actions.
             Bounds<StateType, ValueType> bounds;
-
+            
             // Create a stack that is used to track the path we sampled.
             StateActionStack stack;
             
@@ -237,13 +237,13 @@ namespace storm {
                     for (auto const& choice : behavior) {
                         for (auto const& entry : choice) {
                             explorationInformation.getRowOfMatrix(startAction + localAction).emplace_back(entry.first, entry.second);
-                            std::cout << "adding " << (startAction + localAction) << "x" << entry.first << " -> " << entry.second << std::endl;
+                            STORM_LOG_TRACE("Found transition " << currentStateId << "-[" << (startAction + localAction) << ", " << entry.second << "]-> " << entry.first << ".");
                         }
                         
                         std::pair<ValueType, ValueType> actionBounds = computeBoundsOfAction(startAction + localAction, explorationInformation, bounds);
                         bounds.initializeBoundsForNextAction(actionBounds);
                         stateBounds = combineBounds(explorationInformation.getOptimizationDirection(), stateBounds, actionBounds);
-
+                        
                         STORM_LOG_TRACE("Initializing bounds of action " << (startAction + localAction) << " to " << bounds.getLowerBoundForAction(startAction + localAction) << " and " << bounds.getUpperBoundForAction(startAction + localAction) << ".");
                         
                         ++localAction;
@@ -260,7 +260,7 @@ namespace storm {
                 // terminal state.
                 isTerminalState = true;
             }
-                        
+            
             if (isTerminalState) {
                 STORM_LOG_TRACE("State does not need to be explored, because it is " << (isTargetState ? "a target state" : "a rejecting terminal state") << ".");
                 explorationInformation.addTerminalState(currentStateId);
@@ -328,26 +328,29 @@ namespace storm {
                 return row.front().getColumn();
             }
             
-            std::vector<ValueType> probabilities(row.size());
             
             // Depending on the selected next-state heuristic, we give the states other likelihoods of getting chosen.
-            if (explorationInformation.useDifferenceWeightedProbabilityHeuristic()) {
+            if (explorationInformation.useDifferenceProbabilitySumHeuristic() || explorationInformation.useProbabilityHeuristic()) {
+                std::vector<ValueType> probabilities(row.size());
+                if (explorationInformation.useDifferenceProbabilitySumHeuristic()) {
                 std::transform(row.begin(), row.end(), probabilities.begin(),
                                [&bounds, &explorationInformation] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
-                                   std::cout << entry.getColumn() << " with diff " << bounds.getDifferenceOfStateBounds(entry.getColumn(), explorationInformation) << std::endl;
-                                   return entry.getValue() * bounds.getDifferenceOfStateBounds(entry.getColumn(), explorationInformation);
+                                   return entry.getValue() + bounds.getDifferenceOfStateBounds(entry.getColumn(), explorationInformation);
                                });
-            } else if (explorationInformation.useProbabilityHeuristic()) {
-                std::transform(row.begin(), row.end(), probabilities.begin(),
-                               [&bounds, &explorationInformation] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
-                                   return entry.getValue();
-                               });
+                } else if (explorationInformation.useProbabilityHeuristic()) {
+                    std::transform(row.begin(), row.end(), probabilities.begin(),
+                                   [&bounds, &explorationInformation] (storm::storage::MatrixEntry<StateType, ValueType> const& entry) {
+                                       return entry.getValue();
+                                   });
+                }
+                
+                // Now sample according to the probabilities.
+                std::discrete_distribution<StateType> distribution(probabilities.begin(), probabilities.end());
+                return row[distribution(randomGenerator)].getColumn();
+            } else if (explorationInformation.useUniformHeuristic()) {
+                std::uniform_int_distribution<ActionType> distribution(0, row.size() - 1);
+                return row[distribution(randomGenerator)].getColumn();
             }
-            
-            // Now sample according to the probabilities.
-            std::discrete_distribution<StateType> distribution(probabilities.begin(), probabilities.end());
-            StateType offset = distribution(randomGenerator);
-            return row[offset].getColumn();
         }
         
         template<typename ValueType>
@@ -359,7 +362,7 @@ namespace storm {
             // 2. use this matrix to compute states with probability 0/1 and an MEC decomposition (in the max case).
             // 3. use MEC decomposition to collapse MECs.
             STORM_LOG_TRACE("Starting " << (explorationInformation.useLocalPrecomputation() ? "local" : "global") << " precomputation.");
-
+            
             // Construct the matrix that represents the fragment of the system contained in the currently sampled path.
             storm::storage::SparseMatrixBuilder<ValueType> builder(0, 0, 0, false, true, 0);
             
@@ -390,10 +393,8 @@ namespace storm {
             storm::storage::BitVector targetStates(sink + 1);
             for (StateType index = 0; index < relevantStates.size(); ++index) {
                 relevantStateToNewRowGroupMapping.emplace(relevantStates[index], index);
-                std::cout << "lower bound for state " << relevantStates[index] << " is " << bounds.getLowerBoundForState(relevantStates[index], explorationInformation) << std::endl;
                 if (storm::utility::isOne(bounds.getLowerBoundForState(relevantStates[index], explorationInformation))) {
                     targetStates.set(index);
-                    std::cout << relevantStates[index] << " was identified as a target state" << std::endl;
                 }
             }
             
@@ -409,11 +410,9 @@ namespace storm {
                         if (it != relevantStateToNewRowGroupMapping.end()) {
                             // If the entry is a relevant state, we copy it over (and compensate for the offset change).
                             builder.addNextValue(currentRow, it->second, entry.getValue());
-                            std::cout << state << " to " << entry.getColumn() << " with prob " << entry.getValue() << std::endl;
                         } else {
                             // If the entry is an unexpanded state, we gather the probability to later redirect it to an unexpanded sink.
                             unexpandedProbability += entry.getValue();
-                            std::cout << state << " has unexpanded prob " << unexpandedProbability << " to succ " << entry.getColumn() << std::endl;
                         }
                     }
                     if (unexpandedProbability != storm::utility::zero<ValueType>()) {
@@ -441,11 +440,11 @@ namespace storm {
                 statesWithProbability0 = storm::utility::graph::performProb0A(relevantStatesMatrix, relevantStatesMatrix.getRowGroupIndices(), transposedMatrix, allStates, targetStates);
                 targetStates.set(sink, true);
                 statesWithProbability1 = storm::utility::graph::performProb1E(relevantStatesMatrix, relevantStatesMatrix.getRowGroupIndices(), transposedMatrix, allStates, targetStates);
-
+                
                 storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(relevantStatesMatrix, relevantStatesMatrix.transpose(true));
                 ++stats.ecDetections;
                 STORM_LOG_TRACE("Successfully computed MEC decomposition. Found " << (mecDecomposition.size() > 1 ? (mecDecomposition.size() - 1) : 0) << " MEC(s).");
-
+                
                 // If the decomposition contains only the MEC consisting of the sink state, we count it as 'failed'.
                 if (mecDecomposition.size() > 1) {
                     ++stats.failedEcDetections;
@@ -473,13 +472,9 @@ namespace storm {
                 statesWithProbability1 = storm::utility::graph::performProb1A(relevantStatesMatrix, relevantStatesMatrix.getRowGroupIndices(), transposedMatrix, allStates, targetStates);
             }
             
-            std::cout << statesWithProbability0 << std::endl;
-            std::cout << statesWithProbability1 << std::endl;
-            
             // Set the bounds of the identified states.
             for (auto state : statesWithProbability0) {
                 StateType originalState = relevantStates[state];
-                std::cout << "determined " << originalState << " as a prob0 state" << std::endl;
                 bounds.setUpperBoundForState(originalState, explorationInformation, storm::utility::zero<ValueType>());
                 explorationInformation.addTerminalState(originalState);
             }
@@ -588,7 +583,7 @@ namespace storm {
             }
             return result;
         }
-
+        
         template<typename ValueType>
         std::pair<ValueType, ValueType> SparseMdpExplorationModelChecker<ValueType>::computeBoundsOfState(StateType const& currentStateId, ExplorationInformation<StateType, ValueType> const& explorationInformation, Bounds<StateType, ValueType> const& bounds) const {
             StateType group = explorationInformation.getRowGroup(currentStateId);
@@ -620,7 +615,7 @@ namespace storm {
             // Check if we need to update the values for the states.
             if (explorationInformation.maximize()) {
                 bounds.setLowerBoundOfStateIfGreaterThanOld(state, explorationInformation, newBoundsForAction.first);
-
+                
                 StateType rowGroup = explorationInformation.getRowGroup(state);
                 if (newBoundsForAction.second < bounds.getUpperBoundForRowGroup(rowGroup)) {
                     if (explorationInformation.getRowGroupSize(rowGroup) > 1) {
@@ -631,7 +626,7 @@ namespace storm {
                 }
             } else {
                 bounds.setUpperBoundOfStateIfLessThanOld(state, explorationInformation, newBoundsForAction.second);
-
+                
                 StateType rowGroup = explorationInformation.getRowGroup(state);
                 if (bounds.getLowerBoundForRowGroup(rowGroup) < newBoundsForAction.first) {
                     if (explorationInformation.getRowGroupSize(rowGroup) > 1) {

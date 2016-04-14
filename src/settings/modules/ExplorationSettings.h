@@ -16,7 +16,7 @@ namespace storm {
                 enum class PrecomputationType { Local, Global };
                 
                 // The available heuristics to choose the next state.
-                enum class NextStateHeuristic { DifferenceWeightedProbability, Probability };
+                enum class NextStateHeuristic { DifferenceProbabilitySum, Probability, Uniform };
                 
                 /*!
                  * Creates a new set of exploration settings that is managed by the given manager.

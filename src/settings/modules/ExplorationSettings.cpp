@@ -22,8 +22,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, numberOfExplorationStepsUntilPrecomputationOptionName, true, "Sets the number of exploration steps to perform until a precomputation is triggered.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of exploration steps to perform.").setDefaultValueUnsignedInteger(100000).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, numberOfSampledPathsUntilPrecomputationOptionName, true, "If set, a precomputation is perfomed periodically after the given number of paths has been sampled.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of paths to sample until a precomputation is triggered.").setDefaultValueUnsignedInteger(100000).build()).build());
                 
-                std::vector<std::string> nextStateHeuristics = { "probdiff", "prob" };
-                this->addOption(storm::settings::OptionBuilder(moduleName, nextStateHeuristicOptionName, true, "Sets the next-state heuristic to use. Available are: { probdiff, prob } where 'prob' samples according to the probabilities in the system and 'probdiff' weights the probabilities with the differences between the current bounds.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the heuristic to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nextStateHeuristics)).setDefaultValueString("probdiff").build()).build());
+                std::vector<std::string> nextStateHeuristics = { "probdiffs", "prob", "unif" };
+                this->addOption(storm::settings::OptionBuilder(moduleName, nextStateHeuristicOptionName, true, "Sets the next-state heuristic to use. Available are: { probdiffs, prob, unif } where 'prob' samples according to the probabilities in the system, 'probdiffs' takes into account probabilities and the differences between the current bounds and 'unif' samples uniformly.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the heuristic to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nextStateHeuristics)).setDefaultValueString("probdiffs").build()).build());
             }
             
             bool ExplorationSettings::isLocalPrecomputationSet() const {
@@ -64,10 +64,12 @@ namespace storm {
             
             ExplorationSettings::NextStateHeuristic ExplorationSettings::getNextStateHeuristic() const {
                 std::string nextStateHeuristicAsString = this->getOption(nextStateHeuristicOptionName).getArgumentByName("name").getValueAsString();
-                if (nextStateHeuristicAsString == "probdiff") {
-                    return ExplorationSettings::NextStateHeuristic::DifferenceWeightedProbability;
+                if (nextStateHeuristicAsString == "probdiffs") {
+                    return ExplorationSettings::NextStateHeuristic::DifferenceProbabilitySum;
                 } else if (nextStateHeuristicAsString == "prob") {
                     return ExplorationSettings::NextStateHeuristic::Probability;
+                } else if (nextStateHeuristicAsString == "unif") {
+                    return ExplorationSettings::NextStateHeuristic::Uniform;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown next-state heuristic '" << nextStateHeuristicAsString << "'.");
             }

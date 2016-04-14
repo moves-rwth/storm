@@ -10,7 +10,7 @@ namespace storm {
         namespace exploration_detail {
             
             template<typename StateType, typename ValueType>
-            ExplorationInformation<StateType, ValueType>::ExplorationInformation(storm::OptimizationDirection const& direction, ActionType const& unexploredMarker) : unexploredMarker(unexploredMarker), optimizationDirection(direction), localPrecomputation(false), numberOfExplorationStepsUntilPrecomputation(100000), numberOfSampledPathsUntilPrecomputation(), nextStateHeuristic(storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceWeightedProbability) {
+            ExplorationInformation<StateType, ValueType>::ExplorationInformation(storm::OptimizationDirection const& direction, ActionType const& unexploredMarker) : unexploredMarker(unexploredMarker), optimizationDirection(direction), localPrecomputation(false), numberOfExplorationStepsUntilPrecomputation(100000), numberOfSampledPathsUntilPrecomputation(), nextStateHeuristic(storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceProbabilitySum) {
                 
                 storm::settings::modules::ExplorationSettings const& settings = storm::settings::explorationSettings();
                 localPrecomputation = settings.isLocalPrecomputationSet();
@@ -20,7 +20,6 @@ namespace storm {
                 }
                 
                 nextStateHeuristic = settings.getNextStateHeuristic();
-                STORM_LOG_ASSERT(useDifferenceWeightedProbabilityHeuristic() || useProbabilityHeuristic(), "Illegal next-state heuristic.");
             }
             
             template<typename StateType, typename ValueType>
@@ -198,13 +197,18 @@ namespace storm {
             }
             
             template<typename StateType, typename ValueType>
-            bool ExplorationInformation<StateType, ValueType>::useDifferenceWeightedProbabilityHeuristic() const {
-                return nextStateHeuristic == storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceWeightedProbability;
+            bool ExplorationInformation<StateType, ValueType>::useDifferenceProbabilitySumHeuristic() const {
+                return nextStateHeuristic == storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceProbabilitySum;
             }
             
             template<typename StateType, typename ValueType>
             bool ExplorationInformation<StateType, ValueType>::useProbabilityHeuristic() const {
                 return nextStateHeuristic == storm::settings::modules::ExplorationSettings::NextStateHeuristic::Probability;
+            }
+
+            template<typename StateType, typename ValueType>
+            bool ExplorationInformation<StateType, ValueType>::useUniformHeuristic() const {
+                return nextStateHeuristic == storm::settings::modules::ExplorationSettings::NextStateHeuristic::Uniform;
             }
             
             template<typename StateType, typename ValueType>

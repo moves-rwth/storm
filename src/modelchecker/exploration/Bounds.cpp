@@ -10,10 +10,8 @@ namespace storm {
             std::pair<ValueType, ValueType> Bounds<StateType, ValueType>::getBoundsForState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation) const {
                 ActionType index = explorationInformation.getRowGroup(state);
                 if (index == explorationInformation.getUnexploredMarker()) {
-                    std::cout << "state " << state << " is unexplored! retuning zero/one" << std::endl;
                     return std::make_pair(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                 } else {
-                    std::cout << "accessing at index " << index << " out of " << boundsPerState.size() << std::endl;
                     return boundsPerState[index];
                 }
             }
@@ -116,7 +114,6 @@ namespace storm {
             template<typename StateType, typename ValueType>
             void Bounds<StateType, ValueType>::setBoundsForState(StateType const& state, ExplorationInformation<StateType, ValueType> const& explorationInformation, std::pair<ValueType, ValueType> const& values) {
                 StateType const& rowGroup = explorationInformation.getRowGroup(state);
-                std::cout << "setting " << values.first << ", " << values.second << " for state " << state << std::endl;
                 setBoundsForRowGroup(rowGroup, values);
             }
             
