@@ -2,6 +2,8 @@
 
 #include "src/storage/expressions/ExpressionManager.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/utility/macros.h"
 
 #include "src/exceptions/NotSupportedException.h"
@@ -31,22 +33,8 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         bool GameBasedMdpModelChecker<Type, ValueType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if (formula.isProbabilityOperatorFormula()) {
-                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
-            } else if (formula.isUntilFormula() || formula.isEventuallyFormula()) {
-                if (formula.isUntilFormula()) {
-                    storm::logic::UntilFormula const& untilFormula = formula.asUntilFormula();
-                    if (untilFormula.getLeftSubformula().isPropositionalFormula() && untilFormula.getRightSubformula().isPropositionalFormula()) {
-                        return true;
-                    }
-                } else if (formula.isEventuallyFormula()) {
-                    storm::logic::EventuallyFormula const& eventuallyFormula = formula.asEventuallyFormula();
-                    if (eventuallyFormula.getSubformula().isPropositionalFormula()) {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            storm::logic::FragmentSpecification fragment = storm::logic::reachability();
+            return formula.isInFragment(fragment) && checkTask.isOnlyInitialStatesRelevantSet();
         }
                 
         template<storm::dd::DdType Type, typename ValueType>
@@ -56,7 +44,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType Type, typename ValueType>
-        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::computeEventuallyProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> GameBasedMdpModelChecker<Type, ValueType>::computeReachabilityProbabilities(CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
             storm::logic::EventuallyFormula const& pathFormula = checkTask.getFormula();
             return performGameBasedAbstractionRefinement(CheckTask<storm::logic::Formula>(pathFormula), originalProgram.getManager().boolean(true), getExpression(pathFormula.getSubformula()));
         }
