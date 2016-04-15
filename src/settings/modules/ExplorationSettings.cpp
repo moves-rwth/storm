@@ -15,6 +15,8 @@ namespace storm {
             const std::string ExplorationSettings::numberOfExplorationStepsUntilPrecomputationOptionName = "stepsprecomp";
             const std::string ExplorationSettings::numberOfSampledPathsUntilPrecomputationOptionName = "pathsprecomp";
             const std::string ExplorationSettings::nextStateHeuristicOptionName = "nextstate";
+            const std::string ExplorationSettings::precisionOptionName = "precision";
+            const std::string ExplorationSettings::precisionOptionShortName = "eps";
             
             ExplorationSettings::ExplorationSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
                 std::vector<std::string> types = { "local", "global" };
@@ -24,6 +26,9 @@ namespace storm {
                 
                 std::vector<std::string> nextStateHeuristics = { "probdiffs", "prob", "unif" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, nextStateHeuristicOptionName, true, "Sets the next-state heuristic to use. Available are: { probdiffs, prob, unif } where 'prob' samples according to the probabilities in the system, 'probdiffs' takes into account probabilities and the differences between the current bounds and 'unif' samples uniformly.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the heuristic to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nextStateHeuristics)).setDefaultValueString("probdiffs").build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The internally used precision.").setShortName(precisionOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
             }
             
             bool ExplorationSettings::isLocalPrecomputationSet() const {
@@ -72,6 +77,10 @@ namespace storm {
                     return ExplorationSettings::NextStateHeuristic::Uniform;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown next-state heuristic '" << nextStateHeuristicAsString << "'.");
+            }
+            
+            double ExplorationSettings::getPrecision() const {
+                return this->getOption(precisionOptionName).getArgumentByName("value").getValueAsDouble();
             }
             
             bool ExplorationSettings::check() const {

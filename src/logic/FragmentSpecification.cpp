@@ -414,6 +414,7 @@ namespace storm {
         
         FragmentSpecification& FragmentSpecification::setOperatorAtTopLevelRequired(bool newValue) {
             operatorAtTopLevelRequired = newValue;
+            return *this;
         }
         
     }

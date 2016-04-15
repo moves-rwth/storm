@@ -74,6 +74,13 @@ namespace storm {
                  */
                 NextStateHeuristic getNextStateHeuristic() const;
                 
+                /*!
+                 * Retrieves the precision to use for numerical operations.
+                 *
+                 * @return The precision to use for numerical operations.
+                 */
+                double getPrecision() const;
+                
                 virtual bool check() const override;
                 
                 // The name of the module.
@@ -85,6 +92,8 @@ namespace storm {
                 static const std::string numberOfExplorationStepsUntilPrecomputationOptionName;
                 static const std::string numberOfSampledPathsUntilPrecomputationOptionName;
                 static const std::string nextStateHeuristicOptionName;
+                static const std::string precisionOptionName;
+                static const std::string precisionOptionShortName;
             };
         } // namespace modules
     } // namespace settings

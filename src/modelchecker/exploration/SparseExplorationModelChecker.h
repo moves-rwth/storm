@@ -1,5 +1,5 @@
-#ifndef STORM_MODELCHECKER_EXPLORATION_SPARSEMDPEXPLORATIONMODELCHECKER_H_
-#define STORM_MODELCHECKER_EXPLORATION_SPARSEMDPEXPLORATIONMODELCHECKER_H_
+#ifndef STORM_MODELCHECKER_EXPLORATION_SPARSEEXPLORATIONMODELCHECKER_H_
+#define STORM_MODELCHECKER_EXPLORATION_SPARSEEXPLORATIONMODELCHECKER_H_
 
 #include <random>
 
@@ -30,14 +30,13 @@ namespace storm {
         
         using namespace exploration_detail;
         
-        template<typename ValueType>
-        class SparseMdpExplorationModelChecker : public AbstractModelChecker {
+        template<typename ValueType, typename StateType = uint32_t>
+        class SparseExplorationModelChecker : public AbstractModelChecker {
         public:
-            typedef uint32_t StateType;
             typedef StateType ActionType;
             typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
             
-            SparseMdpExplorationModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions);
+            SparseExplorationModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions = boost::none);
             
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
             
@@ -87,4 +86,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_MODELCHECKER_EXPLORATION_SPARSEMDPEXPLORATIONMODELCHECKER_H_ */
+#endif /* STORM_MODELCHECKER_EXPLORATION_SPARSEEXPLORATIONMODELCHECKER_H_ */
