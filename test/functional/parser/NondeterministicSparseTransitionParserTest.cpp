@@ -202,11 +202,9 @@ TEST(NondeterministicSparseTransitionParserTest, Whitespaces) {
 
 TEST(NondeterministicSparseTransitionParserTest, MixedTransitionOrder) {
 	// Since the MatrixBuilder needs sequential input of new elements reordering of transitions or states should throw an exception.
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_mixedTransitionOrder.tra"), storm::exceptions::InvalidArgumentException);
 	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
 
 	storm::storage::SparseMatrix<double> modelInformation = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general.tra");
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_mixedTransitionOrder.trans.rew", modelInformation), storm::exceptions::InvalidArgumentException);
 	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_mixedStateOrder.trans.rew", modelInformation), storm::exceptions::InvalidArgumentException);
 }
 

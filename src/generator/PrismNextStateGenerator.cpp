@@ -10,10 +10,10 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling) : program(program), selectedRewardModels(), buildChoiceLabeling(buildChoiceLabeling), variableInformation(variableInformation), evaluator(program.getManager()), comparator() {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling) : program(program), selectedRewardModels(), buildChoiceLabeling(buildChoiceLabeling), variableInformation(variableInformation), evaluator(program.getManager()), state(nullptr), comparator() {
             // Intentionally left empty.
         }
-        
+                
         template<typename ValueType, typename StateType>
         void PrismNextStateGenerator<ValueType, StateType>::addRewardModel(storm::prism::RewardModel const& rewardModel) {
             selectedRewardModels.push_back(rewardModel);
@@ -49,10 +49,24 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType>::expand(CompressedState const& state, StateToIdCallback const& stateToIdCallback) {
+        void PrismNextStateGenerator<ValueType, StateType>::load(CompressedState const& state) {
             // Since almost all subsequent operations are based on the evaluator, we load the state into it now.
             unpackStateIntoEvaluator(state, variableInformation, evaluator);
-
+            
+            // Also, we need to store a pointer to the state itself, because we need to be able to access it when expanding it.
+            this->state = &state;
+        }
+        
+        template<typename ValueType, typename StateType>
+        bool PrismNextStateGenerator<ValueType, StateType>::satisfies(storm::expressions::Expression const& expression) const {
+            if (expression.isTrue()) {
+                return true;
+            }
+            return evaluator.asBool(expression);
+        }
+        
+        template<typename ValueType, typename StateType>
+        StateBehavior<ValueType, StateType> PrismNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;
             
@@ -76,8 +90,8 @@ namespace storm {
             }
             
             // Get all choices for the state.
-            std::vector<Choice<ValueType>> allChoices = getUnlabeledChoices(state, stateToIdCallback);
-            std::vector<Choice<ValueType>> allLabeledChoices = getLabeledChoices(state, stateToIdCallback);
+            std::vector<Choice<ValueType>> allChoices = getUnlabeledChoices(*this->state, stateToIdCallback);
+            std::vector<Choice<ValueType>> allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback);
             for (auto& choice : allLabeledChoices) {
                 allChoices.push_back(std::move(choice));
             }

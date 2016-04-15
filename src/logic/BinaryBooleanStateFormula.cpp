@@ -30,11 +30,7 @@ namespace storm {
         bool BinaryBooleanStateFormula::isOr() const {
             return this->getOperator() == OperatorType::Or;
         }
-        
-        std::shared_ptr<Formula> BinaryBooleanStateFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<BinaryBooleanStateFormula>(this->operatorType, this->getLeftSubformula().substitute(substitution), this->getRightSubformula().substitute(substitution));
-        }
-        
+                
         std::ostream& BinaryBooleanStateFormula::writeToStream(std::ostream& out) const {
             out << "(";
             this->getLeftSubformula().writeToStream(out);

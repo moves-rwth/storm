@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstdint>
 
+#include "src/storage/expressions/Expression.h"
+
 #include "src/generator/CompressedState.h"
 #include "src/generator/StateBehavior.h"
 
@@ -16,7 +18,10 @@ namespace storm {
 
             virtual bool isDeterministicModel() const = 0;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
-            virtual StateBehavior<ValueType, StateType> expand(CompressedState const& state, StateToIdCallback const& stateToIdCallback) = 0;
+            
+            virtual void load(CompressedState const& state) = 0;
+            virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
+            virtual bool satisfies(storm::expressions::Expression const& expression) const = 0;
         };
     }
 }

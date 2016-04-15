@@ -20,6 +20,8 @@
 #include "src/models/sparse/Model.h"
 #include "src/models/sparse/StateLabeling.h"
 #include "src/storage/SparseMatrix.h"
+#include "src/storage/sparse/StateValuations.h"
+#include "src/storage/sparse/StateStorage.h"
 #include "src/settings/SettingsManager.h"
 
 #include "src/utility/prism.h"
@@ -45,42 +47,6 @@ namespace storm {
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename StateType = uint32_t>
         class ExplicitPrismModelBuilder {
         public:
-            // A structure holding information about the reachable state space while building it.
-            struct InternalStateInformation {
-                // Builds an empty state information.
-                InternalStateInformation();
-                
-                // Creates a state information structure for storing states of the given bit width.
-                InternalStateInformation(uint64_t bitsPerState);
-
-                // This member stores all the states and maps them to their unique indices.
-                storm::storage::BitVectorHashMap<StateType> stateStorage;
-                
-                // A list of initial states in terms of their global indices.
-                std::vector<StateType> initialStateIndices;
-
-                // The number of bits of each state.
-                uint64_t bitsPerState;
-                
-                // The number of states that were found in the exploration so far.
-                uint_fast64_t numberOfStates;
-            };
-            
-            // A structure holding information about the reachable state space that can be retrieved from the outside.
-            struct StateInformation : public storm::models::sparse::StateAnnotation {
-                /*!
-                 * Constructs a state information object for the given number of states.
-                 */
-                StateInformation(uint_fast64_t numberOfStates);
-                
-                // A mapping from state indices to their variable valuations.
-                std::vector<storm::expressions::SimpleValuation> valuations;
-
-                std::string stateInfo(uint_fast64_t state) const override {
-                    return valuations[state].toString();
-                }
-            };
-            
             // A structure holding the individual components of a model.
             struct ModelComponents {
                 ModelComponents();
@@ -163,7 +129,7 @@ namespace storm {
                 // A flag that indicates whether or not to store the state information after successfully building the
                 // model. If it is to be preserved, it can be retrieved via the appropriate methods after a successful
                 // call to <code>translateProgram</code>.
-                bool buildStateInformation;
+                bool buildStateValuations;
                 
                 // A list of reward models to be build in case not all reward models are to be build.
                 std::set<std::string> rewardModelsToBuild;
@@ -214,7 +180,7 @@ namespace storm {
              *
              * @return A structure that stores information about all reachable states.
              */
-            StateInformation const& getStateInformation() const;
+            storm::storage::sparse::StateValuations const& getStateValuations() const;
             
             /*!
              * Retrieves the program that was actually translated (i.e. including constant substitutions etc.).
@@ -224,8 +190,6 @@ namespace storm {
             storm::prism::Program const& getTranslatedProgram() const;
             
         private:
-            storm::expressions::SimpleValuation unpackStateIntoValuation(storm::storage::BitVector const& currentState);
-            
             /*!
              * Retrieves the state id of the given state. If the state has not been encountered yet, it will be added to
              * the lists of all states with a new id. If the state was already known, the object that is pointed to by
@@ -233,7 +197,6 @@ namespace storm {
              * used after invoking this method.
              *
              * @param state A pointer to a state for which to retrieve the index. This must not be used after the call.
-             * @param internalStateInformation The information about the already explored part of the reachable state space.
              * @return A pair indicating whether the state was already discovered before and the state id of the state.
              */
             StateType getOrAddStateIndex(CompressedState const& state);
@@ -245,7 +208,6 @@ namespace storm {
              * @param variableInformation A structure containing information about the variables in the program.
              * @param transitionRewards A list of transition rewards that are to be considered in the transition reward
              * matrix.
-             * @param internalStateInformation A structure containing information about the states of the program.
              * @param deterministicModel A flag indicating whether the model is supposed to be deterministic or not.
              * @param transitionMatrix A reference to an initialized matrix which is filled with all transitions by this
              * function.
@@ -270,9 +232,6 @@ namespace storm {
             /*!
              * Builds the state labeling for the given program.
              *
-             * @param program The program for which to build the state labeling.
-             * @param variableInformation Information about the variables in the program.
-             * @param internalStateInformation Information about the state space of the program.
              * @return The state labeling of the given program.
              */
             storm::models::sparse::StateLabeling buildStateLabeling();
@@ -287,11 +246,11 @@ namespace storm {
             VariableInformation variableInformation;
             
             // Internal information about the states that were explored.
-            InternalStateInformation internalStateInformation;
+            storm::storage::sparse::StateStorage<StateType> stateStorage;
             
             // This member holds information about reachable states that can be retrieved from the outside after a
             // successful build.
-            boost::optional<StateInformation> stateInformation;
+            boost::optional<storm::storage::sparse::StateValuations> stateValuations;
             
             // A set of states that still need to be explored.
             std::deque<CompressedState> statesToExplore;

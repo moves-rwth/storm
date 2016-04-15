@@ -100,6 +100,9 @@ namespace storm {
             bool areQualitativeOperatorResultsAllowed() const;
             FragmentSpecification& setQualitativeOperatorResultsAllowed(bool newValue);
             
+            bool isOperatorAtTopLevelRequired() const;
+            FragmentSpecification& setOperatorAtTopLevelRequired(bool newValue);
+            
             FragmentSpecification& setOperatorsAllowed(bool newValue);
             FragmentSpecification& setTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
@@ -142,13 +145,20 @@ namespace storm {
             bool varianceAsMeasureType;
             bool quantitativeOperatorResults;
             bool qualitativeOperatorResults;
+            bool operatorAtTopLevelRequired;
         };
         
         // Propositional.
         FragmentSpecification propositional();
         
+        // Just reachability properties.
+        FragmentSpecification reachability();
+        
         // Regular PCTL.
         FragmentSpecification pctl();
+
+        // Flat PCTL.
+        FragmentSpecification flatPctl();
         
         // PCTL + cumulative, instantaneous, reachability and long-run rewards.
         FragmentSpecification prctl();

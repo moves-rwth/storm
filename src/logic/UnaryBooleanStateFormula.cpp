@@ -26,11 +26,7 @@ namespace storm {
         bool UnaryBooleanStateFormula::isNot() const {
             return this->getOperator() == OperatorType::Not;
         }
-        
-        std::shared_ptr<Formula> UnaryBooleanStateFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<UnaryBooleanStateFormula>(this->operatorType, this->getSubformula().substitute(substitution));
-        }
-        
+                
         std::ostream& UnaryBooleanStateFormula::writeToStream(std::ostream& out) const {
             switch (operatorType) {
                 case OperatorType::Not: out << "!("; break;

@@ -37,7 +37,9 @@ namespace storm {
             bool hasOptimalityType() const;
             storm::solver::OptimizationDirection const& getOptimalityType() const;
             virtual bool isOperatorFormula() const override;
-                        
+            
+            OperatorInformation const& getOperatorInformation() const;
+            
             virtual bool hasQualitativeResult() const override;
             virtual bool hasQuantitativeResult() const override;
             

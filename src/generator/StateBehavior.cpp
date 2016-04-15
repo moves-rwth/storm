@@ -50,6 +50,11 @@ namespace storm {
             return stateRewards;
         }
         
+        template<typename ValueType, typename StateType>
+        std::size_t StateBehavior<ValueType, StateType>::getNumberOfChoices() const {
+            return choices.size();
+        }
+        
         template class StateBehavior<double>;
         template class StateBehavior<storm::RationalFunction>;
 

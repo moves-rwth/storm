@@ -18,11 +18,7 @@ namespace storm {
         boost::any ProbabilityOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
-        std::shared_ptr<Formula> ProbabilityOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<ProbabilityOperatorFormula>(this->getSubformula().substitute(substitution), this->operatorInformation);
-        }
-        
+                
         std::ostream& ProbabilityOperatorFormula::writeToStream(std::ostream& out) const {
             out << "P";
             OperatorFormula::writeToStream(out);

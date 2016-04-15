@@ -402,6 +402,13 @@ namespace storm {
             storm::expressions::Expression const& getLabelExpression(std::string const& label) const;
             
             /*!
+             * Retrieves a mapping from all labels in the program to their defining expressions.
+             *
+             * @return A mapping from label names to their expressions.
+             */
+            std::map<std::string, storm::expressions::Expression> getLabelToExpressionMapping() const;
+            
+            /*!
              * Retrieves the number of labels in the program.
              *
              * @return The number of labels in the program.

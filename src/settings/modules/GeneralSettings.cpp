@@ -107,9 +107,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, noCutsOptionName, false, "Do not perform cuts when buildings the state space.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, this flag disables automatically fixing them.").setShortName(dontFixDeadlockOptionShortName).build());
                 
-                std::vector<std::string> engines = {"sparse", "hybrid", "dd", "abs"};
+                std::vector<std::string> engines = {"sparse", "hybrid", "dd", "expl", "abs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, hybrid, dd, ar}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, hybrid, dd, expl, abs}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
@@ -385,6 +385,8 @@ namespace storm {
                     engine = GeneralSettings::Engine::Hybrid;
                 } else if (engineStr == "dd") {
                     engine = GeneralSettings::Engine::Dd;
+                } else if (engineStr == "expl") {
+                    engine = GeneralSettings::Engine::Exploration;
                 } else if (engineStr == "abs") {
                     engine = GeneralSettings::Engine::AbstractionRefinement;
                 } else {
