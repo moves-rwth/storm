@@ -27,8 +27,8 @@ namespace storm {
                 std::vector<std::string> nextStateHeuristics = { "probdiffs", "prob", "unif" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, nextStateHeuristicOptionName, true, "Sets the next-state heuristic to use. Available are: { probdiffs, prob, unif } where 'prob' samples according to the probabilities in the system, 'probdiffs' takes into account probabilities and the differences between the current bounds and 'unif' samples uniformly.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the heuristic to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(nextStateHeuristics)).setDefaultValueString("probdiffs").build()).build());
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The internally used precision.").setShortName(precisionOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to use.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionOptionName, false, "The precision to achieve.").setShortName(precisionOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The value to use to determine convergence.").setDefaultValueDouble(1e-06).addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
             }
             
             bool ExplorationSettings::isLocalPrecomputationSet() const {
