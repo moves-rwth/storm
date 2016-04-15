@@ -40,10 +40,6 @@ namespace storm {
             this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
         }
         
-        std::shared_ptr<Formula> RewardOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<RewardOperatorFormula>(this->getSubformula().substitute(substitution), this->rewardModelName, this->operatorInformation, this->rewardMeasureType);
-        }
-        
         RewardMeasureType RewardOperatorFormula::getMeasureType() const {
             return rewardMeasureType;
         }

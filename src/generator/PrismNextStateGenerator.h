@@ -18,7 +18,7 @@ namespace storm {
             typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
             
             PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling);
-            
+                        
             /*!
              * Adds a reward model to the list of selected reward models ()
              */
@@ -31,7 +31,10 @@ namespace storm {
             
             virtual bool isDeterministicModel() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
-            virtual StateBehavior<ValueType, StateType> expand(CompressedState const& state, StateToIdCallback const& stateToIdCallback) override;
+
+            virtual void load(CompressedState const& state) override;
+            virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
+            virtual bool satisfies(storm::expressions::Expression const& expression) const override;
 
         private:
             /*!
@@ -97,6 +100,8 @@ namespace storm {
             
             // An evaluator used to evaluate expressions.
             storm::expressions::ExpressionEvaluator<ValueType> evaluator;
+            
+            CompressedState const* state;
             
             // A comparator used to compare constants.
             storm::utility::ConstantsComparator<ValueType> comparator;

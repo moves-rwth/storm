@@ -10,6 +10,10 @@ namespace storm {
             STORM_LOG_THROW(context == FormulaContext::Probability || context == FormulaContext::Reward || context == FormulaContext::Time, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
         }
         
+        FormulaContext const& EventuallyFormula::getContext() const {
+            return context;
+        }
+        
         bool EventuallyFormula::isEventuallyFormula() const {
             return true;
         }
@@ -41,11 +45,7 @@ namespace storm {
         boost::any EventuallyFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
-        std::shared_ptr<Formula> EventuallyFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<EventuallyFormula>(this->getSubformula().substitute(substitution), context);
-        }
-        
+                
         std::ostream& EventuallyFormula::writeToStream(std::ostream& out) const {
             out << "F ";
             this->getSubformula().writeToStream(out);

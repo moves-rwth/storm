@@ -229,7 +229,7 @@ namespace storm {
              * @return True if replacement took place, False if nothing changed.
              */
             bool replaceColumns(std::vector<index_type> const& replacements, index_type offset);
-            
+                        
         private:
             // A flag indicating whether a row count was set upon construction.
             bool initialRowCountSet;

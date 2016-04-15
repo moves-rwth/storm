@@ -23,7 +23,7 @@ namespace storm {
             uint_fast64_t stateCount = transitions.getColumnCount();
 
             // Parse the state labeling.
-            storm::models::sparse::StateLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFilename)));
+            storm::models::sparse::StateLabeling labeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFilename));
 
             // Construct the result.
             DeterministicModelParser<ValueType, RewardValueType>::Result result(std::move(transitions), std::move(labeling));
