@@ -515,6 +515,7 @@ extern int Cudd_zddVarsFromBddVars(DdManager *dd, int multiplicity);
 extern unsigned int Cudd_ReadMaxIndex(void);
 extern DdNode * Cudd_addConst(DdManager *dd, CUDD_VALUE_TYPE c);
 extern int Cudd_IsConstant(DdNode *node);
+extern int Cudd_IsConstant_const(DdNode const *node);
 extern int Cudd_IsNonConstant(DdNode *f);
 extern DdNode * Cudd_T(DdNode *node);
 extern DdNode * Cudd_E(DdNode *node);

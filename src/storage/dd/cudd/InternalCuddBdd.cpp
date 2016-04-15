@@ -448,7 +448,7 @@ namespace storm {
             auto nodeCounterIt = nodeToCounterMap.find(dd);
             if (nodeCounterIt != nodeToCounterMap.end()) {
                 // If we have found the node, this means we can look up the counter-index pair and get the corresponding variable.
-                auto variableIt = countIndexToVariablePair.find(std::make_pair(nodeCounterIt->second, dd->index));
+                auto variableIt = countIndexToVariablePair.find(std::make_pair(nodeCounterIt->second, Cudd_NodeReadIndex(dd)));
                 STORM_LOG_ASSERT(variableIt != countIndexToVariablePair.end(), "Unable to find node.");
                 return variableIt->second;
             }
@@ -458,15 +458,15 @@ namespace storm {
             storm::expressions::Variable newVariable = manager.declareFreshBooleanVariable();
             
             // Since we want to reuse the variable whenever possible, we insert the appropriate entries in the hash table.
-            if (!Cudd_IsConstant(dd)) {
+            if (!Cudd_IsConstant_const(dd)) {
                 // If we are dealing with a non-terminal node, we count it as a new node with this index.
-                nodeToCounterMap[dd] = nextCounterForIndex[dd->index];
-                countIndexToVariablePair[std::make_pair(nextCounterForIndex[dd->index], dd->index)] = newVariable;
-                ++nextCounterForIndex[dd->index];
+                nodeToCounterMap[dd] = nextCounterForIndex[Cudd_NodeReadIndex(dd)];
+                countIndexToVariablePair[std::make_pair(nextCounterForIndex[Cudd_NodeReadIndex(dd)], Cudd_NodeReadIndex(dd))] = newVariable;
+                ++nextCounterForIndex[Cudd_NodeReadIndex(dd)];
             } else {
                 // If it's a terminal node, it is the one leaf and there's no need to keep track of a counter for this level.
                 nodeToCounterMap[dd] = 0;
-                countIndexToVariablePair[std::make_pair(0, dd->index)] = newVariable;
+                countIndexToVariablePair[std::make_pair(0, Cudd_NodeReadIndex(dd))] = newVariable;
             }
             
             // In the terminal case, we can only have a one since we are considering non-negated nodes only.
@@ -475,15 +475,15 @@ namespace storm {
                 expressions.push_back(storm::expressions::implies(manager.boolean(true), newVariable));
             } else {
                 // In the non-terminal case, we recursively translate the children nodes and then construct and appropriate ite-expression.
-                DdNode const* t = Cudd_T(dd);
-                DdNode const* e = Cudd_E(dd);
+                DdNode const* t = Cudd_T_const(dd);
+                DdNode const* e = Cudd_E_const(dd);
                 DdNode const* T = Cudd_Regular(t);
                 DdNode const* E = Cudd_Regular(e);
                 storm::expressions::Variable thenVariable = toExpressionRec(T, manager, expressions, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex, indexToExpressionMap);
                 storm::expressions::Variable elseVariable = toExpressionRec(E, manager, expressions, countIndexToVariablePair, nodeToCounterMap, nextCounterForIndex, indexToExpressionMap);
                 
                 // Create the appropriate expression.
-                auto expressionIt = indexToExpressionMap.find(dd->index);
+                auto expressionIt = indexToExpressionMap.find(Cudd_NodeReadIndex(dd));
                 STORM_LOG_ASSERT(expressionIt != indexToExpressionMap.end(), "Unable to find expression for variable index.");
                 expressions.push_back(storm::expressions::iff(newVariable, storm::expressions::ite(expressionIt->second, t == T ? thenVariable : !thenVariable, e == E ? elseVariable : !elseVariable)));
             }
