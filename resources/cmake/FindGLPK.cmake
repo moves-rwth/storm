@@ -42,7 +42,7 @@ endif()
 # handle the QUIETLY and REQUIRED arguments and set LIBXML2_FOUND to TRUE if
 # all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(glpk
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(GLPK
                                   REQUIRED_VARS GLPK_LIBRARIES GLPK_INCLUDE_DIR
                                   VERSION_VAR GLPK_VERSION_STRING)
 

@@ -226,7 +226,7 @@ set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
-find_package(Boost 1.56.0 REQUIRED QUIET)
+find_package(Boost 1.56.0 QUIET REQUIRED)
 
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
@@ -296,7 +296,7 @@ list(APPEND STORM_LINK_LIBRARIES ${GLPK_LIBRARIES})
 #############################################################
 
 if (STORM_USE_GUROBI)
-	find_package(Gurobi REQUIRED QUIET)
+	find_package(Gurobi QUIET REQUIRED)
 	set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
 	if (GUROBI_FOUND)
 		message (STATUS "StoRM - Linking with Gurobi")
@@ -319,7 +319,7 @@ endif()
 #############################################################
 
 # Do not use system CUDD, StoRM has a modified version
-#find_package(CUDD QUIET)
+find_package(CUDD QUIET)
 #set(CUDD_FOUND OFF)
 if(CUDD_FOUND)
 	list(APPEND STORM_LINK_LIBRARIES ${CUDD_LIBRARY})
@@ -350,12 +350,7 @@ if(USE_CARL)
 		include_directories("${carl_INCLUDE_DIR}")
 		list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
 	else()
-		#message(FATAL_ERROR "StoRM - CARL was requested but not found"
-	endif()
-
-	#find_package(smtrat QUIET)
-	if(smtrat_FOUND)
-		
+		message(FATAL_ERROR "StoRM - CARL was requested but not found")
 	endif()
 endif()
 
@@ -414,7 +409,7 @@ endif(ENABLE_MSAT)
 #############################################################
 
 if(USE_XERCES)
-	find_package(Xerces QUIET)
+	find_package(Xerces QUIET REQUIRED)
 	if(XERCES_FOUND)
 		message(STATUS "StoRM - Use system version of xerces")
     else()
@@ -474,7 +469,7 @@ set(STORM_HAVE_INTELTBB OFF)
 if (STORM_USE_INTELTBB)
 	# Point to shipped TBB directory
 	set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_merged-win-lin-mac")
-	find_package(TBB REQUIRED QUIET)
+	find_package(TBB QUIET REQUIRED)
 
 	if (TBB_FOUND)
 		message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
@@ -494,7 +489,10 @@ endif(STORM_USE_INTELTBB)
 ##
 #############################################################
 
-find_package(Threads REQUIRED QUIET)
+find_package(Threads QUIET REQUIRED)
+if (NOT Threads_FOUND)
+	message(FATAL_ERROR "StoRM - Threads was requested, but not found!")
+endif()
 include_directories(${THREADS_INCLUDE_DIRS})
 list(APPEND STORM_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 if (STORM_USE_COTIRE)

@@ -36,7 +36,7 @@ endif()
 # handle the QUIETLY and REQUIRED arguments and set LIBXML2_FOUND to TRUE if
 # all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(cudd
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(CUDD
                                   REQUIRED_VARS CUDD_LIBRARIES CUDD_INCLUDE_DIR
                                   VERSION_VAR CUDD_VERSION_STRING)
 
