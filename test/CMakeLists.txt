@@ -17,8 +17,8 @@ add_dependencies(storm-performance-tests test-resources)
 
 include_directories(${GTEST_INCLUDE_DIR})
 enable_testing()
-target_link_libraries(storm-functional-tests ${GTEST_LIBRARIES})
-target_link_libraries(storm-performance-tests ${GTEST_LIBRARIES})
+target_link_libraries(storm-functional-tests ${STORM_TEST_LINK_LIBRARIES})
+target_link_libraries(storm-performance-tests ${STORM_TEST_LINK_LIBRARIES})
 add_test(NAME storm-functional-tests COMMAND storm-functional-tests)
 add_test(NAME storm-performance-tests COMMAND storm-performance-tests)
 

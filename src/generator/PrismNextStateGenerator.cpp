@@ -336,7 +336,15 @@ namespace storm {
                                 for (auto const& stateProbabilityPair : *currentTargetStates) {
                                     // Compute the new state under the current update and add it to the set of new target states.
                                     CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, update);
-                                    newTargetStates->emplace(newTargetState, stateProbabilityPair.second * evaluator.asRational(update.getLikelihoodExpression()));
+                                    
+                                    // If the new state was already found as a successor state, update the probability
+                                    // and otherwise insert it.
+                                    auto targetStateIt = newTargetStates->find(newTargetState);
+                                    if (targetStateIt != newTargetStates->end()) {
+                                        targetStateIt->second += stateProbabilityPair.second * evaluator.asRational(update.getLikelihoodExpression());
+                                    } else {
+                                        newTargetStates->emplace(newTargetState, stateProbabilityPair.second * evaluator.asRational(update.getLikelihoodExpression()));
+                                    }
                                 }
                             }
                             
