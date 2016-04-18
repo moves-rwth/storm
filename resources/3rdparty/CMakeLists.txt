@@ -1,21 +1,17 @@
-add_custom_target(resources) 
+add_custom_target(resources)
 add_custom_target(test-resources)
 
-
-if(STORM_SUPPORT_XML_INPUT_FORMATS)
-    ExternalProject_Add(
-            xercesc
-            SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2
-            CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2 --libdir=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=-O3 CXXFLAGS=-O3
-            PREFIX ${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2
-            BUILD_COMMAND make
-            BUILD_IN_SOURCE 0
-            LOG_CONFIGURE ON
-            LOG_BUILD ON
-            LOG_INSTALL ON
-    )
-    add_dependencies(resources xercesc)
-endif()
+ExternalProject_Add(
+    xercesc
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2
+    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/xercesc-3.1.2/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2 --libdir=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=-O3 CXXFLAGS=-O3
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2
+    BUILD_COMMAND make
+    BUILD_IN_SOURCE 0
+    LOG_CONFIGURE ON
+    LOG_BUILD ON
+    LOG_INSTALL ON
+)
 
 ExternalProject_Add(
     glpk
@@ -30,10 +26,6 @@ ExternalProject_Add(
     LOG_BUILD ON
     LOG_INSTALL ON
 )
-add_dependencies(resources glpk)
-
-set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk${DYNAMIC_EXT} PARENT_SCOPE)
-set(GLPK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/include PARENT_SCOPE)
 
 ExternalProject_Add(
     cudd3
@@ -48,30 +40,21 @@ ExternalProject_Add(
     LOG_BUILD ON
     LOG_INSTALL ON
 )
-add_dependencies(resources cudd3)
 
-ExternalProject_Get_Property(cudd3 binary_dir)
-set(CUDD3_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/include PARENT_SCOPE)
-
-set(CUDD3_SHARED_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/lib/libcudd${DYNAMIC_EXT} PARENT_SCOPE)
-set(CUDD3_STATIC_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/liblibcudd${STATIC_EXT} PARENT_SCOPE)
-
-set(STORM_SYLVAN_ROOT "${PROJECT_SOURCE_DIR}/resources/3rdparty/sylvan")
 ExternalProject_Add(
     sylvan
     DOWNLOAD_COMMAND ""
     PREFIX "sylvan"
-    SOURCE_DIR "${STORM_SYLVAN_ROOT}"
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/sylvan
     CMAKE_ARGS -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
     BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
     INSTALL_COMMAND ""
     INSTALL_DIR "${PROJECT_BINARY_DIR}/sylvan"
 )
+ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
-set(Sylvan_INCLUDE_DIR "${STORM_SYLVAN_ROOT}/src" PARENT_SCOPE)
+set(Sylvan_INCLUDE_DIR "${source_dir}/src" PARENT_SCOPE)
 set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan.a" PARENT_SCOPE)
-
-add_dependencies(resources sylvan)
 
 ExternalProject_Add(
         googletest
@@ -97,6 +80,3 @@ set(GTEST_INCLUDE_DIR ${source_dir}/include PARENT_SCOPE)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
 set(GTEST_LIBRARIES ${binary_dir}/libgtest.a ${binary_dir}/libgtest_main.a PARENT_SCOPE)
-
-add_dependencies(test-resources googletest)
-
