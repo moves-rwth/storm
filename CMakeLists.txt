@@ -30,7 +30,6 @@ option(USE_CARL "Sets whether carl should be included." ON)
 option(USE_XERCES "Sets whether xerces should be used." OFF)
 option(FORCE_COLOR "Force color output" OFF)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache" ON)
-option(STORM_LOGGING_FRAMEWORK "Use a framework for logging" OFF)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
@@ -310,8 +309,6 @@ else()
 	set(STORM_HAVE_GUROBI OFF)
 endif()
 
-
-
 #############################################################
 ##
 ##	CUDD
@@ -319,17 +316,11 @@ endif()
 #############################################################
 
 # Do not use system CUDD, StoRM has a modified version
-find_package(CUDD QUIET)
-#set(CUDD_FOUND OFF)
-if(CUDD_FOUND)
-	list(APPEND STORM_LINK_LIBRARIES ${CUDD_LIBRARY})
-else()
-	set(CUDD_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/include)
-	set(CUDD_SHARED_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/lib/libcudd${DYNAMIC_EXT})
-	set(CUDD_STATIC_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/liblibcudd${STATIC_EXT})
-	list(APPEND STORM_LINK_LIBRARIES ${CUDD_SHARED_LIBRARY})
-	add_dependencies(resources cudd3)
-endif()
+set(CUDD_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/cudd-3.0.0/include)
+set(CUDD_SHARED_LIBRARY ${CMAKE_BINARY_DIR}/resources/3rdparty/cudd-3.0.0/lib/libcudd${DYNAMIC_EXT})
+set(CUDD_STATIC_LIBRARY ${CMAKE_BINARY_DIR}/resources/3rdparty/cudd-3.0.0/lib/libcudd${STATIC_EXT})
+list(APPEND STORM_LINK_LIBRARIES ${CUDD_SHARED_LIBRARY})
+add_dependencies(resources cudd3)
 
 message(STATUS "StoRM - Linking with CUDD")
 #message("StoRM - CUDD include dir: ${CUDD_INCLUDE_DIR}")
@@ -748,6 +739,5 @@ add_custom_target(memcheck-performance-tests valgrind --leak-check=full --show-r
 
 set(CPPLINT_ARGS --filter=-whitespace/tab,-whitespace/line_length,-legal/copyright,-readability/streams)
 add_custom_target(style python cpplint.py ${CPPLINT_ARGS} `find ./src/ -iname "*.h" -or -iname "*.cpp" `)
-
 
 include(StormCPackConfig.cmake)

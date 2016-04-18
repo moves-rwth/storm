@@ -6,7 +6,6 @@
 
 #include "storm-config.h"
 
-#ifndef STORM_LOGGING_FRAMEWORK
 #include <iostream>
 #include <sstream>
 
@@ -158,108 +157,6 @@ std::cout << "***** warning ***** loglevel trace is not compiled\n"
 #endif
 
 
-#else 
-// Include the parts necessary for Log4cplus.
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-/*!
- * Define the macros STORM_LOG_DEBUG and STORM_LOG_TRACE.
- */
-#define STORM_LOG_DEBUG(message)                \
-do {                                            \
-    LOG4CPLUS_DEBUG(logger, message);           \
-} while (false)                                 \
-
-#define STORM_LOG_TRACE(message)                \
-do {                                            \
-    LOG4CPLUS_TRACE(logger, message);           \
-} while (false)                                 \
-
-// Define STORM_LOG_ASSERT which is only checked when NDEBUG is not set.
-#ifndef NDEBUG
-#define STORM_LOG_ASSERT(cond, message)         \
-do {                                            \
-if (!(cond)) {                                  \
-LOG4CPLUS_ERROR(logger, message);               \
-assert(cond);                                   \
-}                                               \
-} while (false)                                 \
-
-#else
-#define STORM_LOG_ASSERT(cond, message)         
-#endif
-// Define STORM_LOG_THROW to always throw the exception with the given message if the condition fails to hold.
-#define STORM_LOG_THROW(cond, exception, message)     \
-do {                                            \
-    if (!(cond)) {                              \
-        LOG4CPLUS_ERROR(logger, message);       \
-        throw exception() << message;           \
-    }                                           \
-} while (false)                                 \
-
-
-// Define STORM_LOG_WARN, STORM_LOG_ERROR and STORM_LOG_INFO to log the given message with the corresponding log levels.
-#define STORM_LOG_WARN(message)                 \
-do {                                            \
-    LOG4CPLUS_WARN(logger, message);            \
-} while (false)                                 \
-
-#define STORM_LOG_WARN_COND(cond, message)      \
-do {                                            \
-    if (!(cond)) {                              \
-        LOG4CPLUS_WARN(logger, message);        \
-    }                                           \
-} while (false)                                 \
-
-#define STORM_LOG_INFO(message)                 \
-do {                                            \
-    LOG4CPLUS_INFO(logger, message);            \
-} while (false)                                 \
-
-#define STORM_LOG_INFO_COND(cond, message)      \
-do {                                            \
-    if (!(cond)) {                              \
-        LOG4CPLUS_INFO(logger, message);        \
-    }                                           \
-} while (false)                                 \
-
-#define STORM_LOG_ERROR(message)                \
-do {                                            \
-    LOG4CPLUS_ERROR(logger, message);           \
-} while (false)                                 \
-
-#define STORM_LOG_ERROR_COND(cond, message)     \
-do {                                            \
-    if (!(cond)) {                              \
-        LOG4CPLUS_ERROR(logger, message);       \
-    }                                           \
-} while (false)                                 \
-
-
-#define STORM_GLOBAL_LOGLEVEL_INFO() \
-do { \
-logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::INFO_LOG_LEVEL); \
-LOG4CPLUS_INFO(logger, "Enabled verbose mode, log output gets printed to console."); \
-} while (false)
-
-#define STORM_GLOBAL_LOGLEVEL_DEBUG() \
-do { \
-logger.setLogLevel(log4cplus::DEBUG_LOG_LEVEL); \
-logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::DEBUG_LOG_LEVEL); \
-LOG4CPLUS_INFO(logger, "Enabled very verbose mode, log output gets printed to console."); \
-} while(false)
-    
-#define STORM_GLOBAL_LOGLEVEL_TRACE() \
-do { \
-logger.setLogLevel(log4cplus::TRACE_LOG_LEVEL); \
-logger.getAppender("mainConsoleAppender")->setThreshold(log4cplus::TRACE_LOG_LEVEL); \
-LOG4CPLUS_INFO(logger, "Enabled trace mode, log output gets printed to console."); \
-} while(false)
-
-
-
-#endif
 /*!
  * Define the macros that print information and optionally also log it.
  */
