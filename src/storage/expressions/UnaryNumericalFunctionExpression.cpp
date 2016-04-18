@@ -35,10 +35,10 @@ namespace storm {
 
             if (this->getOperatorType() == OperatorType::Minus) {
                 STORM_LOG_THROW(this->getOperand()->hasIntegerType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
-                int_fast64_t result = this->getOperand()->evaluateAsInt();
+                int_fast64_t result = this->getOperand()->evaluateAsInt(valuation);
                 return -result;
             } else {
-                double result = this->getOperand()->evaluateAsDouble();
+                double result = this->getOperand()->evaluateAsDouble(valuation);
                 switch (this->getOperatorType()) {
                     case OperatorType::Floor: return static_cast<int_fast64_t>(std::floor(result)); break;
                     case OperatorType::Ceil: return static_cast<int_fast64_t>(std::ceil(result)); break;
