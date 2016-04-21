@@ -328,6 +328,26 @@ include_directories(${CUDD_INCLUDE_DIR})
 
 #############################################################
 ##
+##      CLN
+##
+#############################################################
+
+find_package(CLN QUIET)
+
+if(CLN_FOUND)
+    set(STORM_HAVE_CLN ON)
+    message(STATUS "StoRM - Linking with CLN")
+    include_directories("${CLN_INCLUDE_DIR}")
+    list(APPEND STORM_LINK_LIBRARIES ${CLN_LIBRARIES})
+else()
+    set(STORM_HAVE_CLN OFF)
+    if(NOT GMP_FOUND)
+        message(FATAL_ERROR "StoRM - Neither CLN nor GMP found")
+    endif()
+endif()
+
+#############################################################
+##
 ##      carl
 ##
 #############################################################
@@ -337,7 +357,7 @@ if(USE_CARL)
 	find_package(carl QUIET REQUIRED)
 	if(carl_FOUND)
 		set(STORM_HAVE_CARL ON)
-		message(STATUS "StoRM - Linking with carl.")
+		message(STATUS "StoRM - Linking with carl")
 		include_directories("${carl_INCLUDE_DIR}")
 		list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
 	else()
@@ -361,6 +381,25 @@ if(smtrat_FOUND)
 	message(STATUS "StoRM - Linking with smtrat.")
     include_directories("${smtrat_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
+endif()
+
+#############################################################
+##
+##      GiNaC
+##
+#############################################################
+
+find_package(GiNaC QUIET)
+
+if(GiNaC_FOUND)
+    set(STORM_HAVE_GINAC ON)
+    message(STATUS "StoRM - Linking with GiNaC")
+    # Right now only link with GiNaC for carl
+    #include_directories("${GINAC_INCLUDE_DIR}")
+    list(APPEND STORM_LINK_LIBRARIES ${GINAC_LIBRARIES})
+else()
+    set(STORM_HAVE_GINAC OFF)
+    #TODO: Check if CARL actually requires the use of GiNaC
 endif()
 
 #############################################################
