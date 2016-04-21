@@ -39,7 +39,7 @@ elseif(GLPK_INCLUDE_DIR AND EXISTS "${GLPK_INCLUDE_DIR}/glpk.h")
     unset(glpk_minor_version)
 endif()
 
-# handle the QUIETLY and REQUIRED arguments and set LIBXML2_FOUND to TRUE if
+# handle the QUIETLY and REQUIRED arguments and set GLPK_FOUND to TRUE if
 # all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(GLPK
