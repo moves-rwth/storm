@@ -32,7 +32,7 @@ ExternalProject_Add(
     DOWNLOAD_COMMAND ""
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0
-    UPDATE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0/autoreconf
+    UPDATE_COMMAND autoreconf
     CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0/configure  --enable-shared   --enable-obj --prefix=${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0 --libdir=${CMAKE_CURRENT_BINARY_DIR}/cudd-3.0.0/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
     BUILD_COMMAND make "CFLAGS=-O2 -w"
     INSTALL_COMMAND make install
