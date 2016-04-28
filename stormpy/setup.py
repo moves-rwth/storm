@@ -10,7 +10,7 @@ PROJECT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
 # Glob source files for modules
 core_sources = glob(os.path.join('src', 'core', '*.cpp'))
-info_sources = glob(os.path.join('src', 'info', '*.cpp'))
+expressions_sources = glob(os.path.join('src', 'expressions', '*.cpp'))
 
 # Configuration shared between external modules follows
 
@@ -47,7 +47,18 @@ ext_core = Extension(
 
 ext_info = Extension(
     name='info.info',
-    sources=['src/mod_info.cpp'] + info_sources,
+    sources=['src/mod_info.cpp'],
+    include_dirs=include_dirs,
+    libraries=libraries,
+    library_dirs=library_dirs,
+    extra_compile_args=extra_compile_args,
+    define_macros=define_macros,
+    extra_link_args=extra_link_args
+)
+
+ext_expressions = Extension(
+    name='expressions.expressions',
+    sources=['src/mod_expressions.cpp'] + expressions_sources,
     include_dirs=include_dirs,
     libraries=libraries,
     library_dirs=library_dirs,
@@ -99,10 +110,10 @@ setup(name="stormpy",
       maintainer_email="sebastian.junges@cs.rwth-aachen.de",
       url="http://moves.rwth-aachen.de",
       description="stormpy - Python Bindings for Storm",
-      packages=['stormpy', 'stormpy.info'],
+      packages=['stormpy', 'stormpy.info', 'stormpy.expressions'],
       package_dir={'':'lib'},
       ext_package='stormpy',
-      ext_modules=[ext_core, ext_info
+      ext_modules=[ext_core, ext_info, ext_expressions
                    ],
       cmdclass={
         'build_ext': stormpy_build_ext,
