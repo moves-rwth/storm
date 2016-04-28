@@ -11,6 +11,7 @@ PROJECT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 # Glob source files for modules
 core_sources = glob(os.path.join('src', 'core', '*.cpp'))
 expressions_sources = glob(os.path.join('src', 'expressions', '*.cpp'))
+logic_sources = glob(os.path.join('src', 'logic', '*.cpp'))
 
 # Configuration shared between external modules follows
 
@@ -67,6 +68,17 @@ ext_expressions = Extension(
     extra_link_args=extra_link_args
 )
 
+ext_logic = Extension(
+    name='logic.logic',
+    sources=['src/mod_logic.cpp'] + logic_sources,
+    include_dirs=include_dirs,
+    libraries=libraries,
+    library_dirs=library_dirs,
+    extra_compile_args=extra_compile_args,
+    define_macros=define_macros,
+    extra_link_args=extra_link_args
+)
+
 class stormpy_build_ext(build_ext):
     """Extend build_ext to provide CLN toggle option
     """
@@ -110,10 +122,10 @@ setup(name="stormpy",
       maintainer_email="sebastian.junges@cs.rwth-aachen.de",
       url="http://moves.rwth-aachen.de",
       description="stormpy - Python Bindings for Storm",
-      packages=['stormpy', 'stormpy.info', 'stormpy.expressions'],
+      packages=['stormpy', 'stormpy.info', 'stormpy.expressions', 'stormpy.logic'],
       package_dir={'':'lib'},
       ext_package='stormpy',
-      ext_modules=[ext_core, ext_info, ext_expressions
+      ext_modules=[ext_core, ext_info, ext_expressions, ext_logic
                    ],
       cmdclass={
         'build_ext': stormpy_build_ext,
