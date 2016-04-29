@@ -43,7 +43,7 @@ namespace storm {
         }
         
         bool BinaryStateFormula::containsNestedRewardOperators() const {
-            return this->containsNestedRewardOperators() || this->getRightSubformula().containsNestedRewardOperators();
+            return this->getLeftSubformula().containsNestedRewardOperators() || this->getRightSubformula().containsNestedRewardOperators();
         }
         
         Formula const& BinaryStateFormula::getLeftSubformula() const {
