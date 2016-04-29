@@ -9,6 +9,7 @@
 #include "src/storage/Decomposition.h"
 #include "src/storage/StateBlock.h"
 #include "src/storage/bisimulation/Partition.h"
+#include "src/solver/OptimizationDirection.h"
 
 #include "src/logic/Formulas.h"
 

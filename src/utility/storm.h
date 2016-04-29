@@ -73,6 +73,9 @@
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/NotImplementedException.h"
 
+// Notice: The implementation for the template functions must stay in the header.
+// Otherwise the linker complains.
+
 namespace storm {
 
     template<typename ValueType>

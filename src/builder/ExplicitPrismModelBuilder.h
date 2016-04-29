@@ -9,6 +9,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/container/flat_set.hpp>
 #include <boost/container/flat_map.hpp>
+#include <boost/variant.hpp>
 #include <src/models/sparse/StandardRewardModel.h>
 
 #include "src/storage/prism/Program.h"
