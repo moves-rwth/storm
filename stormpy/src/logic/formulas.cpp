@@ -1,12 +1,9 @@
 #include "formulas.h"
 
-#include "common.h"
-
-#include <src/logic/Formulas.h>
-#include <src/logic/ComparisonType.h>
+#include "src/common.h"
 
 void define_formulas(py::module& m) {
-    
+ 
     py::enum_<storm::logic::ComparisonType>(m, "ComparisonType")
         .value("LESS", storm::logic::ComparisonType::Less)
         .value("LEQ", storm::logic::ComparisonType::LessEqual)
@@ -14,39 +11,25 @@ void define_formulas(py::module& m) {
         .value("GEQ", storm::logic::ComparisonType::GreaterEqual)
     ;
     
-    /*defineClass<std::vector<std::shared_ptr<storm::logic::Formula>>, void, void>("FormulaVec", "Vector of formulas")
+    /*py::class_<std::vector<std::shared_ptr<storm::logic::Formula>>, void, void>("FormulaVec", "Vector of formulas")
         .def(vector_indexing_suite<std::vector<std::shared_ptr<storm::logic::Formula>>, true>())
-    ;
+    ;*/
     
-    ////////////////////////////////////////////
-    // Formula
-    ////////////////////////////////////////////
-    defineClass<storm::logic::Formula, void, boost::noncopyable>("Formula",
-    "Generic Storm Formula")
+    py::class_<std::shared_ptr<storm::logic::Formula>>(m, "Formula", "Generic Storm Formula")
         .def("__str__", &storm::logic::Formula::toString)
     ;
 
-    //
     // Path Formulae
-    //
-    defineClass<storm::logic::PathFormula, storm::logic::Formula, boost::noncopyable>("PathFormula",
-    "Formula about the probability of a set of paths in an automaton");
-    defineClass<storm::logic::UnaryPathFormula, storm::logic::PathFormula, boost::noncopyable>("UnaryPathFormula",
-    "Path formula with one operand");
-    defineClass<storm::logic::EventuallyFormula, storm::logic::UnaryPathFormula>("EventuallyFormula",
-    "Formula for eventually");
-    defineClass<storm::logic::GloballyFormula, storm::logic::UnaryPathFormula>("GloballyFormula",
-    "Formula for globally");
-    defineClass<storm::logic::BinaryPathFormula, storm::logic::PathFormula, boost::noncopyable>("BinaryPathFormula",
-    "Path formula with two operands");
-    defineClass<storm::logic::BoundedUntilFormula, storm::logic::BinaryPathFormula, boost::noncopyable>("BoundedUntilFormula",
-    "Until Formula with either a step or a time bound.");
-    defineClass<storm::logic::ConditionalPathFormula, storm::logic::BinaryPathFormula>("ConditionalPathFormula",
-    "Path Formula with the right hand side being a condition.");
-    defineClass<storm::logic::UntilFormula, storm::logic::BinaryPathFormula>("UntilFormula",
-    "Path Formula for unbounded until");
+    py::class_<std::shared_ptr<storm::logic::PathFormula>>(m, "PathFormula", "Formula about the probability of a set of paths in an automaton", py::base<std::shared_ptr<storm::logic::Formula>>());
+    //py::class_<storm::logic::UnaryPathFormula, storm::logic::PathFormula>(m, "UnaryPathFormula", "Path formula with one operand");
+    //py::class_<storm::logic::EventuallyFormula, storm::logic::UnaryPathFormula>(m, "EventuallyFormula", "Formula for eventually");
+    //py::class_<storm::logic::GloballyFormula, storm::logic::UnaryPathFormula>(m, "GloballyFormula", "Formula for globally");
+    //py::class_<storm::logic::BinaryPathFormula, storm::logic::PathFormula>(m, "BinaryPathFormula", "Path formula with two operands");
+    //py::class_<storm::logic::BoundedUntilFormula, storm::logic::BinaryPathFormula>(m, "BoundedUntilFormula", "Until Formula with either a step or a time bound.");
+    //py::class_<storm::logic::ConditionalPathFormula, storm::logic::BinaryPathFormula>(m, "ConditionalPathFormula", "Path Formula with the right hand side being a condition.");
+    //py::class_<storm::logic::UntilFormula, storm::logic::BinaryPathFormula>(m, "UntilFormula", "Path Formula for unbounded until");
 
-
+/*
     //
     // Reward Path Formulae
     //

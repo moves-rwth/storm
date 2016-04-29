@@ -1,8 +1,8 @@
 #include "core.h"
 
-#include "common.h"
+#include "src/common.h"
 
-//#include <src/utility/storm.h>
+#include <src/utility/storm.h>
 
 // Thin wrapper for initializing
 void setupStormLib(std::string const& args) {

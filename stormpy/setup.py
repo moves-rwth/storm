@@ -16,7 +16,19 @@ logic_sources = glob(os.path.join('src', 'logic', '*.cpp'))
 # Configuration shared between external modules follows
 
 # To help along, if storm and/or pybind is not system installed, retrieve from storm distribution
-include_dirs = ['.', 'src', 'resources/pybind11/include']
+include_dirs = ['.', 'src', 'resources/pybind11/include/']
+# Add more include dirs
+# TODO handle by cmake
+include_dirs.extend(['../build/include/', '../resources/3rdparty/sylvan/src/', '../resources/3rdparty/exprtk/', '../resources/3rdparty/gmm-5.0/include/'])
+carl_dir = "/Users/mvolk/develop/carl/src/"
+include_dirs.append(carl_dir)
+boost_dir = '/usr/local/include/'
+include_dirs.append(boost_dir)
+cudd_dirs = ['../resources/3rdparty/cudd-2.5.0/src/obj/', '../resources/3rdparty/cudd-2.5.0/src/cudd', '../resources/3rdparty/cudd-2.5.0/src/mtr/', '../resources/3rdparty/cudd-2.5.0/src/epd/']
+include_dirs.extend(cudd_dirs)
+log4cplus_dirs = ['../resources/3rdparty/log4cplus-1.1.3-rc1/include/', '../build/resources/3rdparty/log4cplus-1.1.3-rc1/include/']
+include_dirs.extend(log4cplus_dirs)
+
 local_storm_path = os.path.join(PROJECT_DIR, '..')
 if os.path.exists(local_storm_path):
     include_dirs.append(local_storm_path)
