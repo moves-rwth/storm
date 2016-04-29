@@ -24,7 +24,7 @@ namespace storm {
             uint_fast64_t stateCount = transitions.getColumnCount();
 
             // Parse the state labeling.
-            storm::models::sparse::StateLabeling labeling(std::move(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFilename)));
+            storm::models::sparse::StateLabeling labeling(storm::parser::AtomicPropositionLabelingParser::parseAtomicPropositionLabeling(stateCount, labelingFilename));
 
             // Only parse state rewards if a file is given.
             boost::optional<std::vector<RewardValueType>> stateRewards;
