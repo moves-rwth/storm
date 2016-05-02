@@ -1434,8 +1434,8 @@ TASK_4(MTBDD, mtbdd_equal_norm_d2, MTBDD, a, MTBDD, b, size_t, svalue, int*, sho
     if (result != SYNC(mtbdd_equal_norm_d2)) result = mtbdd_false;
     if (result == mtbdd_false) *shortcircuit = 1;
 
-    /* Store in cache */
-    cache_put3(CACHE_MTBDD_EQUAL_NORM, a, b, svalue, result);
+    /* Store in cache (only if we are not short circuiting) */
+    if (!*shortcircuit) cache_put3(CACHE_MTBDD_EQUAL_NORM, a, b, svalue, result);
     return result;
 }
 
@@ -1470,7 +1470,7 @@ TASK_4(MTBDD, mtbdd_equal_norm_rel_d2, MTBDD, a, MTBDD, b, size_t, svalue, int*,
         // assume Double MTBDD
         double va = mtbdd_getdouble(a);
         double vb = mtbdd_getdouble(b);
-        if (va == 0) return mtbdd_false;
+        if (va == 0.0 || va == -0.0) return mtbdd_false;
         va = (va - vb) / va;
         if (va < 0) va = -va;
         return (va < *(double*)&svalue) ? mtbdd_true : mtbdd_false;
@@ -1501,8 +1501,8 @@ TASK_4(MTBDD, mtbdd_equal_norm_rel_d2, MTBDD, a, MTBDD, b, size_t, svalue, int*,
     if (result != SYNC(mtbdd_equal_norm_rel_d2)) result = mtbdd_false;
     if (result == mtbdd_false) *shortcircuit = 1;
 
-    /* Store in cache */
-    cache_put3(CACHE_MTBDD_EQUAL_NORM_REL, a, b, svalue, result);
+    /* Store in cache (only if we are not short circuiting) */
+    if (!*shortcircuit) cache_put3(CACHE_MTBDD_EQUAL_NORM_REL, a, b, svalue, result);
     return result;
 }
 
