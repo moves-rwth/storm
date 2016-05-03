@@ -11,7 +11,7 @@ namespace storm {
     namespace parser {
         storm::prism::Program PrismParser::parse(std::string const& filename) {
             // Open file and initialize result.
-            std::ifstream inputFileStream(filename, std::ios::in);
+            std::ifstream inputFileStream(filename);
             STORM_LOG_THROW(inputFileStream.good(), storm::exceptions::WrongFormatException, "Unable to read from file '" << filename << "'.");
             
             storm::prism::Program result;
@@ -35,7 +35,7 @@ namespace storm {
             PositionIteratorType first(input.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(input.end());
-            assert(first != last);
+            STORM_LOG_ASSERT(first != last, "Illegal input to PRISM parser.");
             
             // Create empty result;
             storm::prism::Program result;
@@ -142,7 +142,7 @@ namespace storm {
             assignmentDefinitionList = (assignmentDefinition % "&")[qi::_val = qi::_1] | (qi::lit("true"))[qi::_val = phoenix::construct<std::vector<storm::prism::Assignment>>()];
             assignmentDefinitionList.name("assignment list");
             
-            updateDefinition = (((expressionParser > qi::lit(":")) | qi::attr(manager->rational(1))) >> assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)];
+            updateDefinition = (((expressionParser >> qi::lit(":")) | qi::attr(manager->rational(1))) >> assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)];
             updateDefinition.name("update");
             
             updateListDefinition %= +updateDefinition(qi::_r1) % "+";

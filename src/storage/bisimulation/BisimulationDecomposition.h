@@ -140,10 +140,7 @@ namespace storm {
             private:
                 
                 boost::optional<OptimizationDirection> optimalityType;
-                
-                
-                
-                
+
                 /// A flag that indicates whether or not the state-rewards of the model are to be respected (and should
                 /// be kept in the quotient model, if one is built).
                 bool keepRewards;
@@ -154,9 +151,6 @@ namespace storm {
                 /// A flag that indicates whether step-bounded properties are to be preserved. This may only be set to tru
                 /// when computing strong bisimulation equivalence.
                 bool bounded;
-                
-                
-                
                 
                 /*!
                  * Sets the options under the assumption that the given formula is the only one that is to be checked.

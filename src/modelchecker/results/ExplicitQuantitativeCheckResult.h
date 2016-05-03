@@ -4,9 +4,11 @@
 #include <vector>
 #include <map>
 #include <boost/variant.hpp>
+#include <boost/optional.hpp>
 
 #include "src/modelchecker/results/QuantitativeCheckResult.h"
 #include "src/storage/sparse/StateType.h"
+#include "src/storage/Scheduler.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -51,9 +53,16 @@ namespace storm {
 
             virtual void oneMinus() override;
             
+            bool hasScheduler() const;
+            void setScheduler(std::unique_ptr<storm::storage::Scheduler>&& scheduler);
+            storm::storage::Scheduler const& getScheduler() const;
+            
         private:
             // The values of the quantitative check result.
             boost::variant<vector_type, map_type> values;
+            
+            // An optional scheduler that accompanies the values.
+            boost::optional<std::shared_ptr<storm::storage::Scheduler>> scheduler;
         };
     }
 }

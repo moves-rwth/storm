@@ -77,6 +77,14 @@ namespace storm {
             return modelType;
         }
         
+        bool Program::isDiscreteTimeModel() const {
+            return modelType == ModelType::DTMC || modelType == ModelType::MDP;
+        }
+        
+        bool Program::isDeterministicModel() const {
+            return modelType == ModelType::DTMC || modelType == ModelType::CTMC;
+        }
+        
         bool Program::hasUndefinedConstants() const {
             for (auto const& constant : this->getConstants()) {
                 if (!constant.isDefined()) {
@@ -358,6 +366,14 @@ namespace storm {
             auto const& labelIndexPair = labelToIndexMap.find(label);
             STORM_LOG_THROW(labelIndexPair != labelToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve expression for unknown label '" << label << "'.");
             return this->labels[labelIndexPair->second].getStatePredicateExpression();
+        }
+        
+        std::map<std::string, storm::expressions::Expression> Program::getLabelToExpressionMapping() const {
+            std::map<std::string, storm::expressions::Expression> result;
+            for (auto const& label : labels) {
+                result.emplace(label.getName(), label.getStatePredicateExpression());
+            }
+            return result;
         }
         
         std::size_t Program::getNumberOfLabels() const {

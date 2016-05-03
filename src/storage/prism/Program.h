@@ -66,6 +66,18 @@ namespace storm {
              * @return The type of the model.
              */
             ModelType getModelType() const;
+            
+            /*!
+             * Retrieves whether the model is a discrete-time model, i.e. a DTMC or an MDP.
+             *
+             * @return True iff the model is a discrete-time model.
+             */
+            bool isDiscreteTimeModel() const;
+            
+            /*!
+             * Retrieves whether the model is one without nondeterministic choices, i.e. a DTMC or a CTMC.
+             */
+            bool isDeterministicModel() const;
 
             /*!
              * Retrieves whether there are undefined constants of any type in the program.
@@ -366,6 +378,13 @@ namespace storm {
              * @param labelName The name of the label to retrieve.
              */
             storm::expressions::Expression const& getLabelExpression(std::string const& label) const;
+            
+            /*!
+             * Retrieves a mapping from all labels in the program to their defining expressions.
+             *
+             * @return A mapping from label names to their expressions.
+             */
+            std::map<std::string, storm::expressions::Expression> getLabelToExpressionMapping() const;
             
             /*!
              * Retrieves the number of labels in the program.

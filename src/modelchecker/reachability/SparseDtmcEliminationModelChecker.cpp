@@ -16,6 +16,8 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
+#include "src/logic/FragmentSpecification.h"
+
 #include "src/utility/graph.h"
 #include "src/utility/vector.h"
 #include "src/utility/macros.h"
@@ -82,50 +84,9 @@ namespace storm {
         template<typename SparseDtmcModelType>
         bool SparseDtmcEliminationModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula> const& checkTask) const {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if (formula.isProbabilityOperatorFormula()) {
-                return this->canHandle(checkTask.replaceFormula(formula.asProbabilityOperatorFormula().getSubformula()));
-            } else if (formula.isRewardOperatorFormula()) {
-                return this->canHandle(checkTask.replaceFormula(formula.asRewardOperatorFormula().getSubformula()));
-            } else if (formula.isUntilFormula() || formula.isEventuallyFormula()) {
-                if (formula.isUntilFormula()) {
-                    storm::logic::UntilFormula const& untilFormula = formula.asUntilFormula();
-                    if (untilFormula.getLeftSubformula().isPropositionalFormula() && untilFormula.getRightSubformula().isPropositionalFormula()) {
-                        return true;
-                    }
-                } else if (formula.isEventuallyFormula()) {
-                    storm::logic::EventuallyFormula const& eventuallyFormula = formula.asEventuallyFormula();
-                    if (eventuallyFormula.getSubformula().isPropositionalFormula()) {
-                        return true;
-                    }
-                }
-            } else if (formula.isBoundedUntilFormula()) {
-                storm::logic::BoundedUntilFormula const& boundedUntilFormula = formula.asBoundedUntilFormula();
-                if (boundedUntilFormula.getLeftSubformula().isPropositionalFormula() && boundedUntilFormula.getRightSubformula().isPropositionalFormula()) {
-                    return true;
-                }
-            } else if (formula.isReachabilityRewardFormula()) {
-                storm::logic::ReachabilityRewardFormula const& reachabilityRewardFormula = formula.asReachabilityRewardFormula();
-                if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
-                    return true;
-                }
-            } else if (formula.isConditionalPathFormula()) {
-                storm::logic::ConditionalPathFormula const& conditionalPathFormula = formula.asConditionalPathFormula();
-                if (conditionalPathFormula.getLeftSubformula().isEventuallyFormula() && conditionalPathFormula.getRightSubformula().isEventuallyFormula()) {
-                    return this->canHandle(conditionalPathFormula.getLeftSubformula()) && this->canHandle(conditionalPathFormula.getRightSubformula());
-                }
-            } else if (formula.isLongRunAverageOperatorFormula()) {
-                storm::logic::LongRunAverageOperatorFormula const& longRunAverageOperatorFormula = formula.asLongRunAverageOperatorFormula();
-                if (longRunAverageOperatorFormula.getSubformula().isPropositionalFormula()) {
-                    return true;
-                }
-            } else if (formula.isLongRunAverageRewardFormula()) {
-                return true;
-            }
-            
-            else if (formula.isPropositionalFormula()) {
-                return true;
-            }
-            return false;
+            storm::logic::FragmentSpecification fragment = storm::logic::prctl().setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false);
+            fragment.setNestedOperatorsAllowed(false).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true);
+            return formula.isInFragment(fragment);
         }
         
         template<typename SparseDtmcModelType>
@@ -188,7 +149,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageRewards(CheckTask<storm::logic::LongRunAverageRewardFormula> const& checkTask) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeLongRunAverageRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula> const& checkTask) {
             // Do some sanity checks to establish some required properties.
             RewardModelType const& rewardModel = this->getModel().getRewardModel(checkTask.isRewardModelSet() ? checkTask.getRewardModel() : "");
             STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
@@ -579,11 +540,11 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(CheckTask<storm::logic::ReachabilityRewardFormula> const& checkTask) {
-            storm::logic::ReachabilityRewardFormula const& rewardPathFormula = checkTask.getFormula();
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula> const& checkTask) {
+            storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
             
             // Retrieve the appropriate bitvectors by model checking the subformulas.
-            std::unique_ptr<CheckResult> subResultPointer = this->check(rewardPathFormula.getSubformula());
+            std::unique_ptr<CheckResult> subResultPointer = this->check(eventuallyFormula.getSubformula());
             storm::storage::BitVector phiStates(this->getModel().getNumberOfStates(), true);
             storm::storage::BitVector const& psiStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             
@@ -651,15 +612,15 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalPathFormula> const& checkTask) {
-            storm::logic::ConditionalPathFormula const& pathFormula = checkTask.getFormula();
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeConditionalProbabilities(CheckTask<storm::logic::ConditionalFormula> const& checkTask) {
+            storm::logic::ConditionalFormula const& conditionalFormula = checkTask.getFormula();
             
             // Retrieve the appropriate bitvectors by model checking the subformulas.
-            STORM_LOG_THROW(pathFormula.getLeftSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Expected 'eventually' formula.");
-            STORM_LOG_THROW(pathFormula.getRightSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Expected 'eventually' formula.");
+            STORM_LOG_THROW(conditionalFormula.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Expected 'eventually' formula.");
+            STORM_LOG_THROW(conditionalFormula.getConditionFormula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Expected 'eventually' formula.");
             
-            std::unique_ptr<CheckResult> leftResultPointer = this->check(pathFormula.getLeftSubformula().asEventuallyFormula().getSubformula());
-            std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula().asEventuallyFormula().getSubformula());
+            std::unique_ptr<CheckResult> leftResultPointer = this->check(conditionalFormula.getSubformula().asEventuallyFormula().getSubformula());
+            std::unique_ptr<CheckResult> rightResultPointer = this->check(conditionalFormula.getConditionFormula().asEventuallyFormula().getSubformula());
             storm::storage::BitVector phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             storm::storage::BitVector psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
@@ -685,7 +646,7 @@ namespace storm {
             if (this->getModel().getInitialStates().isSubsetOf(statesWithProbability1)) {
                 STORM_LOG_INFO("The condition holds with probability 1, so the regular reachability probability is computed.");
                 std::shared_ptr<storm::logic::BooleanLiteralFormula> trueFormula = std::make_shared<storm::logic::BooleanLiteralFormula>(true);
-                std::shared_ptr<storm::logic::UntilFormula> untilFormula = std::make_shared<storm::logic::UntilFormula>(trueFormula, pathFormula.getLeftSubformula().asSharedPointer());
+                std::shared_ptr<storm::logic::UntilFormula> untilFormula = std::make_shared<storm::logic::UntilFormula>(trueFormula, conditionalFormula.getSubformula().asSharedPointer());
                 return this->computeUntilProbabilities(*untilFormula);
             }
             

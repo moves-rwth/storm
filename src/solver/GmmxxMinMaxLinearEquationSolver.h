@@ -22,7 +22,7 @@ namespace storm {
              *
              * @param A The matrix defining the coefficients of the linear equation system.             
              */
-            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique = MinMaxTechniqueSelection::FROMSETTINGS, bool trackPolicy = false);
+            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique = MinMaxTechniqueSelection::FROMSETTINGS, bool trackScheduler = false);
             
             /*!
              * Constructs a min/max linear equation solver with the given parameters.
@@ -33,7 +33,7 @@ namespace storm {
              * @param relative If set, the relative error rather than the absolute error is considered for convergence
              * detection.
              */
-            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, MinMaxTechniqueSelection tech, bool relative, bool trackPolicy = false);
+            GmmxxMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, MinMaxTechniqueSelection tech, bool relative, bool trackScheduler = false);
 
             virtual void performMatrixVectorMultiplication(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
             

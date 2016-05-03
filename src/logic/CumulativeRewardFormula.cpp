@@ -1,5 +1,7 @@
 #include "src/logic/CumulativeRewardFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         CumulativeRewardFormula::CumulativeRewardFormula(uint_fast64_t timeBound) : timeBound(timeBound) {
@@ -12,6 +14,14 @@ namespace storm {
         
         bool CumulativeRewardFormula::isCumulativeRewardFormula() const {
             return true;
+        }
+        
+        bool CumulativeRewardFormula::isRewardPathFormula() const {
+            return true;
+        }
+        
+        boost::any CumulativeRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         bool CumulativeRewardFormula::hasDiscreteTimeBound() const {
@@ -32,10 +42,6 @@ namespace storm {
             } else {
                 return boost::get<double>(timeBound);
             }
-        }
-        
-        std::shared_ptr<Formula> CumulativeRewardFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<CumulativeRewardFormula>(*this);
         }
         
         std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out) const {

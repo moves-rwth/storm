@@ -1,5 +1,8 @@
 #include "src/logic/AtomicLabelFormula.h"
 
+#include "src/logic/AtomicExpressionFormula.h"
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         AtomicLabelFormula::AtomicLabelFormula(std::string const& label) : label(label) {
@@ -10,16 +13,8 @@ namespace storm {
             return true;
         }
         
-        bool AtomicLabelFormula::isPctlStateFormula() const {
-            return true;
-        }
-    
-        bool AtomicLabelFormula::isLtlFormula() const {
-            return true;
-        }
-        
-        bool AtomicLabelFormula::isPropositionalFormula() const {
-            return true;
+        boost::any AtomicLabelFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         std::string const& AtomicLabelFormula::getLabel() const {
@@ -28,10 +23,6 @@ namespace storm {
         
         void AtomicLabelFormula::gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicExpressionFormulas) const {
             atomicExpressionFormulas.push_back(std::dynamic_pointer_cast<AtomicLabelFormula const>(this->shared_from_this()));
-        }
-        
-        std::shared_ptr<Formula> AtomicLabelFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<AtomicLabelFormula>(*this);
         }
         
         std::ostream& AtomicLabelFormula::writeToStream(std::ostream& out) const {

@@ -179,7 +179,11 @@ namespace storm {
             
             template<typename DataType>
             void Partition<DataType>::sortRange(storm::storage::sparse::state_type beginIndex, storm::storage::sparse::state_type endIndex, std::function<bool (storm::storage::sparse::state_type, storm::storage::sparse::state_type)> const& less, bool updatePositions) {
-                std::sort(this->states.begin() + beginIndex, this->states.begin() + endIndex, less);
+                //FIXME, TODO: Wrapping less argument in a lambda here, as clang and the GCC stdlib do not play nicely
+                // Pass 'less' directly to std::sort when this has been resolved (problem with clang 3.7, gcc 5.1)
+                std::sort(this->states.begin() + beginIndex, this->states.begin() + endIndex, 
+                    [&] (const storm::storage::sparse::state_type &a, storm::storage::sparse::state_type &b) { return less(a, b); }
+                );
                 
                 if (updatePositions) {
                     mapStatesToPositions(this->states.begin() + beginIndex, this->states.begin() + endIndex);
@@ -211,7 +215,7 @@ namespace storm {
             template<typename DataType>
             std::pair<typename std::vector<std::unique_ptr<Block<DataType>>>::iterator, bool> Partition<DataType>::splitBlock(Block<DataType>& block, storm::storage::sparse::state_type position) {
                 STORM_LOG_THROW(position >= block.getBeginIndex() && position <= block.getEndIndex(), storm::exceptions::InvalidArgumentException, "Cannot split block at illegal position.");
-                STORM_LOG_TRACE("Splitting " << block.getId() << " at position " << position << " (begin was " << block.getBeginIndex() << ".");
+                STORM_LOG_TRACE("Splitting " << block.getId() << " at position " << position << " (begin was " << block.getBeginIndex() << ").");
 
                 // In case one of the resulting blocks would be empty, we simply return the current block and do not create
                 // a new one.
@@ -230,7 +234,7 @@ namespace storm {
                 
                 // Update the mapping of the states in the newly created block.
                 this->mapStatesToBlock(**newBlockIt, this->begin(**newBlockIt), this->end(**newBlockIt));
-                
+
                 return std::make_pair(newBlockIt, true);
             }
             

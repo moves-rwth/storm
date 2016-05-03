@@ -1,11 +1,17 @@
 #include "src/logic/BooleanLiteralFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         BooleanLiteralFormula::BooleanLiteralFormula(bool value) : value(value) {
             // Intenionally left empty.
         }
         
+        bool BooleanLiteralFormula::isBooleanLiteralFormula() const {
+            return true;
+        }
+
         bool BooleanLiteralFormula::isTrueFormula() const {
             return value;
         }
@@ -14,24 +20,8 @@ namespace storm {
             return !value;
         }
         
-        bool BooleanLiteralFormula::isPctlStateFormula() const {
-            return true;
-        }
-        
-        bool BooleanLiteralFormula::isLtlFormula() const {
-            return true;
-        }
-        
-        bool BooleanLiteralFormula::isPropositionalFormula() const {
-            return true;
-        }
-        
-        bool BooleanLiteralFormula::isBooleanLiteralFormula() const {
-            return true;
-        }
-        
-        std::shared_ptr<Formula> BooleanLiteralFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<BooleanLiteralFormula>(*this);
+        boost::any BooleanLiteralFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         std::ostream& BooleanLiteralFormula::writeToStream(std::ostream& out) const {

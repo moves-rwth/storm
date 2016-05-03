@@ -1,19 +1,51 @@
 #include "src/logic/EventuallyFormula.h"
+#include "src/logic/FormulaVisitor.h"
+
+#include "src/utility/macros.h"
+#include "src/exceptions/InvalidPropertyException.h"
 
 namespace storm {
     namespace logic {
-        EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subformula) : UnaryPathFormula(subformula) {
-            // Intentionally left empty.
+        EventuallyFormula::EventuallyFormula(std::shared_ptr<Formula const> const& subformula, FormulaContext context) : UnaryPathFormula(subformula), context(context) {
+            STORM_LOG_THROW(context == FormulaContext::Probability || context == FormulaContext::Reward || context == FormulaContext::Time, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
+        }
+        
+        FormulaContext const& EventuallyFormula::getContext() const {
+            return context;
         }
         
         bool EventuallyFormula::isEventuallyFormula() const {
             return true;
         }
         
-        std::shared_ptr<Formula> EventuallyFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<EventuallyFormula>(this->getSubformula().substitute(substitution));
+        bool EventuallyFormula::isReachabilityProbabilityFormula() const {
+            return context == FormulaContext::Probability;
         }
         
+        bool EventuallyFormula::isReachabilityRewardFormula() const {
+            return context == FormulaContext::Reward;
+        }
+        
+        bool EventuallyFormula::isReachabilityTimeFormula() const {
+            return context == FormulaContext::Time;
+        }
+        
+        bool EventuallyFormula::isProbabilityPathFormula() const {
+            return this->isEventuallyFormula();
+        }
+        
+        bool EventuallyFormula::isRewardPathFormula() const {
+            return this->isReachabilityRewardFormula();
+        }
+        
+        bool EventuallyFormula::isTimePathFormula() const {
+            return this->isReachabilityTimeFormula();
+        }
+        
+        boost::any EventuallyFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
+        }
+                
         std::ostream& EventuallyFormula::writeToStream(std::ostream& out) const {
             out << "F ";
             this->getSubformula().writeToStream(out);

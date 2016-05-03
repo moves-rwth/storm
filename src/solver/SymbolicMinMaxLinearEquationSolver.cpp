@@ -61,7 +61,7 @@ namespace storm {
                 
                 ++iterations;
             }
-            
+                        
             return xCopy;
         }
         

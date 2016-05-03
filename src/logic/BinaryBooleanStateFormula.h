@@ -19,16 +19,14 @@ namespace storm {
             
             virtual bool isBinaryBooleanStateFormula() const override;
             
-            virtual bool isPropositionalFormula() const override;
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             OperatorType getOperator() const;
             
             virtual bool isAnd() const;
             virtual bool isOr() const;
-            
+                        
             virtual std::ostream& writeToStream(std::ostream& out) const override;
-            
-            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             
         private:
             OperatorType operatorType;

@@ -26,6 +26,7 @@
 #include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+#include "src/settings/modules/ExplorationSettings.h"
 #include "src/utility/macros.h"
 #include "src/settings/Option.h"
 
@@ -48,6 +49,7 @@ namespace storm {
 			this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::TopologicalValueIterationEquationSolverSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::ParametricSettings(*this)));
             this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::SparseDtmcEliminationModelCheckerSettings(*this)));
+            this->addModule(std::unique_ptr<modules::ModuleSettings>(new modules::ExplorationSettings(*this)));
         }
         
         SettingsManager::~SettingsManager() {
@@ -547,6 +549,10 @@ namespace storm {
 
         storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const& sparseDtmcEliminationModelCheckerSettings() {
             return dynamic_cast<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const&>(manager().getModule(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::moduleName));
+        }
+        
+        storm::settings::modules::ExplorationSettings const& explorationSettings() {
+            return dynamic_cast<storm::settings::modules::ExplorationSettings const&>(manager().getModule(storm::settings::modules::ExplorationSettings::moduleName));
         }
     }
 }

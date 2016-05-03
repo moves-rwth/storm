@@ -8,6 +8,7 @@
 #include "ExpressionVisitor.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidTypeException.h"
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace expressions {
@@ -32,13 +33,19 @@ namespace storm {
         int_fast64_t UnaryNumericalFunctionExpression::evaluateAsInt(Valuation const* valuation) const {
             STORM_LOG_THROW(this->hasIntegerType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
 
-            int_fast64_t result = this->getOperand()->evaluateAsInt(valuation);
-            switch (this->getOperatorType()) {
-                case OperatorType::Minus: result = -result; break;
-                case OperatorType::Floor: result = std::floor(result); break;
-                case OperatorType::Ceil: result = std::ceil(result); break;
+            if (this->getOperatorType() == OperatorType::Minus) {
+                STORM_LOG_THROW(this->getOperand()->hasIntegerType(), storm::exceptions::InvalidTypeException, "Unable to evaluate expression as integer.");
+                int_fast64_t result = this->getOperand()->evaluateAsInt(valuation);
+                return -result;
+            } else {
+                double result = this->getOperand()->evaluateAsDouble(valuation);
+                switch (this->getOperatorType()) {
+                    case OperatorType::Floor: return static_cast<int_fast64_t>(std::floor(result)); break;
+                    case OperatorType::Ceil: return static_cast<int_fast64_t>(std::ceil(result)); break;
+                    default:
+                        STORM_LOG_ASSERT(false, "All other operator types should have been handled before.");
+                }
             }
-            return result;
         }
         
         double UnaryNumericalFunctionExpression::evaluateAsDouble(Valuation const* valuation) const {
@@ -58,7 +65,6 @@ namespace storm {
             
             if (operandSimplified->isLiteral()) {
                 boost::variant<int_fast64_t, double> operandEvaluation;
-
                 if (operandSimplified->hasIntegerType()) {
                     operandEvaluation = operandSimplified->evaluateAsInt();
                 } else {

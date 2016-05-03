@@ -3,6 +3,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         BoundedUntilFormula::BoundedUntilFormula(std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, double lowerBound, double upperBound) : BinaryPathFormula(leftSubformula, rightSubformula), bounds(std::make_pair(lowerBound, upperBound)) {
@@ -22,32 +24,24 @@ namespace storm {
             return true;
         }
         
-        bool BoundedUntilFormula::containsBoundedUntilFormula() const {
+        bool BoundedUntilFormula::isProbabilityPathFormula() const {
             return true;
         }
         
+        boost::any BoundedUntilFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
+        }
+
         bool BoundedUntilFormula::hasDiscreteTimeBound() const {
             return bounds.which() == 0;
         }
-        
-        bool BoundedUntilFormula::isPctlPathFormula() const {
-            return this->hasDiscreteTimeBound() && this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
-        }
-        
-        bool BoundedUntilFormula::isCslPathFormula() const {
-            return this->getLeftSubformula().isCslStateFormula() && this->getRightSubformula().isCslStateFormula();
-        }
-        
+                
         std::pair<double, double> const& BoundedUntilFormula::getIntervalBounds() const {
             return boost::get<std::pair<double, double>>(bounds);
         }
         
         uint_fast64_t BoundedUntilFormula::getDiscreteTimeBound() const {
             return boost::get<uint_fast64_t>(bounds);
-        }
-        
-        std::shared_ptr<Formula> BoundedUntilFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<BoundedUntilFormula>(this->getLeftSubformula().substitute(substitution), this->getRightSubformula().substitute(substitution), bounds);
         }
         
         std::ostream& BoundedUntilFormula::writeToStream(std::ostream& out) const {

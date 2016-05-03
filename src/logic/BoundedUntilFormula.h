@@ -15,19 +15,16 @@ namespace storm {
             
             virtual bool isBoundedUntilFormula() const override;
 
-            virtual bool containsBoundedUntilFormula() const override;
+            virtual bool isProbabilityPathFormula() const override;
+            
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             bool hasDiscreteTimeBound() const;
             
             std::pair<double, double> const& getIntervalBounds() const;
             uint_fast64_t getDiscreteTimeBound() const;
-            
-            virtual bool isPctlPathFormula() const override;
-            virtual bool isCslPathFormula() const override;
 
             virtual std::ostream& writeToStream(std::ostream& out) const override;
-            
-            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
             
         private:
             boost::variant<uint_fast64_t, std::pair<double, double>> bounds;

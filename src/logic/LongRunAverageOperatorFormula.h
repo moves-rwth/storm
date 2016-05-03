@@ -7,11 +7,7 @@ namespace storm {
     namespace logic {
         class LongRunAverageOperatorFormula : public OperatorFormula {
         public:
-            LongRunAverageOperatorFormula(std::shared_ptr<Formula const> const& subformula);
-            LongRunAverageOperatorFormula(ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
-            LongRunAverageOperatorFormula(OptimizationDirection optimalityType, ComparisonType comparisonType, double bound, std::shared_ptr<Formula const> const& subformula);
-            LongRunAverageOperatorFormula(OptimizationDirection optimalityType, std::shared_ptr<Formula const> const& subformula);
-            LongRunAverageOperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula);
+            LongRunAverageOperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation = OperatorInformation());
             
             virtual ~LongRunAverageOperatorFormula() {
                 // Intentionally left empty.
@@ -19,12 +15,8 @@ namespace storm {
             
             virtual bool isLongRunAverageOperatorFormula() const override;
             
-            virtual bool isPctlStateFormula() const override;
-            virtual bool containsProbabilityOperator() const override;
-            virtual bool containsNestedProbabilityOperators() const override;
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
-            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
-
             virtual std::ostream& writeToStream(std::ostream& out) const override;
         };
     }

@@ -84,7 +84,7 @@ namespace storm {
         std::ostream& operator<<(std::ostream& stream, RewardModel const& rewardModel) {
             stream << "rewards";
             if (rewardModel.getName() != "") {
-                std::cout << " \"" << rewardModel.getName() << "\"";
+                stream << " \"" << rewardModel.getName() << "\"";
             }
             stream << std::endl;
             for (auto const& reward : rewardModel.getStateRewards()) {
