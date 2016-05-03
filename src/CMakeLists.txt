@@ -112,7 +112,7 @@ endif(ADDITIONAL_LINK_DIRS)
 ##  All link_directories() calls MUST be made before this point               #
 ##                                                                            #
 ###############################################################################
-add_library(storm STATIC ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
+add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
 add_dependencies(storm sylvan)
 add_dependencies(storm resources)
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})

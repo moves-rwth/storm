@@ -1,9 +1,9 @@
 #include "common.h"
 
-#include "logic/formulas.h"
+#include "logic/formulae.h"
 
 PYBIND11_PLUGIN(logic) {
     py::module m("stormpy.logic", "Logic module for Storm");
-    define_formulas(m);
+    define_formulae(m);
     return m.ptr();
 }

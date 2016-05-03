@@ -24,7 +24,7 @@ carl_dir = "/Users/mvolk/develop/carl/src/"
 include_dirs.append(carl_dir)
 boost_dir = '/usr/local/include/'
 include_dirs.append(boost_dir)
-cudd_dirs = ['../resources/3rdparty/cudd-2.5.0/src/obj/', '../resources/3rdparty/cudd-2.5.0/src/cudd', '../resources/3rdparty/cudd-2.5.0/src/mtr/', '../resources/3rdparty/cudd-2.5.0/src/epd/']
+cudd_dirs = ['../resources/3rdparty/cudd-3.0.0/cplusplus/', '../resources/3rdparty/cudd-3.0.0/mtr/', '../resources/3rdparty/cudd-3.0.0/cudd/']
 include_dirs.extend(cudd_dirs)
 log4cplus_dirs = ['../resources/3rdparty/log4cplus-1.1.3-rc1/include/', '../build/resources/3rdparty/log4cplus-1.1.3-rc1/include/']
 include_dirs.extend(log4cplus_dirs)

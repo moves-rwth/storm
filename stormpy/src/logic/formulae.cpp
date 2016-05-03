@@ -1,8 +1,9 @@
-#include "formulas.h"
+#include "formulae.h"
 
 #include "src/common.h"
+#include "src/logic/Formulas.h"
 
-void define_formulas(py::module& m) {
+void define_formulae(py::module& m) {
  
     py::enum_<storm::logic::ComparisonType>(m, "ComparisonType")
         .value("LESS", storm::logic::ComparisonType::Less)
