@@ -5,7 +5,7 @@ class TestParse:
         program = stormpy.parse_program("../examples/dtmc/die/die.pm")
         assert program.nr_modules() == 1
         assert program.model_type() == stormpy.PrismModelType.DTMC
-        assert program.has_undefined_constants() == False
+        assert not program.has_undefined_constants()
     
     def test_parse_formula(self):
         prop = "P=? [F \"one\"]"
@@ -22,7 +22,7 @@ class TestParse:
         assert model.nr_states() == 13
         assert model.nr_transitions() == 20
         assert model.model_type() == stormpy.ModelType.DTMC
-        assert model.parametric() == False
+        assert not model.parametric()
     
     def test_build_model(self):
         program = stormpy.parse_program("../examples/dtmc/die/die.pm")
@@ -31,5 +31,4 @@ class TestParse:
         assert model.nr_states() == 13
         assert model.nr_transitions() == 20
         assert model.model_type() == stormpy.ModelType.DTMC
-        assert model.parametric() == True
-        
+        assert model.parametric()
