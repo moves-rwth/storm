@@ -22,12 +22,15 @@ namespace py = pybind11;
 #define PY_RDIV "__rdiv__"
 #endif
 
+PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
+PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T const>);
+
 namespace pybind11 {
 namespace detail {
 /**
  * Dummy type caster for handle, so functions can return pybind11 handles directly
  */
-template <> class type_caster<handle> {
+/*template <> class type_caster<handle> {
 public:
     bool load(handle src, bool) {
         value = handle(src).inc_ref();
@@ -49,7 +52,7 @@ public:
         return handle(src);
     }
     PYBIND11_TYPE_CASTER(handle, _("handle"));
-};
+};*/
 /*
 template <typename TupleType, typename ... Keys> struct tuple_caster {
     typedef TupleType type;
