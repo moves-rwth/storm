@@ -8,16 +8,15 @@ class TestParse:
         assert program.has_undefined_constants() == False
     
     def test_parse_formula(self):
-        program = stormpy.parse_program("../examples/dtmc/die/die.pm")
         prop = "P=? [F \"one\"]"
-        formulas = stormpy.parse_formulas(prop, program)
+        formulas = stormpy.parse_formulas(prop)
         assert len(formulas) == 1
         assert str(formulas[0]) == prop
     
     def test_build_model_from_prism_program(self):
         program = stormpy.parse_program("../examples/dtmc/die/die.pm")
         prop = "P=? [F \"one\"]"
-        formulas = stormpy.parse_formulas(prop, program)
+        formulas = stormpy.parse_formulas_for_program(prop, program)
         pair = stormpy.build_model_from_prism_program(program, formulas)
         model = pair.model
         assert model.nr_states() == 13
@@ -27,7 +26,7 @@ class TestParse:
     
     def test_build_model(self):
         program = stormpy.parse_program("../examples/dtmc/die/die.pm")
-        formulas = stormpy.parse_formulas("P=? [ F \"one\" ]", program)
+        formulas = stormpy.parse_formulas_for_program("P=? [ F \"one\" ]", program)
         model = stormpy.build_model(program, formulas[0])
         assert model.nr_states() == 13
         assert model.nr_transitions() == 20

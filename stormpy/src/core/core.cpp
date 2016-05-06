@@ -40,12 +40,13 @@ std::shared_ptr<PmcResult> performStateElimination(std::shared_ptr<storm::models
 void define_core(py::module& m) {
     m.def("set_up", &setupStormLib, "Initialize Storm");
 
-    m.def("parse_program", &storm::parseProgram, "Parse program");
-    m.def("parse_formulas", &storm::parseFormulasForProgram, "Parse formula for program");
+    m.def("parse_program", &storm::parseProgram, "Parse program", py::arg("path"));
+    m.def("parse_formulas", &storm::parseFormulasForExplicit, "Parse explicit formulas", py::arg("formula_string"));
+    m.def("parse_formulas_for_program", &storm::parseFormulasForProgram, "Parse formulas for program", py::arg("formula_string"), py::arg("program"));
 
-    m.def("build_model", &buildModel, "Build the model");
-    m.def("build_model_from_prism_program", &storm::buildSymbolicModel<double>, "Build the model");
-    m.def("build_parametric_model_from_prism_program", &storm::buildSymbolicModel<storm::RationalFunction>, "Build the parametric model");
+    m.def("build_model", &buildModel, "Build the model", py::arg("program"), py::arg("formula"));
+    m.def("build_model_from_prism_program", &storm::buildSymbolicModel<double>, "Build the model", py::arg("program"), py::arg("formulas"));
+    m.def("build_parametric_model_from_prism_program", &storm::buildSymbolicModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formulas"));
 
     //m.def("perform_state_elimination", &performStateElimination, "Perform state elimination");
     
