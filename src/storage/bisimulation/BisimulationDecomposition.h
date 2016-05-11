@@ -80,7 +80,7 @@ namespace storm {
                  * derive a suitable initial partition.
                  * @param formulas The formulas that need to be preserved.
                  */
-                Options(ModelType const& model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas);
+                Options(ModelType const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
                 
                 /*!
                  * Changes the options in a way that the given formula is preserved.

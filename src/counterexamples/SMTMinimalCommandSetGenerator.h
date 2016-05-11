@@ -1751,7 +1751,7 @@ namespace storm {
 #endif
             }
             
-            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<const storm::logic::Formula> const& formula) {
+            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 

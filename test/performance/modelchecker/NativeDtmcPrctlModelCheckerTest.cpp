@@ -26,7 +26,7 @@ TEST(NativeDtmcPrctlModelCheckerTest, Crowds) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
-    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -64,7 +64,7 @@ TEST(NativeDtmcPrctlModelCheckerTest, SynchronousLeader) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
-    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
