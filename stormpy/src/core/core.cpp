@@ -13,13 +13,13 @@ void setupStormLib(std::string const& args) {
 }
 
 // Thin wrapper for model building
-std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula> const& formula) {
-    return storm::buildSymbolicModel<storm::RationalFunction>(program, std::vector<std::shared_ptr<const storm::logic::Formula>>(1,formula)).model;
+std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    return storm::buildSymbolicModel<storm::RationalFunction>(program, std::vector<std::shared_ptr<storm::logic::Formula const>>(1,formula)).model;
 }
 
 // Thin wrapper for bisimulation
 template<typename ValueType>
-std::shared_ptr<storm::models::sparse::Model<ValueType>> performBisimulation(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::shared_ptr<const storm::logic::Formula> const& formula, storm::storage::BisimulationType bisimulationType) {
+std::shared_ptr<storm::models::sparse::Model<ValueType>> performBisimulation(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::shared_ptr<storm::logic::Formula const> const& formula, storm::storage::BisimulationType bisimulationType) {
     return storm::performBisimulationMinimization<storm::models::sparse::Model<ValueType>>(model, formula, bisimulationType);
 }
 
@@ -50,7 +50,7 @@ class PmcResult {
 };
 
 // Thin wrapper for parametric state elimination
-std::shared_ptr<PmcResult> performStateElimination(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula> const& formula) {
+std::shared_ptr<PmcResult> performStateElimination(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
     std::unique_ptr<storm::modelchecker::CheckResult> checkResult = storm::verifySparseModel<storm::RationalFunction>(model, formula);
     std::shared_ptr<PmcResult> result = std::make_shared<PmcResult>();
     result->resultFunction = checkResult->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*model->getInitialStates().begin()];
