@@ -30,10 +30,6 @@ class PmcResult {
         std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> constraintsWellFormed;
         std::unordered_set<storm::ArithConstraint<storm::RationalFunction>> constraintsGraphPreserving;
 
-        /*storm::RationalFunction getFunc() {
-            return resultFunction;
-        }*/
-
         std::string toString() {
             std::stringstream stream;
             stream << resultFunction << std::endl;
@@ -142,10 +138,9 @@ void define_core(py::module& m) {
     // PmcResult
     py::class_<PmcResult, std::shared_ptr<PmcResult>>(m, "PmcResult", "Holds the results after parametric model checking")
         .def("__str__", &PmcResult::toString)
-        //.def("result_function", &PmcResult::getFunc, "Result as rational function")
-        //.def_readwrite("result_function", &PmcResult::resultFunction, "Result as rational function")
-        //.def_readwrite("constraints_well_formed", &PmcResult::constraintsWellFormed, "Constraints ensuring well-formed probabilities")
-        //.def_readwrite("constraints_graph_preserving", &PmcResult::constraintsGraphPreserving, "Constraints ensuring graph preservation")
+        .def_readonly("result_function", &PmcResult::resultFunction, "Result as rational function")
+        .def_readonly("constraints_well_formed", &PmcResult::constraintsWellFormed, "Constraints ensuring well-formed probabilities")
+        .def_readonly("constraints_graph_preserving", &PmcResult::constraintsGraphPreserving, "Constraints ensuring graph preservation")
     ;
 
 }
