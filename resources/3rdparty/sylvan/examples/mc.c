@@ -274,7 +274,7 @@ VOID_TASK_1(par, set_t, set)
             size_t filled, total;
             sylvan_table_usage(&filled, &total);
             INFO("Level %d done, %'0.0f states explored, table: %0.1f%% full (%'zu nodes)\n",
-                iteration, sylvan_satcount_cached(visited, set->variables),
+                iteration, sylvan_satcount(visited, set->variables),
                 100.0*(double)filled/total, filled);
         } else if (report_table) {
             size_t filled, total;
@@ -385,7 +385,7 @@ VOID_TASK_1(bfs, set_t, set)
             size_t filled, total;
             sylvan_table_usage(&filled, &total);
             INFO("Level %d done, %'0.0f states explored, table: %0.1f%% full (%'zu nodes)\n",
-                iteration, sylvan_satcount_cached(visited, set->variables),
+                iteration, sylvan_satcount(visited, set->variables),
                 100.0*(double)filled/total, filled);
         } else if (report_table) {
             size_t filled, total;
@@ -605,7 +605,7 @@ main(int argc, char **argv)
 #endif
 
     // Now we just have states
-    INFO("Final states: %'0.0f states\n", sylvan_satcount_cached(states->bdd, states->variables));
+    INFO("Final states: %'0.0f states\n", sylvan_satcount(states->bdd, states->variables));
     if (report_nodes) {
         INFO("Final states: %'zu BDD nodes\n", sylvan_nodecount(states->bdd));
     }

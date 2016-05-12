@@ -22,22 +22,22 @@ option(STORM_DEBUG "Sets whether the DEBUG mode is used" ON)
 option(STORM_USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
 option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
+option(STORM_USE_GUROBI "Sets whether Gurobi should be used." OFF)
 option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precompiled headers)." OFF)
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
+option(USE_XERCES "Sets whether xerces should be used." OFF)
 option(FORCE_COLOR "Force color output" OFF)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache" ON)
-option(STORM_LOGGING_FRAMEWORK "Use a framework for logging" OFF)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
+set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
-set(CUDA_ROOT "" CACHE STRING "The root directory of CUDA.")
-set(MSAT_ROOT "" CACHE STRING "The root directory of MathSAT (if available).")
+set(CUDA_ROOT "" CACHE STRING "The hint to the root directory of CUDA (optional).")
+set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
-set(CUSTOM_BOOST_ROOT "" CACHE STRING "A custom path to the Boost root directory.")
-set(STORM_SUPPORT_XML_INPUT_FORMATS 0)
 
 # If the DEBUG option was turned on, we will target a debug version and a release version otherwise.
 if (STORM_DEBUG)
@@ -178,19 +178,41 @@ endif()
 message(STATUS "StoRM - Using Compiler Configuration: ${STORM_COMPILED_BY}")
 
 #############################################################
+#############################################################
 ##
 ##	Inclusion of required libraries
 ##
 #############################################################
+#############################################################
 
+#############################################################
+##
+##	Include the targets for non-system resources
+##
+#############################################################
 
+# In 3rdparty, targets are being defined that can be used
+# in the the system does not have a library
 add_subdirectory(resources/3rdparty)
-# Add the version of GMM in the repository to the include pathes
+
+#############################################################
+##
+##	gmm
+##
+#############################################################
+
+# Add the shipped version of GMM to the include pathes
 set(GMMXX_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/gmm-5.0/include")
 include_directories(${GMMXX_INCLUDE_DIR})
 
-find_package(GMP)
+#############################################################
+##
+##	gmp
+##
+#############################################################
 
+# GMP is optional (unless MathSAT is used, see below)
+find_package(GMP QUIET)
 
 #############################################################
 ##
@@ -203,32 +225,26 @@ set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
-# If a custom boost root directory was specified, we set the corresponding hint for the script to find it.
-if(CUSTOM_BOOST_ROOT)
-	message(STATUS "StoRM - Using Boost from CUSTOM_BOOST_ROOT located at ${CUSTOM_BOOST_ROOT}")
-	set(BOOST_ROOT "${CUSTOM_BOOST_ROOT}")
-endif(CUSTOM_BOOST_ROOT)
-
-find_package(Boost 1.56.0 REQUIRED)
+find_package(Boost 1.56.0 QUIET REQUIRED)
 
 if ((NOT Boost_LIBRARY_DIRS) OR ("${Boost_LIBRARY_DIRS}" STREQUAL ""))
     set(Boost_LIBRARY_DIRS "${Boost_INCLUDE_DIRS}/stage/lib")
 endif ()
 link_directories(${Boost_LIBRARY_DIRS})
 
-
 include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND STORM_LINK_LIBRARIES ${Boost_LIBRARIES})
-#message(STATUS "BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
-#message(STATUS "BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
-
-
+message(STATUS "StoRM - Using Boost ${Boost_VERSION} (lib ${Boost_LIB_VERSION})")
+#message(STATUS "StoRM - BOOST_INCLUDE_DIRS is ${Boost_INCLUDE_DIRS}")
+#message(STATUS "StoRM - BOOST_LIBRARY_DIRS is ${Boost_LIBRARY_DIRS}")
 
 #############################################################
 ##
 ##	ExprTk
 ##
 #############################################################
+
+# Use the shipped version of ExprTK
 message (STATUS "StoRM - Including ExprTk")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 
@@ -243,14 +259,11 @@ find_package(Z3 QUIET)
 # Z3 Defines
 set(STORM_HAVE_Z3 ${Z3_FOUND})
 
-if(STORM_HAVE_Z3)
+if(Z3_FOUND)
     message (STATUS "StoRM - Linking with Z3")
     include_directories(${Z3_INCLUDE_DIRS})
     list(APPEND STORM_LINK_LIBRARIES ${Z3_LIBRARIES})
-endif(STORM_HAVE_Z3)
-
-
-
+endif(Z3_FOUND)
 
 #############################################################
 ##
@@ -258,13 +271,22 @@ endif(STORM_HAVE_Z3)
 ##
 #############################################################
 
-set(STORM_HAVE_GLPK 1)
-message (STATUS "StoRM - Linking with glpk")
+find_package(GLPK QUIET)
+if(GLPK_FOUND)
+	message (STATUS "StoRM - Using system version of GLPK")
+else()
+	message (STATUS "StoRM - Using shipped version of GLPK")
+	set(GLPK_LIBRARIES  ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/lib/libglpk${DYNAMIC_EXT})
+	set(GLPK_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/glpk-4.57/include)
+	set(GLPK_VERSION_STRING 4.57)
+	add_dependencies(resources glpk)
+endif()
 
+# Since there is a shipped version, always use GLPK
+set(STORM_HAVE_GLPK ON)
+message (STATUS "StoRM - Linking with glpk ${GLPK_VERSION_STRING}")
 include_directories(${GLPK_INCLUDE_DIR})
 list(APPEND STORM_LINK_LIBRARIES ${GLPK_LIBRARIES})
-
-
 
 #############################################################
 ##
@@ -272,25 +294,247 @@ list(APPEND STORM_LINK_LIBRARIES ${GLPK_LIBRARIES})
 ##
 #############################################################
 
-find_package(Gurobi)
-if ("${GUROBI_ROOT}" STREQUAL "" AND NOT GUROBI_FOUND)
-    set(ENABLE_GUROBI OFF)
+if (STORM_USE_GUROBI)
+	find_package(Gurobi QUIET REQUIRED)
+	set(STORM_HAVE_GUROBI ${GUROBI_FOUND})
+	if (GUROBI_FOUND)
+		message (STATUS "StoRM - Linking with Gurobi")
+		include_directories(${GUROBI_INCLUDE_DIRS})
+		list(APPEND STORM_LINK_LIBRARIES ${GUROBI_LIBRARY})
+		#link_directories("${GUROBI_ROOT}/lib")
+	else()
+		#message(FATAL_ERROR "StoRM - Gurobi was requested, but not found!")
+	endif()
 else()
-    set(ENABLE_GUROBI ON)
+	set(STORM_HAVE_GUROBI OFF)
 endif()
 
-# Gurobi Defines
-set(STORM_HAVE_GUROBI ${ENABLE_GUROBI})
+#############################################################
+##
+##	CUDD
+##
+#############################################################
 
-if (ENABLE_GUROBI)
-	if (NOT GUROBI_FOUND)
-		message(FATAL_ERROR "Gurobi was requested, but not found!")
-        endif()
-        message (STATUS "StoRM - Linking with Gurobi (include: ${GUROBI_INCLUDE_DIRS})")
-        include_directories(${GUROBI_INCLUDE_DIRS})
-        list(APPEND STORM_LINK_LIBRARIES ${GUROBI_LIBRARY})
-	#link_directories("${GUROBI_ROOT}/lib")
+# Do not use system CUDD, StoRM has a modified version
+set(CUDD_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/cudd-3.0.0/include)
+set(CUDD_SHARED_LIBRARY ${CMAKE_BINARY_DIR}/resources/3rdparty/cudd-3.0.0/lib/libcudd${DYNAMIC_EXT})
+set(CUDD_STATIC_LIBRARY ${CMAKE_BINARY_DIR}/resources/3rdparty/cudd-3.0.0/lib/libcudd${STATIC_EXT})
+set(CUDD_VERSION_STRING 3.0.0)
+list(APPEND STORM_LINK_LIBRARIES ${CUDD_SHARED_LIBRARY})
+add_dependencies(resources cudd3)
+
+message(STATUS "StoRM - Linking with CUDD ${CUDD_VERSION_STRING}")
+#message("StoRM - CUDD include dir: ${CUDD_INCLUDE_DIR}")
+include_directories(${CUDD_INCLUDE_DIR})
+
+#############################################################
+##
+##      CLN
+##
+#############################################################
+
+find_package(CLN QUIET)
+
+if(CLN_FOUND)
+    set(STORM_HAVE_CLN ON)
+    message(STATUS "StoRM - Linking with CLN ${CLN_VERSION_STRING}")
+    include_directories("${CLN_INCLUDE_DIR}")
+    list(APPEND STORM_LINK_LIBRARIES ${CLN_LIBRARIES})
+else()
+    set(STORM_HAVE_CLN OFF)
+    if(NOT GMP_FOUND)
+        message(FATAL_ERROR "StoRM - Neither CLN nor GMP found")
+    endif()
 endif()
+
+#############################################################
+##
+##      carl
+##
+#############################################################
+
+set(STORM_HAVE_CARL OFF)
+if(USE_CARL)
+	find_package(carl QUIET REQUIRED)
+	if(carl_FOUND)
+		set(STORM_HAVE_CARL ON)
+		message(STATUS "StoRM - Linking with carl ${carl_VERSION_STRING}")
+		include_directories("${carl_INCLUDE_DIR}")
+		list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
+	else()
+		message(FATAL_ERROR "StoRM - CARL was requested but not found")
+	endif()
+endif()
+
+#############################################################
+##
+##      SMT-RAT
+##
+#############################################################
+
+# No find routine yet
+#find_package(smtrat QUIET)
+# Not yet supported
+set(smtrat_FOUND OFF)
+set(STORM_HAVE_SMTRAT OFF)
+if(smtrat_FOUND)
+	set(STORM_HAVE_SMTRAT ON)
+	message(STATUS "StoRM - Linking with smtrat.")
+    include_directories("${smtrat_INCLUDE_DIR}")
+    list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
+endif()
+
+#############################################################
+##
+##      GiNaC
+##
+#############################################################
+
+find_package(GiNaC QUIET)
+
+if(GINAC_FOUND)
+    set(STORM_HAVE_GINAC ON)
+    message(STATUS "StoRM - Linking with GiNaC ${GINAC_VERSION_STRING}")
+    # Right now only link with GiNaC for carl
+    #include_directories("${GINAC_INCLUDE_DIR}")
+    list(APPEND STORM_LINK_LIBRARIES ${GINAC_LIBRARIES})
+else()
+    set(STORM_HAVE_GINAC OFF)
+    #TODO: Check if CARL actually requires the use of GiNaC
+endif()
+
+#############################################################
+##
+##	MathSAT (optional)
+##
+#############################################################
+
+if ("${MSAT_ROOT}" STREQUAL "")
+    set(ENABLE_MSAT OFF)
+else()
+    set(ENABLE_MSAT ON)
+endif()
+
+# MathSAT Defines
+set(STORM_HAVE_MSAT ${ENABLE_MSAT})
+if (ENABLE_MSAT)
+    message (STATUS "StoRM - Linking with MathSAT")
+    link_directories("${MSAT_ROOT}/lib")
+    include_directories("${MSAT_ROOT}/include")
+    list(APPEND STORM_LINK_LIBRARIES "mathsat")
+    if(GMP_FOUND)
+        include_directories("${GMP_INCLUDE_DIR}")
+        list(APPEND STORM_LINK_LIBRARIES "gmp")
+    elseif(MPIR_FOUND)
+        include_directories("${GMP_INCLUDE_DIR}")
+        list(APPEND STORM_LINK_LIBRARIES "mpir" "mpirxx")
+    else(GMP_FOUND)
+        message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
+    endif(GMP_FOUND)
+endif(ENABLE_MSAT)
+
+#############################################################
+##
+##	Xerces
+##
+#############################################################
+
+if(USE_XERCES)
+	find_package(Xerces QUIET REQUIRED)
+	if(XERCES_FOUND)
+		message(STATUS "StoRM - Use system version of xerces")
+    else()
+		message(STATUS "StoRM - Use shipped version of xerces")
+		set(XERCES_ROOT ${CMAKE_BINARY_DIR}/resources/3rdparty/xercesc-3.1.2)
+		set(XERCESC_INCLUDE ${XERCES_ROOT}/include)
+		set(XERCES_LIBRARY_PATH ${XERCES_ROOT}/lib)
+		set(XERCESC_LIBRARIES ${XERCES_LIBRARY_PATH}/libxerces-c.a)
+
+		add_dependencies(resources xercesc)
+    endif()
+
+	message (STATUS "StoRM - Linking with xercesc")
+    set(STORM_HAVE_XERCES ON)
+	include_directories(${XERCESC_INCLUDE})
+	list(APPEND STORM_LINK_LIBRARIES ${XERCESC_LIBRARIES})
+endif(USE_XERCES)
+
+#############################################################
+##
+##	Sylvan
+##
+#############################################################
+
+message(STATUS "StoRM - Using shipped version of sylvan")
+message(STATUS "StoRM - Linking with sylvan")
+include_directories("${Sylvan_INCLUDE_DIR}")
+list(APPEND STORM_LINK_LIBRARIES ${Sylvan_LIBRARY})
+add_dependencies(resources sylvan)
+
+if(${OPERATING_SYSTEM} MATCHES "Linux")
+	find_package(Hwloc QUIET REQUIRED)
+	if(Hwloc_FOUND)
+		message(STATUS "StoRM - Linking with hwloc ${Hwloc_VERSION}")
+		list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})
+	else()
+		message(FATAL_ERROR "HWLOC is required but was not found.")
+	endif()
+endif()
+
+#############################################################
+##
+##	Google Test gtest
+##
+#############################################################
+
+add_dependencies(test-resources googletest)
+list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
+
+#############################################################
+##
+##	Intel Threading Building Blocks (optional)
+##
+#############################################################
+
+set(STORM_HAVE_INTELTBB OFF)
+if (STORM_USE_INTELTBB)
+	# Point to shipped TBB directory
+	set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_merged-win-lin-mac")
+	find_package(TBB QUIET REQUIRED)
+
+	if (TBB_FOUND)
+		message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
+		message(STATUS "StoRM - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
+		set(STORM_HAVE_INTELTBB ON)
+		link_directories(${TBB_LIBRARY_DIRS})
+		include_directories(${TBB_INCLUDE_DIRS})
+		list(APPEND STORM_LINK_LIBRARIES tbb tbbmalloc)	
+	else(TBB_FOUND)
+		message(FATAL_ERROR "StoRM - TBB was requested, but not found!")
+	endif(TBB_FOUND)
+endif(STORM_USE_INTELTBB)
+
+#############################################################
+##
+##	Threads
+##
+#############################################################
+
+find_package(Threads QUIET REQUIRED)
+if (NOT Threads_FOUND)
+	message(FATAL_ERROR "StoRM - Threads was requested, but not found!")
+endif()
+include_directories(${THREADS_INCLUDE_DIRS})
+list(APPEND STORM_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+if (STORM_USE_COTIRE)
+	target_link_libraries(storm_unity ${CMAKE_THREAD_LIBS_INIT})
+endif(STORM_USE_COTIRE)
+
+if (MSVC)
+	# Add the DebugHelper DLL
+	set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} Dbghelp.lib")
+	target_link_libraries(storm "Dbghelp.lib")
+endif(MSVC)
 
 #############################################################
 ##
@@ -429,195 +673,6 @@ if(ENABLE_CUDA)
         include_directories("${PROJECT_SOURCE_DIR}/cuda/kernels/")
 endif()
 
-
-#############################################################
-##
-##	CUDD
-##
-#############################################################
-
-message("${CUDD3_INCLUDE_DIR}")
-include_directories(${CUDD3_INCLUDE_DIR})
-list(APPEND STORM_LINK_LIBRARIES ${CUDD3_SHARED_LIBRARIES})
-
-#############################################################
-##
-##      carl
-##
-#############################################################
-
-if(USE_CARL)
-    find_package(carl QUIET)
-    if(carl_FOUND)
-     set(STORM_HAVE_CARL ON)
-    endif()
-
-    #find_package(smtrat QUIET)
-    if(smtrat_FOUND)
-        set(STORM_HAVE_SMTRAT ON)
-    endif()
-endif()
-
-if(STORM_HAVE_CARL)
-    message(STATUS "StoRM - Linking with carl.")
-    include_directories("${carl_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
-endif()
-
-#############################################################
-##
-##      SMT-RAT
-##
-#############################################################
-
-if(STORM_HAVE_SMTRAT)
-message(STATUS "StoRM - Linking with smtrat.")
-    include_directories("${smtrat_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
-endif()
-
-#############################################################
-##
-##	MathSAT (optional)
-##
-#############################################################
-
-
-
-if ("${MSAT_ROOT}" STREQUAL "")
-    set(ENABLE_MSAT OFF)
-else()
-    set(ENABLE_MSAT ON)
-endif()
-
-# MathSAT Defines
-set(STORM_HAVE_MSAT ${ENABLE_MSAT})
-if (ENABLE_MSAT)
-    link_directories("${MSAT_ROOT}/lib")
-    message (STATUS "StoRM - Linking with MathSAT")
-    include_directories("${MSAT_ROOT}/include")
-    list(APPEND STORM_LINK_LIBRARIES "mathsat")
-    if(GMP_FOUND)
-        include_directories("${GMP_INCLUDE_DIR}")
-        list(APPEND STORM_LINK_LIBRARIES "gmp")
-    elseif(MPIR_FOUND)
-        include_directories("${GMP_INCLUDE_DIR}")
-        list(APPEND STORM_LINK_LIBRARIES "mpir" "mpirxx")
-    else(GMP_FOUND)
-        message(FATAL_ERROR "GMP is required for MathSAT, but was not found!")
-    endif(GMP_FOUND)
-endif(ENABLE_MSAT)
-
-#############################################################
-##
-##	Xerces
-##
-#############################################################
-
-if(STORM_SUPPORT_XML_INPUT_FORMATS)
-    find_package(Xerces)
-    if(NOT XERCES_FOUND)
-            message(STATUS "Use shipped version of xerces")
-            set(XERCES_ROOT ${CMAKE_BINARY_DIR}/resources/3rdparty/xercesc-3.1.2)
-            set(XERCESC_INCLUDE ${XERCES_ROOT}/include)
-            set(XERCES_LIBRARY_PATH ${XERCES_ROOT}/lib)
-            set(XERCESC_LIBRARIES ${XERCES_LIBRARY_PATH}/libxerces-c.a)
-    endif()
-
-    set(STORM_HAVE_XERCES TRUE)
-    if(STORM_HAVE_XERCES)
-            include_directories(${XERCESC_INCLUDE})
-            list(APPEND STORM_LINK_LIBRARIES ${XERCESC_LIBRARIES})
-    endif()
-endif()
-
-#############################################################
-##
-##	Sylvan
-##
-#############################################################
-
-message(STATUS "Linking with shipped version of sylvan (in directory ${STORM_SYLVAN_ROOT}).")
-include_directories("${Sylvan_INCLUDE_DIR}")
-list(APPEND STORM_LINK_LIBRARIES ${Sylvan_LIBRARY})
-if(${OPERATING_SYSTEM} MATCHES "Linux")
-	find_package(Hwloc QUIET)
-	if(NOT Hwloc_FOUND)
-            message(SEND_ERROR "HWLOC is required but was not found.")
-	else()
-            list(APPEND STORM_LINK_LIBRARIES ${Hwloc_LIBRARIES})	
-	endif()
-endif()
-
-#############################################################
-##
-##	Google Test gtest
-##
-#############################################################
-
-#############################################################
-##
-##	Log4CPlus
-##
-#############################################################
-if(STORM_LOGGING_FRAMEWORK) 
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
-    set(LOG4CPLUS_BUILD_LOGGINGSERVER OFF)
-    set(LOG4CPLUS_BUILD_TESTING OFF)
-    set(LOG4CPLUS_USE_UNICODE OFF)
-    set(LOG4CPLUS_DEFINE_INSTALL_TARGET OFF)
-    add_subdirectory("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1")
-    include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include")
-    include_directories("${PROJECT_BINARY_DIR}/resources/3rdparty/log4cplus-1.1.3-rc1/include") # This adds the defines.hxx file
-
-    list(APPEND STORM_LINK_LIBRARIES log4cplusS)
-    if (UNIX AND NOT APPLE)
-        list(APPEND STORM_LINK_LIBRARIES rt)
-    endif(UNIX AND NOT APPLE)
-endif()
-#############################################################
-##
-##	Intel Threading Building Blocks (optional)
-##
-#############################################################
-
-set(TBB_INSTALL_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/tbb42_20140122_merged-win-lin-mac")
-
-
-find_package(TBB)
-
-set(STORM_HAVE_INTELTBB 0)
-if (TBB_FOUND)
-        message(STATUS "StoRM - Found Intel TBB with interface version ${TBB_INTERFACE_VERSION}.")
-	if (STORM_USE_INTELTBB)
-                set(STORM_HAVE_INTELTBB 1)
-		message(STATUS "StoRM - Linking with Intel TBB in ${TBB_LIBRARY_DIRS}.")
-                link_directories(${TBB_LIBRARY_DIRS})
-                include_directories(${TBB_INCLUDE_DIRS})
-                list(APPEND STORM_LINK_LIBRARIES tbb tbbmalloc)	
-	endif(STORM_USE_INTELTBB)
-endif(TBB_FOUND)
-
-#############################################################
-##
-##	Threads
-##
-#############################################################
-
-find_package(Threads REQUIRED)
-include_directories(${THREADS_INCLUDE_DIRS})
-list(APPEND STORM_LINK_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-if (STORM_USE_COTIRE)
-	target_link_libraries(storm_unity ${CMAKE_THREAD_LIBS_INIT})
-endif(STORM_USE_COTIRE)
-
-if (MSVC)
-	# Add the DebugHelper DLL
-	set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} Dbghelp.lib")
-	target_link_libraries(storm "Dbghelp.lib")
-endif(MSVC)
-
-
 #############################################################
 ##
 ##	Cotire
@@ -664,7 +719,6 @@ if(DOXYGEN_FOUND)
 
     add_custom_target(doc ${DOXYGEN_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile" COMMENT "Generating API documentation with Doxygen" VERBATIM)
 endif(DOXYGEN_FOUND)
-
 
 #############################################################
 ##
@@ -725,6 +779,5 @@ add_custom_target(memcheck-performance-tests valgrind --leak-check=full --show-r
 
 set(CPPLINT_ARGS --filter=-whitespace/tab,-whitespace/line_length,-legal/copyright,-readability/streams)
 add_custom_target(style python cpplint.py ${CPPLINT_ARGS} `find ./src/ -iname "*.h" -or -iname "*.cpp" `)
-
 
 include(StormCPackConfig.cmake)

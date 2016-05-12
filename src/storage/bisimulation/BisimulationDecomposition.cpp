@@ -240,6 +240,9 @@ namespace storm {
                 ++iterations;
 
                 // Get and prepare the next splitter.
+                // Sort the splitters according to their sizes to prefer small splitters. That is just a heuristic, but
+                // tends to work well.
+                std::sort(splitterQueue.begin(), splitterQueue.end(), [] (Block<BlockDataType> const* b1, Block<BlockDataType> const* b2) { return b1->getNumberOfStates() < b2->getNumberOfStates(); } );
                 Block<BlockDataType>* splitter = splitterQueue.front();
                 splitterQueue.pop_front();
                 splitter->data().setSplitter(false);

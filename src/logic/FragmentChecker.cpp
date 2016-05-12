@@ -19,8 +19,13 @@ namespace storm {
         };
         
         bool FragmentChecker::conformsToSpecification(Formula const& f, FragmentSpecification const& specification) const {
-            boost::any result = f.accept(*this, InheritedInformation(specification));
-            return boost::any_cast<bool>(result);
+            bool result = boost::any_cast<bool>(f.accept(*this, InheritedInformation(specification)));
+            
+            if (specification.isOperatorAtTopLevelRequired()) {
+                result &= f.isOperatorFormula();
+            }
+            
+            return result;
         }
         
         boost::any FragmentChecker::visit(AtomicExpressionFormula const& f, boost::any const& data) const {

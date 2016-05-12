@@ -50,6 +50,10 @@ namespace storm {
             return true;
         }
         
+        OperatorInformation const& OperatorFormula::getOperatorInformation() const {
+            return operatorInformation;
+        }
+        
         bool OperatorFormula::hasQualitativeResult() const {
             return this->hasBound();
         }

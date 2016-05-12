@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
+#include <errno.h>  // for errno
 #include <stdio.h>  // for fprintf
 #include <stdint.h> // for uint32_t etc
 #include <stdlib.h> // for exit
+#include <string.h> // for strerror
 #include <sys/mman.h> // for mmap
 
 #include <sylvan_cache.h>
@@ -159,11 +161,11 @@ cache_create(size_t _cache_size, size_t _max_size)
         exit(1);
     }
 
-    cache_table = (cache_entry_t)mmap(0, cache_max * sizeof(struct cache_entry), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
-    cache_status = (uint32_t*)mmap(0, cache_max * sizeof(uint32_t), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+    cache_table = (cache_entry_t)mmap(0, cache_max * sizeof(struct cache_entry), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    cache_status = (uint32_t*)mmap(0, cache_max * sizeof(uint32_t), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     if (cache_table == (cache_entry_t)-1 || cache_status == (uint32_t*)-1) {
-        fprintf(stderr, "cache_create: Unable to allocate memory!\n");
+        fprintf(stderr, "cache_create: Unable to allocate memory: %s!\n", strerror(errno));
         exit(1);
     }
 
