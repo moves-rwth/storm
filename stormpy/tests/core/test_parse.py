@@ -31,4 +31,4 @@ class TestParse:
         assert model.nr_states() == 13
         assert model.nr_transitions() == 20
         assert model.model_type() == stormpy.ModelType.DTMC
-        assert model.parametric()
+        assert not model.parametric()
