@@ -1,6 +1,8 @@
 from . import core
 from .core import *
 
+core.set_up("")
+
 def build_model(program, formulae):
     intermediate = core._build_model(program, formulae)
     
