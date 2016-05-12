@@ -33,7 +33,7 @@ class TestBisimulation:
         assert model.nr_transitions() == 2027
         assert model.model_type() == stormpy.ModelType.DTMC
         assert model.parametric()
-        model_bisim = stormpy.perform_parametric_bisimulation(model, formulas[0], stormpy.BisimulationType.STRONG)
+        model_bisim = stormpy.perform_bisimulation(model, formulas[0], stormpy.BisimulationType.STRONG)
         assert model_bisim.nr_states() == 80
         assert model_bisim.nr_transitions() == 120
         assert model_bisim.model_type() == stormpy.ModelType.DTMC

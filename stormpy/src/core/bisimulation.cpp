@@ -10,8 +10,8 @@ std::shared_ptr<storm::models::sparse::Model<ValueType>> performBisimulation(std
 void define_bisimulation(py::module& m) {
 
     // Bisimulation
-    m.def("perform_bisimulation", &performBisimulation<double>, "Perform bisimulation", py::arg("program"), py::arg("formula"), py::arg("bisimulation_type"));
-    m.def("perform_parametric_bisimulation", &performBisimulation<storm::RationalFunction>, "Perform bisimulation on parametric model", py::arg("program"), py::arg("formula"), py::arg("bisimulation_type"));
+    m.def("_perform_bisimulation", &performBisimulation<double>, "Perform bisimulation", py::arg("model"), py::arg("formula"), py::arg("bisimulation_type"));
+    m.def("_perform_parametric_bisimulation", &performBisimulation<storm::RationalFunction>, "Perform bisimulation on parametric model", py::arg("model"), py::arg("formula"), py::arg("bisimulation_type"));
 
     // BisimulationType 
     py::enum_<storm::storage::BisimulationType>(m, "BisimulationType", "Types of bisimulation")

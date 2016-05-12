@@ -28,3 +28,9 @@ def build_parametric_model(program, formulae):
              raise RuntimeError("Not supported parametric model constructed")
     else:
         raise RuntimeError("Model should be parametric")
+
+def perform_bisimulation(model, formula, bisimulation_type):
+    if model.parametric():
+        return core._perform_parametric_bisimulation(model, formula, bisimulation_type)
+    else:
+        return core._perform_bisimulation(model, formula, bisimulation_type)
