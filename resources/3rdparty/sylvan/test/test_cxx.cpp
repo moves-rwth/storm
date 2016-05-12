@@ -1,18 +1,22 @@
 /**
  * Just a small test file to ensure that Sylvan can compile in C++
- * Suggested by Shota Soga <shota.soga@gmail.com> for testing C++ compatibility
  */
 
 #include <assert.h>
 #include <sylvan.h>
 #include <sylvan_obj.hpp>
 
+#include "test_assert.h"
+
 using namespace sylvan;
 
-void test()
+int runtest()
 {
     Bdd one = Bdd::bddOne();
     Bdd zero = Bdd::bddZero();
+
+    test_assert(one != zero);
+    test_assert(one == !zero);
 
     Bdd v1 = Bdd::bddVar(1);
     Bdd v2 = Bdd::bddVar(2);
@@ -22,25 +26,26 @@ void test()
     BddMap map;
     map.put(2, t);
 
-    assert(v2.Compose(map) == v1+v2);
+    test_assert(v2.Compose(map) == (v1 + v2));
+    test_assert((t * v2) == v2);
 
-    t *= v2;
-
-    assert(t == v2);
+    return 0;
 }
 
 int main()
 {
-    // Standard Lace initialization
-	lace_init(0, 1000000);
+    // Standard Lace initialization with 1 worker
+	lace_init(1, 0);
 	lace_startup(0, NULL, NULL);
 
-    // Simple Sylvan initialization, also initialize BDD and LDD support
+    // Simple Sylvan initialization, also initialize BDD support
 	sylvan_init_package(1LL<<16, 1LL<<16, 1LL<<16, 1LL<<16);
 	sylvan_init_bdd(1);
 
-    test();
+    int res = runtest();
 
     sylvan_quit();
     lace_exit();
+
+    return res;
 }

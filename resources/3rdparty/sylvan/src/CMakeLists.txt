@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 project(sylvan C CXX)
 
-set(CMAKE_C_FLAGS "-g -O3 -Wextra -Wall -Werror -fno-strict-aliasing -std=gnu11")
-
 add_library(sylvan
     avl.h
     lace.h
@@ -44,12 +42,24 @@ set_target_properties(sylvan PROPERTIES
 
 target_link_libraries(sylvan m pthread)
 
-include(CheckIncludeFiles)
-check_include_files(hwloc.h HAVE_HWLOC)
+if(UNIX AND NOT APPLE)
+    target_link_libraries(sylvan rt)
+endif()
 
-if(HAVE_HWLOC)
-    set_target_properties(sylvan PROPERTIES COMPILE_DEFINITIONS "USE_HWLOC=1")
-    target_link_libraries(sylvan hwloc)
+option(USE_HWLOC "Use HWLOC library if available" ON)
+
+if(USE_HWLOC)
+    include(CheckIncludeFiles)
+    check_include_files(hwloc.h HAVE_HWLOC)
+    if(HAVE_HWLOC)
+        set_target_properties(sylvan PROPERTIES COMPILE_DEFINITIONS "USE_HWLOC=1")
+        target_link_libraries(sylvan hwloc)
+    endif()
+endif()
+
+option(SYLVAN_STATS "Collect statistics" OFF)
+if(SYLVAN_STATS)
+    set_target_properties(sylvan PROPERTIES COMPILE_DEFINITIONS "SYLVAN_STATS")
 endif()
 
 install(TARGETS

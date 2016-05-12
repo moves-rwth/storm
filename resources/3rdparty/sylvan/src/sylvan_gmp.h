@@ -21,7 +21,7 @@
 #ifndef SYLVAN_GMP_H
 #define SYLVAN_GMP_H
 
-#include "sylvan.h"
+#include <sylvan.h>
 #include <gmp.h>
 
 #ifdef __cplusplus

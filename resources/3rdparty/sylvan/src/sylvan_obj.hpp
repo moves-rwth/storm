@@ -28,7 +28,7 @@ namespace sylvan {
 class BddSet;
 class BddMap;
 class Mtbdd;
-    
+
 class Bdd {
     friend class Sylvan;
     friend class BddSet;
@@ -326,7 +326,7 @@ public:
     size_t NodeCount() const;
 
 #include "sylvan_obj_bdd_storm.hpp"
-    
+
 private:
     BDD bdd;
 };
@@ -776,7 +776,7 @@ public:
     size_t NodeCount() const;
 
 #include "sylvan_obj_mtbdd_storm.hpp"
-    
+
 private:
     MTBDD mtbdd;
 };
