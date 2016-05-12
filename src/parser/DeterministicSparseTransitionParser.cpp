@@ -17,11 +17,7 @@
 #include "src/settings/modules/GeneralSettings.h"
 
 #include "src/adapters/CarlAdapter.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
+#include "src/utility/macros.h"
 namespace storm {
     namespace parser {
 
@@ -46,7 +42,7 @@ namespace storm {
             setlocale(LC_NUMERIC, "C");
 
             if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-                LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
+                STORM_LOG_ERROR("Error while parsing " << filename << ": File does not exist or is not readable.");
                 throw storm::exceptions::FileIoException() << "The supplied Transition input file \"" << filename << "\" does not exist or is not readable by this process.";
             }
 
@@ -58,11 +54,11 @@ namespace storm {
             bool insertDiagonalEntriesIfMissing = !isRewardFile;
             DeterministicSparseTransitionParser<ValueType>::FirstPassResult firstPass = DeterministicSparseTransitionParser<ValueType>::firstPass(file.getData(), insertDiagonalEntriesIfMissing);
 
-            LOG4CPLUS_INFO(logger, "First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " NonZeros.");
+            STORM_LOG_INFO("First pass on " << filename << " shows " << firstPass.numberOfNonzeroEntries << " NonZeros.");
 
             // If first pass returned zero, the file format was wrong.
             if (firstPass.numberOfNonzeroEntries == 0) {
-                LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": empty or erroneous file format.");
+                STORM_LOG_ERROR("Error while parsing " << filename << ": empty or erroneous file format.");
                 throw storm::exceptions::WrongFormatException();
             }
 
@@ -78,7 +74,7 @@ namespace storm {
             if (isRewardFile) {
                 // The reward matrix should match the size of the transition matrix.
                 if (firstPass.highestStateIndex + 1 > transitionMatrix.getRowCount() || firstPass.highestStateIndex + 1 > transitionMatrix.getColumnCount()) {
-                    LOG4CPLUS_ERROR(logger, "Reward matrix has more rows or columns than transition matrix.");
+                    STORM_LOG_ERROR("Reward matrix has more rows or columns than transition matrix.");
                     throw storm::exceptions::WrongFormatException() << "Reward matrix has more rows or columns than transition matrix.";
                 } else {
                     // If we found the right number of states or less, we set it to the number of states represented by the transition matrix.
@@ -122,9 +118,9 @@ namespace storm {
                         hadDeadlocks = true;
                         if (!dontFixDeadlocks) {
                             resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<ValueType>());
-                            LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
+                            STORM_LOG_WARN("Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
                         } else {
-                            LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
+                            STORM_LOG_ERROR("Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
                             // Before throwing the appropriate exception we will give notice of all deadlock states.
                         }
                     }
@@ -143,9 +139,9 @@ namespace storm {
                         if (!rowHadDiagonalEntry) {
                             if (insertDiagonalEntriesIfMissing) {
                                 resultMatrix.addNextValue(lastRow, lastRow, storm::utility::zero<ValueType>());
-                                LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
+                                STORM_LOG_DEBUG("While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (1)");
                             } else {
-                                LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
+                                STORM_LOG_WARN("Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
                             }
                             // No increment for lastRow.
                             rowHadDiagonalEntry = true;
@@ -154,9 +150,9 @@ namespace storm {
                             hadDeadlocks = true;
                             if (!dontFixDeadlocks) {
                                 resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<ValueType>());
-                                LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
+                                STORM_LOG_WARN("Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
                             } else {
-                                LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
+                                STORM_LOG_ERROR("Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
                                 // Before throwing the appropriate exception we will give notice of all deadlock states.
                             }
                         }
@@ -171,9 +167,9 @@ namespace storm {
                     if (col > row && !rowHadDiagonalEntry) {
                         if (insertDiagonalEntriesIfMissing) {
                             resultMatrix.addNextValue(row, row, storm::utility::zero<ValueType>());
-                            LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
+                            STORM_LOG_DEBUG("While parsing " << filename << ": state " << row << " has no transition to itself. Inserted a 0-transition. (2)");
                         } else {
-                            LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
+                            STORM_LOG_WARN("Warning while parsing " << filename << ": state " << row << " has no transition to itself.");
                         }
                         rowHadDiagonalEntry = true;
                     }
@@ -185,9 +181,9 @@ namespace storm {
                 if (!rowHadDiagonalEntry) {
                     if (insertDiagonalEntriesIfMissing) {
                         resultMatrix.addNextValue(lastRow, lastRow, storm::utility::zero<ValueType>());
-                        LOG4CPLUS_DEBUG(logger, "While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
+                        STORM_LOG_DEBUG("While parsing " << filename << ": state " << lastRow << " has no transition to itself. Inserted a 0-transition. (3)");
                     } else {
-                        LOG4CPLUS_WARN(logger, "Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
+                        STORM_LOG_WARN("Warning while parsing " << filename << ": state " << lastRow << " has no transition to itself.");
                     }
                 }
 
@@ -200,7 +196,7 @@ namespace storm {
 
             // Since we cannot check if each transition for which there is a reward in the reward file also exists in the transition matrix during parsing, we have to do it afterwards.
             if (isRewardFile && !result.isSubmatrixOf(transitionMatrix)) {
-                LOG4CPLUS_ERROR(logger, "There are rewards for non existent transitions given in the reward file.");
+                STORM_LOG_ERROR("There are rewards for non existent transitions given in the reward file.");
                 throw storm::exceptions::WrongFormatException() << "There are rewards for non existent transitions given in the reward file.";
             }
 
@@ -272,7 +268,7 @@ namespace storm {
 
                 // Have we already seen this transition?
                 if (row == lastRow && col == lastCol) {
-                    LOG4CPLUS_ERROR(logger, "The same transition (" << row << ", " << col << ") is given twice.");
+                    STORM_LOG_ERROR("The same transition (" << row << ", " << col << ") is given twice.");
                     throw storm::exceptions::InvalidArgumentException() << "The same transition (" << row << ", " << col << ") is given twice.";
                 }
 

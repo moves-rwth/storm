@@ -1,7 +1,7 @@
 #ifndef STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
 #define STORM_MODELCHECKER_REACHABILITY_SPARSEDTMCREGIONMODELCHECKER_H_
 
-#include "src/modelchecker/region/AbstractSparseRegionModelChecker.h"
+#include "src/modelchecker/region/SparseRegionModelChecker.h"
 
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/models/sparse/Dtmc.h"
@@ -12,7 +12,7 @@ namespace storm {
     namespace modelchecker {
         namespace region {
             template<typename ParametricSparseModelType, typename ConstantType>
-            class SparseDtmcRegionModelChecker : public AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType> {
+            class SparseDtmcRegionModelChecker : public SparseRegionModelChecker<ParametricSparseModelType, ConstantType> {
             public:
 
                 typedef typename ParametricSparseModelType::ValueType ParametricType;

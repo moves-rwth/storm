@@ -10,6 +10,9 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
+
+#ifdef STORM_HAVE_MSAT
+
 TEST(SmtPermissiveSchedulerTest, DieSelection) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die_c1.nm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
@@ -28,7 +31,7 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
     options.addConstantDefinitionsFromString(program, "");
     options.buildCommandLabels = true;
     
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>().translateProgram(program, options)->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
     
 //    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms = storm::ps::computePermissiveSchedulerViaSMT<>(*mdp, formula02);
 //    EXPECT_NE(perms, boost::none);
@@ -58,3 +61,5 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
     //
     
 }
+
+#endif // STORM_HAVE_MSAT

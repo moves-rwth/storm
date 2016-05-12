@@ -3,11 +3,11 @@
 
 #include <boost/variant.hpp>
 
-#include "src/logic/RewardPathFormula.h"
+#include "src/logic/PathFormula.h"
 
 namespace storm {
     namespace logic {
-        class CumulativeRewardFormula : public RewardPathFormula {
+        class CumulativeRewardFormula : public PathFormula {
         public:
             CumulativeRewardFormula(uint_fast64_t timeBound);
             
@@ -16,9 +16,12 @@ namespace storm {
             virtual ~CumulativeRewardFormula() {
                 // Intentionally left empty.
             }
-            
+
             virtual bool isCumulativeRewardFormula() const override;
+            virtual bool isRewardPathFormula() const override;
             
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
+
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             bool hasDiscreteTimeBound() const;

@@ -27,7 +27,7 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/NotSupportedException.h"
-
+#include "src/logic/FragmentSpecification.h"
 
 namespace storm {
     namespace modelchecker {
@@ -35,7 +35,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             SparseMdpRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseMdpRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
-                    AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
+                    SparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
                 STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidArgumentException, "Tried to create an mdp region model checker for a model that is not an mdp");
             }
 
@@ -55,7 +55,7 @@ namespace storm {
                 //    return rewardOperatorFormula.hasBound() && this->canHandle(rewardOperatorFormula.getSubformula());
                 } else if (formula.isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = formula.asEventuallyFormula();
-                    if (eventuallyFormula.getSubformula().isPropositionalFormula()) {
+                    if (eventuallyFormula.getSubformula().isInFragment(storm::logic::propositional())) {
                         return true;
                     }
               //  } else if (formula.isReachabilityRewardFormula()) {
@@ -191,7 +191,7 @@ namespace storm {
                 //Get the simplified formula
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
                 std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
-                simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(this->getSpecifiedFormula()->getComparisonType(), this->getSpecifiedFormulaBound(), eventuallyFormula));
+                simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
             }
 
             template<typename ParametricSparseModelType, typename ConstantType>
@@ -277,7 +277,7 @@ namespace storm {
             }
 
 #ifdef STORM_HAVE_CARL
-            template class SparseMdpRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+            template class SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
 #endif
         } // namespace region 
     } // namespace modelchecker

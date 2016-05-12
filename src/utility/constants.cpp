@@ -39,6 +39,7 @@ namespace storm {
         bool isConstant(ValueType const& a) {
             return true;
         }
+
         
 #ifdef STORM_HAVE_CARL
         template<>
@@ -91,11 +92,11 @@ namespace storm {
 
 		template<typename ValueType>
 		ValueType simplify(ValueType value) {
-            // In the general case, we don't to anything here, but merely return the value. If something else is
+            // In the general case, we don't do anything here, but merely return the value. If something else is
             // supposed to happen here, the templated function can be specialized for this particular type.
 			return value;
 		}
-
+        
 #ifdef STORM_HAVE_CARL
         template<>
         RationalFunction& simplify(RationalFunction& value);
@@ -125,6 +126,17 @@ namespace storm {
             value.simplify();
             return std::move(value);
         }
+        
+        template<>
+        double convertNumber(RationalNumber const& number){
+            return carl::toDouble(number);
+        }
+        
+        template<>
+        RationalNumber convertNumber(double const& number){
+            return carl::rationalize<RationalNumber>(number);
+        }
+
 #endif
         
         template<typename IndexType, typename ValueType>
@@ -198,6 +210,10 @@ namespace storm {
         template bool isZero(storm::storage::sparse::state_type const& value);
         template bool isConstant(storm::storage::sparse::state_type const& value);
 
+        template uint32_t one();
+        template uint32_t zero();
+        template uint32_t infinity();
+                
         template storm::storage::sparse::state_type one();
         template storm::storage::sparse::state_type zero();
         template storm::storage::sparse::state_type infinity();
@@ -230,6 +246,9 @@ namespace storm {
         template RationalNumber one();
         template RationalNumber zero();
         template RationalNumber infinity();
+        
+        template double convertNumber(RationalNumber const& number);
+        template RationalNumber convertNumber(double const& number);
         
         template bool isOne(Interval const& value);
         template bool isZero(Interval const& value);

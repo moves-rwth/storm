@@ -224,7 +224,6 @@ TASK_DECL_3(MTBDD, mtbdd_abstract_op_plus, MTBDD, MTBDD, int);
  * For Integer/Double MTBDDs, mtbdd_false is interpreted as "0" or "0.0".
  */
 TASK_DECL_2(MTBDD, mtbdd_op_minus, MTBDD*, MTBDD*);
-TASK_DECL_3(MTBDD, mtbdd_abstract_op_minus, MTBDD, MTBDD, int);
 
 /**
  * Binary operation Times (for MTBDDs of same type)

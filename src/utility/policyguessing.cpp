@@ -24,33 +24,31 @@ namespace storm {
                             std::vector<ValueType> const& b,
                             OptimizationDirection player1Goal,
                             OptimizationDirection player2Goal,
-                            std::vector<storm::storage::sparse::state_type>& player1Policy, 
-                            std::vector<storm::storage::sparse::state_type>& player2Policy,
+                            storm::storage::TotalScheduler& player1Scheduler, 
+                            storm::storage::TotalScheduler& player2Scheduler,
                             storm::storage::BitVector const& targetChoices,
                             ValueType const& prob0Value
                     ){
                 
-             //               std::vector<storm::storage::sparse::state_type> pl1Policy = player1Policy;
-             //               std::vector<storm::storage::sparse::state_type> pl2Policy = player2Policy;
                 storm::storage::SparseMatrix<ValueType> inducedA;
                 std::vector<ValueType> inducedB;
                 storm::storage::BitVector probGreater0States;
-                getInducedEquationSystem(solver, b, player1Policy, player2Policy, targetChoices, inducedA, inducedB, probGreater0States);
+                getInducedEquationSystem(solver, b, player1Scheduler, player2Scheduler, targetChoices, inducedA, inducedB, probGreater0States);
                 
                 solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                 
-                solver.setPolicyTracking();
+                solver.setTrackScheduler();
                 bool resultCorrect = false;
                 while(!resultCorrect){
                     solver.solveGame(player1Goal, player2Goal, x, b);
-                    player1Policy = solver.getPlayer1Policy();
-                    player2Policy = solver.getPlayer2Policy();
+                    player1Scheduler = solver.getPlayer1Scheduler();
+                    player2Scheduler = solver.getPlayer2Scheduler();
                     
                     //Check if the policies makes choices that lead to states from which no target state is reachable ("prob0"-states). 
-                    getInducedEquationSystem(solver, b, player1Policy, player2Policy, targetChoices, inducedA, inducedB, probGreater0States);
-                    resultCorrect = checkAndFixPolicy(solver, x, b, player1Policy, player2Policy, targetChoices, inducedA, inducedB, probGreater0States);
+                    getInducedEquationSystem(solver, b, player1Scheduler, player2Scheduler, targetChoices, inducedA, inducedB, probGreater0States);
+                    resultCorrect = checkAndFixScheduler(solver, x, b, player1Scheduler, player2Scheduler, targetChoices, inducedA, inducedB, probGreater0States);
                     if(!resultCorrect){
-                        //If the policy could not be fixed, it indicates that our guessed values were to high.
+                        //If the Scheduler could not be fixed, it indicates that our guessed values were to high.
                         STORM_LOG_WARN("Policies could not be fixed. Restarting Gamesolver. ");
                         solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                         //x = std::vector<ValueType>(x.size(), storm::utility::zero<ValueType>());
@@ -63,29 +61,29 @@ namespace storm {
                                     std::vector<ValueType>& x,
                                     std::vector<ValueType> const& b,
                                     OptimizationDirection goal,
-                                    std::vector<storm::storage::sparse::state_type>& policy,
+                                    storm::storage::TotalScheduler& scheduler,
                                     storm::storage::BitVector const& targetChoices,
                                     ValueType const& prob0Value
                                 ){
                 storm::storage::SparseMatrix<ValueType> inducedA;
                 std::vector<ValueType> inducedB;
                 storm::storage::BitVector probGreater0States;
-                getInducedEquationSystem(solver, b, policy, targetChoices, inducedA, inducedB, probGreater0States);
+                getInducedEquationSystem(solver, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
                 solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                 
-                solver.setPolicyTracking();
+                solver.setTrackScheduler();
                 bool resultCorrect = false;
                 while(!resultCorrect){
                     solver.solveEquationSystem(goal, x, b);
-                    policy = solver.getPolicy();
+                    scheduler = solver.getScheduler();
                     
-                    //Check if the policy makes choices that lead to states from which no target state is reachable ("prob0"-states). 
-                    getInducedEquationSystem(solver, b, policy, targetChoices, inducedA, inducedB, probGreater0States);
-                    resultCorrect = checkAndFixPolicy(solver, x, b, policy, targetChoices, inducedA, inducedB, probGreater0States);
+                    //Check if the Scheduler makes choices that lead to states from which no target state is reachable ("prob0"-states). 
+                    getInducedEquationSystem(solver, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
+                    resultCorrect = checkAndFixScheduler(solver, x, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
                     
                     if(!resultCorrect){
-                        //If the policy could not be fixed, it indicates that our guessed values were to high.
-                        STORM_LOG_WARN("Policy could not be fixed. Restarting MinMaxsolver." );
+                        //If the Scheduler could not be fixed, it indicates that our guessed values were to high.
+                        STORM_LOG_WARN("Scheduler could not be fixed. Restarting MinMaxsolver." );
                         solveLinearEquationSystem(inducedA, x, inducedB, probGreater0States, prob0Value, solver.getPrecision(), solver.getRelative());
                     }
                 }
@@ -96,8 +94,8 @@ namespace storm {
             template <typename ValueType>
             void getInducedEquationSystem(storm::solver::GameSolver<ValueType> const& solver,
                                             std::vector<ValueType> const& b,
-                                            std::vector<storm::storage::sparse::state_type> const& player1Policy, 
-                                            std::vector<storm::storage::sparse::state_type> const& player2Policy,
+                                            storm::storage::TotalScheduler const& player1Scheduler, 
+                                            storm::storage::TotalScheduler const& player2Scheduler,
                                             storm::storage::BitVector const& targetChoices,
                                             storm::storage::SparseMatrix<ValueType>& inducedA,
                                             std::vector<ValueType>& inducedB,
@@ -109,10 +107,10 @@ namespace storm {
                 //Note that rows can be selected more then once and in an arbitrary order.
                 std::vector<storm::storage::sparse::state_type> selectedRows(numberOfPlayer1States);
                 for (uint_fast64_t pl1State = 0; pl1State < numberOfPlayer1States; ++pl1State){
-                    auto const& pl1Row = solver.getPlayer1Matrix().getRow(solver.getPlayer1Matrix().getRowGroupIndices()[pl1State] + player1Policy[pl1State]);
+                    auto const& pl1Row = solver.getPlayer1Matrix().getRow(solver.getPlayer1Matrix().getRowGroupIndices()[pl1State] + player1Scheduler.getChoice(pl1State));
                     STORM_LOG_ASSERT(pl1Row.getNumberOfEntries()==1, "");
                     uint_fast64_t pl2State = pl1Row.begin()->getColumn();
-                    selectedRows[pl1State] = solver.getPlayer2Matrix().getRowGroupIndices()[pl2State] + player2Policy[pl2State];
+                    selectedRows[pl1State] = solver.getPlayer2Matrix().getRowGroupIndices()[pl2State] + player2Scheduler.getChoice(pl2State);
                 }
                 //Get the matrix A, vector b, and the targetStates induced by this selection
                 inducedA = solver.getPlayer2Matrix().selectRowsFromRowIndexSequence(selectedRows, false);
@@ -132,7 +130,7 @@ namespace storm {
             template <typename ValueType>
             void getInducedEquationSystem(storm::solver::MinMaxLinearEquationSolver<ValueType> const& solver,
                                             std::vector<ValueType> const& b,
-                                            std::vector<storm::storage::sparse::state_type> const& policy,
+                                            storm::storage::TotalScheduler const& scheduler,
                                             storm::storage::BitVector const& targetChoices,
                                             storm::storage::SparseMatrix<ValueType>& inducedA,
                                             std::vector<ValueType>& inducedB,
@@ -140,13 +138,17 @@ namespace storm {
                                         ){
                 uint_fast64_t numberOfStates = solver.getMatrix().getRowGroupCount();
                 
-                //Get the matrix A, vector b, and the targetStates induced by the policy
-                inducedA = solver.getMatrix().selectRowsFromRowGroups(policy, false);
+                //Get the matrix A, vector b, and the targetStates induced by the Scheduler
+                std::vector<storm::storage::sparse::state_type> selectedRows(numberOfStates);
+                for(uint_fast64_t stateIndex = 0; stateIndex < numberOfStates; ++stateIndex){
+                    selectedRows[stateIndex] = (scheduler.getChoice(stateIndex));
+                }
+                inducedA = solver.getMatrix().selectRowsFromRowGroups(selectedRows, false);
                 inducedB = std::vector<ValueType>(numberOfStates);
-                storm::utility::vector::selectVectorValues<ValueType>(inducedB, policy, solver.getMatrix().getRowGroupIndices(), b);
+                storm::utility::vector::selectVectorValues<ValueType>(inducedB, selectedRows, solver.getMatrix().getRowGroupIndices(), b);
                 storm::storage::BitVector inducedTarget(numberOfStates, false);
                 for (uint_fast64_t state = 0; state < numberOfStates; ++state){
-                    if(targetChoices.get(solver.getMatrix().getRowGroupIndices()[state] + policy[state])){
+                    if(targetChoices.get(solver.getMatrix().getRowGroupIndices()[state] + scheduler.getChoice(state))){
                         inducedTarget.set(state);
                     }
                 }
@@ -198,11 +200,11 @@ namespace storm {
             
             
             template <typename ValueType>
-            bool checkAndFixPolicy(storm::solver::GameSolver<ValueType> const& solver,
+            bool checkAndFixScheduler(storm::solver::GameSolver<ValueType> const& solver,
                                                     std::vector<ValueType> const& x,
                                                     std::vector<ValueType> const& b,
-                                                    std::vector<storm::storage::sparse::state_type>& player1Policy,
-                                                    std::vector<storm::storage::sparse::state_type>& player2Policy,
+                                                    storm::storage::TotalScheduler& player1Scheduler,
+                                                    storm::storage::TotalScheduler& player2Scheduler,
                                                     storm::storage::BitVector const& targetChoices,
                                                     storm::storage::SparseMatrix<ValueType>& inducedA,
                                                     std::vector<ValueType>& inducedB,
@@ -210,38 +212,38 @@ namespace storm {
                                         ){
                 if(probGreater0States.getNumberOfSetBits() == probGreater0States.size()) return true;
                 
-                bool policyChanged = true;
-                while(policyChanged){
+                bool schedulerChanged = true;
+                while(schedulerChanged){
                     /*
                      * Lets try to fix the issue by doing other choices that are equally good.
-                     * We change the policy in a state if the following conditions apply:
+                     * We change the Scheduler in a state if the following conditions apply:
                      * 1. The current choice does not lead to target
                      * 2. There is another choice that leads to target
-                     * 3. The value of that choice is equal to the value of the choice given by the policy
+                     * 3. The value of that choice is equal to the value of the choice given by the Scheduler
                      * Note that the values of the result will not change this way.
-                     * We do this until the policy does not change anymore
+                     * We do this until the Scheduler does not change anymore
                      */
-                    policyChanged = false;
+                    schedulerChanged = false;
                     //Player 1:
-                    for(uint_fast64_t pl1State=0; pl1State < player1Policy.size(); ++pl1State){
+                    for(uint_fast64_t pl1State=0; pl1State < solver.getPlayer1Matrix().getRowGroupCount(); ++pl1State){
                         uint_fast64_t pl1RowGroupIndex = solver.getPlayer1Matrix().getRowGroupIndices()[pl1State];
                         //Check 1.: The current choice does not lead to target
                         if(!probGreater0States.get(pl1State)){
                             //1. Is satisfied. Check 2.: There is another choice that leads to target
                             ValueType choiceValue = x[pl1State];
                             for(uint_fast64_t otherChoice = 0; otherChoice < solver.getPlayer1Matrix().getRowGroupSize(pl1State); ++otherChoice){
-                                if(otherChoice == player1Policy[pl1State]) continue;
-                                //the otherChoice selects a player2 state in which player2 makes his choice (according to the player2Policy).
+                                if(otherChoice == player1Scheduler.getChoice(pl1State)) continue;
+                                //the otherChoice selects a player2 state in which player2 makes his choice (according to the player2Scheduler).
                                 uint_fast64_t pl2State = solver.getPlayer1Matrix().getRow(pl1RowGroupIndex + otherChoice).begin()->getColumn();
-                                uint_fast64_t pl2Row = solver.getPlayer2Matrix().getRowGroupIndices()[pl2State] + player2Policy[pl2State];
+                                uint_fast64_t pl2Row = solver.getPlayer2Matrix().getRowGroupIndices()[pl2State] + player2Scheduler.getChoice(pl2State);
                                 if(rowLeadsToTarget(pl2Row, solver.getPlayer2Matrix(), targetChoices, probGreater0States)){
-                                    //2. is satisfied. Check 3. The value of that choice is equal to the value of the choice given by the policy
+                                    //2. is satisfied. Check 3. The value of that choice is equal to the value of the choice given by the Scheduler
                                     ValueType otherValue = solver.getPlayer2Matrix().multiplyRowWithVector(pl2Row, x) + b[pl2Row];
-                                    if(storm::utility::vector::equalModuloPrecision(choiceValue, otherValue, solver.getPrecision(), !solver.getRelative())){
+                                    if(storm::utility::vector::equalModuloPrecision(choiceValue, otherValue, solver.getPrecision(), solver.getRelative())){
                                         //3. is satisfied.
-                                        player1Policy[pl1State] = otherChoice;
+                                        player1Scheduler.setChoice(pl1State, otherChoice);
                                         probGreater0States.set(pl1State);
-                                        policyChanged = true;
+                                        schedulerChanged = true;
                                         break; //no need to check other choices
                                     }
                                 }
@@ -251,21 +253,21 @@ namespace storm {
                     //update probGreater0States
                     probGreater0States = storm::utility::graph::performProbGreater0(inducedA.transpose(), storm::storage::BitVector(probGreater0States.size(), true), probGreater0States);
                     //Player 2:
-                    for(uint_fast64_t pl2State=0; pl2State < player2Policy.size(); ++pl2State){
+                    for(uint_fast64_t pl2State=0; pl2State < solver.getPlayer2Matrix().getRowGroupCount(); ++pl2State){
                         uint_fast64_t pl2RowGroupIndex = solver.getPlayer2Matrix().getRowGroupIndices()[pl2State];
                         //Check 1.: The current choice does not lead to target
-                        if(!rowLeadsToTarget(pl2RowGroupIndex + player2Policy[pl2State], solver.getPlayer2Matrix(), targetChoices, probGreater0States)){
+                        if(!rowLeadsToTarget(pl2RowGroupIndex + player2Scheduler.getChoice(pl2State), solver.getPlayer2Matrix(), targetChoices, probGreater0States)){
                             //1. Is satisfied. Check 2. There is another choice that leads to target
-                            ValueType choiceValue = solver.getPlayer2Matrix().multiplyRowWithVector(pl2RowGroupIndex + player2Policy[pl2State], x) + b[pl2RowGroupIndex + player2Policy[pl2State]];
+                            ValueType choiceValue = solver.getPlayer2Matrix().multiplyRowWithVector(pl2RowGroupIndex + player2Scheduler.getChoice(pl2State), x) + b[pl2RowGroupIndex + player2Scheduler.getChoice(pl2State)];
                             for(uint_fast64_t otherChoice = 0; otherChoice < solver.getPlayer2Matrix().getRowGroupSize(pl2State); ++otherChoice){
-                                if(otherChoice == player2Policy[pl2State]) continue;
+                                if(otherChoice == player2Scheduler.getChoice(pl2State)) continue;
                                 if(rowLeadsToTarget(pl2RowGroupIndex + otherChoice, solver.getPlayer2Matrix(), targetChoices, probGreater0States)){
-                                    //2. is satisfied. Check 3. The value of that choice is equal to the value of the choice given by the policy
+                                    //2. is satisfied. Check 3. The value of that choice is equal to the value of the choice given by the Scheduler
                                     ValueType otherValue = solver.getPlayer2Matrix().multiplyRowWithVector(pl2RowGroupIndex + otherChoice, x) + b[pl2RowGroupIndex + otherChoice];
                                     if(storm::utility::vector::equalModuloPrecision(choiceValue, otherValue, solver.getPrecision(), solver.getRelative())){
                                         //3. is satisfied.
-                                        player2Policy[pl2State] = otherChoice;
-                                        policyChanged = true;
+                                        player2Scheduler.setChoice(pl2State, otherChoice);
+                                        schedulerChanged = true;
                                         break; //no need to check other choices
                                     }
                                 }
@@ -274,20 +276,20 @@ namespace storm {
                     }
                     
                     //update probGreater0States
-                    getInducedEquationSystem(solver, b, player1Policy, player2Policy, targetChoices, inducedA, inducedB, probGreater0States);
+                    getInducedEquationSystem(solver, b, player1Scheduler, player2Scheduler, targetChoices, inducedA, inducedB, probGreater0States);
                     if(probGreater0States.getNumberOfSetBits() == probGreater0States.size()){
                         return true;
                     }
                 }
-                //Reaching this point means that the policy does not change anymore and we could not fix it.
+                //Reaching this point means that the Scheduler does not change anymore and we could not fix it.
                 return false;
             }
             
             template <typename ValueType>
-            bool checkAndFixPolicy(storm::solver::MinMaxLinearEquationSolver<ValueType> const& solver,
+            bool checkAndFixScheduler(storm::solver::MinMaxLinearEquationSolver<ValueType> const& solver,
                                     std::vector<ValueType> const& x,
                                     std::vector<ValueType> const& b,
-                                    std::vector<storm::storage::sparse::state_type>& policy,
+                                    storm::storage::TotalScheduler& scheduler,
                                     storm::storage::BitVector const& targetChoices,
                                     storm::storage::SparseMatrix<ValueType>& inducedA,
                                     std::vector<ValueType>& inducedB,
@@ -295,34 +297,34 @@ namespace storm {
                                 ){
                 if(probGreater0States.getNumberOfSetBits() == probGreater0States.size()) return true;
                 
-                bool policyChanged = true;
-                while(policyChanged){
+                bool schedulerChanged = true;
+                while(schedulerChanged){
                     /*
                      * Lets try to fix the issue by doing other choices that are equally good.
-                     * We change the policy in a state if the following conditions apply:
+                     * We change the Scheduler in a state if the following conditions apply:
                      * 1. The current choice does not lead to target
                      * 2. There is another choice that leads to target
-                     * 3. The value of that choice is equal to the value of the choice given by the policy
+                     * 3. The value of that choice is equal to the value of the choice given by the Scheduler
                      * Note that the values of the result will not change this way.
-                     * We do this unil the policy does not change anymore
+                     * We do this unil the Scheduler does not change anymore
                      */
-                    policyChanged = false;
-                    for(uint_fast64_t state=0; state < policy.size(); ++state){
+                    schedulerChanged = false;
+                    for(uint_fast64_t state=0; state < solver.getMatrix().getRowGroupCount(); ++state){
                         uint_fast64_t rowGroupIndex = solver.getMatrix().getRowGroupIndices()[state];
                         //Check 1.: The current choice does not lead to target
                         if(!probGreater0States.get(state)){
                             //1. Is satisfied. Check 2.: There is another choice that leads to target
                             ValueType choiceValue = x[state];
                             for(uint_fast64_t otherChoice = 0; otherChoice < solver.getMatrix().getRowGroupSize(state); ++otherChoice){
-                                if(otherChoice == policy[state]) continue;
+                                if(otherChoice == scheduler.getChoice(state)) continue;
                                 if(rowLeadsToTarget(rowGroupIndex + otherChoice, solver.getMatrix(), targetChoices, probGreater0States)){
-                                    //2. is satisfied. Check 3. The value of that choice is equal to the value of the choice given by the policy
+                                    //2. is satisfied. Check 3. The value of that choice is equal to the value of the choice given by the Scheduler
                                     ValueType otherValue = solver.getMatrix().multiplyRowWithVector(rowGroupIndex + otherChoice, x) + b[rowGroupIndex + otherChoice];
                                     if(storm::utility::vector::equalModuloPrecision(choiceValue, otherValue, solver.getPrecision(), !solver.getRelative())){
                                         //3. is satisfied.
-                                        policy[state] = otherChoice;
+                                        scheduler.setChoice(state, otherChoice);
                                         probGreater0States.set(state);
-                                        policyChanged = true;
+                                        schedulerChanged = true;
                                         break; //no need to check other choices
                                     }
                                 }
@@ -331,12 +333,12 @@ namespace storm {
                     }
                     
                     //update probGreater0States and equation system
-                    getInducedEquationSystem(solver, b, policy, targetChoices, inducedA, inducedB, probGreater0States);
+                    getInducedEquationSystem(solver, b, scheduler, targetChoices, inducedA, inducedB, probGreater0States);
                     if(probGreater0States.getNumberOfSetBits() == probGreater0States.size()){
                         return true;
                     }
                 }
-                //Reaching this point means that the policy does not change anymore and we could not fix it.
+                //Reaching this point means that the Scheduler does not change anymore and we could not fix it.
                 return false;
             }
             
@@ -346,8 +348,8 @@ namespace storm {
                                 std::vector<double> const& b,
                                 OptimizationDirection player1Goal,
                                 OptimizationDirection player2Goal,
-                                std::vector<storm::storage::sparse::state_type>& player1Policy, 
-                                std::vector<storm::storage::sparse::state_type>& player2Policy,
+                                storm::storage::TotalScheduler& player1Scheduler, 
+                                storm::storage::TotalScheduler& player2Scheduler,
                                 storm::storage::BitVector const& targetChoices,
                                 double const& prob0Value
                             );
@@ -356,15 +358,15 @@ namespace storm {
                                 std::vector<double>& x,
                                 std::vector<double> const& b,
                                 OptimizationDirection goal,
-                                std::vector<storm::storage::sparse::state_type>& policy,
+                                storm::storage::TotalScheduler& scheduler,
                                 storm::storage::BitVector const& targetChoices,
                                 double const& prob0Value
                             );
             
             template void getInducedEquationSystem<double>(storm::solver::GameSolver<double> const& solver,
                                                     std::vector<double> const& b,
-                                                    std::vector<storm::storage::sparse::state_type> const& player1Policy,
-                                                    std::vector<storm::storage::sparse::state_type> const& player2Policy,
+                                                    storm::storage::TotalScheduler const& player1Scheduler,
+                                                    storm::storage::TotalScheduler const& player2Scheduler,
                                                     storm::storage::BitVector const& targetChoices,
                                                     storm::storage::SparseMatrix<double>& inducedA,
                                                     std::vector<double>& inducedB,
@@ -373,7 +375,7 @@ namespace storm {
             
             template void getInducedEquationSystem<double>(storm::solver::MinMaxLinearEquationSolver<double> const& solver,
                                             std::vector<double> const& b,
-                                            std::vector<storm::storage::sparse::state_type> const& policy,
+                                            storm::storage::TotalScheduler const& scheduler,
                                             storm::storage::BitVector const& targetChoices,
                                             storm::storage::SparseMatrix<double>& inducedA,
                                             std::vector<double>& inducedB,
@@ -389,21 +391,21 @@ namespace storm {
                                            bool relative
                             );
             
-            template bool checkAndFixPolicy<double>(storm::solver::GameSolver<double> const& solver,
+            template bool checkAndFixScheduler<double>(storm::solver::GameSolver<double> const& solver,
                                             std::vector<double> const& x,
                                             std::vector<double> const& b,
-                                            std::vector<storm::storage::sparse::state_type>& player1Policy,
-                                            std::vector<storm::storage::sparse::state_type>& player2Policy,
+                                            storm::storage::TotalScheduler& player1Scheduler,
+                                            storm::storage::TotalScheduler& player2Scheduler,
                                             storm::storage::BitVector const& targetChoices,
                                             storm::storage::SparseMatrix<double>& inducedA,
                                             std::vector<double>& inducedB,
                                             storm::storage::BitVector& probGreater0States
                                         );
             
-            template bool checkAndFixPolicy<double>(storm::solver::MinMaxLinearEquationSolver<double> const& solver,
+            template bool checkAndFixScheduler<double>(storm::solver::MinMaxLinearEquationSolver<double> const& solver,
                                     std::vector<double> const& x,
                                     std::vector<double> const& b,
-                                    std::vector<storm::storage::sparse::state_type>& policy,
+                                    storm::storage::TotalScheduler& scheduler,
                                     storm::storage::BitVector const& targetChoices,
                                     storm::storage::SparseMatrix<double>& inducedA,
                                     std::vector<double>& inducedB,

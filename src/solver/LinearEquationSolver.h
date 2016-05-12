@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "src/solver/AbstractEquationSolver.h"
+
 #include "src/storage/SparseMatrix.h"
 
 namespace storm {
@@ -12,10 +14,9 @@ namespace storm {
          * An interface that represents an abstract linear equation solver. In addition to solving a system of linear
          * equations, the functionality to repeatedly multiply a matrix with a given vector is provided.
          */
-        template<class Type>
-        class LinearEquationSolver {
+        template<class ValueType>
+        class LinearEquationSolver : public AbstractEquationSolver<ValueType> {
         public:
-            
             virtual ~LinearEquationSolver() {
                 // Intentionally left empty.
             }
@@ -32,7 +33,7 @@ namespace storm {
              * 
              * @return true iff solving was successful (e.g. iterative methods converged)
              */
-            virtual bool solveEquationSystem(std::vector<Type>& x, std::vector<Type> const& b, std::vector<Type>* multiplyResult = nullptr) const = 0;
+            virtual bool solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
             
             /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After
@@ -46,13 +47,12 @@ namespace storm {
              * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
              * vector must be equal to the number of rows of A.
              */
-            virtual void performMatrixVectorMultiplication(std::vector<Type>& x, std::vector<Type> const* b = nullptr, uint_fast64_t n = 1, std::vector<Type>* multiplyResult = nullptr) const = 0;
-            
+            virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
+
             virtual void setPrecision(double precision) = 0;
             virtual void setIterations(uint_fast64_t maximalNumberOfIterations) = 0;
             
             virtual void setRelative(bool relative) = 0;
-            
         };
         
     } // namespace solver

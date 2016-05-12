@@ -3,9 +3,12 @@
 #include "src/settings/SettingsManager.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 
+#include "src/exceptions/InvalidSettingsException.h"
+
 namespace storm {
     namespace solver {
-        AbstractGameSolver::AbstractGameSolver() {
+        template <typename ValueType>
+        AbstractGameSolver<ValueType>::AbstractGameSolver() {
             // Get the settings object to customize solving.
             storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::nativeEquationSolverSettings();
 
@@ -15,31 +18,50 @@ namespace storm {
             relative = settings.getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative;
         }
 
-        AbstractGameSolver::AbstractGameSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
+        template <typename ValueType>
+        AbstractGameSolver<ValueType>::AbstractGameSolver(double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative) {
             // Intentionally left empty.
         }
         
-        void AbstractGameSolver::setPolicyTracking(bool setToTrue) {
-            this->trackPolicies = setToTrue;
+        template <typename ValueType>
+        void AbstractGameSolver<ValueType>::setTrackScheduler(bool trackScheduler){
+            this->trackScheduler = trackScheduler;
         }
         
-        std::vector<storm::storage::sparse::state_type> AbstractGameSolver::getPlayer1Policy() const {
-            assert(!this->player1Policy.empty());
-            return player1Policy;
+        template<typename ValueType>
+        bool AbstractGameSolver<ValueType>::hasScheduler() const {
+            return (static_cast<bool>(player1Scheduler) && static_cast<bool>(player2Scheduler));
         }
         
-        std::vector<storm::storage::sparse::state_type> AbstractGameSolver::getPlayer2Policy() const {
-            assert(!this->player2Policy.empty());
-            return player2Policy;
+        template<typename ValueType>
+        bool AbstractGameSolver<ValueType>::isTrackSchedulerSet() const {
+            return this->trackScheduler;
         }
         
-        double AbstractGameSolver::getPrecision() const {
+        template<typename ValueType>
+        storm::storage::TotalScheduler const& AbstractGameSolver<ValueType>::getPlayer1Scheduler() const {
+            STORM_LOG_THROW(player1Scheduler, storm::exceptions::InvalidSettingsException, "Cannot retrieve scheduler, because none was generated.");
+            return *player1Scheduler.get();
+        }
+        
+        template<typename ValueType>
+        storm::storage::TotalScheduler const& AbstractGameSolver<ValueType>::getPlayer2Scheduler() const {
+            STORM_LOG_THROW(player2Scheduler, storm::exceptions::InvalidSettingsException, "Cannot retrieve scheduler, because none was generated.");
+            return *player2Scheduler.get();
+        }
+
+        
+        template <typename ValueType>
+        double AbstractGameSolver<ValueType>::getPrecision() const {
             return precision;
         }
         
-        bool AbstractGameSolver::getRelative() const {
+        template <typename ValueType>
+        bool AbstractGameSolver<ValueType>::getRelative() const {
             return relative;
         }
+        
+        template class AbstractGameSolver<double>;
         
     }
 }

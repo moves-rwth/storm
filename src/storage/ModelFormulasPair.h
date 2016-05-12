@@ -1,6 +1,6 @@
 #pragma once
 #include "../models/ModelBase.h"
-
+#include <vector>
 
 namespace storm {
     namespace logic {
@@ -10,7 +10,7 @@ namespace storm {
     namespace storage {
         struct ModelFormulasPair {
             std::shared_ptr<storm::models::ModelBase> model;
-            std::vector<std::shared_ptr<storm::logic::Formula>> formulas;
+            std::vector<std::shared_ptr<const storm::logic::Formula>> formulas;
         };
     }
 }

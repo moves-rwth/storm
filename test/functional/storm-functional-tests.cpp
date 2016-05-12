@@ -2,21 +2,25 @@
 #include <list>
 #include <string>
 
+#include "storm-config.h"
+
 #include "gtest/gtest.h"
+#ifdef STORM_LOGGING_FRAMEWORK
 #include "log4cplus/logger.h"
 #include "log4cplus/loggingmacros.h"
 #include "log4cplus/consoleappender.h"
 #include "log4cplus/fileappender.h"
 
-#include "storm-config.h"
-#include "src/settings/SettingsManager.h"
-
 log4cplus::Logger logger;
+#endif
+
+#include "src/settings/SettingsManager.h"
 
 /*!
  * Initializes the logging framework.
  */
 void setUpLogging() {
+#ifdef STORM_LOGGING_FRAMEWORK
 	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
 	logger.setLogLevel(log4cplus::ERROR_LOG_LEVEL);
 	log4cplus::SharedAppenderPtr fileLogAppender(new log4cplus::FileAppender("storm-functional-tests.log"));
@@ -24,7 +28,7 @@ void setUpLogging() {
 	fileLogAppender->setThreshold(log4cplus::FATAL_LOG_LEVEL);
 	fileLogAppender->setLayout(std::auto_ptr<log4cplus::Layout>(new log4cplus::PatternLayout("%-5p - %D{%H:%M} (%r ms) - %F:%L : %m%n")));
 	logger.addAppender(fileLogAppender);
-
+#endif
 	// Uncomment these lines to enable console logging output
 	// log4cplus::SharedAppenderPtr consoleLogAppender(new log4cplus::ConsoleAppender());
 	// consoleLogAppender->setName("mainConsoleAppender");
@@ -39,9 +43,10 @@ int main(int argc, char* argv[]) {
 	testing::InitGoogleTest(&argc, argv);
 
     int result = RUN_ALL_TESTS();
-    
+#ifdef STORM_LOGGING_FRAMEWORK
     logger.closeNestedAppenders();
-
+#endif
+    
 	std::list<std::string> untestedModules;
 #ifndef STORM_HAVE_GUROBI
 	untestedModules.push_back("Gurobi");

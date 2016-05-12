@@ -95,6 +95,13 @@ namespace storm {
                 std::vector<ValueType> const& getExitRates() const;
                 
                 /*!
+                 * Retrieves the vector representing the exit rates of the states.
+                 *
+                 * @return The exit rate vector of the model.
+                 */
+                std::vector<ValueType>& getExitRates();
+                
+                /*!
                  * Retrieves the exit rate of the given state.
                  *
                  * @param state The state for which retrieve the exit rate.
@@ -132,6 +139,11 @@ namespace storm {
                  * dividing each entry by the exit rate of the state.
                  */
                 void turnRatesToProbabilities();
+                
+                /*!
+                 * Checks whether the automaton is closed by actually looking at the transition information.
+                 */
+                bool checkIsClosed() const;
                 
                 // A bit vector representing the set of Markovian states.
                 storm::storage::BitVector markovianStates;

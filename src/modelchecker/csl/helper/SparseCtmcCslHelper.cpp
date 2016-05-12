@@ -262,10 +262,6 @@ namespace storm {
                 if (startingIteration == 0) {
                     result = values;
                     storm::utility::vector::scaleVectorInPlace(result, std::get<3>(foxGlynnResult)[0]);
-                    std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&foxGlynnResult] (ValueType const& a, ValueType const& b) { return a + std::get<3>(foxGlynnResult)[0] * b; };
-                    if (addVector != nullptr) {
-                        storm::utility::vector::applyPointwise(result, *addVector, result, addAndScale);
-                    }
                     ++startingIteration;
                 } else {
                     if (computeCumulativeReward) {
@@ -358,7 +354,7 @@ namespace storm {
                 STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                 
                 storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, storm::storage::BitVector(numberOfStates, true), uniformizationRate, exitRateVector);
-                
+
                 // Compute the total state reward vector.
                 std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, exitRateVector);
                 

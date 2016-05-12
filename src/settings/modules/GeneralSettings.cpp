@@ -32,6 +32,8 @@ namespace storm {
             const std::string GeneralSettings::explicitOptionShortName = "exp";
             const std::string GeneralSettings::symbolicOptionName = "symbolic";
             const std::string GeneralSettings::symbolicOptionShortName = "s";
+            const std::string GeneralSettings::explorationOrderOptionName = "explorder";
+            const std::string GeneralSettings::explorationOrderOptionShortName = "eo";
             const std::string GeneralSettings::propertyOptionName = "prop";
             const std::string GeneralSettings::propertyOptionShortName = "prop";
             const std::string GeneralSettings::transitionRewardsOptionName = "transrew";
@@ -84,6 +86,11 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("labeling filename", "The name of the file from which to read the state labeling.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, symbolicOptionName, false, "Parses the model given in a symbolic representation.").setShortName(symbolicOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the symbolic model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
+
+                std::vector<std::string> explorationOrders = {"dfs", "bfs"};
+                this->addOption(storm::settings::OptionBuilder(moduleName, explorationOrderOptionName, false, "Sets which exploration order to use.").setShortName(explorationOrderOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the exploration order to choose. Available are: dfs and bfs.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(explorationOrders)).setDefaultValueString("bfs").build()).build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the formulas to be checked on the model.").setShortName(propertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("formula or filename", "The formula or the file containing the formulas.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
@@ -97,9 +104,9 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
                 
-                std::vector<std::string> engines = {"sparse", "hybrid", "dd"};
+                std::vector<std::string> engines = {"sparse", "hybrid", "dd", "abs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, hybrid, dd}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use. Available are {sparse, hybrid, dd, ar}.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
@@ -186,6 +193,20 @@ namespace storm {
             
             std::string GeneralSettings::getSymbolicModelFilename() const {
                 return this->getOption(symbolicOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool GeneralSettings::isExplorationOrderSet() const {
+                return this->getOption(explorationOrderOptionName).getHasOptionBeenSet();
+            }
+            
+            storm::builder::ExplorationOrder GeneralSettings::getExplorationOrder() const {
+                std::string explorationOrderAsString = this->getOption(explorationOrderOptionName).getArgumentByName("name").getValueAsString();
+                if (explorationOrderAsString == "dfs") {
+                    return storm::builder::ExplorationOrder::Dfs;
+                } else if (explorationOrderAsString == "bfs") {
+                    return storm::builder::ExplorationOrder::Bfs;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown exploration order '" << explorationOrderAsString << "'.");
             }
             
             bool GeneralSettings::isPropertySet() const {
@@ -351,10 +372,11 @@ namespace storm {
                     engine = GeneralSettings::Engine::Hybrid;
                 } else if (engineStr == "dd") {
                     engine = GeneralSettings::Engine::Dd;
+                } else if (engineStr == "abs") {
+                    engine = GeneralSettings::Engine::AbstractionRefinement;
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown engine '" << engineStr << "'.");
                 }
-
             }
 
             bool GeneralSettings::check() const {

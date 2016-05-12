@@ -56,9 +56,9 @@ namespace storm {
         
         template<typename ValueType>
         bool GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
-            LOG4CPLUS_INFO(logger, "Using method '" << methodToString() << "' with preconditioner '" << preconditionerToString() << "' (max. " << maximalNumberOfIterations << " iterations).");
+            STORM_LOG_INFO("Using method '" << methodToString() << "' with preconditioner '" << preconditionerToString() << "' (max. " << maximalNumberOfIterations << " iterations).");
             if (method == SolutionMethod::Jacobi && preconditioner != Preconditioner::None) {
-                LOG4CPLUS_WARN(logger, "Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
+                STORM_LOG_WARN("Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
             }
             
             if (method == SolutionMethod::Bicgstab || method == SolutionMethod::Qmr || method == SolutionMethod::Gmres) {
@@ -93,10 +93,10 @@ namespace storm {
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iter.converged()) {
-                    LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iter.get_iteration() << " iterations.");
+                    STORM_LOG_INFO("Iterative solver converged after " << iter.get_iteration() << " iterations.");
                     return true;
                 } else {
-                    LOG4CPLUS_INFO(logger, "Iterative solver did not converge.");
+                    STORM_LOG_WARN("Iterative solver did not converge.");
                     return false;
                 }
             } else if (method == SolutionMethod::Jacobi) {
@@ -104,16 +104,15 @@ namespace storm {
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iterations < maximalNumberOfIterations) {
-                    LOG4CPLUS_INFO(logger, "Iterative solver converged after " << iterations << " iterations.");
+                    STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
                     return true;
                 } else {
-                    LOG4CPLUS_INFO(logger, "Iterative solver did not converge.");
+                    STORM_LOG_WARN("Iterative solver did not converge.");
                     return false;
                 }
-            } else {
-                STORM_LOG_ERROR("The selected method is not supported.");
-                return false;
             }
+            STORM_LOG_ERROR("Selected method is not available");
+            return false;
         }
         
         template<typename ValueType>
@@ -178,7 +177,7 @@ namespace storm {
             uint_fast64_t iterationCount = 0;
             bool converged = false;
             
-            while (!converged && iterationCount < maximalNumberOfIterations) {
+            while (!converged && iterationCount < maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 gmm::mult(*gmmLU, *currentX, tmpX);
                 gmm::add(b, gmm::scaled(tmpX, -storm::utility::one<ValueType>()), tmpX);

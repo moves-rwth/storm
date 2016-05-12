@@ -24,9 +24,9 @@ message("-- Generating build for Log4cplus version ${log4cplus_version_major}.${
 set (log4cplus_soversion 9)
 set (log4cplus_postfix "")
 
-option(LOG4CPLUS_BUILD_TESTING "Build the test suite." ON)
+option(LOG4CPLUS_BUILD_TESTING "Build the test suite." OFF)
 
-option(LOG4CPLUS_BUILD_LOGGINGSERVER "Build the logging server." ON)
+option(LOG4CPLUS_BUILD_LOGGINGSERVER "Build the logging server." OFF)
 
 option(LOG4CPLUS_DEFINE_INSTALL_TARGET "Whether the install target should be generated." OFF)
 
@@ -35,7 +35,7 @@ if(NOT LOG4CPLUS_SINGLE_THREADED)
   message (STATUS "Threads: ${CMAKE_THREAD_LIBS_INIT}")
 endif(NOT LOG4CPLUS_SINGLE_THREADED)
 
-set(BUILD_SHARED_LIBS TRUE CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
+set(BUILD_SHARED_LIBS FALSE CACHE BOOL "If TRUE, log4cplus is built as a shared library, otherwise as a static library")
 
 if (WIN32)
   set (UNICODE_DEFAULT ON)

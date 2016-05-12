@@ -17,6 +17,11 @@ namespace storm {
         class BitVector;
     }
     
+    namespace utility {
+        template<typename ParametricModelType, typename ConstantModelType>
+        class ModelInstantiator;
+    }
+    
     namespace models {
         namespace sparse {
             
@@ -31,6 +36,9 @@ namespace storm {
              */
             template<class CValueType, class CRewardModelType = StandardRewardModel<CValueType>>
             class Model : public storm::models::ModelBase {
+                template<typename ParametricModelType, typename ConstantModelType>
+                friend class storm::utility::ModelInstantiator;
+                
             public:
                 typedef CValueType ValueType;
                 typedef CRewardModelType RewardModelType;
@@ -140,6 +148,21 @@ namespace storm {
                  */
                 storm::storage::SparseMatrix<ValueType>& getTransitionMatrix();
 
+                
+                /*!
+                 * Retrieves the reward models.
+                 *
+                 * @return A mapping from reward model names to the reward models.
+                 */
+                std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
+                
+                /*!
+                 * Retrieves the reward models.
+                 *
+                 * @return A mapping from reward model names to the reward models.
+                 */
+                std::unordered_map<std::string, RewardModelType>& getRewardModels();
+                
                 /*!
                  * Retrieves whether the model has a reward model with the given name.
                  *
@@ -285,6 +308,7 @@ namespace storm {
                 
                 virtual bool isSparseModel() const override;
                 
+                virtual bool isParametric() const override;
             protected:
 
                 RewardModelType & rewardModel(std::string const& rewardModelName);
@@ -324,20 +348,6 @@ namespace storm {
                  */
                 void printRewardModelsInformationToStream(std::ostream& out) const;
                 
-                /*!
-                 * Retrieves the reward models.
-                 *
-                 * @return A mapping from reward model names to the reward models.
-                 */
-                std::unordered_map<std::string, RewardModelType> const& getRewardModels() const;
-                
-                /*!
-                 * Retrieves the reward models.
-                 *
-                 * @return A mapping from reward model names to the reward models.
-                 */
-                std::unordered_map<std::string, RewardModelType>& getRewardModels();
-                
             private:
                 //  A matrix representing transition relation.
                 storm::storage::SparseMatrix<ValueType> transitionMatrix;
@@ -352,6 +362,7 @@ namespace storm {
                 boost::optional<std::vector<LabelSet>> choiceLabeling;
             };
             
+            std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
         } // namespace sparse
     } // namespace models
 } // namespace storm

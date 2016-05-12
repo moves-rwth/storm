@@ -88,6 +88,8 @@ namespace storm {
                  */
                 void resetModes();
                     
+                bool doRefinement() const;
+                double getRefinementThreshold() const;
                 
                 bool check() const override;
 
@@ -99,6 +101,7 @@ namespace storm {
                 const static std::string approxmodeOptionName;
                 const static std::string samplemodeOptionName;
                 const static std::string smtmodeOptionName;
+                const static std::string refinementOptionName;
                 
                 bool modesModified;
                 ApproxMode approxMode;

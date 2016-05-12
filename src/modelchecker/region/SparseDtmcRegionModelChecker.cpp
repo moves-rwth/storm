@@ -28,7 +28,7 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/UnexpectedException.h"
 #include "src/exceptions/NotSupportedException.h"
-
+#include "src/logic/FragmentSpecification.h"
 
 namespace storm {
     namespace modelchecker {
@@ -36,7 +36,7 @@ namespace storm {
 
             template<typename ParametricSparseModelType, typename ConstantType>
             SparseDtmcRegionModelChecker<ParametricSparseModelType, ConstantType>::SparseDtmcRegionModelChecker(std::shared_ptr<ParametricSparseModelType> model) : 
-                    AbstractSparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
+                    SparseRegionModelChecker<ParametricSparseModelType, ConstantType>(model){
                 //intentionally left empty
             }
 
@@ -56,12 +56,12 @@ namespace storm {
                     return rewardOperatorFormula.hasBound() && this->canHandle(rewardOperatorFormula.getSubformula());
                 } else if (formula.isEventuallyFormula()) {
                     storm::logic::EventuallyFormula const& eventuallyFormula = formula.asEventuallyFormula();
-                    if (eventuallyFormula.getSubformula().isPropositionalFormula()) {
+                    if (eventuallyFormula.getSubformula().isInFragment(storm::logic::propositional())) {
                         return true;
                     }
                 } else if (formula.isReachabilityRewardFormula()) {
-                    storm::logic::ReachabilityRewardFormula reachabilityRewardFormula = formula.asReachabilityRewardFormula();
-                    if (reachabilityRewardFormula.getSubformula().isPropositionalFormula()) {
+                    storm::logic::EventuallyFormula reachabilityRewardFormula = formula.asReachabilityRewardFormula();
+                    if (reachabilityRewardFormula.getSubformula().isInFragment(storm::logic::propositional())) {
                         return true;
                     }
                 }
@@ -229,11 +229,11 @@ namespace storm {
                 STORM_LOG_DEBUG("Building the resulting simplified formula.");
                 std::shared_ptr<storm::logic::AtomicLabelFormula> targetFormulaPtr(new storm::logic::AtomicLabelFormula("target"));
                 if(this->isComputeRewards()){
-                    std::shared_ptr<storm::logic::ReachabilityRewardFormula> reachRewFormula(new storm::logic::ReachabilityRewardFormula(targetFormulaPtr));
-                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::RewardOperatorFormula(boost::optional<std::string>(), this->getSpecifiedFormula()->getComparisonType(), this->getSpecifiedFormulaBound(), reachRewFormula));
+                    std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr, storm::logic::FormulaContext::Reward));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::RewardOperatorFormula(eventuallyFormula, boost::none, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
                 } else {
                     std::shared_ptr<storm::logic::EventuallyFormula> eventuallyFormula(new storm::logic::EventuallyFormula(targetFormulaPtr));
-                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(this->getSpecifiedFormula()->getComparisonType(), this->getSpecifiedFormulaBound(), eventuallyFormula));
+                    simpleFormula = std::shared_ptr<storm::logic::OperatorFormula>(new storm::logic::ProbabilityOperatorFormula(eventuallyFormula, storm::logic::OperatorInformation(boost::none, this->getSpecifiedFormula()->getBound())));
                 }
                 //Check if the reachability function needs to be computed
                 if((storm::settings::regionSettings().getSmtMode()==storm::settings::modules::RegionSettings::SmtMode::FUNCTION) || 
@@ -633,7 +633,7 @@ namespace storm {
 
 
 #ifdef STORM_HAVE_CARL
-            template class SparseDtmcRegionModelChecker<storm::models::sparse::Model<storm::RationalFunction, storm::models::sparse::StandardRewardModel<storm::RationalFunction>>, double>;
+            template class SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
 #endif
         } // namespace region 
     } // namespace modelchecker
