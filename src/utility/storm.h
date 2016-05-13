@@ -142,7 +142,7 @@ namespace storm {
     
     template<typename ModelType>
     std::shared_ptr<ModelType> performDeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType type) {
-        std::cout << "Performing bisimulation minimization... ";
+        STORM_LOG_INFO("Performing bisimulation minimization... ");
         typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options options;
         if (!formulas.empty()) {
             options = typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
@@ -152,13 +152,13 @@ namespace storm {
         storm::storage::DeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
         model = bisimulationDecomposition.getQuotient();
-        std::cout << "done." << std::endl << std::endl;
+        STORM_LOG_INFO("Bisimulation done. ");
         return model;
     }
     
     template<typename ModelType>
     std::shared_ptr<ModelType> performNondeterministicSparseBisimulationMinimization(std::shared_ptr<ModelType> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, storm::storage::BisimulationType type) {
-        std::cout << "Performing bisimulation minimization... ";
+        STORM_LOG_INFO("Performing bisimulation minimization... ");
         typename storm::storage::DeterministicModelBisimulationDecomposition<ModelType>::Options options;
         if (!formulas.empty()) {
             options = typename storm::storage::NondeterministicModelBisimulationDecomposition<ModelType>::Options(*model, formulas);
@@ -169,7 +169,7 @@ namespace storm {
         storm::storage::NondeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
         model = bisimulationDecomposition.getQuotient();
-        std::cout << "done." << std::endl << std::endl;
+        STORM_LOG_INFO("Bisimulation done.");
         return model;
     }
     
