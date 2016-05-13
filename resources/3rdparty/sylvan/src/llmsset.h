@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-#include "sylvan_config.h"
+#include <sylvan_config.h>
 #include <stdint.h>
 #include <unistd.h>
 
-#include "lace.h"
-
-#include <assert.h>
+#include <lace.h>
 
 #ifndef LLMSSET_H
 #define LLMSSET_H
@@ -77,7 +75,6 @@ typedef struct llmsset
 /**
  * Retrieve a pointer to the data associated with the 42-bit value.
  */
-    
 static inline void*
 llmsset_index_to_ptr(const llmsset_t dbs, size_t index)
 {

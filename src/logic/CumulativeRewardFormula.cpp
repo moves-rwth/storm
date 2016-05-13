@@ -44,10 +44,6 @@ namespace storm {
             }
         }
         
-        std::shared_ptr<Formula> CumulativeRewardFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<CumulativeRewardFormula>(*this);
-        }
-        
         std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out) const {
             if (this->hasDiscreteTimeBound()) {
                 out << "C<=" << this->getDiscreteTimeBound();

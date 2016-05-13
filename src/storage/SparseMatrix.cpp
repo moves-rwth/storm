@@ -65,6 +65,17 @@ namespace storm {
             return MatrixEntry(this->getColumn(), this->getValue() * factor);
         }
         
+        
+        template<typename IndexType, typename ValueType>
+        bool MatrixEntry<IndexType, ValueType>::operator==(MatrixEntry<IndexType, ValueType> const& other) const {
+            return this->entry.first == other.entry.first && this->entry.second == other.entry.second;
+        }
+        
+        template<typename IndexType, typename ValueType>
+        bool MatrixEntry<IndexType, ValueType>::operator!=(MatrixEntry<IndexType, ValueType> const& other) const {
+            return !(*this == other); 
+        }
+        
         template<typename IndexTypePrime, typename ValueTypePrime>
         std::ostream& operator<<(std::ostream& out, MatrixEntry<IndexTypePrime, ValueTypePrime> const& entry) {
             out << "(" << entry.getColumn() << ", " << entry.getValue() << ")";
@@ -106,14 +117,11 @@ namespace storm {
         template<typename ValueType>
         void SparseMatrixBuilder<ValueType>::addNextValue(index_type row, index_type column, ValueType const& value) {
             // Check that we did not move backwards wrt. the row.
-            if (row < lastRow) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrixBuilder::addNextValue: adding an element in row " << row << ", but an element in row " << lastRow << " has already been added.";
-            }
+            STORM_LOG_THROW(row >= lastRow, storm::exceptions::InvalidArgumentException, "Adding an element in row " << row << ", but an element in row " << lastRow << " has already been added.");
             
-            // Check that we did not move backwards wrt. to column.
-            if (row == lastRow && column < lastColumn) {
-                throw storm::exceptions::InvalidArgumentException() << "Illegal call to SparseMatrixBuilder::addNextValue: adding an element in column " << column << " in row " << row << ", but an element in column " << lastColumn << " has already been added in that row.";
-            }
+            // If the element is in the same row, but was not inserted in the correct order, we need to fix the row after
+            // the insertion.
+            bool fixCurrentRow = row == lastRow && column < lastColumn;
             
             // If we switched to another row, we have to adjust the missing entries in the row indices vector.
             if (row != lastRow) {
@@ -131,6 +139,27 @@ namespace storm {
             columnsAndValues.emplace_back(column, value);
             highestColumn = std::max(highestColumn, column);
             ++currentEntryCount;
+            
+            // If we need to fix the row, do so now.
+            if (fixCurrentRow) {
+                // First, we sort according to columns.
+                std::sort(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(), [] (storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
+                    return a.getColumn() < b.getColumn();
+                });
+                
+                // Then, we eliminate possible duplicate entries.
+                auto it = std::unique(columnsAndValues.begin() + rowIndications.back(), columnsAndValues.end(), [] (storm::storage::MatrixEntry<index_type, ValueType> const& a, storm::storage::MatrixEntry<index_type, ValueType> const& b) {
+                    return a.getColumn() == b.getColumn();
+                });
+                
+                // Finally, remove the superfluous elements.
+                std::size_t elementsToRemove = std::distance(it, columnsAndValues.end());
+                if (elementsToRemove > 0) {
+                    STORM_LOG_WARN("Unordered insertion into matrix builder caused duplicate entries.");
+                    currentEntryCount -= elementsToRemove;
+                    columnsAndValues.resize(columnsAndValues.size() - elementsToRemove);
+                }
+            }
             
             // In case we did not expect this value, we throw an exception.
             if (forceInitialDimensions) {
@@ -548,6 +577,38 @@ namespace storm {
                 columnValuePtr->setColumn(0);
                 columnValuePtr->setValue(storm::utility::zero<ValueType>());
             }
+        }
+        
+        template<typename ValueType>
+        bool SparseMatrix<ValueType>::compareRows(index_type i1, index_type i2) const {
+            const_iterator end1 = this->end(i1);
+            const_iterator end2 = this->end(i2);
+            const_iterator it1 = this->begin(i1);
+            const_iterator it2 = this->begin(i2);
+            for(;it1 != end1 && it2 != end2; ++it1, ++it2 ) {
+                if(*it1 != *it2) {
+                    return false;
+                }
+            }
+            if(it1 == end1 && it2 == end2) {
+                return true;
+            }
+            return false;
+        }
+        
+        template<typename ValueType>
+        BitVector SparseMatrix<ValueType>::duplicateRowsInRowgroups() const {
+            BitVector bv(this->getRowCount());
+            for(size_t rowgroup = 0; rowgroup < this->getRowGroupCount(); ++rowgroup) {
+                for(size_t row1 = this->getRowGroupIndices().at(rowgroup); row1 < this->getRowGroupIndices().at(rowgroup+1); ++row1) {
+                    for(size_t row2 = row1; row2 < this->getRowGroupIndices().at(rowgroup+1); ++row2) {
+                        if(compareRows(row1, row2)) {
+                            bv.set(row2);
+                        }
+                    }
+                }
+            }
+            return bv;
         }
         
         template<typename ValueType>
@@ -1395,6 +1456,9 @@ namespace storm {
         template std::ostream& operator<<(std::ostream& out, SparseMatrix<double> const& matrix);
         template std::vector<double> SparseMatrix<double>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<double> const& otherMatrix) const;
         template bool SparseMatrix<double>::isSubmatrixOf(SparseMatrix<double> const& matrix) const;
+
+        template class MatrixEntry<uint32_t, double>;
+        template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint32_t, double> const& entry);
         
         // float
         template class MatrixEntry<typename SparseMatrix<float>::index_type, float>;

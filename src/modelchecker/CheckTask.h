@@ -23,7 +23,7 @@ namespace storm {
         /*
          * This class is used to customize the checking process of a formula.
          */
-        template<typename FormulaType, typename ValueType = double>
+        template<typename FormulaType = storm::logic::Formula, typename ValueType = double>
         class CheckTask {
         public:
             template<typename OtherFormulaType, typename OtherValueType>

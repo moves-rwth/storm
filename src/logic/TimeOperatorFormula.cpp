@@ -18,11 +18,7 @@ namespace storm {
         boost::any TimeOperatorFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
-        
-        std::shared_ptr<Formula> TimeOperatorFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<TimeOperatorFormula>(this->getSubformula().substitute(substitution), this->operatorInformation, this->rewardMeasureType);
-        }
-        
+                
         RewardMeasureType TimeOperatorFormula::getMeasureType() const {
             return rewardMeasureType;
         }

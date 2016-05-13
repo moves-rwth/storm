@@ -148,7 +148,7 @@ sylvan_protect(BDD *a)
 void
 sylvan_unprotect(BDD *a)
 {
-    protect_down(&bdd_protected, (size_t)a);
+    if (bdd_protected.refs_table != NULL) protect_down(&bdd_protected, (size_t)a);
 }
 
 size_t
@@ -2446,7 +2446,7 @@ sylvan_fprintdot(FILE *out, BDD bdd)
     fprintf(out, "graph [dpi = 300];\n");
     fprintf(out, "center = true;\n");
     fprintf(out, "edge [dir = forward];\n");
-    fprintf(out, "0 [shape=box, label=\"0\", style=filled, shape=box, height=0.3, width=0.3];\n");
+    fprintf(out, "0 [label=\"0\", style=filled, shape=box, height=0.3, width=0.3];\n");
     fprintf(out, "root [style=invis];\n");
     fprintf(out, "root -> \"%" PRIx64 "\" [style=solid dir=both arrowtail=%s];\n", BDD_STRIPMARK(bdd), BDD_HASMARK(bdd) ? "dot" : "none");
 
@@ -2487,7 +2487,7 @@ sylvan_fprintdot_nc_rec(FILE *out, BDD bdd, avl_node_t **levels)
 
     BDD low = sylvan_low(bdd);
     BDD high = sylvan_high(bdd);
-    fprintf(out, "\"%" PRIx64 " [label=\"%d\"];\n", bdd, sylvan_var(bdd));
+    fprintf(out, "\"%" PRIx64 "\" [label=\"%d\"];\n", bdd, sylvan_var(bdd));
     fprintf(out, "\"%" PRIx64 "\" -> \"%" PRIx64 "\" [style=dashed];\n", bdd, low);
     fprintf(out, "\"%" PRIx64 "\" -> \"%" PRIx64 "\" [style=solid];\n", bdd, high);
     sylvan_fprintdot_nc_rec(out, low, levels);

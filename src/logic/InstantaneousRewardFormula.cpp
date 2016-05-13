@@ -43,11 +43,7 @@ namespace storm {
                 return boost::get<double>(timeBound);
             }
         }
-        
-        std::shared_ptr<Formula> InstantaneousRewardFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<InstantaneousRewardFormula>(*this);
-        }
-        
+                
         std::ostream& InstantaneousRewardFormula::writeToStream(std::ostream& out) const {
             if (this->hasDiscreteTimeBound()) {
                 out << "I=" << this->getDiscreteTimeBound();

@@ -78,6 +78,37 @@ namespace storm {
         void verifySymbolicModelWithAbstractionRefinementEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Abstraction Refinement is not yet implemented.");
         }
+        
+        template<typename ValueType>
+        void verifySymbolicModelWithExplorationEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
+            
+            for (auto const& formula : formulas) {
+                STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
+                std::cout << std::endl << "Model checking property: " << *formula << " ...";
+                storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+                storm::modelchecker::SparseExplorationModelChecker<ValueType> checker(program, storm::utility::prism::parseConstantDefinitionString(program, storm::settings::generalSettings().getConstantDefinitionString()));
+                std::unique_ptr<storm::modelchecker::CheckResult> result;
+                if (checker.canHandle(task)) {
+                    result = checker.check(task);
+                    if (result) {
+                        std::cout << " done." << std::endl;
+                        std::cout << "Result (initial states): ";
+                        std::cout << *result << std::endl;
+                    } else {
+                        std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
+                    }
+                } else {
+                    std::cout << " skipped, because the formula cannot be handled by the selected engine/method." << std::endl;
+                }
+            }
+        }
+        
+#ifdef STORM_HAVE_CARL
+        template<>
+        void verifySymbolicModelWithExplorationEngine<storm::RationalFunction>(storm::prism::Program const& program, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant) {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Exploration-based verification does currently not support parametric models.");
+        }
+#endif
 
         template<storm::dd::DdType DdType>
         void verifySymbolicModelWithHybridEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant = false) {
@@ -145,6 +176,8 @@ namespace storm {
 
             if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement) {
                 verifySymbolicModelWithAbstractionRefinementEngine<LibraryType>(program, formulas, onlyInitialStatesRelevant);
+            } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Exploration) {
+                verifySymbolicModelWithExplorationEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
             } else {
                 storm::storage::ModelFormulasPair modelFormulasPair = buildSymbolicModel<ValueType, LibraryType>(program, formulas);
                 STORM_LOG_THROW(modelFormulasPair.model != nullptr, storm::exceptions::InvalidStateException,
@@ -161,7 +194,7 @@ namespace storm {
                     if (modelFormulasPair.model->isSparseModel()) {
                         if (storm::settings::generalSettings().isCounterexampleSet()) {
                             // If we were requested to generate a counterexample, we now do so for each formula.
-                            for (auto const &formula : modelFormulasPair.formulas) {
+                            for (auto const& formula : modelFormulasPair.formulas) {
                                 generateCounterexample<ValueType>(program, modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), formula);
                             }
                         } else {

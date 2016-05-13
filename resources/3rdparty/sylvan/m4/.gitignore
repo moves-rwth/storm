@@ -1,4 +1,5 @@
 # Ignore everything in this directory
 *
-# Except this file
+# Except:
 !.gitignore
+!m4_ax_check_compile_flag.m4

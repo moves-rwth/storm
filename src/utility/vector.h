@@ -22,8 +22,6 @@ namespace storm {
     namespace utility {
         namespace vector {
 
-
-
             /*!
              * Finds the given element in the given vector.
              * If the vector does not contain the element, it is inserted (at the end of vector).

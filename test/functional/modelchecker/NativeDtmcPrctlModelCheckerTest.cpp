@@ -157,8 +157,8 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 
         std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
-        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
-		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+        std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
+            storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
 		EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 		EXPECT_NEAR(.5, quantitativeResult1[1], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -181,8 +181,8 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 
         std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
-        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
-		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+        std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
+        storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
 		EXPECT_NEAR(.5, quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 		EXPECT_NEAR(.5, quantitativeResult1[1], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -205,8 +205,8 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRASingleBscc) {
 
         std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
-        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
-		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+        std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
+        storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
 		EXPECT_NEAR(1. / 3., quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 		EXPECT_NEAR(1. / 3., quantitativeResult1[1], storm::settings::nativeEquationSolverSettings().getPrecision());
@@ -268,8 +268,8 @@ TEST(SparseDtmcPrctlModelCheckerTest, LRA) {
 
         std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
-        std::unique_ptr<storm::modelchecker::CheckResult> result = std::move(checker.check(*formula));
-		storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
+        std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
+        storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
 		EXPECT_NEAR(0.3 / 3., quantitativeResult1[0], storm::settings::nativeEquationSolverSettings().getPrecision());
 		EXPECT_NEAR(0.0, quantitativeResult1[3], storm::settings::nativeEquationSolverSettings().getPrecision());

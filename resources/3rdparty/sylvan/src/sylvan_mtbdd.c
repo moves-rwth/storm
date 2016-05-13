@@ -150,7 +150,7 @@ mtbdd_protect(MTBDD *a)
 void
 mtbdd_unprotect(MTBDD *a)
 {
-    protect_down(&mtbdd_protected, (size_t)a);
+    if (mtbdd_protected.refs_table != NULL) protect_down(&mtbdd_protected, (size_t)a);
 }
 
 size_t
@@ -2540,4 +2540,3 @@ mtbdd_map_removeall(MTBDDMAP map, MTBDD variables)
 }
 
 #include "sylvan_mtbdd_storm.c"
-

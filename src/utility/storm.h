@@ -60,6 +60,8 @@
 #include "src/modelchecker/region/SparseDtmcRegionModelChecker.h"
 #include "src/modelchecker/region/SparseMdpRegionModelChecker.h"
 #include "src/modelchecker/region/ParameterRegion.h"
+#include "src/modelchecker/exploration/SparseExplorationModelChecker.h"
+
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
@@ -258,7 +260,7 @@ namespace storm {
                 STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Dd engine requires a dd input model");
                 return verifySymbolicModelWithDdEngine(ddModel, formula, onlyInitialStatesRelevant);
             }
-            case storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement: {
+            default: {
                 STORM_LOG_ASSERT(false, "This position should not be reached, as at this point no model has been built.");
             }
         }

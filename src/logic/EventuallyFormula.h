@@ -14,6 +14,8 @@ namespace storm {
                 // Intentionally left empty.
             }
             
+            FormulaContext const& getContext() const;
+            
             virtual bool isEventuallyFormula() const override;
             virtual bool isReachabilityProbabilityFormula() const override;
             virtual bool isReachabilityRewardFormula() const override;
@@ -26,8 +28,6 @@ namespace storm {
 
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
-            virtual std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const override;
-
         private:
             FormulaContext context;
         };
