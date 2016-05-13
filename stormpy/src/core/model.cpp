@@ -6,6 +6,16 @@ std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const
     return storm::buildSymbolicModel<ValueType>(program, std::vector<std::shared_ptr<storm::logic::Formula const>>(1,formula)).model;
 }
 
+// Thin wrapper for getting initial states
+template<typename ValueType>
+std::vector<storm::storage::sparse::state_type> getInitialStates(storm::models::sparse::Model<ValueType> const& model) {
+    std::vector<storm::storage::sparse::state_type> initialStates;
+    for (auto entry : model.getInitialStates()) {
+        initialStates.push_back(entry);
+    }
+    return initialStates;
+}
+
 // Define python bindings
 void define_model(py::module& m) {
    
@@ -39,6 +49,11 @@ void define_model(py::module& m) {
 
     // Models
     py::class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>>(m, "SparseModel", "A probabilistic model where transitions are represented by doubles and saved in a sparse matrix", py::base<storm::models::ModelBase>())
+        .def("labels", [](storm::models::sparse::Model<double> const& model) {
+                return model.getStateLabeling().getLabels();
+            }, "Get labels")
+        .def("labels_state", &storm::models::sparse::Model<double>::getLabelsOfState, "Get labels")
+        .def("initial_states", &getInitialStates<double>, "Get initial states")
     ;    
     py::class_<storm::models::sparse::Dtmc<double>, std::shared_ptr<storm::models::sparse::Dtmc<double>>>(m, "SparseDtmc", "DTMC in sparse representation", py::base<storm::models::sparse::Model<double>>())
     ;
@@ -46,6 +61,11 @@ void define_model(py::module& m) {
     ;
     py::class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>(m, "SparseParametricModel", "A probabilistic model where transitions are represented by rational functions and saved in a sparse matrix", py::base<storm::models::ModelBase>())
         .def("collect_probability_parameters", &storm::models::sparse::getProbabilityParameters, "Collect parameters")
+        .def("labels", [](storm::models::sparse::Model<storm::RationalFunction> const& model) {
+                return model.getStateLabeling().getLabels();
+            }, "Get labels")
+        .def("labels_state", &storm::models::sparse::Model<storm::RationalFunction>::getLabelsOfState, "Get labels")
+        .def("initial_states", &getInitialStates<storm::RationalFunction>, "Get initial states")
     ;
     py::class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>>(m, "SparseParametricDtmc", "pDTMC in sparse representation", py::base<storm::models::sparse::Model<storm::RationalFunction>>())
     ;

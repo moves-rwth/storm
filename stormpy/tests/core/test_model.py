@@ -62,3 +62,37 @@ class TestModel:
         assert model.supports_parameters()
         assert not model.has_parameters()
         assert type(model) is stormpy.SparseParametricDtmc
+
+    def test_label(self):
+        program = stormpy.parse_program("../examples/dtmc/die/die.pm")
+        formulas = stormpy.parse_formulas_for_program("P=? [ F \"one\" ]", program)
+        model = stormpy.build_model(program, formulas[0])
+        labels = model.labels()
+        assert len(labels) == 2
+        assert "init" in labels
+        assert "one" in labels
+        assert "init" in model.labels_state(0)
+        assert "one" in model.labels_state(7)
+    
+    def test_initial_states(self):
+        program = stormpy.parse_program("../examples/dtmc/die/die.pm")
+        formulas = stormpy.parse_formulas_for_program("P=? [ F \"one\" ]", program)
+        model = stormpy.build_model(program, formulas[0])
+        initial_states =  model.initial_states()
+        assert len(initial_states) == 1
+        assert 0 in initial_states
+    
+    def test_label_parametric(self):
+        program = stormpy.parse_program("../examples/pdtmc/brp/brp_16_2.pm")
+        formulas = stormpy.parse_formulas_for_program("P=? [ F \"target\" ]", program)
+        model = stormpy.build_parametric_model(program, formulas[0])
+        labels = model.labels()
+        assert len(labels) == 2
+        assert "init" in labels
+        assert "target" in labels
+        assert "init" in model.labels_state(0)
+        assert "target" in model.labels_state(28)
+        assert "target" in model.labels_state(611)
+        initial_states = model.initial_states()
+        assert len(initial_states) == 1
+        assert 0 in initial_states
