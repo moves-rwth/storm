@@ -28,3 +28,9 @@ def perform_bisimulation(model, formula, bisimulation_type):
         return core._perform_parametric_bisimulation(model, formula, bisimulation_type)
     else:
         return core._perform_bisimulation(model, formula, bisimulation_type)
+
+def model_checking(model, formula):
+    if model.supports_parameters():
+        return core._parametric_model_checking(model, formula)
+    else:
+        return core._model_checking(model, formula)

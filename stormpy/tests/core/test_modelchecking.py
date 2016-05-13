@@ -3,6 +3,15 @@ import stormpy.logic
 
 class TestModelChecking:
     def test_state_elimination(self):
+        program = stormpy.parse_program("../examples/dtmc/die/die.pm")
+        formulas = stormpy.parse_formulas_for_program("P=? [ F \"one\" ]", program)
+        model = stormpy.build_model(program, formulas[0])
+        assert model.nr_states() == 13
+        assert model.nr_transitions() == 20
+        result = stormpy.model_checking(model, formulas[0])
+        assert result == 0.16666666666666663
+    
+    def test_parametric_state_elimination(self):
         import pycarl
         import pycarl.formula
         program = stormpy.parse_program("../examples/pdtmc/brp/brp_16_2.pm")
@@ -14,7 +23,7 @@ class TestModelChecking:
         assert model.nr_transitions() == 803
         assert model.model_type() == stormpy.ModelType.DTMC
         assert model.has_parameters()
-        result = stormpy.perform_state_elimination(model, formulas[0])
+        result = stormpy.model_checking(model, formulas[0])
         func = result.result_function
         one = pycarl.FactorizedPolynomial(pycarl.Rational(1))
         assert func.denominator == one

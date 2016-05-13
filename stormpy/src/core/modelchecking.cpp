@@ -22,8 +22,14 @@ class PmcResult {
         }
 };
 
-// Thin wrapper for parametric state elimination
-std::shared_ptr<PmcResult> performStateElimination(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+// Thin wrapper for model checking
+double modelChecking(std::shared_ptr<storm::models::sparse::Model<double>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+    std::unique_ptr<storm::modelchecker::CheckResult> checkResult = storm::verifySparseModel<double>(model, formula);
+    return checkResult->asExplicitQuantitativeCheckResult<double>()[*model->getInitialStates().begin()];
+}
+
+// Thin wrapper for parametric model checking
+std::shared_ptr<PmcResult> parametricModelChecking(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
     std::unique_ptr<storm::modelchecker::CheckResult> checkResult = storm::verifySparseModel<storm::RationalFunction>(model, formula);
     std::shared_ptr<PmcResult> result = std::make_shared<PmcResult>();
     result->resultFunction = checkResult->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*model->getInitialStates().begin()];
@@ -37,7 +43,8 @@ std::shared_ptr<PmcResult> performStateElimination(std::shared_ptr<storm::models
 void define_modelchecking(py::module& m) {
 
     // Model checking
-    m.def("perform_state_elimination", &performStateElimination, "Perform state elimination", py::arg("model"), py::arg("formula"));
+    m.def("_model_checking", &modelChecking, "Perform model checking", py::arg("model"), py::arg("formula"));
+    m.def("_parametric_model_checking", &parametricModelChecking, "Perform parametric model checking", py::arg("model"), py::arg("formula"));
 
     // PmcResult
     py::class_<PmcResult, std::shared_ptr<PmcResult>>(m, "PmcResult", "Holds the results after parametric model checking")
