@@ -13,7 +13,7 @@ class TestModelChecking:
         assert model.nr_states() == 613
         assert model.nr_transitions() == 803
         assert model.model_type() == stormpy.ModelType.DTMC
-        assert model.parametric()
+        assert model.has_parameters()
         result = stormpy.perform_state_elimination(model, formulas[0])
         func = result.result_function
         one = pycarl.FactorizedPolynomial(pycarl.Rational(1))

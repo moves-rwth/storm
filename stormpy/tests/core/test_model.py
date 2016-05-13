@@ -12,7 +12,7 @@ class TestModel:
         assert model.nr_states() == 13
         assert model.nr_transitions() == 20
         assert model.model_type() == stormpy.ModelType.DTMC
-        assert not model.parametric()
+        assert not model.supports_parameters()
         assert type(model) is stormpy.SparseDtmc
  
     def test_build_parametric_dtmc_from_prism_program(self):
@@ -27,7 +27,8 @@ class TestModel:
         assert model.nr_states() == 613
         assert model.nr_transitions() == 803
         assert model.model_type() == stormpy.ModelType.DTMC
-        assert model.parametric()
+        assert model.supports_parameters()
+        assert model.has_parameters()
         assert type(model) is stormpy.SparseParametricDtmc
     
     def test_build_dtmc(self):
@@ -37,7 +38,7 @@ class TestModel:
         assert model.nr_states() == 13
         assert model.nr_transitions() == 20
         assert model.model_type() == stormpy.ModelType.DTMC
-        assert not model.parametric()
+        assert not model.supports_parameters()
         assert type(model) is stormpy.SparseDtmc
     
     def test_build_parametric_dtmc(self):
@@ -47,5 +48,17 @@ class TestModel:
         assert model.nr_states() == 613
         assert model.nr_transitions() == 803
         assert model.model_type() == stormpy.ModelType.DTMC
-        assert model.parametric()
+        assert model.supports_parameters()
+        assert model.has_parameters()
+        assert type(model) is stormpy.SparseParametricDtmc
+    
+    def test_build_dtmc_supporting_parameters(self):
+        program = stormpy.parse_program("../examples/dtmc/die/die.pm")
+        formulas = stormpy.parse_formulas_for_program("P=? [ F \"one\" ]", program)
+        model = stormpy.build_parametric_model(program, formulas[0])
+        assert model.nr_states() == 13
+        assert model.nr_transitions() == 20
+        assert model.model_type() == stormpy.ModelType.DTMC
+        assert model.supports_parameters()
+        assert not model.has_parameters()
         assert type(model) is stormpy.SparseParametricDtmc
