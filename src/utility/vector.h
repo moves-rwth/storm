@@ -70,7 +70,7 @@ namespace storm {
              * Constructs a vector [min, min+1, ...., max]
              */
             inline std::vector<uint_fast64_t> buildVectorForRange(uint_fast64_t min, uint_fast64_t max) {
-                assert(min < max);
+                STORM_LOG_ASSERT(min < max, "Invalid range.");
                 uint_fast64_t diff = max - min;
                 std::vector<uint_fast64_t> v;
                 v.reserve(diff);
@@ -700,7 +700,7 @@ namespace storm {
                 for(auto index : filter) {
                     result.push_back(in[index]);
                 }
-                assert(result.size() == filter.getNumberOfSetBits());
+                STORM_LOG_ASSERT(result.size() == filter.getNumberOfSetBits(), "Result does not match.");
                 return result;
             }
             

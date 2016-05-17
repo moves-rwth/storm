@@ -36,7 +36,7 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false,
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForExplicit(property);
-    assert(formulas.size() == 1);
+    STORM_LOG_ASSERT(formulas.size() == 1, "Wrong number of formulas.");
     
     DFTAnalyser<ValueType> analyser;
     analyser.check(dft, formulas[0], symred, allowModularisation, enableDC);
@@ -95,7 +95,7 @@ int main(const int argc, const char** argv) {
         // Set min or max
         bool minimal = true;
         if (dftSettings.isComputeMaximalValue()) {
-            assert(!dftSettings.isComputeMinimalValue());
+            STORM_LOG_THROW(!dftSettings.isComputeMinimalValue(), storm::exceptions::InvalidSettingsException, "Cannot compute minimal and maximal values at the same time.");
             minimal = false;
         }
         
@@ -126,11 +126,11 @@ int main(const int argc, const char** argv) {
         }
         
         if (!targetFormula.empty()) {
-            assert(pctlFormula.empty());
+            STORM_LOG_ASSERT(pctlFormula.empty(), "Pctl formula not empty.");
             pctlFormula = operatorType + (minimal ? "min" : "max") + "=?[" + targetFormula + "]";
         }
         
-        assert(!pctlFormula.empty());
+        STORM_LOG_ASSERT(!pctlFormula.empty(), "Pctl formula empty.");
 
         bool parametric = false;
 #ifdef STORM_HAVE_CARL

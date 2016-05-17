@@ -20,7 +20,7 @@ namespace storm {
             
             inline uint64_t uint64_log2(uint64_t n)
             {
-                assert(n != 0);
+                STORM_LOG_ASSERT(n != 0, "N is 0.");
                 #define S(k) if (n >= (UINT64_C(1) << k)) { i += k; n >>= k; }
                 uint64_t i = 0; S(32); S(16); S(8); S(4); S(2); S(1); return i;
                 #undef S

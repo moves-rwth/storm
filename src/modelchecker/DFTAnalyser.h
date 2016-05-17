@@ -38,7 +38,7 @@ public:
     
 private:
     ValueType checkHelper(storm::storage::DFT<ValueType> const& dft , std::shared_ptr<const storm::logic::Formula> const& formula, bool symred = true, bool allowModularisation = true, bool enableDC = true)  {
-        std::cout << "check helper called" << std::endl;
+        STORM_LOG_TRACE("Check helper called");
         bool invResults = false;
         std::vector<storm::storage::DFT<ValueType>> dfts = {dft};
         std::vector<ValueType> res;
@@ -86,11 +86,11 @@ private:
 
             for (auto const& model : models) {
                 // Model checking
-                std::cout << "Model checking..." << std::endl;
+                STORM_LOG_INFO("Model checking...");
                 std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formula));
-                std::cout << "done." << std::endl;
-                assert(result);
+                STORM_LOG_INFO("Model checking done.");
+                STORM_LOG_ASSERT(result, "Result does not exist.");
                 result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                 modelCheckingTime += std::chrono::high_resolution_clock::now() -  modelCheckingStart;
                 res.push_back(result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second);
@@ -98,7 +98,7 @@ private:
         }
         if(nrM <= 1) {
             // No modularisation done.
-            assert(res.size()==1);
+            STORM_LOG_ASSERT(res.size()==1, "Result size not 1.");
             return res[0];
         }
         
@@ -107,7 +107,7 @@ private:
         int limK = invResults ? -1 : nrM+1;
         int chK = invResults ? -1 : 1;
         for(int cK = nrK; cK != limK; cK += chK ) {
-            assert(cK >= 0);
+            STORM_LOG_ASSERT(cK >= 0, "ck negative.");
             size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(cK));
             do {
                 STORM_LOG_TRACE("Permutation="<<permutation);
@@ -141,31 +141,31 @@ private:
             if(symred) {
                 auto colouring = dft.colourDFT();
                 symmetries = dft.findSymmetries(colouring);
-                std::cout << "Found " << symmetries.groups.size() << " symmetries." << std::endl;
+                STORM_LOG_INFO("Found " << symmetries.groups.size() << " symmetries.");
                 STORM_LOG_TRACE("Symmetries: " << std::endl << symmetries);
             }
             std::chrono::high_resolution_clock::time_point buildingEnd = std::chrono::high_resolution_clock::now();
             buildingTime += buildingEnd - buildingStart;
             
             // Building Markov Automaton
-            std::cout << "Building Model..." << std::endl;
+            STORM_LOG_INFO("Building Model...");
             storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, enableDC);
             typename storm::builder::ExplicitDFTModelBuilder<ValueType>::LabelOptions labeloptions; // TODO initialize this with the formula
             std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModel(labeloptions);
             //model->printModelInformationToStream(std::cout);
-            std::cout << "No. states (Explored): " << model->getNumberOfStates() << std::endl;
-            std::cout << "No. transitions (Explored): " << model->getNumberOfTransitions() << std::endl;
+            STORM_LOG_INFO("No. states (Explored): " << model->getNumberOfStates());
+            STORM_LOG_INFO("No. transitions (Explored): " << model->getNumberOfTransitions());
             std::chrono::high_resolution_clock::time_point explorationEnd = std::chrono::high_resolution_clock::now();
             explorationTime += explorationEnd -buildingEnd;
 
             // Bisimulation
             if (model->isOfType(storm::models::ModelType::Ctmc) && storm::settings::getModule<storm::settings::modules::GeneralSettings>().isBisimulationSet()) {
-                std::cout << "Bisimulation..." << std::endl;
+                STORM_LOG_INFO("Bisimulation...");
                 model =  storm::performDeterministicSparseBisimulationMinimization<storm::models::sparse::Ctmc<ValueType>>(model->template as<storm::models::sparse::Ctmc<ValueType>>(), {formula}, storm::storage::BisimulationType::Weak)->template as<storm::models::sparse::Ctmc<ValueType>>();
                 //model->printModelInformationToStream(std::cout);
             }
-            std::cout << "No. states (Bisimulation): " << model->getNumberOfStates() << std::endl;
-            std::cout << "No. transitions (Bisimulation): " << model->getNumberOfTransitions() << std::endl;
+            STORM_LOG_INFO("No. states (Bisimulation): " << model->getNumberOfStates());
+            STORM_LOG_INFO("No. transitions (Bisimulation): " << model->getNumberOfTransitions());
             bisimulationTime += std::chrono::high_resolution_clock::now() - explorationEnd;
             models.push_back(model);
         }

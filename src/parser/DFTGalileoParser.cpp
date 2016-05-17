@@ -130,7 +130,8 @@ namespace storm {
 
         template<typename ValueType>
         ValueType DFTGalileoParser<ValueType>::parseRationalExpression(std::string const& expr) {
-            assert(false);
+            STORM_LOG_ASSERT(false, "Specialized method should be called.");
+            return 0;
         }
 
         template<>
