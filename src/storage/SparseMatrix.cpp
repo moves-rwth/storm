@@ -65,6 +65,17 @@ namespace storm {
             return MatrixEntry(this->getColumn(), this->getValue() * factor);
         }
         
+        
+        template<typename IndexType, typename ValueType>
+        bool MatrixEntry<IndexType, ValueType>::operator==(MatrixEntry<IndexType, ValueType> const& other) const {
+            return this->entry.first == other.entry.first && this->entry.second == other.entry.second;
+        }
+        
+        template<typename IndexType, typename ValueType>
+        bool MatrixEntry<IndexType, ValueType>::operator!=(MatrixEntry<IndexType, ValueType> const& other) const {
+            return !(*this == other); 
+        }
+        
         template<typename IndexTypePrime, typename ValueTypePrime>
         std::ostream& operator<<(std::ostream& out, MatrixEntry<IndexTypePrime, ValueTypePrime> const& entry) {
             out << "(" << entry.getColumn() << ", " << entry.getValue() << ")";
@@ -566,6 +577,38 @@ namespace storm {
                 columnValuePtr->setColumn(0);
                 columnValuePtr->setValue(storm::utility::zero<ValueType>());
             }
+        }
+        
+        template<typename ValueType>
+        bool SparseMatrix<ValueType>::compareRows(index_type i1, index_type i2) const {
+            const_iterator end1 = this->end(i1);
+            const_iterator end2 = this->end(i2);
+            const_iterator it1 = this->begin(i1);
+            const_iterator it2 = this->begin(i2);
+            for(;it1 != end1 && it2 != end2; ++it1, ++it2 ) {
+                if(*it1 != *it2) {
+                    return false;
+                }
+            }
+            if(it1 == end1 && it2 == end2) {
+                return true;
+            }
+            return false;
+        }
+        
+        template<typename ValueType>
+        BitVector SparseMatrix<ValueType>::duplicateRowsInRowgroups() const {
+            BitVector bv(this->getRowCount());
+            for(size_t rowgroup = 0; rowgroup < this->getRowGroupCount(); ++rowgroup) {
+                for(size_t row1 = this->getRowGroupIndices().at(rowgroup); row1 < this->getRowGroupIndices().at(rowgroup+1); ++row1) {
+                    for(size_t row2 = row1; row2 < this->getRowGroupIndices().at(rowgroup+1); ++row2) {
+                        if(compareRows(row1, row2)) {
+                            bv.set(row2);
+                        }
+                    }
+                }
+            }
+            return bv;
         }
         
         template<typename ValueType>
