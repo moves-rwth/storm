@@ -5,13 +5,17 @@
 namespace storm {
     namespace prism {
         
-        ParallelComposition::ParallelComposition(std::shared_ptr<Composition> const& left, std::set<std::string> const& synchronizingActions, std::shared_ptr<Composition> const& right) : left(left), synchronizingActions(synchronizingActions), right(right) {
+        ParallelComposition::ParallelComposition(std::shared_ptr<Composition> const& left, std::shared_ptr<Composition> const& right) : left(left), right(right) {
             // Intentionally left empty.
         }
         
-        void ParallelComposition::writeToStream(std::ostream& stream) const {
-            stream << "(" << *left << " |[" << boost::algorithm::join(synchronizingActions, ", ") << "]| " << *right << ")";
+        Composition const& ParallelComposition::getLeftSubcomposition() const {
+            return *left;
         }
-
+        
+        Composition const& ParallelComposition::getRightSubcomposition() const {
+            return *right;
+        }
+        
     }
 }

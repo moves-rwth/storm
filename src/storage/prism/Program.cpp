@@ -15,15 +15,56 @@
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/solver/SmtSolver.h"
 
+#include "src/storage/prism/CompositionVisitor.h"
+#include "src/storage/prism/Compositions.h"
+
 namespace storm {
     namespace prism {
-        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<std::shared_ptr<Composition>> const& composition, std::string const& filename, uint_fast64_t lineNumber, bool finalModel)
+        class CompositionValidityChecker : public CompositionVisitor {
+        public:
+            CompositionValidityChecker(storm::prism::Program const& program) : program(program) {
+                // Intentionally left empty.
+            }
+            
+            bool isValid(Composition const& composition) {
+                return boost::any_cast<bool>(composition.accept(*this));
+            }
+            
+            virtual boost::any visit(ModuleComposition const& composition) override {
+                return program.hasModule(composition.getModuleName());
+            }
+            
+            virtual boost::any visit(RenamingComposition const& composition) override {
+                return composition.getSubcomposition().accept(*this);
+            }
+            
+            virtual boost::any visit(HidingComposition const& composition) override {
+                return composition.getSubcomposition().accept(*this);
+            }
+            
+            virtual boost::any visit(SynchronizingParallelComposition const& composition) override {
+                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+            }
+            
+            virtual boost::any visit(InterleavingParallelComposition const& composition) override {
+                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+            }
+            
+            virtual boost::any visit(RestrictedParallelComposition const& composition) override {
+                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+            }
+            
+        private:
+            storm::prism::Program const& program;
+        };
+        
+        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, std::string const& filename, uint_fast64_t lineNumber, bool finalModel)
         : LocatedInformation(filename, lineNumber), manager(manager),
             modelType(modelType), constants(constants), constantToIndexMap(),
             globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(),
             globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(), 
             formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(), 
-            rewardModels(rewardModels), rewardModelToIndexMap(), systemComposition(composition),
+            rewardModels(rewardModels), rewardModelToIndexMap(), systemCompositionConstruct(compositionConstruct),
             labels(labels), labelToIndexMap(), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(),
             synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap()
         {
@@ -277,6 +318,10 @@ namespace storm {
             return this->modules[index];
         }
         
+        bool Program::hasModule(std::string const& moduleName) const {
+            return this->moduleToIndexMap.find(moduleName) != this->moduleToIndexMap.end();
+        }
+        
         Module const& Program::getModule(std::string const& moduleName) const {
             auto const& nameIndexPair = this->moduleToIndexMap.find(moduleName);
             STORM_LOG_THROW(nameIndexPair != this->moduleToIndexMap.end(), storm::exceptions::OutOfRangeException, "Unknown module '" << moduleName << "'.");
@@ -296,15 +341,15 @@ namespace storm {
         }
         
         bool Program::specifiesSystemComposition() const {
-            return static_cast<bool>(systemComposition);
+            return static_cast<bool>(systemCompositionConstruct);
         }
         
-        Composition const& Program::getSystemComposition() const {
-            return *systemComposition.get();
+        SystemCompositionConstruct const& Program::getSystemCompositionConstruct() const {
+            return systemCompositionConstruct.get();
         }
         
-        boost::optional<std::shared_ptr<Composition>> Program::getOptionalSystemComposition() const {
-            return systemComposition;
+        boost::optional<SystemCompositionConstruct> Program::getOptionalSystemCompositionConstruct() const {
+            return systemCompositionConstruct;
         }
         
         std::set<std::string> const& Program::getActions() const {
@@ -430,7 +475,7 @@ namespace storm {
                 newModules.push_back(module.restrictCommands(indexSet));
             }
             
-            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getInitialConstruct(), this->getOptionalSystemComposition());
+            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         
         void Program::createMappings() {
@@ -530,7 +575,7 @@ namespace storm {
                 STORM_LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidArgumentException, "Unable to define non-existant constant.");
             }
             
-            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getInitialConstruct(), this->getOptionalSystemComposition());
+            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         
         Program Program::substituteConstants() const {
@@ -590,7 +635,7 @@ namespace storm {
                 newLabels.emplace_back(label.substitute(constantSubstitution));
             }
             
-            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newInitialConstruct, this->getOptionalSystemComposition());
+            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct());
         }
         
         void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
@@ -914,6 +959,13 @@ namespace storm {
             bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedIdentifiers.begin(), containedIdentifiers.end());
             STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << this->getInitialConstruct().getFilename() << ", line " << this->getInitialConstruct().getLineNumber() << ": initial expression refers to unknown identifiers.");
             
+            // Check the system composition if given.
+            if (systemCompositionConstruct) {
+                CompositionValidityChecker checker(*this);
+                isValid = checker.isValid(systemCompositionConstruct.get().getSystemComposition());
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in system composition expression.");
+            }
+            
             // Check the labels.
             for (auto const& label : this->getLabels()) {
                 std::set<storm::expressions::Variable> containedVariables = label.getStatePredicateExpression().getVariables();
@@ -1031,7 +1083,7 @@ namespace storm {
         }
         
         Program Program::replaceModulesAndConstantsInProgram(std::vector<Module> const& newModules, std::vector<Constant> const& newConstants) {
-            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, getActionNameToIndexMapping(), getRewardModels(), getLabels(), getInitialConstruct(), this->getOptionalSystemComposition());
+            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, getActionNameToIndexMapping(), getRewardModels(), getLabels(), getInitialConstruct(), this->getOptionalSystemCompositionConstruct());
         }
         
         Program Program::flattenModules(std::unique_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
@@ -1217,7 +1269,7 @@ namespace storm {
             
             // Finally, we can create the module and the program and return it.
             storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, newCommands, this->getFilename(), 0);
-            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getInitialConstruct(), this->getOptionalSystemComposition(), this->getFilename(), 0, true);
+            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getInitialConstruct(), this->getOptionalSystemCompositionConstruct(), this->getFilename(), 0, true);
         }
 
         std::unordered_map<uint_fast64_t, std::string> Program::buildCommandIndexToActionNameMap() const {
@@ -1370,9 +1422,7 @@ namespace storm {
             stream << program.getInitialConstruct() << std::endl;
             
             if (program.specifiesSystemComposition()) {
-                stream << "system" << std::endl;
-                stream << "\t" << program.getSystemComposition() << std::endl;
-                stream << "endsystem" << std::endl;
+                stream << program.getSystemCompositionConstruct();
             }
             
             return stream;

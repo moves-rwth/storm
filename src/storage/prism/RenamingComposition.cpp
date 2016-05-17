@@ -7,21 +7,26 @@
 namespace storm {
     namespace prism {
         
-        RenamingComposition::RenamingComposition(std::shared_ptr<Composition> const& left, std::map<std::string, boost::optional<std::string>> const& actionRenaming) : left(left), actionRenaming(actionRenaming) {
+        RenamingComposition::RenamingComposition(std::shared_ptr<Composition> const& sub, std::map<std::string, std::string> const& actionRenaming) : sub(sub), actionRenaming(actionRenaming) {
             // Intentionally left empty.
+        }
+        
+        boost::any RenamingComposition::accept(CompositionVisitor& visitor) const {
+            return visitor.visit(*this);
+        }
+        
+        Composition const& RenamingComposition::getSubcomposition() const {
+            return *sub;
         }
         
         void RenamingComposition::writeToStream(std::ostream& stream) const {
             std::vector<std::string> renamings;
             for (auto const& renaming : actionRenaming) {
                 std::stringstream s;
-                if (renaming.second) {
-                    s << renaming.second.get();
-                }
-                s << " <- " << renaming.first;
+                s << renaming.second << " <- " << renaming.first;
                 renamings.push_back(s.str());
             }
-            stream << *left << "{" << boost::join(renamings, ", ") << "}";
+            stream << *sub << "{" << boost::join(renamings, ", ") << "}";
         }
         
     }

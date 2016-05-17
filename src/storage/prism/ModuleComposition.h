@@ -7,9 +7,13 @@
 
 namespace storm {
     namespace prism {
-        class ModuleComposition : Composition {
+        class ModuleComposition : public Composition {
         public:
             ModuleComposition(std::string const& moduleName);
+            
+            virtual boost::any accept(CompositionVisitor& visitor) const override;
+            
+            std::string const& getModuleName() const;
             
         protected:
             virtual void writeToStream(std::ostream& stream) const override;

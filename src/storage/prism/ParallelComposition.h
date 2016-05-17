@@ -1,6 +1,7 @@
 #ifndef STORM_STORAGE_PRISM_PARALLELCOMPOSITION_H_
 #define STORM_STORAGE_PRISM_PARALLELCOMPOSITION_H_
 
+#include <memory>
 #include <set>
 #include <string>
 
@@ -8,16 +9,15 @@
 
 namespace storm {
     namespace prism {
-        class ParallelComposition : Composition {
+        class ParallelComposition : public Composition {
         public:
-            ParallelComposition(std::shared_ptr<Composition> const& left, std::set<std::string> const& synchronizingActions, std::shared_ptr<Composition> const& right);
+            ParallelComposition(std::shared_ptr<Composition> const& left, std::shared_ptr<Composition> const& right);
             
-        protected:
-            virtual void writeToStream(std::ostream& stream) const override;
+            Composition const& getLeftSubcomposition() const;
+            Composition const& getRightSubcomposition() const;
             
         private:
             std::shared_ptr<Composition> left;
-            std::set<std::string> synchronizingActions;
             std::shared_ptr<Composition> right;
         };
     }

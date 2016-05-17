@@ -13,6 +13,7 @@
 #include "src/storage/prism/Label.h"
 #include "src/storage/prism/Module.h"
 #include "src/storage/prism/RewardModel.h"
+#include "src/storage/prism/SystemCompositionConstruct.h"
 #include "src/storage/prism/InitialConstruct.h"
 #include "src/storage/prism/Composition.h"
 #include "src/utility/solver.h"
@@ -45,13 +46,13 @@ namespace storm {
              * @param labels The labels defined for this program.
              * @param initialConstruct The initial construct of the program. If none, then an initial construct is built
              * using the initial values of the variables.
-             * @param composition If not none, specifies how the modules are composed for the full system. If none, the
-             * regular parallel composition is assumed.
+             * @param compositionConstruct If not none, specifies how the modules are composed for the full system.
+             * If none, the regular parallel composition is assumed.
              * @param filename The filename in which the program is defined.
              * @param lineNumber The line number in which the program is defined.
              * @param finalModel If set to true, the program is checked for input-validity, as well as some post-processing.
              */
-            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<std::shared_ptr<Composition>> const& composition, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -238,6 +239,13 @@ namespace storm {
             Module const& getModule(uint_fast64_t index) const;
 
             /*!
+             * Retrieves whether the program has a module with the given name.
+             *
+             * @return True iff a module with the given name exists.
+             */
+            bool hasModule(std::string const& moduleName) const;
+            
+            /*!
              * Retrieves the module with the given name.
              *
              * @param moduleName The name of the module to retrieve.
@@ -275,18 +283,18 @@ namespace storm {
             bool specifiesSystemComposition() const;
             
             /*!
-             * If the program specifies a system composition, this method retrieves it.
+             * If the program specifies a system composition construct, this method retrieves it.
              *
-             * @return The system composition as specified by the program.
+             * @return The system composition construct as specified by the program.
              */
-            Composition const& getSystemComposition() const;
+            SystemCompositionConstruct const& getSystemCompositionConstruct() const;
             
             /*!
-             * Retrieves the system composition (if any) and none otherwise.
+             * Retrieves the system composition construct (if any) and none otherwise.
              *
-             * @return The system composition specified by the program or none.
+             * @return The system composition construct specified by the program or none.
              */
-            boost::optional<std::shared_ptr<Composition>> getOptionalSystemComposition() const;
+            boost::optional<SystemCompositionConstruct> getOptionalSystemCompositionConstruct() const;
             
             /*!
              * Retrieves the set of actions present in the program.
@@ -576,7 +584,7 @@ namespace storm {
             InitialConstruct initialConstruct;
             
             // If set, this specifies the way the modules are composed to obtain the full system.
-            boost::optional<std::shared_ptr<Composition>> systemComposition;
+            boost::optional<SystemCompositionConstruct> systemCompositionConstruct;
             
             // The labels that are defined for this model.
             std::vector<Label> labels;

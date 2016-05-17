@@ -7,6 +7,14 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        boost::any ModuleComposition::accept(CompositionVisitor& visitor) const {
+            return visitor.visit(*this);
+        }
+        
+        std::string const& ModuleComposition::getModuleName() const {
+            return moduleName;
+        }
+        
         void ModuleComposition::writeToStream(std::ostream& stream) const {
             stream << moduleName;
         }

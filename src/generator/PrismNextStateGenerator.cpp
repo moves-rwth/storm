@@ -11,7 +11,7 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling) : program(program), selectedRewardModels(), buildChoiceLabeling(buildChoiceLabeling), variableInformation(variableInformation), evaluator(program.getManager()), state(nullptr), comparator() {
-            // Intentionally left empty.
+            STORM_LOG_THROW(!program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
         }
                 
         template<typename ValueType, typename StateType>

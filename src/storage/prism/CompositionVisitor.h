@@ -8,13 +8,19 @@ namespace storm {
         
         class ModuleComposition;
         class RenamingComposition;
-        class ParallelComposition;
+        class HidingComposition;
+        class SynchronizingParallelComposition;
+        class InterleavingParallelComposition;
+        class RestrictedParallelComposition;
         
         class CompositionVisitor {
         public:
             virtual boost::any visit(ModuleComposition const& composition) = 0;
             virtual boost::any visit(RenamingComposition const& composition) = 0;
-            virtual boost::any visit(ParallelComposition const& composition) = 0;
+            virtual boost::any visit(HidingComposition const& composition) = 0;
+            virtual boost::any visit(SynchronizingParallelComposition const& composition) = 0;
+            virtual boost::any visit(InterleavingParallelComposition const& composition) = 0;
+            virtual boost::any visit(RestrictedParallelComposition const& composition) = 0;
         };
     }
 }
