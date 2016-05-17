@@ -799,7 +799,7 @@ namespace storm {
             STORM_LOG_TRACE("Translating (first) module '" << generationInfo.program.getModule(0).getName() << "'.");
             ModuleDecisionDiagram system = createModuleDecisionDiagram(generationInfo, generationInfo.program.getModule(0), synchronizingActionToOffsetMap);
 
-            // No translate module by module and combine it with the system created thus far.
+            // Now translate module by module and combine it with the system created thus far.
             for (uint_fast64_t i = 1; i < generationInfo.program.getNumberOfModules(); ++i) {
                 storm::prism::Module const& currentModule = generationInfo.program.getModule(i);
                 STORM_LOG_TRACE("Translating module '" << currentModule.getName() << "'.");

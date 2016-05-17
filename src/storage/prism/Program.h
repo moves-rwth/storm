@@ -1,10 +1,12 @@
 #ifndef STORM_STORAGE_PRISM_PROGRAM_H_
 #define STORM_STORAGE_PRISM_PROGRAM_H_
 
+#include <memory>
 #include <map>
 #include <vector>
 #include <set>
 #include <boost/container/flat_set.hpp>
+#include <boost/optional.hpp>
 
 #include "src/storage/prism/Constant.h"
 #include "src/storage/prism/Formula.h"
@@ -12,6 +14,7 @@
 #include "src/storage/prism/Module.h"
 #include "src/storage/prism/RewardModel.h"
 #include "src/storage/prism/InitialConstruct.h"
+#include "src/storage/prism/Composition.h"
 #include "src/utility/solver.h"
 #include "src/utility/OsDetection.h"
 
@@ -38,18 +41,17 @@ namespace storm {
              * @param formulas The formulas defined in the program.
              * @param modules The modules of the program.
              * @param actionToIndexMap A mapping of action names to their indices.
-             * @param fixInitialConstruct A flag that indicates whether the given initial construct is to be ignored and
-             * replaced by a new one created from the initial values of the variables.
-             * @param initialConstruct The initial construct of the program. If the initial construct specifies "false"
-             * as the initial condition, the default values of the variables are used to construct a legal initial
-             * condition.
              * @param rewardModels The reward models of the program.
              * @param labels The labels defined for this program.
+             * @param initialConstruct The initial construct of the program. If none, then an initial construct is built
+             * using the initial values of the variables.
+             * @param composition If not none, specifies how the modules are composed for the full system. If none, the
+             * regular parallel composition is assumed.
              * @param filename The filename in which the program is defined.
              * @param lineNumber The line number in which the program is defined.
              * @param finalModel If set to true, the program is checked for input-validity, as well as some post-processing.
              */
-            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<std::shared_ptr<Composition>> const& composition, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -100,7 +102,7 @@ namespace storm {
              *
              * @return The undefined constants in the program.
              */
-            std::vector<std::reference_wrapper<storm::prism::Constant const>> getUndefinedConstants() const;
+            std::vector<std::reference_wrapper<Constant const>> getUndefinedConstants() const;
 
             /*!
              * Retrieves the undefined constants in the program as a comma-separated string.
@@ -262,7 +264,29 @@ namespace storm {
              *
              * @return The initial construct of the program.
              */
-            storm::prism::InitialConstruct const& getInitialConstruct() const;
+            InitialConstruct const& getInitialConstruct() const;
+            
+            /*!
+             * Retrieves whether the program specifies a system composition in terms of process algebra operations over
+             * the modules.
+             *
+             * @return True iff the program specifies a system composition.
+             */
+            bool specifiesSystemComposition() const;
+            
+            /*!
+             * If the program specifies a system composition, this method retrieves it.
+             *
+             * @return The system composition as specified by the program.
+             */
+            Composition const& getSystemComposition() const;
+            
+            /*!
+             * Retrieves the system composition (if any) and none otherwise.
+             *
+             * @return The system composition specified by the program or none.
+             */
+            boost::optional<std::shared_ptr<Composition>> getOptionalSystemComposition() const;
             
             /*!
              * Retrieves the set of actions present in the program.
@@ -549,7 +573,10 @@ namespace storm {
             std::map<std::string, uint_fast64_t> rewardModelToIndexMap;
             
             // The initial construct of the program.
-            storm::prism::InitialConstruct initialConstruct;
+            InitialConstruct initialConstruct;
+            
+            // If set, this specifies the way the modules are composed to obtain the full system.
+            boost::optional<std::shared_ptr<Composition>> systemComposition;
             
             // The labels that are defined for this model.
             std::vector<Label> labels;
