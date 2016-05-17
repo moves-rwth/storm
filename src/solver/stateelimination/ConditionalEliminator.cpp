@@ -31,8 +31,9 @@ namespace storm {
                         return phiStates.get(state);
                     case PSI:
                         return psiStates.get(state);
-                    case NONE:
-                        assert(false);
+                    default:
+                        STORM_LOG_ASSERT(false, "Specific state not set.");
+                        return false;
                 }
             }
             

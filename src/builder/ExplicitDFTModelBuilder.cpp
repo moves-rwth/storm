@@ -48,20 +48,20 @@ namespace storm {
             initialStateIndex = exploreResult.first;
             bool deterministic = exploreResult.second;
         
-            // Before ending the exploration check for pseudo states which are no be initialized yet
+            // Before ending the exploration check for pseudo states which are not initialized yet
             for (auto & pseudoStatePair : mPseudoStatesMapping) {
                 if (pseudoStatePair.first == 0) {
                     // Create state from pseudo state and explore
-                    assert(mStates.contains(pseudoStatePair.second));
-                    assert(mStates.getValue(pseudoStatePair.second) >= OFFSET_PSEUDO_STATE);
+                    STORM_LOG_ASSERT(mStates.contains(pseudoStatePair.second), "Pseudo state not contained.");
+                    STORM_LOG_ASSERT(mStates.getValue(pseudoStatePair.second) >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
                     STORM_LOG_TRACE("Create pseudo state from bit vector " << pseudoStatePair.second);
                     DFTStatePointer pseudoState = std::make_shared<storm::storage::DFTState<ValueType>>(pseudoStatePair.second, mDft, *mStateGenerationInfo, newIndex);
-                    assert(pseudoStatePair.second == pseudoState->status());
+                    STORM_LOG_ASSERT(pseudoStatePair.second == pseudoState->status(), "Pseudo states do not coincide.");
                     STORM_LOG_TRACE("Explore pseudo state " << mDft.getStateString(pseudoState) << " with id " << pseudoState->getId());
                     auto exploreResult = exploreStates(pseudoState, rowOffset, transitionMatrixBuilder, tmpMarkovianStates, modelComponents.exitRates);
                     deterministic &= exploreResult.second;
-                    assert(pseudoStatePair.first == pseudoState->getId());
-                    assert(pseudoState->getId() == exploreResult.first);
+                    STORM_LOG_ASSERT(pseudoStatePair.first == pseudoState->getId(), "Pseudo state ids do not coincide");
+                    STORM_LOG_ASSERT(pseudoState->getId() == exploreResult.first, "Pseudo state ids do not coincide.");
                 }
             }
             
@@ -70,7 +70,7 @@ namespace storm {
             for (auto const& pseudoStatePair : mPseudoStatesMapping) {
                 pseudoStatesVector.push_back(pseudoStatePair.first);
             }
-            assert(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end());
+            STORM_LOG_ASSERT(std::find(pseudoStatesVector.begin(), pseudoStatesVector.end(), 0) == pseudoStatesVector.end(), "Unexplored pseudo state still contained.");
             transitionMatrixBuilder.replaceColumns(pseudoStatesVector, OFFSET_PSEUDO_STATE);
             
             STORM_LOG_DEBUG("Generated " << mStates.size() + (mergeFailedStates ? 1 : 0) << " states");
@@ -137,7 +137,7 @@ namespace storm {
                 // TODO Matthias: avoid transforming back and forth
                 storm::storage::SparseMatrix<ValueType> rateMatrix(modelComponents.transitionMatrix);
                 for (uint_fast64_t row = 0; row < rateMatrix.getRowCount(); ++row) {
-                    assert(row < modelComponents.markovianStates.size());
+                    STORM_LOG_ASSERT(row < modelComponents.markovianStates.size(), "Row exceeds no. of markovian states.");
                     if (modelComponents.markovianStates.get(row)) {
                         for (auto& entry : rateMatrix.getRow(row)) {
                             entry.setValue(entry.getValue() * modelComponents.exitRates[row]);
@@ -182,14 +182,14 @@ namespace storm {
             // Absorbing state
             if (mDft.hasFailed(state) || mDft.isFailsafe(state) || state->nrFailableBEs() == 0) {
                 uint_fast64_t stateId = addState(state);
-                assert(stateId == state->getId());
+                STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not coincide.");
 
                 // Add self loop
                 transitionMatrixBuilder.newRowGroup(stateId + rowOffset);
                 transitionMatrixBuilder.addNextValue(stateId + rowOffset, stateId, storm::utility::one<ValueType>());
                 STORM_LOG_TRACE("Added self loop for " << stateId);
                 exitRates.push_back(storm::utility::one<ValueType>());
-                assert(exitRates.size()-1 == stateId);
+                STORM_LOG_ASSERT(exitRates.size()-1 == stateId, "No. of considered states does not match state id.");
                 markovianStates.push_back(stateId);
                 // No further exploration required
                 return std::make_pair(stateId, true);
@@ -197,14 +197,14 @@ namespace storm {
 
             // Let BE fail
             while (smallest < failableCount) {
-                assert(!mDft.hasFailed(state));
+                STORM_LOG_ASSERT(!mDft.hasFailed(state), "Dft has failed.");
 
                 // Construct new state as copy from original one
                 DFTStatePointer newState = std::make_shared<storm::storage::DFTState<ValueType>>(*state);
                 std::pair<std::shared_ptr<storm::storage::DFTBE<ValueType> const>, bool> nextBEPair = newState->letNextBEFail(smallest++);
                 std::shared_ptr<storm::storage::DFTBE<ValueType> const>& nextBE = nextBEPair.first;
-                assert(nextBE);
-                assert(nextBEPair.second == hasDependencies);
+                STORM_LOG_ASSERT(nextBE, "NextBE is null.");
+                STORM_LOG_ASSERT(nextBEPair.second == hasDependencies, "Failure due to dependencies does not match.");
                 STORM_LOG_TRACE("With the failure of: " << nextBE->name() << " [" << nextBE->id() << "] in " << mDft.getStateString(state));
 
                 // Propagate failures
@@ -291,7 +291,7 @@ namespace storm {
                         isActive = state->isActive(mDft.getRepresentant(nextBE->id())->id());
                     }
                     ValueType rate = isActive ? nextBE->activeFailureRate() : nextBE->passiveFailureRate();
-                    assert(!storm::utility::isZero(rate));
+                    STORM_LOG_ASSERT(!storm::utility::isZero(rate), "Rate is 0.");
                     auto resultFind = outgoingRates.find(newStateId);
                     if (resultFind != outgoingRates.end()) {
                         // Add to existing transition
@@ -309,15 +309,15 @@ namespace storm {
             
             // Add state
             uint_fast64_t stateId = addState(state);
-            assert(stateId == state->getId());
-            assert(stateId == newIndex-1);
+            STORM_LOG_ASSERT(stateId == state->getId(), "Ids do not match.");
+            STORM_LOG_ASSERT(stateId == newIndex-1, "Id does not match no. of states.");
             
             if (hasDependencies) {
                 // Add all probability transitions
-                assert(outgoingRates.empty());
+                STORM_LOG_ASSERT(outgoingRates.empty(), "Outgoing transitions not empty.");
                 transitionMatrixBuilder.newRowGroup(stateId + rowOffset);
                 for (size_t i = 0; i < outgoingProbabilities.size(); ++i, ++rowOffset) {
-                    assert(outgoingProbabilities[i].size() == 1 || outgoingProbabilities[i].size() == 2);
+                    STORM_LOG_ASSERT(outgoingProbabilities[i].size() == 1 || outgoingProbabilities[i].size() == 2, "No. of outgoing transitions is not valid.");
                     for (auto it = outgoingProbabilities[i].begin(); it != outgoingProbabilities[i].end(); ++it)
                     {
                         STORM_LOG_TRACE("Set transition from " << stateId << " to " << it->first << " with probability " << it->second);
@@ -331,7 +331,7 @@ namespace storm {
                 for (auto it = outgoingRates.begin(); it != outgoingRates.end(); ) {
                     if (it->first >= OFFSET_PSEUDO_STATE) {
                         uint_fast64_t newId = it->first - OFFSET_PSEUDO_STATE;
-                        assert(newId < mPseudoStatesMapping.size());
+                        STORM_LOG_ASSERT(newId < mPseudoStatesMapping.size(), "Id is not valid.");
                         if (mPseudoStatesMapping[newId].first > 0) {
                             // State exists already
                             newId = mPseudoStatesMapping[newId].first;
@@ -356,7 +356,7 @@ namespace storm {
                 }
                 
                 // Add all rate transitions
-                assert(outgoingProbabilities.empty());
+                STORM_LOG_ASSERT(outgoingProbabilities.empty(), "Outgoing probabilities not empty.");
                 transitionMatrixBuilder.newRowGroup(state->getId() + rowOffset);
                 STORM_LOG_TRACE("Exit rate for " << state->getId() << ": " << exitRate);
                 for (auto it = outgoingRates.begin(); it != outgoingRates.end(); ++it)
@@ -371,7 +371,7 @@ namespace storm {
             
             STORM_LOG_TRACE("Finished exploring state: " << mDft.getStateString(state));
             exitRates.push_back(exitRate);
-            assert(exitRates.size()-1 == state->getId());
+            STORM_LOG_ASSERT(exitRates.size()-1 == state->getId(), "Id does not match no. of states.");
             return std::make_pair(state->getId(), deterministic);
         }
         
@@ -396,13 +396,13 @@ namespace storm {
                 }
                 
                 stateId -= OFFSET_PSEUDO_STATE;
-                assert(stateId < mPseudoStatesMapping.size());
+                STORM_LOG_ASSERT(stateId < mPseudoStatesMapping.size(), "Id not valid.");
                 if (mPseudoStatesMapping[stateId].first > 0) {
                     // Pseudo state already explored
                     return std::make_pair(false, mPseudoStatesMapping[stateId].first);
                 }
                 
-                assert(mPseudoStatesMapping[stateId].second == state->status());
+                STORM_LOG_ASSERT(mPseudoStatesMapping[stateId].second == state->status(), "States do not coincide.");
                 STORM_LOG_TRACE("Pseudo state " << mDft.getStateString(state) << " can be explored now");
                 return std::make_pair(true, stateId);
             } else {
@@ -426,7 +426,7 @@ namespace storm {
             uint_fast64_t stateId;
             // TODO remove
             bool changed = state->orderBySymmetry();
-            assert(!changed);
+            STORM_LOG_ASSERT(!changed, "State to add has changed by applying symmetry.");
             
             // Check if state already exists
             if (mStates.contains(state->status())) {
@@ -435,32 +435,28 @@ namespace storm {
                 STORM_LOG_TRACE("State " << mDft.getStateString(state) << " with id " << stateId << " already exists");
                 
                 // Check if possible pseudo state can be created now
-                if (!changed && stateId >= OFFSET_PSEUDO_STATE) {
-                    stateId -= OFFSET_PSEUDO_STATE;
-                    assert(stateId < mPseudoStatesMapping.size());
-                    if (mPseudoStatesMapping[stateId].first == 0) {
-                        // Create pseudo state now
-                        assert(mPseudoStatesMapping[stateId].second == state->status());
-                        state->setId(newIndex++);
-                        mPseudoStatesMapping[stateId].first = state->getId();
-                        stateId = state->getId();
-                        mStates.setOrAdd(state->status(), stateId);
-                        STORM_LOG_TRACE("Now create state " << mDft.getStateString(state) << " with id " << stateId);
-                        return stateId;
-                    }
-                }
-                assert(false);
-            } else {
-                // New state
-                if (changed) {
-                    assert(false);
-                } else {
-                    // Create new state
+                STORM_LOG_ASSERT(stateID >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
+                stateId -= OFFSET_PSEUDO_STATE;
+                STORM_LOG_ASSERT(stateId < mPseudoStatesMapping.size(), "Pseudo state not known.");
+                if (mPseudoStatesMapping[stateId].first == 0) {
+                    // Create pseudo state now
+                    STORM_LOG_ASSERT(mPseudoStatesMapping[stateId].second == state->status(), "Pseudo states do not coincide.");
                     state->setId(newIndex++);
-                    stateId = mStates.findOrAdd(state->status(), state->getId());
-                    STORM_LOG_TRACE("New state: " << mDft.getStateString(state));
+                    mPseudoStatesMapping[stateId].first = state->getId();
+                    stateId = state->getId();
+                    mStates.setOrAdd(state->status(), stateId);
+                    STORM_LOG_TRACE("Now create state " << mDft.getStateString(state) << " with id " << stateId);
                     return stateId;
+                } else {
+                    STORM_LOG_ASSERT(false, "Pseudo state already created.");
+                    return 0;
                 }
+            } else {
+                // Create new state
+                state->setId(newIndex++);
+                stateId = mStates.findOrAdd(state->status(), state->getId());
+                STORM_LOG_TRACE("New state: " << mDft.getStateString(state));
+                return stateId;
             }
         }
 

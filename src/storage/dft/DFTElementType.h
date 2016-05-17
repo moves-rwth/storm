@@ -1,6 +1,8 @@
-#pragma once
+#ifndef DFTELEMENTTYPE_H
+#define DFTELEMENTTYPE_H
 
-#include <cassert>
+#include "src/utility/macros.h"
+
 namespace storm {
     namespace storage {
 
@@ -23,7 +25,7 @@ namespace storm {
                 case DFTElementType::PDEP:
                     return false;
                 default:
-                    assert(false);
+                    STORM_LOG_ASSERT(false, "Dft type not known.");
                     return false;
             }
         }
@@ -40,7 +42,7 @@ namespace storm {
                 case DFTElementType::PAND:
                     return false;
                 default:
-                    assert(false);
+                    STORM_LOG_ASSERT(false, "Dft gate type not known.");
                     return false;
             }
         }
@@ -68,7 +70,8 @@ namespace storm {
                 case DFTElementType::PDEP:
                     return "PDEP";
                 default:
-                    assert(false);
+                    STORM_LOG_ASSERT(false, "Dft type not known.");
+                    return "";
             }
         }
 
@@ -81,3 +84,4 @@ namespace storm {
     }
 }
 
+#endif	/* DFTELEMENTTYPE_H */

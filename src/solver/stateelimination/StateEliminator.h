@@ -8,6 +8,7 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/adapters/CarlAdapter.h"
 #include "src/modelchecker/reachability/SparseDtmcEliminationModelChecker.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace solver {

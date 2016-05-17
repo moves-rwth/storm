@@ -25,7 +25,8 @@ namespace storm {
             
             template<typename SparseModelType>
             bool MAEliminator<SparseModelType>::filterPredecessor(storm::storage::sparse::state_type const& state) {
-                assert(false);
+                STORM_LOG_ASSERT(false, "Filter should not be applied.");
+                return false;
             }
             
             template<typename SparseModelType>

@@ -341,10 +341,9 @@ namespace storm {
                     case DFTElementType::SEQ:
                     case DFTElementType::MUTEX:
                         // Other elements are not supported
-                        assert(false);
-                        break;
                     default:
-                        assert(false);
+                        STORM_LOG_ASSERT(false, "Dft type can not be rewritten.");
+                        break;
                 }
                 
                 // Add parent with the new child newParent and all its remaining children
@@ -508,7 +507,8 @@ namespace storm {
                     return nrChild;
                 }
             }
-            assert(false);
+            STORM_LOG_ASSERT(false, "Child not found.");
+            return 0;
         }
         
         template <typename ValueType>
@@ -520,8 +520,9 @@ namespace storm {
 
         template<typename ValueType>
         std::vector<size_t> DFT<ValueType>::immediateFailureCauses(size_t index) const {
-            if(isGate(index)) {
-
+            if (isGate(index)) {
+                STORM_LOG_ASSERT(false, "Is gate.");
+                return {};
             } else {
                 return {index};
             }
