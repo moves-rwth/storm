@@ -3,6 +3,9 @@
 
 #include "src/logic/FragmentChecker.h"
 #include "src/logic/FormulaInformationVisitor.h"
+#include "src/logic/VariableSubstitutionVisitor.h"
+#include "src/logic/LabelSubstitutionVisitor.h"
+#include "src/logic/ToExpressionVisitor.h"
 
 namespace storm {
     namespace logic {
@@ -404,6 +407,25 @@ namespace storm {
             std::set<std::string> referencedRewardModels;
             this->gatherReferencedRewardModels(referencedRewardModels);
             return referencedRewardModels;
+        }
+        
+        std::shared_ptr<Formula> Formula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            VariableSubstitutionVisitor visitor(substitution);
+            return visitor.substitute(*this);
+        }
+        
+        std::shared_ptr<Formula> Formula::substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const {
+            LabelSubstitutionVisitor visitor(labelSubstitution);
+            return visitor.substitute(*this);
+        }
+        
+        storm::expressions::Expression Formula::toExpression(storm::expressions::ExpressionManager const& manager, std::map<std::string, storm::expressions::Expression> const& labelToExpressionMapping) const {
+            ToExpressionVisitor visitor;
+            if (labelToExpressionMapping.empty()) {
+                return visitor.toExpression(*this, manager);
+            } else {
+                return visitor.toExpression(*this->substitute(labelToExpressionMapping), manager);
+            }
         }
         
         std::shared_ptr<Formula const> Formula::asSharedPointer() {

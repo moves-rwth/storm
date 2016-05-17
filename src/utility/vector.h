@@ -24,8 +24,6 @@ namespace storm {
     namespace utility {
         namespace vector {
 
-
-
             /*!
              * Sets the provided values at the provided positions in the given vector.
              *

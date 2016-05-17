@@ -56,6 +56,11 @@ namespace storm {
              */
             std::vector<ValueType> const& getStateRewards() const;
             
+            /*!
+             * Retrieves the number of choices in the behavior.
+             */
+            std::size_t getNumberOfChoices() const;
+            
         private:
             // The choices available in the state.
             std::vector<Choice<ValueType, StateType>> choices;

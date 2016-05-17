@@ -1,3 +1,5 @@
+void mtbdd_getsha(MTBDD mtbdd, char *target); // target must be at least 65 bytes...
+
 /**
  * Binary operation Divide (for MTBDDs of same type)
  * Only for MTBDDs where all leaves are Integer or Double.

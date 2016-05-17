@@ -131,3 +131,11 @@ void
 Mtbdd::PrintDot(FILE *out) const {
     mtbdd_fprintdot(out, mtbdd, NULL);
 }
+
+std::string
+Mtbdd::GetShaHash() const {
+    char buf[65];
+    mtbdd_getsha(mtbdd, buf);
+    return std::string(buf);
+}
+

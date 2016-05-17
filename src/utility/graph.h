@@ -4,7 +4,7 @@
 #include <set>
 #include <limits>
 
-#include "utility/OsDetection.h"
+#include "src/utility/OsDetection.h"
 
 #include "src/storage/sparse/StateType.h"
 #include "src/storage/PartialScheduler.h"

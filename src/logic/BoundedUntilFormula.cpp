@@ -44,10 +44,6 @@ namespace storm {
             return boost::get<uint_fast64_t>(bounds);
         }
         
-        std::shared_ptr<Formula> BoundedUntilFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<BoundedUntilFormula>(this->getLeftSubformula().substitute(substitution), this->getRightSubformula().substitute(substitution), bounds);
-        }
-        
         std::ostream& BoundedUntilFormula::writeToStream(std::ostream& out) const {
             this->getLeftSubformula().writeToStream(out);
             

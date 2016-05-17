@@ -183,11 +183,9 @@ TEST(DeterministicSparseTransitionParserTest, Whitespaces) {
 TEST(DeterministicSparseTransitionParserTest, MixedTransitionOrder) {
 
     // Since the MatrixBuilder needs sequential input of new elements reordering of transitions or states should throw an exception.
-    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_mixedTransitionOrder.tra"), storm::exceptions::InvalidArgumentException);
     ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
 
     storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/dtmc_general.tra");
-    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_mixedTransitionOrder.trans.rew", transitionMatrix), storm::exceptions::InvalidArgumentException);
     ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/dtmc_mixedStateOrder.trans.rew", transitionMatrix), storm::exceptions::InvalidArgumentException);
 }
 

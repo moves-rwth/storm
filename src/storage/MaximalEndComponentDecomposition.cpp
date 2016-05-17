@@ -74,7 +74,7 @@ namespace storm {
             // from iterator to const_iterator only for "set, multiset, map [and] multimap".
             for (std::list<StateBlock>::const_iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
                 StateBlock const& mec = *mecIterator;
-
+                
                 // Keep track of whether the MEC changed during this iteration.
                 bool mecChanged = false;
                 
@@ -86,52 +86,52 @@ namespace storm {
                 mecChanged |= sccs.size() > 1 || (sccs.size() > 0 && sccs[0].size() < mec.size());
                 
                 // Check for each of the SCCs whether there is at least one action for each state that does not leave the SCC.
-                if (sccs.empty()) {
-                    mecChanged = true;
-                } else {
-                    for (auto& scc : sccs) {
-                        statesToCheck.set(scc.begin(), scc.end());
+                for (auto& scc : sccs) {
+                    statesToCheck.set(scc.begin(), scc.end());
+                    
+                    while (!statesToCheck.empty()) {
+                        storm::storage::BitVector statesToRemove(numberOfStates);
                         
-                        while (!statesToCheck.empty()) {
-                            storm::storage::BitVector statesToRemove(numberOfStates);
+                        for (auto state : statesToCheck) {
+                            bool keepStateInMEC = false;
                             
-                            for (auto state : statesToCheck) {
-                                bool keepStateInMEC = false;
-                                
-                                for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
-                                    bool choiceContainedInMEC = true;
-                                    for (auto const& entry : transitionMatrix.getRow(choice)) {
-                                        if (!scc.containsState(entry.getColumn())) {
-                                            choiceContainedInMEC = false;
-                                            break;
-                                        }
+                            for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
+                                bool choiceContainedInMEC = true;
+                                for (auto const& entry : transitionMatrix.getRow(choice)) {
+                                    if (entry.getValue() == storm::utility::zero<ValueType>()) {
+                                        continue;
                                     }
-                                    
-                                    // If there is at least one choice whose successor states are fully contained in the MEC, we can leave the state in the MEC.
-                                    if (choiceContainedInMEC) {
-                                        keepStateInMEC = true;
+                                        
+                                    if (!scc.containsState(entry.getColumn())) {
+                                        choiceContainedInMEC = false;
                                         break;
                                     }
                                 }
                                 
-                                if (!keepStateInMEC) {
-                                    statesToRemove.set(state, true);
+                                // If there is at least one choice whose successor states are fully contained in the MEC, we can leave the state in the MEC.
+                                if (choiceContainedInMEC) {
+                                    keepStateInMEC = true;
+                                    break;
                                 }
                             }
                             
-                            // Now erase the states that have no option to stay inside the MEC with all successors.
-                            mecChanged |= !statesToRemove.empty();
-                            for (uint_fast64_t state : statesToRemove) {
-                                scc.erase(state);
+                            if (!keepStateInMEC) {
+                                statesToRemove.set(state, true);
                             }
-                            
-                            // Now check which states should be reconsidered, because successors of them were removed.
-                            statesToCheck.clear();
-                            for (auto state : statesToRemove) {
-                                for (auto const& entry : backwardTransitions.getRow(state)) {
-                                    if (scc.containsState(entry.getColumn())) {
-                                        statesToCheck.set(entry.getColumn());
-                                    }
+                        }
+                        
+                        // Now erase the states that have no option to stay inside the MEC with all successors.
+                        mecChanged |= !statesToRemove.empty();
+                        for (uint_fast64_t state : statesToRemove) {
+                            scc.erase(state);
+                        }
+                        
+                        // Now check which states should be reconsidered, because successors of them were removed.
+                        statesToCheck.clear();
+                        for (auto state : statesToRemove) {
+                            for (auto const& entry : backwardTransitions.getRow(state)) {
+                                if (scc.containsState(entry.getColumn())) {
+                                    statesToCheck.set(entry.getColumn());
                                 }
                             }
                         }
@@ -179,6 +179,7 @@ namespace storm {
                         }
                     }
                     
+                    STORM_LOG_ASSERT(!containedChoices.empty(), "The contained choices of any state in an MEC must be non-empty.");
                     newMec.addState(state, std::move(containedChoices));
                 }
                 

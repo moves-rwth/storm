@@ -22,6 +22,7 @@ file(GLOB_RECURSE STORM_MODELCHECKER_PRCTL_HELPER_FILES ${PROJECT_SOURCE_DIR}/sr
 file(GLOB STORM_MODELCHECKER_CSL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_CSL_HELPER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/helper/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/csl/helper/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_REACHABILITY_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_EXPLORATION_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/exploration/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/exploration/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_PROPOSITIONAL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_RESULTS_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.cpp)
 file(GLOB_RECURSE STORM_COUNTEREXAMPLES_FILES ${PROJECT_SOURCE_DIR}/src/counterexamples/*.h ${PROJECT_SOURCE_DIR}/src/counterexamples/*.cpp)
@@ -74,6 +75,7 @@ source_group(modelchecker\\prctl FILES ${STORM_MODELCHECKER_PRCTL_FILES})
 source_group(modelchecker\\prctl\\helper FILES ${STORM_MODELCHECKER_PRCTL_HELPER_FILES})
 source_group(modelchecker\\csl FILES ${STORM_MODELCHECKER_CSL_FILES})
 source_group(modelchecker\\csl\\helper FILES ${STORM_MODELCHECKER_CSL_HELPER_FILES})
+source_group(modelchecker\\exploration FILES ${STORM_MODELCHECKER_EXPLORATION_FILES})
 source_group(modelchecker\\reachability FILES ${STORM_MODELCHECKER_REACHABILITY_FILES})
 source_group(modelchecker\\propositional FILES ${STORM_MODELCHECKER_PROPOSITIONAL_FILES})
 source_group(modelchecker\\results FILES ${STORM_MODELCHECKER_RESULTS_FILES})
@@ -117,7 +119,7 @@ endif(ADDITIONAL_LINK_DIRS)
 ##  All link_directories() calls MUST be made before this point               #
 ##                                                                            #
 ###############################################################################
-add_library(storm STATIC ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
+add_library(storm SHARED ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS}) # Adding headers for xcode
 add_dependencies(storm sylvan)
 add_dependencies(storm resources)
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})

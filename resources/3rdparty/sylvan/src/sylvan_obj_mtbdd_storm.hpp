@@ -48,4 +48,4 @@
      */
     void PrintDot(FILE *out) const;
 
-    
+    std::string GetShaHash() const;

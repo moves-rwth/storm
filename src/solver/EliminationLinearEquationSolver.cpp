@@ -54,7 +54,7 @@ namespace storm {
         template class EliminationLinearEquationSolver<double>;
         
         // TODO: make this work with the proper implementation of solveEquationSystem.
-        template class EliminationLinearEquationSolver<storm::CarlRationalNumber>;
+        template class EliminationLinearEquationSolver<storm::RationalNumber>;
         template class EliminationLinearEquationSolver<storm::RationalFunction>;
         
     }

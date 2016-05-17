@@ -109,6 +109,9 @@ namespace storm {
              */
             MatrixEntry operator*(value_type factor) const;
             
+            bool operator==(MatrixEntry const& other) const;
+            bool operator!=(MatrixEntry const& other) const;
+            
             template<typename IndexTypePrime, typename ValueTypePrime>
             friend std::ostream& operator<<(std::ostream& out, MatrixEntry<IndexTypePrime, ValueTypePrime> const& entry);
         private:
@@ -229,7 +232,7 @@ namespace storm {
              * @return True if replacement took place, False if nothing changed.
              */
             bool replaceColumns(std::vector<index_type> const& replacements, index_type offset);
-            
+                        
         private:
             // A flag indicating whether a row count was set upon construction.
             bool initialRowCountSet;
@@ -644,6 +647,18 @@ namespace storm {
              * 
              */
             SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep) const;
+            
+            /**
+             * Compares two rows.
+             * @param i1 Index of first row
+             * @param i2 Index of second row
+             * @return True if the rows have identical entries.
+             */
+            bool compareRows(index_type i1, index_type i2) const;
+            /*!
+             * Finds duplicate rows in a rowgroup.
+             */
+            BitVector duplicateRowsInRowgroups() const;
             
             /*!
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.

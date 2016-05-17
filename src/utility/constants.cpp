@@ -79,12 +79,12 @@ namespace storm {
         }
         
         template<>
-        bool isOne(storm::CarlRationalNumber const& a) {
+        bool isOne(storm::RationalNumber const& a) {
             return carl::isOne(a);
         }
         
         template<>
-        bool isZero(storm::CarlRationalNumber const& a) {
+        bool isZero(storm::RationalNumber const& a) {
             return carl::isZero(a);
         }
         
@@ -133,13 +133,13 @@ namespace storm {
         }
         
         template<>
-        double convertNumber(CarlRationalNumber const& number){
+        double convertNumber(RationalNumber const& number){
             return carl::toDouble(number);
         }
         
         template<>
-        CarlRationalNumber convertNumber(double const& number){
-            return carl::rationalize<CarlRationalNumber>(number);
+        RationalNumber convertNumber(double const& number){
+            return carl::rationalize<RationalNumber>(number);
         }
 
 #endif
@@ -248,15 +248,15 @@ namespace storm {
         template Polynomial one();
         template Polynomial zero();
         
-        template bool isOne(CarlRationalNumber const& value);
-        template bool isZero(CarlRationalNumber const& value);
-        template bool isConstant(CarlRationalNumber const& value);
+        template bool isOne(RationalNumber const& value);
+        template bool isZero(RationalNumber const& value);
+        template bool isConstant(RationalNumber const& value);
         
-        template CarlRationalNumber one();
-        template CarlRationalNumber zero();
+        template RationalNumber one();
+        template RationalNumber zero();
        
-        template double convertNumber(CarlRationalNumber const& number);
-        template CarlRationalNumber convertNumber(double const& number);
+        template double convertNumber(RationalNumber const& number);
+        template RationalNumber convertNumber(double const& number);
         
         template bool isOne(Interval const& value);
         template bool isZero(Interval const& value);

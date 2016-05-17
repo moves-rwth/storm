@@ -10,7 +10,7 @@ namespace storm {
             stream.str("");
             stream.clear();
             expression->accept(*this);
-            return std::move(stream.str());
+            return stream.str();
         }
         
         boost::any ToExprtkStringVisitor::visit(IfThenElseExpression const& expression) {

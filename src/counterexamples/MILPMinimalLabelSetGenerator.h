@@ -974,7 +974,7 @@ namespace storm {
              * @param formulaPtr A pointer to a safety formula. The outermost operator must be a probabilistic bound operator with a strict upper bound. The nested
              * formula can be either an unbounded until formula or an eventually formula.
              */
-            static void computeCounterexample(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<const storm::logic::Formula> const& formula) {
+            static void computeCounterexample(storm::prism::Program const& program, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 
                 STORM_LOG_THROW(formula->isProbabilityOperatorFormula(), storm::exceptions::InvalidPropertyException, "Counterexample generation does not support this kind of formula. Expecting a probability operator as the outermost formula element.");

@@ -20,10 +20,6 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
-        std::shared_ptr<Formula> UntilFormula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
-            return std::make_shared<UntilFormula>(this->getLeftSubformula().substitute(substitution), this->getRightSubformula().substitute(substitution));
-        }
-        
         std::ostream& UntilFormula::writeToStream(std::ostream& out) const {
             this->getLeftSubformula().writeToStream(out);
             out << " U ";

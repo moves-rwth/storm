@@ -28,6 +28,7 @@
 #include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
+#include "src/settings/modules/ExplorationSettings.h"
 #include "src/utility/macros.h"
 #include "src/settings/Option.h"
 
@@ -66,11 +67,12 @@ namespace storm {
         
         void SettingsManager::setFromString(std::string const& commandLineString) {
             if (commandLineString.empty()) {
-                return;
+                this->setFromExplodedString({});
+            } else {
+                std::vector<std::string> argumentVector;
+                boost::split(argumentVector, commandLineString, boost::is_any_of("\t "));
+                this->setFromExplodedString(argumentVector);
             }
-            std::vector<std::string> argumentVector;
-            boost::split(argumentVector, commandLineString, boost::is_any_of("\t "));
-            this->setFromExplodedString(argumentVector);
         }
         
         void SettingsManager::setFromExplodedString(std::vector<std::string> const& commandLineArguments) {
@@ -513,6 +515,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
             storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
+            storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
         }
 
     }

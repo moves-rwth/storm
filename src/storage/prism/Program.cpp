@@ -368,6 +368,14 @@ namespace storm {
             return this->labels[labelIndexPair->second].getStatePredicateExpression();
         }
         
+        std::map<std::string, storm::expressions::Expression> Program::getLabelToExpressionMapping() const {
+            std::map<std::string, storm::expressions::Expression> result;
+            for (auto const& label : labels) {
+                result.emplace(label.getName(), label.getStatePredicateExpression());
+            }
+            return result;
+        }
+        
         std::size_t Program::getNumberOfLabels() const {
             return this->getLabels().size();
         }

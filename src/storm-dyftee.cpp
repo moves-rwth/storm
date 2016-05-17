@@ -35,8 +35,7 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false,
 
     storm::parser::DFTGalileoParser<ValueType> parser;
     storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
-    std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas = storm::parseFormulasForExplicit(property);
-    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForExplicit(property);
     assert(formulas.size() == 1);
     
     DFTAnalyser<ValueType> analyser;
