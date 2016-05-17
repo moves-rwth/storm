@@ -308,7 +308,17 @@ namespace storm {
                 
                 virtual bool isSparseModel() const override;
                 
-                virtual bool isParametric() const override;
+                virtual bool supportsParameters() const override;
+                
+                /*!
+                 * Checks whether the model has parameters.
+                 * Performance warning: the worst-case complexity is linear in the number of transitions.
+                 *
+                 * @return True iff the model has parameters.
+                 */
+                virtual bool hasParameters() const override;
+                
+                virtual bool isExact() const override;
             protected:
 
                 RewardModelType & rewardModel(std::string const& rewardModelName);

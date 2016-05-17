@@ -9,6 +9,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/container/flat_set.hpp>
 #include <boost/container/flat_map.hpp>
+#include <boost/variant.hpp>
 #include <src/models/sparse/StandardRewardModel.h>
 
 #include "src/storage/prism/Program.h"
@@ -87,7 +88,7 @@ namespace storm {
                  *
                  * @param formula Thes formula based on which to choose the building options.
                  */
-                Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas);
+                Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
                 
                 /*!
                  * Sets the constants definitions from the given string. The string must be of the form 'X=a,Y=b,Z=c',

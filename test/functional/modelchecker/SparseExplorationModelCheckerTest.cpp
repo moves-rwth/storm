@@ -18,7 +18,7 @@ TEST(SparseExplorationModelCheckerTest, Dice) {
 
     storm::modelchecker::SparseExplorationModelChecker<double, uint32_t> checker(program);
     
-    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<>(*formula, true));
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> const& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -70,7 +70,7 @@ TEST(SparseExplorationModelCheckerTest, AsynchronousLeader) {
     
     storm::modelchecker::SparseExplorationModelChecker<double, uint32_t> checker(program);
     
-    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<>(*formula, true));
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> const& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();

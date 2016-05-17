@@ -317,8 +317,29 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            bool Model<ValueType, RewardModelType>::isParametric() const {
+            bool Model<ValueType, RewardModelType>::supportsParameters() const {
                 return std::is_same<ValueType, storm::RationalFunction>::value;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasParameters() const {
+                if (!this->supportsParameters()) {
+                    return false;
+                }
+                // Check for parameters
+                for (auto const& entry : this->getTransitionMatrix()) {
+                    if (!storm::utility::isConstant(entry.getValue())) {
+                        return true;
+                    }
+                }
+                // Only constant values present
+                return false;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::isExact() const {
+                // TODO: change when dedicated data-structure for exact values is present
+                return this->supportsParameters();
             }
             
             template<typename ValueType, typename RewardModelType>

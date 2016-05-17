@@ -220,7 +220,7 @@ namespace storm {
                 }
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
-                std::vector<std::shared_ptr<storm::logic::Formula>> parsedFormulas;
+                std::vector<std::shared_ptr<storm::logic::Formula const>> parsedFormulas;
                 if (settings.isPropertySet()) {
                     std::string properties = settings.getProperty();
                     
@@ -231,7 +231,7 @@ namespace storm {
                     }
                     
                 }
-                std::vector<std::shared_ptr<const storm::logic::Formula>> formulas(parsedFormulas.begin(), parsedFormulas.end());
+                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas(parsedFormulas.begin(), parsedFormulas.end());
                 
                 if (settings.isSymbolicSet()) {
 #ifdef STORM_HAVE_CARL

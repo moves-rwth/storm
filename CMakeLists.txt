@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8.6)
-
+cmake_policy(VERSION 3.2)
 # Set project name
 project (storm CXX C)
 
@@ -29,6 +29,7 @@ option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
 option(USE_XERCES "Sets whether xerces should be used." OFF)
 option(FORCE_COLOR "Force color output" OFF)
+option(STORM_PYTHON "Builds the API for Python" OFF)
 option(STORM_COMPILE_WITH_CCACHE "Compile using CCache" ON)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
@@ -60,6 +61,9 @@ endif()
 
 # Base path for test files
 set(STORM_CPP_TESTS_BASE_PATH "${PROJECT_SOURCE_DIR}/test")
+
+set(STORMPY_OUTPUT_DIR "${PROJECT_BINARY_DIR}/stormpy")
+set(STORMPY_SOURCE_DIR "${PROJECT_SOURCE_DIR}/stormpy")
 
 # Auto-detect operating system.
 set(MACOSX 0)
@@ -94,6 +98,7 @@ elseif (WIN32)
 endif()
 message(STATUS "Assuming extension for shared libraries: ${DYNAMIC_EXT}")
 message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
+
 
 #############################################################
 ##
@@ -221,7 +226,7 @@ find_package(GMP QUIET)
 #############################################################
 
 # Boost Option variables
-set(Boost_USE_STATIC_LIBS        ON)
+set(Boost_USE_STATIC_LIBS        ${USE_BOOST_STATIC_LIBRARIES})
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
