@@ -79,7 +79,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : explorationOrder(storm::settings::generalSettings().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(false), buildStateValuations(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
+        ExplicitPrismModelBuilder<ValueType, RewardModelType, StateType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : explorationOrder(storm::settings::generalSettings().getExplorationOrder()), buildCommandLabels(false), buildAllRewardModels(false), buildStateValuations(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), expressionLabels(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;

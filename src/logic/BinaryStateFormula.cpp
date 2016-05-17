@@ -9,7 +9,7 @@ namespace storm {
         bool BinaryStateFormula::isBinaryStateFormula() const {
             return true;
         }
-                
+        
         Formula const& BinaryStateFormula::getLeftSubformula() const {
             return *leftSubformula;
         }

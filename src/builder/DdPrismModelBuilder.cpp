@@ -201,7 +201,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;

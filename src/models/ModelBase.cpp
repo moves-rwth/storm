@@ -18,7 +18,15 @@ namespace storm {
             return this->getType() == modelType;
         }
         
-        bool ModelBase::isParametric() const { 
+        bool ModelBase::supportsParameters() const {
+            return false;
+        }
+
+        bool ModelBase::hasParameters() const {
+            return false;
+        }
+
+        bool ModelBase::isExact() const {
             return false;
         }
     }

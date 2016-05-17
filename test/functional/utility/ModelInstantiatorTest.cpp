@@ -27,7 +27,7 @@ TEST(ModelInstantiatorTest, BrpProb) {
     // Program and formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = storm::parseFormulasForProgram(formulaAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulaAsString, program);
     ASSERT_TRUE(formulas.size()==1);
     // Parametric model
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
@@ -148,7 +148,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
     // Program and formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = storm::parseFormulasForProgram(formulaAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulaAsString, program);
     ASSERT_TRUE(formulas.size()==1);
     // Parametric model
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
@@ -221,7 +221,7 @@ TEST(ModelInstantiatorTest, Consensus) {
     // Program and formula
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
-    std::vector<std::shared_ptr<storm::logic::Formula>> formulas = storm::parseFormulasForProgram(formulaAsString, program);
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulaAsString, program);
     ASSERT_TRUE(formulas.size()==1);
     // Parametric model
     typename storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitPrismModelBuilder<storm::RationalFunction>::Options(*formulas[0]);

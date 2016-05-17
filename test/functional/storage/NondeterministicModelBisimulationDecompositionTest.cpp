@@ -43,7 +43,7 @@ TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
-    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
 
     typename storm::storage::NondeterministicModelBisimulationDecomposition<storm::models::sparse::Mdp<double>>::Options options2(*mdp, *formula);
     

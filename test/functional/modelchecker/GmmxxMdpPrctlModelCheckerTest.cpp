@@ -32,7 +32,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
 
-    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -148,7 +148,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
 
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
 
-    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
 
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
@@ -211,7 +211,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     solverFactory->setPreferredTechnique(storm::solver::MinMaxTechniqueSelection::PolicyIteration);
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::move(solverFactory));
     
-    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"target\"]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"target\"]");
     
     storm::modelchecker::CheckTask<storm::logic::Formula> checkTask(*formula);
     checkTask.setProduceSchedulers(true);
@@ -261,7 +261,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, tiny_rewards) {
     solverFactory->setPreferredTechnique(storm::solver::MinMaxTechniqueSelection::ValueIteration);
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::move(solverFactory));
     
-    std::shared_ptr<const storm::logic::Formula> formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"target\"]");
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"target\"]");
     
     storm::modelchecker::CheckTask<storm::logic::Formula> checkTask(*formula);
     

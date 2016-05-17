@@ -74,11 +74,12 @@ namespace storm {
         
         void SettingsManager::setFromString(std::string const& commandLineString) {
             if (commandLineString.empty()) {
-                return;
+                this->setFromExplodedString({});
+            } else {
+                std::vector<std::string> argumentVector;
+                boost::split(argumentVector, commandLineString, boost::is_any_of("\t "));
+                this->setFromExplodedString(argumentVector);
             }
-            std::vector<std::string> argumentVector;
-            boost::split(argumentVector, commandLineString, boost::is_any_of("\t "));
-            this->setFromExplodedString(argumentVector);
         }
         
         void SettingsManager::setFromExplodedString(std::vector<std::string> const& commandLineArguments) {

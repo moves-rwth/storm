@@ -9,7 +9,7 @@ TEST(FragmentCheckerTest, Propositional) {
     storm::logic::FragmentSpecification prop = storm::logic::propositional();
 
     storm::parser::FormulaParser formulaParser;
-    std::shared_ptr<const storm::logic::Formula> formula;
+    std::shared_ptr<storm::logic::Formula const> formula;
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("\"label\""));
     EXPECT_TRUE(checker.conformsToSpecification(*formula, prop));
@@ -41,7 +41,7 @@ TEST(FragmentCheckerTest, Pctl) {
     storm::logic::FragmentSpecification pctl = storm::logic::pctl();
     
     storm::parser::FormulaParser formulaParser;
-    std::shared_ptr<const storm::logic::Formula> formula;
+    std::shared_ptr<storm::logic::Formula const> formula;
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("\"label\""));
     EXPECT_TRUE(checker.conformsToSpecification(*formula, pctl));
@@ -61,7 +61,7 @@ TEST(FragmentCheckerTest, Prctl) {
     storm::logic::FragmentSpecification prctl = storm::logic::prctl();
     
     storm::parser::FormulaParser formulaParser;
-    std::shared_ptr<const storm::logic::Formula> formula;
+    std::shared_ptr<storm::logic::Formula const> formula;
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("\"label\""));
     EXPECT_TRUE(checker.conformsToSpecification(*formula, prctl));
@@ -87,7 +87,7 @@ TEST(FragmentCheckerTest, Csl) {
     storm::logic::FragmentSpecification csl = storm::logic::csl();
     
     storm::parser::FormulaParser formulaParser;
-    std::shared_ptr<const storm::logic::Formula> formula;
+    std::shared_ptr<storm::logic::Formula const> formula;
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("\"label\""));
     EXPECT_TRUE(checker.conformsToSpecification(*formula, csl));
@@ -110,7 +110,7 @@ TEST(FragmentCheckerTest, Csrl) {
     storm::logic::FragmentSpecification csrl = storm::logic::csrl();
     
     storm::parser::FormulaParser formulaParser;
-    std::shared_ptr<const storm::logic::Formula> formula;
+    std::shared_ptr<storm::logic::Formula const> formula;
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("\"label\""));
     EXPECT_TRUE(checker.conformsToSpecification(*formula, csrl));

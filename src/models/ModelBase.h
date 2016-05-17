@@ -98,9 +98,25 @@ namespace storm {
             bool isOfType(storm::models::ModelType const& modelType) const;
             
             /*!
-             * Checks whether the model is parametric
+             * Checks whether the model supports parameters.
+             *
+             * @return True iff the model supports parameters.
              */
-            virtual bool isParametric() const;
+            virtual bool supportsParameters() const;
+            
+            /*!
+             * Checks whether the model has parameters.
+             *
+             * @return True iff the model has parameters.
+             */
+            virtual bool hasParameters() const;
+            
+            /*!
+             * Checks whether the model is exact.
+             *
+             * @return True iff the model is exact.
+             */
+            virtual bool isExact() const;
             
         private:
             // The type of the model.
