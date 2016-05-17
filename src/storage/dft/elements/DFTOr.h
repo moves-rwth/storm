@@ -12,7 +12,7 @@ namespace storm {
             {}
 
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
-                assert(this->hasFailedChild(state));
+                STORM_LOG_ASSERT(this->hasFailedChild(state), "No failed child.");
                 if(state.isOperational(this->mId)) {
                     this->fail(state, queues);
                 }

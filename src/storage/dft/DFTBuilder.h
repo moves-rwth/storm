@@ -104,7 +104,7 @@ namespace storm {
                             STORM_LOG_ERROR("Element with name: " << nameDep << " already exists.");
                             return false;
                         }
-                        assert(storm::utility::isOne(probability) || children.size() == 2);
+                        STORM_LOG_ASSERT(storm::utility::isOne(probability) || children.size() == 2, "PDep with multiple children supported.");
                         DFTDependencyPointer element = std::make_shared<DFTDependency<ValueType>>(mNextId++, nameDep, trigger, children[i], probability);
                         mElements[element->name()] = element;
                         mDependencies.push_back(element);
@@ -114,7 +114,7 @@ namespace storm {
             }
 
             bool addVotElement(std::string const& name, unsigned threshold, std::vector<std::string> const& children) {
-                assert(children.size() > 0);
+                STORM_LOG_ASSERT(children.size() > 0, "Has no child.");
                 if(mElements.count(name) != 0) {
                     STORM_LOG_ERROR("Element with name: " << name << " already exists.");
                     return false;

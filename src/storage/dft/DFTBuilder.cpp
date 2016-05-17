@@ -25,7 +25,7 @@ namespace storm {
                     if (itFind != mElements.end()) {
                         // Child found
                         DFTElementPointer childElement = itFind->second;
-                        assert(!childElement->isDependency());
+                        STORM_LOG_ASSERT(!childElement->isDependency(), "Child is dependency.");
                         gate->pushBackChild(childElement);
                         childElement->addParent(gate);
                     } else {
@@ -42,9 +42,9 @@ namespace storm {
             for(auto& elem : mRestrictionChildNames) {
                 for(auto const& childName : elem.second) {
                     auto itFind = mElements.find(childName);
-                    assert(itFind != mElements.end());
+                    STORM_LOG_ASSERT(itFind != mElements.end(), "Child not found.");
                     DFTElementPointer childElement = itFind->second;
-                    assert(!childElement->isDependency() && !childElement->isRestriction());
+                    STORM_LOG_ASSERT(!childElement->isDependency() && !childElement->isRestriction(), "Child has invalid type.");
                     elem.first->pushBackChild(childElement);
                     childElement->addRestriction(elem.first);
                 }
@@ -53,7 +53,7 @@ namespace storm {
             // Initialize dependencies
             for (auto& dependency : mDependencies) {
                 DFTGatePointer triggerEvent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[dependency->nameTrigger()]);
-                assert(mElements[dependency->nameDependent()]->isBasicElement());
+                STORM_LOG_ASSERT(mElements[dependency->nameDependent()]->isBasicElement(), "Dependent element is not BE.");
                 std::shared_ptr<DFTBE<ValueType>> dependentEvent = std::static_pointer_cast<DFTBE<ValueType>>(mElements[dependency->nameDependent()]);
                 dependency->initialize(triggerEvent, dependentEvent);
                 triggerEvent->addOutgoingDependency(dependency);
@@ -73,7 +73,7 @@ namespace storm {
             for(DFTElementPointer e : elems) {
                 e->setId(id++);
             }
-            assert(!mTopLevelIdentifier.empty());
+            STORM_LOG_ASSERT(!mTopLevelIdentifier.empty(), "No top level element.");
             return DFT<ValueType>(elems, mElements[mTopLevelIdentifier]);
         }
 
@@ -130,7 +130,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTBuilder<ValueType>::addStandardGate(std::string const& name, std::vector<std::string> const& children, DFTElementType tp) {
-            assert(children.size() > 0);
+            STORM_LOG_ASSERT(children.size() > 0, "No child.");
             if(mElements.count(name) != 0) {
                 // Element with that name already exists.
                 return false;
@@ -234,7 +234,7 @@ namespace storm {
                 case DFTElementType::CONSTF:
                 case DFTElementType::CONSTS:
                     // TODO
-                    assert(false);
+                    STORM_LOG_ASSERT(false, "Const elements not supported.");
                     break;
                 case DFTElementType::PDEP:
                 {
@@ -254,7 +254,7 @@ namespace storm {
                     break;
                 }
                 default:
-                    assert(false);
+                    STORM_LOG_ASSERT(false, "Dft type not known.");
                     break;
             }
         }
@@ -273,7 +273,7 @@ namespace storm {
                     addVotElement(gate->name(), std::static_pointer_cast<DFTVot<ValueType>>(gate)->threshold(), children);
                     break;
                 default:
-                    assert(false);
+                    STORM_LOG_ASSERT(false, "Dft type not known.");
                     break;
             }
         }

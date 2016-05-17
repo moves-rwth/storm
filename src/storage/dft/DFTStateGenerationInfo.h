@@ -18,7 +18,7 @@ namespace storm {
                 mUsageInfoBits(storm::utility::math::uint64_log2(maxSpareChildCount) + 1), 
                 mIdToStateIndex(nrElements)
             {
-                assert(maxSpareChildCount < pow(2, mUsageInfoBits));
+                STORM_LOG_ASSERT(maxSpareChildCount < pow(2, mUsageInfoBits), "Bit length incorrect.");
             }
 
             size_t usageInfoBits() const {
@@ -26,7 +26,7 @@ namespace storm {
             }
 
             void addStateIndex(size_t id, size_t index) {
-                assert(id < mIdToStateIndex.size());
+                STORM_LOG_ASSERT(id < mIdToStateIndex.size(), "Id invalid.");
                 mIdToStateIndex[id] = index;
             }
 
@@ -39,7 +39,7 @@ namespace storm {
             }
             
             std::vector<size_t> const& seqRestrictionPostElements(size_t index) const {
-                assert(mSeqRestrictionPostElements.count(index) > 0);
+                STORM_LOG_ASSERT(mSeqRestrictionPostElements.count(index) > 0, "Index invalid.");
                 return mSeqRestrictionPostElements.at(index);
             }
             
@@ -53,17 +53,17 @@ namespace storm {
             }
 
             size_t getStateIndex(size_t id) const {
-                assert(id < mIdToStateIndex.size());
+                STORM_LOG_ASSERT(id < mIdToStateIndex.size(), "Id invalid.");
                 return mIdToStateIndex[id];
             }
 
             size_t getSpareUsageIndex(size_t id) const {
-                assert(mSpareUsageIndex.count(id) > 0);
+                STORM_LOG_ASSERT(mSpareUsageIndex.count(id) > 0, "Id invalid.");
                 return mSpareUsageIndex.at(id);
             }
 
             size_t getSpareActivationIndex(size_t id) const {
-                assert(mSpareActivationIndex.count(id) > 0);
+                STORM_LOG_ASSERT(mSpareActivationIndex.count(id) > 0, "Id invalid.");
                 return mSpareActivationIndex.at(id);
             }
 
@@ -114,12 +114,12 @@ namespace storm {
             }
 
             size_t getSymmetryLength(size_t pos) const {
-                assert(pos < mSymmetries.size());
+                STORM_LOG_ASSERT(pos < mSymmetries.size(), "Pos invalid.");
                 return mSymmetries[pos].first;
             }
 
             std::vector<size_t> const& getSymmetryIndices(size_t pos) const {
-                assert(pos < mSymmetries.size());
+                STORM_LOG_ASSERT(pos < mSymmetries.size(), "Pos invalid.");
                 return mSymmetries[pos].second;
             }
 

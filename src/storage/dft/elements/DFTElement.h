@@ -1,7 +1,6 @@
 #pragma once 
 
 #include <string>
-#include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <functional>
@@ -182,7 +181,7 @@ namespace storm {
             }
             
             bool addOutgoingDependency(DFTDependencyPointer const& e) {
-                assert(e->triggerEvent()->id() == this->id());
+                STORM_LOG_ASSERT(e->triggerEvent()->id() == this->id(), "Ids do not match.");
                 if(std::find(mOutgoingDependencies.begin(), mOutgoingDependencies.end(), e) != mOutgoingDependencies.end()) {
                     return false;
                 }
@@ -217,7 +216,7 @@ namespace storm {
                             break;
                         }
                     }
-                    assert(it != restr->children().cend());
+                    STORM_LOG_ASSERT(it != restr->children().cend(), "Child not found.");
                     ++it;
                     if(it != restr->children().cend()) {
                         res.push_back((*it)->id());
@@ -242,7 +241,7 @@ namespace storm {
                             break;
                         }
                     }
-                    assert(it != restr->children().cend());
+                    STORM_LOG_ASSERT(it != restr->children().cend(), "Child not found.");
                     if(it != restr->children().cbegin()) {
                         --it;
                         res.push_back((*it)->id());

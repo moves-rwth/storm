@@ -27,8 +27,8 @@ namespace storm {
             virtual ~DFTDependency() {}
 
             void initialize(DFTGatePointer triggerEvent, DFTBEPointer dependentEvent) {
-                assert(triggerEvent->name() == mNameTrigger);
-                assert(dependentEvent->name() == mNameDependent);
+                STORM_LOG_ASSERT(triggerEvent->name() == mNameTrigger, "Name does not match.");
+                STORM_LOG_ASSERT(dependentEvent->name() == mNameDependent, "Name does not match.");
                 mTriggerEvent = triggerEvent;
                 mDependentEvent = dependentEvent;
             }
@@ -46,12 +46,12 @@ namespace storm {
             }
 
             DFTGatePointer const& triggerEvent() const {
-                assert(mTriggerEvent);
+                STORM_LOG_ASSERT(mTriggerEvent, "Trigger does not exist.");
                 return mTriggerEvent;
             }
 
             DFTBEPointer const& dependentEvent() const {
-                assert(mDependentEvent);
+                STORM_LOG_ASSERT(mDependentEvent, "Dependent element does not exists.");
                 return mDependentEvent;
             }
 

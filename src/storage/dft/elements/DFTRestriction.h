@@ -173,7 +173,7 @@ namespace storm {
 
             
             void checkFails(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
-                assert(queues.failurePropagationDone());
+                STORM_LOG_ASSERT(queues.failurePropagationDone(), "Failure propagation not finished.");
                 bool childOperationalBefore = false;
                 for(auto const& child : this->mChildren)
                 {

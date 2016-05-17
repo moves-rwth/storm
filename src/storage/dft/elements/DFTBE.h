@@ -38,7 +38,7 @@ namespace storm {
             }
             
             bool addIngoingDependency(DFTDependencyPointer const& e) {
-                assert(e->dependentEvent()->id() == this->id());
+                STORM_LOG_ASSERT(e->dependentEvent()->id() == this->id(), "Ids do not match.");
                 if(std::find(mIngoingDependencies.begin(), mIngoingDependencies.end(), e) != mIngoingDependencies.end()) {
                     return false;
                 }

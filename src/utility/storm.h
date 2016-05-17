@@ -399,7 +399,7 @@ namespace storm {
                     psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 } else {
                     // Eventually formula
-                    STORM_LOG_THROW(!probOpFormula.getSubformula().isEventuallyFormula(), storm::exceptions::NotSupportedException, "The parametric engine only supports eventually formulas on CTMCs");
+                    STORM_LOG_THROW(probOpFormula.getSubformula().isEventuallyFormula(), storm::exceptions::NotSupportedException, "The parametric engine only supports eventually formulas on CTMCs");
                     storm::logic::EventuallyFormula eventuallyFormula = probOpFormula.getSubformula().asEventuallyFormula();
                     STORM_LOG_THROW(eventuallyFormula.getSubformula().isInFragment(storm::logic::propositional()), storm::exceptions::NotSupportedException, "The parametric engine does not support nested formulas on CTMCs");
                     std::unique_ptr<storm::modelchecker::CheckResult> resultPointer = propositionalModelchecker.check(eventuallyFormula.getSubformula());
