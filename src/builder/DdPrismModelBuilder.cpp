@@ -286,7 +286,7 @@ namespace storm {
                     if (synchronizationActionIndices.find(action.first) != synchronizationActionIndices.end()) {
                         // If we are to synchronize over an action that does not exist in the second module, the result
                         // is that the synchronization is the empty action.
-                        if (right.hasSynchronizingAction(action.first)) {
+                        if (!right.hasSynchronizingAction(action.first)) {
                             action.second = emptyAction;
                         } else {
                             // Otherwise, the actions of the modules are synchronized.
