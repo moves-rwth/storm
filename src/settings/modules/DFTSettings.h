@@ -58,6 +58,13 @@ namespace storm {
                 bool isDisableDC() const;
 
                 /*!
+                 * Retrieves whether the option to compute an approximation is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool computeApproximation() const;
+                
+                /*!
                  * Retrieves whether the property expected time should be used.
                  *
                  * @return True iff the option was set.
@@ -122,6 +129,8 @@ namespace storm {
                 static const std::string symmetryReductionOptionShortName;
                 static const std::string modularisationOptionName;
                 static const std::string disableDCOptionName;
+                static const std::string computeApproximationOptionName;
+                static const std::string computeApproximationOptionShortName;
                 static const std::string propExpectedTimeOptionName;
                 static const std::string propExpectedTimeOptionShortName;
                 static const std::string propProbabilityOptionName;

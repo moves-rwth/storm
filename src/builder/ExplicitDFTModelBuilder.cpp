@@ -4,7 +4,7 @@
 #include <src/utility/constants.h>
 #include <src/utility/vector.h>
 #include <src/exceptions/UnexpectedException.h>
-#include "src/settings/modules/DebugSettings.h"
+#include "src/settings/modules/DFTSettings.h"
 #include "src/settings/SettingsManager.h"
 #include <map>
 
@@ -226,7 +226,7 @@ namespace storm {
                 STORM_LOG_ASSERT(nextBEPair.second == hasDependencies, "Failure due to dependencies does not match.");
                 STORM_LOG_TRACE("With the failure of: " << nextBE->name() << " [" << nextBE->id() << "] in " << mDft.getStateString(state));
                 
-                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTestSet()) {
+                if (storm::settings::getModule<storm::settings::modules::DFTSettings>().computeApproximation()) {
                     if (!storm::utility::isZero(exitRate)) {
                     ValueType rate = nextBE->activeFailureRate();
                     ValueType div = rate / exitRate;
