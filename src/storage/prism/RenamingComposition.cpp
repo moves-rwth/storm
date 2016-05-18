@@ -19,6 +19,10 @@ namespace storm {
             return *sub;
         }
         
+        std::map<std::string, std::string> const& RenamingComposition::getActionRenaming() const {
+            return actionRenaming;
+        }
+        
         void RenamingComposition::writeToStream(std::ostream& stream) const {
             std::vector<std::string> renamings;
             for (auto const& renaming : actionRenaming) {

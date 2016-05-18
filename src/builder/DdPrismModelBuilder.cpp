@@ -221,11 +221,34 @@ namespace storm {
             }
             
             virtual boost::any visit(storm::prism::RenamingComposition const& composition) override {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Renaming is currently not supported in symbolic model building.");
+                // First, we translate the subcomposition.
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram sub = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getSubcomposition().accept(*this));
+
+                // Create the mapping from action indices to action indices.
+                std::map<uint_fast64_t, uint_fast64_t> renaming;
+                for (auto const& namePair : composition.getActionRenaming()) {
+                    STORM_LOG_THROW(generationInfo.program.hasAction(namePair.first), storm::exceptions::InvalidArgumentException, "Composition refers to unknown action '" << namePair.first << "'.");
+                    STORM_LOG_THROW(generationInfo.program.hasAction(namePair.second), storm::exceptions::InvalidArgumentException, "Composition refers to unknown action '" << namePair.second << "'.");
+                    renaming.emplace(generationInfo.program.getActionIndex(namePair.first), generationInfo.program.getActionIndex(namePair.second));
+                }
+                
+                // Perform the renaming and return result.
+                return rename(sub, renaming);
             }
             
             virtual boost::any visit(storm::prism::HidingComposition const& composition) override {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Hiding is currently not supported in symbolic model building.");
+                // First, we translate the subcomposition.
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram sub = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getSubcomposition().accept(*this));
+                
+                // Create the mapping from action indices to action indices.
+                std::set<uint_fast64_t> actionIndicesToHide;
+                for (auto const& action : composition.getActionsToHide()) {
+                    STORM_LOG_THROW(generationInfo.program.hasAction(action), storm::exceptions::InvalidArgumentException, "Composition refers to unknown action '" << action << "'.");
+                    actionIndicesToHide.insert(generationInfo.program.getActionIndex(action));
+                }
+                
+                // Perform the hiding and return result.
+                return hide(sub, actionIndicesToHide);
             }
             
             virtual boost::any visit(storm::prism::SynchronizingParallelComposition const& composition) override {
@@ -280,16 +303,62 @@ namespace storm {
 
         private:
             /*!
+             * Hides the actions of the given module according to the given set. As a result, the module is modified in
+             * place.
+             */
+            void hide(typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& sub, std::set<uint_fast64_t> const& actionIndicesToHide) const {
+                STORM_LOG_TRACE("Hiding the actions " << boost::join(actionIndicesToHide, ", ") << ".");
+
+                for (auto const& action : sub.synchronizingActionToDecisionDiagramMap) {
+                    if (actionIndicesToHide.find(action) != actionIndicesToHide.end()) {
+                        
+                    }
+                }
+            }
+            
+            /*!
+             * Renames the actions of the given module according to the given renaming.
+             */
+            typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram rename(typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& sub, std::map<uint_fast64_t, uint_fast64_t> const& renaming) const {
+                STORM_LOG_TRACE("Renaming actions.");
+                uint_fast64_t numberOfUsedNondeterminismVariables = sub.numberOfUsedNondeterminismVariables;
+                std::map<uint_fast64_t, typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram> actionIndexToDdMap;
+                
+                // Go through all action DDs with a synchronizing label and rename them if they appear in the renaming.
+                for (auto const& action : sub.synchronizingActionToDecisionDiagramMap) {
+                    auto renamingIt = renaming.find(action.first);
+                    if (renamingIt != renaming.end()) {
+                        // If the action is to be renamed and an action with the target index already exists, we need
+                        // to combine the action DDs.
+                        auto itNewActions = actionIndexToDdMap.find(renamingIt.second);
+                        if (itNewActions != actionIndexToDdMap.end()) {
+                            actionIndexToDdMap[renamingIt.second] = DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(generationInfo, action.second, itNewActions->second);
+                        } else {
+                            // In this case, we can simply copy the action over.
+                            actionIndexToDdMap[renamingIt.second] = action.second;
+                        }
+                    } else {
+                        // If the action is not to be renamed, we need to copy it over. However, if some other action
+                        // was renamed to the very same action name before, we need to combine the transitions.
+                        auto itNewActions = actionIndexToDdMap.find(action.first);
+                        if (itNewActions != actionIndexToDdMap.end()) {
+                            actionIndexToDdMap[action.first] = DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(generationInfo, action.second, itNewActions->second);
+                        } else {
+                            // In this case, we can simply copy the action over.
+                            actionIndexToDdMap[action.first] = action.second;
+                        }
+                    }
+                }
+                
+                return ModuleDecisionDiagram(sub.independentAction, actionIndexToDdMap, sub.identity, numberOfUsedNondeterminismVariables);
+            }
+            
+            /*!
              * Composes the given modules while synchronizing over the provided action indices. As a result, the first
              * module is modified in place and will contain the composition after a call to this method.
              */
-            void composeInParallel(typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& left, typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& right, std::set<uint_fast64_t> const& synchronizationActionIndices) {
-                
-                std::vector<std::string> actionNames;
-                for (auto const& actionIndex : synchronizationActionIndices) {
-                    actionNames.push_back(generationInfo.program.getActionName(actionIndex));
-                }
-                STORM_LOG_TRACE("Composing two modules over the actions '" << boost::join(actionNames, ", ") << "'.");
+            void composeInParallel(typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& left, typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& right, std::set<uint_fast64_t> const& synchronizationActionIndices) const {
+                STORM_LOG_TRACE("Composing two modules over the actions " << boost::join(synchronizationActionIndices, ", ") << ".");
                 
                 // Combine the tau action.
                 uint_fast64_t numberOfUsedNondeterminismVariables = right.independentAction.numberOfUsedNondeterminismVariables;
@@ -802,21 +871,30 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2, storm::dd::Add<Type, ValueType> const& identityDd1, storm::dd::Add<Type, ValueType> const& identityDd2) {
-            storm::dd::Add<Type, ValueType> action1Extended = action1.transitionsDd * identityDd2;
-            storm::dd::Add<Type, ValueType> action2Extended = action2.transitionsDd * identityDd1;
             
+            // First extend the action DDs by the other identities.
+            STORM_LOG_TRACE("Multiplying identities to combine unsynchronized actions.");
+            action1.transitionsDd = action1.transitionsDd * identityDd2;
+            action2.transitionsDd = action2.transitionsDd * identityDd1;
+            
+            // Then combine the extended action DDs.
+            return combineUnsynchronizedActions(generationInfo, action1, action2);
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2) {
             STORM_LOG_TRACE("Combining unsynchronized actions.");
             
             // Make both action DDs write to the same global variables.
             std::set<storm::expressions::Variable> assignedGlobalVariables = equalizeAssignedGlobalVariables(generationInfo, action1, action2);
             
             if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                return ActionDecisionDiagram(action1.guardDd + action2.guardDd, action1Extended + action2Extended, assignedGlobalVariables, 0);
+                return ActionDecisionDiagram(action1.guardDd + action2.guardDd, action1.transitionsDd + action2.transitionsDd, assignedGlobalVariables, 0);
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 if (action1.transitionsDd.isZero()) {
-                    return ActionDecisionDiagram(action2.guardDd, action2Extended, assignedGlobalVariables, action2.numberOfUsedNondeterminismVariables);
+                    return ActionDecisionDiagram(action2.guardDd, action2.transitionsDd, assignedGlobalVariables, action2.numberOfUsedNondeterminismVariables);
                 } else if (action2.transitionsDd.isZero()) {
-                    return ActionDecisionDiagram(action1.guardDd, action1Extended, assignedGlobalVariables, action1.numberOfUsedNondeterminismVariables);
+                    return ActionDecisionDiagram(action1.guardDd, action1.transitionsDd, assignedGlobalVariables, action1.numberOfUsedNondeterminismVariables);
                 }
                 
                 // Bring both choices to the same number of variables that encode the nondeterminism.
@@ -827,18 +905,18 @@ namespace storm {
                     for (uint_fast64_t i = action2.numberOfUsedNondeterminismVariables; i < action1.numberOfUsedNondeterminismVariables; ++i) {
                         nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0).template toAdd<ValueType>();
                     }
-                    action2Extended *= nondeterminismEncoding;
+                    action2.transitionsDd *= nondeterminismEncoding;
                 } else if (action2.numberOfUsedNondeterminismVariables > action1.numberOfUsedNondeterminismVariables) {
                     storm::dd::Add<Type, ValueType> nondeterminismEncoding = generationInfo.manager->template getAddOne<ValueType>();
                     
                     for (uint_fast64_t i = action1.numberOfUsedNondeterminismVariables; i < action2.numberOfUsedNondeterminismVariables; ++i) {
                         nondeterminismEncoding *= generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[i], 0).template toAdd<ValueType>();
                     }
-                    action1Extended *= nondeterminismEncoding;
+                    action1.transitionsDd *= nondeterminismEncoding;
                 }
                 
                 // Add a new variable that resolves the nondeterminism between the two choices.
-                storm::dd::Add<Type, ValueType> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables], 1).ite(action2Extended, action1Extended);
+                storm::dd::Add<Type, ValueType> combinedTransitions = generationInfo.manager->getEncoding(generationInfo.nondeterminismMetaVariables[numberOfUsedNondeterminismVariables], 1).ite(action2.transitionsDd, action1.transitionsDd);
                 
                 return ActionDecisionDiagram((action1.guardDd.toBdd() || action2.guardDd.toBdd()).template toAdd<ValueType>(), combinedTransitions, assignedGlobalVariables, numberOfUsedNondeterminismVariables + 1);
             } else {

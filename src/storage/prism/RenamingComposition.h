@@ -17,6 +17,8 @@ namespace storm {
             
             Composition const& getSubcomposition() const;
             
+            std::map<std::string, std::string> const& getActionRenaming() const;
+            
         protected:
             virtual void writeToStream(std::ostream& stream) const override;
             
