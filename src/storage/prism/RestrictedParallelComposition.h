@@ -18,9 +18,7 @@ namespace storm {
             virtual void writeToStream(std::ostream& stream) const override;
             
         private:
-            std::shared_ptr<Composition> left;
             std::set<std::string> synchronizingActions;
-            std::shared_ptr<Composition> right;
         };
     }
 }

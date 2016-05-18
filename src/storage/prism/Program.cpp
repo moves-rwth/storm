@@ -27,11 +27,21 @@ namespace storm {
             }
             
             bool isValid(Composition const& composition) {
-                return boost::any_cast<bool>(composition.accept(*this));
+                bool isValid = boost::any_cast<bool>(composition.accept(*this));
+                if (appearingModules.size() != program.getNumberOfModules()) {
+                    isValid = false;
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Not every module is used in the system composition.");
+                }
+                return isValid;
             }
             
             virtual boost::any visit(ModuleComposition const& composition) override {
-                return program.hasModule(composition.getModuleName());
+                bool isValid = program.hasModule(composition.getModuleName());
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "The module \"" << composition.getModuleName() << "\" referred to in the system composition does not exist.");
+                isValid = appearingModules.find(composition.getModuleName()) == appearingModules.end();
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "The module \"" << composition.getModuleName() << "\" is referred to more than once in the system composition.");
+                appearingModules.insert(composition.getModuleName());
+                return isValid;
             }
             
             virtual boost::any visit(RenamingComposition const& composition) override {
@@ -56,6 +66,7 @@ namespace storm {
             
         private:
             storm::prism::Program const& program;
+            std::set<std::string> appearingModules;
         };
         
         Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, std::string const& filename, uint_fast64_t lineNumber, bool finalModel)
@@ -350,6 +361,18 @@ namespace storm {
         
         boost::optional<SystemCompositionConstruct> Program::getOptionalSystemCompositionConstruct() const {
             return systemCompositionConstruct;
+        }
+        
+        std::shared_ptr<Composition> Program::getDefaultSystemComposition() const {
+            std::shared_ptr<Composition> current = std::make_shared<ModuleComposition>(this->modules.front().getName());
+            
+            for (uint_fast64_t index = 1; index < this->modules.size(); ++index) {
+                std::shared_ptr<Composition> newComposition = std::make_shared<SynchronizingParallelComposition>(current, std::make_shared<ModuleComposition>(this->modules[index].getName()));
+                current = newComposition;
+            }
+            
+            
+            return current;
         }
         
         std::set<std::string> const& Program::getActions() const {

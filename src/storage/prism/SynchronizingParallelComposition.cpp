@@ -12,7 +12,7 @@ namespace storm {
         }
         
         void SynchronizingParallelComposition::writeToStream(std::ostream& stream) const {
-            stream << "(" << *left << " || " << *right << ")";
+            stream << "(" << this->getLeftSubcomposition() << " || " << this->getRightSubcomposition() << ")";
         }
         
     }

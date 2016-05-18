@@ -297,6 +297,13 @@ namespace storm {
             boost::optional<SystemCompositionConstruct> getOptionalSystemCompositionConstruct() const;
             
             /*!
+             * Retrieves the default system composition for this program.
+             *
+             * @return The default system composition.
+             */
+            std::shared_ptr<Composition> getDefaultSystemComposition() const;
+            
+            /*!
              * Retrieves the set of actions present in the program.
              *
              * @return The set of actions present in the program.

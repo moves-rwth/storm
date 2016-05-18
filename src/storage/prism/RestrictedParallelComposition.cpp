@@ -14,7 +14,7 @@ namespace storm {
         }
         
         void RestrictedParallelComposition::writeToStream(std::ostream& stream) const {
-            stream << "(" << *left << " |[" << boost::algorithm::join(synchronizingActions, ", ") << "]| " << *right << ")";
+            stream << "(" << this->getLeftSubcomposition() << " |[" << boost::algorithm::join(synchronizingActions, ", ") << "]| " << this->getRightSubcomposition() << ")";
         }
 
     }
