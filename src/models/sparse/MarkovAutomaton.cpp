@@ -43,8 +43,8 @@ namespace storm {
                                                                          std::unordered_map<std::string, RewardModelType>&& rewardModels,
                                                                          boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(this->checkIsClosed()) {
-                assert(probabilities);
-                assert(this->getTransitionMatrix().isProbabilistic());
+                STORM_LOG_ASSERT(probabilities, "Matrix must be probabilistic.");
+                STORM_LOG_ASSERT(this->getTransitionMatrix().isProbabilistic(), "Matrix must be probabilistic.");
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -244,10 +244,10 @@ namespace storm {
                     // Get number of choices in current state
                     uint_fast64_t numberChoices = this->getTransitionMatrix().getRowGroupIndices()[state + 1] - this->getTransitionMatrix().getRowGroupIndices()[state];
                     if (isMarkovianState(state)) {
-                        assert(numberChoices == 1);
+                        STORM_LOG_ASSERT(numberChoices == 1, "Wrong number of choices for markovian state.");
                     }
                     if (numberChoices > 1) {
-                        assert(isProbabilisticState(state));
+                        STORM_LOG_ASSERT(isProbabilisticState(state), "State is not probabilistic.");
                         return false;
                     }
                 }
@@ -276,7 +276,7 @@ namespace storm {
                 storm::solver::stateelimination::MAEliminator<storm::models::sparse::Dtmc<ValueType>> stateEliminator(flexibleMatrix, flexibleBackwardTransitions);
                 
                 for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
-                    assert(!this->isHybridState(state));
+                    STORM_LOG_ASSERT(!this->isHybridState(state), "State is hybrid.");
                     if (this->isProbabilisticState(state)) {
                         // Eliminate this probabilistic state
                         stateEliminator.eliminateState(state, true);
@@ -293,7 +293,7 @@ namespace storm {
                         // State is eliminated and can be discarded
                         keepStates.set(state, false);
                     } else {
-                        assert(this->isMarkovianState(state));
+                        STORM_LOG_ASSERT(this->isMarkovianState(state), "State is not markovian.");
                         // Copy transitions
                         for (uint_fast64_t row = flexibleMatrix.getRowGroupIndices()[state]; row < flexibleMatrix.getRowGroupIndices()[state + 1]; ++row) {
                             for (auto const& entry : flexibleMatrix.getRow(row)) {

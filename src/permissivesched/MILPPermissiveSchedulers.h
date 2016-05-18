@@ -51,13 +51,13 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
             
             
             bool foundSolution() const override {
-                assert(mCalledOptimizer);
+                STORM_LOG_ASSERT(mCalledOptimizer, "Optimizer not called.");
                 return !solver.isInfeasible();
             }
             
             SubMDPPermissiveScheduler<RM> getScheduler() const override {
-                assert(mCalledOptimizer);
-                assert(foundSolution());
+                STORM_LOG_ASSERT(mCalledOptimizer, "Optimizer not called.");
+                STORM_LOG_ASSERT(foundSolution(), "Solution not found.");
 
 
                 SubMDPPermissiveScheduler<RM> result(this->mdp, true);
@@ -103,7 +103,7 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
              */
             void createVariables(PermissiveSchedulerPenalties const& penalties, storm::storage::BitVector const& relevantStates) {
                 // We need the unique initial state later, so we get that one before looping.
-                assert(this->mdp.getInitialStates().getNumberOfSetBits() == 1);
+                STORM_LOG_ASSERT(this->mdp.getInitialStates().getNumberOfSetBits() == 1, "No unique initial state.");
                 uint_fast64_t initialStateIndex = this->mdp.getInitialStates().getNextSetIndex(0);
                     
                 storm::expressions::Variable var;
@@ -151,9 +151,9 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                 // (5) and (7) are omitted on purpose (-- we currenty do not support controllability of actions -- )
                 
                 // (1)
-                assert(this->mdp.getInitialStates().getNumberOfSetBits() == 1);
+                STORM_LOG_ASSERT(this->mdp.getInitialStates().getNumberOfSetBits() == 1, "No unique initial state.");
                 uint_fast64_t initialStateIndex = this->mdp.getInitialStates().getNextSetIndex(0);
-                assert(relevantStates[initialStateIndex]);
+                STORM_LOG_ASSERT(relevantStates[initialStateIndex], "Initial state not relevant.");
                 if(lowerBound) {
                     solver.addConstraint("c1", mProbVariables[initialStateIndex] >= solver.getConstant(boundary));
                 } else {
@@ -206,9 +206,9 @@ class MilpPermissiveSchedulerComputation : public PermissiveSchedulerComputation
                                 std::string satstring = to_string(sat);
                                 // (8)
                                 if(relevantStates[entry.getColumn()]) {
-                                    assert(mGammaVariables.count(entry.getColumn()) > 0);
-                                    assert(mGammaVariables.count(s) > 0);
-                                    assert(mBetaVariables.count(sat) > 0);
+                                    STORM_LOG_ASSERT(mGammaVariables.count(entry.getColumn()) > 0, "Entry not found.");
+                                    STORM_LOG_ASSERT(mGammaVariables.count(s) > 0, "Entry not found.");
+                                    STORM_LOG_ASSERT(mBetaVariables.count(sat) > 0, "Entry not found.");
                                     solver.addConstraint("c8-" + satstring, mGammaVariables[entry.getColumn()] < mGammaVariables[s] + (solver.getConstant(1) - mBetaVariables[sat]));
                                 }
                             }

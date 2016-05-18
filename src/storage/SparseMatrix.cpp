@@ -277,9 +277,9 @@ namespace storm {
                 }
                 maxColumn = std::max(maxColumn, elem.getColumn());
             }
-            assert(changed || highestColumn == maxColumn);
+            STORM_LOG_ASSERT(changed || highestColumn == maxColumn, "Incorrect maximal column.");
             highestColumn = maxColumn;
-            assert(changed || lastColumn == columnsAndValues[columnsAndValues.size() - 1].getColumn());
+            STORM_LOG_ASSERT(changed || lastColumn == columnsAndValues[columnsAndValues.size() - 1].getColumn(), "Incorrect last column.");
             lastColumn = columnsAndValues[columnsAndValues.size() - 1].getColumn();
             
             if (changed) {
@@ -305,10 +305,10 @@ namespace storm {
                                       return a.getColumn() < b.getColumn();
                                   });
                         // Assert no equal elements
-                        assert(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                        STORM_LOG_ASSERT(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
                                               [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
                                                   return a.getColumn() <= b.getColumn();
-                                              }));
+                                              }), "Columns not sorted.");
                     }
                 }
             } else {
@@ -320,10 +320,10 @@ namespace storm {
                                   return a.getColumn() < b.getColumn();
                               });
                     // Assert no equal elements
-                    assert(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
+                    STORM_LOG_ASSERT(std::is_sorted(columnsAndValues.begin() + rowIndications[i], columnsAndValues.begin() + endRows,
                                           [](MatrixEntry<index_type, value_type> const& a, MatrixEntry<index_type, value_type> const& b) {
                                               return a.getColumn() <= b.getColumn();
-                                          }));
+                                          }), "Columns not sorted.");
                 }
 
             }
@@ -1368,7 +1368,7 @@ namespace storm {
         void SparseMatrix<ValueType>::printAsMatlabMatrix(std::ostream& out) const {
             // Iterate over all row groups.
             for (typename SparseMatrix<ValueType>::index_type group = 0; group < this->getRowGroupCount(); ++group) {
-                assert(this->getRowGroupSize(group) == 1);
+                STORM_LOG_ASSERT(this->getRowGroupSize(group) == 1, "Incorrect row group size.");
                 for (typename SparseMatrix<ValueType>::index_type i = this->getRowGroupIndices()[group]; i < this->getRowGroupIndices()[group + 1]; ++i) {
                     typename SparseMatrix<ValueType>::index_type nextIndex = this->rowIndications[i];
                     

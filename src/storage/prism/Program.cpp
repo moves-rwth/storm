@@ -1297,7 +1297,7 @@ namespace storm {
         }
 
         uint_fast64_t Program::largestActionIndex() const {
-            assert(numberOfActions() != 0);
+            STORM_LOG_ASSERT(numberOfActions() != 0, "No actions available.");
             return this->indexToActionMap.rbegin()->first;
         }
         

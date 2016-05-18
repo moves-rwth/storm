@@ -37,13 +37,13 @@ namespace storm {
             
             template<typename ValueType>
             std::vector<ValueType> const& StandardRewardModel<ValueType>::getStateRewardVector() const {
-                assert(this->hasStateRewards());
+                STORM_LOG_ASSERT(this->hasStateRewards(), "No state rewards available.");
                 return this->optionalStateRewardVector.get();
             }
 
             template<typename ValueType>
             std::vector<ValueType>& StandardRewardModel<ValueType>::getStateRewardVector() {
-                assert(this->hasStateRewards());
+                STORM_LOG_ASSERT(this->hasStateRewards(), "No state rewards available.");
                 return this->optionalStateRewardVector.get();
             }
 
@@ -54,16 +54,16 @@ namespace storm {
 
             template<typename ValueType>
             ValueType const& StandardRewardModel<ValueType>::getStateReward(uint_fast64_t state) const {
-                assert(this->hasStateRewards());
-                assert(state < this->optionalStateRewardVector.get().size());
+                STORM_LOG_ASSERT(this->hasStateRewards(), "No state rewards available.");
+                STORM_LOG_ASSERT(state < this->optionalStateRewardVector.get().size(), "Invalid state.");
                 return this->optionalStateRewardVector.get()[state];
             }
 
             template<typename ValueType>
             template<typename T>
             void StandardRewardModel<ValueType>::setStateReward(uint_fast64_t state, T const & newReward) {
-                assert(this->hasStateRewards());
-                assert(state < this->optionalStateRewardVector.get().size());
+                STORM_LOG_ASSERT(this->hasStateRewards(), "No state rewards available.");
+                STORM_LOG_ASSERT(state < this->optionalStateRewardVector.get().size(), "Invalid state.");
                 this->optionalStateRewardVector.get()[state] = newReward;
             }
 
@@ -76,28 +76,28 @@ namespace storm {
             
             template<typename ValueType>
             std::vector<ValueType> const& StandardRewardModel<ValueType>::getStateActionRewardVector() const {
-                assert(this->hasStateActionRewards());
+                STORM_LOG_ASSERT(this->hasStateActionRewards(), "No state action rewards available.");
                 return this->optionalStateActionRewardVector.get();
             }
             
             template<typename ValueType>
             std::vector<ValueType>& StandardRewardModel<ValueType>::getStateActionRewardVector() {
-                assert(this->hasStateActionRewards());
+                STORM_LOG_ASSERT(this->hasStateActionRewards(), "No state action rewards available.");
                 return this->optionalStateActionRewardVector.get();
             }
 
             template<typename ValueType>
             ValueType const& StandardRewardModel<ValueType>::getStateActionReward(uint_fast64_t choiceIndex) const {
-                assert(this->hasStateActionRewards());
-                assert(choiceIndex < this->optionalStateActionRewardVector.get().size());
+                STORM_LOG_ASSERT(this->hasStateActionRewards(), "No state action rewards available.");
+                STORM_LOG_ASSERT(choiceIndex < this->optionalStateActionRewardVector.get().size(), "Invalid choiceIndex.");
                 return this->optionalStateActionRewardVector.get()[choiceIndex];
             }
 
             template<typename ValueType>
             template<typename T>
             void StandardRewardModel<ValueType>::setStateActionReward(uint_fast64_t choiceIndex, T const &newValue) {
-                assert(this->hasStateActionRewards());
-                assert(choiceIndex < this->optionalStateActionRewardVector.get().size());
+                STORM_LOG_ASSERT(this->hasStateActionRewards(), "No state action rewards available.");
+                STORM_LOG_ASSERT(choiceIndex < this->optionalStateActionRewardVector.get().size(), "Invalid choiceIndex.");
                 this->optionalStateActionRewardVector.get()[choiceIndex] = newValue;
             }
 

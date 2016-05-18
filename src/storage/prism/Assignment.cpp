@@ -1,5 +1,4 @@
 #include "Assignment.h"
-#include <cassert>
 
 namespace storm {
     namespace prism {
@@ -25,7 +24,7 @@ namespace storm {
         
         bool Assignment::isIdentity() const {
             if(this->expression.isVariable()) {
-                assert(this->expression.getVariables().size() == 1);
+                STORM_LOG_ASSERT(this->expression.getVariables().size() == 1, "Invalid number of variables.");
                 //if( variable == *(this->expression.getVariables().begin())) {
                 //    std::cout << variable.getName() << " == " << (this->expression.getVariables().begin())->getName() << std::endl;
                 //}

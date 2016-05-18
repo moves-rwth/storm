@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <vector>
 #include <unordered_map>
 #include <utility>
@@ -197,7 +196,7 @@ namespace storage {
                 } else if(dft.isDependency(id)) {
                     colourize(dft.getDependency(id));
                 } else {
-                    assert(dft.isRestriction(id));
+                    STORM_LOG_ASSERT(dft.isRestriction(id), "Element is no restriction.");
                     colourize(dft.getRestriction(id));
                 }
             }
@@ -233,7 +232,7 @@ namespace storage {
                         res.pdepCandidates[depColour.at(index)] = std::vector<size_t>({index});
                     }
                 } else {
-                    assert(dft.isRestriction(index));
+                    STORM_LOG_ASSERT(dft.isRestriction(index), "Element is no restriction.");
                     auto it = res.restrictionCandidates.find(restrictionColour.at(index));
                     if(it != res.restrictionCandidates.end()) {
                         it->second.push_back(index);
@@ -342,14 +341,14 @@ namespace storage {
          * Construct the initial bijection.
          */
         void constructInitialBijection() {
-            assert(candidatesCompatible);
+            STORM_LOG_ASSERT(candidatesCompatible, "Candidates are not compatible.");
             // We first construct the currentPermutations, which helps to determine the current state of the check.
             initializePermutationsAndTreatTrivialGroups(bleft.beCandidates, bright.beCandidates, currentPermutations.beCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.gateCandidates, bright.gateCandidates, currentPermutations.gateCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.pdepCandidates, bright.pdepCandidates, currentPermutations.pdepCandidates);
             initializePermutationsAndTreatTrivialGroups(bleft.restrictionCandidates, bright.restrictionCandidates, currentPermutations.restrictionCandidates);
             STORM_LOG_TRACE(bijection.size() << " vs. " << bleft.size() << " vs. " << bright.size());
-            assert(bijection.size() == bleft.size());
+            STORM_LOG_ASSERT(bijection.size() == bleft.size(), "No. of bijection elements do not match.");
             
         }
 
@@ -358,7 +357,7 @@ namespace storage {
          * @return true if a next bijection exists.
          */
         bool findNextBijection() {
-            assert(candidatesCompatible);
+            STORM_LOG_ASSERT(candidatesCompatible, "Candidates are not compatible.");
             bool foundNext = false;
             if(!currentPermutations.beCandidates.empty()) {
                 auto it = currentPermutations.beCandidates.begin();
@@ -395,28 +394,28 @@ namespace storage {
             if(foundNext) {
                 for(auto const& colour : bleft.beCandidates) {
                     if (colour.second.size() > 1) {
-                        assert(currentPermutations.beCandidates.find(colour.first) != currentPermutations.beCandidates.end());
+                        STORM_LOG_ASSERT(currentPermutations.beCandidates.find(colour.first) != currentPermutations.beCandidates.end(), "Colour not found.");
                         zipVectorsIntoMap(colour.second, currentPermutations.beCandidates.find(colour.first)->second, bijection);
                     }
                 }
 
                 for(auto const& colour : bleft.gateCandidates) {
                     if (colour.second.size() > 1) {
-                        assert(currentPermutations.gateCandidates.find(colour.first) != currentPermutations.gateCandidates.end());
+                        STORM_LOG_ASSERT(currentPermutations.gateCandidates.find(colour.first) != currentPermutations.gateCandidates.end(), "Colour not found.");
                         zipVectorsIntoMap(colour.second, currentPermutations.gateCandidates.find(colour.first)->second, bijection);
                     }
                 }
 
                 for(auto const& colour : bleft.pdepCandidates) {
                     if (colour.second.size() > 1) {
-                        assert(currentPermutations.pdepCandidates.find(colour.first) != currentPermutations.pdepCandidates.end());
+                        STORM_LOG_ASSERT(currentPermutations.pdepCandidates.find(colour.first) != currentPermutations.pdepCandidates.end(), "Colour not found.");
                         zipVectorsIntoMap(colour.second, currentPermutations.pdepCandidates.find(colour.first)->second, bijection);
                     }
                 }
                 
                 for(auto const& colour : bleft.restrictionCandidates) {
                     if (colour.second.size() > 1) {
-                        assert(currentPermutations.restrictionCandidates.find(colour.first) != currentPermutations.restrictionCandidates.end());
+                        STORM_LOG_ASSERT(currentPermutations.restrictionCandidates.find(colour.first) != currentPermutations.restrictionCandidates.end(), "Colour not found.");
                         zipVectorsIntoMap(colour.second, currentPermutations.restrictionCandidates.find(colour.first)->second, bijection);
                     }
                 }
@@ -430,13 +429,13 @@ namespace storage {
          *
          */
         bool check() const {
-            assert(bijection.size() == bleft.size());
+            STORM_LOG_ASSERT(bijection.size() == bleft.size(), "No. of bijection elements do not match.");
             // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
             for(auto const& indexpair : bijection) {
                 // Check type first. Colouring takes care of a lot, but not necesarily everything (e.g. voting thresholds)
                 equalType(*dft.getElement(indexpair.first), *dft.getElement(indexpair.second));
                 if(dft.isGate(indexpair.first)) {
-                    assert(dft.isGate(indexpair.second));
+                    STORM_LOG_ASSERT(dft.isGate(indexpair.second), "Element is no gate.");
                     auto const& lGate = dft.getGate(indexpair.first);
                     auto const& rGate = dft.getGate(indexpair.second);
                     if(lGate->isDynamicGate()) {
@@ -483,7 +482,7 @@ namespace storage {
                 
                     
                 } else if(dft.isDependency(indexpair.first)) {
-                    assert(dft.isDependency(indexpair.second));
+                    STORM_LOG_ASSERT(dft.isDependency(indexpair.second), "Element is no dependency.");
                     auto const& lDep = dft.getDependency(indexpair.first);
                     auto const& rDep = dft.getDependency(indexpair.second);
                     if(bijection.at(lDep->triggerEvent()->id()) != rDep->triggerEvent()->id()) {
@@ -493,7 +492,7 @@ namespace storage {
                         return false;
                     }
                 } else if(dft.isRestriction(indexpair.first)) {
-                    assert(dft.isRestriction(indexpair.second));
+                    STORM_LOG_ASSERT(dft.isRestriction(indexpair.second), "Element is no restriction.");
                     auto const& lRestr = dft.getRestriction(indexpair.first);
                     std::vector<size_t> childrenLeftMapped;
                     for(auto const& child : lRestr->children() ) {
@@ -521,8 +520,8 @@ namespace storage {
                     }
                 }
                 else {
-                    assert(dft.isBasicElement(indexpair.first));
-                    assert(dft.isBasicElement(indexpair.second));
+                    STORM_LOG_ASSERT(dft.isBasicElement(indexpair.first), "Element is no BE.");
+                    STORM_LOG_ASSERT(dft.isBasicElement(indexpair.second), "Element is no BE.");
                     // No operations required.
                 }
             }
@@ -590,12 +589,12 @@ namespace storage {
             for(auto const& colour : right) {
                 if(colour.second.size()>1) {
                     auto it = permutations.insert(colour);
-                    assert(it.second);
+                    STORM_LOG_ASSERT(it.second, "Element already contained.");
                     std::sort(it.first->second.begin(), it.first->second.end());
                     zipVectorsIntoMap(left.at(colour.first), it.first->second, bijection);
                 } else {
-                    assert(colour.second.size() == 1);
-                    assert(bijection.count(left.at(colour.first).front()) == 0);
+                    STORM_LOG_ASSERT(colour.second.size() == 1, "No elements for colour.");
+                    STORM_LOG_ASSERT(bijection.count(left.at(colour.first).front()) == 0, "Element already contained.");
                     bijection[left.at(colour.first).front()] = colour.second.front();
                 }
             }
@@ -606,7 +605,7 @@ namespace storage {
          */
         void zipVectorsIntoMap(std::vector<size_t> const& a, std::vector<size_t> const& b, std::map<size_t, size_t>& map) const {
             // Assert should pass due to compatibility check
-            assert(a.size() == b.size());
+            STORM_LOG_ASSERT(a.size() == b.size(), "Sizes do not match.");
             auto it = b.cbegin();
             for(size_t lIndex : a) {
                 map[lIndex] = *it;

@@ -5,6 +5,7 @@
 #include "src/cli/cli.h"
 #include "src/exceptions/BaseException.h"
 #include "src/utility/macros.h"
+#include "src/builder/DftSmtBuilder.h"
 #include <boost/lexical_cast.hpp>
 
 #include "src/settings/modules/GeneralSettings.h"
@@ -42,6 +43,18 @@ void analyzeDFT(std::string filename, std::string property, bool symred = false,
     analyser.check(dft, formulas[0], symred, allowModularisation, enableDC);
     analyser.printTimings();
     analyser.printResult();
+}
+
+template<typename ValueType>
+void analyzeWithSMT(std::string filename) {
+    std::cout << "Running DFT analysis on file " << filename << " with use of SMT" << std::endl;
+    
+    storm::parser::DFTGalileoParser<ValueType> parser;
+    storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
+    storm::builder::DFTSMTBuilder<ValueType> dftSmtBuilder;
+    dftSmtBuilder.convertToSMT(dft);
+    bool sat = dftSmtBuilder.check();
+    std::cout << "SMT result: " << sat << std::endl;
 }
 
 /*!
@@ -92,6 +105,22 @@ int main(const int argc, const char** argv) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
         }
         
+        bool parametric = false;
+#ifdef STORM_HAVE_CARL
+        parametric = generalSettings.isParametricSet();
+#endif
+        
+        if (dftSettings.solveWithSMT()) {
+            // Solve with SMT
+            if (parametric) {
+                analyzeWithSMT<storm::RationalFunction>(dftSettings.getDftFilename());
+            } else {
+                analyzeWithSMT<double>(dftSettings.getDftFilename());
+            }
+            storm::utility::cleanUp();
+            return 0;
+        }
+        
         // Set min or max
         bool minimal = true;
         if (dftSettings.isComputeMaximalValue()) {
@@ -132,11 +161,6 @@ int main(const int argc, const char** argv) {
         
         STORM_LOG_ASSERT(!pctlFormula.empty(), "Pctl formula empty.");
 
-        bool parametric = false;
-#ifdef STORM_HAVE_CARL
-        parametric = generalSettings.isParametricSet();
-#endif
-        
         // From this point on we are ready to carry out the actual computations.
         if (parametric) {
             analyzeDFT<storm::RationalFunction>(dftSettings.getDftFilename(), pctlFormula, dftSettings.useSymmetryReduction(), allowModular && dftSettings.useModularisation(), !dftSettings.isDisableDC() );

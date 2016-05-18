@@ -11,6 +11,7 @@
 #include <boost/optional.hpp>
 
 #include "src/utility/OsDetection.h"
+#include "src/utility/macros.h"
 #include "src/adapters/CarlAdapter.h"
 
 // Forward declaration for adapter classes.

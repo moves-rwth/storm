@@ -120,7 +120,7 @@ namespace storm {
                 }
                 
                 OptimizationDirection getOptimizationDirection() const {
-                    assert(optimalityType);
+                    STORM_LOG_ASSERT(optimalityType, "Optimality type not set.");
                     return optimalityType.get();
                 }
                 // A flag that indicates whether a measure driven initial partition is to be used. If this flag is set

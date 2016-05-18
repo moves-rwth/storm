@@ -70,7 +70,7 @@ namespace storm {
                     
                     // Skip the state itself as one of its predecessors.
                     if (predecessor == state) {
-                        assert(hasSelfLoop);
+                        STORM_LOG_ASSERT(hasSelfLoop, "State has no self loop.");
                         continue;
                     }
                     

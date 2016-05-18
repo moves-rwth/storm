@@ -6,7 +6,6 @@
 
 #include <sstream>
 #include <memory>
-#include <cassert>
 
 namespace storm {
     namespace storage {
@@ -156,7 +155,7 @@ namespace storm {
              * @return Id of the dependency
              */
             size_t getDependencyId(size_t index) const {
-                assert(index < nrFailableDependencies());
+                STORM_LOG_ASSERT(index < nrFailableDependencies(), "Index invalid.");
                 return mFailableDependencies[index];
             }
 

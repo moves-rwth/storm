@@ -102,7 +102,7 @@ namespace storm {
              * Can only be called after the direction has been set.
              */
             virtual void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const {
-                assert(isSet(this->direction));
+                STORM_LOG_ASSERT(isSet(this->direction), "Direction not set.");
                 solveEquationSystem(convert(this->direction), x, b, multiplyResult, newX);
             }
             

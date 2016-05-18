@@ -11,8 +11,8 @@ namespace storm {
             // Initialize uses
             for(size_t id  : mDft.getSpareIndices()) {
                 std::shared_ptr<DFTGate<ValueType> const> elem = mDft.getGate(id);
-                assert(elem->isSpareGate());
-                assert(elem->nrChildren() > 0);
+                STORM_LOG_ASSERT(elem->isSpareGate(), "Element is no spare gate.");
+                STORM_LOG_ASSERT(elem->nrChildren() > 0, "Element has no child.");
                 this->setUses(id, elem->children()[0]->id());
             }
             
@@ -47,7 +47,7 @@ namespace storm {
             // Initialize failable dependencies
             for (size_t dependencyId : mDft.getDependencies()) {
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(dependencyId);
-                assert(dependencyId == dependency->id());
+                STORM_LOG_ASSERT(dependencyId == dependency->id(), "Ids do not match.");
                 if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvent()->id()) == DFTElementState::Operational) {
                     mFailableDependencies.push_back(dependencyId);
                     STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
@@ -182,9 +182,9 @@ namespace storm {
             }
             
             for (auto dependency : mDft.getElement(id)->outgoingDependencies()) {
-                assert(dependency->triggerEvent()->id() == id);
+                STORM_LOG_ASSERT(dependency->triggerEvent()->id() == id, "Ids do not match.");
                 if (getElementState(dependency->dependentEvent()->id()) == DFTElementState::Operational) {
-                    assert(!isFailsafe(dependency->dependentEvent()->id()));
+                    STORM_LOG_ASSERT(!isFailsafe(dependency->dependentEvent()->id()), "Dependent event is failsafe.");
                     mFailableDependencies.push_back(dependency->id());
                     STORM_LOG_TRACE("New dependency failure: " << dependency->toString());
                 }
@@ -194,11 +194,11 @@ namespace storm {
         
         template<typename ValueType>
         void DFTState<ValueType>::updateDontCareDependencies(size_t id) {
-            assert(mDft.isBasicElement(id));
-            assert(hasFailed(id));
+            STORM_LOG_ASSERT(mDft.isBasicElement(id), "Element is no BE.");
+            STORM_LOG_ASSERT(hasFailed(id), "Element has not failed.");
             
             for (auto dependency : mDft.getBasicElement(id)->ingoingDependencies()) {
-                assert(dependency->dependentEvent()->id() == id);
+                STORM_LOG_ASSERT(dependency->dependentEvent()->id() == id, "Ids do not match.");
                 setDependencyDontCare(dependency->id());
             }
         }
@@ -209,7 +209,7 @@ namespace storm {
             STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
             if (nrFailableDependencies() > 0) {
                 // Consider failure due to dependency
-                assert(index < nrFailableDependencies());
+                STORM_LOG_ASSERT(index < nrFailableDependencies(), "Index invalid.");
                 std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(mFailableDependencies[index]);
                 std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvent()->id()), true);
                 mFailableDependencies.erase(mFailableDependencies.begin() + index);
@@ -218,9 +218,9 @@ namespace storm {
                 return res;
             } else {
                 // Consider "normal" failure
-                assert(index < nrFailableBEs());
+                STORM_LOG_ASSERT(index < nrFailableBEs(), "Index invalid.");
                 std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(mIsCurrentlyFailableBE[index]), false);
-                assert(res.first->canFail());
+                STORM_LOG_ASSERT(res.first->canFail(), "Element cannot fail.");
                 mIsCurrentlyFailableBE.erase(mIsCurrentlyFailableBE.begin() + index);
                 setFailed(res.first->id());
                 return res;
@@ -229,7 +229,7 @@ namespace storm {
  
         template<typename ValueType>
         void DFTState<ValueType>::letDependencyBeUnsuccessful(size_t index) {
-            assert(nrFailableDependencies() > 0 && index < nrFailableDependencies());
+            STORM_LOG_ASSERT(nrFailableDependencies() > 0 && index < nrFailableDependencies(), "Index invalid.");
             std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(getDependencyId(index));
             mFailableDependencies.erase(mFailableDependencies.begin() + index);
             setDependencyUnsuccessful(dependency->id());
@@ -243,7 +243,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DFTState<ValueType>::isActive(size_t id) const {
-            assert(mDft.isRepresentative(id));
+            STORM_LOG_ASSERT(mDft.isRepresentative(id), "Element is no representative.");
             return mStatus[mStateGenerationInfo.getSpareActivationIndex(id)];
         }
             
@@ -277,7 +277,7 @@ namespace storm {
 
         template<typename ValueType>
         uint_fast64_t DFTState<ValueType>::extractUses(size_t from) const {
-            assert(mStateGenerationInfo.usageInfoBits() < 64);
+            STORM_LOG_ASSERT(mStateGenerationInfo.usageInfoBits() < 64, "UsageInfoBit size too large.");
             return mStatus.getAsInt(from, mStateGenerationInfo.usageInfoBits());
         }
 
@@ -294,14 +294,14 @@ namespace storm {
         
         template<typename ValueType>
         void DFTState<ValueType>::finalizeUses(size_t spareId) {
-            assert(hasFailed(spareId));
+            STORM_LOG_ASSERT(hasFailed(spareId), "Spare has not failed.");
             mStatus.setFromInt(mStateGenerationInfo.getSpareUsageIndex(spareId), mStateGenerationInfo.usageInfoBits(), mDft.getMaxSpareChildCount());
         }
         
         template<typename ValueType>
         bool DFTState<ValueType>::hasOperationalPostSeqElements(size_t id) const {
-            assert(!mDft.isDependency(id));
-            assert(!mDft.isRestriction(id));
+            STORM_LOG_ASSERT(!mDft.isDependency(id), "Element is dependency.");
+            STORM_LOG_ASSERT(!mDft.isRestriction(id), "Element is restriction.");
             auto const& postIds =  mStateGenerationInfo.seqRestrictionPostElements(id);
             for(size_t id : postIds) {
                 if(isOperational(id)) {
@@ -315,7 +315,7 @@ namespace storm {
         bool DFTState<ValueType>::claimNew(size_t spareId, size_t currentlyUses, std::vector<std::shared_ptr<DFTElement<ValueType>>> const& children) {
             auto it = children.begin();
             while ((*it)->id() != currentlyUses) {
-                assert(it != children.end());
+                STORM_LOG_ASSERT(it != children.end(), "Currently used element not found.");
                 ++it;
             }
             ++it;

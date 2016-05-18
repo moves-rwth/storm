@@ -6,6 +6,7 @@
 #include <functional>
 
 #include "src/utility/OsDetection.h"
+#include "src/utility/macros.h"
 
 namespace storm {
     namespace expressions {

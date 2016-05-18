@@ -17,7 +17,7 @@ namespace storm {
         template<typename RM>
         boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaMILP(storm::models::sparse::Mdp<double, RM> const& mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, RM>> propMC(mdp);
-            assert(safeProp.getSubformula().isEventuallyFormula());
+            STORM_LOG_ASSERT(safeProp.getSubformula().isEventuallyFormula(), "No eventually formula.");
             auto backwardTransitions = mdp.getBackwardTransitions();
             storm::storage::BitVector goalstates = propMC.check(safeProp.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
             goalstates = storm::utility::graph::performProb1A(mdp, backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);
@@ -44,7 +44,7 @@ namespace storm {
         template<typename RM>
         boost::optional<SubMDPPermissiveScheduler<RM>> computePermissiveSchedulerViaSMT(storm::models::sparse::Mdp<double, RM> const& mdp, storm::logic::ProbabilityOperatorFormula const& safeProp) {
             storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Mdp<double, RM>> propMC(mdp);
-            assert(safeProp.getSubformula().isEventuallyFormula());
+            STORM_LOG_ASSERT(safeProp.getSubformula().isEventuallyFormula(), "No eventually formula.");
             auto backwardTransitions = mdp.getBackwardTransitions();
             storm::storage::BitVector goalstates = propMC.check(safeProp.getSubformula().asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
             goalstates = storm::utility::graph::performProb1A(mdp, backwardTransitions, storm::storage::BitVector(goalstates.size(), true), goalstates);

@@ -14,7 +14,7 @@ namespace storm {
 
         template<typename ValueType>
         DFT<ValueType>::DFT(DFTElementVector const& elements, DFTElementPointer const& tle) : mElements(elements), mNrOfBEs(0), mNrOfSpares(0), mTopLevelIndex(tle->id()), mMaxSpareChildCount(0) {
-            assert(elementIndicesCorrect());
+            STORM_LOG_ASSERT(elementIndicesCorrect(), "Ids incorrect.");
             size_t nrRepresentatives = 0;
             
             for (auto& elem : mElements) {
@@ -100,9 +100,9 @@ namespace storm {
             } else {
                 // Generate information according to symmetries
                 for (size_t symmetryIndex : symmetries.sortedSymmetries) {
-                    assert(!visited[symmetryIndex]);
+                    STORM_LOG_ASSERT(!visited[symmetryIndex], "Element already considered for symmetry.");
                     auto const& symmetryGroup = symmetries.groups.at(symmetryIndex);
-                    assert(!symmetryGroup.empty());
+                    STORM_LOG_ASSERT(!symmetryGroup.empty(), "No symmetry available.");
 
                     // Insert all elements of first subtree of each symmetry
                     size_t groupIndex = stateIndex;
@@ -117,14 +117,14 @@ namespace storm {
                     
                     // Mirror symmetries
                     size_t noSymmetricElements = symmetryGroup.front().size();
-                    assert(noSymmetricElements > 1);
+                    STORM_LOG_ASSERT(noSymmetricElements > 1, "No symmetry available.");
 
                     for (std::vector<size_t> symmetricElements : symmetryGroup) {
-                        assert(symmetricElements.size() == noSymmetricElements);
+                        STORM_LOG_ASSERT(symmetricElements.size() == noSymmetricElements, "No. of symmetric elements do not coincide.");
                         if (visited[symmetricElements[1]]) {
                             // Elements already mirrored
                             for (size_t index : symmetricElements) {
-                                assert(visited[index]);
+                                STORM_LOG_ASSERT(visited[index], "Element not mirrored.");
                             }
                             continue;
                         }
@@ -143,13 +143,13 @@ namespace storm {
                             generationInfo.addStateIndex(symmetricElement, index + offset * i);
                             stateIndex += 2;
 
-                            assert((activationIndex > 0) == isRepresentative(symmetricElement));
+                            STORM_LOG_ASSERT((activationIndex > 0) == isRepresentative(symmetricElement), "Bits for representative incorrect.");
                             if (activationIndex > 0) {
                                 generationInfo.addSpareActivationIndex(symmetricElement, activationIndex + offset * i);
                                 ++stateIndex;
                             }
 
-                            assert((usageIndex > 0) == mElements[symmetricElement]->isSpareGate());
+                            STORM_LOG_ASSERT((usageIndex > 0) == mElements[symmetricElement]->isSpareGate(), "Bits for usage incorrect.");
                             if (usageIndex > 0) {
                                 generationInfo.addSpareUsageIndex(symmetricElement, usageIndex + offset * i);
                                 stateIndex += generationInfo.usageInfoBits();
@@ -187,15 +187,15 @@ namespace storm {
             generationInfo.generateSymmetries(symmetries);
 
             STORM_LOG_TRACE(generationInfo);
-            assert(stateIndex == mStateVectorSize);
-            assert(visited.full());
+            STORM_LOG_ASSERT(stateIndex == mStateVectorSize, "Id incorrect.");
+            STORM_LOG_ASSERT(visited.full(), "Not all elements considered.");
             
             return generationInfo;
         }
         
         template<typename ValueType>
         size_t DFT<ValueType>::generateStateInfo(DFTStateGenerationInfo& generationInfo, size_t id, storm::storage::BitVector& visited, size_t stateIndex) const {
-            assert(!visited[id]);
+            STORM_LOG_ASSERT(!visited[id], "Element already visited.");
             visited.set(id);
             
             // Reserve bits for element
@@ -238,7 +238,7 @@ namespace storm {
         
         template<typename ValueType>
         std::vector<DFT<ValueType>>  DFT<ValueType>::topModularisation() const {
-            assert(isGate(mTopLevelIndex));
+            STORM_LOG_ASSERT(isGate(mTopLevelIndex), "Top level element is no gate.");
             auto const& children = getGate(mTopLevelIndex)->children();
             std::map<size_t, std::vector<size_t>> subdfts;
             for(auto const& child : children) {
@@ -250,7 +250,7 @@ namespace storm {
                 if (isGate(child->id())) {
                     isubdft = getGate(child->id())->independentSubDft(false);
                 } else {
-                    assert(isBasicElement(child->id()));
+                    STORM_LOG_ASSERT(isBasicElement(child->id()), "Child is no BE.");
                     if(getBasicElement(child->id())->hasIngoingDependencies()) {
                         STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
                         return {*this};
@@ -309,16 +309,16 @@ namespace storm {
             
             // Add rewritten elements
             for (std::vector<size_t> rewrites : rewriteIds) {
-                assert(rewrites.size() > 1);
-                assert(mElements[rewrites[1]]->hasParents());
-                assert(mElements[rewrites[1]]->parents().front()->isGate());
+                STORM_LOG_ASSERT(rewrites.size() > 1, "No rewritten elements.");
+                STORM_LOG_ASSERT(mElements[rewrites[1]]->hasParents(), "Rewritten elements has no parents.");
+                STORM_LOG_ASSERT(mElements[rewrites[1]]->parents().front()->isGate(), "Rewritten element has no parent gate.");
                 DFTGatePointer originalParent = std::static_pointer_cast<DFTGate<ValueType>>(mElements[rewrites[1]]->parents().front());
                 std::string newParentName = builder.getUniqueName(originalParent->name());
                 
                 // Accumulate children names
                 std::vector<std::string> childrenNames;
                 for (size_t i = 1; i < rewrites.size(); ++i) {
-                    assert(mElements[rewrites[i]]->parents().front()->id() == originalParent->id()); // Children have the same father
+                    STORM_LOG_ASSERT(mElements[rewrites[i]]->parents().front()->id() == originalParent->id(), "Children have the same father");
                     childrenNames.push_back(mElements[rewrites[i]]->name());
                 }
                 
@@ -390,7 +390,7 @@ namespace storm {
                 stream << "}" << std::endl;
                 return stream.str();
             }
-            assert(it != mTopModule.end());
+            STORM_LOG_ASSERT(it != mTopModule.end(), "Element not found.");
             stream << mElements[(*it)]->name();
             ++it;
             while(it != mTopModule.end()) {
@@ -403,7 +403,7 @@ namespace storm {
                 stream << "[" << mElements[spareModule.first]->name() << "] = {";
                 if (!spareModule.second.empty()) {
                     std::vector<size_t>::const_iterator it = spareModule.second.begin();
-                    assert(it != spareModule.second.end());
+                    STORM_LOG_ASSERT(it != spareModule.second.end(), "Element not found.");
                     stream << mElements[(*it)]->name();
                     ++it;
                     while(it != spareModule.second.end()) {
@@ -494,13 +494,13 @@ namespace storm {
         
         template<typename ValueType>
         size_t DFT<ValueType>::getChild(size_t spareId, size_t nrUsedChild) const {
-            assert(mElements[spareId]->isSpareGate());
+            STORM_LOG_ASSERT(mElements[spareId]->isSpareGate(), "Element is no spare.");
             return getGate(spareId)->children()[nrUsedChild]->id();
         }
         
         template<typename ValueType>
         size_t DFT<ValueType>::getNrChild(size_t spareId, size_t childId) const {
-            assert(mElements[spareId]->isSpareGate());
+            STORM_LOG_ASSERT(mElements[spareId]->isSpareGate(), "Element is no spare.");
             DFTElementVector children = getGate(spareId)->children();
             for (size_t nrChild = 0; nrChild < children.size(); ++nrChild) {
                 if (children[nrChild]->id() == childId) {
@@ -551,8 +551,8 @@ namespace storm {
                 }
             }
             
-            assert(isGate(index1));
-            assert(isGate(index2));
+            STORM_LOG_ASSERT(isGate(index1), "Element is no gate.");
+            STORM_LOG_ASSERT(isGate(index2), "Element is no gate.");
             std::vector<size_t> isubdft1 = getGate(index1)->independentSubDft(false);
             std::vector<size_t> isubdft2 = getGate(index2)->independentSubDft(false);
             if(isubdft1.empty() || isubdft2.empty() || isubdft1.size() != isubdft2.size()) {
@@ -591,7 +591,7 @@ namespace storm {
                                 size_t childLeftId = spareLeft->children().at(i)->id();
                                 size_t childRightId = spareRight->children().at(i)->id();
 
-                                assert(bijection.count(childLeftId) == 0);
+                                STORM_LOG_ASSERT(bijection.count(childLeftId) == 0, "Child already part of bijection.");
                                 if (childLeftId == childRightId) {
                                     // Ignore shared child
                                     continue;

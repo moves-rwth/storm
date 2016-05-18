@@ -51,15 +51,15 @@ namespace storm {
         
         template<typename ValueType>
         typename FlexibleSparseMatrix<ValueType>::row_type& FlexibleSparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) {
-            assert(rowGroup < this->getRowGroupCount());
-            assert(offset < this->getRowGroupSize(rowGroup));
+            STORM_LOG_ASSERT(rowGroup < this->getRowGroupCount(), "Invalid rowGroup.");
+            STORM_LOG_ASSERT(offset < this->getRowGroupSize(rowGroup), "Invalid offset.");
             return getRow(rowGroupIndices[rowGroup] + offset);
         }
         
         template<typename ValueType>
         typename FlexibleSparseMatrix<ValueType>::row_type const& FlexibleSparseMatrix<ValueType>::getRow(index_type rowGroup, index_type offset) const {
-            assert(rowGroup < this->getRowGroupCount());
-            assert(offset < this->getRowGroupSize(rowGroup));
+            STORM_LOG_ASSERT(rowGroup < this->getRowGroupCount(), "Invalid rowGroup.");
+            STORM_LOG_ASSERT(offset < this->getRowGroupSize(rowGroup), "Invalid offset.");
             return getRow(rowGroupIndices[rowGroup] + offset);
         }
         
@@ -112,7 +112,7 @@ namespace storm {
             this->columnCount = 0;
             for (auto const& row : this->data) {
                 for (auto const& element : row) {
-                    assert(!storm::utility::isZero(element.getValue()));
+                    STORM_LOG_ASSERT(!storm::utility::isZero(element.getValue()), "Entry is 0.");
                     ++this->nonzeroEntryCount;
                     this->columnCount = std::max(element.getColumn() + 1, this->columnCount);
                 }
