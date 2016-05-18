@@ -12,8 +12,8 @@
 
 #include <bitset>
 
-#ifndef NDEBUG
-//#define ASSERT_BITVECTOR
+#ifdef STORM_DEV
+#define ASSERT_BITVECTOR
 #endif
 
 namespace storm {
@@ -725,11 +725,11 @@ namespace storm {
                 if (result.get(i) != get(start + i)) {
                     STORM_LOG_ERROR("Getting of bits not correct for index " << i);
                     STORM_LOG_ERROR("Getting from " << start << " with length " << length);
-                    stringstream stream;
+                    std::stringstream stream;
                     printBits(stream);
                     stream << std::endl;
                     result.printBits(stream);
-                    STORM_LOG_ERROR(stream);
+                    STORM_LOG_ERROR(stream.str());
                     STORM_LOG_ASSERT(false, "Getting of bits not correct.");
                 }
             }
@@ -738,11 +738,11 @@ namespace storm {
                     if (original.get(i) != get(i)) {
                         STORM_LOG_ERROR("Getting did change bitvector at index " << i);
                         STORM_LOG_ERROR("Getting from " << start << " with length " << length);
-                        stringstream stream;
+                        std::stringstream stream;
                         printBits(stream);
                         stream << std::endl;
                         original.printBits(stream);
-                        STORM_LOG_ERROR(stream);
+                        STORM_LOG_ERROR(stream.str());
                         STORM_LOG_ASSERT(false, "Getting of bits not correct.");
                     }
                 }
@@ -818,11 +818,11 @@ namespace storm {
                 if (other.get(i) != get(start + i)) {
                     STORM_LOG_ERROR("Setting of bits not correct for index " << i);
                     STORM_LOG_ERROR("Setting from " << start << " with length " << other.bitCount);
-                    stringstream stream;
+                    std::stringstream stream;
                     printBits(stream);
                     stream << std::endl;
                     other.printBits(stream);
-                    STORM_LOG_ERROR(stream);
+                    STORM_LOG_ERROR(stream.str());
                     STORM_LOG_ASSERT(false, "Setting of bits not correct.");
                 }
             }
@@ -831,11 +831,11 @@ namespace storm {
                     if (original.get(i) != get(i)) {
                         STORM_LOG_ERROR("Setting did change bitvector at index " << i);
                         STORM_LOG_ERROR("Setting from " << start << " with length " << other.bitCount);
-                        stringstream stream;
+                        std::stringstream stream;
                         printBits(stream);
                         stream << std::endl;
                         original.printBits(stream);
-                        STORM_LOG_ERROR(stream);
+                        STORM_LOG_ERROR(stream.str());
                         STORM_LOG_ASSERT(false, "Setting of bits not correct.");
                     }
                 }
