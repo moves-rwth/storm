@@ -188,6 +188,14 @@ namespace storm {
                     return synchronizingActionToDecisionDiagramMap.find(actionIndex) != synchronizingActionToDecisionDiagramMap.end();
                 }
                 
+                std::set<uint_fast64_t> getSynchronizingActionIndices() const {
+                    std::set<uint_fast64_t> result;
+                    for (auto const& entry : synchronizingActionToDecisionDiagramMap) {
+                        result.insert(entry.first);
+                    }
+                    return result;
+                }
+                
                 // The decision diagram for the independent action.
                 ActionDecisionDiagram independentAction;
                 
@@ -210,7 +218,11 @@ namespace storm {
              * Structure to store the result of the system creation phase.
              */
             struct SystemResult;
+            
         private:
+            template <storm::dd::DdType TypePrime, typename ValueTypePrime>
+            friend class ModuleComposer;
+            
             static std::set<storm::expressions::Variable> equalizeAssignedGlobalVariables(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2);
             
             static std::set<storm::expressions::Variable> equalizeAssignedGlobalVariables(GenerationInformation const& generationInfo, std::vector<ActionDecisionDiagram>& actionDds);
@@ -230,6 +242,8 @@ namespace storm {
             static ActionDecisionDiagram combineSynchronizingActions(GenerationInformation const& generationInfo, ActionDecisionDiagram const& action1, ActionDecisionDiagram const& action2);
 
             static ActionDecisionDiagram combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2, storm::dd::Add<Type, ValueType> const& identityDd1, storm::dd::Add<Type, ValueType> const& identityDd2);
+            
+            static ActionDecisionDiagram combineUnsynchronizedActions(GenerationInformation const& generationInfo, ActionDecisionDiagram& action1, ActionDecisionDiagram& action2);
 
             static ModuleDecisionDiagram createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap);
 

@@ -297,6 +297,13 @@ namespace storm {
             boost::optional<SystemCompositionConstruct> getOptionalSystemCompositionConstruct() const;
             
             /*!
+             * Retrieves the default system composition for this program.
+             *
+             * @return The default system composition.
+             */
+            std::shared_ptr<Composition> getDefaultSystemComposition() const;
+            
+            /*!
              * Retrieves the set of actions present in the program.
              *
              * @return The set of actions present in the program.
@@ -317,6 +324,28 @@ namespace storm {
              * @return The name of the action.
              */
             std::string const& getActionName(uint_fast64_t actionIndex) const;
+            
+            /*!
+             * Retrieves the index of the action with the given name.
+             *
+             * @param actionName The name of the action.
+             * @return The index of the action.
+             */
+            uint_fast64_t getActionIndex(std::string const& actionName) const;
+            
+            /*!
+             * Retrieves whether the program has an action with the given name.
+             *
+             * @return True iff the program has an action with the given name.
+             */
+            bool hasAction(std::string const& actionName) const;
+
+            /*!
+             * Retrieves whether the program has an action with the given index.
+             *
+             * @return True iff the program has an action with the given index.
+             */
+            bool hasAction(uint_fast64_t const& actionIndex) const;
             
             /*!
              * Retrieves the indices of all modules within this program that contain commands that are labelled with the

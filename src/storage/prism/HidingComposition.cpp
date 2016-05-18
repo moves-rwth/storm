@@ -17,6 +17,10 @@ namespace storm {
             return *sub;
         }
         
+        std::set<std::string> const& HidingComposition::getActionsToHide() const {
+            return actionsToHide;
+        }
+        
         void HidingComposition::writeToStream(std::ostream& stream) const {
             stream << "(" << *sub << ")" << " " << "{" << boost::join(actionsToHide, ", ") << "}";
         }

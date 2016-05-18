@@ -13,10 +13,6 @@ namespace storm {
 
         protected:
             virtual void writeToStream(std::ostream& stream) const override;
-            
-        private:
-            std::shared_ptr<Composition> left;
-            std::shared_ptr<Composition> right;
         };
     }
 }

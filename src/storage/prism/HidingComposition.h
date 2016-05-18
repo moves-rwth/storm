@@ -16,6 +16,8 @@ namespace storm {
             
             Composition const& getSubcomposition() const;
             
+            std::set<std::string> const& getActionsToHide() const;
+            
         protected:
             virtual void writeToStream(std::ostream& stream) const override;
             

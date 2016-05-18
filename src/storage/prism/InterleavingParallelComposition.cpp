@@ -12,7 +12,7 @@ namespace storm {
         }
         
         void InterleavingParallelComposition::writeToStream(std::ostream& stream) const {
-            stream << "(" << *left << " ||| " << *right << ")";
+            stream << "(" << this->getLeftSubcomposition() << " ||| " << this->getRightSubcomposition() << ")";
         }
         
     }

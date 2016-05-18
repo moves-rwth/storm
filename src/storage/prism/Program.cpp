@@ -27,11 +27,21 @@ namespace storm {
             }
             
             bool isValid(Composition const& composition) {
-                return boost::any_cast<bool>(composition.accept(*this));
+                bool isValid = boost::any_cast<bool>(composition.accept(*this));
+                if (appearingModules.size() != program.getNumberOfModules()) {
+                    isValid = false;
+                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Not every module is used in the system composition.");
+                }
+                return isValid;
             }
             
             virtual boost::any visit(ModuleComposition const& composition) override {
-                return program.hasModule(composition.getModuleName());
+                bool isValid = program.hasModule(composition.getModuleName());
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "The module \"" << composition.getModuleName() << "\" referred to in the system composition does not exist.");
+                isValid = appearingModules.find(composition.getModuleName()) == appearingModules.end();
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "The module \"" << composition.getModuleName() << "\" is referred to more than once in the system composition.");
+                appearingModules.insert(composition.getModuleName());
+                return isValid;
             }
             
             virtual boost::any visit(RenamingComposition const& composition) override {
@@ -51,11 +61,20 @@ namespace storm {
             }
             
             virtual boost::any visit(RestrictedParallelComposition const& composition) override {
-                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+                bool isValid = boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+                
+                for (auto const& action : composition.getSynchronizingActions()) {
+                    if (!program.hasAction(action)) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "System composition refers to unknown action '" << action << "'.");
+                    }
+                }
+                
+                return isValid;
             }
             
         private:
             storm::prism::Program const& program;
+            std::set<std::string> appearingModules;
         };
         
         Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, std::string const& filename, uint_fast64_t lineNumber, bool finalModel)
@@ -352,6 +371,18 @@ namespace storm {
             return systemCompositionConstruct;
         }
         
+        std::shared_ptr<Composition> Program::getDefaultSystemComposition() const {
+            std::shared_ptr<Composition> current = std::make_shared<ModuleComposition>(this->modules.front().getName());
+            
+            for (uint_fast64_t index = 1; index < this->modules.size(); ++index) {
+                std::shared_ptr<Composition> newComposition = std::make_shared<SynchronizingParallelComposition>(current, std::make_shared<ModuleComposition>(this->modules[index].getName()));
+                current = newComposition;
+            }
+            
+            
+            return current;
+        }
+        
         std::set<std::string> const& Program::getActions() const {
             return this->actions;
         }
@@ -364,6 +395,20 @@ namespace storm {
             auto const& indexNamePair = this->indexToActionMap.find(actionIndex);
             STORM_LOG_THROW(indexNamePair != this->indexToActionMap.end(), storm::exceptions::InvalidArgumentException, "Unknown action index " << actionIndex << ".");
             return indexNamePair->second;
+        }
+        
+        uint_fast64_t Program::getActionIndex(std::string const& actionName) const {
+            auto const& nameIndexPair = this->actionToIndexMap.find(actionName);
+            STORM_LOG_THROW(nameIndexPair != this->actionToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Unknown action name '" << actionName << "'.");
+            return nameIndexPair->second;
+        }
+        
+        bool Program::hasAction(std::string const& actionName) const {
+            return this->actionToIndexMap.find(actionName) != this->actionToIndexMap.end();
+        }
+        
+        bool Program::hasAction(uint_fast64_t const& actionIndex) const {
+            return this->indexToActionMap.find(actionIndex) != this->indexToActionMap.end();
         }
         
         std::set<uint_fast64_t> const& Program::getModuleIndicesByAction(std::string const& action) const {

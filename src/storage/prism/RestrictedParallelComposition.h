@@ -14,13 +14,13 @@ namespace storm {
             
             virtual boost::any accept(CompositionVisitor& visitor) const override;
 
+            std::set<std::string> const& getSynchronizingActions() const;
+            
         protected:
             virtual void writeToStream(std::ostream& stream) const override;
             
         private:
-            std::shared_ptr<Composition> left;
             std::set<std::string> synchronizingActions;
-            std::shared_ptr<Composition> right;
         };
     }
 }
