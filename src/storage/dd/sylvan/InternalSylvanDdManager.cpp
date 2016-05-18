@@ -29,11 +29,11 @@ namespace storm {
         InternalDdManager<DdType::Sylvan>::InternalDdManager() {
             if (numberOfInstances == 0) {
                 // Initialize lace: auto-detect number of workers.
-                lace_init(storm::settings::sylvanSettings().getNumberOfThreads(), 1000000);
+                lace_init(storm::settings::getModule<storm::settings::modules::SylvanSettings>().getNumberOfThreads(), 1000000);
                 lace_startup(0, 0, 0);
                 
                 // Each node takes 24 bytes and the maximal memory is specified in megabytes.
-                uint_fast64_t totalNodesToStore = storm::settings::sylvanSettings().getMaximalMemory() * 1024 * 1024 / 24;
+                uint_fast64_t totalNodesToStore = storm::settings::getModule<storm::settings::modules::SylvanSettings>().getMaximalMemory() * 1024 * 1024 / 24;
                 
                 // Compute the power of two that still fits within the total numbers to store.
                 uint_fast64_t powerOfTwo = findLargestPowerOfTwoFitting(totalNodesToStore);

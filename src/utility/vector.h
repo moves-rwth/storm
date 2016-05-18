@@ -15,8 +15,10 @@
 #include "src/utility/macros.h"
 #include "src/solver/OptimizationDirection.h"
 
-template<typename ValueType>
-std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector);
+// Template was causing problems as Carl has the same function
+//template<typename ValueType>
+//std::ostream& operator<<(std::ostream& out, std::vector<ValueType> const& vector);
+std::ostream& operator<<(std::ostream& out, std::vector<double> const& vector);
 
 namespace storm {
     namespace utility {
@@ -68,7 +70,7 @@ namespace storm {
              * Constructs a vector [min, min+1, ...., max]
              */
             inline std::vector<uint_fast64_t> buildVectorForRange(uint_fast64_t min, uint_fast64_t max) {
-                assert(min < max);
+                STORM_LOG_ASSERT(min < max, "Invalid range.");
                 uint_fast64_t diff = max - min;
                 std::vector<uint_fast64_t> v;
                 v.reserve(diff);
@@ -267,7 +269,7 @@ namespace storm {
              * @param target The target vector.
              */
             template<class InValueType1, class InValueType2, class OutValueType>
-            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&)> function) {
+            void applyPointwise(std::vector<InValueType1> const& firstOperand, std::vector<InValueType2> const& secondOperand, std::vector<OutValueType>& target, std::function<OutValueType (InValueType1 const&, InValueType2 const&)> const& function) {
 #ifdef STORM_HAVE_INTELTBB
                 tbb::parallel_for(tbb::blocked_range<uint_fast64_t>(0, target.size()),
                                   [&](tbb::blocked_range<uint_fast64_t> const& range) {
@@ -698,8 +700,28 @@ namespace storm {
                 for(auto index : filter) {
                     result.push_back(in[index]);
                 }
-                assert(result.size() == filter.getNumberOfSetBits());
+                STORM_LOG_ASSERT(result.size() == filter.getNumberOfSetBits(), "Result does not match.");
                 return result;
+            }
+            
+            /*!
+             * Output vector as string.
+             *
+             * @param vector Vector to output.
+             * @return String containing the representation of the vector.
+             */
+            template<typename ValueType>
+            std::string toString(std::vector<ValueType> vector) {
+                std::stringstream stream;
+                stream << "vector (" << vector.size() << ") [ ";
+                if (!vector.empty()) {
+                    for (uint_fast64_t i = 0; i < vector.size() - 1; ++i) {
+                        stream << vector[i] << ", ";
+                    }
+                    stream << vector.back();
+                }
+                stream << " ]";
+                return stream.str();
             }
         } // namespace vector
     } // namespace utility

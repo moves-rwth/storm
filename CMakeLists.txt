@@ -18,7 +18,7 @@ include(ExternalProject)
 ##	CMake options of StoRM
 ##
 #############################################################
-option(STORM_DEBUG "Sets whether the DEBUG mode is used" ON)
+option(STORM_DEVELOPER "Sets whether the development mode is used" OFF)
 option(STORM_USE_POPCNT "Sets whether the popcnt instruction is going to be used." ON)
 option(USE_BOOST_STATIC_LIBRARIES "Sets whether the Boost libraries should be linked statically." ON)
 option(STORM_USE_INTELTBB "Sets whether the Intel TBB libraries should be used." OFF)
@@ -40,11 +40,11 @@ set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (option
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 
-# If the DEBUG option was turned on, we will target a debug version and a release version otherwise.
-if (STORM_DEBUG)
-    set (CMAKE_BUILD_TYPE "DEBUG")
-else()
-    set (CMAKE_BUILD_TYPE "RELEASE")
+# If the STORM_DEVELOPER option was turned on, we will target a debug version.
+if (STORM_DEVELOPER)
+    message(STATUS "StoRM - Using development mode")
+    set(CMAKE_BUILD_TYPE "DEBUG" CACHE STRING "Set the build type" FORCE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTORM_DEV")
 endif()
 message(STATUS "StoRM - Building ${CMAKE_BUILD_TYPE} version.")
 

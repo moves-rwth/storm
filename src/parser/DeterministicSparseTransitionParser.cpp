@@ -14,7 +14,7 @@
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 
 #include "src/adapters/CarlAdapter.h"
 #include "src/utility/macros.h"
@@ -88,7 +88,7 @@ namespace storm {
 
             uint_fast64_t row, col, lastRow = 0;
             double val;
-            bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet();
             bool hadDeadlocks = false;
             bool rowHadDiagonalEntry = false;
 

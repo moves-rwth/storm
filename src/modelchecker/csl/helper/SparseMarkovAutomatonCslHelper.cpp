@@ -122,17 +122,17 @@ namespace storm {
             std::vector<ValueType> SparseMarkovAutomatonCslHelper<ValueType>::computeBoundedUntilProbabilities(OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair, storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> const& minMaxLinearEquationSolverFactory) {
 
                 uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
-                
+               
                 // 'Unpack' the bounds to make them more easily accessible.
                 double lowerBound = boundsPair.first;
                 double upperBound = boundsPair.second;
-                
+
                 // (1) Compute the accuracy we need to achieve the required error bound.
                 ValueType maxExitRate = 0;
                 for (auto value : exitRateVector) {
                     maxExitRate = std::max(maxExitRate, value);
                 }
-                ValueType delta = (2 * storm::settings::generalSettings().getPrecision()) / (upperBound * maxExitRate * maxExitRate);
+                ValueType delta = (2 * storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) / (upperBound * maxExitRate * maxExitRate);
                 
                 // (2) Compute the number of steps we need to make for the interval.
                 uint_fast64_t numberOfSteps = static_cast<uint_fast64_t>(std::ceil((upperBound - lowerBound) / delta));
@@ -408,33 +408,35 @@ namespace storm {
                         infinityStates = storm::storage::BitVector(numberOfStates);
                     }
                 }
-                
                 // Now we identify the states for which values need to be computed.
                 storm::storage::BitVector maybeStates = ~(goalStates | infinityStates);
-                
-                // Then, we can eliminate the rows and columns for all states whose values are already known to be 0.
-                std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
-                storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates);
-                
-                // Now prepare the expected reward values for all states so they can be used as the right-hand side of the equation system.
-                std::vector<ValueType> rewardValues(stateRewards);
-                for (auto state : markovianStates) {
-                    rewardValues[state] = rewardValues[state] / exitRateVector[state];
-                }
-                
-                // Finally, prepare the actual right-hand side.
-                std::vector<ValueType> b(submatrix.getRowCount());
-                storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, transitionMatrix.getRowGroupIndices(), rewardValues);
-                
-                // Solve the corresponding system of equations.
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(submatrix);
-                solver->solveEquationSystem(dir, x, b);
-                
+
                 // Create resulting vector.
                 std::vector<ValueType> result(numberOfStates);
                 
-                // Set values of resulting vector according to previous result and return the result.
-                storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
+                if (!maybeStates.empty()) {
+                    // Then, we can eliminate the rows and columns for all states whose values are already known.
+                    std::vector<ValueType> x(maybeStates.getNumberOfSetBits());
+                    storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates);
+                    
+                    // Now prepare the expected reward values for all states so they can be used as the right-hand side of the equation system.
+                    std::vector<ValueType> rewardValues(stateRewards);
+                    for (auto state : markovianStates) {
+                        rewardValues[state] = rewardValues[state] / exitRateVector[state];
+                    }
+                    
+                    // Finally, prepare the actual right-hand side.
+                    std::vector<ValueType> b(submatrix.getRowCount());
+                    storm::utility::vector::selectVectorValuesRepeatedly(b, maybeStates, transitionMatrix.getRowGroupIndices(), rewardValues);
+                    
+                    // Solve the corresponding system of equations.
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(submatrix);
+                    solver->solveEquationSystem(dir, x, b);
+                    
+                    // Set values of resulting vector according to previous result and return the result.
+                    storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
+                }
+
                 storm::utility::vector::setVectorValues(result, goalStates, storm::utility::zero<ValueType>());
                 storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
                 

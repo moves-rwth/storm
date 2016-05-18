@@ -31,21 +31,21 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(0.2296800237, quantitativeResult1[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    EXPECT_NEAR(0.2296800237, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeIGreater1\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-	EXPECT_NEAR(0.05073232193, quantitativeResult2[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+	EXPECT_NEAR(0.05073232193, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeOnlyTrueSender\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-	EXPECT_NEAR(0.22742171078, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+	EXPECT_NEAR(0.22742171078, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 
@@ -69,19 +69,19 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
     
-	EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+	EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F<=20 \"elected\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
     
-	EXPECT_NEAR(0.9993949793, quantitativeResult2[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+	EXPECT_NEAR(0.9993949793, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"elected\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double> quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
     
-	EXPECT_NEAR(1.025106273, quantitativeResult3[0], storm::settings::gmmxxEquationSolverSettings().getPrecision());
+	EXPECT_NEAR(1.025106273, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }

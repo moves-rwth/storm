@@ -19,10 +19,10 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptions) {
         
     storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A);
     ASSERT_NO_THROW(solver.solveEquationSystem(storm::OptimizationDirection::Minimize, x, b));
-    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     ASSERT_NO_THROW(solver.solveEquationSystem(storm::OptimizationDirection::Maximize, x, b));
-    ASSERT_LT(std::abs(x[0] - 0.989991), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.989991), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 // TODO add better tests here.
@@ -42,16 +42,16 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithStandardOptionsAndEarlyTerminatio
     
     solver.setTerminationCondition(std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<double>>(storm::storage::BitVector(A.getRowGroupCount(), true), bound, false, true));
     ASSERT_NO_THROW(solver.solveEquationSystem(storm::OptimizationDirection::Minimize, x, b));
-    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     ASSERT_NO_THROW(solver.solveEquationSystem(storm::OptimizationDirection::Maximize, x, b));
-    ASSERT_LT(std::abs(x[0] - 0.989991), 0.989991 - bound - storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.989991), 0.989991 - bound - storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     bound = 0.6;
     solver.setTerminationCondition(std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<double>>(storm::storage::BitVector(A.getRowGroupCount(), true), bound, false, true));
     
     ASSERT_NO_THROW(solver.solveEquationSystem(storm::OptimizationDirection::Maximize, x, b));
-    ASSERT_LT(std::abs(x[0] - 0.989991), 0.989991 - bound - storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.989991), 0.989991 - bound - storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 TEST(GmmxxMinMaxLinearEquationSolver, MatrixVectorMultiplication) {
@@ -76,23 +76,23 @@ TEST(GmmxxMinMaxLinearEquationSolver, MatrixVectorMultiplication) {
     
     storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A);
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(storm::OptimizationDirection::Minimize, x, nullptr, 1));
-    ASSERT_LT(std::abs(x[0] - 0.099), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.099), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(storm::OptimizationDirection::Minimize, x, nullptr, 2));
-    ASSERT_LT(std::abs(x[0] - 0.1881), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.1881), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(storm::OptimizationDirection::Minimize, x, nullptr, 20));
-    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(storm::OptimizationDirection::Maximize, x, nullptr, 1));
-    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
     ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(storm::OptimizationDirection::Maximize, x, nullptr, 20));
-    ASSERT_LT(std::abs(x[0] - 0.9238082658), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+    ASSERT_LT(std::abs(x[0] - 0.9238082658), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
 TEST(GmmxxMinMaxLinearEquationSolver, SolveWithPolicyIteration) {
@@ -106,11 +106,11 @@ TEST(GmmxxMinMaxLinearEquationSolver, SolveWithPolicyIteration) {
 	std::vector<double> x(1);
 	std::vector<double> b = { 0.099, 0.5 };
 
-	storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
+	storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>();
 	storm::solver::GmmxxMinMaxLinearEquationSolver<double> solver(A, settings.getPrecision(), settings.getMaximalIterationCount(), storm::solver::MinMaxTechniqueSelection::PolicyIteration, settings.getConvergenceCriterion() == storm::settings::modules::GmmxxEquationSolverSettings::ConvergenceCriterion::Relative);
 	ASSERT_NO_THROW(solver.solveEquationSystem(storm::OptimizationDirection::Minimize, x, b));
-	ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+	ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 
 	ASSERT_NO_THROW(solver.solveEquationSystem(storm::OptimizationDirection::Maximize, x, b));
-	ASSERT_LT(std::abs(x[0] - 0.99), storm::settings::gmmxxEquationSolverSettings().getPrecision());
+	ASSERT_LT(std::abs(x[0] - 0.99), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }

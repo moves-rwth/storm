@@ -4,6 +4,8 @@
 // Include config to know whether CARL is available or not.
 #include "storm-config.h"
 
+#include <boost/multiprecision/gmp.hpp>
+
 #ifdef STORM_HAVE_CARL
 
 #include <carl/numbers/numbers.h>
@@ -38,6 +40,14 @@ namespace carl {
     inline size_t hash_value(carl::Interval<Number> const& i) {
         std::hash<Interval<Number>> h;
         return h(i);
+    }
+
+}
+
+namespace cln {
+    inline size_t hash_value(cl_RA const& n) {
+        std::hash<cln::cl_RA> h;
+        return h(n);
     }
 }
 

@@ -1,7 +1,7 @@
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/Option.h"
 #include "src/settings/OptionBuilder.h"
 #include "src/settings/ArgumentBuilder.h"
@@ -20,7 +20,7 @@ namespace storm {
             const std::string NativeEquationSolverSettings::precisionOptionName = "precision";
             const std::string NativeEquationSolverSettings::absoluteOptionName = "absolute";
             
-            NativeEquationSolverSettings::NativeEquationSolverSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
+            NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the native engine. Available are: { jacobi }.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("jacobi").build()).build());
                 
@@ -81,7 +81,7 @@ namespace storm {
                 // This list does not include the precision, because this option is shared with other modules.
                 bool optionSet = isLinearEquationSystemTechniqueSet() || isMaximalIterationCountSet() || isConvergenceCriterionSet();
                 
-                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::solver::EquationSolverType::Native || !optionSet, "Native is not selected as the preferred equation solver, so setting options for native might have no effect.");
+                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Native || !optionSet, "Native is not selected as the preferred equation solver, so setting options for native might have no effect.");
                 
                 return true;
             }

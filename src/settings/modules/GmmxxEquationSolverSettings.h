@@ -22,11 +22,9 @@ namespace storm {
                 enum class ConvergenceCriterion { Absolute, Relative };
                 
                 /*!
-                 * Creates a new set of gmm++ settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of gmm++ settings.
                  */
-                GmmxxEquationSolverSettings(storm::settings::SettingsManager& settingsManager);
+                GmmxxEquationSolverSettings();
                 
                 /*!
                  * Retrieves whether the linear equation system method has been set.

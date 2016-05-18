@@ -6,7 +6,7 @@
 #include "src/settings/Argument.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/solver/SolverSelectionOptions.h"
 
 namespace storm {
@@ -22,7 +22,7 @@ namespace storm {
             const std::string GmmxxEquationSolverSettings::precisionOptionName = "precision";
             const std::string GmmxxEquationSolverSettings::absoluteOptionName = "absolute";
 
-            GmmxxEquationSolverSettings::GmmxxEquationSolverSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
+            GmmxxEquationSolverSettings::GmmxxEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> methods = {"bicgstab", "qmr", "gmres", "jacobi"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the gmm++ engine. Available are {bicgstab, qmr, gmres, jacobi}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("gmres").build()).build());
                 
@@ -109,7 +109,7 @@ namespace storm {
                 // This list does not include the precision, because this option is shared with other modules.
                 bool optionsSet = isLinearEquationSystemMethodSet() || isPreconditioningMethodSet() || isRestartIterationCountSet() | isMaximalIterationCountSet() || isConvergenceCriterionSet();
                 
-                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEquationSolver() == storm::solver::EquationSolverType::Gmmxx || !optionsSet, "gmm++ is not selected as the preferred equation solver, so setting options for gmm++ might have no effect.");
+                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Gmmxx || !optionsSet, "gmm++ is not selected as the preferred equation solver, so setting options for gmm++ might have no effect.");
                 
                 return true;
             }

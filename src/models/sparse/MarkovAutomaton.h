@@ -2,6 +2,7 @@
 #define STORM_MODELS_SPARSE_MARKOVAUTOMATON_H_
 
 #include "src/models/sparse/NondeterministicModel.h"
+#include "src/models/sparse/Ctmc.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
@@ -45,6 +46,25 @@ namespace storm {
                                 storm::models::sparse::StateLabeling&& stateLabeling,
                                 storm::storage::BitVector const& markovianStates,
                                 std::vector<ValueType> const& exitRates,
+                                std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
+                                boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
+                
+                /*!
+                 * Constructs a model by moving the given data.
+                 *
+                 * @param transitionMatrix The matrix representing the transitions in the model in terms of rates.
+                 * @param stateLabeling The labeling of the states.
+                 * @param markovianStates A bit vector indicating the Markovian states of the automaton.
+                 * @param exitRates A vector storing the exit rates of the states.
+                 * @param probabilities Flag if transitions matrix contains probabilities or rates
+                 * @param rewardModels A mapping of reward model names to reward models.
+                 * @param optionalChoiceLabeling A vector that represents the labels associated with the choices of each state.
+                 */
+                MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
+                                storm::models::sparse::StateLabeling&& stateLabeling,
+                                storm::storage::BitVector const& markovianStates,
+                                std::vector<ValueType> const& exitRates,
+                                bool probabilities,
                                 std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(),
                                 boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling = boost::optional<std::vector<LabelSet>>());
                 
@@ -127,6 +147,10 @@ namespace storm {
                  * Closes the Markov automaton. That is, this applies the maximal progress assumption to all hybrid states.
                  */
                 void close();
+                
+                bool hasOnlyTrivialNondeterminism() const;
+                
+                std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCTMC();
                 
                 virtual void writeDotToStream(std::ostream& outStream, bool includeLabeling = true, storm::storage::BitVector const* subsystem = nullptr, std::vector<ValueType> const* firstValue = nullptr, std::vector<ValueType> const* secondValue = nullptr, std::vector<uint_fast64_t> const* stateColoring = nullptr, std::vector<std::string> const* colors = nullptr, std::vector<uint_fast64_t>* scheduler = nullptr, bool finalizeOutput = true) const;
                 

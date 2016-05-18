@@ -77,6 +77,17 @@ namespace storm {
             // FIXME: this should be treated more properly.
             return storm::RationalFunction(-1.0);
         }
+        
+        template<>
+        bool isOne(storm::RationalNumber const& a) {
+            return carl::isOne(a);
+        }
+        
+        template<>
+        bool isZero(storm::RationalNumber const& a) {
+            return carl::isZero(a);
+        }
+        
 #endif
         
         template<typename ValueType>
@@ -230,13 +241,20 @@ namespace storm {
         template storm::RationalFunction infinity();
         
         template RationalFunction pow(RationalFunction const& value, uint_fast64_t exponent);
-        
-        template Polynomial one();
-        template Polynomial zero();
         template RationalFunction simplify(RationalFunction value);
         template RationalFunction& simplify(RationalFunction& value);
         template RationalFunction&& simplify(RationalFunction&& value);
         
+        template Polynomial one();
+        template Polynomial zero();
+        
+        template bool isOne(RationalNumber const& value);
+        template bool isZero(RationalNumber const& value);
+        template bool isConstant(RationalNumber const& value);
+        
+        template RationalNumber one();
+        template RationalNumber zero();
+       
         template double convertNumber(RationalNumber const& number);
         template RationalNumber convertNumber(double const& number);
         

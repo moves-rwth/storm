@@ -1,5 +1,5 @@
 #include "src/settings/modules/ExplorationSettings.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/Option.h"
 #include "src/settings/OptionBuilder.h"
 #include "src/settings/ArgumentBuilder.h"
@@ -18,7 +18,7 @@ namespace storm {
             const std::string ExplorationSettings::precisionOptionName = "precision";
             const std::string ExplorationSettings::precisionOptionShortName = "eps";
             
-            ExplorationSettings::ExplorationSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
+            ExplorationSettings::ExplorationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> types = { "local", "global" };
                     this->addOption(storm::settings::OptionBuilder(moduleName, precomputationTypeOptionName, true, "Sets the kind of precomputation used. Available are: { local, global }.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the type to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(types)).setDefaultValueString("global").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, numberOfExplorationStepsUntilPrecomputationOptionName, true, "Sets the number of exploration steps to perform until a precomputation is triggered.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of exploration steps to perform.").setDefaultValueUnsignedInteger(100000).build()).build());
@@ -88,7 +88,7 @@ namespace storm {
                                     this->getOption(numberOfExplorationStepsUntilPrecomputationOptionName).getHasOptionBeenSet() ||
                                     this->getOption(numberOfSampledPathsUntilPrecomputationOptionName).getHasOptionBeenSet() ||
                                     this->getOption(nextStateHeuristicOptionName).getHasOptionBeenSet();
-                STORM_LOG_WARN_COND(storm::settings::generalSettings().getEngine() == storm::settings::modules::GeneralSettings::Engine::Exploration || !optionsSet, "Exploration engine is not selected, so setting options for it has no effect.");
+                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Exploration || !optionsSet, "Exploration engine is not selected, so setting options for it has no effect.");
                 return true;
             }
         } // namespace modules

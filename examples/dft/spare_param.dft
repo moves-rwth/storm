@@ -1,0 +1,9 @@
+param x;
+param y;
+toplevel "SF";
+"SF" or "FW" "BW";
+"FW" wsp "W1" "WS";
+"BW" wsp "W2" "WS";
+"W1" lambda=x dorm=0;
+"W2" lambda=1 dorm=0;
+"WS" lambda=y dorm=0;

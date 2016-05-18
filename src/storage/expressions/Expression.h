@@ -297,7 +297,7 @@ namespace storm {
              *
              * @return The string representation of the expression.
              */
-            std::string toString();
+            std::string toString() const;
             
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 

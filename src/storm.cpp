@@ -3,13 +3,18 @@
 #include "src/utility/macros.h"
 #include "src/cli/cli.h"
 #include "src/utility/initialize.h"
+
+#include "src/settings/SettingsManager.h"
+
 /*!
  * Main entry point of the executable storm.
  */
 int main(const int argc, const char** argv) {
+
     try {
         storm::utility::setUp();
-        storm::cli::printHeader(argc, argv);
+        storm::cli::printHeader("SToRM", argc, argv);
+        storm::settings::initializeAll("SToRM", "storm");
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
         if (!optionsCorrect) {
             return -1;

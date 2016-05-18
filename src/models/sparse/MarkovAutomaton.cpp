@@ -3,6 +3,10 @@
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/utility/constants.h"
 #include "src/adapters/CarlAdapter.h"
+#include "src/storage/FlexibleSparseMatrix.h"
+#include "src/models/sparse/Dtmc.h"
+#include "src/solver/stateelimination/MAEliminator.h"
+#include "src/utility/vector.h"
 
 namespace storm {
     namespace models {
@@ -28,6 +32,19 @@ namespace storm {
                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
             : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(this->checkIsClosed()) {
                 this->turnRatesToProbabilities();
+            }
+            
+            template <typename ValueType, typename RewardModelType>
+            MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
+                                                                         storm::models::sparse::StateLabeling&& stateLabeling,
+                                                                         storm::storage::BitVector const& markovianStates,
+                                                                         std::vector<ValueType> const& exitRates,
+                                                                         bool probabilities,
+                                                                         std::unordered_map<std::string, RewardModelType>&& rewardModels,
+                                                                         boost::optional<std::vector<LabelSet>>&& optionalChoiceLabeling)
+            : NondeterministicModel<ValueType, RewardModelType>(storm::models::ModelType::MarkovAutomaton, std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling)), markovianStates(markovianStates), exitRates(std::move(exitRates)), closed(this->checkIsClosed()) {
+                assert(probabilities);
+                assert(this->getTransitionMatrix().isProbabilistic());
             }
             
             template <typename ValueType, typename RewardModelType>
@@ -221,6 +238,23 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::hasOnlyTrivialNondeterminism() const {
+                // Check every state
+                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    // Get number of choices in current state
+                    uint_fast64_t numberChoices = this->getTransitionMatrix().getRowGroupIndices()[state + 1] - this->getTransitionMatrix().getRowGroupIndices()[state];
+                    if (isMarkovianState(state)) {
+                        assert(numberChoices == 1);
+                    }
+                    if (numberChoices > 1) {
+                        assert(isProbabilisticState(state));
+                        return false;
+                    }
+                }
+                return true;
+            }
+            
+            template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::checkIsClosed() const {
                 for (auto state : markovianStates) {
                     if (this->getTransitionMatrix().getRowGroupSize(state) > 1) {
@@ -229,6 +263,62 @@ namespace storm {
                 }
                 return true;
             }
+            
+            template <typename ValueType, typename RewardModelType>
+            std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> MarkovAutomaton<ValueType, RewardModelType>::convertToCTMC() {
+                STORM_LOG_TRACE("MA matrix:" << std::endl << this->getTransitionMatrix());
+                STORM_LOG_TRACE("Markovian states: " << getMarkovianStates());
+
+                // Eliminate all probabilistic states by state elimination
+                // Initialize
+                storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(this->getTransitionMatrix());
+                storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(this->getTransitionMatrix().transpose());
+                storm::solver::stateelimination::MAEliminator<storm::models::sparse::Dtmc<ValueType>> stateEliminator(flexibleMatrix, flexibleBackwardTransitions);
+                
+                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    assert(!this->isHybridState(state));
+                    if (this->isProbabilisticState(state)) {
+                        // Eliminate this probabilistic state
+                        stateEliminator.eliminateState(state, true);
+                        STORM_LOG_TRACE("Flexible matrix after eliminating state " << state << ":" << std::endl << flexibleMatrix);
+                    }
+                }
+                
+                // Create the rate matrix for the CTMC
+                storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, false);
+                // Remember state to keep
+                storm::storage::BitVector keepStates(this->getNumberOfStates(), true);
+                for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    if (storm::utility::isZero(flexibleMatrix.getRowSum(state))) {
+                        // State is eliminated and can be discarded
+                        keepStates.set(state, false);
+                    } else {
+                        assert(this->isMarkovianState(state));
+                        // Copy transitions
+                        for (uint_fast64_t row = flexibleMatrix.getRowGroupIndices()[state]; row < flexibleMatrix.getRowGroupIndices()[state + 1]; ++row) {
+                            for (auto const& entry : flexibleMatrix.getRow(row)) {
+                                // Convert probabilities into rates
+                                transitionMatrixBuilder.addNextValue(state, entry.getColumn(), entry.getValue() * exitRates[state]);
+                            }
+                        }
+                    }
+                }
+                
+                storm::storage::SparseMatrix<ValueType> rateMatrix = transitionMatrixBuilder.build();
+                rateMatrix = rateMatrix.getSubmatrix(false, keepStates, keepStates, false);
+                STORM_LOG_TRACE("New CTMC matrix:" << std::endl << rateMatrix);
+                // Construct CTMC
+                storm::models::sparse::StateLabeling stateLabeling = this->getStateLabeling().getSubLabeling(keepStates);
+                boost::optional<std::vector<LabelSet>> optionalChoiceLabeling = this->getOptionalChoiceLabeling();
+                if (optionalChoiceLabeling) {
+                    optionalChoiceLabeling = storm::utility::vector::filterVector(optionalChoiceLabeling.get(), keepStates);
+                }
+                //TODO update reward models according to kept states
+                std::unordered_map<std::string, RewardModelType> rewardModels = this->getRewardModels();
+                
+                return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling));
+            }
+
             
             template class MarkovAutomaton<double>;
 //            template class MarkovAutomaton<float>;

@@ -1,0 +1,9 @@
+toplevel "SF";
+"SF" or "A" "B" "PDEP";
+"A" pand "S" "MA";
+"B" and "MA" "MB";
+"PDEP" pdep=0.2 "MA" "S" "MB";
+
+"S" lambda=0.5 dorm=0;
+"MA" lambda=0.5 dorm=0;
+"MB" lambda=0.5 dorm=0;

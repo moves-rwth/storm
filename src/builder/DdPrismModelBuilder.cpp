@@ -20,7 +20,7 @@
 #include "src/storage/dd/cudd/CuddAddIterator.h"
 #include "src/storage/dd/Bdd.h"
 
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 
 namespace storm {
     namespace builder {
@@ -1081,7 +1081,7 @@ namespace storm {
 
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
-                if (!storm::settings::generalSettings().isDontFixDeadlocksSet()) {
+                if (!storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet()) {
                     STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
                     
                     uint_fast64_t count = 0;

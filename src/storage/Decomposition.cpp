@@ -42,6 +42,11 @@ namespace storm {
         }
         
         template <typename BlockType>
+        bool Decomposition<BlockType>::empty() const {
+            return blocks.empty();
+        }
+        
+        template <typename BlockType>
         typename Decomposition<BlockType>::iterator Decomposition<BlockType>::begin() {
             return blocks.begin();
         }

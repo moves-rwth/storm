@@ -16,7 +16,7 @@ namespace storm {
             const std::string SparseDtmcEliminationModelCheckerSettings::entryStatesLastOptionName = "entrylast";
             const std::string SparseDtmcEliminationModelCheckerSettings::maximalSccSizeOptionName = "sccsize";
             
-            SparseDtmcEliminationModelCheckerSettings::SparseDtmcEliminationModelCheckerSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
+            SparseDtmcEliminationModelCheckerSettings::SparseDtmcEliminationModelCheckerSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> orders = {"fw", "fwrev", "bw", "bwrev", "rand", "spen", "dpen", "regex"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eliminationOrderOptionName, true, "The order that is to be used for the elimination techniques. Available are {fw, fwrev, bw, bwrev, rand, spen, dpen}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the order in which states are chosen for elimination.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(orders)).setDefaultValueString("fwrev").build()).build());
                 

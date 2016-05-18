@@ -7,11 +7,11 @@ namespace storm {
     namespace dd {
         
         InternalDdManager<DdType::CUDD>::InternalDdManager() : cuddManager(), reorderingTechnique(CUDD_REORDER_NONE) {
-            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::cuddSettings().getMaximalMemory() * 1024ul * 1024ul));
-            this->cuddManager.SetEpsilon(storm::settings::cuddSettings().getConstantPrecision());
+            this->cuddManager.SetMaxMemory(static_cast<unsigned long>(storm::settings::getModule<storm::settings::modules::CuddSettings>().getMaximalMemory() * 1024ul * 1024ul));
+            this->cuddManager.SetEpsilon(storm::settings::getModule<storm::settings::modules::CuddSettings>().getConstantPrecision());
             
             // Now set the selected reordering technique.
-            storm::settings::modules::CuddSettings::ReorderingTechnique reorderingTechniqueAsSetting = storm::settings::cuddSettings().getReorderingTechnique();
+            storm::settings::modules::CuddSettings::ReorderingTechnique reorderingTechniqueAsSetting = storm::settings::getModule<storm::settings::modules::CuddSettings>().getReorderingTechnique();
             switch (reorderingTechniqueAsSetting) {
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::None: this->reorderingTechnique = CUDD_REORDER_NONE; break;
                 case storm::settings::modules::CuddSettings::ReorderingTechnique::Random: this->reorderingTechnique = CUDD_REORDER_RANDOM; break;

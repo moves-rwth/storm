@@ -9,7 +9,7 @@
 
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 
@@ -24,13 +24,10 @@ namespace storm {
         
         template<typename ValueType>
         TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : 
-        NativeMinMaxLinearEquationSolver<ValueType>(A, storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision(), \
-                storm::settings::topologicalValueIterationEquationSolverSettings().getMaximalIterationCount(), MinMaxTechniqueSelection::ValueIteration, \
-                storm::settings::topologicalValueIterationEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative)
+        NativeMinMaxLinearEquationSolver<ValueType>(A, storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision(), storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getMaximalIterationCount(), MinMaxTechniqueSelection::ValueIteration, storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative)
         {
 			// Get the settings object to customize solving.
-			auto generalSettings = storm::settings::generalSettings();
-			this->enableCuda = generalSettings.isCudaSet();
+			this->enableCuda = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCudaSet();
 #ifdef STORM_HAVE_CUDA
 			STORM_LOG_INFO_COND(this->enableCuda, "Option CUDA was not set, but the topological value iteration solver will use it anyways.");
 #endif

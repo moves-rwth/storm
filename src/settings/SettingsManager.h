@@ -12,20 +12,8 @@
 namespace storm {
     namespace settings {
         namespace modules {
-            class GeneralSettings;
-            class DebugSettings;
-            class CounterexampleGeneratorSettings;
-            class CuddSettings;
-            class SylvanSettings;
-            class GmmxxEquationSolverSettings;
-            class NativeEquationSolverSettings;
-            class BisimulationSettings;
-            class GlpkSettings;
-            class GurobiSettings;
-            class TopologicalValueIterationEquationSolverSettings;
-            class ParametricSettings;
-            class SparseDtmcEliminationModelCheckerSettings;
-            class ExplorationSettings;
+            class MarkovChainSettings;
+            class IOSettings;
             class ModuleSettings;
         }
         class Option;
@@ -37,6 +25,11 @@ namespace storm {
          */
         class SettingsManager {
 		public:
+            
+            // Explicitely delete copy constructor
+            SettingsManager(SettingsManager const&) = delete;
+            void operator=(SettingsManager const&) = delete;
+            
             /*!
              * This function parses the given command line arguments and sets all registered options accordingly. If the
              * command line cannot be matched using the known options, an exception is thrown.
@@ -100,6 +93,13 @@ namespace storm {
             static SettingsManager& manager();
             
             /*!
+             * Sets the name of the tool.
+             * @param name Name of the tool.
+             * @param executableName Filename of the executable.
+             */
+            void setName(std::string const& name, std::string const& executableName);
+            
+            /*!
              * Adds a new module with the given name. If the module could not be successfully added, an exception is
              * thrown.
              *
@@ -134,6 +134,10 @@ namespace storm {
 			 * This destructor is private, since we need to forbid explicit destruction of the manager.
 			 */
 			virtual ~SettingsManager();
+            
+            // The name of the tool
+            std::string name;
+            std::string executableName;
             
             // The registered modules.
             std::vector<std::string> moduleNames;
@@ -235,108 +239,47 @@ namespace storm {
         SettingsManager& mutableManager();
         
         /*!
-         * Retrieves the general settings.
-         *
-         * @return An object that allows accessing the general settings.
+         * Add new module to use for the settings. The new module is given as a template argument.
          */
-        storm::settings::modules::GeneralSettings const& generalSettings();
-
+        template<typename SettingsType>
+        void addModule() {
+            static_assert(std::is_base_of<storm::settings::modules::ModuleSettings, SettingsType>::value, "Template argument must be derived from ModuleSettings");
+            mutableManager().addModule(std::unique_ptr<modules::ModuleSettings>(new SettingsType()));
+        }
+        
         /*!
-         * Retrieves the general settings in a mutable form. This is only meant to be used for debug purposes or very
+         * Initialize the settings manager with all available modules.
+         * @param name Name of the tool.
+         * @param executableName Filename of the executable.
+         */
+        void initializeAll(std::string const& name, std::string const& executableName);
+        
+        /*!
+         * Get module. The type of the module is given as a template argument.
+         *
+         * @return The module.
+         */
+        template<typename SettingsType>
+        SettingsType getModule() {
+            static_assert(std::is_base_of<storm::settings::modules::ModuleSettings, SettingsType>::value, "Template argument must be derived from ModuleSettings");
+            return dynamic_cast<SettingsType const&>(manager().getModule(SettingsType::moduleName));
+        }
+        
+        /*!
+         * Retrieves the markov chain settings in a mutable form. This is only meant to be used for debug purposes or very
          * rare cases where it is necessary.
          *
-         * @return An object that allows accessing and modifying the general settings.
+         * @return An object that allows accessing and modifying the markov chain settings.
          */
-        storm::settings::modules::GeneralSettings& mutableGeneralSettings();
+        storm::settings::modules::MarkovChainSettings& mutableMarkovChainSettings();
         
         /*!
-         * Retrieves the debug settings.
+         * Retrieves the IO settings in a mutable form. This is only meant to be used for debug purposes or very
+         * rare cases where it is necessary.
          *
-         * @return An object that allows accessing the debug settings.
+         * @return An object that allows accessing and modifying the IO settings.
          */
-        storm::settings::modules::DebugSettings const& debugSettings();
-        
-        /*!
-         * Retrieves the counterexample generator settings.
-         *
-         * @return An object that allows accessing the counterexample generator settings.
-         */
-        storm::settings::modules::CounterexampleGeneratorSettings const& counterexampleGeneratorSettings();
-        
-        /*!
-         * Retrieves the CUDD settings.
-         *
-         * @return An object that allows accessing the CUDD settings.
-         */
-        storm::settings::modules::CuddSettings const& cuddSettings();
-
-        /*!
-         * Retrieves the Sylvan settings.
-         *
-         * @return An object that allows accessing the Sylvan settings.
-         */
-        storm::settings::modules::SylvanSettings const& sylvanSettings();
-        
-        /*!
-         * Retrieves the settings of the gmm++-based equation solver.
-         *
-         * @return An object that allows accessing the settings of the gmm++-based equation solver.
-         */
-        storm::settings::modules::GmmxxEquationSolverSettings const& gmmxxEquationSolverSettings();
-        
-        /*!
-         * Retrieves the settings of the native equation solver.
-         *
-         * @return An object that allows accessing the settings of the native equation solver.
-         */
-        storm::settings::modules::NativeEquationSolverSettings const& nativeEquationSolverSettings();
-
-        /*!
-         * Retrieves the settings of the native equation solver.
-         *
-         * @return An object that allows accessing the settings of the native equation solver.
-         */
-        storm::settings::modules::BisimulationSettings const& bisimulationSettings();
-        
-        /*!
-         * Retrieves the settings of glpk.
-         *
-         * @return An object that allows accessing the settings of glpk.
-         */
-        storm::settings::modules::GlpkSettings const& glpkSettings();
-        
-        /*!
-         * Retrieves the settings of Gurobi.
-         *
-         * @return An object that allows accessing the settings of Gurobi.
-         */
-		storm::settings::modules::GurobiSettings const& gurobiSettings();
-
-		/*!
-		* Retrieves the settings of the topological value iteration-based equation solver.
-		*
-		* @return An object that allows accessing the settings of the topological value iteration-based equation solver.
-		*/
-		storm::settings::modules::TopologicalValueIterationEquationSolverSettings const& topologicalValueIterationEquationSolverSettings();
-        
-        /*!
-         * Retrieves the settings for parametric model checking.
-         *
-         * @return An object that allows accessing the settings for parameteric model checking.
-         */
-        storm::settings::modules::ParametricSettings const& parametricSettings();
-
-        /* Retrieves the settings of the elimination-based DTMC model checker.
-         *
-         * @return An object that allows accessing the settings of the elimination-based DTMC model checker.
-         */
-        storm::settings::modules::SparseDtmcEliminationModelCheckerSettings const& sparseDtmcEliminationModelCheckerSettings();
-
-        /* Retrieves the settings of the exploration engine.
-         *
-         * @return An object that allows accessing the settings of the exploration engine.
-         */
-        storm::settings::modules::ExplorationSettings const& explorationSettings();
+        storm::settings::modules::IOSettings& mutableIOSettings();
         
     } // namespace settings
 } // namespace storm

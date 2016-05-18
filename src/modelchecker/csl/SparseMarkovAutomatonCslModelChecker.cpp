@@ -45,7 +45,6 @@ namespace storm {
             STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException, "Unable to compute time-bounded reachability probabilities in non-closed Markov automaton.");
             std::unique_ptr<CheckResult> rightResultPointer = this->check(pathFormula.getRightSubformula());
             ExplicitQualitativeCheckResult const& rightResult = rightResultPointer->asExplicitQualitativeCheckResult();
-
             double lowerBound = 0;
             double upperBound = 0;
             if (!pathFormula.hasDiscreteTimeBound()) {

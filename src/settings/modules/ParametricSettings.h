@@ -23,11 +23,9 @@ namespace storm {
 				enum class Smt2EncodingStrategy {FULL_TRANSITION_SYSTEM, ONLY_SCC_ENTRY_STATES, HIGH_INDEGREE, RATIONAL_FUNCTION};
                 
                 /*!
-                 * Creates a new set of parametric model checking settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of parametric model checking settings.
                  */
-                ParametricSettings(storm::settings::SettingsManager& settingsManager);
+                ParametricSettings();
 				
 				/**
 				 * Retrieves whether the model checking result should be exported to a file.

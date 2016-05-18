@@ -4,6 +4,8 @@
 #include "../utility/storm.h"
 
 #include "src/settings/modules/DebugSettings.h"
+#include "src/settings/modules/IOSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/exceptions/OptionParserException.h"
 
 #include "src/utility/storm-version.h"
@@ -41,9 +43,9 @@ namespace storm {
                 return (GetCurrentDir(temp, 512 - 1) ? std::string(temp) : std::string(""));
             }
             
-            void printHeader(const int argc, const char* argv[]) {
-                 std::cout << "StoRM" << std::endl;
-                std::cout << "--------" << std::endl << std::endl;
+            void printHeader(const std::string name, const int argc, const char* argv[]) {
+                std::cout << name << std::endl;
+                std::cout << "---------------" << std::endl << std::endl;
                 
                 
                 std::cout << storm::utility::StormVersion::longVersionString() << std::endl;
@@ -166,59 +168,56 @@ namespace storm {
             }
             
             bool parseOptions(const int argc, const char* argv[]) {
-                storm::settings::SettingsManager& manager = storm::settings::mutableManager();
                 try {
-                    manager.setFromCommandLine(argc, argv);
+                    storm::settings::mutableManager().setFromCommandLine(argc, argv);
                 } catch (storm::exceptions::OptionParserException& e) {
-                    manager.printHelp();
+                    storm::settings::manager().printHelp();
                     throw e;
                     return false;
                 }
                 
-                if (storm::settings::generalSettings().isHelpSet()) {
-                    storm::settings::manager().printHelp(storm::settings::generalSettings().getHelpModuleName());
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isHelpSet()) {
+                    storm::settings::manager().printHelp(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getHelpModuleName());
                     return false;
                 }
                 
-                if (storm::settings::generalSettings().isVersionSet()) {
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVersionSet()) {
                     storm::settings::manager().printVersion();
                     return false;
                 }
                 
-                if (storm::settings::generalSettings().isVerboseSet()) {
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
                     STORM_GLOBAL_LOGLEVEL_INFO();
                 }
-                if (storm::settings::debugSettings().isDebugSet()) {
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet()) {
                     STORM_GLOBAL_LOGLEVEL_DEBUG();
                     
                 }
-                if (storm::settings::debugSettings().isTraceSet()) {
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
                     STORM_GLOBAL_LOGLEVEL_TRACE();
                 }
-                if (storm::settings::debugSettings().isLogfileSet()) {
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
                     storm::utility::initializeFileLogging();
                 }
                 return true;
             }
             
             void processOptions() {
-                if (storm::settings::debugSettings().isLogfileSet()) {
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
                     storm::utility::initializeFileLogging();
                 }
                 
-                storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
-                
                 // If we have to build the model from a symbolic representation, we need to parse the representation first.
                 boost::optional<storm::prism::Program> program;
-                if (settings.isSymbolicSet()) {
-                    std::string const& programFile = settings.getSymbolicModelFilename();
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet()) {
+                    std::string const& programFile = storm::settings::getModule<storm::settings::modules::IOSettings>().getSymbolicModelFilename();
                     program = storm::parseProgram(programFile);
                 }
                 
                 // Then proceed to parsing the property (if given), since the model we are building may depend on the property.
                 std::vector<std::shared_ptr<storm::logic::Formula const>> parsedFormulas;
-                if (settings.isPropertySet()) {
-                    std::string properties = settings.getProperty();
+                if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isPropertySet()) {
+                    std::string properties = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getProperty();
                     
                     if(program) {
                         parsedFormulas = storm::parseFormulasForProgram(properties, program.get());
@@ -229,9 +228,9 @@ namespace storm {
                 }
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas(parsedFormulas.begin(), parsedFormulas.end());
                 
-                if (settings.isSymbolicSet()) {
+                if (storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet()) {
 #ifdef STORM_HAVE_CARL
-                    if (settings.isParametricSet()) {
+                    if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
                         buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formulas, true);
                     } else {
 #endif
@@ -239,7 +238,8 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
                     }
 #endif
-                } else if (settings.isExplicitSet()) {
+                } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
+                    STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use explicit input models with this engine.");
                     buildAndCheckExplicitModel<double>(formulas, true);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");

@@ -13,11 +13,9 @@ namespace storm {
             class CounterexampleGeneratorSettings : public ModuleSettings {
             public:
                 /*!
-                 * Creates a new set of counterexample settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of counterexample settings.
                  */
-                CounterexampleGeneratorSettings(storm::settings::SettingsManager& settingsManager);
+                CounterexampleGeneratorSettings();
                 
                 /*!
                  * Retrieves whether the option to generate a minimal command set was set.

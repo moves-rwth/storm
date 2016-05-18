@@ -14,7 +14,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique, bool trackScheduler) :  MinMaxLinearEquationSolver<ValueType>(A, storm::settings::nativeEquationSolverSettings().getPrecision(), storm::settings::nativeEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative, storm::settings::nativeEquationSolverSettings().getMaximalIterationCount(), trackScheduler, preferredTechnique) {
+        NativeMinMaxLinearEquationSolver<ValueType>::NativeMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, MinMaxTechniqueSelection preferredTechnique, bool trackScheduler) :  MinMaxLinearEquationSolver<ValueType>(A, storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision(), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getConvergenceCriterion() == storm::settings::modules::NativeEquationSolverSettings::ConvergenceCriterion::Relative, storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getMaximalIterationCount(), trackScheduler, preferredTechnique) {
             // Intentionally left empty.
         }
         

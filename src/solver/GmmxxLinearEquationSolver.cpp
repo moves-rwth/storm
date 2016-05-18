@@ -23,7 +23,7 @@ namespace storm {
         template<typename ValueType>
         GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : originalA(&A), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)) {
             // Get the settings object to customize linear solving.
-            storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::gmmxxEquationSolverSettings();
+            storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>();
             
             // Get appropriate settings.
             maximalNumberOfIterations = settings.getMaximalIterationCount();

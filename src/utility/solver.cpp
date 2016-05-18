@@ -19,7 +19,7 @@
 #include "src/solver/Z3SmtSolver.h"
 #include "src/solver/MathsatSmtSolver.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
@@ -46,7 +46,7 @@ namespace storm {
             
             template<typename ValueType>
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                storm::solver::EquationSolverType equationSolver = storm::settings::generalSettings().getEquationSolver();
+                storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver();
                 switch (equationSolver) {
                     case storm::solver::EquationSolverType::Gmmxx: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
                     case storm::solver::EquationSolverType::Native: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix));
@@ -61,7 +61,7 @@ namespace storm {
             
             template<typename ValueType>
             NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory() {
-                switch (storm::settings::nativeEquationSolverSettings().getLinearEquationSystemMethod()) {
+                switch (storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getLinearEquationSystemMethod()) {
                     case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Jacobi:
                     this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::Jacobi;
                     break;
@@ -70,7 +70,7 @@ namespace storm {
                     case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::SOR:
                     this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::SOR;
                 }
-                omega = storm::settings::nativeEquationSolverSettings().getOmega();
+                omega = storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getOmega();
             }
             
             template<typename ValueType>
@@ -93,7 +93,7 @@ namespace storm {
             template<typename ValueType>
             MinMaxLinearEquationSolverFactory<ValueType>& MinMaxLinearEquationSolverFactory<ValueType>::setSolverType(storm::solver::EquationSolverTypeSelection solverTypeSel) {
                 if(solverTypeSel == storm::solver::EquationSolverTypeSelection::FROMSETTINGS) {
-                    this->solverType = storm::settings::generalSettings().getEquationSolver();
+                    this->solverType = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver();
                 } else {
                     this->solverType = storm::solver::convert(solverTypeSel);
                 }
@@ -140,7 +140,7 @@ namespace storm {
             std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
                 storm::solver::LpSolverType t;
                 if(solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
-                    t = storm::settings::generalSettings().getLpSolver();
+                    t = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getLpSolver();
                 } else {
                     t = convert(solvT);
                 }
@@ -168,7 +168,7 @@ namespace storm {
             }
             
             std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
-                storm::solver::SmtSolverType smtSolverType = storm::settings::generalSettings().getSmtSolver();
+                storm::solver::SmtSolverType smtSolverType = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getSmtSolver();
                 switch (smtSolverType) {
                     case storm::solver::SmtSolverType::Z3: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
                     case storm::solver::SmtSolverType::Mathsat: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));

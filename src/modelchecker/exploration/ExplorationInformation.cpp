@@ -12,7 +12,7 @@ namespace storm {
             template<typename StateType, typename ValueType>
             ExplorationInformation<StateType, ValueType>::ExplorationInformation(storm::OptimizationDirection const& direction, ActionType const& unexploredMarker) : unexploredMarker(unexploredMarker), optimizationDirection(direction), localPrecomputation(false), numberOfExplorationStepsUntilPrecomputation(100000), numberOfSampledPathsUntilPrecomputation(), nextStateHeuristic(storm::settings::modules::ExplorationSettings::NextStateHeuristic::DifferenceProbabilitySum) {
                 
-                storm::settings::modules::ExplorationSettings const& settings = storm::settings::explorationSettings();
+                storm::settings::modules::ExplorationSettings const& settings = storm::settings::getModule<storm::settings::modules::ExplorationSettings>();
                 localPrecomputation = settings.isLocalPrecomputationSet();
                 numberOfExplorationStepsUntilPrecomputation = settings.getNumberOfExplorationStepsUntilPrecomputation();
                 if (settings.isNumberOfSampledPathsUntilPrecomputationSet()) {

@@ -10,13 +10,13 @@ namespace storm {
         enum class NativeLinearEquationSolverSolutionMethod {
             Jacobi, GaussSeidel, SOR
         };
+        
         /*!
          * A class that uses StoRM's native matrix operations to implement the LinearEquationSolver interface.
          */
         template<typename ValueType>
         class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
-            
             
             /*!
              * Constructs a linear equation solver with parameters being set according to the settings object.
