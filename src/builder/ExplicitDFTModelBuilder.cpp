@@ -4,6 +4,8 @@
 #include <src/utility/constants.h>
 #include <src/utility/vector.h>
 #include <src/exceptions/UnexpectedException.h>
+#include "src/settings/modules/DebugSettings.h"
+#include "src/settings/SettingsManager.h"
 #include <map>
 
 namespace storm {
@@ -157,7 +159,24 @@ namespace storm {
             
             return model;
         }
+        
+        template<>
+        bool belowThreshold(double const& number) {
+            return number < 0.1;
+        }
 
+        template<>
+        bool belowThreshold(storm::RationalFunction const& number) {
+            storm::RationalFunction threshold = storm::utility::one<storm::RationalFunction>() / 10;
+            std::cout << number << " < " << threshold << ": " << (number < threshold) << std::endl;
+            std::map<storm::Variable, storm::RationalNumber> mapping;
+            
+            storm::RationalFunction eval(number.evaluate(mapping));
+            std::cout << "Evaluated: " << eval << std::endl;
+            return eval < threshold;
+        }
+
+        
         template <typename ValueType>
         std::pair<uint_fast64_t, bool> ExplicitDFTModelBuilder<ValueType>::exploreStates(DFTStatePointer const& state, size_t& rowOffset, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<uint_fast64_t>& markovianStates, std::vector<ValueType>& exitRates) {
             STORM_LOG_TRACE("Explore state: " << mDft.getStateString(state));
@@ -206,6 +225,29 @@ namespace storm {
                 STORM_LOG_ASSERT(nextBE, "NextBE is null.");
                 STORM_LOG_ASSERT(nextBEPair.second == hasDependencies, "Failure due to dependencies does not match.");
                 STORM_LOG_TRACE("With the failure of: " << nextBE->name() << " [" << nextBE->id() << "] in " << mDft.getStateString(state));
+                
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTestSet()) {
+                    if (!storm::utility::isZero(exitRate)) {
+                    ValueType rate = nextBE->activeFailureRate();
+                    ValueType div = rate / exitRate;
+                    if (!storm::utility::isZero(exitRate) && belowThreshold(div)) {
+                        // Set transition directly to failed state
+                        auto resultFind = outgoingRates.find(failedIndex);
+                        if (resultFind != outgoingRates.end()) {
+                            // Add to existing transition
+                            resultFind->second += rate;
+                            STORM_LOG_TRACE("Updated transition to " << resultFind->first << " with rate " << rate << " to new rate " << resultFind->second);
+                        } else {
+                            // Insert new transition
+                            outgoingRates.insert(std::make_pair(failedIndex, rate));
+                            STORM_LOG_TRACE("Added transition to " << failedIndex << " with rate " << rate);
+                        }
+                        exitRate += rate;
+                        std::cout << "IGNORE: " << nextBE->name() << " [" << nextBE->id() << "] with rate " << rate << std::endl;
+                        //STORM_LOG_TRACE("Ignore: " << nextBE->name() << " [" << nextBE->id() << "] with rate " << rate);
+                        continue;
+                    }}
+                }
 
                 // Propagate failures
                 storm::storage::DFTStateSpaceGenerationQueues<ValueType> queues;

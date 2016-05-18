@@ -91,6 +91,9 @@ namespace storm {
             std::pair<bool, uint_fast64_t> checkForExploration(DFTStatePointer const& state);
 
         };
+        
+        template<typename ValueType>
+        bool belowThreshold(ValueType const& number);
     }
 }
 
