@@ -271,7 +271,9 @@ namespace storm {
             while (priorityQueue->hasNextState()) {
                 storm::storage::sparse::state_type state = priorityQueue->popNextState();
                 stateEliminator.eliminateState(state, true);
+#ifdef STORM_DEV
                 STORM_LOG_ASSERT(checkConsistent(flexibleMatrix, flexibleBackwardTransitions), "The forward and backward transition matrices became inconsistent.");
+#endif
             }
             
             // Now, we set the values of all states in BSCCs to that of the representative value (and clear the
@@ -903,7 +905,9 @@ namespace storm {
                 if (removeForwardTransitions) {
                     values[state] = storm::utility::zero<ValueType>();
                 }
+#ifdef STORM_DEV
                 STORM_LOG_ASSERT(checkConsistent(transitionMatrix, backwardTransitions), "The forward and backward transition matrices became inconsistent.");
+#endif
             }
         }
         
