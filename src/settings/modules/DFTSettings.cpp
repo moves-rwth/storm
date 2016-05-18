@@ -27,7 +27,10 @@ namespace storm {
             const std::string DFTSettings::propTimeBoundOptionName = "timebound";
             const std::string DFTSettings::minValueOptionName = "min";
             const std::string DFTSettings::maxValueOptionName = "max";
-
+#ifdef STORM_HAVE_Z3
+            const std::string DFTSettings::solveWithSmtOptionName = "smt";
+#endif
+            
             DFTSettings::DFTSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, dftFileOptionName, false, "Parses the model given in the Galileo format.").setShortName(dftFileOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the DFT model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
@@ -39,6 +42,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, propTimeBoundOptionName, false, "Compute probability of system failure up to given timebound.").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("time", "The timebound to use.").addValidationFunctionDouble(storm::settings::ArgumentValidators::doubleGreaterValidatorExcluding(0.0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, minValueOptionName, false, "Compute minimal value in case of non-determinism.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxValueOptionName, false, "Compute maximal value in case of non-determinism.").build());
+#ifdef STORM_HAVE_Z3
+                this->addOption(storm::settings::OptionBuilder(moduleName, solveWithSmtOptionName, true, "Solve the DFT with SMT.").build());
+#endif
             }
             
             bool DFTSettings::isDftFileSet() const {
@@ -84,6 +90,12 @@ namespace storm {
             bool DFTSettings::isComputeMaximalValue() const {
                 return this->getOption(maxValueOptionName).getHasOptionBeenSet();
             }
+            
+#ifdef STORM_HAVE_Z3
+            bool DFTSettings::solveWithSMT() const {
+                return this->getOption(solveWithSmtOptionName).getHasOptionBeenSet();
+            }
+#endif
             
             void DFTSettings::finalize() {
                 

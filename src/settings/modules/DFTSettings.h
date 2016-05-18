@@ -99,6 +99,15 @@ namespace storm {
                  */
                 double getPropTimebound() const;
                 
+#ifdef STORM_HAVE_Z3
+                /*!
+                 * Retrieves whether the DFT should be checked via SMT.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool solveWithSMT() const;
+#endif
+                
                 bool check() const override;
                 void finalize() override;
 
@@ -119,6 +128,9 @@ namespace storm {
                 static const std::string propTimeBoundOptionName;
                 static const std::string minValueOptionName;
                 static const std::string maxValueOptionName;
+#ifdef STORM_HAVE_Z3
+                static const std::string solveWithSmtOptionName;
+#endif
                 
             };
 
