@@ -61,7 +61,15 @@ namespace storm {
             }
             
             virtual boost::any visit(RestrictedParallelComposition const& composition) override {
-                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+                bool isValid = boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+                
+                for (auto const& action : composition.getSynchronizingActions()) {
+                    if (!program.hasAction(action)) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "System composition refers to unknown action '" << action << "'.");
+                    }
+                }
+                
+                return isValid;
             }
             
         private:
@@ -387,6 +395,20 @@ namespace storm {
             auto const& indexNamePair = this->indexToActionMap.find(actionIndex);
             STORM_LOG_THROW(indexNamePair != this->indexToActionMap.end(), storm::exceptions::InvalidArgumentException, "Unknown action index " << actionIndex << ".");
             return indexNamePair->second;
+        }
+        
+        uint_fast64_t Program::getActionIndex(std::string const& actionName) const {
+            auto const& nameIndexPair = this->actionToIndexMap.find(actionName);
+            STORM_LOG_THROW(nameIndexPair != this->actionToIndexMap.end(), storm::exceptions::InvalidArgumentException, "Unknown action name '" << actionName << "'.");
+            return nameIndexPair->second;
+        }
+        
+        bool Program::hasAction(std::string const& actionName) const {
+            return this->actionToIndexMap.find(actionName) != this->actionToIndexMap.end();
+        }
+        
+        bool Program::hasAction(uint_fast64_t const& actionIndex) const {
+            return this->indexToActionMap.find(actionIndex) != this->indexToActionMap.end();
         }
         
         std::set<uint_fast64_t> const& Program::getModuleIndicesByAction(std::string const& action) const {

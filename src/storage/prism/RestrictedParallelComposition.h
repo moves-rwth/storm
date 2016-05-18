@@ -14,6 +14,8 @@ namespace storm {
             
             virtual boost::any accept(CompositionVisitor& visitor) const override;
 
+            std::set<std::string> const& getSynchronizingActions() const;
+            
         protected:
             virtual void writeToStream(std::ostream& stream) const override;
             

@@ -235,28 +235,47 @@ namespace storm {
                 
                 // Then, determine the action indices on which we need to synchronize.
                 std::set<uint_fast64_t> leftSynchronizationActionIndices = left.getSynchronizingActionIndices();
-                for (auto const& entry : leftSynchronizationActionIndices) {
-                    std::cout << "entry 1: " << entry << std::endl;
-                }
                 std::set<uint_fast64_t> rightSynchronizationActionIndices = right.getSynchronizingActionIndices();
-                for (auto const& entry : rightSynchronizationActionIndices) {
-                    std::cout << "entry 2: " << entry << std::endl;
-                }
                 std::set<uint_fast64_t> synchronizationActionIndices;
                 std::set_intersection(leftSynchronizationActionIndices.begin(), leftSynchronizationActionIndices.end(), rightSynchronizationActionIndices.begin(), rightSynchronizationActionIndices.end(), std::inserter(synchronizationActionIndices, synchronizationActionIndices.begin()));
                 
-                // Finally, we compose the subcompositions to create the result. For this, we modify the left
-                // subcomposition in place and later return it.
+                // Finally, we compose the subcompositions to create the result.
                 composeInParallel(left, right, synchronizationActionIndices);
                 return left;
             }
             
             virtual boost::any visit(storm::prism::InterleavingParallelComposition const& composition) override {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Interleaving is currently not supported in symbolic model building.");
+                // First, we translate the subcompositions.
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram left = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getLeftSubcomposition().accept(*this));
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram right = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getRightSubcomposition().accept(*this));
+
+                // Finally, we compose the subcompositions to create the result.
+                composeInParallel(left, right, std::set<uint_fast64_t>());
+                return left;
             }
             
             virtual boost::any visit(storm::prism::RestrictedParallelComposition const& composition) override {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Restricted parallel composition is currently not supported in symbolic model building.");
+                // First, we translate the subcompositions.
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram left = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getLeftSubcomposition().accept(*this));
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram right = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getRightSubcomposition().accept(*this));
+                
+                // Construct the synchronizing action indices from the synchronizing action names.
+                std::set<uint_fast64_t> synchronizingActionIndices;
+                for (auto const& action : composition.getSynchronizingActions()) {
+                    synchronizingActionIndices.insert(generationInfo.program.getActionIndex(action));
+                }
+                
+                std::set<uint_fast64_t> leftSynchronizationActionIndices = left.getSynchronizingActionIndices();
+                bool isContainedInLeft = std::includes(leftSynchronizationActionIndices.begin(), leftSynchronizationActionIndices.end(), synchronizingActionIndices.begin(), synchronizingActionIndices.end());
+                STORM_LOG_WARN_COND(isContainedInLeft, "Left subcomposition of composition '" << composition << "' does not include all actions over which to synchronize.");
+
+                std::set<uint_fast64_t> rightSynchronizationActionIndices = right.getSynchronizingActionIndices();
+                bool isContainedInRight = std::includes(rightSynchronizationActionIndices.begin(), rightSynchronizationActionIndices.end(), synchronizingActionIndices.begin(), synchronizingActionIndices.end());
+                STORM_LOG_WARN_COND(isContainedInRight, "Right subcomposition of composition '" << composition << "' does not include all actions over which to synchronize.");
+                
+                // Finally, we compose the subcompositions to create the result.
+                composeInParallel(left, right, synchronizingActionIndices);
+                return left;
             }
 
         private:

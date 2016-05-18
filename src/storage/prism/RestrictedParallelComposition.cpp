@@ -12,6 +12,10 @@ namespace storm {
         boost::any RestrictedParallelComposition::accept(CompositionVisitor& visitor) const {
             return visitor.visit(*this);
         }
+
+        std::set<std::string> const& RestrictedParallelComposition::getSynchronizingActions() const {
+            return synchronizingActions;
+        }
         
         void RestrictedParallelComposition::writeToStream(std::ostream& stream) const {
             stream << "(" << this->getLeftSubcomposition() << " |[" << boost::algorithm::join(synchronizingActions, ", ") << "]| " << this->getRightSubcomposition() << ")";
