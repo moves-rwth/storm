@@ -435,7 +435,7 @@ namespace storm {
                 STORM_LOG_TRACE("State " << mDft.getStateString(state) << " with id " << stateId << " already exists");
                 
                 // Check if possible pseudo state can be created now
-                STORM_LOG_ASSERT(stateID >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
+                STORM_LOG_ASSERT(stateId >= OFFSET_PSEUDO_STATE, "State is no pseudo state.");
                 stateId -= OFFSET_PSEUDO_STATE;
                 STORM_LOG_ASSERT(stateId < mPseudoStatesMapping.size(), "Pseudo state not known.");
                 if (mPseudoStatesMapping[stateId].first == 0) {
