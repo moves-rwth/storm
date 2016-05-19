@@ -26,13 +26,11 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            bool isValid(Composition const& composition) {
-                bool isValid = boost::any_cast<bool>(composition.accept(*this, boost::any()));
+            void check(Composition const& composition) {
+                composition.accept(*this, boost::any());
                 if (appearingModules.size() != program.getNumberOfModules()) {
-                    isValid = false;
-                    STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Not every module is used in the system composition.");
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Not every module is used in the system composition.");
                 }
-                return isValid;
             }
             
             virtual boost::any visit(ModuleComposition const& composition, boost::any const& data) override {
@@ -41,35 +39,90 @@ namespace storm {
                 isValid = appearingModules.find(composition.getModuleName()) == appearingModules.end();
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "The module \"" << composition.getModuleName() << "\" is referred to more than once in the system composition.");
                 appearingModules.insert(composition.getModuleName());
-                return isValid;
+                std::set<uint_fast64_t> synchronizingActionIndices = program.getModule(composition.getModuleName()).getSynchronizingActionIndices();
+                return synchronizingActionIndices;
             }
             
             virtual boost::any visit(RenamingComposition const& composition, boost::any const& data) override {
-                return composition.getSubcomposition().accept(*this, data);
+                std::set<uint_fast64_t> subSynchronizingActionIndices = boost::any_cast<std::set<uint_fast64_t>>(composition.getSubcomposition().accept(*this, data));
+
+                std::set<uint_fast64_t> newSynchronizingActionIndices = subSynchronizingActionIndices;
+                for (auto const& namePair : composition.getActionRenaming()) {
+                    if (!program.hasAction(namePair.first)) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "System composition refers to unknown action '" << namePair.first << "'.");
+                    } else if (!program.hasAction(namePair.second)) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "System composition refers to unknown action '" << namePair.second << "'.");
+                    } else {
+                        uint_fast64_t fromIndex = program.getActionIndex(namePair.first);
+                        uint_fast64_t toIndex = program.getActionIndex(namePair.second);
+                        auto it = subSynchronizingActionIndices.find(fromIndex);
+                        STORM_LOG_THROW(it != subSynchronizingActionIndices.end(), storm::exceptions::WrongFormatException, "Cannot rename action '" << namePair.first << "', because module '" << composition.getSubcomposition() << " does not have this action.");
+                        newSynchronizingActionIndices.erase(newSynchronizingActionIndices.find(fromIndex));
+                        newSynchronizingActionIndices.insert(toIndex);
+                    }
+                }
+                
+                
+                return newSynchronizingActionIndices;
             }
             
             virtual boost::any visit(HidingComposition const& composition, boost::any const& data) override {
-                return composition.getSubcomposition().accept(*this, data);
+                std::set<uint_fast64_t> subSynchronizingActionIndices = boost::any_cast<std::set<uint_fast64_t>>(composition.getSubcomposition().accept(*this, data));
+                
+                for (auto const& action : composition.getActionsToHide()) {
+                    if (!program.hasAction(action)) {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "System composition refers to unknown action '" << action << "'.");
+                    } else {
+                        uint_fast64_t index = program.getActionIndex(action);
+                        auto it = subSynchronizingActionIndices.find(index);
+                        STORM_LOG_THROW(it != subSynchronizingActionIndices.end(), storm::exceptions::WrongFormatException, "Cannot hide action '" << action << "', because module '" << composition.getSubcomposition() << " does not have this action.");
+                        subSynchronizingActionIndices.erase(it);
+                    }
+                }
+
+                return subSynchronizingActionIndices;
             }
             
             virtual boost::any visit(SynchronizingParallelComposition const& composition, boost::any const& data) override {
-                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this, data)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this, data));
+                std::set<uint_fast64_t> leftSynchronizingActionIndices = boost::any_cast<std::set<uint_fast64_t>>(composition.getLeftSubcomposition().accept(*this, data));
+                std::set<uint_fast64_t> rightSynchronizingActionIndices = boost::any_cast<std::set<uint_fast64_t>>(composition.getRightSubcomposition().accept(*this, data));
+                
+                std::set<uint_fast64_t> synchronizingActionIndices;
+                std::set_union(leftSynchronizingActionIndices.begin(), leftSynchronizingActionIndices.end(), rightSynchronizingActionIndices.begin(), rightSynchronizingActionIndices.end(), std::inserter(synchronizingActionIndices, synchronizingActionIndices.begin()));
+                
+                return synchronizingActionIndices;
             }
             
             virtual boost::any visit(InterleavingParallelComposition const& composition, boost::any const& data) override {
-                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this, data)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this, data));
+                std::set<uint_fast64_t> leftSynchronizingActionIndices = boost::any_cast<std::set<uint_fast64_t>>(composition.getLeftSubcomposition().accept(*this, data));
+                std::set<uint_fast64_t> rightSynchronizingActionIndices = boost::any_cast<std::set<uint_fast64_t>>(composition.getRightSubcomposition().accept(*this, data));
+
+                std::set<uint_fast64_t> synchronizingActionIndices;
+                std::set_union(leftSynchronizingActionIndices.begin(), leftSynchronizingActionIndices.end(), rightSynchronizingActionIndices.begin(), rightSynchronizingActionIndices.end(), std::inserter(synchronizingActionIndices, synchronizingActionIndices.begin()));
+                
+                return synchronizingActionIndices;
             }
             
             virtual boost::any visit(RestrictedParallelComposition const& composition, boost::any const& data) override {
-                bool isValid = boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this, data)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this, data));
+                std::set<uint_fast64_t> leftSynchronizingActionIndices = boost::any_cast<std::set<uint_fast64_t>>(composition.getLeftSubcomposition().accept(*this, data));
+                std::set<uint_fast64_t> rightSynchronizingActionIndices = boost::any_cast<std::set<uint_fast64_t>>(composition.getRightSubcomposition().accept(*this, data));
                 
                 for (auto const& action : composition.getSynchronizingActions()) {
                     if (!program.hasAction(action)) {
                         STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "System composition refers to unknown action '" << action << "'.");
+                    } else {
+                        uint_fast64_t index = program.getActionIndex(action);
+                        auto it = leftSynchronizingActionIndices.find(index);
+                        STORM_LOG_THROW(it != leftSynchronizingActionIndices.end(), storm::exceptions::WrongFormatException, "Cannot synchronize on action '" << action << "', because module '" << composition.getLeftSubcomposition() << " does not have this action.");
+                        it = rightSynchronizingActionIndices.find(index);
+                        STORM_LOG_THROW(it != rightSynchronizingActionIndices.end(), storm::exceptions::WrongFormatException, "Cannot synchronize on action '" << action << "', because module '" << composition.getRightSubcomposition() << " does not have this action.");
                     }
                 }
                 
-                return isValid;
+                std::set<uint_fast64_t> synchronizingActionIndices;
+                std::set_union(leftSynchronizingActionIndices.begin(), leftSynchronizingActionIndices.end(), rightSynchronizingActionIndices.begin(), rightSynchronizingActionIndices.end(), std::inserter(synchronizingActionIndices, synchronizingActionIndices.begin()));
+                
+                return synchronizingActionIndices;
             }
             
         private:
@@ -1007,8 +1060,7 @@ namespace storm {
             // Check the system composition if given.
             if (systemCompositionConstruct) {
                 CompositionValidityChecker checker(*this);
-                isValid = checker.isValid(systemCompositionConstruct.get().getSystemComposition());
-                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in system composition expression.");
+                checker.check(systemCompositionConstruct.get().getSystemComposition());
             }
             
             // Check the labels.

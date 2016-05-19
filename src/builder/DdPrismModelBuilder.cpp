@@ -200,8 +200,6 @@ namespace storm {
             }
             
             typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram compose(storm::prism::Composition const& composition) {
-                std::cout << "composing the system " << composition << std::endl;
-
                 return boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.accept(*this, newSynchronizingActionToOffsetMap()));
             }
             

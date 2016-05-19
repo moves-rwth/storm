@@ -251,3 +251,52 @@ TEST(DdPrismModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(59ul, mdp->getNumberOfTransitions());
     EXPECT_EQ(59ul, mdp->getNumberOfChoices());
 }
+
+TEST(DdPrismModelBuilderTest_Sylvan, Composition) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition.nm");
+    
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(21ul, mdp->getNumberOfStates());
+    EXPECT_EQ(61ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(61ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition2.nm");
+    
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(8ul, mdp->getNumberOfStates());
+    EXPECT_EQ(21ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(21ul, mdp->getNumberOfChoices());
+}
+
+TEST(DdPrismModelBuilderTest_Cudd, Composition) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition.nm");
+    
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(21ul, mdp->getNumberOfStates());
+    EXPECT_EQ(61ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(61ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition2.nm");
+    
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(8ul, mdp->getNumberOfStates());
+    EXPECT_EQ(21ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(21ul, mdp->getNumberOfChoices());
+}
+
