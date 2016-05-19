@@ -27,7 +27,7 @@ namespace storm {
             }
             
             bool isValid(Composition const& composition) {
-                bool isValid = boost::any_cast<bool>(composition.accept(*this));
+                bool isValid = boost::any_cast<bool>(composition.accept(*this, boost::any()));
                 if (appearingModules.size() != program.getNumberOfModules()) {
                     isValid = false;
                     STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Not every module is used in the system composition.");
@@ -35,7 +35,7 @@ namespace storm {
                 return isValid;
             }
             
-            virtual boost::any visit(ModuleComposition const& composition) override {
+            virtual boost::any visit(ModuleComposition const& composition, boost::any const& data) override {
                 bool isValid = program.hasModule(composition.getModuleName());
                 STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "The module \"" << composition.getModuleName() << "\" referred to in the system composition does not exist.");
                 isValid = appearingModules.find(composition.getModuleName()) == appearingModules.end();
@@ -44,24 +44,24 @@ namespace storm {
                 return isValid;
             }
             
-            virtual boost::any visit(RenamingComposition const& composition) override {
-                return composition.getSubcomposition().accept(*this);
+            virtual boost::any visit(RenamingComposition const& composition, boost::any const& data) override {
+                return composition.getSubcomposition().accept(*this, data);
             }
             
-            virtual boost::any visit(HidingComposition const& composition) override {
-                return composition.getSubcomposition().accept(*this);
+            virtual boost::any visit(HidingComposition const& composition, boost::any const& data) override {
+                return composition.getSubcomposition().accept(*this, data);
             }
             
-            virtual boost::any visit(SynchronizingParallelComposition const& composition) override {
-                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+            virtual boost::any visit(SynchronizingParallelComposition const& composition, boost::any const& data) override {
+                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this, data)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this, data));
             }
             
-            virtual boost::any visit(InterleavingParallelComposition const& composition) override {
-                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+            virtual boost::any visit(InterleavingParallelComposition const& composition, boost::any const& data) override {
+                return boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this, data)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this, data));
             }
             
-            virtual boost::any visit(RestrictedParallelComposition const& composition) override {
-                bool isValid = boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this));
+            virtual boost::any visit(RestrictedParallelComposition const& composition, boost::any const& data) override {
+                bool isValid = boost::any_cast<bool>(composition.getLeftSubcomposition().accept(*this, data)) && boost::any_cast<bool>(composition.getRightSubcomposition().accept(*this, data));
                 
                 for (auto const& action : composition.getSynchronizingActions()) {
                     if (!program.hasAction(action)) {

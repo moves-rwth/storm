@@ -15,12 +15,12 @@ namespace storm {
         
         class CompositionVisitor {
         public:
-            virtual boost::any visit(ModuleComposition const& composition) = 0;
-            virtual boost::any visit(RenamingComposition const& composition) = 0;
-            virtual boost::any visit(HidingComposition const& composition) = 0;
-            virtual boost::any visit(SynchronizingParallelComposition const& composition) = 0;
-            virtual boost::any visit(InterleavingParallelComposition const& composition) = 0;
-            virtual boost::any visit(RestrictedParallelComposition const& composition) = 0;
+            virtual boost::any visit(ModuleComposition const& composition, boost::any const& data) = 0;
+            virtual boost::any visit(RenamingComposition const& composition, boost::any const& data) = 0;
+            virtual boost::any visit(HidingComposition const& composition, boost::any const& data) = 0;
+            virtual boost::any visit(SynchronizingParallelComposition const& composition, boost::any const& data) = 0;
+            virtual boost::any visit(InterleavingParallelComposition const& composition, boost::any const& data) = 0;
+            virtual boost::any visit(RestrictedParallelComposition const& composition, boost::any const& data) = 0;
         };
     }
 }

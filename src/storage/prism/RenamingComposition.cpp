@@ -11,8 +11,8 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        boost::any RenamingComposition::accept(CompositionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any RenamingComposition::accept(CompositionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         Composition const& RenamingComposition::getSubcomposition() const {

@@ -13,7 +13,7 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& stream, Composition const& composition);
             
-            virtual boost::any accept(CompositionVisitor& visitor) const = 0;
+            virtual boost::any accept(CompositionVisitor& visitor, boost::any const& data) const = 0;
             
         protected:
             virtual void writeToStream(std::ostream& stream) const = 0;

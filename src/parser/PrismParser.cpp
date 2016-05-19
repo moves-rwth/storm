@@ -162,7 +162,7 @@ namespace storm {
             hidingComposition = (atomicComposition >> (qi::lit("/") > (qi::lit("{") > actionNameList > qi::lit("}"))))[qi::_val = phoenix::bind(&PrismParser::createHidingComposition, phoenix::ref(*this), qi::_1, qi::_2)];
             hidingComposition.name("hiding composition");
             
-            actionRenamingList = +(identifier >> (qi::lit("<-") >> identifier))[phoenix::insert(qi::_val, phoenix::construct<std::pair<std::string, std::string>>(qi::_2, qi::_1))];
+            actionRenamingList = +(identifier >> (qi::lit("<-") >> identifier))[phoenix::insert(qi::_val, phoenix::construct<std::pair<std::string, std::string>>(qi::_1, qi::_2))];
             actionRenamingList.name("action renaming list");
             
             renamingComposition = (atomicComposition >> (qi::lit("{") > (actionRenamingList > qi::lit("}"))))[qi::_val = phoenix::bind(&PrismParser::createRenamingComposition, phoenix::ref(*this), qi::_1, qi::_2)];

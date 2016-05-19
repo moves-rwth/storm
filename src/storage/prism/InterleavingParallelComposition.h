@@ -9,7 +9,7 @@ namespace storm {
         public:
             InterleavingParallelComposition(std::shared_ptr<Composition> const& left, std::shared_ptr<Composition> const& right);
             
-            virtual boost::any accept(CompositionVisitor& visitor) const override;
+            virtual boost::any accept(CompositionVisitor& visitor, boost::any const& data) const override;
 
         protected:
             virtual void writeToStream(std::ostream& stream) const override;

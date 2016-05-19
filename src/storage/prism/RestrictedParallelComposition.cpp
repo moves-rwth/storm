@@ -9,8 +9,8 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        boost::any RestrictedParallelComposition::accept(CompositionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any RestrictedParallelComposition::accept(CompositionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
 
         std::set<std::string> const& RestrictedParallelComposition::getSynchronizingActions() const {

@@ -196,34 +196,41 @@ namespace storm {
         class ModuleComposer : public storm::prism::CompositionVisitor {
         public:
             ModuleComposer(typename DdPrismModelBuilder<Type, ValueType>::GenerationInformation& generationInfo) : generationInfo(generationInfo) {
-                for (auto const& actionIndex : generationInfo.program.getSynchronizingActionIndices()) {
-                    synchronizingActionToOffsetMap[actionIndex] = 0;
-                }
+                // Intentionally left empty.
             }
             
             typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram compose(storm::prism::Composition const& composition) {
                 std::cout << "composing the system " << composition << std::endl;
-                return boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.accept(*this));
+
+                return boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.accept(*this, newSynchronizingActionToOffsetMap()));
             }
             
-            virtual boost::any visit(storm::prism::ModuleComposition const& composition) override {
-                STORM_LOG_TRACE("Translating module '" << composition.getModuleName() << "'.");
-                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram result = DdPrismModelBuilder<Type, ValueType>::createModuleDecisionDiagram(generationInfo, generationInfo.program.getModule(composition.getModuleName()), synchronizingActionToOffsetMap);
-                
-                // Update the offset indices.
+            std::map<uint_fast64_t, uint_fast64_t> newSynchronizingActionToOffsetMap() const {
+                std::map<uint_fast64_t, uint_fast64_t> result;
                 for (auto const& actionIndex : generationInfo.program.getSynchronizingActionIndices()) {
-                    if (result.hasSynchronizingAction(actionIndex)) {
-                        synchronizingActionToOffsetMap[actionIndex] = result.synchronizingActionToDecisionDiagramMap[actionIndex].numberOfUsedNondeterminismVariables;
-                    }
+                    result[actionIndex] = 0;
                 }
+                return result;
+            }
+            
+            std::map<uint_fast64_t, uint_fast64_t> updateSynchronizingActionToOffsetMap(typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram const& sub, std::map<uint_fast64_t, uint_fast64_t> const& oldMapping) const {
+                std::map<uint_fast64_t, uint_fast64_t> result = oldMapping;
+                for (auto const& action : sub.synchronizingActionToDecisionDiagramMap) {
+                    result[action.first] = action.second.numberOfUsedNondeterminismVariables;
+                }
+                return result;
+            }
+            
+            virtual boost::any visit(storm::prism::ModuleComposition const& composition, boost::any const& data) override {
+                STORM_LOG_TRACE("Translating module '" << composition.getModuleName() << "'.");
+                std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap = boost::any_cast<std::map<uint_fast64_t, uint_fast64_t> const&>(data);
+                
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram result = DdPrismModelBuilder<Type, ValueType>::createModuleDecisionDiagram(generationInfo, generationInfo.program.getModule(composition.getModuleName()), synchronizingActionToOffsetMap);
                 
                 return result;
             }
             
-            virtual boost::any visit(storm::prism::RenamingComposition const& composition) override {
-                // First, we translate the subcomposition.
-                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram sub = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getSubcomposition().accept(*this));
-
+            virtual boost::any visit(storm::prism::RenamingComposition const& composition, boost::any const& data) override {
                 // Create the mapping from action indices to action indices.
                 std::map<uint_fast64_t, uint_fast64_t> renaming;
                 for (auto const& namePair : composition.getActionRenaming()) {
@@ -231,30 +238,58 @@ namespace storm {
                     STORM_LOG_THROW(generationInfo.program.hasAction(namePair.second), storm::exceptions::InvalidArgumentException, "Composition refers to unknown action '" << namePair.second << "'.");
                     renaming.emplace(generationInfo.program.getActionIndex(namePair.first), generationInfo.program.getActionIndex(namePair.second));
                 }
+
+                // Prepare the new offset mapping.
+                std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap = boost::any_cast<std::map<uint_fast64_t, uint_fast64_t> const&>(data);
+                std::map<uint_fast64_t, uint_fast64_t> newSynchronizingActionToOffsetMap = synchronizingActionToOffsetMap;
+                for (auto const& indexPair : renaming) {
+                    auto it = synchronizingActionToOffsetMap.find(indexPair.second);
+                    STORM_LOG_THROW(it != synchronizingActionToOffsetMap.end(), storm::exceptions::InvalidArgumentException, "Invalid action index " << indexPair.second << ".");
+                    newSynchronizingActionToOffsetMap[indexPair.first] = it->second;
+                }
+                
+                // Then, we translate the subcomposition.
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram sub = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getSubcomposition().accept(*this, newSynchronizingActionToOffsetMap));
                 
                 // Perform the renaming and return result.
                 return rename(sub, renaming);
             }
             
-            virtual boost::any visit(storm::prism::HidingComposition const& composition) override {
-                // First, we translate the subcomposition.
-                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram sub = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getSubcomposition().accept(*this));
-                
+            virtual boost::any visit(storm::prism::HidingComposition const& composition, boost::any const& data) override {
                 // Create the mapping from action indices to action indices.
                 std::set<uint_fast64_t> actionIndicesToHide;
                 for (auto const& action : composition.getActionsToHide()) {
                     STORM_LOG_THROW(generationInfo.program.hasAction(action), storm::exceptions::InvalidArgumentException, "Composition refers to unknown action '" << action << "'.");
                     actionIndicesToHide.insert(generationInfo.program.getActionIndex(action));
                 }
+
+                // Prepare the new offset mapping.
+                std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap = boost::any_cast<std::map<uint_fast64_t, uint_fast64_t> const&>(data);
+                std::map<uint_fast64_t, uint_fast64_t> newSynchronizingActionToOffsetMap = synchronizingActionToOffsetMap;
+                for (auto const& index : actionIndicesToHide) {
+                    newSynchronizingActionToOffsetMap[index] = 0;
+                }
+                
+                // Then, we translate the subcomposition.
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram sub = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getSubcomposition().accept(*this, newSynchronizingActionToOffsetMap));
                 
                 // Perform the hiding and return result.
-                return hide(sub, actionIndicesToHide);
+                hide(sub, actionIndicesToHide);
+                return sub;
             }
             
-            virtual boost::any visit(storm::prism::SynchronizingParallelComposition const& composition) override {
+            virtual boost::any visit(storm::prism::SynchronizingParallelComposition const& composition, boost::any const& data) override {
                 // First, we translate the subcompositions.
-                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram left = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getLeftSubcomposition().accept(*this));
-                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram right = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getRightSubcomposition().accept(*this));
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram left = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getLeftSubcomposition().accept(*this, data));
+
+                // Prepare the new offset mapping.
+                std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap = boost::any_cast<std::map<uint_fast64_t, uint_fast64_t> const&>(data);
+                std::map<uint_fast64_t, uint_fast64_t> newSynchronizingActionToOffsetMap = synchronizingActionToOffsetMap;
+                for (auto const& action : left.synchronizingActionToDecisionDiagramMap) {
+                    newSynchronizingActionToOffsetMap[action.first] = action.second.numberOfUsedNondeterminismVariables;
+                }
+                
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram right = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getRightSubcomposition().accept(*this, newSynchronizingActionToOffsetMap));
                 
                 // Then, determine the action indices on which we need to synchronize.
                 std::set<uint_fast64_t> leftSynchronizationActionIndices = left.getSynchronizingActionIndices();
@@ -267,26 +302,38 @@ namespace storm {
                 return left;
             }
             
-            virtual boost::any visit(storm::prism::InterleavingParallelComposition const& composition) override {
+            virtual boost::any visit(storm::prism::InterleavingParallelComposition const& composition, boost::any const& data) override {
                 // First, we translate the subcompositions.
-                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram left = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getLeftSubcomposition().accept(*this));
-                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram right = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getRightSubcomposition().accept(*this));
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram left = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getLeftSubcomposition().accept(*this, data));
+                
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram right = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getRightSubcomposition().accept(*this, data));
 
                 // Finally, we compose the subcompositions to create the result.
                 composeInParallel(left, right, std::set<uint_fast64_t>());
                 return left;
             }
             
-            virtual boost::any visit(storm::prism::RestrictedParallelComposition const& composition) override {
-                // First, we translate the subcompositions.
-                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram left = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getLeftSubcomposition().accept(*this));
-                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram right = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getRightSubcomposition().accept(*this));
-                
+            virtual boost::any visit(storm::prism::RestrictedParallelComposition const& composition, boost::any const& data) override {
                 // Construct the synchronizing action indices from the synchronizing action names.
                 std::set<uint_fast64_t> synchronizingActionIndices;
                 for (auto const& action : composition.getSynchronizingActions()) {
                     synchronizingActionIndices.insert(generationInfo.program.getActionIndex(action));
                 }
+                
+                // Then, we translate the subcompositions.
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram left = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getLeftSubcomposition().accept(*this, data));
+                
+                // Prepare the new offset mapping.
+                std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap = boost::any_cast<std::map<uint_fast64_t, uint_fast64_t> const&>(data);
+                std::map<uint_fast64_t, uint_fast64_t> newSynchronizingActionToOffsetMap = synchronizingActionToOffsetMap;
+                for (auto const& actionIndex : synchronizingActionIndices) {
+                    auto it = left.synchronizingActionToDecisionDiagramMap.find(actionIndex);
+                    if (it != left.synchronizingActionToDecisionDiagramMap.end()) {
+                        newSynchronizingActionToOffsetMap[actionIndex] = it->second.numberOfUsedNondeterminismVariables;
+                    }
+                }
+                
+                typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram right = boost::any_cast<typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram>(composition.getRightSubcomposition().accept(*this, newSynchronizingActionToOffsetMap));
                 
                 std::set<uint_fast64_t> leftSynchronizationActionIndices = left.getSynchronizingActionIndices();
                 bool isContainedInLeft = std::includes(leftSynchronizationActionIndices.begin(), leftSynchronizationActionIndices.end(), synchronizingActionIndices.begin(), synchronizingActionIndices.end());
@@ -307,11 +354,14 @@ namespace storm {
              * place.
              */
             void hide(typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& sub, std::set<uint_fast64_t> const& actionIndicesToHide) const {
-                STORM_LOG_TRACE("Hiding the actions " << boost::join(actionIndicesToHide, ", ") << ".");
+                STORM_LOG_TRACE("Hiding actions.");
 
-                for (auto const& action : sub.synchronizingActionToDecisionDiagramMap) {
-                    if (actionIndicesToHide.find(action) != actionIndicesToHide.end()) {
-                        
+                for (auto const& actionIndex : actionIndicesToHide) {
+                    auto it = sub.synchronizingActionToDecisionDiagramMap.find(actionIndex);
+                    if (it != sub.synchronizingActionToDecisionDiagramMap.end()) {
+                        sub.independentAction = DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(generationInfo, sub.independentAction, it->second);
+                        sub.numberOfUsedNondeterminismVariables = std::max(sub.numberOfUsedNondeterminismVariables, sub.independentAction.numberOfUsedNondeterminismVariables);
+                        sub.synchronizingActionToDecisionDiagramMap.erase(it);
                     }
                 }
             }
@@ -321,21 +371,21 @@ namespace storm {
              */
             typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram rename(typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& sub, std::map<uint_fast64_t, uint_fast64_t> const& renaming) const {
                 STORM_LOG_TRACE("Renaming actions.");
-                uint_fast64_t numberOfUsedNondeterminismVariables = sub.numberOfUsedNondeterminismVariables;
                 std::map<uint_fast64_t, typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram> actionIndexToDdMap;
                 
                 // Go through all action DDs with a synchronizing label and rename them if they appear in the renaming.
-                for (auto const& action : sub.synchronizingActionToDecisionDiagramMap) {
+                for (auto& action : sub.synchronizingActionToDecisionDiagramMap) {
                     auto renamingIt = renaming.find(action.first);
                     if (renamingIt != renaming.end()) {
                         // If the action is to be renamed and an action with the target index already exists, we need
                         // to combine the action DDs.
-                        auto itNewActions = actionIndexToDdMap.find(renamingIt.second);
+                        auto itNewActions = actionIndexToDdMap.find(renamingIt->second);
                         if (itNewActions != actionIndexToDdMap.end()) {
-                            actionIndexToDdMap[renamingIt.second] = DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(generationInfo, action.second, itNewActions->second);
+                            actionIndexToDdMap[renamingIt->second] = DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(generationInfo, action.second, itNewActions->second);
+                            
                         } else {
                             // In this case, we can simply copy the action over.
-                            actionIndexToDdMap[renamingIt.second] = action.second;
+                            actionIndexToDdMap[renamingIt->second] = action.second;
                         }
                     } else {
                         // If the action is not to be renamed, we need to copy it over. However, if some other action
@@ -350,7 +400,7 @@ namespace storm {
                     }
                 }
                 
-                return ModuleDecisionDiagram(sub.independentAction, actionIndexToDdMap, sub.identity, numberOfUsedNondeterminismVariables);
+                return typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram(sub.independentAction, actionIndexToDdMap, sub.identity, sub.numberOfUsedNondeterminismVariables);
             }
             
             /*!
@@ -358,7 +408,7 @@ namespace storm {
              * module is modified in place and will contain the composition after a call to this method.
              */
             void composeInParallel(typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& left, typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& right, std::set<uint_fast64_t> const& synchronizationActionIndices) const {
-                STORM_LOG_TRACE("Composing two modules over the actions " << boost::join(synchronizationActionIndices, ", ") << ".");
+                STORM_LOG_TRACE("Composing two modules.");
                 
                 // Combine the tau action.
                 uint_fast64_t numberOfUsedNondeterminismVariables = right.independentAction.numberOfUsedNondeterminismVariables;
@@ -421,7 +471,6 @@ namespace storm {
             }
             
             typename DdPrismModelBuilder<Type, ValueType>::GenerationInformation& generationInfo;
-            std::map<uint_fast64_t, uint_fast64_t> synchronizingActionToOffsetMap;
         };
         
         template <storm::dd::DdType Type, typename ValueType>

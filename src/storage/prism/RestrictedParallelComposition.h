@@ -12,7 +12,7 @@ namespace storm {
         public:
             RestrictedParallelComposition(std::shared_ptr<Composition> const& left, std::set<std::string> const& synchronizingActions, std::shared_ptr<Composition> const& right);
             
-            virtual boost::any accept(CompositionVisitor& visitor) const override;
+            virtual boost::any accept(CompositionVisitor& visitor, boost::any const& data) const override;
 
             std::set<std::string> const& getSynchronizingActions() const;
             

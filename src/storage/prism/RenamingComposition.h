@@ -13,7 +13,7 @@ namespace storm {
         public:
             RenamingComposition(std::shared_ptr<Composition> const& sub, std::map<std::string, std::string> const& actionRenaming);
             
-            virtual boost::any accept(CompositionVisitor& visitor) const override;
+            virtual boost::any accept(CompositionVisitor& visitor, boost::any const& data) const override;
             
             Composition const& getSubcomposition() const;
             

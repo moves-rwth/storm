@@ -7,8 +7,8 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        boost::any ModuleComposition::accept(CompositionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any ModuleComposition::accept(CompositionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         std::string const& ModuleComposition::getModuleName() const {

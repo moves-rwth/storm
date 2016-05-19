@@ -12,7 +12,7 @@ namespace storm {
         public:
             HidingComposition(std::shared_ptr<Composition> const& sub, std::set<std::string> const& actionsToHide);
             
-            virtual boost::any accept(CompositionVisitor& visitor) const override;
+            virtual boost::any accept(CompositionVisitor& visitor, boost::any const& data) const override;
             
             Composition const& getSubcomposition() const;
             

@@ -9,8 +9,8 @@ namespace storm {
             // Intentionally left empty.
         }
 
-        boost::any HidingComposition::accept(CompositionVisitor& visitor) const {
-            return visitor.visit(*this);
+        boost::any HidingComposition::accept(CompositionVisitor& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         Composition const& HidingComposition::getSubcomposition() const {
