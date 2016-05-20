@@ -27,7 +27,7 @@ namespace storm {
                 std::stringstream stream;
                 stream << entry.first << " -> ";
                 if (entry.second) {
-                    stream << entry.second;
+                    stream << entry.second.get();
                 } else {
                     stream << "tau";
                 }
