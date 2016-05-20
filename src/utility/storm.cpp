@@ -1,3 +1,4 @@
+#include <src/parser/JaniParser.h>
 #include "storm.h"
 
 // Headers related to parsing.
@@ -13,7 +14,15 @@ namespace storm {
         program.checkValidity();
         return program;
     }
-     
+
+    storm::jani::Model parseJaniModel(std::string const& path) {
+        storm::jani::Model model = storm::parser::JaniParser::parse(path);
+        if(!model.checkValidity(true)) {
+            STORM_LOG_THROW(storm::exceptions::FileIoException, "Jani file parsing yields invalid model.");
+        }
+        return model;
+    }
+
     /**
      * Helper
      * @param FormulaParser
