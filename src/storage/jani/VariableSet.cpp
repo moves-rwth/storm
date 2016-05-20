@@ -7,6 +7,73 @@
 namespace storm {
     namespace jani {
         
+        namespace detail {
+            
+            VariableSetIterator::VariableSetIterator(VariableSet const& variableSet, boost::variant<bool_iter, bint_iter, int_iter> initialIterator) : variableSet(variableSet), it(initialIterator) {
+                // Intentionally left empty.
+            }
+            
+            VariableSetIterator& VariableSetIterator::operator++() {
+                incrementIterator();
+                return *this;
+            }
+            
+            VariableSetIterator& VariableSetIterator::operator++(int) {
+                incrementIterator();
+                return *this;
+            }
+            
+            Variable const& VariableSetIterator::operator*() {
+                if (it.which() == 0) {
+                    return *boost::get<bool_iter>(it);
+                } else if (it.which() == 1) {
+                    return *boost::get<bint_iter>(it);
+                } else {
+                    return *boost::get<int_iter>(it);
+                }
+            }
+            
+            bool VariableSetIterator::operator==(VariableSetIterator const& other) const {
+                return this->it == other.it;
+            }
+            
+            bool VariableSetIterator::operator!=(VariableSetIterator const& other) const {
+                return this->it != other.it;
+            }
+            
+            void VariableSetIterator::incrementIterator() {
+                if (it.which() == 0) {
+                    bool_iter& tmp = boost::get<bool_iter>(it);
+                    if (tmp != variableSet.getBooleanVariables().end()) {
+                        ++tmp;
+                    } else {
+                        it = variableSet.getBoundedIntegerVariables().begin();
+                    }
+                } else if (it.which() == 1) {
+                    bint_iter& tmp = boost::get<bint_iter>(it);
+                    if (tmp != variableSet.getBoundedIntegerVariables().end()) {
+                        ++tmp;
+                    } else {
+                        it = variableSet.getUnboundedIntegerVariables().begin();
+                    }
+                } else {
+                    ++boost::get<int_iter>(it);
+                }
+            }
+            
+            IntegerVariables::IntegerVariables(VariableSet const& variableSet) : variableSet(variableSet) {
+                // Intentionally left empty.
+            }
+            
+            VariableSetIterator IntegerVariables::begin() const {
+                return VariableSetIterator(variableSet, variableSet.getBoundedIntegerVariables().begin());
+            }
+            
+            VariableSetIterator IntegerVariables::end() const {
+                return VariableSetIterator(variableSet, variableSet.getUnboundedIntegerVariables().end());
+            }
+        }
+        
         VariableSet::VariableSet() {
             // Intentionally left empty.
         }
@@ -21,6 +88,10 @@ namespace storm {
         
         std::vector<UnboundedIntegerVariable> const& VariableSet::getUnboundedIntegerVariables() const {
             return unboundedIntegerVariables;
+        }
+        
+        detail::IntegerVariables VariableSet::getIntegerVariables() const {
+            return detail::IntegerVariables(*this);
         }
         
         void VariableSet::addBooleanVariable(BooleanVariable const& variable) {
@@ -49,6 +120,14 @@ namespace storm {
             auto it = variables.find(name);
             STORM_LOG_THROW(it != variables.end(), storm::exceptions::InvalidArgumentException, "Unable to retrieve unknown variable '" << name << "'.");
             return it->second.get();
+        }
+        
+        detail::VariableSetIterator VariableSet::begin() const {
+            return detail::VariableSetIterator(*this, booleanVariables.begin());
+        }
+        
+        detail::VariableSetIterator VariableSet::end() const {
+            return detail::VariableSetIterator(*this, unboundedIntegerVariables.end());
         }
         
     }
