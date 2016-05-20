@@ -56,7 +56,7 @@ namespace storm {
         }
 
         std::shared_ptr<storm::jani::Composition> JaniParser::parseComposition(json const &compositionStructure) {
-            
+
         }
     }
 }
