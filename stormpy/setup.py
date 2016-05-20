@@ -12,6 +12,7 @@ PROJECT_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 core_sources = glob(os.path.join('src', 'core', '*.cpp'))
 expressions_sources = glob(os.path.join('src', 'expressions', '*.cpp'))
 logic_sources = glob(os.path.join('src', 'logic', '*.cpp'))
+storage_sources = glob(os.path.join('src', 'storage', '*.cpp'))
 
 # Configuration shared between external modules follows
 
@@ -81,6 +82,17 @@ ext_expressions = Extension(
 ext_logic = Extension(
     name='logic.logic',
     sources=['src/mod_logic.cpp'] + logic_sources,
+    include_dirs=include_dirs,
+    libraries=libraries,
+    library_dirs=library_dirs,
+    extra_compile_args=extra_compile_args,
+    define_macros=define_macros,
+    extra_link_args=extra_link_args
+)
+
+ext_logic = Extension(
+    name='storage.storage',
+    sources=['src/mod_storage.cpp'] + storage_sources,
     include_dirs=include_dirs,
     libraries=libraries,
     library_dirs=library_dirs,

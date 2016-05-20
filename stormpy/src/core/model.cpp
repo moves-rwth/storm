@@ -16,6 +16,10 @@ std::vector<storm::storage::sparse::state_type> getInitialStates(storm::models::
     return initialStates;
 }
 
+storm::storage::SparseMatrix<double> getTransitionMatrix(storm::models::sparse::Model<double> const& model) {
+    return model.getTransitionMatrix();
+}
+
 // Define python bindings
 void define_model(py::module& m) {
    
@@ -54,6 +58,7 @@ void define_model(py::module& m) {
             }, "Get labels")
         .def("labels_state", &storm::models::sparse::Model<double>::getLabelsOfState, "Get labels")
         .def("initial_states", &getInitialStates<double>, "Get initial states")
+        .def("transition_matrix", &getTransitionMatrix, "Get transition matrix")
     ;    
     py::class_<storm::models::sparse::Dtmc<double>, std::shared_ptr<storm::models::sparse::Dtmc<double>>>(m, "SparseDtmc", "DTMC in sparse representation", py::base<storm::models::sparse::Model<double>>())
     ;
