@@ -1,24 +1,20 @@
 #pragma once
 
-#include "Automaton.h"
 #include "src/utility/macros.h"
 
+#include "src/storage/jani/ModelType.h"
+#include "src/storage/jani/Automaton.h"
 
 namespace storm {
     namespace jani {
 
-
-         enum class JaniModelType {UNSPECIFED = 0,
-                                    DTMC = 1,
-                                    CTMC = 2,
-                                    MDP = 3};
-
         class Model {
-            size_t janiVersion = 0;
-            JaniModelType modelType;
-            std::map<std::string, Automaton> automata;
-
         public:
+            /*!
+             * Creates an empty model with the given type.
+             */
+            Model(ModelType const& modelType, uint64_t version = 1);
+            
             /*!
              *  Does some simple checks to determine whether the model is supported by Prism.
              *  Mainly checks abscence of features the parser supports.
@@ -26,32 +22,24 @@ namespace storm {
              *  Throws UnsupportedModelException if something is wrong
              */
             // TODO add engine as argument to check this for several engines.
-            void checkSupported() {
+            void checkSupported();
 
-            }
-
-            /*!
+             /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.
              */
-            bool checkValidity(bool logdbg = true) {
-                if (janiVersion == 0) {
-                    if(logdbg) STORM_LOG_DEBUG("Jani version is unspecified");
-                    return false;
-                }
+             bool checkValidity(bool logdbg = true);
+        private:
+            /// The list of automata
+            std::vector<Automaton> automata;
+            /// A mapping from names to automata indices
+            std::map<std::string, size_t> automatonIndex;
+            /// The type of the model.
+            ModelType modelType;
+            /// The JANI-version used to specify the model.
+            uint64_t version;
+            /// The model name
+            std::string name;
 
-                if(modelType == JaniModelType::UNSPECIFED) {
-                    if(logdbg) STORM_LOG_DEBUG("Model type is unspecified");
-                    return false;
-                }
-
-                if(automata.empty()) {
-                    if(logdbg) STORM_LOG_DEBUG("No automata specified");
-                    return false;
-                }
-                // All checks passed.
-                return true;
-
-            }
         };
     }
 }
