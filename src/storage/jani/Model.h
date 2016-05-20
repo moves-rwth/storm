@@ -1,38 +1,31 @@
 #pragma once
 
-#include "Automaton.h"
+#include "src/storage/jani/ModelType.h"
+#include "src/storage/jani/Automaton.h"
 
 namespace storm {
     namespace jani {
 
+        class Model {
+        public:
+            /*!
+             * Creates an empty model with the given type.
+             */
+            Model(ModelType const& modelType, uint64_t version = 1);
+            
+            /*!
+             * Checks whether the model is valid wrt. to the rules of JANI. Note that this does not make any statement
+             * about whether we can handle the model.
+             */
+            bool isValid(bool logdbg = true) const;
+            
+        private:
+            // The type of the model.
+            ModelType modelType;
+            
+            // The JANI-version used to specify the model.
+            uint64_t version;
 
-        class enum JaniModelType {UNSPECIFED = 0,
-                                    DTMC = 1,
-                                    CTMC = 2,
-                                    MDP = 3};
-
-        class JaniModel {
-            size_t janiVersion = 0;
-            JaniModelType modelType;
-            std::map<std::string, JaniAutomaton> automata;
-
-
-            bool checkValid(bool logdbg = true) {
-                if (janiVersion == 0) {
-                    if(logdbg) STORM_LOG_DEBUG("Jani version is unspecified");
-                    return false;
-                }
-
-                if(modelType == JaniModelType::UNSPECIFED) {
-                    if(logdbg) STORM_LOG_DEBUG("Model type is unspecified");
-                    return false;
-                }
-
-                if(automata.empty()) {
-                    if(logdbg) STORM_LOG_DEBUG("No automata specified");
-                }
-
-            }
         };
     }
 }
