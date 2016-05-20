@@ -48,6 +48,8 @@ namespace storm {
                     if(logdbg) STORM_LOG_DEBUG("No automata specified");
                     return false;
                 }
+                // All checks passed.
+                return true;
 
             }
         };

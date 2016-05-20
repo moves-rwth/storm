@@ -4,7 +4,7 @@
 // Headers related to parsing.
 #include "src/parser/PrismParser.h"
 #include "src/parser/FormulaParser.h"
-
+#include "src/utility/macros.h"
 
 
 namespace storm {
@@ -18,7 +18,7 @@ namespace storm {
     storm::jani::Model parseJaniModel(std::string const& path) {
         storm::jani::Model model = storm::parser::JaniParser::parse(path);
         if(!model.checkValidity(true)) {
-            STORM_LOG_THROW(storm::exceptions::FileIoException, "Jani file parsing yields invalid model.");
+            STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Jani file parsing yields invalid model.");
         }
         return model;
     }
