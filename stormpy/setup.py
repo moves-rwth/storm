@@ -20,8 +20,6 @@ include_dirs = ['.', 'src', 'resources/pybind11/include/']
 # Add more include dirs
 # TODO handle by cmake
 include_dirs.extend(['../build/include/', '../resources/3rdparty/sylvan/src/', '../resources/3rdparty/exprtk/', '../resources/3rdparty/gmm-5.0/include/'])
-carl_dir = "/Users/mvolk/develop/carl/src/"
-include_dirs.append(carl_dir)
 boost_dir = '/usr/local/include/'
 include_dirs.append(boost_dir)
 cudd_dirs = ['../resources/3rdparty/cudd-3.0.0/cplusplus/', '../resources/3rdparty/cudd-3.0.0/mtr/', '../resources/3rdparty/cudd-3.0.0/cudd/']
@@ -96,7 +94,10 @@ class stormpy_build_ext(build_ext):
     """
     user_options = build_ext.user_options + [
         ('use-cln', None,
-         "use cln numbers instead of gmpxx")
+         "use cln numbers instead of gmpxx"),
+        ('carl_src', None,
+         "path to src directory of CaRL"),
+
         ]
 
     def __init__(self, *args, **kwargs):
@@ -105,6 +106,7 @@ class stormpy_build_ext(build_ext):
     def initialize_options (self):
         build_ext.initialize_options(self)
         self.use_cln = None
+        self.carl_src = None
 
     def finalize_options(self):
         build_ext.finalize_options(self)
@@ -125,6 +127,9 @@ class stormpy_build_ext(build_ext):
         if library_dirs:
             # Makes local storm library lookup that much easier
             self.rpath += library_dirs
+
+        print("Add carl_src: {}".format(self.carl_src))
+        include_dirs.append(self.carl_src)
 
 setup(name="stormpy",
       version="0.9",
