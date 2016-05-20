@@ -9,6 +9,7 @@
 PYBIND11_PLUGIN(core) {
     py::module m("core");
     define_core(m);
+    define_parse(m);
     define_model(m);
     define_modelchecking(m);
     define_bisimulation(m);
