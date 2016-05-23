@@ -17,6 +17,13 @@ namespace storm {
             return structure.front();
         }
 
+        uint64_t getUnsignedInt(json const& structure, std::string const& errorInfo) {
+            STORM_LOG_THROW(structure.is_number(), storm::exceptions::InvalidJaniException, "Expected a number in " << errorInfo << ", got '" << structure.dump() << "'");
+            int num = structure.front();
+            STORM_LOG_THROW(num >= 0, storm::exceptions::InvalidJaniException, "Expected a positive number in " << errorInfo << ", got '" << num << "'");
+            return static_cast<uint64_t>(num);
+        }
+
 
         storm::jani::Model JaniParser::parse(std::string const& path) {
             JaniParser parser;
@@ -47,12 +54,14 @@ namespace storm {
 
         storm::jani::Model JaniParser::parseModel() {
             STORM_LOG_THROW(parsedStructure.count("jani-version") == 1, storm::exceptions::InvalidJaniException, "Jani-version must be given exactly once.");
-
+            uint64_t version = getUnsignedInt(parsedStructure.at("jani-version"), "jani version");
+            STORM_LOG_THROW(parsedStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "A model must have a (single) name");
+            std::string name = getString(parsedStructure.at("name"), "model name");
             STORM_LOG_THROW(parsedStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "A type must be given exactly once");
             std::string modeltypestring = getString(parsedStructure.at("type"), "type of the model");
             storm::jani::ModelType type = storm::jani::getModelType(modeltypestring);
             STORM_LOG_THROW(type != storm::jani::ModelType::UNDEFINED, storm::exceptions::InvalidJaniException, "model type " + modeltypestring + " not recognized");
-            storm::jani::Model model("model", type);
+            storm::jani::Model model(name, type, version);
 
             STORM_LOG_THROW(parsedStructure.count("actions") < 2, storm::exceptions::InvalidJaniException, "Action-declarations can be given at most once");
             parseActions(parsedStructure.at("actions"), model);
@@ -84,11 +93,11 @@ namespace storm {
 
         storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure) {
             STORM_LOG_THROW(automatonStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Each automaton must have a name");
-            std::string name = getString(parsedStructure.at("name"), " the name field for automaton");
+            std::string name = getString(automatonStructure.at("name"), " the name field for automaton");
             storm::jani::Automaton automaton(name);
             STORM_LOG_THROW(automatonStructure.count("locations") > 0, storm::exceptions::InvalidJaniException, "Automaton " << name << " does not have locations.");
             std::unordered_map<std::string, uint64_t> locIds;
-            for(auto const& locEntry : parsedStructure.at("locations")) {
+            for(auto const& locEntry : automatonStructure.at("locations")) {
                 std::string locName = getString(locEntry, "location of automaton " + name);
                 STORM_LOG_THROW(locIds.count(locName) == 0, storm::exceptions::InvalidJaniException, "Location with name '" + locName + "' already exists in automaton '" + name + "'");
                 uint64_t id = automaton.addLocation(storm::jani::Location(locName));
