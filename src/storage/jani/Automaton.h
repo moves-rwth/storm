@@ -47,6 +47,14 @@ namespace storm {
              * Retrieves whether the automaton has a location with the given name.
              */
             bool hasLocation(std::string const& name) const;
+
+            /*!
+             * Get location id for a location with a given name.
+             * Yields undefined behaviour if no such location exists;
+             *
+             * @name the name of the location
+             */
+            uint64_t getLocationId(std::string const& name) const;
             
             /*!
              * Retrieves the locations of the automaton.
@@ -56,7 +64,7 @@ namespace storm {
             /*!
              * Adds the given location to the automaton.
              */
-            void addLocation(Location const& location);
+            uint64_t addLocation(Location const& location);
             
             /*!
              * Uses the location with the given name as the initial location.

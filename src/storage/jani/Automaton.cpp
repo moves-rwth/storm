@@ -39,12 +39,18 @@ namespace storm {
             return locations;
         }
         
-        void Automaton::addLocation(Location const& location) {
+        uint64_t Automaton::addLocation(Location const& location) {
             STORM_LOG_THROW(!this->hasLocation(location.getName()), storm::exceptions::WrongFormatException, "Cannot add location with name '" << location.getName() << "', because a location with this name already exists.");
             locationToIndex.emplace(location.getName(), locations.size());
             locations.push_back(location);
+            return locations.size() - 1;
         }
-        
+
+        uint64_t Automaton::getLocationId(std::string const& name) const {
+            assert(hasLocation(name));
+            return locationToIndex.at(name);
+        }
+
         void Automaton::setInitialLocation(std::string const& name) {
             auto it = locationToIndex.find(name);
             STORM_LOG_THROW(it != locationToIndex.end(), storm::exceptions::InvalidArgumentException, "Cannot make unknown location '" << name << "' the initial location.");
