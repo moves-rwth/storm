@@ -1,0 +1,3 @@
+Pmax=? [ F "a" ] ;
+Pmax=? [ F "b" ] ;
+multi(P>0.4 [ F "a"], P>0.3 [ F "b"] )
