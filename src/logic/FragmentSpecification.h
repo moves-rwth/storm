@@ -24,6 +24,9 @@ namespace storm {
 
             bool areLongRunAverageOperatorsAllowed() const;
             FragmentSpecification& setLongRunAverageOperatorsAllowed(bool newValue);
+            
+            bool areMultiObjectiveFormulasAllowed() const;
+            FragmentSpecification& setMultiObjectiveFormulasAllowed( bool newValue);
 
             bool areGloballyFormulasAllowed() const;
             FragmentSpecification& setGloballyFormulasAllowed(bool newValue);
@@ -78,9 +81,12 @@ namespace storm {
 
             bool areNestedOperatorsAllowed() const;
             FragmentSpecification& setNestedOperatorsAllowed(bool newValue);
-
+            
             bool areNestedPathFormulasAllowed() const;
             FragmentSpecification& setNestedPathFormulasAllowed(bool newValue);
+            
+            bool areNestedMultiObjectiveFormulasAllowed() const;
+            FragmentSpecification& setNestedMultiObjectiveFormulasAllowed(bool newValue);
             
             bool areOnlyEventuallyFormuluasInConditionalFormulasAllowed() const;
             FragmentSpecification& setOnlyEventuallyFormuluasInConditionalFormulasAllowed(bool newValue);
@@ -114,6 +120,8 @@ namespace storm {
             bool expectedTimeOperator;
             bool longRunAverageOperator;
             
+            bool multiObjectiveFormula;
+            
             bool globallyFormula;
             bool reachabilityProbabilityFormula;
             bool nextFormula;
@@ -139,6 +147,7 @@ namespace storm {
             // Members that indicate certain restrictions.
             bool nestedOperators;
             bool nestedPathFormulas;
+            bool nestedMultiObjectiveFormulas;
             bool onlyEventuallyFormuluasInConditionalFormulas;
             bool stepBoundedUntilFormulas;
             bool timeBoundedUntilFormulas;
@@ -168,6 +177,9 @@ namespace storm {
         
         // CSL + cumulative, instantaneous, reachability and long-run rewards.
         FragmentSpecification csrl();
+        
+        // Multi-Objective formulas.
+        FragmentSpecification multiObjective();
 
     }
 }

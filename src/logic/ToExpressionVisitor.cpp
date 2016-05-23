@@ -82,6 +82,10 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
         
+        boost::any ToExpressionVisitor::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+        }
+        
         boost::any ToExpressionVisitor::visit(NextFormula const& f, boost::any const& data) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }

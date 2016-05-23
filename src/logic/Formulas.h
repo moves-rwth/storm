@@ -18,6 +18,7 @@
 #include "src/logic/RewardOperatorFormula.h"
 #include "src/logic/StateFormula.h"
 #include "src/logic/LongRunAverageOperatorFormula.h"
+#include "src/logic/MultiObjectiveFormula.h"
 #include "src/logic/TimeOperatorFormula.h"
 #include "src/logic/UnaryBooleanStateFormula.h"
 #include "src/logic/UnaryPathFormula.h"

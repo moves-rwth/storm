@@ -17,6 +17,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isMultiObjectiveFormula() const {
+            return false;
+        }
+        
         bool Formula::isBinaryStateFormula() const {
             return false;
         }
@@ -181,6 +185,14 @@ namespace storm {
         
         StateFormula const& Formula::asStateFormula() const {
             return dynamic_cast<StateFormula const&>(*this);
+        }
+        
+        MultiObjectiveFormula& Formula::asMultiObjectiveFormula() {
+            return dynamic_cast<MultiObjectiveFormula&>(*this);
+        }
+        
+        MultiObjectiveFormula const& Formula::asMultiObjectiveFormula() const {
+            return dynamic_cast<MultiObjectiveFormula const&>(*this);
         }
         
         BinaryStateFormula& Formula::asBinaryStateFormula() {

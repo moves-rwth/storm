@@ -159,6 +159,21 @@ namespace storm {
             return inherited.getSpecification().areLongRunAverageRewardFormulasAllowed();
         }
         
+        boost::any FragmentChecker::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            
+            FragmentSpecification subFormulaFragment(inherited.getSpecification());
+            if(!inherited.getSpecification().areNestedMultiObjectiveFormulasAllowed()){
+                subFormulaFragment.setMultiObjectiveFormulasAllowed(false);
+            }
+            
+            bool result = inherited.getSpecification().areMultiObjectiveFormulasAllowed();
+            for(uint_fast64_t index = 0; index<f.getNumberOfSubformulas(); ++index){
+                result = result && boost::any_cast<bool>(f.getSubformula(index).accept(*this, InheritedInformation(subFormulaFragment)));
+            }
+            return result;
+        }
+        
         boost::any FragmentChecker::visit(NextFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areNextFormulasAllowed();

@@ -36,7 +36,8 @@ namespace storm {
                     ("max", 4)
                     ("F", 5)
                     ("G", 6)
-                    ("X", 7);
+                    ("X", 7)
+                    ("multi", 8);
                 }
             };
             
@@ -144,6 +145,8 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> instantaneousRewardFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> longRunAverageRewardFormula;
             
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> multiObjectiveFormula;
+            
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
             
@@ -166,6 +169,7 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createProbabilityOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula);
             std::shared_ptr<storm::logic::Formula const> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
             std::shared_ptr<storm::logic::Formula const> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
+            std::shared_ptr<storm::logic::Formula const> createMultiObjectiveFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas);
             
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;
@@ -340,7 +344,10 @@ namespace storm {
             orStateFormula = andStateFormula[qi::_val = qi::_1] >> *(qi::lit("|") >> andStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::Or)];
             orStateFormula.name("or state formula");
             
-            stateFormula = (orStateFormula);
+            multiObjectiveFormula = (qi::lit("multi") > qi::lit("(") >> (stateFormula  % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiObjectiveFormula, phoenix::ref(*this), qi::_1)];
+            multiObjectiveFormula.name("Multi-objective formula");
+            
+            stateFormula = (orStateFormula | multiObjectiveFormula);
             stateFormula.name("state formula");
             
             start = qi::eps > (stateFormula % +(qi::char_("\n;"))) >> qi::skip(boost::spirit::ascii::space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)))[qi::eps] >> qi::eoi;
@@ -369,6 +376,7 @@ namespace storm {
             debug(rewardPathFormula);
             debug(cumulativeRewardFormula);
             debug(instantaneousRewardFormula);
+            debug(multiObjectiveFormula);
             */
 
             // Enable error reporting.
@@ -395,6 +403,7 @@ namespace storm {
             qi::on_error<qi::fail>(rewardPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(cumulativeRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(instantaneousRewardFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(multiObjectiveFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         }
         
         void FormulaParserGrammar::addIdentifierExpression(std::string const& identifier, storm::expressions::Expression const& expression) {
@@ -518,6 +527,10 @@ namespace storm {
             } else {
                 return subformula;
             }
+        }
+        
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiObjectiveFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::MultiObjectiveFormula(subformulas));
         }
 
     } // namespace parser

@@ -148,3 +148,34 @@ TEST(FormulaParserTest, WrongFormatTest) {
     input = "P>0.5 [F y!=0)]";
     EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
 }
+
+TEST(FormulaParserTest, MultiObjectiveFormulaTest) {
+    storm::parser::FormulaParser formulaParser;
+    
+    std::string input = "multi(P<0.9 [ F \"a\" ], R<42 [ F \"b\" ], Pmin=? [ F\"c\" ])";
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
+    ASSERT_NO_THROW(formulas = formulaParser.parseFromString(input));
+    ASSERT_EQ(1, formulas.size());
+    ASSERT_TRUE(formulas[0]->isMultiObjectiveFormula());
+    storm::logic::MultiObjectiveFormula mof = formulas[0]->asMultiObjectiveFormula();
+    ASSERT_EQ(3, mof.getNumberOfSubformulas());
+    
+    ASSERT_TRUE(mof.getSubformula(0).isProbabilityOperatorFormula());
+    ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
+    ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
+    ASSERT_TRUE(mof.getSubformula(0).asProbabilityOperatorFormula().hasBound());
+    ASSERT_EQ(0.9, mof.getSubformula(0).asProbabilityOperatorFormula().getBound().threshold);
+    
+    ASSERT_TRUE(mof.getSubformula(1).isRewardOperatorFormula());
+    ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().isEventuallyFormula());
+    ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
+    ASSERT_TRUE(mof.getSubformula(1).asRewardOperatorFormula().hasBound());
+    ASSERT_EQ(42, mof.getSubformula(1).asRewardOperatorFormula().getBound().threshold);
+    
+    ASSERT_TRUE(mof.getSubformula(2).isProbabilityOperatorFormula());
+    ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().isEventuallyFormula());
+    ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula().getSubformula().isAtomicLabelFormula());
+    ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().hasOptimalityType());
+    ASSERT_TRUE(storm::solver::minimize(mof.getSubformula(2).asProbabilityOperatorFormula().getOptimalityType()));
+
+}

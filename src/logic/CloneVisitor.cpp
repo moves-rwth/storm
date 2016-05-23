@@ -76,6 +76,14 @@ namespace storm {
             return std::static_pointer_cast<Formula>(std::make_shared<LongRunAverageRewardFormula>(f));
         }
         
+        boost::any CloneVisitor::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
+            std::vector<std::shared_ptr<Formula const>> subformulas;
+            for(uint_fast64_t index = 0; index < f.getNumberOfSubformulas(); ++index){
+                subformulas.push_back(boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula(index).accept(*this, data)));
+            }
+            return std::static_pointer_cast<Formula>(std::make_shared<MultiObjectiveFormula>(subformulas));
+        }
+        
         boost::any CloneVisitor::visit(NextFormula const& f, boost::any const& data) const {
             std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
             return std::static_pointer_cast<Formula>(std::make_shared<NextFormula>(subformula));
