@@ -1,17 +1,35 @@
+#include <src/exceptions/InvalidJaniException.h>
 #include "src/storage/jani/Model.h"
 
 namespace storm {
     namespace jani {
         
-        Model::Model(ModelType const& modelType, uint64_t version) : modelType(modelType), version(version) {
+        Model::Model(std::string const& name, ModelType const& modelType, uint64_t version) : name(name), modelType(modelType), version(version) {
             // Intentionally left empty.
         }
 
-        void Model::checkSupported() {
+        uint64_t Model::addAction(Action const& act) {
+            STORM_LOG_THROW(actionToIndex.count(act.getName()) == 0, storm::exceptions::InvalidJaniException, "Action with name " + act.getName() + " already exists");
+            actionToIndex.emplace(act.getName(), actions.size());
+            actions.push_back(act);
+            return actions.size() - 1;
+        }
+
+        bool Model::hasAction(std::string const &name) const {
+            return actionToIndex.count(name) != 0;
+        }
+
+        uint64_t Model::getActionIndex(std::string const& name) const {
+            assert(this->hasAction(name));
+            return actionToIndex.at(name);
+        }
+
+
+        void Model::checkSupported() const {
             //TODO
         }
 
-        bool Model::checkValidity(bool logdbg) {
+        bool Model::checkValidity(bool logdbg) const {
             // TODO switch to exception based return value.
 
             if (version == 0) {
