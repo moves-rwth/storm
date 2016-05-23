@@ -3,7 +3,6 @@ import stormpy.logic
 
 class TestModel:
     def test_build_dtmc_from_prism_program(self):
-        stormpy.set_up("")
         program = stormpy.parse_prism_program("../examples/dtmc/die/die.pm")
         prop = "P=? [F \"one\"]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)

@@ -1,5 +1,4 @@
 import stormpy
-import stormpy.storage
 
 class TestMatrix:
     def test_sparse_matrix(self):

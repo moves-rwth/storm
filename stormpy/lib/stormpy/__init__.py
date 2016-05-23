@@ -32,6 +32,8 @@ It looks like you want to know about 'stormpy'.
 
 from . import core
 from .core import *
+from . import storage
+from .storage import *
 
 core.set_up("")
 
