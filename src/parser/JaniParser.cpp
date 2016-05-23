@@ -10,6 +10,13 @@
 namespace storm {
     namespace parser {
 
+
+        std::string getString(json const& structure, std::string const& errorInfo) {
+            STORM_LOG_THROW(structure.is_string(), storm::exceptions::InvalidJaniException, "Expected a string in " << errorInfo << ", got '" << structure.dump() << "'");
+            return structure.front();
+        }
+
+
         storm::jani::Model JaniParser::parse(std::string const& path) {
             JaniParser parser;
             parser.readFile(path);
@@ -52,7 +59,20 @@ namespace storm {
         }
 
         storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure) {
+            STORM_LOG_THROW(automatonStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Each automaton must have a name");
+            std::string name = getString(parsedStructure.at("name"), " the name field for automaton");
+            storm::jani::Automaton automaton(name);
+            STORM_LOG_THROW(automatonStructure.count("locations") > 0, storm::exceptions::InvalidJaniException, "Automaton " << name << " does not have locations.");
+            std::unordered_map<std::string, uint64_t> locIds;
+            for(auto const& locEntry : parsedStructure.at("locations")) {
+                std::string locName = getString(locEntry, "location of automaton " + name);
+                STORM_LOG_THROW(locIds.count(locName) == 0, storm::exceptions::InvalidJaniException, "Location with name '" + locName + "' already exists in automaton '" + name + "'");
+                uint64_t id = automaton.addLocation(storm::jani::Location(locName));
+                locIds.emplace(locName, id);
+            }
 
+
+            return automaton;
         }
 
         std::shared_ptr<storm::jani::Composition> JaniParser::parseComposition(json const &compositionStructure) {
