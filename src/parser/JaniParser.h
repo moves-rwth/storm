@@ -31,6 +31,7 @@ namespace storm {
             void readFile(std::string const& path);
             storm::jani::Model parseModel();
             storm::jani::Automaton parseAutomaton(json const& automatonStructure);
+            void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
             std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);
 
 

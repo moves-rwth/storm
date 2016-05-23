@@ -2,6 +2,7 @@
 #include "src/storage/jani/Model.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/InvalidJaniException.h"
+#include "src/storage/jani/ModelType.h"
 
 #include <iostream>
 #include <sstream>
@@ -45,6 +46,19 @@ namespace storm {
         }
 
         storm::jani::Model JaniParser::parseModel() {
+            STORM_LOG_THROW(parsedStructure.count("jani-version") == 1, storm::exceptions::InvalidJaniException, "Jani-version must be given exactly once.");
+
+            STORM_LOG_THROW(parsedStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "A type must be given exactly once");
+            std::string modeltypestring = getString(parsedStructure.at("type"), "type of the model");
+            storm::jani::ModelType type = storm::jani::getModelType(modeltypestring);
+            STORM_LOG_THROW(type != storm::jani::ModelType::UNDEFINED, storm::exceptions::InvalidJaniException, "model type " + modeltypestring + " not recognized");
+            storm::jani::Model model("model", type);
+
+            STORM_LOG_THROW(parsedStructure.count("actions") < 2, storm::exceptions::InvalidJaniException, "Action-declarations can be given at most once");
+            parseActions(parsedStructure.at("actions"), model);
+
+            
+
 
             STORM_LOG_THROW(parsedStructure.count("automata") == 1, storm::exceptions::InvalidJaniException, "Exactly one list of automata must be given");
             STORM_LOG_THROW(parsedStructure.at("automata").is_array(), storm::exceptions::InvalidJaniException, "Automata must be an array");
@@ -56,6 +70,16 @@ namespace storm {
             std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
 
 
+        }
+
+        void JaniParser::parseActions(json const& actionStructure, storm::jani::Model& parentModel) {
+            std::set<std::string> actionNames;
+            for(auto const& actionEntry : actionStructure) {
+                std::string actionName = getString(actionEntry, "name of action");
+                STORM_LOG_THROW(actionNames.count(actionName) == 0, storm::exceptions::InvalidJaniException, "Action with name " + actionName + " already exists.");
+                parentModel.addAction(storm::jani::Action(actionName));
+                actionNames.emplace(actionName);
+            }
         }
 
         storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure) {
@@ -70,6 +94,8 @@ namespace storm {
                 uint64_t id = automaton.addLocation(storm::jani::Location(locName));
                 locIds.emplace(locName, id);
             }
+
+
 
 
             return automaton;
