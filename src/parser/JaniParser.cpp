@@ -62,11 +62,12 @@ namespace storm {
             storm::jani::ModelType type = storm::jani::getModelType(modeltypestring);
             STORM_LOG_THROW(type != storm::jani::ModelType::UNDEFINED, storm::exceptions::InvalidJaniException, "model type " + modeltypestring + " not recognized");
             storm::jani::Model model(name, type, version);
-
-            STORM_LOG_THROW(parsedStructure.count("actions") < 2, storm::exceptions::InvalidJaniException, "Action-declarations can be given at most once");
+            STORM_LOG_THROW(parsedStructure.count("actions") < 2, storm::exceptions::InvalidJaniException, "Action-declarations can be given at most once.");
             parseActions(parsedStructure.at("actions"), model);
-
-            
+            STORM_LOG_THROW(parsedStructure.count("variables") < 2, storm::exceptions::InvalidJaniException, "Variable-declarations can be given at most once for global variables.");
+            for(auto const& varStructure : parsedStructure.at("variables")) {
+                parseVariable(varStructure, "global");
+            }
 
 
             STORM_LOG_THROW(parsedStructure.count("automata") == 1, storm::exceptions::InvalidJaniException, "Exactly one list of automata must be given");
@@ -80,6 +81,41 @@ namespace storm {
 
 
         }
+
+        std::shared_ptr<storm::jani::Variable> JaniParser::parseVariable(json const &variableStructure, std::string const& scopeDescription) {
+            STORM_LOG_THROW(variableStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Variable (scope: " + scopeDescription + ") must have a name");
+            std::string name = getString(variableStructure.at("name"), "variable-name in " + scopeDescription + "-scope");
+            STORM_LOG_THROW(variableStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Variable '" + name + "' (scope: " + scopeDescription + ") must have a (single) type-declaration.");
+            STORM_LOG_THROW(variableStructure.count("initial-value") == 1, storm::exceptions::InvalidJaniException, "Initial value for variable '" + name +  "' +  (scope: " + scopeDescription + ") must be given once.");
+            // Read initial value before; that makes creation later on a bit easier, and has as an additional benefit that we do not need to check whether the variable occurs also on the assignment.
+            storm::expressions::Expression initExpr = parseExpression(variableStructure.at("initial-value"), "Initial value of variable " + name + " (scope: " + scopeDescription + ")");
+
+            if(variableStructure.at("type").is_string()) {
+                if(variableStructure.at("type") == "real") {
+                    // expressionManager->declareRationalVariable(name);
+                } else if(variableStructure.at("type") == "bool") {
+                    return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(name), initExpr);
+                } else if(variableStructure.at("type") == "int") {
+                    return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(name), initExpr);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
+                }
+            } // TODO support other types.
+            if(variableStructure.at("type").is_object()) {
+
+            }
+            else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
+            }
+        }
+
+        storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription) {
+            STORM_LOG_WARN(scopeDescription);
+            //TDOO FIX
+            return expressionManager->boolean(false);
+        }
+
+
 
         void JaniParser::parseActions(json const& actionStructure, storm::jani::Model& parentModel) {
             std::set<std::string> actionNames;
