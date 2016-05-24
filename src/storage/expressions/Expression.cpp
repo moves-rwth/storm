@@ -161,7 +161,14 @@ namespace storm {
         boost::any Expression::accept(ExpressionVisitor& visitor) const {
             return this->getBaseExpression().accept(visitor);
         }
-        
+
+        bool Expression::isInitialized() const {
+            if(this->getBaseExpressionPointer()) {
+                return true;
+            }
+            return false;
+        }
+
         std::string Expression::toString() const {
             std::stringstream stream;
             stream << *this;
@@ -311,7 +318,8 @@ namespace storm {
             
             return result;
         }
-        
+
+
 
     }
 }

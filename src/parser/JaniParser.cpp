@@ -7,6 +7,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <boost/lexical_cast.hpp>
 
 namespace storm {
     namespace parser {
@@ -79,7 +80,7 @@ namespace storm {
             STORM_LOG_THROW(parsedStructure.count("system") == 1, storm::exceptions::InvalidJaniException, "Exactly one system description must be given");
             std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
 
-
+            return model;
         }
 
         std::shared_ptr<storm::jani::Variable> JaniParser::parseVariable(json const &variableStructure, std::string const& scopeDescription) {
@@ -89,13 +90,15 @@ namespace storm {
             STORM_LOG_THROW(variableStructure.count("initial-value") == 1, storm::exceptions::InvalidJaniException, "Initial value for variable '" + name +  "' +  (scope: " + scopeDescription + ") must be given once.");
             // Read initial value before; that makes creation later on a bit easier, and has as an additional benefit that we do not need to check whether the variable occurs also on the assignment.
             storm::expressions::Expression initExpr = parseExpression(variableStructure.at("initial-value"), "Initial value of variable " + name + " (scope: " + scopeDescription + ")");
-
+            assert(initExpr.isInitialized());
             if(variableStructure.at("type").is_string()) {
                 if(variableStructure.at("type") == "real") {
                     // expressionManager->declareRationalVariable(name);
                 } else if(variableStructure.at("type") == "bool") {
+                    STORM_LOG_THROW(initExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Initial value for Boolean variable " << name << " (scope: " << scopeDescription << ") should have Boolean type.");
                     return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(name), initExpr);
                 } else if(variableStructure.at("type") == "int") {
+                    STORM_LOG_THROW(initExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Initial value for interger variable "  << name << " (scope: " << scopeDescription << ") should have integer type.");
                     return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(name), initExpr);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
@@ -110,9 +113,25 @@ namespace storm {
         }
 
         storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription) {
-            STORM_LOG_WARN(scopeDescription);
-            //TDOO FIX
-            return expressionManager->boolean(false);
+            if(expressionStructure.is_boolean()) {
+                if(expressionStructure.get<bool>()) {
+                    return expressionManager->boolean(true);
+                } else {
+                    return expressionManager->boolean(false);
+                }
+            } else if(expressionStructure.is_number()) {
+                std::string stringrepr = expressionStructure.get<std::string>();
+                try {
+                    // It has to be an integer whenever it represents an integer.
+                    int64_t intval = boost::lexical_cast<int64_t>(stringrepr);
+                    return expressionManager->integer(intval);
+                } catch (boost::bad_lexical_cast const&) {
+                    // For now, just take the double.
+                    // TODO make this a rational number
+                    return expressionManager->rational(expressionStructure.get<double>());
+                }
+            }
+
         }
 
 
@@ -134,7 +153,8 @@ namespace storm {
             STORM_LOG_THROW(automatonStructure.count("locations") > 0, storm::exceptions::InvalidJaniException, "Automaton " << name << " does not have locations.");
             std::unordered_map<std::string, uint64_t> locIds;
             for(auto const& locEntry : automatonStructure.at("locations")) {
-                std::string locName = getString(locEntry, "location of automaton " + name);
+                STORM_LOG_THROW(locEntry.count("name"), storm::exceptions::InvalidJaniException, "Locations for automaton " << name << " must have exactly one name");
+                std::string locName = getString(locEntry.at("name"), "location of automaton " + name);
                 STORM_LOG_THROW(locIds.count(locName) == 0, storm::exceptions::InvalidJaniException, "Location with name '" + locName + "' already exists in automaton '" + name + "'");
                 uint64_t id = automaton.addLocation(storm::jani::Location(locName));
                 locIds.emplace(locName, id);

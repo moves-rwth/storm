@@ -298,7 +298,12 @@ namespace storm {
              * @return The string representation of the expression.
              */
             std::string toString() const;
-            
+
+            /**
+             * Checks whether the object encapsulates a base-expression.
+             */
+            bool isInitialized() const;
+
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:
