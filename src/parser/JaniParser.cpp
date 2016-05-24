@@ -69,8 +69,6 @@ namespace storm {
             for(auto const& varStructure : parsedStructure.at("variables")) {
                 parseVariable(varStructure, "global");
             }
-
-
             STORM_LOG_THROW(parsedStructure.count("automata") == 1, storm::exceptions::InvalidJaniException, "Exactly one list of automata must be given");
             STORM_LOG_THROW(parsedStructure.at("automata").is_array(), storm::exceptions::InvalidJaniException, "Automata must be an array");
             for(auto const& automataEntry : parsedStructure.at("automata")) {
@@ -105,7 +103,7 @@ namespace storm {
                 }
             } // TODO support other types.
             if(variableStructure.at("type").is_object()) {
-
+               // STORM_LOG_THROW(variableStructure.at("type").count("kind") == 1, storm::excepti
             }
             else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
@@ -120,7 +118,7 @@ namespace storm {
                     return expressionManager->boolean(false);
                 }
             } else if(expressionStructure.is_number()) {
-                std::string stringrepr = expressionStructure.get<std::string>();
+                std::string stringrepr = expressionStructure.dump();
                 try {
                     // It has to be an integer whenever it represents an integer.
                     int64_t intval = boost::lexical_cast<int64_t>(stringrepr);
@@ -139,7 +137,8 @@ namespace storm {
         void JaniParser::parseActions(json const& actionStructure, storm::jani::Model& parentModel) {
             std::set<std::string> actionNames;
             for(auto const& actionEntry : actionStructure) {
-                std::string actionName = getString(actionEntry, "name of action");
+                STORM_LOG_THROW(actionEntry.count("name") == 1, storm::exceptions::InvalidJaniException, "Actions must have exactly one name.");
+                std::string actionName = getString(actionEntry.at("name"), "name of action");
                 STORM_LOG_THROW(actionNames.count(actionName) == 0, storm::exceptions::InvalidJaniException, "Action with name " + actionName + " already exists.");
                 parentModel.addAction(storm::jani::Action(actionName));
                 actionNames.emplace(actionName);
