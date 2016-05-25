@@ -11,6 +11,16 @@ the [pbtest]_ repository.
 
 .. [pbtest] https://github.com/pybind/pbtest
 
+Building with cppimport
+========================
+
+ cppimport is a small Python import hook that determines whether there is a C++
+ source file whose name matches the requested module. If there is, the file is
+ compiled as a Python extension using pybind11 and placed in the same folder as
+ the C++ source file. Python is then able to find the module and load it.
+
+.. [cppimport] https://github.com/tbenthompson/cppimport
+
 .. _cmake:
 
 Building with CMake
@@ -29,11 +39,13 @@ subdirectory named :file:`pybind11`.
     project(example)
 
     # Add a CMake parameter for choosing a desired Python version
-    set(EXAMPLE_PYTHON_VERSION "" CACHE STRING "Python version to use for compiling the example library")
-    
+    set(EXAMPLE_PYTHON_VERSION "" CACHE STRING
+        "Python version to use for compiling the example library")
+
     include(CheckCXXCompilerFlag)
 
-    # Set a default build configuration if none is specified. 'MinSizeRel' produces the smallest binaries
+    # Set a default build configuration if none is specified.
+    # 'MinSizeRel' produces the smallest binaries
     if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
       message(STATUS "Setting build type to 'MinSizeRel' as none was specified.")
       set(CMAKE_BUILD_TYPE MinSizeRel CACHE STRING "Choose the type of build." FORCE)
@@ -46,14 +58,15 @@ subdirectory named :file:`pybind11`.
     set(Python_ADDITIONAL_VERSIONS 3.4 3.5 3.6 3.7)
     if (NOT ${EXAMPLE_PYTHON_VERSION} STREQUAL "")
       find_package(PythonLibs ${EXAMPLE_PYTHON_VERSION} EXACT)
-      if (NOT PythonLibs_FOUND)
+      if (NOT PYTHONLIBS_FOUND)
         find_package(PythonLibs ${EXAMPLE_PYTHON_VERSION} REQUIRED)
       endif()
     else()
       find_package(PythonLibs REQUIRED)
     endif()
 
-    # The above sometimes returns version numbers like "3.4.3+"; the "+" must be removed for the next lines to work
+    # The above sometimes returns version numbers like "3.4.3+";
+    # the "+" must be removed for the next lines to work
     string(REPLACE "+" "" PYTHONLIBS_VERSION_STRING "+${PYTHONLIBS_VERSION_STRING}")
 
     # Uncomment the following line if you will also require a matching Python interpreter
@@ -88,7 +101,8 @@ subdirectory named :file:`pybind11`.
     # Include path for Python header files
     include_directories(${PYTHON_INCLUDE_DIR})
 
-    # Include path for pybind11 header files -- this may need to be changed depending on your setup
+    # Include path for pybind11 header files -- this may need to be
+    # changed depending on your setup
     include_directories(${PROJECT_SOURCE_DIR}/pybind11/include)
 
     # Create the binding library
@@ -102,17 +116,19 @@ subdirectory named :file:`pybind11`.
 
     if (WIN32)
       if (MSVC)
-        # /bigobj is needed for bigger binding projects due to the limit to 64k
-        # addressable sections. /MP enables multithreaded builds (relevant when
-        # there are many files).
-        set_target_properties(example PROPERTIES COMPILE_FLAGS "/MP /bigobj ")
-
-        if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-          # Enforce size-based optimization and link time code generation on MSVC
-          # (~30% smaller binaries in experiments).
-          set_target_properties(example APPEND_STRING PROPERTY COMPILE_FLAGS "/Os /GL ")
-          set_target_properties(example APPEND_STRING PROPERTY LINK_FLAGS "/LTCG ")
-        endif()
+        # /MP enables multithreaded builds (relevant when there are many files), /bigobj is
+        # needed for bigger binding projects due to the limit to 64k addressable sections
+        set_property(TARGET example APPEND PROPERTY COMPILE_OPTIONS /MP /bigobj)
+        # Enforce size-based optimization and link time code generation on MSVC
+        # (~30% smaller binaries in experiments); do nothing in debug mode.
+        set_property(TARGET example APPEND PROPERTY COMPILE_OPTIONS
+          "$<$<CONFIG:Release>:/Os>" "$<$<CONFIG:Release>:/GL>"
+          "$<$<CONFIG:MinSizeRel>:/Os>" "$<$<CONFIG:MinSizeRel>:/GL>"
+          "$<$<CONFIG:RelWithDebInfo>:/Os>" "$<$<CONFIG:RelWithDebInfo>:/GL>"
+        )
+        set_property(TARGET example APPEND_STRING PROPERTY LINK_FLAGS_RELEASE "/LTCG ")
+        set_property(TARGET example APPEND_STRING PROPERTY LINK_FLAGS_MINSIZEREL "/LTCG ")
+        set_property(TARGET example APPEND_STRING PROPERTY LINK_FLAGS_RELWITHDEBINFO "/LTCG ")
       endif()
 
       # .PYD file extension on Windows
@@ -143,11 +159,13 @@ subdirectory named :file:`pybind11`.
         set_target_properties(example PROPERTIES MACOSX_RPATH ".")
         set_target_properties(example PROPERTIES LINK_FLAGS "-undefined dynamic_lookup ")
         if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-          add_custom_command(TARGET example POST_BUILD COMMAND strip -u -r ${PROJECT_BINARY_DIR}/example.so)
+          add_custom_command(TARGET example POST_BUILD
+                             COMMAND strip -u -r ${PROJECT_BINARY_DIR}/example.so)
         endif()
       else()
         if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-          add_custom_command(TARGET example POST_BUILD COMMAND strip ${PROJECT_BINARY_DIR}/example.so)
+          add_custom_command(TARGET example POST_BUILD
+                             COMMAND strip ${PROJECT_BINARY_DIR}/example.so)
         endif()
       endif()
     endif()

@@ -28,7 +28,7 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" U_CMAKE_BUILD_TYPE)
 set(Python_ADDITIONAL_VERSIONS 3.4 3.5 3.6 3.7)
 if (NOT ${PYBIND11_PYTHON_VERSION} STREQUAL "")
   find_package(PythonLibs ${PYBIND11_PYTHON_VERSION} EXACT)
-  if (NOT PythonLibs_FOUND)
+  if (NOT PYTHONLIBS_FOUND)
     find_package(PythonLibs ${PYBIND11_PYTHON_VERSION} REQUIRED)
   endif()
 else()
@@ -84,11 +84,16 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_CXX_COMPILER_ID}"
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 endif()
 
-# Include path for Python header files
-include_directories(${PYTHON_INCLUDE_DIR})
+
+# Check if Eigen is available
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools")
+find_package(Eigen3 QUIET)
 
 # Include path for pybind11 header files
 include_directories(include)
+
+# Include path for Python header files
+include_directories(${PYTHON_INCLUDE_DIR})
 
 set(PYBIND11_HEADERS
   include/pybind11/attr.h
@@ -96,12 +101,14 @@ set(PYBIND11_HEADERS
   include/pybind11/common.h
   include/pybind11/complex.h
   include/pybind11/descr.h
+  include/pybind11/eigen.h
   include/pybind11/functional.h
   include/pybind11/numpy.h
   include/pybind11/operators.h
   include/pybind11/pybind11.h
   include/pybind11/pytypes.h
   include/pybind11/stl.h
+  include/pybind11/stl_bind.h
   include/pybind11/typeid.h
 )
 
@@ -122,8 +129,18 @@ set(PYBIND11_EXAMPLES
   example/example14.cpp
   example/example15.cpp
   example/example16.cpp
+  example/example17.cpp
   example/issues.cpp
 )
+
+if (EIGEN3_FOUND)
+  include_directories(${EIGEN3_INCLUDE_DIR})
+  list(APPEND PYBIND11_EXAMPLES example/eigen.cpp)
+  add_definitions(-DPYBIND11_TEST_EIGEN)
+  message(STATUS "Building Eigen testcase")
+else()
+  message(STATUS "NOT Building Eigen testcase")
+endif()
 
 # Create the binding library
 add_library(example SHARED
@@ -148,17 +165,19 @@ endforeach()
 
 if (WIN32)
   if (MSVC)
-    # /bigobj is needed for bigger binding projects due to the limit to 64k
-    # addressable sections. /MP enables multithreaded builds (relevant when
-    # there are many files).
-    set_target_properties(example PROPERTIES COMPILE_FLAGS "/MP /bigobj ")
-
-    if (NOT ${U_CMAKE_BUILD_TYPE} MATCHES DEBUG)
-      # Enforce size-based optimization and link time code generation on MSVC
-      # (~30% smaller binaries in experiments).
-      set_target_properties(example APPEND_STRING PROPERTY COMPILE_FLAGS "/Os /GL ")
-      set_target_properties(example APPEND_STRING PROPERTY LINK_FLAGS "/LTCG ")
-    endif()
+    # /MP enables multithreaded builds (relevant when there are many files), /bigobj is
+    # needed for bigger binding projects due to the limit to 64k addressable sections
+    set_property(TARGET example APPEND PROPERTY COMPILE_OPTIONS /MP /bigobj)
+    # Enforce size-based optimization and link time code generation on MSVC
+    # (~30% smaller binaries in experiments); do nothing in debug mode.
+    set_property(TARGET example APPEND PROPERTY COMPILE_OPTIONS
+      "$<$<CONFIG:Release>:/Os>" "$<$<CONFIG:Release>:/GL>"
+      "$<$<CONFIG:MinSizeRel>:/Os>" "$<$<CONFIG:MinSizeRel>:/GL>"
+      "$<$<CONFIG:RelWithDebInfo>:/Os>" "$<$<CONFIG:RelWithDebInfo>:/GL>"
+    )
+    set_property(TARGET example APPEND_STRING PROPERTY LINK_FLAGS_RELEASE "/LTCG ")
+    set_property(TARGET example APPEND_STRING PROPERTY LINK_FLAGS_MINSIZEREL "/LTCG ")
+    set_property(TARGET example APPEND_STRING PROPERTY LINK_FLAGS_RELWITHDEBINFO "/LTCG ")
   endif()
 
   # .PYD file extension on Windows

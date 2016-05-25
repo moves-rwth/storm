@@ -3,9 +3,50 @@
 Changelog
 #########
 
-1.5 (not yet released)
+1.8 (Not yet released)
 ----------------------
-* For polymorphic types, use RTTI to try to return the closest type registered with pybind11.
+* Prevent implicit conversion of floating point values to integral types in
+  function arguments
+* Transparent conversion of sparse and dense Eigen data types
+* Fixed incorrect default return value policy for functions returning a shared
+  pointer
+* Don't allow casting a ``None`` value into a C++ lvalue reference
+* Fixed a crash in ``enum_::operator==`` that was triggered by the ``help()`` command
+* Improved detection of whether or not custom C++ types can be copy/move-constructed
+* Extended ``str`` type to also work with ``bytes`` instances
+* Added ``[[noreturn]]`` attribute to ``pybind11_fail()`` to quench some
+  compiler warnings
+* Various minor ``iterator`` and ``make_iterator()`` improvements
+* Minor CMake build system improvements on Windows
+* Many ``mkdoc.py`` improvements (enumerations, template arguments, ``DOC()``
+  macro accepts more arguments)
+* Documentation improvements (pickling support, ``keep_alive``)
+
+1.7 (April 30, 2016)
+----------------------
+* Added a new ``move`` return value policy that triggers C++11 move semantics.
+  The automatic return value policy falls back to this case whenever a rvalue
+  reference is encountered
+* Significantly more general GIL state routines that are used instead of
+  Python's troublesome ``PyGILState_Ensure`` and ``PyGILState_Release`` API
+* Redesign of opaque types that drastically simplifies their usage
+* Extended ability to pass values of type ``[const] void *``
+* ``keep_alive`` fix: don't fail when there is no patient
+* ``functional.h``: acquire the GIL before calling a Python function
+* Added Python RAII type wrappers ``none`` and ``iterable``
+* Added ``*args`` and ``*kwargs`` pass-through parameters to
+  ``pybind11.get_include()`` function
+* Iterator improvements and fixes
+* Documentation on return value policies and opaque types improved
+
+1.6 (April 30, 2016)
+----------------------
+* Skipped due to upload to PyPI gone wrong and inability to recover
+  (https://github.com/pypa/packaging-problems/issues/74)
+
+1.5 (April 21, 2016)
+----------------------
+* For polymorphic types, use RTTI to try to return the closest type registered with pybind11
 * Pickling support for serializing and unserializing C++ instances to a byte stream in Python
 * Added a convenience routine ``make_iterator()`` which turns a range indicated
   by a pair of C++ iterators into a iterable Python object
@@ -16,6 +57,7 @@ Changelog
 * Added a ``get_include()`` function to the Python module that returns the path
   of the directory containing the installed pybind11 header files
 * Documentation improvements: import issues, symbol visibility, pickling, limitations
+* Added casting support for ``std::reference_wrapper<>``
 
 1.4 (April 7, 2016)
 --------------------------

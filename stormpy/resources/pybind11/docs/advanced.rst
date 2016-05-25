@@ -41,15 +41,18 @@ in C++.
     public:
         Vector2(float x, float y) : x(x), y(y) { }
 
-        std::string toString() const { return "[" + std::to_string(x) + ", " + std::to_string(y) + "]"; }
-
         Vector2 operator+(const Vector2 &v) const { return Vector2(x + v.x, y + v.y); }
         Vector2 operator*(float value) const { return Vector2(x * value, y * value); }
         Vector2& operator+=(const Vector2 &v) { x += v.x; y += v.y; return *this; }
         Vector2& operator*=(float v) { x *= v; y *= v; return *this; }
 
-        friend Vector2 operator*(float f, const Vector2 &v) { return Vector2(f * v.x, f * v.y); }
+        friend Vector2 operator*(float f, const Vector2 &v) {
+            return Vector2(f * v.x, f * v.y);
+        }
 
+        std::string toString() const {
+            return "[" + std::to_string(x) + ", " + std::to_string(y) + "]";
+        }
     private:
         float x, y;
     };
@@ -265,8 +268,14 @@ helper class that is defined as follows:
 
 The macro :func:`PYBIND11_OVERLOAD_PURE` should be used for pure virtual
 functions, and :func:`PYBIND11_OVERLOAD` should be used for functions which have
-a default implementation. The binding code also needs a few minor adaptations
-(highlighted):
+a default implementation. 
+
+There are also two alternate macros :func:`PYBIND11_OVERLOAD_PURE_NAME` and
+:func:`PYBIND11_OVERLOAD_NAME` which take a string-valued name argument
+after the *Name of the function* slot. This is useful when the C++ and Python
+versions of the function have different names, e.g. ``operator()`` vs ``__call__``.
+
+The binding code also needs a few minor adaptations (highlighted):
 
 .. code-block:: cpp
     :emphasize-lines: 4,6,7
@@ -309,6 +318,15 @@ a virtual method call.
     >>> c = Cat()
     >>> call_go(c)
     u'meow! meow! meow! '
+
+.. warning::
+
+    Both :func:`PYBIND11_OVERLOAD` and :func:`PYBIND11_OVERLOAD_PURE` are
+    macros, which means that they can get confused by commas in a template
+    argument such as ``PYBIND11_OVERLOAD(MyReturnValue<T1, T2>, myFunc)``. In
+    this case, the preprocessor assumes that the comma indicates the beginnning
+    of the next parameter. Use a ``typedef`` to bind the template to another
+    name and use it in the macro to avoid this problem.
 
 .. seealso::
 
@@ -411,39 +429,52 @@ For this reason, pybind11 provides a several `return value policy` annotations
 that can be passed to the :func:`module::def` and :func:`class_::def`
 functions. The default policy is :enum:`return_value_policy::automatic`.
 
+.. tabularcolumns:: |p{0.5\textwidth}|p{0.45\textwidth}|
 
-+--------------------------------------------------+---------------------------------------------------------------------------+
-| Return value policy                              | Description                                                               |
-+==================================================+===========================================================================+
-| :enum:`return_value_policy::automatic`           | Automatic: copy objects returned as values and take ownership of          |
-|                                                  | objects returned as pointers                                              |
-+--------------------------------------------------+---------------------------------------------------------------------------+
-| :enum:`return_value_policy::automatic_reference` | Automatic variant 2 : copy objects returned as values and reference       |
-|                                                  | objects returned as pointers                                              |
-+--------------------------------------------------+---------------------------------------------------------------------------+
-| :enum:`return_value_policy::copy`                | Create a new copy of the returned object, which will be owned by Python   |
-+--------------------------------------------------+---------------------------------------------------------------------------+
-| :enum:`return_value_policy::take_ownership`      | Reference the existing object and take ownership. Python will call        |
-|                                                  | the destructor and delete operator when the reference count reaches zero  |
-+--------------------------------------------------+---------------------------------------------------------------------------+
-| :enum:`return_value_policy::reference`           | Reference the object, but do not take ownership and defer responsibility  |
-|                                                  | for deleting it to C++ (dangerous when C++ code at some point decides to  |
-|                                                  | delete it while Python still has a nonzero reference count)               |
-+--------------------------------------------------+---------------------------------------------------------------------------+
-| :enum:`return_value_policy::reference_internal`  | Reference the object, but do not take ownership. The object is considered |
-|                                                  | be owned by the C++ instance whose method or property returned it. The    |
-|                                                  | Python object will increase the reference count of this 'parent' by 1     |
-|                                                  | to ensure that it won't be deallocated while Python is using the 'child'  |
-+--------------------------------------------------+---------------------------------------------------------------------------+
++--------------------------------------------------+----------------------------------------------------------------------------+
+| Return value policy                              | Description                                                                |
++==================================================+============================================================================+
+| :enum:`return_value_policy::automatic`           | This is the default return value policy, which falls back to the policy    |
+|                                                  | :enum:`return_value_policy::take_ownership` when the return value is a     |
+|                                                  | pointer. Otherwise, it uses :enum:`return_value::move` or                  |
+|                                                  | :enum:`return_value::copy` for rvalue and lvalue references, respectively. |
+|                                                  | See below for a description of what all of these different policies do.    |
++--------------------------------------------------+----------------------------------------------------------------------------+
+| :enum:`return_value_policy::automatic_reference` | As above, but use policy :enum:`return_value_policy::reference` when the   |
+|                                                  | return value is a pointer. You probably won't need to use this.            |
++--------------------------------------------------+----------------------------------------------------------------------------+
+| :enum:`return_value_policy::take_ownership`      | Reference an existing object (i.e. do not create a new copy) and take      |
+|                                                  | ownership. Python will call the destructor and delete operator when the    |
+|                                                  | object's reference count reaches zero. Undefined behavior ensues when the  |
+|                                                  | C++ side does the same..                                                   |
++--------------------------------------------------+----------------------------------------------------------------------------+
+| :enum:`return_value_policy::copy`                | Create a new copy of the returned object, which will be owned by Python.   |
+|                                                  | This policy is comparably safe because the lifetimes of the two instances  |
+|                                                  | are decoupled.                                                             |
++--------------------------------------------------+----------------------------------------------------------------------------+
+| :enum:`return_value_policy::move`                | Use ``std::move`` to move the return value contents into a new instance    |
+|                                                  | that will be owned by Python. This policy is comparably safe because the   |
+|                                                  | lifetimes of the two instances (move source and destination) are decoupled.|
++--------------------------------------------------+----------------------------------------------------------------------------+
+| :enum:`return_value_policy::reference`           | Reference an existing object, but do not take ownership. The C++ side is   |
+|                                                  | responsible for managing the object's lifetime and deallocating it when    |
+|                                                  | it is no longer used. Warning: undefined behavior will ensue when the C++  |
+|                                                  | side deletes an object that is still referenced and used by Python.        |
++--------------------------------------------------+----------------------------------------------------------------------------+
+| :enum:`return_value_policy::reference_internal`  | This policy only applies to methods and properties. It references the      |
+|                                                  | object without taking ownership similar to the above                       |
+|                                                  | :enum:`return_value_policy::reference` policy. In contrast to that policy, |
+|                                                  | the function or property's implicit ``this`` argument (called the *parent*)|
+|                                                  | is considered to be the the owner of the return value (the *child*).       |
+|                                                  | pybind11 then couples the lifetime of the parent to the child via a        |
+|                                                  | reference relationship that ensures that the parent cannot be garbage      |
+|                                                  | collected while Python is still using the child. More advanced variations  |
+|                                                  | of this scheme are also possible using combinations of                     |
+|                                                  | :enum:`return_value_policy::reference` and the :class:`keep_alive` call    |
+|                                                  | policy described next.                                                     |
++--------------------------------------------------+----------------------------------------------------------------------------+
 
-.. warning::
-
-    Code with invalid call policies might access unitialized memory and free
-    data structures multiple times, which can lead to hard-to-debug
-    non-determinism and segmentation faults, hence it is worth spending the
-    time to understand all the different options above.
-
-See below for an example that uses the
+The following example snippet shows a use case of the
 :enum:`return_value_policy::reference_internal` policy.
 
 .. code-block:: cpp
@@ -460,11 +491,36 @@ See below for an example that uses the
 
         py::class_<Example>(m, "Example")
             .def(py::init<>())
-            .def("get_internal", &Example::get_internal, "Return the internal data", py::return_value_policy::reference_internal);
+            .def("get_internal", &Example::get_internal, "Return the internal data",
+                                 py::return_value_policy::reference_internal);
 
         return m.ptr();
     }
 
+.. warning::
+
+    Code with invalid call policies might access unitialized memory or free
+    data structures multiple times, which can lead to hard-to-debug
+    non-determinism and segmentation faults, hence it is worth spending the
+    time to understand all the different options in the table above.
+
+.. note::
+
+    The next section on :ref:`call_policies` discusses *call policies* that can be
+    specified *in addition* to a return value policy from the list above. Call
+    policies indicate reference relationships that can involve both return values
+    and parameters of functions.
+
+.. note::
+
+   As an alternative to elaborate call policies and lifetime management logic,
+   consider using smart pointers (see the section on :ref:`smart_pointers` for
+   details). Smart pointers can tell whether an object is still referenced from
+   C++ or Python, which generally eliminates the kinds of inconsistencies that
+   can lead to crashes or undefined behavior. For functions returning smart
+   pointers, it is not necessary to specify a return value policy.
+
+.. _call_policies:
 
 Additional call policies
 ========================
@@ -474,12 +530,13 @@ specified to indicate dependencies between parameters. There is currently just
 one policy named ``keep_alive<Nurse, Patient>``, which indicates that the
 argument with index ``Patient`` should be kept alive at least until the
 argument with index ``Nurse`` is freed by the garbage collector; argument
-indices start at one, while zero refers to the return value. Arbitrarily many
-call policies can be specified.
+indices start at one, while zero refers to the return value. For methods, index
+one refers to the implicit ``this`` pointer, while regular arguments begin at
+index two. Arbitrarily many call policies can be specified.
 
-For instance, binding code for a a list append operation that ties the lifetime
-of the newly added element to the underlying container might be declared as
-follows:
+Consider the following example: the binding code for a list append operation
+that ties the lifetime of the newly added element to the underlying container
+might be declared as follows:
 
 .. code-block:: cpp
 
@@ -501,7 +558,7 @@ Implicit type conversions
 =========================
 
 Suppose that instances of two types ``A`` and ``B`` are used in a project, and
-that an ``A`` can easily be converted into a an instance of type ``B`` (examples of this
+that an ``A`` can easily be converted into an instance of type ``B`` (examples of this
 could be a fixed and an arbitrary precision number type).
 
 .. code-block:: cpp
@@ -557,14 +614,16 @@ The above signature would imply that Python needs to give up ownership of an
 object that is passed to this function, which is generally not possible (for
 instance, the object might be referenced elsewhere).
 
+.. _smart_pointers:
+
 Smart pointers
 ==============
 
 This section explains how to pass values that are wrapped in "smart" pointer
-types with internal reference counting. For simpler C++11 unique pointers,
-please refer to the previous section.
+types with internal reference counting. For the simpler C++11 unique pointers,
+refer to the previous section.
 
-The binding generator for classes (:class:`class_`) takes an optional second
+The binding generator for classes, :class:`class_`, takes an optional second
 template type, which denotes a special *holder* type that is used to manage
 references to the object. When wrapping a type named ``Type``, the default
 value of this template parameter is ``std::unique_ptr<Type>``, which means that
@@ -708,6 +767,8 @@ automatically converted into a Python ``Exception``. pybind11 defines multiple
 special exception classes that will map to different types of Python
 exceptions:
 
+.. tabularcolumns:: |p{0.5\textwidth}|p{0.45\textwidth}|
+
 +--------------------------------------+------------------------------+
 |  C++ exception type                  |  Python exception type       |
 +======================================+==============================+
@@ -733,6 +794,10 @@ exceptions:
 |                                      | accesses in ``__getitem__``, |
 |                                      | ``__setitem__``, etc.)       |
 +--------------------------------------+------------------------------+
+| :class:`pybind11::value_error`       | ``ValueError`` (used to      |
+|                                      | indicate wrong value passed  |
+|                                      | in ``container.remove(...)`` |
++--------------------------------------+------------------------------+
 | :class:`pybind11::error_already_set` | Indicates that the Python    |
 |                                      | exception flag has already   |
 |                                      | been initialized             |
@@ -746,13 +811,157 @@ There is also a special exception :class:`cast_error` that is thrown by
 :func:`handle::call` when the input arguments cannot be converted to Python
 objects.
 
+.. _opaque:
+
+Treating STL data structures as opaque objects
+==============================================
+
+pybind11 heavily relies on a template matching mechanism to convert parameters
+and return values that are constructed from STL data types such as vectors,
+linked lists, hash tables, etc. This even works in a recursive manner, for
+instance to deal with lists of hash maps of pairs of elementary and custom
+types, etc.
+
+However, a fundamental limitation of this approach is that internal conversions
+between Python and C++ types involve a copy operation that prevents
+pass-by-reference semantics. What does this mean?
+
+Suppose we bind the following function
+
+.. code-block:: cpp
+
+    void append_1(std::vector<int> &v) {
+       v.push_back(1);
+    }
+
+and call it from Python, the following happens:
+
+.. code-block:: python
+
+   >>> v = [5, 6]
+   >>> append_1(v)
+   >>> print(v)
+   [5, 6]
+
+As you can see, when passing STL data structures by reference, modifications
+are not propagated back the Python side. A similar situation arises when
+exposing STL data structures using the ``def_readwrite`` or ``def_readonly``
+functions:
+
+.. code-block:: cpp
+
+    /* ... definition ... */
+
+    class MyClass {
+        std::vector<int> contents;
+    };
+
+    /* ... binding code ... */
+
+    py::class_<MyClass>(m, "MyClass")
+        .def(py::init<>)
+        .def_readwrite("contents", &MyClass::contents);
+
+In this case, properties can be read and written in their entirety. However, an
+``append`` operaton involving such a list type has no effect:
+
+.. code-block:: python
+
+   >>> m = MyClass()
+   >>> m.contents = [5, 6]
+   >>> print(m.contents)
+   [5, 6]
+   >>> m.contents.append(7)
+   >>> print(m.contents)
+   [5, 6]
+
+To deal with both of the above situations, pybind11 provides a macro named
+``PYBIND11_MAKE_OPAQUE(T)`` that disables the template-based conversion
+machinery of types, thus rendering them *opaque*. The contents of opaque
+objects are never inspected or extracted, hence they can be passed by
+reference. For instance, to turn ``std::vector<int>`` into an opaque type, add
+the declaration
+
+.. code-block:: cpp
+
+    PYBIND11_MAKE_OPAQUE(std::vector<int>);
+
+before any binding code (e.g. invocations to ``class_::def()``, etc.). This
+macro must be specified at the top level, since instantiates a partial template
+overload. If your binding code consists of multiple compilation units, it must
+be present in every file preceding any usage of ``std::vector<int>``. Opaque
+types must also have a corresponding ``class_`` declaration to associate them
+with a name in Python, and to define a set of available operations:
+
+.. code-block:: cpp
+
+    py::class_<std::vector<int>>(m, "IntVector")
+        .def(py::init<>())
+        .def("clear", &std::vector<int>::clear)
+        .def("pop_back", &std::vector<int>::pop_back)
+        .def("__len__", [](const std::vector<int> &v) { return v.size(); })
+        .def("__iter__", [](std::vector<int> &v) {
+           return py::make_iterator(v.begin(), v.end());
+        }, py::keep_alive<0, 1>()) /* Keep vector alive while iterator is used */
+        // ....
+
+
+.. seealso::
+
+    The file :file:`example/example14.cpp` contains a complete example that
+    demonstrates how to create and expose opaque types using pybind11 in more
+    detail.
+
+.. _eigen:
+
+Transparent conversion of dense and sparse Eigen data types
+===========================================================
+
+Eigen [#f1]_ is C++ header-based library for dense and sparse linear algebra. Due to
+its popularity and widespread adoption, pybind11 provides transparent
+conversion support between Eigen and Scientific Python linear algebra data types.
+
+Specifically, when including the optional header file :file:`pybind11/eigen.h`,
+pybind11 will automatically and transparently convert
+
+1. Static and dynamic Eigen dense vectors and matrices to instances of
+   ``numpy.ndarray`` (and vice versa).
+
+1. Eigen sparse vectors and matrices to instances of
+   ``scipy.sparse.csr_matrix``/``scipy.sparse.csc_matrix`` (and vice versa).
+
+This makes it possible to bind most kinds of functions that rely on these types.
+One major caveat are functions that take Eigen matrices *by reference* and modify
+them somehow, in which case the information won't be propagated to the caller.
+
+.. code-block:: cpp
+
+    /* The Python bindings of this function won't replicate
+       the intended effect of modifying the function argument */
+    void scale_by_2(Eigen::Vector3f &v) {
+       v *= 2;
+    }
+
+To see why this is, refer to the section on :ref:`opaque` (although that
+section specifically covers STL data types, the underlying issue is the same).
+The next two sections discuss an efficient alternative for exposing the
+underlying native Eigen types as opaque objects in a way that still integrates
+with NumPy and SciPy.
+
+.. [#f1] http://eigen.tuxfamily.org
+
+.. seealso::
+
+    The file :file:`example/eigen.cpp` contains a complete example that
+    shows how to pass Eigen sparse and dense data types in more detail.
+
 Buffer protocol
 ===============
 
 Python supports an extremely general and convenient approach for exchanging
-data between plugin libraries. Types can expose a buffer view [#f1]_,
-which provides fast direct access to the raw internal representation. Suppose
-we want to bind the following simplistic Matrix class:
+data between plugin libraries. Types can expose a buffer view [#f2]_, which
+provides fast direct access to the raw internal data representation. Suppose we
+want to bind the following simplistic Matrix class:
 
 .. code-block:: cpp
 
@@ -770,7 +979,7 @@ we want to bind the following simplistic Matrix class:
     };
 
 The following binding code exposes the ``Matrix`` contents as a buffer object,
-making it possible to cast Matrixes into NumPy arrays. It is even possible to
+making it possible to cast Matrices into NumPy arrays. It is even possible to
 completely avoid copy operations with Python expressions like
 ``np.array(matrix_instance, copy = False)``.
 
@@ -779,12 +988,12 @@ completely avoid copy operations with Python expressions like
     py::class_<Matrix>(m, "Matrix")
        .def_buffer([](Matrix &m) -> py::buffer_info {
             return py::buffer_info(
-                m.data(),                              /* Pointer to buffer */
-                sizeof(float),                         /* Size of one scalar */
-                py::format_descriptor<float>::value(), /* Python struct-style format descriptor */
-                2,                                     /* Number of dimensions */
-                { m.rows(), m.cols() },                /* Buffer dimensions */
-                { sizeof(float) * m.rows(),            /* Strides (in bytes) for each index */
+                m.data(),                            /* Pointer to buffer */
+                sizeof(float),                       /* Size of one scalar */
+                py::format_descriptor<float>::value, /* Python struct-style format descriptor */
+                2,                                   /* Number of dimensions */
+                { m.rows(), m.cols() },              /* Buffer dimensions */
+                { sizeof(float) * m.rows(),          /* Strides (in bytes) for each index */
                   sizeof(float) }
             );
         });
@@ -810,41 +1019,71 @@ in a great variety of configurations, hence some safety checks are usually
 necessary in the function body. Below, you can see an basic example on how to
 define a custom constructor for the Eigen double precision matrix
 (``Eigen::MatrixXd``) type, which supports initialization from compatible
-buffer
-objects (e.g. a NumPy matrix).
+buffer objects (e.g. a NumPy matrix).
 
 .. code-block:: cpp
 
-    py::class_<Eigen::MatrixXd>(m, "MatrixXd")
-        .def("__init__", [](Eigen::MatrixXd &m, py::buffer b) {
+    /* Bind MatrixXd (or some other Eigen type) to Python */
+    typedef Eigen::MatrixXd Matrix;
+
+    typedef Matrix::Scalar Scalar;
+    constexpr bool rowMajor = Matrix::Flags & Eigen::RowMajorBit;
+
+    py::class_<Matrix>(m, "Matrix")
+        .def("__init__", [](Matrix &m, py::buffer b) {
+            typedef Eigen::Stride<Eigen::Dynamic, Eigen::Dynamic> Strides;
+
             /* Request a buffer descriptor from Python */
             py::buffer_info info = b.request();
 
             /* Some sanity checks ... */
-            if (info.format != py::format_descriptor<double>::value())
+            if (info.format != py::format_descriptor<Scalar>::value)
                 throw std::runtime_error("Incompatible format: expected a double array!");
 
             if (info.ndim != 2)
                 throw std::runtime_error("Incompatible buffer dimension!");
 
-            if (info.strides[0] == sizeof(double)) {
-                /* Buffer has the right layout -- directly copy. */
-                new (&m) Eigen::MatrixXd(info.shape[0], info.shape[1]);
-                memcpy(m.data(), info.ptr, sizeof(double) * m.size());
-            } else {
-                /* Oops -- the buffer is transposed */
-                new (&m) Eigen::MatrixXd(info.shape[1], info.shape[0]);
-                memcpy(m.data(), info.ptr, sizeof(double) * m.size());
-                m.transposeInPlace();
-            }
+            auto strides = Strides(
+                info.strides[rowMajor ? 0 : 1] / sizeof(Scalar),
+                info.strides[rowMajor ? 1 : 0] / sizeof(Scalar));
+
+            auto map = Eigen::Map<Matrix, 0, Strides>(
+                static_cat<Scalar *>(info.ptr), info.shape[0], info.shape[1], strides);
+
+            new (&m) Matrix(map);
         });
+
+For reference, the ``def_buffer()`` call for this Eigen data type should look
+as follows:
+
+.. code-block:: cpp
+
+    .def_buffer([](Matrix &m) -> py::buffer_info {
+        return py::buffer_info(
+            m.data(),                /* Pointer to buffer */
+            sizeof(Scalar),          /* Size of one scalar */
+            /* Python struct-style format descriptor */
+            py::format_descriptor<Scalar>::value,
+            /* Number of dimensions */
+            2,
+            /* Buffer dimensions */
+            { (size_t) m.rows(),
+              (size_t) m.cols() },
+            /* Strides (in bytes) for each index */
+            { sizeof(Scalar) * (rowMajor ? m.cols() : 1),
+              sizeof(Scalar) * (rowMajor ? 1 : m.rows()) }
+        );
+     })
+
+For a much easier approach of binding Eigen types (although with some
+limitations), refer to the section on :ref:`eigen`.
 
 .. seealso::
 
     The file :file:`example/example7.cpp` contains a complete example that
     demonstrates using the buffer protocol with pybind11 in more detail.
 
-.. [#f1] http://docs.python.org/3/c-api/buffer.html
+.. [#f2] http://docs.python.org/3/c-api/buffer.html
 
 NumPy support
 =============
@@ -856,16 +1095,32 @@ type of Python object satisfying the buffer protocol).
 In many situations, we want to define a function which only accepts a NumPy
 array of a certain data type. This is possible via the ``py::array_t<T>``
 template. For instance, the following function requires the argument to be a
-dense array of doubles in C-style ordering.
+NumPy array containing double precision values.
 
 .. code-block:: cpp
 
     void f(py::array_t<double> array);
 
-When it is invoked with a different type (e.g. an integer), the binding code
-will attempt to cast the input into a NumPy array of the requested type. Note
-that this feature requires the :file:``pybind11/numpy.h`` header to be
-included.
+When it is invoked with a different type (e.g. an integer or a list of
+integers), the binding code will attempt to cast the input into a NumPy array
+of the requested type. Note that this feature requires the
+:file:``pybind11/numpy.h`` header to be included.
+
+Data in NumPy arrays is not guaranteed to packed in a dense manner;
+furthermore, entries can be separated by arbitrary column and row strides.
+Sometimes, it can be useful to require a function to only accept dense arrays
+using either the C (row-major) or Fortran (column-major) ordering. This can be
+accomplished via a second template argument with values ``py::array::c_style``
+or ``py::array::f_style``.
+
+.. code-block:: cpp
+
+    void f(py::array_t<double, py::array::c_style | py::array::forcecast> array);
+
+The ``py::array::forcecast`` argument is the default value of the second
+template paramenter, and it ensures that non-conforming arguments are converted
+into an array satisfying the specified requirements instead of trying the next
+function overload.
 
 Vectorizing functions
 =====================
@@ -885,7 +1140,7 @@ After including the ``pybind11/numpy.h`` header, this is extremely simple:
     m.def("vectorized_func", py::vectorize(my_func));
 
 Invoking the function like below causes 4 calls to be made to ``my_func`` with
-each of the the array elements. The significant advantage of this compared to
+each of the array elements. The significant advantage of this compared to
 solutions like ``numpy.vectorize()`` is that the loop over the elements runs
 entirely on the C++ side and can be crunched down into a tight, optimized loop
 by the compiler. The result is returned as a NumPy array of type
@@ -903,7 +1158,7 @@ arrays ``x`` and ``y`` are automatically converted into the right types (they
 are of type  ``numpy.dtype.int64`` but need to be ``numpy.dtype.int32`` and
 ``numpy.dtype.float32``, respectively)
 
-Sometimes we might want to explitly exclude an argument from the vectorization
+Sometimes we might want to explicitly exclude an argument from the vectorization
 because it makes little sense to wrap it in a NumPy array. For instance,
 suppose the function signature was
 
@@ -996,8 +1251,9 @@ For instance, the following statement iterates over a Python ``dict``:
 
 Available types include :class:`handle`, :class:`object`, :class:`bool_`,
 :class:`int_`, :class:`float_`, :class:`str`, :class:`bytes`, :class:`tuple`,
-:class:`list`, :class:`dict`, :class:`slice`, :class:`capsule`,
-:class:`function`, :class:`buffer`, :class:`array`, and :class:`array_t`.
+:class:`list`, :class:`dict`, :class:`slice`, :class:`none`, :class:`capsule`,
+:class:`iterable`, :class:`iterator`, :class:`function`, :class:`buffer`,
+:class:`array`, and :class:`array_t`.
 
 In this kind of mixed code, it is often necessary to convert arbitrary C++
 types to Python, which can be done using :func:`cast`:
@@ -1015,11 +1271,31 @@ The reverse direction uses the following syntax:
     MyClass *cls = obj.cast<MyClass *>();
 
 When conversion fails, both directions throw the exception :class:`cast_error`.
+It is also possible to call python functions via ``operator()``.
+
+.. code-block:: cpp
+
+    py::function f = <...>;
+    py::object result_py = f(1234, "hello", some_instance);
+    MyClass &result = result_py.cast<MyClass>();
+
+The special ``f(*args)`` and ``f(*args, **kwargs)`` syntax is also supported to
+supply arbitrary argument and keyword lists, although these cannot be mixed
+with other parameters.
+
+.. code-block:: cpp
+
+    py::function f = <...>;
+    py::tuple args = py::make_tuple(1234);
+    py::dict kwargs;
+    kwargs["y"] = py::cast(5678);
+    py::object result = f(*args, **kwargs);
 
 .. seealso::
 
     The file :file:`example/example2.cpp` contains a complete example that
-    demonstrates passing native Python types in more detail.
+    demonstrates passing native Python types in more detail. The file
+    :file:`example/example11.cpp` discusses usage of ``args`` and ``kwargs``.
 
 Default arguments revisited
 ===========================
@@ -1067,6 +1343,36 @@ like so:
 
     py::class_<MyClass>("MyClass")
         .def("myFunction", py::arg("arg") = (SomeType *) nullptr);
+
+Binding functions that accept arbitrary numbers of arguments and keywords arguments
+===================================================================================
+
+Python provides a useful mechanism to define functions that accept arbitrary
+numbers of arguments and keyword arguments:
+
+.. code-block:: cpp
+
+   def generic(*args, **kwargs):
+       # .. do something with args and kwargs
+
+Such functions can also be created using pybind11:
+
+.. code-block:: cpp
+
+   void generic(py::args args, py::kwargs kwargs) {
+       /// .. do something with args
+       if (kwargs)
+           /// .. do something with kwargs
+   }
+
+   /// Binding code
+   m.def("generic", &generic);
+
+(See ``example/example11.cpp``). The class ``py::args`` derives from
+``py::list`` and ``py::kwargs`` derives from ``py::dict`` Note that the
+``kwargs`` argument is invalid if no keyword arguments were actually provided.
+Please refer to the other examples for details on how to iterate over these,
+and on how to cast their entries into C++ objects.
 
 Partitioning code over multiple extension modules
 =================================================
@@ -1136,58 +1442,6 @@ accessed by multiple extension modules:
     };
 
 
-Treating STL data structures as opaque objects
-==============================================
-
-pybind11 heavily relies on a template matching mechanism to convert parameters
-and return values that are constructed from STL data types such as vectors,
-linked lists, hash tables, etc. This even works in a recursive manner, for
-instance to deal with lists of hash maps of pairs of elementary and custom
-types, etc.
-
-A fundamental limitation of this approach is that the internal conversion
-between Python and C++ types involves a copy operation that prevents
-pass-by-reference semantics. What does this mean?
-
-Suppose we bind the following function
-
-.. code-block:: cpp
-
-    void append_1(std::vector<int> &v) {
-       v.push_back(1);
-    }
-
-and call it as follows from Python:
-
-.. code-block:: python
-
-   >>> v = [5, 6]
-   >>> append_1(v)
-   >>> print(v)
-   [5, 6]
-
-As you can see, when passing STL data structures by reference, modifications
-are not propagated back the Python side. To deal with situations where this
-desirable, pybind11 contains a simple template wrapper class named ``opaque<T>``.
-
-``opaque<T>`` disables the underlying template machinery for
-``T`` and can be used to treat STL types as opaque objects, whose contents are
-never inspected or extracted (thus, they can be passed by reference).
-The downside of this approach is that it the binding code becomes a bit more
-wordy. The above function can be bound using the following wrapper code:
-
-.. code-block:: cpp
-
-   m.def("append_1", [](py::opaque<std::vector<int>> &v) { append_1(v); });
-
-Opaque types must also have a dedicated ``class_`` declaration to define a
-set of admissible operations.
-
-.. seealso::
-
-    The file :file:`example/example14.cpp` contains a complete example that
-    demonstrates how to create opaque types using pybind11 in more detail.
-
 Pickling support
 ================
 
@@ -1210,7 +1464,7 @@ Suppose the class in question has the following signature:
         int m_extra = 0;
     };
 
-The binding code including the requisite ``__setstate__`` and ``__getstate__`` methods [#f2]_
+The binding code including the requisite ``__setstate__`` and ``__getstate__`` methods [#f3]_
 looks as follows:
 
 .. code-block:: cpp
@@ -1247,27 +1501,29 @@ An instance can now be pickled as follows:
 
     p = Pickleable("test_value")
     p.setExtra(15)
-    data = pickle.dumps(p, -1)
+    data = pickle.dumps(p, 2)
 
-Note that only the cPickle module is supported on Python 2.7. It is also
-important to request usage of the highest protocol version using the ``-1``
-argument to ``dumps``. Failure to follow these two steps will lead to important
-pybind11 memory allocation routines to be skipped during unpickling, which will
-likely cause memory corruption and/or segmentation faults.
+Note that only the cPickle module is supported on Python 2.7. The second
+argument to ``dumps`` is also crucial: it selects the pickle protocol version
+2, since the older version 1 is not supported. Newer versions are also fine—for
+instance, specify ``-1`` to always use the latest available version. Beware:
+failure to follow these instructions will cause important pybind11 memory
+allocation routines to be skipped during unpickling, which will likely lead to
+memory corruption and/or segmentation faults.
 
 .. seealso::
 
     The file :file:`example/example15.cpp` contains a complete example that
     demonstrates how to pickle and unpickle types using pybind11 in more detail.
 
-.. [#f2] http://docs.python.org/3/library/pickle.html#pickling-class-instances
+.. [#f3] http://docs.python.org/3/library/pickle.html#pickling-class-instances
 
 Generating documentation using Sphinx
 =====================================
 
-Sphinx [#f3]_ has the ability to inspect the signatures and documentation
+Sphinx [#f4]_ has the ability to inspect the signatures and documentation
 strings in pybind11-based extension modules to automatically generate beautiful
-documentation in a variety formats. The pbtest repository [#f4]_ contains a
+documentation in a variety formats. The pbtest repository [#f5]_ contains a
 simple example repository which uses this approach.
 
 There are two potential gotchas when using this approach: first, make sure that
@@ -1294,6 +1550,5 @@ work, it is important that all lines are indented consistently, i.e.:
         ----------
     )mydelimiter");
 
-.. [#f3] http://www.sphinx-doc.org
-.. [#f4] http://github.com/pybind/pbtest
-
+.. [#f4] http://www.sphinx-doc.org
+.. [#f5] http://github.com/pybind/pbtest

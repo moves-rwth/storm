@@ -158,7 +158,7 @@ else:
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['.static']
+html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -233,7 +233,7 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-#'preamble': '',
+'preamble': '\DeclareUnicodeCharacter{00A0}{}',
 
 # Latex figure (float) alignment
 #'figure_align': 'htbp',
@@ -249,7 +249,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#latex_logo = None
+# latex_logo = 'pybind11-logo.png'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.

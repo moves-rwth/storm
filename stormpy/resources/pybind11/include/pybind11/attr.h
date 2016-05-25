@@ -2,7 +2,7 @@
     pybind11/pybind11.h: Infrastructure for processing custom
     type and function attributes
 
-    Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+    Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
 
     All rights reserved. Use of this source code is governed by a
     BSD-style license that can be found in the LICENSE file.
@@ -92,19 +92,28 @@ struct function_record {
     std::vector<argument_record> args;
 
     /// Pointer to lambda function which converts arguments and performs the actual call
-    handle (*impl) (function_record *, handle, handle) = nullptr;
+    handle (*impl) (function_record *, handle, handle, handle) = nullptr;
 
     /// Storage for the wrapped function pointer and captured data, if any
-    void *data = nullptr;
+    void *data[3] = { };
 
     /// Pointer to custom destructor for 'data' (if needed)
-    void (*free_data) (void *ptr) = nullptr;
+    void (*free_data) (function_record *ptr) = nullptr;
 
     /// Return value policy associated with this function
     return_value_policy policy = return_value_policy::automatic;
 
     /// True if name == '__init__'
-    bool is_constructor = false;
+    bool is_constructor : 1;
+
+    /// True if the function has a '*args' argument
+    bool has_args : 1;
+
+    /// True if the function has a '**kwargs' argument
+    bool has_kwargs : 1;
+
+    /// Number of arguments
+    uint16_t nargs;
 
     /// Python method object
     PyMethodDef *def = nullptr;

@@ -2,7 +2,7 @@
     example/example5.cpp -- inheritance, callbacks, acquiring and releasing the
     global interpreter lock
 
-    Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+    Copyright (c) 2016 Wenzel Jakob <wenzel.jakob@epfl.ch>
 
     All rights reserved. Use of this source code is governed by a
     BSD-style license that can be found in the LICENSE file.
@@ -43,12 +43,12 @@ void dog_bark(const Dog &dog) {
 }
 
 bool test_callback1(py::object func) {
-    func.call();
+    func();
     return false;
 }
 
 int test_callback2(py::object func) {
-    py::object result = func.call("Hello", 'x', true, 5);
+    py::object result = func("Hello", 'x', true, 5);
     return result.cast<int>();
 }
 
