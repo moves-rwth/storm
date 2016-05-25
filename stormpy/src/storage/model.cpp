@@ -16,6 +16,7 @@ std::vector<storm::storage::sparse::state_type> getInitialStates(storm::models::
     return initialStates;
 }
 
+// Thin wrapper for getting transition matrix
 storm::storage::SparseMatrix<double> getTransitionMatrix(storm::models::sparse::Model<double> const& model) {
     return model.getTransitionMatrix();
 }

@@ -1,9 +1,8 @@
 #include "core.h"
 
 void define_core(py::module& m) {
-    
     // Init
-    m.def("set_up", [] (std::string const& args) {
+    m.def("set_up", [](std::string const& args) {
             storm::utility::setUp();
             storm::settings::SettingsManager::manager().setFromString(args);
         }, "Initialize Storm", py::arg("arguments"));
@@ -16,8 +15,12 @@ void define_parse(py::module& m) {
 
     // Pair <Model,Formulas>
     py::class_<storm::storage::ModelFormulasPair>(m, "ModelFormulasPair", "Pair of model and formulas")
-        .def_readwrite("model", &storm::storage::ModelFormulasPair::model, "The model")
-        .def_readwrite("formulas", &storm::storage::ModelFormulasPair::formulas, "The formulas")
+        .def("model", [](storm::storage::ModelFormulasPair const& pair) {
+                return pair.model;
+            }, "The model")
+        .def("formulas", [](storm::storage::ModelFormulasPair const& pair) {
+                return pair.formulas;
+            }, "The formulas")
     ;
 
     // Parse explicit models
@@ -31,7 +34,6 @@ std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const
 }
 
 void define_build(py::module& m) {
-   
     // Build model
     m.def("_build_model", &buildModel<double>, "Build the model", py::arg("program"), py::arg("formula"));
     m.def("_build_parametric_model", &buildModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formula"));

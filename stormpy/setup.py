@@ -90,7 +90,7 @@ ext_logic = Extension(
     extra_link_args=extra_link_args
 )
 
-ext_logic = Extension(
+ext_storage = Extension(
     name='storage.storage',
     sources=['src/mod_storage.cpp'] + storage_sources,
     include_dirs=include_dirs,
@@ -154,7 +154,7 @@ setup(name="stormpy",
       packages=['stormpy', 'stormpy.info', 'stormpy.expressions', 'stormpy.logic'],
       package_dir={'':'lib'},
       ext_package='stormpy',
-      ext_modules=[ext_core, ext_info, ext_expressions, ext_logic
+      ext_modules=[ext_core, ext_info, ext_expressions, ext_logic, ext_storage
                    ],
       cmdclass={
         'build_ext': stormpy_build_ext,

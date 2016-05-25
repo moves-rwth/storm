@@ -12,12 +12,13 @@ void define_sparse_matrix(py::module& m) {
                 stream << entry;
                 return stream.str();
             })
-        .def_property("val", &storm::storage::MatrixEntry<entry_index, double>::getValue, &storm::storage::MatrixEntry<entry_index, double>::setValue, "Value")
-        .def_property_readonly("column", &storm::storage::MatrixEntry<entry_index, double>::getColumn, "Column")
+        //def_property threw "pointer being freed not allocated" after exiting
+        .def("val", &storm::storage::MatrixEntry<entry_index, double>::getValue, "Value")
+        .def("set_val", &storm::storage::MatrixEntry<entry_index, double>::setValue, "Set value")
+        .def("column", &storm::storage::MatrixEntry<entry_index, double>::getColumn, "Column")
     ;
  
     py::class_<storm::storage::SparseMatrix<double>>(m, "SparseMatrix", "Sparse matrix")
-        //.def("__str__", &storm::logic::Formula::toString)
         .def("__iter__", [](storm::storage::SparseMatrix<double> const& matrix) {
                 return py::make_iterator(matrix.begin(), matrix.end());
             }, py::keep_alive<0, 1>() /* Essential: keep object alive while iterator exists */)

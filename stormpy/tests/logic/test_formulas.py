@@ -1,5 +1,5 @@
 import stormpy
-from stormpy.logic import logic
+import stormpy.logic
 
 class TestFormulas:
 
@@ -7,7 +7,7 @@ class TestFormulas:
         prop = "P=? [F \"one\"]"
         formulas = stormpy.parse_formulas(prop)
         formula = formulas[0]
-        assert type(formula) == logic.ProbabilityOperator
+        assert type(formula) == stormpy.logic.ProbabilityOperator
         assert len(formulas) == 1
         assert str(formula) == prop
 
@@ -15,7 +15,7 @@ class TestFormulas:
         prop = "R=? [F \"one\"]"
         formulas = stormpy.parse_formulas(prop)
         formula = formulas[0]
-        assert type(formula) == logic.RewardOperator
+        assert type(formula) == stormpy.logic.RewardOperator
         assert len(formulas) == 1
         assert str(formula) == "R[exp]=? [F \"one\"]"
 
@@ -38,13 +38,13 @@ class TestFormulas:
         formula = stormpy.parse_formulas(prop)[0]
         assert formula.has_bound()
         assert formula.threshold == 0.4
-        assert formula.comparison_type == logic.ComparisonType.LESS
+        assert formula.comparison_type == stormpy.logic.ComparisonType.LESS
 
     def test_set_bounds(self):
         prop = "P<0.4 [F \"one\"]"
         formula = stormpy.parse_formulas(prop)[0]
         formula.threshold = 0.2
-        formula.comparison_type = logic.ComparisonType.GEQ
+        formula.comparison_type = stormpy.logic.ComparisonType.GEQ
         assert formula.threshold == 0.2
-        assert formula.comparison_type == logic.ComparisonType.GEQ
+        assert formula.comparison_type == stormpy.logic.ComparisonType.GEQ
         assert str(formula) == "P>=0.2 [F \"one\"]"

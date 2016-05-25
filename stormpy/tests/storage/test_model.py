@@ -7,7 +7,7 @@ class TestModel:
         prop = "P=? [F \"one\"]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)
         pair = stormpy.build_model_from_prism_program(program, formulas)
-        model = pair.model
+        model = pair.model()
         assert model.nr_states() == 13
         assert model.nr_transitions() == 20
         assert model.model_type() == stormpy.ModelType.DTMC
@@ -22,7 +22,7 @@ class TestModel:
         prop = "P=? [F \"target\"]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)
         pair = stormpy.build_parametric_model_from_prism_program(program, formulas)
-        model = pair.model
+        model = pair.model()
         assert model.nr_states() == 613
         assert model.nr_transitions() == 803
         assert model.model_type() == stormpy.ModelType.DTMC
