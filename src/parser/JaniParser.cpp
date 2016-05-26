@@ -71,6 +71,7 @@ namespace storm {
             }
             STORM_LOG_THROW(parsedStructure.count("automata") == 1, storm::exceptions::InvalidJaniException, "Exactly one list of automata must be given");
             STORM_LOG_THROW(parsedStructure.at("automata").is_array(), storm::exceptions::InvalidJaniException, "Automata must be an array");
+            // Automatons can only be parsed after constants and variables.
             for(auto const& automataEntry : parsedStructure.at("automata")) {
                 storm::jani::Automaton automaton = parseAutomaton(automataEntry);
 
@@ -81,10 +82,15 @@ namespace storm {
             return model;
         }
 
-        std::shared_ptr<storm::jani::Variable> JaniParser::parseVariable(json const &variableStructure, std::string const& scopeDescription) {
+        std::shared_ptr<storm::jani::Variable> JaniParser::parseVariable(json const &variableStructure, std::string const& scopeDescription, bool prefWithScope) {
             STORM_LOG_THROW(variableStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Variable (scope: " + scopeDescription + ") must have a name");
+            std::string pref = prefWithScope  ? scopeDescription + "." : "";
             std::string name = getString(variableStructure.at("name"), "variable-name in " + scopeDescription + "-scope");
+            // TODO check existance of name.
+            // TODO store prefix in variable.
+            std::string exprManagerName = pref + name;
             STORM_LOG_THROW(variableStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Variable '" + name + "' (scope: " + scopeDescription + ") must have a (single) type-declaration.");
+            // TODO DEPRECATED make initial value optional?  --- still rpesent in files, so keep it for now
             STORM_LOG_THROW(variableStructure.count("initial-value") == 1, storm::exceptions::InvalidJaniException, "Initial value for variable '" + name +  "' +  (scope: " + scopeDescription + ") must be given once.");
             // Read initial value before; that makes creation later on a bit easier, and has as an additional benefit that we do not need to check whether the variable occurs also on the assignment.
             storm::expressions::Expression initExpr = parseExpression(variableStructure.at("initial-value"), "Initial value of variable " + name + " (scope: " + scopeDescription + ")");
@@ -92,12 +98,13 @@ namespace storm {
             if(variableStructure.at("type").is_string()) {
                 if(variableStructure.at("type") == "real") {
                     // expressionManager->declareRationalVariable(name);
+                    // TODO something.
                 } else if(variableStructure.at("type") == "bool") {
                     STORM_LOG_THROW(initExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Initial value for Boolean variable " << name << " (scope: " << scopeDescription << ") should have Boolean type.");
-                    return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(name), initExpr);
+                    return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), initExpr);
                 } else if(variableStructure.at("type") == "int") {
                     STORM_LOG_THROW(initExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Initial value for interger variable "  << name << " (scope: " << scopeDescription << ") should have integer type.");
-                    return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(name), initExpr);
+                    return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), initExpr);
                 } else {
                     // TODO clocks.
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
@@ -119,7 +126,7 @@ namespace storm {
                     if(basictype == "int") {
                         STORM_LOG_THROW(lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
                         STORM_LOG_THROW(upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
-                        return std::make_shared<storm::jani::BoundedIntegerVariable>(name, expressionManager->declareIntegerVariable(name), lowerboundExpr, upperboundExpr, initExpr);
+                        return std::make_shared<storm::jani::BoundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), lowerboundExpr, upperboundExpr, initExpr);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported base " << basictype << " for bounded variable " << name << "(scope: " << scopeDescription << ") ");
                     }
@@ -151,7 +158,7 @@ namespace storm {
         }
 
 
-        storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription) {
+        storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars) {
             if(expressionStructure.is_boolean()) {
                 if(expressionStructure.get<bool>()) {
                     return expressionManager->boolean(true);
@@ -165,8 +172,13 @@ namespace storm {
                 // TODO make this a rational number
                 return expressionManager->rational(expressionStructure.get<double>());
             } else if(expressionStructure.is_string()) {
-                // TODO check that identifier is known.
-                return expressionManager->getVariableExpression(expressionStructure.get<std::string>());
+                std::string ident = expressionStructure.get<std::string>();
+                if(localVars.count(ident) == 1) {
+                    return storm::expressions::Expression(localVars.at(ident)->getExpressionVariable());
+                } else {
+                    STORM_LOG_THROW(expressionManager->hasVariable(ident), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in  " << scopeDescription);
+                    return expressionManager->getVariableExpression(ident);
+                }
             } else if(expressionStructure.is_object()) {
                 if(expressionStructure.count("op") == 1) {
                     std::string opstring = getString(expressionStructure.at("op"), scopeDescription);
@@ -174,7 +186,7 @@ namespace storm {
                     std::vector<storm::expressions::Expression> arguments;
                     unsigned i = 1;
                     for(json const& argStructure : expressionStructure.at("args")) {
-                        arguments.push_back(parseExpression(argStructure, "in " + scopeDescription + "in argument " + std::to_string(i)));
+                        arguments.push_back(parseExpression(argStructure, scopeDescription + "in argument " + std::to_string(i), localVars));
                         assert(arguments.back().isInitialized());
                         ++i;
                     }
@@ -291,6 +303,18 @@ namespace storm {
                 uint64_t id = automaton.addLocation(storm::jani::Location(locName));
                 locIds.emplace(locName, id);
             }
+            uint64_t varDeclCount = automatonStructure.count("variables");
+            STORM_LOG_THROW(varDeclCount < 2, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' has more than one list of variables");
+            std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> localVars;
+            if(varDeclCount > 0) {
+                for(auto const& varStructure : automatonStructure.at("variables")) {
+                    std::shared_ptr<storm::jani::Variable> var = parseVariable(varStructure, name, true);
+                    std::cout << "Automaton " << name << "     variable " << var->getName() << std::endl;
+                    assert(localVars.count(var->getName()) == 0);
+                    localVars.emplace(var->getName(), var);
+                }
+            }
+
 
             STORM_LOG_THROW(automatonStructure.count("edges") > 0, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' must have a list of edges");
             for(auto const& edgeEntry : automatonStructure.at("edges")) {
@@ -311,7 +335,7 @@ namespace storm {
                     STORM_LOG_THROW(rateExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Rate '" << rateExpr << "' has not a numerical type");
                 }
                 STORM_LOG_THROW(edgeEntry.count("guard") == 1, storm::exceptions::InvalidJaniException, "A single guard must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
-                storm::expressions::Expression guardExpr = parseExpression(edgeEntry.at("guard"), "guard expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                storm::expressions::Expression guardExpr = parseExpression(edgeEntry.at("guard"), "guard expression in edge from '" + sourceLoc + "' in automaton '" + name + "'", localVars);
                 STORM_LOG_THROW(guardExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Guard " << guardExpr << " does not have Boolean type.");
 
             }

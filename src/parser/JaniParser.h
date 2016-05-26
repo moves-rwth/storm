@@ -33,8 +33,8 @@ namespace storm {
             void readFile(std::string const& path);
             storm::jani::Model parseModel();
             storm::jani::Automaton parseAutomaton(json const& automatonStructure);
-            std::shared_ptr<storm::jani::Variable>  parseVariable(json const& variableStructure, std::string const& scopeDescription);
-            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription);
+            std::shared_ptr<storm::jani::Variable>  parseVariable(json const& variableStructure, std::string const& scopeDescription, bool prefWithScope = false);
+            storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
         private:
             /**
              * Helper for parsing the actions of a model.
