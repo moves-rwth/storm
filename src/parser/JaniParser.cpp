@@ -240,11 +240,21 @@ namespace storm {
                 std::string sourceLoc = getString(edgeEntry.at("location"), "source location for edge in automaton '" + name + "'");
                 STORM_LOG_THROW(locIds.count(sourceLoc) == 1, storm::exceptions::InvalidJaniException, "Source of edge has unknown location '" << sourceLoc << "' in automaton '" << name << "'.");
                 STORM_LOG_THROW(edgeEntry.count("action") < 2, storm::exceptions::InvalidJaniException, "Edge from " << sourceLoc << " in automaton " << name << " has multiple actions");
+                std::string action = "";
                 if(edgeEntry.count("action") > 0) {
-                    std::string action = getString(edgeEntry.at("action"), "action name in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    action = getString(edgeEntry.at("action"), "action name in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    // TODO check if action is known
+                    assert(action != "");
                 }
-                STORM_LOG_THROW(edgeEntry.count("rate") < 2, storm::exceptions::InvalidJaniException, "Edge from " << sourceLoc << " in automaton " << name << " has multiple rates");
-
+                STORM_LOG_THROW(edgeEntry.count("rate") < 2, storm::exceptions::InvalidJaniException, "Edge from '" << sourceLoc << "' in automaton '" << name << "' has multiple rates");
+                storm::expressions::Expression rateExpr;
+                if(edgeEntry.count("rate") > 0) {
+                    rateExpr = parseExpression(edgeEntry.at("rate"), "Rate expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    STORM_LOG_THROW(rateExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Rate '" << rateExpr << "' has not a numerical type");
+                }
+                STORM_LOG_THROW(edgeEntry.count("guard") == 1, storm::exceptions::InvalidJaniException, "A single guard must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
+                storm::expressions::Expression guardExpr = parseExpression(edgeEntry.at("guard"), "Guard expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                STORM_LOG_THROW(guardExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Guard " << guardExpr << " does not have Boolean type.");
 
             }
 
