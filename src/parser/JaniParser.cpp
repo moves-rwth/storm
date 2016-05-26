@@ -2,6 +2,7 @@
 #include "src/storage/jani/Model.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/InvalidJaniException.h"
+#include "src/exceptions/NotImplementedException.h"
 #include "src/storage/jani/ModelType.h"
 
 #include <iostream>
@@ -206,16 +207,31 @@ namespace storm {
                         ensureBooleanType(arguments[1], opstring, 1, scopeDescription);
                         assert(arguments.size() == 2);
                         return arguments[0] && arguments[1];
+                    } else if (opstring == "!") {
+                        ensureNumberOfArguments(1, arguments.size(), opstring, scopeDescription);
+                        ensureBooleanType(arguments[0], opstring, 0, scopeDescription);
+                        assert(arguments.size() == 1);
+                        return !arguments[0];
                     } else if (opstring == "=") {
                         ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
-                        // TODO check types
                         assert(arguments.size() == 2);
-                        return arguments[0] == arguments[1];
+                        if(arguments[0].hasBooleanType()) {
+                            ensureBooleanType(arguments[1], opstring, 1, scopeDescription);
+                            return storm::expressions::iff(arguments[0], arguments[1]);
+                        } else {
+                            ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                            return arguments[0] == arguments[1];
+                        }
                     } else if (opstring == "≠") {
                         ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
-                        // TODO check types
                         assert(arguments.size() == 2);
-                        return arguments[0] != arguments[1];
+                        if(arguments[0].hasBooleanType()) {
+                            ensureBooleanType(arguments[1], opstring, 1, scopeDescription);
+                            return storm::expressions::xclusiveor(arguments[0], arguments[1]);
+                        } else {
+                            ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                            return arguments[0] != arguments[1];
+                        }
                     } else if (opstring == "<") {
                         ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
@@ -246,6 +262,11 @@ namespace storm {
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
                         return arguments[0] - arguments[1];
+                    } else if (opstring == "--") {
+                        ensureNumberOfArguments(1, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        assert(arguments.size() == 1);
+                        return -arguments[0];
                     } else if (opstring == "*") {
                         ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
@@ -256,6 +277,12 @@ namespace storm {
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
                         return arguments[0] / arguments[1];
+                    } else if (opstring == "%") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        // TODO implement
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "modulo operation is not yet implemented");
                     } else if (opstring == "max") {
                         ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
@@ -266,8 +293,45 @@ namespace storm {
                         ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
                         ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
                         return storm::expressions::minimum(arguments[0],arguments[1]);
-                    }
-                    else {
+                    } else if (opstring == "⌊⌋") {
+                        ensureNumberOfArguments(1, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        return storm::expressions::floor(arguments[0]);
+                    } else if (opstring == "⌈⌉") {
+                        ensureNumberOfArguments(1, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        return storm::expressions::ceil(arguments[0]);
+                    } else if (opstring == "abs") {
+                        ensureNumberOfArguments(1, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        return storm::expressions::abs(arguments[0]);
+                    } else if (opstring == "sgn") {
+                        ensureNumberOfArguments(1, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        return storm::expressions::sign(arguments[0]);
+                    } else if (opstring == "trc") {
+                        ensureNumberOfArguments(1, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        return storm::expressions::abs(arguments[0]);
+                    } else if (opstring == "pow") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        // TODO implement
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "pow operation is not yet implemented");
+                    } else if (opstring == "exp") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        // TODO implement
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "exp operation is not yet implemented");
+                    } else if (opstring == "log") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        // TODO implement
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "log operation is not yet implemented");
+                    }  else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opstring << " in  " << scopeDescription << ".");
                     }
                 }
@@ -318,26 +382,49 @@ namespace storm {
 
             STORM_LOG_THROW(automatonStructure.count("edges") > 0, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' must have a list of edges");
             for(auto const& edgeEntry : automatonStructure.at("edges")) {
+                // source location
                 STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each edge in automaton '" << name << "' must have a source");
                 std::string sourceLoc = getString(edgeEntry.at("location"), "source location for edge in automaton '" + name + "'");
                 STORM_LOG_THROW(locIds.count(sourceLoc) == 1, storm::exceptions::InvalidJaniException, "Source of edge has unknown location '" << sourceLoc << "' in automaton '" << name << "'.");
+                // action
                 STORM_LOG_THROW(edgeEntry.count("action") < 2, storm::exceptions::InvalidJaniException, "Edge from " << sourceLoc << " in automaton " << name << " has multiple actions");
-                std::string action = "";
+                std::string action = ""; // def is tau
                 if(edgeEntry.count("action") > 0) {
                     action = getString(edgeEntry.at("action"), "action name in edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     // TODO check if action is known
                     assert(action != "");
                 }
+                // rate
                 STORM_LOG_THROW(edgeEntry.count("rate") < 2, storm::exceptions::InvalidJaniException, "Edge from '" << sourceLoc << "' in automaton '" << name << "' has multiple rates");
                 storm::expressions::Expression rateExpr;
                 if(edgeEntry.count("rate") > 0) {
                     rateExpr = parseExpression(edgeEntry.at("rate"), "rate expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     STORM_LOG_THROW(rateExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Rate '" << rateExpr << "' has not a numerical type");
                 }
+                // guard
                 STORM_LOG_THROW(edgeEntry.count("guard") == 1, storm::exceptions::InvalidJaniException, "A single guard must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
                 storm::expressions::Expression guardExpr = parseExpression(edgeEntry.at("guard"), "guard expression in edge from '" + sourceLoc + "' in automaton '" + name + "'", localVars);
                 STORM_LOG_THROW(guardExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Guard " << guardExpr << " does not have Boolean type.");
+                STORM_LOG_THROW(edgeEntry.count("destinations") == 1, storm::exceptions::InvalidJaniException, "A single list of destinations must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
+                for(auto const& destEntry : edgeEntry.at("destinations")) {
+                    // target location
+                    STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a source");
+                    std::string targetLoc = getString(edgeEntry.at("location"), "target location for edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    STORM_LOG_THROW(locIds.count(targetLoc) == 1, storm::exceptions::InvalidJaniException, "Target of edge has unknown location '" << targetLoc << "' in automaton '" << name << "'.");
+                    // probability
+                    storm::expressions::Expression probExpr;
+                    unsigned probDeclCount = destEntry.count("probability");
+                    STORM_LOG_THROW(probDeclCount, storm::exceptions::InvalidJaniException, "Destination in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "' has multiple probabilites");
+                    if(probDeclCount == 0) {
+                        probExpr = expressionManager->rational(1.0);
+                    } else {
+                        probExpr = parseExpression(destEntry.at("probability"), "probability expression in edge from '" + sourceLoc + "' to  '"  + targetLoc + "' in automaton '" + name + "'", localVars);
+                    }
+                    assert(probExpr.isInitialized());
+                    STORM_LOG_THROW(probExpr.hasRationalType(), storm::exceptions::InvalidJaniException, "Probability expr " << probExpr << " does not have rational type." );
+                    // assignments
 
+                }
             }
 
 
