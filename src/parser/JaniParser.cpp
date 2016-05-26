@@ -132,6 +132,20 @@ namespace storm {
             }
         }
 
+        /**
+         * Helper for parse expression.
+         */
+        void ensureNumberOfArguments(uint64_t expected, uint64_t actual, std::string const& opstring, std::string const& errorInfo) {
+            STORM_LOG_THROW(expected == actual, storm::exceptions::InvalidJaniException, "Operator " << opstring  << " expects " << expected << " arguments, but got " << actual << " in " << errorInfo << ".");
+        }
+        /**
+         * Helper for parse expression.
+         */
+        void ensureBooleanType(storm::expressions::Expression const& expr, std::string const& opstring, unsigned argNr, std::string const& errorInfo) {
+            STORM_LOG_THROW(expr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Operator " << opstring << " expects argument " + std::to_string(argNr) + " to be Boolean in " << errorInfo << ".");
+        }
+
+
         storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription) {
             if(expressionStructure.is_boolean()) {
                 if(expressionStructure.get<bool>()) {
@@ -139,17 +153,56 @@ namespace storm {
                 } else {
                     return expressionManager->boolean(false);
                 }
-            } else if(expressionStructure.is_number()) {
-                std::string stringrepr = expressionStructure.dump();
-                try {
-                    // It has to be an integer whenever it represents an integer.
-                    int64_t intval = boost::lexical_cast<int64_t>(stringrepr);
-                    return expressionManager->integer(intval);
-                } catch (boost::bad_lexical_cast const&) {
-                    // For now, just take the double.
-                    // TODO make this a rational number
-                    return expressionManager->rational(expressionStructure.get<double>());
+            } else if(expressionStructure.is_number_integer()) {
+                return expressionManager->integer(expressionStructure.get<uint64_t>());
+            } else if(expressionStructure.is_number_float()) {
+                // For now, just take the double.
+                // TODO make this a rational number
+                return expressionManager->rational(expressionStructure.get<double>());
+            } else if(expressionStructure.is_object()) {
+                if(expressionStructure.count("op") == 1) {
+                    std::string opstring = getString(expressionStructure.at("op"), scopeDescription);
+                    STORM_LOG_THROW(expressionStructure.count("args") == 1, storm::exceptions::InvalidJaniException, "Operation arguments are not given in " << expressionStructure.dump() << " in " << scopeDescription << "." );
+                    std::vector<storm::expressions::Expression> arguments;
+                    unsigned i = 1;
+                    for(json const& argStructure : expressionStructure.at("args")) {
+                        arguments.push_back(parseExpression(argStructure, "in " + scopeDescription + "in argument " + std::to_string(i)));
+                        ++i;
+                    }
+                    if(opstring == "?:") {
+                        ensureNumberOfArguments(3, arguments.size(), opstring, scopeDescription);
+                        assert(arguments.size() == 3);
+                        return storm::expressions::ite(arguments[0], arguments[1], arguments[2]);
+                    } else if (opstring == "∨") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureBooleanType(arguments[0], opstring, 0, scopeDescription);
+                        ensureBooleanType(arguments[1], opstring, 1, scopeDescription);
+                        assert(arguments.size() == 2);
+                        return arguments[0] || arguments[1];
+                    } else if (opstring == "∧") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureBooleanType(arguments[0], opstring, 0, scopeDescription);
+                        ensureBooleanType(arguments[1], opstring, 1, scopeDescription);
+                        assert(arguments.size() == 2);
+                        return arguments[0] && arguments[1];
+                    } else if (opstring == "=") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        // TODO check types
+                        assert(arguments.size() == 2);
+                        return arguments[0] == arguments[1];
+                    } else if (opstring == "≠") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        // TODO check types
+                        assert(arguments.size() == 2);
+                        return arguments[0] != arguments[1];
+
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opstring << " in  " << scopeDescription << ".");
+                    }
+
+
                 }
+                STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Only standard operators are supported for complex expressions as " << expressionStructure.dump() << " in  " << scopeDescription << ".");
             }
 
         }
@@ -171,16 +224,29 @@ namespace storm {
             STORM_LOG_THROW(automatonStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Each automaton must have a name");
             std::string name = getString(automatonStructure.at("name"), " the name field for automaton");
             storm::jani::Automaton automaton(name);
-            STORM_LOG_THROW(automatonStructure.count("locations") > 0, storm::exceptions::InvalidJaniException, "Automaton " << name << " does not have locations.");
+            STORM_LOG_THROW(automatonStructure.count("locations") > 0, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' does not have locations.");
             std::unordered_map<std::string, uint64_t> locIds;
             for(auto const& locEntry : automatonStructure.at("locations")) {
-                STORM_LOG_THROW(locEntry.count("name"), storm::exceptions::InvalidJaniException, "Locations for automaton " << name << " must have exactly one name");
+                STORM_LOG_THROW(locEntry.count("name"), storm::exceptions::InvalidJaniException, "Locations for automaton '" << name << "' must have exactly one name");
                 std::string locName = getString(locEntry.at("name"), "location of automaton " + name);
                 STORM_LOG_THROW(locIds.count(locName) == 0, storm::exceptions::InvalidJaniException, "Location with name '" + locName + "' already exists in automaton '" + name + "'");
                 uint64_t id = automaton.addLocation(storm::jani::Location(locName));
                 locIds.emplace(locName, id);
             }
 
+            STORM_LOG_THROW(automatonStructure.count("edges") > 0, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' must have a list of edges");
+            for(auto const& edgeEntry : automatonStructure.at("edges")) {
+                STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each edge in automaton '" << name << "' must have a source");
+                std::string sourceLoc = getString(edgeEntry.at("location"), "source location for edge in automaton '" + name + "'");
+                STORM_LOG_THROW(locIds.count(sourceLoc) == 1, storm::exceptions::InvalidJaniException, "Source of edge has unknown location '" << sourceLoc << "' in automaton '" << name << "'.");
+                STORM_LOG_THROW(edgeEntry.count("action") < 2, storm::exceptions::InvalidJaniException, "Edge from " << sourceLoc << " in automaton " << name << " has multiple actions");
+                if(edgeEntry.count("action") > 0) {
+                    std::string action = getString(edgeEntry.at("action"), "action name in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                }
+                STORM_LOG_THROW(edgeEntry.count("rate") < 2, storm::exceptions::InvalidJaniException, "Edge from " << sourceLoc << " in automaton " << name << " has multiple rates");
+
+
+            }
 
 
 
