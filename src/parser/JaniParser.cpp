@@ -127,9 +127,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported kind " << kind << " for complex type of variable " << name << "(scope: " << scopeDescription << ") ");
                 }
             }
-            else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
-            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
         }
 
         /**
@@ -143,6 +141,13 @@ namespace storm {
          */
         void ensureBooleanType(storm::expressions::Expression const& expr, std::string const& opstring, unsigned argNr, std::string const& errorInfo) {
             STORM_LOG_THROW(expr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Operator " << opstring << " expects argument " + std::to_string(argNr) + " to be Boolean in " << errorInfo << ".");
+        }
+
+        /**
+         * Helper for parse expression.
+         */
+        void ensureNumericalType(storm::expressions::Expression const& expr, std::string const& opstring, unsigned argNr, std::string const& errorInfo) {
+            STORM_LOG_THROW(expr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Operator " << opstring << " expects argument " + std::to_string(argNr) + " to be numerical in " << errorInfo << ".");
         }
 
 
@@ -159,6 +164,9 @@ namespace storm {
                 // For now, just take the double.
                 // TODO make this a rational number
                 return expressionManager->rational(expressionStructure.get<double>());
+            } else if(expressionStructure.is_string()) {
+                // TODO check that identifier is known.
+                return expressionManager->getVariableExpression(expressionStructure.get<std::string>());
             } else if(expressionStructure.is_object()) {
                 if(expressionStructure.count("op") == 1) {
                     std::string opstring = getString(expressionStructure.at("op"), scopeDescription);
@@ -167,6 +175,7 @@ namespace storm {
                     unsigned i = 1;
                     for(json const& argStructure : expressionStructure.at("args")) {
                         arguments.push_back(parseExpression(argStructure, "in " + scopeDescription + "in argument " + std::to_string(i)));
+                        assert(arguments.back().isInitialized());
                         ++i;
                     }
                     if(opstring == "?:") {
@@ -195,15 +204,64 @@ namespace storm {
                         // TODO check types
                         assert(arguments.size() == 2);
                         return arguments[0] != arguments[1];
-
-                    } else {
+                    } else if (opstring == "<") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return arguments[0] < arguments[1];
+                    } else if (opstring == "≤") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return arguments[0] <= arguments[1];
+                    } else if (opstring == ">") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return arguments[0] > arguments[1];
+                    } else if (opstring == "≥") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return arguments[0] >= arguments[1];
+                    } else if (opstring == "+") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return arguments[0] + arguments[1];
+                    } else if (opstring == "-") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return arguments[0] - arguments[1];
+                    } else if (opstring == "*") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return arguments[0] * arguments[1];
+                    } else if (opstring == "/") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return arguments[0] / arguments[1];
+                    } else if (opstring == "max") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return storm::expressions::maximum(arguments[0],arguments[1]);
+                    } else if (opstring == "min") {
+                        ensureNumberOfArguments(2, arguments.size(), opstring, scopeDescription);
+                        ensureNumericalType(arguments[0], opstring, 0, scopeDescription);
+                        ensureNumericalType(arguments[1], opstring, 1, scopeDescription);
+                        return storm::expressions::minimum(arguments[0],arguments[1]);
+                    }
+                    else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown operator " << opstring << " in  " << scopeDescription << ".");
                     }
-
-
                 }
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Only standard operators are supported for complex expressions as " << expressionStructure.dump() << " in  " << scopeDescription << ".");
             }
+            assert(false);
 
         }
 
@@ -249,11 +307,11 @@ namespace storm {
                 STORM_LOG_THROW(edgeEntry.count("rate") < 2, storm::exceptions::InvalidJaniException, "Edge from '" << sourceLoc << "' in automaton '" << name << "' has multiple rates");
                 storm::expressions::Expression rateExpr;
                 if(edgeEntry.count("rate") > 0) {
-                    rateExpr = parseExpression(edgeEntry.at("rate"), "Rate expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    rateExpr = parseExpression(edgeEntry.at("rate"), "rate expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     STORM_LOG_THROW(rateExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Rate '" << rateExpr << "' has not a numerical type");
                 }
                 STORM_LOG_THROW(edgeEntry.count("guard") == 1, storm::exceptions::InvalidJaniException, "A single guard must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
-                storm::expressions::Expression guardExpr = parseExpression(edgeEntry.at("guard"), "Guard expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                storm::expressions::Expression guardExpr = parseExpression(edgeEntry.at("guard"), "guard expression in edge from '" + sourceLoc + "' in automaton '" + name + "'");
                 STORM_LOG_THROW(guardExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Guard " << guardExpr << " does not have Boolean type.");
 
             }
