@@ -92,10 +92,10 @@ namespace storm {
             multiObjective.setReachabilityProbabilityFormulasAllowed(true);
             multiObjective.setRewardOperatorsAllowed(true);
             multiObjective.setReachabilityRewardFormulasAllowed(true);
+            multiObjective.setCumulativeRewardFormulasAllowed(true);
             multiObjective.setBoundedUntilFormulasAllowed(true);
             multiObjective.setStepBoundedUntilFormulasAllowed(true);
-            // multiObjective.setTimeBoundedUntilFormulasAllowed(true); //probably better to activate this only when an MA is given...
-            multiObjective.setNestedOperatorsAllowed(false);
+ //           multiObjective.setTimeBoundedUntilFormulasAllowed(true); //probably better to activate this only when an MA is given...
 
             return multiObjective;
         }
@@ -132,7 +132,8 @@ namespace storm {
             
             nestedOperators = true;
             nestedPathFormulas = false;
-            setNestedMultiObjectiveFormulasAllowed(false);
+            nestedMultiObjectiveFormulas = false;
+            nestedOperatorsInsideMultiObjectiveFormulas = false;
             onlyEventuallyFormuluasInConditionalFormulas = true;
             stepBoundedUntilFormulas = false;
             timeBoundedUntilFormulas = false;
@@ -372,7 +373,16 @@ namespace storm {
             this->nestedMultiObjectiveFormulas = newValue;
             return *this;
         }
-
+        
+        bool FragmentSpecification::areNestedOperatorsInsideMultiObjectiveFormulasAllowed() const {
+            return this->nestedOperatorsInsideMultiObjectiveFormulas;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setNestedOperatorsInsideMultiObjectiveFormulasAllowed(bool newValue) {
+            this->nestedOperatorsInsideMultiObjectiveFormulas = newValue;
+            return *this;
+        }
+        
         bool FragmentSpecification::areOnlyEventuallyFormuluasInConditionalFormulasAllowed() const {
             return this->onlyEventuallyFormuluasInConditionalFormulas;
         }

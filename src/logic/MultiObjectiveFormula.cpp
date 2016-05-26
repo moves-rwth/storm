@@ -30,7 +30,24 @@ namespace storm {
         
         bool MultiObjectiveFormula::hasQuantitativeResult() const {
             return !hasQualitativeResult();
-        };
+        }
+        
+        bool MultiObjectiveFormula::hasNumericalResult() const {
+            bool hasExactlyOneQualitativeSubformula = false;
+            for(auto const& subformula : this->subformulas){
+                if(subformula->hasQualitativeResult()){
+                    if(hasExactlyOneQualitativeSubformula){
+                        return false;
+                    }
+                    hasExactlyOneQualitativeSubformula=true;
+                }
+            }
+            return hasExactlyOneQualitativeSubformula;
+        }
+        
+        bool MultiObjectiveFormula::hasParetoCurveResult() const {
+            return hasQuantitativeResult() && !hasNumericalResult();
+        }
         
         Formula const& MultiObjectiveFormula::getSubformula(uint_fast64_t index) const {
             STORM_LOG_THROW(index < getNumberOfSubformulas(), storm::exceptions::InvalidArgumentException, "Tried to access subformula with index " << index << " but there are only " << this->getNumberOfSubformulas() << " subformulas.");
@@ -39,6 +56,10 @@ namespace storm {
         
         uint_fast64_t MultiObjectiveFormula::getNumberOfSubformulas() const {
             return this->subformulas.size();
+        }
+        
+        std::vector<std::shared_ptr<Formula const>> const& MultiObjectiveFormula::getSubFormulas() const {
+            return this->subformulas;
         }
         
         boost::any MultiObjectiveFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {

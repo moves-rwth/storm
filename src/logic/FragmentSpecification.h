@@ -88,6 +88,9 @@ namespace storm {
             bool areNestedMultiObjectiveFormulasAllowed() const;
             FragmentSpecification& setNestedMultiObjectiveFormulasAllowed(bool newValue);
             
+            bool areNestedOperatorsInsideMultiObjectiveFormulasAllowed() const;
+            FragmentSpecification& setNestedOperatorsInsideMultiObjectiveFormulasAllowed(bool newValue);
+            
             bool areOnlyEventuallyFormuluasInConditionalFormulasAllowed() const;
             FragmentSpecification& setOnlyEventuallyFormuluasInConditionalFormulasAllowed(bool newValue);
 
@@ -148,6 +151,7 @@ namespace storm {
             bool nestedOperators;
             bool nestedPathFormulas;
             bool nestedMultiObjectiveFormulas;
+            bool nestedOperatorsInsideMultiObjectiveFormulas;
             bool onlyEventuallyFormuluasInConditionalFormulas;
             bool stepBoundedUntilFormulas;
             bool timeBoundedUntilFormulas;

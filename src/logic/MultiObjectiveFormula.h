@@ -13,12 +13,14 @@ namespace storm {
             
             virtual bool isMultiObjectiveFormula() const override;
             
-            virtual bool hasQualitativeResult() const override;
-            virtual bool hasQuantitativeResult() const override;
+            virtual bool hasQualitativeResult() const override; // Result is true or false
+            virtual bool hasQuantitativeResult() const override; // Result is numerical or a pareto curve
+            virtual bool hasNumericalResult() const; // Result is numerical
+            virtual bool hasParetoCurveResult() const; // Result is a pareto curve
             
             Formula const& getSubformula(uint_fast64_t index) const;
             uint_fast64_t getNumberOfSubformulas() const;
-            
+            std::vector<std::shared_ptr<Formula const>> const& getSubFormulas() const;
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;

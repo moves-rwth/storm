@@ -24,6 +24,8 @@ file(GLOB_RECURSE STORM_MODELCHECKER_CSL_HELPER_FILES ${PROJECT_SOURCE_DIR}/src/
 file(GLOB_RECURSE STORM_MODELCHECKER_REACHABILITY_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/reachability/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_EXPLORATION_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/exploration/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/exploration/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_PROPOSITIONAL_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/propositional/*.cpp)
+file(GLOB STORM_MODELCHECKER_MULTIOBJECTIVE_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/multiobjective/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/multiobjective/*.cpp)
+file(GLOB_RECURSE STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/multiobjective/helper/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/multiobjective/helper/*.cpp)
 file(GLOB_RECURSE STORM_MODELCHECKER_RESULTS_FILES ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.h ${PROJECT_SOURCE_DIR}/src/modelchecker/results/*.cpp)
 file(GLOB_RECURSE STORM_COUNTEREXAMPLES_FILES ${PROJECT_SOURCE_DIR}/src/counterexamples/*.h ${PROJECT_SOURCE_DIR}/src/counterexamples/*.cpp)
 file(GLOB_RECURSE STORM_PERMISSIVESCHEDULER_FILES ${PROJECT_SOURCE_DIR}/src/permissivesched/*.h ${PROJECT_SOURCE_DIR}/src/permissivesched/*.cpp)
@@ -78,6 +80,8 @@ source_group(modelchecker\\csl\\helper FILES ${STORM_MODELCHECKER_CSL_HELPER_FIL
 source_group(modelchecker\\exploration FILES ${STORM_MODELCHECKER_EXPLORATION_FILES})
 source_group(modelchecker\\reachability FILES ${STORM_MODELCHECKER_REACHABILITY_FILES})
 source_group(modelchecker\\propositional FILES ${STORM_MODELCHECKER_PROPOSITIONAL_FILES})
+source_group(modelchecker\\multiobjective FILES ${STORM_MODELCHECKER_MULTIOBJECTIVE_FILES})
+source_group(modelchecker\\multiobjective\\helper FILES ${STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_FILES})
 source_group(modelchecker\\results FILES ${STORM_MODELCHECKER_RESULTS_FILES})
 source_group(counterexamples FILES ${STORM_COUNTEREXAMPLES_FILES})
 source_group(permissiveschedulers FILES ${STORM_PERMISSIVESCHEDULER_FILES})
@@ -131,7 +135,6 @@ target_link_libraries(storm-dft-main storm) # Adding headers for xcode
 set_target_properties(storm-dft-main PROPERTIES OUTPUT_NAME "storm-dft")
 
 target_link_libraries(storm ${STORM_LINK_LIBRARIES})
-
 
 
 INSTALL(TARGETS storm-main

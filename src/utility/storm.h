@@ -66,6 +66,7 @@
 #include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "src/modelchecker/multiobjective/SparseMdpMultiObjectiveModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -301,13 +302,19 @@ namespace storm {
             if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCudaSet()) {
                     storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
                     result = modelchecker.check(task);
-                } else {
-                    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
+            } else {
+#endif
+                storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
+                if(modelchecker.canHandle(task)){
                     result = modelchecker.check(task);
+                } else {
+                    storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker2(*mdp);
+                    if(modelchecker2.canHandle(task)){
+                        result = modelchecker2.check(task);
+                    }
                 }
-#else
-            storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
-            result = modelchecker.check(task);
+#ifdef STORM_HAVE_CUDA
+            }
 #endif
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> ctmc = model->template as<storm::models::sparse::Ctmc<ValueType>>();

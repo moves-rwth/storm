@@ -166,6 +166,9 @@ namespace storm {
             if(!inherited.getSpecification().areNestedMultiObjectiveFormulasAllowed()){
                 subFormulaFragment.setMultiObjectiveFormulasAllowed(false);
             }
+            if(!inherited.getSpecification().areNestedOperatorsInsideMultiObjectiveFormulasAllowed()){
+                subFormulaFragment.setNestedOperatorsAllowed(false);
+            }
             
             bool result = inherited.getSpecification().areMultiObjectiveFormulasAllowed();
             for(uint_fast64_t index = 0; index<f.getNumberOfSubformulas(); ++index){
