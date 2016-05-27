@@ -17,7 +17,8 @@ std::vector<storm::storage::sparse::state_type> getInitialStates(storm::models::
 }
 
 // Thin wrapper for getting transition matrix
-storm::storage::SparseMatrix<double>& getTransitionMatrix(storm::models::sparse::Model<double>& model) {
+template<typename ValueType>
+storm::storage::SparseMatrix<ValueType>& getTransitionMatrix(storm::models::sparse::Model<ValueType>& model) {
     return model.getTransitionMatrix();
 }
 
@@ -48,20 +49,21 @@ void define_model(py::module& m) {
 
     // Models
     py::class_<storm::models::sparse::Model<double>, std::shared_ptr<storm::models::sparse::Model<double>>>(m, "SparseModel", "A probabilistic model where transitions are represented by doubles and saved in a sparse matrix", py::base<storm::models::ModelBase>())
-        .def("labels", [](storm::models::sparse::Model<double> const& model) {
+        .def("labels", [](storm::models::sparse::Model<double>& model) {
                 return model.getStateLabeling().getLabels();
             }, "Get labels")
         .def("labels_state", &storm::models::sparse::Model<double>::getLabelsOfState, "Get labels")
         .def("initial_states", &getInitialStates<double>, "Get initial states")
-        .def("transition_matrix", &getTransitionMatrix, py::return_value_policy::reference, py::keep_alive<1, 0>(), "Get transition matrix")
+        .def("transition_matrix", &getTransitionMatrix<double>, py::return_value_policy::reference, py::keep_alive<1, 0>(), "Get transition matrix")
     ;    
     py::class_<storm::models::sparse::Dtmc<double>, std::shared_ptr<storm::models::sparse::Dtmc<double>>>(m, "SparseDtmc", "DTMC in sparse representation", py::base<storm::models::sparse::Model<double>>())
     ;
     py::class_<storm::models::sparse::Mdp<double>, std::shared_ptr<storm::models::sparse::Mdp<double>>>(m, "SparseMdp", "MDP in sparse representation", py::base<storm::models::sparse::Model<double>>())
     ;
+
     py::class_<storm::models::sparse::Model<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>>>(m, "SparseParametricModel", "A probabilistic model where transitions are represented by rational functions and saved in a sparse matrix", py::base<storm::models::ModelBase>())
         .def("collect_probability_parameters", &storm::models::sparse::getProbabilityParameters, "Collect parameters")
-        .def("labels", [](storm::models::sparse::Model<storm::RationalFunction> const& model) {
+        .def("labels", [](storm::models::sparse::Model<storm::RationalFunction>& model) {
                 return model.getStateLabeling().getLabels();
             }, "Get labels")
         .def("labels_state", &storm::models::sparse::Model<storm::RationalFunction>::getLabelsOfState, "Get labels")

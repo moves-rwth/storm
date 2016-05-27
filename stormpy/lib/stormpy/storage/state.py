@@ -28,7 +28,7 @@ class State:
         """ Get actions associated with the state
         :return List of actions
         """
-        row_group_indices = self.model.transition_matrix().row_group_indices()
+        row_group_indices = self.model.transition_matrix()._row_group_indices()
         start = row_group_indices[self.id]
         end = row_group_indices[self.id+1]
         return stormpy.action.Action(start, end, 0, self.model)

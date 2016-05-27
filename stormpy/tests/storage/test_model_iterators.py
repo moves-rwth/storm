@@ -50,7 +50,7 @@ class TestModelIterators:
                     i += 1
                     assert state.id == transition_orig[0]
                     assert transition.column() == transition_orig[1]
-                    assert transition.val() == transition_orig[2]
+                    assert transition.value() == transition_orig[2]
     
     def test_transitions_mdp(self):
         model = stormpy.parse_explicit_model("../examples/mdp/two_dice/two_dice.tra", "../examples/mdp/two_dice/two_dice.lab")
@@ -60,5 +60,5 @@ class TestModelIterators:
             for action in state.actions():
                 i += 1
                 for transition in action.transitions():
-                    assert transition.val() == 0.5 or transition.val() == 1
+                    assert transition.value() == 0.5 or transition.value() == 1
             assert i == 1 or i == 2
