@@ -19,7 +19,7 @@ void define_sparse_matrix(py::module& m) {
     ;
  
     py::class_<storm::storage::SparseMatrix<double>>(m, "SparseMatrix", "Sparse matrix")
-        .def("__iter__", [](storm::storage::SparseMatrix<double> const& matrix) {
+        .def("__iter__", [](storm::storage::SparseMatrix<double>& matrix) {
                 return py::make_iterator(matrix.begin(), matrix.end());
             }, py::keep_alive<0, 1>() /* Essential: keep object alive while iterator exists */)
         .def("__str__", [](storm::storage::SparseMatrix<double> const& matrix) {
@@ -37,7 +37,7 @@ void define_sparse_matrix(py::module& m) {
         .def("get_rows", [](storm::storage::SparseMatrix<double>& matrix, entry_index start, entry_index end) {
                 return matrix.getRows(start, end);
             }, "Get rows from start to end")
-        .def("print_row", [](storm::storage::SparseMatrix<double>& matrix, entry_index row) {
+        .def("print_row", [](storm::storage::SparseMatrix<double> const& matrix, entry_index row) {
                 std::stringstream stream;
                 auto rows = matrix.getRows(row, row+1);
                 for (auto transition : rows) {
