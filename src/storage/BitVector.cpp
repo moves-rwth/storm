@@ -549,13 +549,13 @@ namespace storm {
             // First, count all full buckets.
             uint_fast64_t bucket = index >> 6;
             for (uint_fast64_t i = 0; i < bucket; ++i) {
-                // Check if we are using g++ or clang++ and, if so, use the built-in function
-#if (defined (__GNUG__) || defined(__clang__))
-                result += __builtin_popcountll(buckets[i]);
-#elif defined WINDOWS
+                // Check how to determine the number of set bits in a bucket
+#ifdef WINDOWS
 #include <nmmintrin.h>
                 // If the target machine does not support SSE4, this will fail.
                 result += _mm_popcnt_u64(bucketVector[i]);
+#elif defined STORM_HAS_BUILTIN_POPCOUNT
+                result += __builtin_popcountll(buckets[i]);
 #else
                 uint_fast32_t cnt;
                 uint_fast64_t bitset = buckets[i];
@@ -571,8 +571,12 @@ namespace storm {
             if (tmp != 0) {
                 tmp = ~((1ll << (64 - (tmp & mod64mask))) - 1ll);
                 tmp &= buckets[bucket];
-                // Check if we are using g++ or clang++ and, if so, use the built-in function
-#if (defined (__GNUG__) || defined(__clang__))
+                // Check how to determine the number of set bits in a bucket
+#ifdef WINDOWS
+#include <nmmintrin.h>
+                // If the target machine does not support SSE4, this will fail.
+                result += _mm_popcnt_u64(tmp);
+#elif defined STORM_HAS_BUILTIN_POPCOUNT
                 result += __builtin_popcountll(tmp);
 #else
                 uint_fast32_t cnt;
