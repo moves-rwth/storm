@@ -44,12 +44,14 @@ namespace carl {
 
 }
 
+#if defined STORM_HAVE_CLN && defined USE_CLN_NUMBERS
 namespace cln {
     inline size_t hash_value(cl_RA const& n) {
         std::hash<cln::cl_RA> h;
         return h(n);
     }
 }
+#endif
 
 namespace storm {
 #if defined STORM_HAVE_CLN && defined USE_CLN_NUMBERS
