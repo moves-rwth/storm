@@ -68,6 +68,7 @@ void define_model(py::module& m) {
             }, "Get labels")
         .def("labels_state", &storm::models::sparse::Model<storm::RationalFunction>::getLabelsOfState, "Get labels")
         .def("initial_states", &getInitialStates<storm::RationalFunction>, "Get initial states")
+        .def("transition_matrix", &getTransitionMatrix<storm::RationalFunction>, py::return_value_policy::reference, py::keep_alive<1, 0>(), "Get transition matrix")
     ;
     py::class_<storm::models::sparse::Dtmc<storm::RationalFunction>, std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>>>(m, "SparseParametricDtmc", "pDTMC in sparse representation", py::base<storm::models::sparse::Model<storm::RationalFunction>>())
     ;
