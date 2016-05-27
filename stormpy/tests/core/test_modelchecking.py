@@ -2,7 +2,7 @@ import stormpy
 import stormpy.logic
 
 class TestModelChecking:
-    def test_state_elimination(self):
+    def test_model_checking_dtmc(self):
         program = stormpy.parse_prism_program("../examples/dtmc/die/die.pm")
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"one\" ]", program)
         model = stormpy.build_model(program, formulas[0])
@@ -10,6 +10,16 @@ class TestModelChecking:
         assert model.nr_transitions() == 20
         result = stormpy.model_checking(model, formulas[0])
         assert result == 0.16666666666666663
+    
+    def test_model_checking_all_dtmc(self):
+        program = stormpy.parse_prism_program("../examples/dtmc/die/die.pm")
+        formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"one\" ]", program)
+        model = stormpy.build_model(program, formulas[0])
+        assert model.nr_states() == 13
+        assert model.nr_transitions() == 20
+        results = stormpy.model_checking_all(model, formulas[0])
+        results_orig = [0.16666666666666663, 0.3333333333333333, 0, 0.6666666666666666, 0, 0, 0, 1, 0, 0, 0, 0, 0]
+        assert results == results_orig
     
     def test_parametric_state_elimination(self):
         import pycarl
