@@ -51,7 +51,4 @@
 
 #cmakedefine STORM_LOG_DISABLE_DEBUG
 
-// Check whether machine supports builtin_popcount
-#cmakedefine STORM_HAS_BUILTIN_POPCOUNT
-
 #endif // STORM_GENERATED_STORMCONFIG_H_

@@ -13,7 +13,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/resources/cmak
 
 
 include(ExternalProject)
-include(CheckFunctionExists) 
 #############################################################
 ##
 ##	CMake options of StoRM
@@ -106,9 +105,6 @@ message(STATUS "Assuming extension for static libraries: ${STATIC_EXT}")
 ##	Compiler specific settings and definitions
 ##
 #############################################################
-
-CHECK_FUNCTION_EXISTS(__builtin_popcountll, STORM_HAS_BUILTIN_POPCOUNT)
-
 # Path to the no-strict-aliasing target
 set(CONVERSIONHELPER_TARGET "${PROJECT_SOURCE_DIR}/src/utility/ConversionHelper.cpp")
 
