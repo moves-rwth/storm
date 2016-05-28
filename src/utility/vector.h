@@ -67,7 +67,7 @@ namespace storm {
             }
 
             /*!
-             * Constructs a vector [min, min+1, ...., max]
+             * Constructs a vector [min, min+1, ...., max-1]
              */
             inline std::vector<uint_fast64_t> buildVectorForRange(uint_fast64_t min, uint_fast64_t max) {
                 STORM_LOG_ASSERT(min < max, "Invalid range.");
@@ -336,7 +336,7 @@ namespace storm {
             }
             
             /*!
-             * Subtracts the two given vectors and writes the result into the first operand.
+             * Multiplies each element of the given vector with the given factor and writes the result into the vector.
              *
              * @param target The first summand and target vector.
              * @param summand The second summand.
