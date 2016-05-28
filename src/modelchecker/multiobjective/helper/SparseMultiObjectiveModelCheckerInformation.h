@@ -36,18 +36,28 @@ namespace storm {
                     //Intentionally left empty
                 }
                 
-                SparseModelType& getModel(){
-                    return model;
+                void setModel(SparseModelType&& newModel){
+                    model = newModel;
                 }
+                
+                void setModel(SparseModelType const& newModel){
+                    model = newModel;
+                }
+                
                 SparseModelType const& getModel() const {
                     return model;
                 }
                 
-                std::vector<uint_fast64_t>& getNewToOldStateMapping(){
-                    return newToOldStateMapping;
+                void setNewToOldStateIndexMapping(std::vector<uint_fast64_t> const& newMapping){
+                    newToOldStateIndexMapping = newMapping;
                 }
-                std::vector<uint_fast64_t>const& getNewToOldStateMapping() const{
-                    return newToOldStateMapping;
+                
+                void setNewToOldStateIndexMapping(std::vector<uint_fast64_t>&& newMapping){
+                    newToOldStateIndexMapping = newMapping;
+                }
+                
+                std::vector<uint_fast64_t>const& getNewToOldStateIndexMapping() const{
+                    return newToOldStateIndexMapping;
                 }
                 
                 bool areNegativeRewardsConsidered() {
@@ -68,7 +78,7 @@ namespace storm {
                 
             private:
                 SparseModelType model;
-                std::vector<uint_fast64_t> newToOldStateMapping;
+                std::vector<uint_fast64_t> newToOldStateIndexMapping;
                 bool negativeRewardsConsidered;
                 
                 std::vector<ObjectiveInformation> objectives;

@@ -1,36 +1,20 @@
-#ifndef STORM_MDPTRIVIALSTATEELIMINATOR_H
-#define STORM_MDPTRIVIALSTATEELIMINATOR_H
+#ifndef STORM_TRANSFORMER_STATEDUPLICATOR_H
+#define STORM_TRANSFORMER_STATEDUPLICATOR_H
 
-#include "../utility/macros.h"
 
-#include <chrono>
 #include <memory>
 #include <boost/optional.hpp>
 
-#include "src/adapters/CarlAdapter.h"
-#include "src/logic/Formulas.h"
-#include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/modelchecker/region/RegionCheckResult.h"
-#include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/models/sparse/StandardRewardModel.h"
-#include "src/settings/SettingsManager.h"
-#include "src/settings/modules/RegionSettings.h"
-#include "src/solver/OptimizationDirection.h"
-#include "src/storage/sparse/StateType.h"
-#include "src/storage/FlexibleSparseMatrix.h"
 #include "src/utility/constants.h"
 #include "src/utility/graph.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
+#include "src/models/sparse/Dtmc.h"
+#include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/Ctmc.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/exceptions/InvalidPropertyException.h"
-#include "src/exceptions/InvalidStateException.h"
-#include "src/exceptions/InvalidSettingsException.h"
-#include "src/exceptions/NotImplementedException.h"
-#include "src/exceptions/UnexpectedException.h"
-#include "src/exceptions/NotSupportedException.h"
-#include "src/logic/FragmentSpecification.h"
 
 namespace storm {
     namespace transformer {
@@ -39,14 +23,12 @@ namespace storm {
          * Duplicates the state space of the given model and redirects the incoming transitions of gateStates of the first copy to the gateStates of the second copy.
          * Only states reachable from the initial states are kept.
          */
-        <template ModelType>
+        template <typename SparseModelType>
         class StateDuplicator {
         public:
-            typedef typename SparseMdpModelType::ValueType ValueType;
-            typedef typename SparseMdpModelType::RewardModelType RewardModelType;
 
             struct StateDuplicatorReturnType {
-                ModelType model;                        // The resulting model
+                std::shared_ptr<SparseModelType> model;  // The resulting model
                 storm::storage::BitVector firstCopy;    // The states of the resulting model that correspond to the first copy
                 storm::storage::BitVector secondCopy;   // The states of the resulting model that correspond to the second copy
                 storm::storage::BitVector gateStates;   // The gate states of the resulting model
@@ -67,25 +49,42 @@ namespace storm {
              * @param originalModel The model to be duplicated
              * @param gateStates The states for which the incoming transitions are redirected
              */
-            static StateDuplicatorReturnType transform(ModelType const& originalModel, storm::storage::BitVector const& gateStates) {
+            static StateDuplicatorReturnType transform(SparseModelType const& originalModel, storm::storage::BitVector const& gateStates) {
+                STORM_LOG_DEBUG("Invoked state duplicator on model with " << originalModel.getNumberOfStates() << " states.");
                 StateDuplicatorReturnType result;
                 
                 // Collect some data for the result
                 initializeTransformation(originalModel, gateStates, result);
                 
                 // Transform the ingedients of the model
+                storm::storage::SparseMatrix<typename SparseModelType::ValueType> matrix = transformMatrix(originalModel.getTransitionMatrix(), result);
+                storm::models::sparse::StateLabeling labeling(matrix.getRowGroupCount());
+                for(auto const& label : originalModel.getStateLabeling().getLabels()){
+                    storm::storage::BitVector newBitVectorForLabel = transformStateBitVector(originalModel.getStateLabeling().getStates(label), result);
+                    if(label=="init"){
+                        newBitVectorForLabel &=result.firstCopy;
+                    }
+                    labeling.addLabel(label, std::move(newBitVectorForLabel));
+                }
+                std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
+                for(auto const& rewardModel : originalModel.getRewardModels()){
+                    rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, originalModel.getTransitionMatrix().getRowGroupIndices(), result)));
+                }
+                boost::optional<std::vector<storm::models::sparse::LabelSet>> choiceLabeling;
+                if(originalModel.hasChoiceLabeling()){
+                    choiceLabeling = transformActionValueVector<storm::models::sparse::LabelSet>(originalModel.getChoiceLabeling(), originalModel.getTransitionMatrix().getRowGroupIndices(), result);
+                }
                 
-                storm::storage::SparseMatrix<ValueType> matrix = transformMatrix(originalModel.getTransitionMatrix(), originalModel, gateStates, result);
-                
-                //TODO
+                result.model = std::make_shared<SparseModelType>(createTransformedModel(originalModel, result, matrix, labeling, rewardModels, choiceLabeling));
+                STORM_LOG_DEBUG("State duplicator is done. Resulting model has " << result.model->getNumberOfStates() << " states, where " << result.firstCopy.getNumberOfSetBits() << " are in the first copy.");
                 return result;
             }
             
         private:
             
-            static void initializeTransformation(ModelType const& originalModel, storm::storage::BitVector const& gateStates, StateDuplicatorReturnType& result) {
+            static void initializeTransformation(SparseModelType const& originalModel, storm::storage::BitVector const& gateStates, StateDuplicatorReturnType& result) {
                 
-                storm::storage::BitVector noStates(originalModel.getNumberOfStates(), false)
+                storm::storage::BitVector noStates(originalModel.getNumberOfStates(), false);
                 // Get the states that are reachable without visiting a gateState
                 storm::storage::BitVector statesForFirstCopy = storm::utility::graph::getReachableStates(originalModel.getTransitionMatrix(), originalModel.getInitialStates(), ~gateStates, noStates);
                 
@@ -96,13 +95,13 @@ namespace storm {
                 result.reachableStates = statesForFirstCopy | statesForSecondCopy;
             
                 uint_fast64_t numStates = statesForFirstCopy.getNumberOfSetBits() + statesForSecondCopy.getNumberOfSetBits();
-                result.firstCopy = statesForFirstCopy % reachableStates; // only consider reachable states
+                result.firstCopy = statesForFirstCopy % result.reachableStates; // only consider reachable states
                 result.firstCopy.resize(numStates, false); // the new states do NOT belong to the first copy
-                result.secondCopy = (statesForSecondCopy & (~statesForFirstCopy)) % reachableStates; // only consider reachable states
+                result.secondCopy = (statesForSecondCopy & (~statesForFirstCopy)) % result.reachableStates; // only consider reachable states
                 result.secondCopy.resize(numStates, true); // the new states DO belong to the second copy
                 result.gateStates = gateStates;
-                gateStates.resize(numStates, false); // there are no duplicated gateStates
-                STORM_LOG_ASSERT((result.firstCopy^result.secondCopy).full()), "firstCopy and secondCopy do not partition the state space.");
+                result.gateStates.resize(numStates, false); // there are no duplicated gateStates
+                STORM_LOG_ASSERT((result.firstCopy^result.secondCopy).full(), "firstCopy and secondCopy do not partition the state space.");
             
                 // Get the state mappings.
                 // We initialize them with illegal values to assert that we don't get a valid
@@ -111,7 +110,7 @@ namespace storm {
                 result.firstCopyOldToNewStateIndexMapping = std::vector<uint_fast64_t>(originalModel.getNumberOfStates(), std::numeric_limits<uint_fast64_t>::max());
                 result.secondCopyOldToNewStateIndexMapping = std::vector<uint_fast64_t>(originalModel.getNumberOfStates(), std::numeric_limits<uint_fast64_t>::max());
                 uint_fast64_t newState = 0;
-                for(auto const& oldState : reachableStates){
+                for(auto const& oldState : result.reachableStates){
                     result.newToOldStateIndexMapping[newState] = oldState;
                     if(statesForFirstCopy.get(oldState)){
                         result.firstCopyOldToNewStateIndexMapping[oldState] = newState;
@@ -125,11 +124,30 @@ namespace storm {
                 for(auto const& oldState : result.duplicatedStates) {
                     result.newToOldStateIndexMapping[newState] = oldState;
                     result.secondCopyOldToNewStateIndexMapping[oldState] = newState;
-                    ++newState
+                    ++newState;
                 }
                 STORM_LOG_ASSERT(newState == numStates, "Unexpected state Indices");
             }
             
+            template<typename ValueType = typename SparseModelType::ValueType, typename RewardModelType = typename SparseModelType::RewardModelType>
+            static typename std::enable_if<std::is_same<RewardModelType, storm::models::sparse::StandardRewardModel<ValueType>>::value, RewardModelType>::type
+            transformRewardModel(RewardModelType const& originalRewardModel, std::vector<uint_fast64_t> const& originalRowGroupIndices, StateDuplicatorReturnType const& result) {
+                boost::optional<std::vector<ValueType>> stateRewardVector;
+                boost::optional<std::vector<ValueType>> stateActionRewardVector;
+                boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewardMatrix;
+                if(originalRewardModel.hasStateRewards()){
+                    stateRewardVector = transformStateValueVector(originalRewardModel.getStateRewardVector(), result);
+                }
+                if(originalRewardModel.hasStateActionRewards()){
+                    stateActionRewardVector = transformActionValueVector(originalRewardModel.getStateActionRewardVector(), originalRowGroupIndices, result);
+                }
+                if(originalRewardModel.hasTransitionRewards()){
+                    transitionRewardMatrix = transformMatrix(originalRewardModel.getTransitionRewardMatrix(), result);
+                }
+                return RewardModelType(std::move(stateRewardVector), std::move(stateActionRewardVector), std::move(transitionRewardMatrix));
+            }
+            
+            template<typename ValueType = typename SparseModelType::ValueType>
             static storm::storage::SparseMatrix<ValueType> transformMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix, StateDuplicatorReturnType const& result) {
                 // Build the builder
                 uint_fast64_t numStates = result.newToOldStateIndexMapping.size();
@@ -137,7 +155,7 @@ namespace storm {
                 uint_fast64_t numEntries = 0;
                 for(auto const& oldState : result.newToOldStateIndexMapping){
                     numRows += originalMatrix.getRowGroupSize(oldState);
-                    numEntries += stateOccurrences * originalMatrix.getRowGroupEntryCount(oldState);
+                    numEntries += originalMatrix.getRowGroupEntryCount(oldState);
                 }
                 storm::storage::SparseMatrixBuilder<ValueType> builder(numRows, numStates, numEntries, true, !originalMatrix.hasTrivialRowGrouping(), originalMatrix.hasTrivialRowGrouping() ? 0 : numStates);
                 
@@ -148,10 +166,14 @@ namespace storm {
                         builder.newRowGroup(newRow);
                     }
                     uint_fast64_t oldState = result.newToOldStateIndexMapping[newState];
-                    const& correctOldToNewMapping = result.firstCopy.get(newState) ? result.firstCopyOldToNewStateIndexMapping : result.secondCopyOldToNewStateIndexMapping;
                     for (uint_fast64_t oldRow = originalMatrix.getRowGroupIndices()[oldState]; oldRow < originalMatrix.getRowGroupIndices()[oldState+1]; ++oldRow){
                         for(auto const& entry : originalMatrix.getRow(oldRow)){
-                            builder.addNextValue(newRow, correctOldToNewMapping[entry.getColumn()], entry.getValue());
+                            if(result.firstCopy.get(newState) && !result.gateStates.get(entry.getColumn())){
+                                builder.addNextValue(newRow, result.firstCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
+                            } else {
+                                builder.addNextValue(newRow, result.secondCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
+                                
+                            }
                         }
                         ++newRow;
                     }
@@ -159,7 +181,9 @@ namespace storm {
                 
                 return builder.build();
             }
-                
+            
+            
+            template<typename ValueType = typename SparseModelType::ValueType>
             static std::vector<ValueType> transformActionValueVector(std::vector<ValueType>const& originalVector, std::vector<uint_fast64_t> const& originalRowGroupIndices, StateDuplicatorReturnType const& result) {
                 uint_fast64_t numActions = 0;
                 for(auto const& oldState : result.newToOldStateIndexMapping){
@@ -168,7 +192,7 @@ namespace storm {
                 std::vector<ValueType> v;
                 v.reserve(numActions);
                 for(auto const& oldState : result.newToOldStateIndexMapping){
-                    for (uint_fast64_t oldAction = originalRowGroupIndices()[oldState]; oldAction < originaRowGroupIndices()[oldState+1]; ++oldAction){
+                    for (uint_fast64_t oldAction = originalRowGroupIndices[oldState]; oldAction < originalRowGroupIndices[oldState+1]; ++oldAction){
                         v.push_back(originalVector[oldAction]);
                     }
                 }
@@ -176,14 +200,15 @@ namespace storm {
                 return v;
             }
             
+            template<typename ValueType = typename SparseModelType::ValueType>
             static std::vector<ValueType> transformStateValueVector(std::vector<ValueType> const& originalVector, StateDuplicatorReturnType const& result) {
                 uint_fast64_t numStates = result.newToOldStateIndexMapping.size();
                 std::vector<ValueType> v;
-                result.reserve(numStates);
+                v.reserve(numStates);
                 for(auto const& oldState : result.newToOldStateIndexMapping){
                     v.push_back(originalVector[oldState]);
                 }
-                STORM_LOG_ASSERT(result.size() == numStates, "Unexpected vector size.");
+                STORM_LOG_ASSERT(v.size() == numStates, "Unexpected vector size.");
                 return v;
             }
             
@@ -197,8 +222,41 @@ namespace storm {
                 return bv;
             }
             
-
-             
+            
+            template<typename MT = SparseModelType>
+            static typename std::enable_if<
+            std::is_same<MT,storm::models::sparse::Dtmc<typename SparseModelType::ValueType>>::value ||
+            std::is_same<MT,storm::models::sparse::Mdp<typename SparseModelType::ValueType>>::value ||
+            std::is_same<MT,storm::models::sparse::Ctmc<typename SparseModelType::ValueType>>::value,
+            MT>::type
+            createTransformedModel(MT const& originalModel,
+                                   StateDuplicatorReturnType& result,
+                                   storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
+                                   storm::models::sparse::StateLabeling& stateLabeling,
+                                   std::unordered_map<std::string,
+                                   typename MT::RewardModelType>& rewardModels,
+                                   boost::optional<std::vector<typename storm::models::sparse::LabelSet>>& choiceLabeling ) {
+                return MT(std::move(matrix), std::move(stateLabeling), std::move(rewardModels), std::move(choiceLabeling));
+            }
+            
+            template<typename MT = SparseModelType>
+            static typename std::enable_if<
+            std::is_same<MT,storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType>>::value,
+            MT>::type
+            createTransformedModel(MT const& originalModel,
+                                   StateDuplicatorReturnType& result,
+                                   storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
+                                   storm::models::sparse::StateLabeling& stateLabeling,
+                                   std::unordered_map<std::string,
+                                   typename MT::RewardModelType>& rewardModels,
+                                   boost::optional<std::vector<typename storm::models::sparse::LabelSet>>& choiceLabeling ) {
+                storm::storage::BitVector markovianStates = transformStateBitVector(originalModel.getMarkovianStates(), result);
+                std::vector<typename MT::ValueType> exitRates = transformStateValueVector(originalModel.getExitRates(), result);
+                return MT(std::move(matrix), std::move(stateLabeling), std::move(markovianStates), std::move(exitRates), true, std::move(rewardModels), std::move(choiceLabeling));
+            }
+            
+            
         };
     }
 }
+#endif // STORM_TRANSFORMER_STATEDUPLICATOR_H

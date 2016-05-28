@@ -6,6 +6,8 @@
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 
+#include "src/transformer/StateDuplicator.h"
+
 #include "src/storage/BitVector.h"
 
 #include "src/utility/macros.h"
@@ -24,10 +26,7 @@ namespace storm {
                 Information info(std::move(originalModel));
                 
                 //Initialize the state mapping.
-                info.getNewToOldStateMapping().reserve(info.getModel().getNumberOfStates());
-                for(uint_fast64_t state = 0; state < info.getModel().getNumberOfStates(); ++state){
-                    info.getNewToOldStateMapping().push_back(state);
-                }
+                info.setNewToOldStateIndexMapping(storm::utility::vector::buildVectorForRange(0, info.getModel().getNumberOfStates()));
                 
                 //Gather information regarding the individual objectives
                 if(!gatherObjectiveInformation(originalFormula, info)){
@@ -201,13 +200,27 @@ namespace storm {
                 storm::storage::BitVector phiStates = mc.check(phiTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 storm::storage::BitVector psiStates = mc.check(psiTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 
-                // modelUnfolder(info.model, (~phiStates) | psiStates)
-                // info.model = modelUnfolder.info()
-                // build info.stateMapping from modelUnfolder.stateMapping
-                // build stateaction reward vector
-                // insert it in the model information
-    
-                // TODO
+                auto duplicatorResult = storm::transformer::StateDuplicator<SparseMdpModelType>::transform(info.getModel(), ~phiStates | psiStates);
+                // duplicatorResult.newToOldStateIndexMapping now reffers to the indices of the model we had before preprocessing this formula.
+                // This might not be the actual original model.
+                for(auto & originalModelStateIndex : duplicatorResult.newToOldStateIndexMapping){
+                    originalModelStateIndex = info.getNewToOldStateIndexMapping()[originalModelStateIndex];
+                }
+                info.setNewToOldStateIndexMapping(duplicatorResult.newToOldStateIndexMapping);
+                
+                // build stateAction reward vector that gives (one*transitionProbability) reward whenever a transition leads from the firstCopy to a psiState
+                storm::storage::BitVector newPsiStates(duplicatorResult.model->getNumberOfStates(), false);
+                for(auto const& oldPsiState : psiStates){
+                    //note that psiStates are always located in the second copy
+                    newPsiStates.set(duplicatorResult.secondCopyOldToNewStateIndexMapping[oldPsiState], true);
+                }
+                std::vector<ValueType> objectiveRewards = duplicatorResult.model->getTransitionMatrix().getConstrainedRowGroupSumVector(duplicatorResult.firstCopy, newPsiStates);
+                if(info.areNegativeRewardsConsidered()){
+                    storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
+                }
+
+                duplicatorResult.model->getRewardModels().insert(std::make_pair(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards)));
+                info.setModel(std::move(*duplicatorResult.model));
                 
                return success;
             }
