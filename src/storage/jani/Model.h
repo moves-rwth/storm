@@ -148,6 +148,16 @@ namespace storm {
             std::vector<Automaton> const& getAutomata() const;
 
             /*!
+             * Retrieves the automaton with the given name.
+             */
+            Automaton& getAutomaton(std::string const& name);
+
+            /*!
+             * Retrieves the automaton with the given name.
+             */
+            Automaton const& getAutomaton(std::string const& name) const;
+
+            /*!
              * Sets the system composition expression of the JANI model.
              */
             void setSystemComposition(std::shared_ptr<Composition> const& composition);
@@ -171,6 +181,11 @@ namespace storm {
              * Retrieves the name of the silent action.
              */
             std::string const& getSilentActionName() const;
+            
+            /*!
+             * Retrieves the index of the silent action.
+             */
+            uint64_t getSilentActionIndex() const;
             
             /*!
              * Defines the undefined constants of the model by the given expressions. The original model is not modified,

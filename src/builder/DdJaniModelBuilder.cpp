@@ -119,6 +119,35 @@ namespace storm {
             this->model = this->model->substituteConstants();
         }
         
+        /*!
+         * This structure represents a subcomponent of a composition.
+         */
+        template<storm::dd::DdType Type, typename ValueType>
+        struct AutomatonDd {
+
+        };
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::translate() {
+            auto system = this->model->getSystemComposition().accept(*this, boost::any());
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        boost::any DdJaniModelBuilder<Type, ValueType>::visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) {
+            
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        boost::any DdJaniModelBuilder<Type, ValueType>::visit(storm::jani::RenameComposition const& composition, boost::any const& data) {
+            
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        boost::any DdJaniModelBuilder<Type, ValueType>::visit(storm::jani::ParallelComposition const& composition, boost::any const& data) {
+            
+        }
+
+        
         template class DdJaniModelBuilder<storm::dd::DdType::CUDD, double>;
         template class DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>;
     }

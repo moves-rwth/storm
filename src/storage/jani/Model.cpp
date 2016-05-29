@@ -61,7 +61,7 @@ namespace storm {
         
         uint64_t Model::getActionIndex(std::string const& name) const {
             auto it = actionToIndex.find(name);
-            STORM_LOG_THROW(it != actionToIndex.end(), storm::exceptions::WrongFormatException, "Unable to retrieve index of unknown action '" << name << "'.");
+            STORM_LOG_THROW(it != actionToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve index of unknown action '" << name << "'.");
             return it->second;
         }
         
@@ -135,6 +135,18 @@ namespace storm {
             return automata;
         }
         
+        Automaton& Model::getAutomaton(std::string const& name) {
+            auto it = automatonToIndex.find(name);
+            STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");
+            return automata[it->second];
+        }
+        
+        Automaton const& Model::getAutomaton(std::string const& name) const {
+            auto it = automatonToIndex.find(name);
+            STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");
+            return automata[it->second];
+        }
+        
         std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
             std::set<std::string> fullSynchronizationAlphabet = getActionNames(false);
             
@@ -158,6 +170,14 @@ namespace storm {
                 }
             }
             return result;
+        }
+        
+        std::string const& Model::getSilentActionName() const {
+            return actions[silentActionIndex].getName();
+        }
+        
+        uint64_t Model::getSilentActionIndex() const {
+            return silentActionIndex;
         }
         
         Model Model::defineUndefinedConstants(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
