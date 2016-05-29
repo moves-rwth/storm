@@ -10,6 +10,8 @@
 #include <fstream>
 #include <boost/lexical_cast.hpp>
 
+#include "src/utility/macros.h"
+
 namespace storm {
     namespace parser {
 

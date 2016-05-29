@@ -27,7 +27,7 @@ namespace storm {
             variables.addUnboundedIntegerVariable(variable);
         }
         
-        VariableSet const& Automaton::getVariableSet() const {
+        VariableSet const& Automaton::getVariables() const {
             return variables;
         }
         
@@ -39,10 +39,15 @@ namespace storm {
             return locations;
         }
         
+        Location const& Automaton::getLocation(uint64_t index) const {
+            return locations[index];
+        }
+        
         uint64_t Automaton::addLocation(Location const& location) {
             STORM_LOG_THROW(!this->hasLocation(location.getName()), storm::exceptions::WrongFormatException, "Cannot add location with name '" << location.getName() << "', because a location with this name already exists.");
             locationToIndex.emplace(location.getName(), locations.size());
             locations.push_back(location);
+            edges.push_back(EdgeSet());
             return locations.size() - 1;
         }
 
@@ -80,5 +85,14 @@ namespace storm {
             return edges[index];
         }
         
+        void Automaton::addEdge(Edge const& edge) {
+            STORM_LOG_THROW(edge.getSourceLocationId() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationId() << "'.");
+            edges[edge.getSourceLocationId()].addEdge(edge);
+        }
+        
+        uint64_t Automaton::getNumberOfLocations() const {
+            return edges.size();
+        }
+
     }
 }

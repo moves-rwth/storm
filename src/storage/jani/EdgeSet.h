@@ -14,8 +14,13 @@ namespace storm {
             /*!
              * Creates a new set of edges.
              */
-            EdgeSet(std::vector<Edge> const& edges);
+            EdgeSet(std::vector<Edge> const& edges = std::vector<Edge>());
 
+            /*!
+             * Adds the edge to the edges.
+             */
+            void addEdge(Edge const& edge);
+            
             // Methods to get an iterator to the edges.
             iterator begin();
             iterator end();

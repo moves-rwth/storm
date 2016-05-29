@@ -17,8 +17,8 @@ namespace storm {
             std::string const& getName() const;
 
         private:
+            /// The name of the action.
             std::string name;
-
         };
 
     }

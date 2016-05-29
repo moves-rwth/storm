@@ -1,5 +1,7 @@
 #include "src/storage/jani/Variable.h"
 
+#include <iostream>
+
 namespace storm {
     namespace jani {
         
@@ -11,8 +13,16 @@ namespace storm {
             return variable;
         }
 
+        bool Variable::hasInitialValue() const {
+            return initialValue.isInitialized();
+        }
+        
         std::string const& Variable::getName() const {
             return name;
+        }
+        
+        storm::expressions::Expression const& Variable::getInitialValue() const {
+            return initialValue;
         }
         
     }

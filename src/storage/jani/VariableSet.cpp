@@ -97,29 +97,32 @@ namespace storm {
         void VariableSet::addBooleanVariable(BooleanVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             booleanVariables.push_back(variable);
-            variables.emplace(variable.getName(), booleanVariables.back());
+            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
+            variableToVariable.emplace(variable.getExpressionVariable(), std::make_pair(0, booleanVariables.size() - 1));
         }
         
         void VariableSet::addBoundedIntegerVariable(BoundedIntegerVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             boundedIntegerVariables.push_back(variable);
-            variables.emplace(variable.getName(), boundedIntegerVariables.back());
+            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
+            variableToVariable.emplace(variable.getExpressionVariable(), std::make_pair(1, boundedIntegerVariables.size() - 1));
         }
         
         void VariableSet::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             unboundedIntegerVariables.push_back(variable);
-            variables.emplace(variable.getName(), unboundedIntegerVariables.back());
+            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
+            variableToVariable.emplace(variable.getExpressionVariable(), std::make_pair(2, boundedIntegerVariables.size() - 1));
         }
         
         bool VariableSet::hasVariable(std::string const& name) const {
-            return variables.find(name) != variables.end();
+            return nameToVariable.find(name) != nameToVariable.end();
         }
         
         Variable const& VariableSet::getVariable(std::string const& name) const {
-            auto it = variables.find(name);
-            STORM_LOG_THROW(it != variables.end(), storm::exceptions::InvalidArgumentException, "Unable to retrieve unknown variable '" << name << "'.");
-            return it->second.get();
+            auto it = nameToVariable.find(name);
+            STORM_LOG_THROW(it != nameToVariable.end(), storm::exceptions::InvalidArgumentException, "Unable to retrieve unknown variable '" << name << "'.");
+            return getVariable(it->second);
         }
         
         detail::VariableSetIterator VariableSet::begin() const {
@@ -130,5 +133,21 @@ namespace storm {
             return detail::VariableSetIterator(*this, unboundedIntegerVariables.end());
         }
         
+        Variable const& VariableSet::getVariable(storm::expressions::Variable const& variable) const {
+            auto it = variableToVariable.find(variable);
+            STORM_LOG_THROW(it != variableToVariable.end(), storm::exceptions::InvalidArgumentException, "Unable to retrieve unknown variable '" << variable.getName() << "'.");
+            
+            if (it->second.first == 0) {
+                return booleanVariables[it->second.second];
+            } else if (it->second.first == 1) {
+                return boundedIntegerVariables[it->second.second];
+            } else {
+                return unboundedIntegerVariables[it->second.second];
+            }
+        }
+        
+        bool VariableSet::hasVariable(storm::expressions::Variable const& variable) const {
+            return variableToVariable.find(variable) != variableToVariable.end();
+        }
     }
 }

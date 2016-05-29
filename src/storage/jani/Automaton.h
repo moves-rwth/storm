@@ -41,7 +41,7 @@ namespace storm {
             /*!
              * Retrieves the variables of this automaton.
              */
-            VariableSet const& getVariableSet() const;
+            VariableSet const& getVariables() const;
             
             /*!
              * Retrieves whether the automaton has a location with the given name.
@@ -60,6 +60,11 @@ namespace storm {
              * Retrieves the locations of the automaton.
              */
             std::vector<Location> const& getLocations() const;
+            
+            /*!
+             * Retrieves the location with the given index.
+             */
+            Location const& getLocation(uint64_t index) const;
             
             /*!
              * Adds the given location to the automaton.
@@ -95,6 +100,16 @@ namespace storm {
              * Retrieves the edges of the location with the given index.
              */
             EdgeSet const& getEdgesFromLocation(uint64_t index) const;
+            
+            /*!
+             * Adds an edge to the automaton.
+             */
+            void addEdge(Edge const& edge);
+            
+            /*!
+             * Retrieves the number of locations.
+             */
+            uint64_t getNumberOfLocations() const;
             
         private:
             // The name of the automaton.

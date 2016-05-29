@@ -31,6 +31,11 @@ namespace storm {
              */
             storm::expressions::Expression const& getInitialValue() const;
             
+            /*!
+             * Retrieves whether the variable has an initial value.
+             */
+            bool hasInitialValue() const;
+            
         private:
             // The name of the variable.
             std::string name;

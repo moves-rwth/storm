@@ -121,7 +121,17 @@ namespace storm {
              * Retrieves the variable with the given name.
              */
             Variable const& getVariable(std::string const& name) const;
+
+            /*!
+             * Retrieves whether this variable set contains a variable with the expression variable.
+             */
+            bool hasVariable(storm::expressions::Variable const& variable) const;
             
+            /*!
+             * Retrieves the variable object associated with the given expression variable (if any).
+             */
+            Variable const& getVariable(storm::expressions::Variable const& variable) const;
+
             /*!
              * Retrieves an iterator to the variables in this set.
              */
@@ -131,19 +141,22 @@ namespace storm {
              * Retrieves the end iterator to the variables in this set.
              */
             detail::VariableSetIterator end() const;
-
+            
         private:
-            // The boolean variables in this set.
+            /// The boolean variables in this set.
             std::vector<BooleanVariable> booleanVariables;
 
-            // The bounded integer variables in this set.
+            /// The bounded integer variables in this set.
             std::vector<BoundedIntegerVariable> boundedIntegerVariables;
 
-            // The unbounded integer variables in this set.
+            /// The unbounded integer variables in this set.
             std::vector<UnboundedIntegerVariable> unboundedIntegerVariables;
             
-            // A set of all variable names currently in use.
-            std::map<std::string, std::reference_wrapper<Variable>> variables;
+            /// A set of all variable names currently in use.
+            std::map<std::string, storm::expressions::Variable> nameToVariable;
+            
+            /// A mapping from expression variables to their variable objects.
+            std::map<storm::expressions::Variable, std::pair<uint8_t, uint64_t>> variableToVariable;
         };
         
     }

@@ -23,5 +23,9 @@ namespace storm {
             return edges.cend();
         }
         
+        void EdgeSet::addEdge(Edge const& edge) {
+            edges.push_back(edge);
+        }
+        
     }
 }

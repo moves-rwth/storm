@@ -17,6 +17,9 @@ namespace storm {
                 case ModelType::MDP:
                     stream << "mdp";
                     break;
+                case ModelType::CTMDP:
+                    stream << "ctmdp";
+                    break;
                 case ModelType::MA:
                     stream << "ma";
                     break;
@@ -31,22 +34,25 @@ namespace storm {
         }
 
         ModelType getModelType(std::string const& input) {
-            if(input == "dtmc") {
+            if (input == "dtmc") {
                 return ModelType::DTMC;
             }
-            if(input == "ctmc") {
+            if (input == "ctmc") {
                 return ModelType::CTMC;
             }
-            if(input == "mdp") {
+            if (input == "mdp") {
                 return ModelType::MDP;
             }
-            if(input == "ma") {
+            if (input == "ctmdp") {
+                return ModelType::CTMDP;
+            }
+            if (input == "ma") {
                 return ModelType::MA;
             }
-            if(input == "pta") {
+            if (input == "pta") {
                 return ModelType::PTA;
             }
-            if(input == "sta") {
+            if (input == "sta") {
                 return ModelType::STA;
             }
             return ModelType::UNDEFINED;

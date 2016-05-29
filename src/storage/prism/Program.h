@@ -20,6 +20,10 @@
 #include "src/utility/OsDetection.h"
 
 namespace storm {
+    namespace jani {
+        class Model;
+    }
+    
     namespace prism {
         class Program : public LocatedInformation {
         public:
@@ -550,6 +554,11 @@ namespace storm {
             uint_fast64_t numberOfActions() const;
 
             uint_fast64_t largestActionIndex() const;
+            
+            /*!
+             * Converts the PRISM model into an equivalent JANI model.
+             */
+            storm::jani::Model toJani() const;
             
         private:
             /*!
