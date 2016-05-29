@@ -11,8 +11,16 @@ namespace storm {
             return lowerBound;
         }
         
+        void BoundedIntegerVariable::setLowerBound(storm::expressions::Expression const& expression) {
+            this->lowerBound = expression;
+        }
+        
         storm::expressions::Expression const& BoundedIntegerVariable::getUpperBound() const {
             return upperBound;
+        }
+        
+        void BoundedIntegerVariable::setUpperBound(storm::expressions::Expression const& expression) {
+            this->upperBound = expression;
         }
         
     }

@@ -21,6 +21,11 @@ namespace storm {
              */
             void addEdge(Edge const& edge);
             
+            /*!
+             * Retrieves whether the set of edges is empty.
+             */
+            bool empty() const;
+            
             // Methods to get an iterator to the edges.
             iterator begin();
             iterator end();

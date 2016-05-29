@@ -7,6 +7,132 @@
 namespace storm {
     namespace jani {
         
+        namespace detail {
+            EdgeIterator::EdgeIterator(Automaton& automaton, outer_iter out_it, outer_iter out_ite, inner_iter in_it) : automaton(automaton), out_it(out_it), out_ite(out_ite), in_it(in_it) {
+                // Intentionally left empty.
+            }
+            
+            EdgeIterator& EdgeIterator::operator++() {
+                incrementIterator();
+                return *this;
+            }
+            
+            EdgeIterator& EdgeIterator::operator++(int) {
+                incrementIterator();
+                return *this;
+            }
+            
+            Edge& EdgeIterator::operator*() {
+                return *in_it;
+            }
+            
+            bool EdgeIterator::operator==(EdgeIterator const& other) const {
+                return this->out_it == other.out_it && this->in_it == other.in_it;
+            }
+            
+            bool EdgeIterator::operator!=(EdgeIterator const& other) const {
+                return !(*this == other);
+            }
+            
+            void EdgeIterator::incrementIterator() {
+                ++in_it;
+                
+                // If the inner iterator has reached its end move it to the beginning of the next outer element.
+                if (in_it == out_it->end()) {
+                    ++out_it;
+                    while (out_it != out_ite && out_it->empty()) {
+                        ++out_it;
+                        in_it = out_it->end();
+                    }
+                    if (out_it != out_ite) {
+                        in_it = out_it->begin();
+                    }
+                }
+            }
+            
+            ConstEdgeIterator::ConstEdgeIterator(Automaton const& automaton, outer_iter out_it, outer_iter out_ite, inner_iter in_it) : automaton(automaton), out_it(out_it), out_ite(out_ite), in_it(in_it) {
+                // Intentionally left empty.
+            }
+            
+            ConstEdgeIterator& ConstEdgeIterator::operator++() {
+                incrementIterator();
+                return *this;
+            }
+            
+            ConstEdgeIterator& ConstEdgeIterator::operator++(int) {
+                incrementIterator();
+                return *this;
+            }
+            
+            Edge const& ConstEdgeIterator::operator*() const {
+                return *in_it;
+            }
+            
+            bool ConstEdgeIterator::operator==(ConstEdgeIterator const& other) const {
+                return this->out_it == other.out_it && this->in_it == other.in_it;
+            }
+            
+            bool ConstEdgeIterator::operator!=(ConstEdgeIterator const& other) const {
+                return !(*this == other);
+            }
+            
+            void ConstEdgeIterator::incrementIterator() {
+                ++in_it;
+                
+                // If the inner iterator has reached its end move it to the beginning of the next outer element.
+                if (in_it == out_it->end()) {
+                    ++out_it;
+                    while (out_it != out_ite && out_it->empty()) {
+                        ++out_it;
+                        in_it = out_it->end();
+                    }
+                    if (out_it != out_ite) {
+                        in_it = out_it->begin();
+                    }
+                }
+            }
+            
+            Edges::Edges(Automaton& automaton) : automaton(automaton) {
+                // Intentionally left empty.
+            }
+            
+            EdgeIterator Edges::begin() {
+                auto outer = automaton.edges.begin();
+                while (outer != automaton.edges.end() && outer->empty()) {
+                    ++outer;
+                }
+                if (outer == automaton.edges.end()) {
+                    return end();
+                } else {
+                    return EdgeIterator(automaton, outer, automaton.edges.end(), outer->begin());
+                }
+            }
+            
+            EdgeIterator Edges::end() {
+                return EdgeIterator(automaton, automaton.edges.end(), automaton.edges.end(), automaton.edges.back().end());
+            }
+            
+            ConstEdges::ConstEdges(Automaton const& automaton) : automaton(automaton) {
+                // Intentionally left empty.
+            }
+            
+            ConstEdgeIterator ConstEdges::begin() const {
+                auto outer = automaton.edges.begin();
+                while (outer != automaton.edges.end() && outer->empty()) {
+                    ++outer;
+                }
+                if (outer == automaton.edges.end()) {
+                    return end();
+                } else {
+                    return ConstEdgeIterator(automaton, outer, automaton.edges.end(), outer->begin());
+                }
+            }
+            
+            ConstEdgeIterator ConstEdges::end() const {
+                return ConstEdgeIterator(automaton, automaton.edges.end(), automaton.edges.end(), automaton.edges.back().end());
+            }
+        }
+        
         Automaton::Automaton(std::string const& name) : name(name) {
             // Intentionally left empty.
         }
@@ -26,7 +152,11 @@ namespace storm {
         void Automaton::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
             variables.addUnboundedIntegerVariable(variable);
         }
-        
+
+        VariableSet& Automaton::getVariables() {
+            return variables;
+        }
+
         VariableSet const& Automaton::getVariables() const {
             return variables;
         }
@@ -88,6 +218,14 @@ namespace storm {
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationId() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationId() << "'.");
             edges[edge.getSourceLocationId()].addEdge(edge);
+        }
+        
+        Automaton::Edges Automaton::getEdges() {
+            return Edges(*this);
+        }
+        
+        Automaton::ConstEdges Automaton::getEdges() const {
+            return ConstEdges(*this);
         }
         
         uint64_t Automaton::getNumberOfLocations() const {

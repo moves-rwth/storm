@@ -11,8 +11,122 @@
 namespace storm {
     namespace jani {
 
+        class Automaton;
+        
+        namespace detail {
+            class EdgeIterator {
+            private:
+                typedef std::vector<EdgeSet>::iterator outer_iter;
+                typedef EdgeSet::iterator inner_iter;
+                
+            public:
+                /*!
+                 * Creates an iterator over all edges.
+                 */
+                EdgeIterator(Automaton& automaton, outer_iter out_it, outer_iter out_ite, inner_iter in_it);
+                
+                // Methods to advance the iterator.
+                EdgeIterator& operator++();
+                EdgeIterator& operator++(int);
+                
+                Edge& operator*();
+                
+                bool operator==(EdgeIterator const& other) const;
+                bool operator!=(EdgeIterator const& other) const;
+                
+            private:
+                // Moves the iterator to the next position.
+                void incrementIterator();
+                
+                // The underlying automaton.
+                Automaton& automaton;
+                
+                // The current iterator positions.
+                outer_iter out_it;
+                outer_iter out_ite;
+                inner_iter in_it;
+            };
+            
+            class ConstEdgeIterator {
+            private:
+                typedef std::vector<EdgeSet>::const_iterator outer_iter;
+                typedef EdgeSet::const_iterator inner_iter;
+                
+            public:
+                /*!
+                 * Creates an iterator over all edges.
+                 */
+                ConstEdgeIterator(Automaton const& automaton, outer_iter out_it, outer_iter out_ite, inner_iter in_it);
+                
+                // Methods to advance the iterator.
+                ConstEdgeIterator& operator++();
+                ConstEdgeIterator& operator++(int);
+                
+                Edge const& operator*() const;
+                
+                bool operator==(ConstEdgeIterator const& other) const;
+                bool operator!=(ConstEdgeIterator const& other) const;
+                
+            private:
+                // Moves the iterator to the next position.
+                void incrementIterator();
+                
+                // The underlying automaton.
+                Automaton const& automaton;
+                
+                // The current iterator positions.
+                outer_iter out_it;
+                outer_iter out_ite;
+                inner_iter in_it;
+            };
+            
+            class Edges {
+            public:
+                Edges(Automaton& automaton);
+                
+                /*!
+                 * Retrieves an iterator to all edges of the automaton.
+                 */
+                EdgeIterator begin();
+                
+                /*!
+                 * Retrieves the end iterator to edges of the automaton.
+                 */
+                EdgeIterator end();
+                
+            private:
+                // The underlying automaton.
+                Automaton& automaton;
+            };
+            
+            class ConstEdges {
+            public:
+                ConstEdges(Automaton const& automaton);
+                
+                /*!
+                 * Retrieves an iterator to all edges of the automaton.
+                 */
+                ConstEdgeIterator begin() const;
+                
+                /*!
+                 * Retrieves the end iterator to edges of the automaton.
+                 */
+                ConstEdgeIterator end() const;
+                
+            private:
+                // The underlying automaton.
+                Automaton const& automaton;
+            };
+        }
+        
         class Automaton {
         public:
+            friend class detail::Edges;
+            friend class detail::ConstEdges;
+            
+            typedef detail::Edges Edges;
+            typedef detail::ConstEdges ConstEdges;
+            
             /*!
              * Creates an empty automaton.
              */
@@ -37,7 +151,12 @@ namespace storm {
              * Adds the given unbounded integer variable to this automaton.
              */
             void addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
-            
+
+            /*!
+             * Retrieves the variables of this automaton.
+             */
+            VariableSet& getVariables();
+
             /*!
              * Retrieves the variables of this automaton.
              */
@@ -106,6 +225,16 @@ namespace storm {
              */
             void addEdge(Edge const& edge);
             
+            /*!
+             * Retrieves the edges of the automaton.
+             */
+            Edges getEdges();
+
+            /*!
+             * Retrieves the edges of the automaton.
+             */
+            ConstEdges getEdges() const;
+
             /*!
              * Retrieves the number of locations.
              */

@@ -23,11 +23,23 @@ namespace storm {
             return rate.get();
         }
         
+        void Edge::setRate(storm::expressions::Expression const& rate) {
+            this->rate = rate;
+        }
+        
         storm::expressions::Expression const& Edge::getGuard() const {
             return guard;
         }
         
+        void Edge::setGuard(storm::expressions::Expression const& guard) {
+            this->guard = guard;
+        }
+        
         std::vector<EdgeDestination> const& Edge::getDestinations() const {
+            return destinations;
+        }
+        
+        std::vector<EdgeDestination>& Edge::getDestinations() {
             return destinations;
         }
         

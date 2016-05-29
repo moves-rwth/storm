@@ -52,6 +52,16 @@ namespace storm {
              */
             bool isRealConstant() const;
             
+            /*!
+             * Retrieves the expression variable associated with this constant.
+             */
+            storm::expressions::Variable const& getExpressionVariable() const;
+            
+            /*!
+             * Retrieves the expression that defines this constant (if any).
+             */
+            storm::expressions::Expression const& getExpression() const;
+            
         private:
             // The name of the constant.
             std::string name;

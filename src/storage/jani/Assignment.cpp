@@ -15,6 +15,10 @@ namespace storm  {
             return expression;
         }
         
+        void Assignment::setAssignedExpression(storm::expressions::Expression const& expression) {
+            this->expression = expression;
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Assignment const& assignment) {
             stream << assignment.getExpressionVariable().getName() << " := " << assignment.getAssignedExpression();
             return stream;

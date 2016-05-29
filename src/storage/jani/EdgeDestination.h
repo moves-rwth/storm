@@ -38,6 +38,16 @@ namespace storm {
             storm::expressions::Expression const& getProbability() const;
             
             /*!
+             * Sets a new probability for this edge destination.
+             */
+            void setProbability(storm::expressions::Expression const& probability);
+
+            /*!
+             * Retrieves the assignments to make when choosing this destination.
+             */
+            std::vector<Assignment>& getAssignments();
+
+            /*!
              * Retrieves the assignments to make when choosing this destination.
              */
             std::vector<Assignment> const& getAssignments() const;

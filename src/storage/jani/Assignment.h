@@ -22,6 +22,11 @@ namespace storm {
              * Retrieves the expression whose value is assigned to the target variable.
              */
             storm::expressions::Expression const& getAssignedExpression() const;
+            
+            /*!
+             * Sets a new expression that is assigned to the target variable.
+             */
+            void setAssignedExpression(storm::expressions::Expression const& expression);
 
             friend std::ostream& operator<<(std::ostream& stream, Assignment const& assignment);
             

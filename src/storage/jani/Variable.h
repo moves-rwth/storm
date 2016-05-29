@@ -32,6 +32,11 @@ namespace storm {
             storm::expressions::Expression const& getInitialValue() const;
             
             /*!
+             * Sets a new value as the initial value of the variable.
+             */
+            void setInitialValue(storm::expressions::Expression const& initialValue);
+            
+            /*!
              * Retrieves whether the variable has an initial value.
              */
             bool hasInitialValue() const;

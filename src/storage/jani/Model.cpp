@@ -8,6 +8,7 @@
 
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace jani {
@@ -72,6 +73,24 @@ namespace storm {
             return constants.size() - 1;
         }
         
+        bool Model::hasConstant(std::string const& name) const {
+            return constantToIndex.find(name) != constantToIndex.end();
+        }
+        
+        Constant const& Model::getConstant(std::string const& name) const {
+            auto it = constantToIndex.find(name);
+            STORM_LOG_THROW(it != constantToIndex.end(), storm::exceptions::WrongFormatException, "Unable to retrieve unknown constant '" << name << "'.");
+            return constants[it->second];
+        }
+        
+        std::vector<Constant> const& Model::getConstants() const {
+            return constants;
+        }
+
+        std::vector<Constant>& Model::getConstants() {
+            return constants;
+        }
+
         void Model::addBooleanVariable(BooleanVariable const& variable) {
             globalVariables.addBooleanVariable(variable);
         }
@@ -83,8 +102,12 @@ namespace storm {
         void Model::addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable) {
             globalVariables.addUnboundedIntegerVariable(variable);
         }
-        
-        VariableSet const& Model::getVariables() const {
+
+        VariableSet& Model::getGlobalVariables() {
+            return globalVariables;
+        }
+
+        VariableSet const& Model::getGlobalVariables() const {
             return globalVariables;
         }
         
@@ -102,6 +125,14 @@ namespace storm {
             automatonToIndex.emplace(automaton.getName(), automata.size());
             automata.push_back(automaton);
             return automata.size() - 1;
+        }
+        
+        std::vector<Automaton>& Model::getAutomata() {
+            return automata;
+        }
+        
+        std::vector<Automaton> const& Model::getAutomata() const {
+            return automata;
         }
         
         std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
@@ -126,6 +157,109 @@ namespace storm {
                     result.insert(entry.first);
                 }
             }
+            return result;
+        }
+        
+        Model Model::defineUndefinedConstants(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
+            Model result(*this);
+            
+            std::set<storm::expressions::Variable> definedUndefinedConstants;
+            for (auto& constant : result.constants) {
+                // If the constant is already defined, we need to replace the appearances of undefined constants in its
+                // defining expression
+                if (constant.isDefined()) {
+                    // Make sure we are not trying to define an already defined constant.
+                    STORM_LOG_THROW(constantDefinitions.find(constant.getExpressionVariable()) == constantDefinitions.end(), storm::exceptions::InvalidOperationException, "Illegally defining already defined constant '" << constant.getName() << "'.");
+                } else {
+                    auto const& variableExpressionPair = constantDefinitions.find(constant.getExpressionVariable());
+                    
+                    if (variableExpressionPair != constantDefinitions.end()) {
+                        // If we need to define it, we add it to the defined constants and assign it the appropriate expression.
+                        definedUndefinedConstants.insert(constant.getExpressionVariable());
+                        
+                        // Make sure the type of the constant is correct.
+                        STORM_LOG_THROW(variableExpressionPair->second.getType() == constant.getType(), storm::exceptions::InvalidOperationException, "Illegal type of expression defining constant '" << constant.getName() << "'.");
+                        
+                        // Now define the constant.
+                        constant.define(variableExpressionPair->second);
+                    }
+                }
+            }
+            
+            // As a sanity check, we make sure that the given mapping does not contain any definitions for identifiers
+            // that are not undefined constants.
+            for (auto const& constantExpressionPair : constantDefinitions) {
+                STORM_LOG_THROW(definedUndefinedConstants.find(constantExpressionPair.first) != definedUndefinedConstants.end(), storm::exceptions::InvalidOperationException, "Unable to define non-existant constant '" << constantExpressionPair.first.getName() << "'.");
+            }
+            return result;
+        }
+        
+        bool Model::hasUndefinedConstants() const {
+            for (auto const& constant : constants) {
+                if (!constant.isDefined()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        std::vector<std::reference_wrapper<Constant const>> Model::getUndefinedConstants() const {
+            std::vector<std::reference_wrapper<Constant const>> result;
+            
+            for (auto const& constant : constants) {
+                if (!constant.isDefined()) {
+                    result.push_back(constant);
+                }
+            }
+            
+            return result;
+        }
+        
+        Model Model::substituteConstants() const {
+            Model result(*this);
+
+            // Gather all defining expressions of constants.
+            std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
+            for (auto& constant : result.getConstants()) {
+                if (constant.isDefined()) {
+                    constant.define(constant.getExpression().substitute(constantSubstitution));
+                    constantSubstitution[constant.getExpressionVariable()] = constant.getExpression();
+                }
+            }
+            
+            // Substitute constants in all global variables.
+            for (auto& variable : result.getGlobalVariables()) {
+                variable.setInitialValue(variable.getInitialValue().substitute(constantSubstitution));
+            }
+            for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {
+                variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
+                variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
+            }
+            
+            // Substitute constants in variables of automata and their edges.
+            for (auto& automaton : result.getAutomata()) {
+                for (auto& variable : automaton.getVariables()) {
+                    variable.setInitialValue(variable.getInitialValue().substitute(constantSubstitution));
+                }
+                for (auto& variable : automaton.getVariables().getBoundedIntegerVariables()) {
+                    variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
+                    variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
+                }
+                
+                for (auto& edge : automaton.getEdges()) {
+                    edge.setGuard(edge.getGuard().substitute(constantSubstitution));
+                    if (edge.hasRate()) {
+                        edge.setRate(edge.getRate().substitute(constantSubstitution));
+                    }
+                    for (auto& destination : edge.getDestinations()) {
+                        destination.setProbability(destination.getProbability().substitute(constantSubstitution));
+                        for (auto& assignment : destination.getAssignments()) {
+                            assignment.setAssignedExpression(assignment.getAssignedExpression().substitute(constantSubstitution));
+                        }
+                    }
+                }
+            }
+            
             return result;
         }
         

@@ -25,5 +25,9 @@ namespace storm {
             return initialValue;
         }
         
+        void Variable::setInitialValue(storm::expressions::Expression const& initialValue) {
+            this->initialValue = initialValue;
+        }
+        
     }
 }

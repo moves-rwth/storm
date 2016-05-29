@@ -78,6 +78,26 @@ namespace storm {
             uint64_t addConstant(Constant const& constant);
             
             /*!
+             * Retrieves whether the model has a constant with the given name.
+             */
+            bool hasConstant(std::string const& name) const;
+            
+            /*!
+             * Retrieves the constants of the model.
+             */
+            std::vector<Constant> const& getConstants() const;
+
+            /*!
+             * Retrieves the constants of the model.
+             */
+            std::vector<Constant>& getConstants();
+
+            /*!
+             * Retrieves the constant with the given name (if any).
+             */
+            Constant const& getConstant(std::string const& name) const;
+            
+            /*!
              * Adds the given boolean variable to this model.
              */
             void addBooleanVariable(BooleanVariable const& variable);
@@ -91,11 +111,16 @@ namespace storm {
              * Adds the given unbounded integer variable to this model.
              */
             void addUnboundedIntegerVariable(UnboundedIntegerVariable const& variable);
-            
+
             /*!
              * Retrieves the variables of this automaton.
              */
-            VariableSet const& getVariables() const;
+            VariableSet& getGlobalVariables();
+
+            /*!
+             * Retrieves the variables of this automaton.
+             */
+            VariableSet const& getGlobalVariables() const;
             
             /*!
              * Retrieves the manager responsible for the expressions in the JANI model.
@@ -112,6 +137,16 @@ namespace storm {
              */
             uint64_t addAutomaton(Automaton const& automaton);
             
+            /*!
+             * Retrieves the automata of the model.
+             */
+            std::vector<Automaton>& getAutomata();
+
+            /*!
+             * Retrieves the automata of the model.
+             */
+            std::vector<Automaton> const& getAutomata() const;
+
             /*!
              * Sets the system composition expression of the JANI model.
              */
@@ -136,6 +171,28 @@ namespace storm {
              * Retrieves the name of the silent action.
              */
             std::string const& getSilentActionName() const;
+            
+            /*!
+             * Defines the undefined constants of the model by the given expressions. The original model is not modified,
+             * but instead a new model is created.
+             */
+            Model defineUndefinedConstants(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;
+            
+            /*!
+             * Retrieves whether the model still has undefined constants.
+             */
+            bool hasUndefinedConstants() const;
+            
+            /*!
+             * Retrieves all undefined constants of the model.
+             */
+            std::vector<std::reference_wrapper<Constant const>> getUndefinedConstants() const;
+            
+            /*!
+             * Substitutes all constants in all expressions of the model. The original model is not modified, but
+             * instead a new model is created.
+             */
+            Model substituteConstants() const;
             
             /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.

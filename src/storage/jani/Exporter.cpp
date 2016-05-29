@@ -227,7 +227,7 @@ namespace storm {
             
             appendIndent(out, indent + 1);
             appendField(out, "ref");
-            storm::jani::Variable const& variable = model.getVariables().hasVariable(assignment.getExpressionVariable()) ? model.getVariables().getVariable(assignment.getExpressionVariable()) : automaton.getVariables().getVariable(assignment.getExpressionVariable());
+            storm::jani::Variable const& variable = model.getGlobalVariables().hasVariable(assignment.getExpressionVariable()) ? model.getGlobalVariables().getVariable(assignment.getExpressionVariable()) : automaton.getVariables().getVariable(assignment.getExpressionVariable());
             appendValue(out, variable.getName());
             out << ",";
             clearLine(out);
@@ -399,7 +399,7 @@ namespace storm {
             clearLine(out);
             appendActions(out, model, 1);
             clearLine(out);
-            appendVariables(out, model.getVariables(), 1);
+            appendVariables(out, model.getGlobalVariables(), 1);
             clearLine(out);
             appendAutomata(out, model, 1);
             clearLine(out);

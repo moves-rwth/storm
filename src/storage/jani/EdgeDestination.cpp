@@ -30,6 +30,14 @@ namespace storm {
             return probability;
         }
         
+        void EdgeDestination::setProbability(storm::expressions::Expression const& probability) {
+            this->probability = probability;
+        }
+        
+        std::vector<Assignment>& EdgeDestination::getAssignments() {
+            return assignments;
+        }
+        
         std::vector<Assignment> const& EdgeDestination::getAssignments() const {
             return assignments;
         }

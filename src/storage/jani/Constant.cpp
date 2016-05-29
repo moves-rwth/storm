@@ -35,5 +35,13 @@ namespace storm {
             return getType().isRationalType();
         }
         
+        storm::expressions::Variable const& Constant::getExpressionVariable() const {
+            return variable;
+        }
+        
+        storm::expressions::Expression const& Constant::getExpression() const {
+            return expression.get();
+        }
+        
     }
 }

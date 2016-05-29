@@ -27,5 +27,9 @@ namespace storm {
             edges.push_back(edge);
         }
         
+        bool EdgeSet::empty() const {
+            return edges.empty();
+        }
+        
     }
 }

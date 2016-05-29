@@ -30,6 +30,11 @@ namespace storm {
              * Retrieves the rate of this edge. Note that calling this is only valid if the edge has an associated rate.
              */
             storm::expressions::Expression const& getRate() const;
+
+            /*!
+             * Sets a new rate for this edge.
+             */
+            void setRate(storm::expressions::Expression const& rate);
             
             /*!
              * Retrieves the guard of this edge.
@@ -37,9 +42,19 @@ namespace storm {
             storm::expressions::Expression const& getGuard() const;
             
             /*!
+             * Sets a new guard for this edge.
+             */
+            void setGuard(storm::expressions::Expression const& guard);
+            
+            /*!
              * Retrieves the destinations of this edge.
              */
             std::vector<EdgeDestination> const& getDestinations() const;
+
+            /*!
+             * Retrieves the destinations of this edge.
+             */
+            std::vector<EdgeDestination>& getDestinations();
             
             /*!
              * Adds the given destination to the destinations of this edge.

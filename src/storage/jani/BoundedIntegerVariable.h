@@ -19,9 +19,19 @@ namespace storm {
             storm::expressions::Expression const& getLowerBound() const;
 
             /*!
+             * Sets a new lower bound of the variable.
+             */
+            void setLowerBound(storm::expressions::Expression const& expression);
+            
+            /*!
              * Retrieves the expression defining the upper bound of the variable.
              */
             storm::expressions::Expression const& getUpperBound() const;
+
+            /*!
+             * Sets a new upper bound of the variable.
+             */
+            void setUpperBound(storm::expressions::Expression const& expression);
 
         private:
             // The expression defining the lower bound of the variable.
