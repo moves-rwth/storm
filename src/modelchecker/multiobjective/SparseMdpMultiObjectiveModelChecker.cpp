@@ -35,7 +35,12 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseMdpMultiObjectiveModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula> const& checkTask) {
             
             helper::SparseMultiObjectiveModelCheckerInformation<SparseMdpModelType> info = helper::SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocess(checkTask.getFormula(), this->getModel());
-          
+            
+            std::cout << std::endl;
+            info.printInformationToStream(std::cout);
+            
+            
+            
             return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult());
         }
         

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <memory>
+#include <iomanip>
 
 #include "src/logic/Formulas.h"
 
@@ -13,8 +14,7 @@ namespace storm {
         namespace helper {
             
             template <class SparseModelType>
-            class SparseMultiObjectiveModelCheckerInformation {
-            public :
+            struct SparseMultiObjectiveModelCheckerInformation {
                 
                 typedef typename SparseModelType::ValueType ValueType;
                 typedef typename SparseModelType::RewardModelType RewardModelType;
@@ -25,6 +25,27 @@ namespace storm {
                     boost::optional<double> threshold;
                     std::string rewardModelName;
                     boost::optional<uint_fast64_t> stepBound;
+                    
+                    void printInformationToStream(std::ostream& out) const {
+                        out << std::setw(30) << originalFormula->toString();
+                        out << " \t(";
+                        out << (originalFormulaMinimizes ? "minimizes, \t" : "maximizes, \t");
+                        out << "intern threshold:";
+                        if(threshold){
+                            out << std::setw(5) << (*threshold) << ",";
+                        } else {
+                            out << " none,";
+                        }
+                        out << " \t";
+                        out << "intern reward model: " << std::setw(10) << rewardModelName << ", \t";
+                        out << "step bound:";
+                        if(stepBound) {
+                            out << std::setw(5) << (*stepBound);
+                        } else {
+                            out << " none";
+                        }
+                        out << ")" << std::endl;
+                     }
                 };
                 
                 
@@ -36,53 +57,33 @@ namespace storm {
                     //Intentionally left empty
                 }
                 
-                void setModel(SparseModelType&& newModel){
-                    model = newModel;
-                }
-                
-                void setModel(SparseModelType const& newModel){
-                    model = newModel;
-                }
-                
-                SparseModelType const& getModel() const {
-                    return model;
-                }
-                
-                void setNewToOldStateIndexMapping(std::vector<uint_fast64_t> const& newMapping){
-                    newToOldStateIndexMapping = newMapping;
-                }
-                
-                void setNewToOldStateIndexMapping(std::vector<uint_fast64_t>&& newMapping){
-                    newToOldStateIndexMapping = newMapping;
-                }
-                
-                std::vector<uint_fast64_t>const& getNewToOldStateIndexMapping() const{
-                    return newToOldStateIndexMapping;
-                }
-                
-                bool areNegativeRewardsConsidered() {
-                    return negativeRewardsConsidered;
-                }
-                
-                void setNegativeRewardsConsidered(bool value){
-                    negativeRewardsConsidered = value;
-                }
-                
-                std::vector<ObjectiveInformation>& getObjectives() {
-                    return objectives;
-                }
-                std::vector<ObjectiveInformation>const& getObjectives() const {
-                    return objectives;
-                }
-                
-                
-            private:
                 SparseModelType model;
                 std::vector<uint_fast64_t> newToOldStateIndexMapping;
-                bool negativeRewardsConsidered;
+                bool negatedRewardsConsidered;
                 
                 std::vector<ObjectiveInformation> objectives;
                 
+                void printInformationToStream(std::ostream& out) {
+                    out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
+                    out << "                                                   Multi-objective Model Checker Information                                           " << std::endl;
+                    out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
+                    out << std::endl;
+                    out << "Objectives:" << std::endl;
+                    out << "--------------------------------------------------------------" << std::endl;
+                    for (auto const& obj : objectives) {
+                        obj.printInformationToStream(out);
+                    }
+                    out << "--------------------------------------------------------------" << std::endl;
+                    out << std::endl;
+                    out << "Preprocessed Model Information:" << std::endl;
+                    model.printModelInformationToStream(out);
+                    out << std::endl;
+                    if(negatedRewardsConsidered){
+                        out << "The rewards in the preprocessed model are negated" << std::endl;
+                        out << std::endl;
+                    }
+                    out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
+                }
                 
                 
             };

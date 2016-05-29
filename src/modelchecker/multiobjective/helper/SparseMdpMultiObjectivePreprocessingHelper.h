@@ -3,7 +3,6 @@
 
 #include "src/logic/Formulas.h"
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveModelCheckerInformation.h"
-#include "src/storage/BitVector.h"
 
 namespace storm {
     namespace modelchecker {
@@ -30,28 +29,38 @@ namespace storm {
                 
             private:
                 
-                static bool gatherObjectiveInformation(storm::logic::MultiObjectiveFormula const& formula, Information& info);
-                static bool setStepBoundOfObjective(typename Information::ObjectiveInformation& currentObjective);
-                static bool setWhetherNegativeRewardsAreConsidered(Information& info);
+                /*!
+                 * Inserts the information regarding the given formula (i.e. objective) into info.objectives
+                 *
+                 * @param formula OperatorFormula representing the objective
+                 * @param the information collected so far
+                 */
+                static void addObjective(std::shared_ptr<storm::logic::Formula const> const& formula, Information& info);
+                
+                /*!
+                 * Sets the timeBound for the given objective
+                 */
+                static void setStepBoundOfObjective(typename Information::ObjectiveInformation& currentObjective);
+                
+                /*!
+                 * Sets whether we should consider negated rewards
+                 */
+                static void setWhetherNegatedRewardsAreConsidered(Information& info);
                 
                 /*!
                  * Apply the neccessary preprocessing for the given formula.
                  * @param formula the current (sub)formula
-                 * @param info the current state of the preprocessing.
-                 * @return true iff there was no error
+                 * @param info the information collected so far
+                 * @param currentObjective the currently considered objective. The given formula should be a a (sub)formula of this objective
+                 * @param optionalRewardModelName the reward model name that is considered for the formula (if available)
                  */
-                // State formulas (will transform the formula and the reward model)
-                static bool preprocess(storm::logic::ProbabilityOperatorFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
-                static bool preprocess(storm::logic::RewardOperatorFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
-                
-                // Path formulas (will transform the model)
-                static bool preprocess(storm::logic::UntilFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
-                static bool preprocess(storm::logic::BoundedUntilFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
-                static bool preprocess(storm::logic::GloballyFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
-                static bool preprocess(storm::logic::EventuallyFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName = boost::none);
-                static bool preprocess(storm::logic::CumulativeRewardFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName = boost::none);
-                
-                static storm::storage::BitVector checkPropositionalFormula(storm::logic::Formula propFormula, SparseMdpModelType const& model);
+                static void preprocessFormula(storm::logic::ProbabilityOperatorFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
+                static void preprocessFormula(storm::logic::RewardOperatorFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
+                static void preprocessFormula(storm::logic::UntilFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
+                static void preprocessFormula(storm::logic::BoundedUntilFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
+                static void preprocessFormula(storm::logic::GloballyFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective);
+                static void preprocessFormula(storm::logic::EventuallyFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName = boost::none);
+                static void preprocessFormula(storm::logic::CumulativeRewardFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName = boost::none);
                 
             };
             
