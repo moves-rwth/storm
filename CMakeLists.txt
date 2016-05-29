@@ -27,6 +27,8 @@ option(STORM_USE_COTIRE "Sets whether Cotire should be used (for building precom
 option(LINK_LIBCXXABI "Sets whether libc++abi should be linked." OFF)
 option(USE_LIBCXX "Sets whether the standard library is libc++." OFF)
 option(USE_CARL "Sets whether carl should be included." ON)
+option(USE_SMTRAT "Sets whether SMT-RAT should be included." OFF)
+option(USE_HYPRO "Sets whether HyPro should be included." OFF)
 option(USE_XERCES "Sets whether xerces should be used." OFF)
 option(FORCE_COLOR "Force color output" OFF)
 option(STORM_PYTHON "Builds the API for Python" OFF)
@@ -377,16 +379,38 @@ endif()
 ##
 #############################################################
 
-# No find routine yet
-#find_package(smtrat QUIET)
-# Not yet supported
-set(smtrat_FOUND OFF)
 set(STORM_HAVE_SMTRAT OFF)
-if(smtrat_FOUND)
-	set(STORM_HAVE_SMTRAT ON)
-	message(STATUS "StoRM - Linking with smtrat.")
-    include_directories("${smtrat_INCLUDE_DIR}")
-    list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
+if(USE_SMTRAT)
+	find_package(smtrat QUIET REQUIRED)
+	if(smtrat_FOUND)
+		set(STORM_HAVE_SMTRAT ON)
+		message(STATUS "StoRM - Linking with smtrat.")
+    	include_directories("${smtrat_INCLUDE_DIR}")
+    	list(APPEND STORM_LINK_LIBRARIES ${smtrat_LIBRARIES})
+	else()
+		message(FATAL_ERROR "StoRM - SMT-RAT was requested but not found")
+	endif()
+endif()
+
+
+#############################################################
+##
+##      HyPro
+##
+#############################################################
+
+set(STORM_HAVE_HYPRO OFF)
+if(USE_HYPRO)
+	find_package(hypro QUIET REQUIRED)
+	if(hypro_FOUND)
+		set(STORM_HAVE_HYPRO ON)
+		message(STATUS "StoRM - Linking with hypro ${hypro_VERSION_STRING}")
+		include_directories("${hypro_INCLUDE_DIR}")
+		link_directories( /Users/tim/hypro/build )
+		list(APPEND STORM_LINK_LIBRARIES ${hypro_LIBRARIES})
+	else()
+		message(FATAL_ERROR "StoRM - HyPro was requested but not found")
+	endif()
 endif()
 
 #############################################################
