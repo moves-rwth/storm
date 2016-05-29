@@ -195,7 +195,6 @@ namespace storm {
                 if(info.negatedRewardsConsidered){
                     storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
                 }
-                std::cout << objectiveRewards.size() << "==" << info.model.getTransitionMatrix().getRowCount() << "!=" << info.model.getNumberOfStates() << std::endl;
                 info.model.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
             }
             

@@ -347,6 +347,35 @@ namespace storm {
             }
             
             /*!
+             * Converts the numbers in the given vector to the target representation
+             *
+             * @param target The target vector in which the resulting numbers are written.
+             * @param source The source vector whose numbers are converted
+             */
+            template<class SourceType, class TargetType>
+            void convertVector(std::vector<SourceType> const& source, std::vector<TargetType>& target) {
+                applyPointwise<SourceType, TargetType>(source, target, [&] (SourceType const& argument) -> TargetType { return convertNumber<TargetType>(argument); });
+            }
+            
+            /*!
+             * Multiplies the two given vectors (scalar product) and returns the result
+             *
+             * @param firstOperand The first operand.
+             * @param secondOperand The second operand
+             * @return firstOperand*secondOperand
+             */
+            template<class T>
+            T multiplyVectors(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand) {
+                T res = storm::utility::zero<T>();
+                auto it1 = firstOperand.begin();
+                auto it2 = secondOperand.begin();
+                for(; it1<firstOperand.end(); ++it1, ++it2){
+                    res += (*it1) * (*it2);
+                }
+                return res;
+            }
+            
+            /*!
              * Retrieves a bit vector containing all the indices for which the value at this position makes the given
              * function evaluate to true.
              *

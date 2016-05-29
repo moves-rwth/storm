@@ -47,6 +47,7 @@ file(GLOB STORM_STORAGE_DFT_ELEMENTS_FILES ${PROJECT_SOURCE_DIR}/src/storage/dft
 file(GLOB_RECURSE STORM_STORAGE_DD_CUDD_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/cudd/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_DD_SYLVAN_FILES ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.h ${PROJECT_SOURCE_DIR}/src/storage/dd/sylvan/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_EXPRESSIONS_FILES ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.h ${PROJECT_SOURCE_DIR}/src/storage/expressions/*.cpp)
+file(GLOB_RECURSE STORM_STORAGE_GEOMETRY_FILES ${PROJECT_SOURCE_DIR}/src/storage/geometry/*.h ${PROJECT_SOURCE_DIR}/src/storage/geometry/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_PRISM_FILES ${PROJECT_SOURCE_DIR}/src/storage/prism/*.h ${PROJECT_SOURCE_DIR}/src/storage/prism/*.cpp)
 file(GLOB_RECURSE STORM_STORAGE_SPARSE_FILES ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.h ${PROJECT_SOURCE_DIR}/src/storage/sparse/*.cpp)
 file(GLOB_RECURSE STORM_UTILITY_FILES ${PROJECT_SOURCE_DIR}/src/utility/*.h ${PROJECT_SOURCE_DIR}/src/utility/*.cpp)
@@ -106,6 +107,7 @@ source_group(storage\\prism FILES ${STORM_STORAGE_PRISM_FILES})
 source_group(storage\\sparse FILES ${STORM_STORAGE_SPARSE_FILES})
 source_group(storage\\dft FILES ${STORM_STORAGE_DFT_FILES})
 source_group(storage\\dft\\elements FILES ${STORM_STORAGE_DFT_ELEMENTS_FILES})
+source_group(storage\\geometry FILES ${STORM_STORAGE_GEOMETRY_FILES})
 source_group(utility FILES ${STORM_UTILITY_FILES})
 
 # Add custom additional include or link directories
