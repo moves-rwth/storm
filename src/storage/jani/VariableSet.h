@@ -54,8 +54,8 @@ namespace storm {
                 const_iterator end();
                 
             private:
-                input_iterator it;
-                input_iterator ite;
+                const_input_iterator it;
+                const_input_iterator ite;
             };
         }
         
@@ -64,7 +64,7 @@ namespace storm {
             typedef typename std::vector<std::shared_ptr<Variable>>::iterator input_iterator;
             typedef typename std::vector<std::shared_ptr<Variable>>::const_iterator const_input_iterator;
             typedef boost::transform_iterator<detail::Dereferencer<Variable>, input_iterator> iterator;
-            typedef boost::transform_iterator<detail::Dereferencer<Variable>, const_input_iterator> const_iterator;
+            typedef boost::transform_iterator<detail::Dereferencer<Variable const>, const_input_iterator> const_iterator;
             
             /*!
              * Creates an empty variable set.
