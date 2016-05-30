@@ -13,37 +13,57 @@ namespace storm {
              */
              
             template <typename ValueType>
-            struct HalfSpace {
+            class Halfspace {
                 
-                HalfSpace(std::vector<ValueType> const& normalVector, ValueType const& offset) : normalVector(normalVector), offset(offset)  {
+            public:
+                
+                Halfspace(std::vector<ValueType> const& normalVector, ValueType const& offset) : mNormalVector(normalVector), mOffset(offset)  {
                     //Intentionally left empty
                 }
                 
-                HalfSpace(std::vector<ValueType>&& normalVector, ValueType&& offset) : normalVector(normalVector), offset(offset) {
+                Halfspace(std::vector<ValueType>&& normalVector, ValueType&& offset) : mNormalVector(normalVector), mOffset(offset) {
                     //Intentionally left empty
                 }
                 
                 bool contains(std::vector<ValueType> const& point) {
-                    return storm::utility::vector::multiplyVectors(point, normalVector) <= offset;
+                    return storm::utility::vector::multiplyVectors(point, normalVector()) <= offset();
                 }
 
-                std::vector<ValueType> normalVector;
-                ValueType offset;
-                
                 std::string toString() {
                     std::stringstream stream;
                     stream << "(";
-                    for(auto it = normalVector.begin(); it != normalVector.end(); ++it){
-                        if(it != normalVector.begin()){
+                    for(auto it = normalVector().begin(); it != normalVector().end(); ++it){
+                        if(it != normalVector().begin()){
                             stream << ", ";
                         }
                         stream << *it;
                     }
-                    stream << ") * x <= " << offset;
+                    stream << ") * x <= " << offset();
                     return stream.str();
                 }
                 
-            }
+                std::vector<ValueType> const& normalVector() const {
+                    return mNormalVector;
+                }
+                
+                std::vector<ValueType>& normalVector(){
+                    return mNormalVector;
+                }
+                
+                ValueType const& offset() const {
+                    return mOffset;
+                }
+                
+                ValueType& offset(){
+                    return mOffset;
+                }
+                
+            private:
+                
+                std::vector<ValueType> mNormalVector;
+                ValueType mOffset;
+                
+            };
         }
     }
 }
