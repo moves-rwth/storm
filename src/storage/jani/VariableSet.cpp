@@ -36,12 +36,12 @@ namespace storm {
             
             template<typename VariableType>
             typename ConstVariables<VariableType>::const_iterator ConstVariables<VariableType>::begin() {
-                return boost::make_transform_iterator(it, Dereferencer<VariableType>());
+                return boost::make_transform_iterator(it, Dereferencer<VariableType const>());
             }
             
             template<typename VariableType>
             typename ConstVariables<VariableType>::const_iterator ConstVariables<VariableType>::end() {
-                return boost::make_transform_iterator(ite, Dereferencer<VariableType>());
+                return boost::make_transform_iterator(ite, Dereferencer<VariableType const>());
             }
 
         }
@@ -148,6 +148,21 @@ namespace storm {
         bool VariableSet::containsUnboundedIntegerVariables() const {
             return !unboundedIntegerVariables.empty();
         }
+        
+        template class detail::Dereferencer<Variable>;
+        template class detail::Dereferencer<BooleanVariable>;
+        template class detail::Dereferencer<BoundedIntegerVariable>;
+        template class detail::Dereferencer<UnboundedIntegerVariable>;
+        template class detail::Dereferencer<Variable const>;
+        template class detail::Dereferencer<BooleanVariable const>;
+        template class detail::Dereferencer<BoundedIntegerVariable const>;
+        template class detail::Dereferencer<UnboundedIntegerVariable const>;
+        template class detail::Variables<BooleanVariable>;
+        template class detail::Variables<BoundedIntegerVariable>;
+        template class detail::Variables<UnboundedIntegerVariable>;
+        template class detail::ConstVariables<BooleanVariable>;
+        template class detail::ConstVariables<BoundedIntegerVariable>;
+        template class detail::ConstVariables<UnboundedIntegerVariable>;
 
     }
 }

@@ -130,7 +130,11 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         struct CompositionVariables {
-            CompositionVariables() : manager(std::make_shared<storm::dd::DdManager<Type>>()) {
+            CompositionVariables() : manager(std::make_shared<storm::dd::DdManager<Type>>()),
+            variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
+            rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type>>(manager, variableToRowMetaVariableMap)),
+            variableToColumnMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()),
+            columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type>>(manager, variableToColumnMetaVariableMap)) {
                 // Intentionally left empty.
             }
             
@@ -138,12 +142,12 @@ namespace storm {
             
             // The meta variables for the row encoding.
             std::set<storm::expressions::Variable> rowMetaVariables;
-            std::map<storm::expressions::Variable, storm::expressions::Variable> variableToRowMetaVariableMap;
+            std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToRowMetaVariableMap;
             std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter;
             
             // The meta variables for the column encoding.
             std::set<storm::expressions::Variable> columnMetaVariables;
-            std::map<storm::expressions::Variable, storm::expressions::Variable> variableToColumnMetaVariableMap;
+            std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToColumnMetaVariableMap;
             std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter;
             
             // All pairs of row/column meta variables.
@@ -197,7 +201,7 @@ namespace storm {
             
             boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) override {
                 auto it = automata.find(composition.getAutomatonName());
-                STORM_LOG_THROW(it != automata.end(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition that refers to the same automaton multiple times.");
+                STORM_LOG_THROW(it == automata.end(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition that refers to the automaton '" << composition.getAutomatonName() << "' multiple times.");
                 automata.insert(it, composition.getAutomatonName());
                 return boost::none;
             }
@@ -218,14 +222,16 @@ namespace storm {
                 CompositionVariables<Type, ValueType> result;
                 
                 for (auto const& action : this->model.getActions()) {
-                    std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(action.getName());
-                    result.actionVariables.push_back(variablePair.first);
+                    if (this->model.getActionIndex(action.getName()) != this->model.getSilentActionIndex()) {
+                        std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(action.getName());
+                        result.actionVariables.push_back(variablePair.first);
+                    }
                 }
                 
                 // FIXME: check how many nondeterminism variables we should actually allocate.
                 uint64_t numberOfNondeterminismVariables = this->model.getNumberOfAutomata();
                 for (auto const& automaton : this->model.getAutomata()) {
-                    numberOfNondeterminismVariables *= automaton.getNumberOfEdges();
+                    numberOfNondeterminismVariables += automaton.getNumberOfEdges();
                 }
                 for (uint_fast64_t i = 0; i < numberOfNondeterminismVariables; ++i) {
                     std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("nondet" + std::to_string(i));
@@ -256,12 +262,12 @@ namespace storm {
                     for (auto const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
                         createVariable(variable, result);
                         identity &= result.variableToIdentityMap.at(variable.getExpressionVariable()).toBdd();
-                        range &= result.manager->getRange(result.variableToRowMetaVariableMap.at(variable.getExpressionVariable()));
+                        range &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
                     }
                     for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
                         createVariable(variable, result);
                         identity &= result.variableToIdentityMap.at(variable.getExpressionVariable()).toBdd();
-                        range &= result.manager->getRange(result.variableToRowMetaVariableMap.at(variable.getExpressionVariable()));
+                        range &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
                     }
                     
                     result.automatonToIdentityMap[automaton.getName()] = identity.template toAdd<ValueType>();
@@ -279,10 +285,10 @@ namespace storm {
                 STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << "] and " << variablePair.second.getName() << ".");
                 
                 result.rowMetaVariables.insert(variablePair.first);
-                result.variableToRowMetaVariableMap.emplace(variable.getExpressionVariable(), variablePair.first);
+                result.variableToRowMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.first);
                 
                 result.columnMetaVariables.insert(variablePair.second);
-                result.variableToColumnMetaVariableMap.emplace(variable.getExpressionVariable(), variablePair.second);
+                result.variableToColumnMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.second);
                 
                 storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(variablePair.first).equals(result.manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * result.manager->getRange(variablePair.first).template toAdd<ValueType>() * result.manager->getRange(variablePair.second).template toAdd<ValueType>();
                 result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity);
@@ -297,10 +303,10 @@ namespace storm {
                 STORM_LOG_TRACE("Created meta variables for global boolean variable: " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");
                 
                 result.rowMetaVariables.insert(variablePair.first);
-                result.variableToRowMetaVariableMap.emplace(variable.getExpressionVariable(), variablePair.first);
+                result.variableToRowMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.first);
                 
                 result.columnMetaVariables.insert(variablePair.second);
-                result.variableToColumnMetaVariableMap.emplace(variable.getExpressionVariable(), variablePair.second);
+                result.variableToColumnMetaVariableMap->emplace(variable.getExpressionVariable(), variablePair.second);
                 
                 storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(variablePair.first).equals(result.manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>();
                 result.variableToIdentityMap.emplace(variable.getExpressionVariable(), variableIdentity);
@@ -326,11 +332,11 @@ namespace storm {
         // This structure represents an edge.
         template<storm::dd::DdType Type, typename ValueType>
         struct EdgeDd {
-            EdgeDd(storm::dd::Add<Type> const& guardDd = storm::dd::Add<Type>(), storm::dd::Add<Type, ValueType> const& transitionsDd = storm::dd::Add<Type, ValueType>(), std::set<storm::expressions::Variable> const& writtenGlobalVariables = {}, std::set<storm::expressions::Variable> const& globalVariablesWrittenMultipleTimes = {}) {
+            EdgeDd(storm::dd::Add<Type> const& guardDd = storm::dd::Add<Type>(), storm::dd::Add<Type, ValueType> const& transitionsDd = storm::dd::Add<Type, ValueType>(), std::set<storm::expressions::Variable> const& writtenGlobalVariables = {}, std::set<storm::expressions::Variable> const& globalVariablesWrittenMultipleTimes = {}) : guardDd(guardDd), transitionsDd(transitionsDd), writtenGlobalVariables(writtenGlobalVariables), globalVariablesWrittenMultipleTimes(globalVariablesWrittenMultipleTimes) {
                 // Intentionally left empty.
             }
             
-            EdgeDd(EdgeDd const& other) : globalVariablesWrittenMultipleTimes(other.globalVariablesWrittenMultipleTimes), writtenGlobalVariables(other.writtenGlobalVariables), guardDd(other.guardDd), transitionsDd(other.transitionsDd) {
+            EdgeDd(EdgeDd const& other) : guardDd(other.guardDd), transitionsDd(other.transitionsDd), writtenGlobalVariables(other.writtenGlobalVariables), globalVariablesWrittenMultipleTimes(other.globalVariablesWrittenMultipleTimes) {
                 // Intentionally left empty.
             }
             
@@ -344,10 +350,10 @@ namespace storm {
                 return *this;
             }
             
-            std::set<storm::expressions::Variable> globalVariablesWrittenMultipleTimes;
-            std::set<storm::expressions::Variable> writtenGlobalVariables;
             storm::dd::Add<Type, ValueType> guardDd;
             storm::dd::Add<Type, ValueType> transitionsDd;
+            std::set<storm::expressions::Variable> writtenGlobalVariables;
+            std::set<storm::expressions::Variable> globalVariablesWrittenMultipleTimes;
         };
         
         // This structure represents a subcomponent of a composition.
@@ -509,11 +515,11 @@ namespace storm {
                 std::set<storm::expressions::Variable> assignedVariables;
                 for (auto const& assignment : destination.getAssignments()) {
                     // Record the variable as being written.
-                    STORM_LOG_TRACE("Assigning to variable " << variables.variableToRowMetaVariableMap.at(assignment.getExpressionVariable()).getName());
+                    STORM_LOG_TRACE("Assigning to variable " << variables.variableToRowMetaVariableMap->at(assignment.getExpressionVariable()).getName());
                     assignedVariables.insert(assignment.getExpressionVariable());
                     
                     // Translate the written variable.
-                    auto const& primedMetaVariable = variables.variableToColumnMetaVariableMap.at(assignment.getExpressionVariable());
+                    auto const& primedMetaVariable = variables.variableToColumnMetaVariableMap->at(assignment.getExpressionVariable());
                     storm::dd::Add<Type, ValueType> writtenVariable = variables.manager->template getIdentity<ValueType>(primedMetaVariable);
                     
                     // Translate the expression that is being assigned.

@@ -26,9 +26,7 @@ namespace storm {
             class Variables {
             public:
                 typedef typename std::vector<std::shared_ptr<VariableType>>::iterator input_iterator;
-                typedef typename std::vector<std::shared_ptr<VariableType>>::const_iterator const_input_iterator;
                 typedef boost::transform_iterator<Dereferencer<VariableType>, input_iterator> iterator;
-                typedef boost::transform_iterator<Dereferencer<VariableType const>, const_input_iterator> const_iterator;
                 
                 Variables(input_iterator it, input_iterator ite);
                 
@@ -43,9 +41,7 @@ namespace storm {
             template<typename VariableType>
             class ConstVariables {
             public:
-                typedef typename std::vector<std::shared_ptr<VariableType>>::iterator input_iterator;
                 typedef typename std::vector<std::shared_ptr<VariableType>>::const_iterator const_input_iterator;
-                typedef boost::transform_iterator<Dereferencer<VariableType>, input_iterator> iterator;
                 typedef boost::transform_iterator<Dereferencer<VariableType const>, const_input_iterator> const_iterator;
                 
                 ConstVariables(const_input_iterator it, const_input_iterator ite);

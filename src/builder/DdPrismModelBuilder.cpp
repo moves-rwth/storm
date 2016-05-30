@@ -31,7 +31,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class DdPrismModelBuilder<Type, ValueType>::GenerationInformation {
         public:
-            GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(), rowExpressionAdapter(nullptr), columnMetaVariables(), variableToColumnMetaVariableMap(), columnExpressionAdapter(nullptr), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), allGlobalVariables(), moduleToIdentityMap() {
+            GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()), rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type>>(manager, variableToRowMetaVariableMap)), columnMetaVariables(), variableToColumnMetaVariableMap((std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>())), columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type>>(manager, variableToColumnMetaVariableMap)), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), allGlobalVariables(), moduleToIdentityMap() {
                 // Initializes variables and identity DDs.
                 createMetaVariablesAndIdentities();
                 
@@ -47,12 +47,12 @@ namespace storm {
             
             // The meta variables for the row encoding.
             std::set<storm::expressions::Variable> rowMetaVariables;
-            std::map<storm::expressions::Variable, storm::expressions::Variable> variableToRowMetaVariableMap;
+            std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToRowMetaVariableMap;
             std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter;
             
             // The meta variables for the column encoding.
             std::set<storm::expressions::Variable> columnMetaVariables;
-            std::map<storm::expressions::Variable, storm::expressions::Variable> variableToColumnMetaVariableMap;
+            std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToColumnMetaVariableMap;
             std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter;
             
             // All pairs of row/column meta variables.
@@ -116,10 +116,10 @@ namespace storm {
                     STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
                     
                     rowMetaVariables.insert(variablePair.first);
-                    variableToRowMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.first);
+                    variableToRowMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.first);
                     
                     columnMetaVariables.insert(variablePair.second);
-                    variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
+                    variableToColumnMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.second);
                     
                     storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
                     variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
@@ -133,10 +133,10 @@ namespace storm {
                     STORM_LOG_TRACE("Created meta variables for global boolean variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
                     
                     rowMetaVariables.insert(variablePair.first);
-                    variableToRowMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.first);
+                    variableToRowMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.first);
                     
                     columnMetaVariables.insert(variablePair.second);
-                    variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
+                    variableToColumnMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                     
                     storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>();
                     variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
@@ -157,10 +157,10 @@ namespace storm {
                         STORM_LOG_TRACE("Created meta variables for integer variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
                         
                         rowMetaVariables.insert(variablePair.first);
-                        variableToRowMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.first);
+                        variableToRowMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.first);
                         
                         columnMetaVariables.insert(variablePair.second);
-                        variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
+                        variableToColumnMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.second);
                         
                         storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
                         variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
@@ -174,10 +174,10 @@ namespace storm {
                         STORM_LOG_TRACE("Created meta variables for boolean variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
                         
                         rowMetaVariables.insert(variablePair.first);
-                        variableToRowMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.first);
+                        variableToRowMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.first);
                         
                         columnMetaVariables.insert(variablePair.second);
-                        variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
+                        variableToColumnMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                         
                         storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
                         variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
@@ -591,11 +591,11 @@ namespace storm {
             std::set<storm::expressions::Variable> assignedVariables;
             for (auto const& assignment : assignments) {
                 // Record the variable as being written.
-                STORM_LOG_TRACE("Assigning to variable " << generationInfo.variableToRowMetaVariableMap.at(assignment.getVariable()).getName());
+                STORM_LOG_TRACE("Assigning to variable " << generationInfo.variableToRowMetaVariableMap->at(assignment.getVariable()).getName());
                 assignedVariables.insert(assignment.getVariable());
                 
                 // Translate the written variable.
-                auto const& primedMetaVariable = generationInfo.variableToColumnMetaVariableMap.at(assignment.getVariable());
+                auto const& primedMetaVariable = generationInfo.variableToColumnMetaVariableMap->at(assignment.getVariable());
                 storm::dd::Add<Type, ValueType> writtenVariable = generationInfo.manager->template getIdentity<ValueType>(primedMetaVariable);
                 
                 // Translate the expression that is being assigned.

@@ -170,6 +170,10 @@ namespace storm {
             return *composition;
         }
         
+        void Model::setSystemComposition(std::shared_ptr<Composition> const& composition) {
+            this->composition = composition;
+        }
+        
         std::set<std::string> Model::getActionNames(bool includeSilent) const {
             std::set<std::string> result;
             for (auto const& entry : actionToIndex) {
@@ -257,7 +261,6 @@ namespace storm {
             
             // Substitute constants in all global variables.
             for (auto& variable : result.getGlobalVariables()) {
-                std::cout << "init: " << variable.getInitialValue() << std::endl;
                 variable.setInitialValue(variable.getInitialValue().substitute(constantSubstitution));
             }
             for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {

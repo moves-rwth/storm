@@ -1610,6 +1610,9 @@ namespace storm {
                 janiModel.addAutomaton(automaton);
             }
             
+            // Set the standard system composition. This is possible, because we reject non-standard compositions anyway.
+            janiModel.setSystemComposition(janiModel.getStandardSystemComposition());
+            
             return janiModel;
         }
         

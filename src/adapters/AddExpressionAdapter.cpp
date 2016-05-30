@@ -12,7 +12,7 @@ namespace storm {
     namespace adapters {
         
         template<storm::dd::DdType Type, typename ValueType>
-        AddExpressionAdapter<Type, ValueType>::AddExpressionAdapter(std::shared_ptr<storm::dd::DdManager<Type>> ddManager, std::map<storm::expressions::Variable, storm::expressions::Variable> const& variableMapping) : ddManager(ddManager), variableMapping(variableMapping) {
+        AddExpressionAdapter<Type, ValueType>::AddExpressionAdapter(std::shared_ptr<storm::dd::DdManager<Type>> ddManager, std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> const& variableMapping) : ddManager(ddManager), variableMapping(variableMapping) {
             // Intentionally left empty.
         }
         
@@ -140,8 +140,8 @@ namespace storm {
         
         template<storm::dd::DdType Type, typename ValueType>
         boost::any AddExpressionAdapter<Type, ValueType>::visit(storm::expressions::VariableExpression const& expression) {
-            auto const& variablePair = variableMapping.find(expression.getVariable());
-            STORM_LOG_THROW(variablePair != variableMapping.end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains the variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
+            auto const& variablePair = variableMapping->find(expression.getVariable());
+            STORM_LOG_THROW(variablePair != variableMapping->end(), storm::exceptions::InvalidArgumentException, "Cannot translate the given expression, because it contains the variable '" << expression.getVariableName() << "' for which no DD counterpart is known.");
             if (expression.hasBooleanType()) {
                 return ddManager->template getIdentity<ValueType>(variablePair->second).toBdd();
             } else {
