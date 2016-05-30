@@ -10,7 +10,7 @@ namespace storm {
         namespace detail {
             
             template<typename VariableType>
-            VariableType& Dereferencer<VariableType>::operator()(std::shared_ptr<VariableType> const& d) {
+            VariableType& Dereferencer<VariableType>::operator()(std::shared_ptr<VariableType> const& d) const {
                 return *d;
             }
             

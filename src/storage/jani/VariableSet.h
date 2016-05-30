@@ -19,7 +19,7 @@ namespace storm {
             template<typename VariableType>
             class Dereferencer {
             public:
-                VariableType& operator()(std::shared_ptr<VariableType> const& d);
+                VariableType& operator()(std::shared_ptr<VariableType> const& d) const;
             };
             
             template<typename VariableType>
