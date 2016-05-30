@@ -8,133 +8,42 @@ namespace storm {
     namespace jani {
         
         namespace detail {
-            EdgeIterator::EdgeIterator(Automaton& automaton, outer_iter out_it, outer_iter out_ite, inner_iter in_it) : automaton(automaton), out_it(out_it), out_ite(out_ite), in_it(in_it) {
+            Edges::Edges(iterator it, iterator ite) : it(it), ite(ite) {
                 // Intentionally left empty.
             }
             
-            EdgeIterator& EdgeIterator::operator++() {
-                incrementIterator();
-                return *this;
+            Edges::iterator Edges::begin() const {
+                return it;
             }
             
-            EdgeIterator& EdgeIterator::operator++(int) {
-                incrementIterator();
-                return *this;
+            Edges::iterator Edges::end() const {
+                return ite;
             }
             
-            Edge& EdgeIterator::operator*() {
-                return *in_it;
+            bool Edges::empty() const {
+                return it == ite;
             }
             
-            bool EdgeIterator::operator==(EdgeIterator const& other) const {
-                return this->out_it == other.out_it && this->in_it == other.in_it;
-            }
-            
-            bool EdgeIterator::operator!=(EdgeIterator const& other) const {
-                return !(*this == other);
-            }
-            
-            void EdgeIterator::incrementIterator() {
-                ++in_it;
-                
-                // If the inner iterator has reached its end move it to the beginning of the next outer element.
-                if (in_it == out_it->end()) {
-                    ++out_it;
-                    while (out_it != out_ite && out_it->empty()) {
-                        ++out_it;
-                        in_it = out_it->end();
-                    }
-                    if (out_it != out_ite) {
-                        in_it = out_it->begin();
-                    }
-                }
-            }
-            
-            ConstEdgeIterator::ConstEdgeIterator(Automaton const& automaton, outer_iter out_it, outer_iter out_ite, inner_iter in_it) : automaton(automaton), out_it(out_it), out_ite(out_ite), in_it(in_it) {
+            ConstEdges::ConstEdges(const_iterator it, const_iterator ite) : it(it), ite(ite) {
                 // Intentionally left empty.
             }
             
-            ConstEdgeIterator& ConstEdgeIterator::operator++() {
-                incrementIterator();
-                return *this;
+            ConstEdges::const_iterator ConstEdges::begin() const {
+                return it;
             }
             
-            ConstEdgeIterator& ConstEdgeIterator::operator++(int) {
-                incrementIterator();
-                return *this;
+            ConstEdges::const_iterator ConstEdges::end() const {
+                return ite;
             }
-            
-            Edge const& ConstEdgeIterator::operator*() const {
-                return *in_it;
-            }
-            
-            bool ConstEdgeIterator::operator==(ConstEdgeIterator const& other) const {
-                return this->out_it == other.out_it && this->in_it == other.in_it;
-            }
-            
-            bool ConstEdgeIterator::operator!=(ConstEdgeIterator const& other) const {
-                return !(*this == other);
-            }
-            
-            void ConstEdgeIterator::incrementIterator() {
-                ++in_it;
-                
-                // If the inner iterator has reached its end move it to the beginning of the next outer element.
-                if (in_it == out_it->end()) {
-                    ++out_it;
-                    while (out_it != out_ite && out_it->empty()) {
-                        ++out_it;
-                        in_it = out_it->end();
-                    }
-                    if (out_it != out_ite) {
-                        in_it = out_it->begin();
-                    }
-                }
-            }
-            
-            Edges::Edges(Automaton& automaton) : automaton(automaton) {
-                // Intentionally left empty.
-            }
-            
-            EdgeIterator Edges::begin() {
-                auto outer = automaton.edges.begin();
-                while (outer != automaton.edges.end() && outer->empty()) {
-                    ++outer;
-                }
-                if (outer == automaton.edges.end()) {
-                    return end();
-                } else {
-                    return EdgeIterator(automaton, outer, automaton.edges.end(), outer->begin());
-                }
-            }
-            
-            EdgeIterator Edges::end() {
-                return EdgeIterator(automaton, automaton.edges.end(), automaton.edges.end(), automaton.edges.back().end());
-            }
-            
-            ConstEdges::ConstEdges(Automaton const& automaton) : automaton(automaton) {
-                // Intentionally left empty.
-            }
-            
-            ConstEdgeIterator ConstEdges::begin() const {
-                auto outer = automaton.edges.begin();
-                while (outer != automaton.edges.end() && outer->empty()) {
-                    ++outer;
-                }
-                if (outer == automaton.edges.end()) {
-                    return end();
-                } else {
-                    return ConstEdgeIterator(automaton, outer, automaton.edges.end(), outer->begin());
-                }
-            }
-            
-            ConstEdgeIterator ConstEdges::end() const {
-                return ConstEdgeIterator(automaton, automaton.edges.end(), automaton.edges.end(), automaton.edges.back().end());
+
+            bool ConstEdges::empty() const {
+                return it == ite;
             }
         }
         
         Automaton::Automaton(std::string const& name) : name(name) {
-            // Intentionally left empty.
+            // Add a sentinel element to the mapping from locations to starting indices.
+            locationToStartingIndex.push_back(0);
         }
         
         std::string const& Automaton::getName() const {
@@ -177,7 +86,7 @@ namespace storm {
             STORM_LOG_THROW(!this->hasLocation(location.getName()), storm::exceptions::WrongFormatException, "Cannot add location with name '" << location.getName() << "', because a location with this name already exists.");
             locationToIndex.emplace(location.getName(), locations.size());
             locations.push_back(location);
-            edges.push_back(EdgeSet());
+            locationToStartingIndex.push_back(edges.size());
             return locations.size() - 1;
         }
 
@@ -204,31 +113,62 @@ namespace storm {
         uint64_t Automaton::getInitialLocationIndex() const {
             return initialLocationIndex;
         }
-        
-        EdgeSet const& Automaton::getEdgesFromLocation(std::string const& name) const {
+
+        Automaton::Edges Automaton::getEdgesFromLocation(std::string const& name) {
             auto it = locationToIndex.find(name);
             STORM_LOG_THROW(it != locationToIndex.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve edges from unknown location '" << name << ".");
             return getEdgesFromLocation(it->second);
         }
         
-        EdgeSet const& Automaton::getEdgesFromLocation(uint64_t index) const {
-            return edges[index];
+        Automaton::Edges Automaton::getEdgesFromLocation(uint64_t index) {
+            auto it = edges.begin();
+            std::advance(it, locationToStartingIndex[index]);
+            auto ite = edges.begin();
+            std::advance(ite, locationToStartingIndex[index + 1]);
+            return Edges(it, ite);
+        }
+        
+        Automaton::ConstEdges Automaton::getEdgesFromLocation(std::string const& name) const {
+            auto it = locationToIndex.find(name);
+            STORM_LOG_THROW(it != locationToIndex.end(), storm::exceptions::InvalidArgumentException, "Cannot retrieve edges from unknown location '" << name << ".");
+            return getEdgesFromLocation(it->second);
+        }
+        
+        Automaton::ConstEdges Automaton::getEdgesFromLocation(uint64_t index) const {
+            auto it = edges.begin();
+            std::advance(it, locationToStartingIndex[index]);
+            auto ite = edges.begin();
+            std::advance(ite, locationToStartingIndex[index + 1]);
+            return ConstEdges(it, ite);
         }
         
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationId() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationId() << "'.");
-            edges[edge.getSourceLocationId()].addEdge(edge);
+            
+            // Find the right position for the edge and insert it properly.
+            auto posIt = edges.begin();
+            std::advance(posIt, locationToStartingIndex[edge.getSourceLocationId() + 1]);
+            edges.insert(posIt, edge);
+            
+            // Now update the starting indices of all subsequent locations.
+            for (uint64_t locationIndex = edge.getSourceLocationId() + 1; locationIndex < locationToStartingIndex.size(); ++locationIndex) {
+                ++locationToStartingIndex[locationIndex];
+            }
         }
         
-        Automaton::Edges Automaton::getEdges() {
-            return Edges(*this);
+        std::vector<Edge>& Automaton::getEdges() {
+            return edges;
         }
         
-        Automaton::ConstEdges Automaton::getEdges() const {
-            return ConstEdges(*this);
+        std::vector<Edge> const& Automaton::getEdges() const {
+            return edges;
         }
         
         uint64_t Automaton::getNumberOfLocations() const {
+            return locations.size();
+        }
+        
+        uint64_t Automaton::getNumberOfEdges() const {
             return edges.size();
         }
 

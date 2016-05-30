@@ -65,6 +65,10 @@ namespace storm {
             return it->second;
         }
         
+        std::vector<Action> const& Model::getActions() const {
+            return actions;
+        }
+        
         uint64_t Model::addConstant(Constant const& constant) {
             auto it = constantToIndex.find(constant.getName());
             STORM_LOG_THROW(it == constantToIndex.end(), storm::exceptions::WrongFormatException, "Cannot add constant with name '" << constant.getName() << "', because a constant with that name already exists.");
@@ -145,6 +149,10 @@ namespace storm {
             auto it = automatonToIndex.find(name);
             STORM_LOG_THROW(it != automatonToIndex.end(), storm::exceptions::InvalidOperationException, "Unable to retrieve unknown automaton '" << name << "'.");
             return automata[it->second];
+        }
+        
+        std::size_t Model::getNumberOfAutomata() const {
+            return automata.size();
         }
         
         std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
@@ -249,6 +257,7 @@ namespace storm {
             
             // Substitute constants in all global variables.
             for (auto& variable : result.getGlobalVariables()) {
+                std::cout << "init: " << variable.getInitialValue() << std::endl;
                 variable.setInitialValue(variable.getInitialValue().substitute(constantSubstitution));
             }
             for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {

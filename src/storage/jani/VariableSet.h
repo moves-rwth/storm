@@ -3,7 +3,7 @@
 #include <vector>
 #include <set>
 
-#include <boost/variant.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 
 #include "src/storage/jani/BooleanVariable.h"
 #include "src/storage/jani/UnboundedIntegerVariable.h"
@@ -16,117 +16,55 @@ namespace storm {
         
         namespace detail {
             
-            class VariableSetIterator {
-            private:
-                typedef std::vector<BooleanVariable>::iterator bool_iter;
-                typedef std::vector<BoundedIntegerVariable>::iterator bint_iter;
-                typedef std::vector<UnboundedIntegerVariable>::iterator int_iter;
-                
+            template<typename VariableType>
+            class Dereferencer {
             public:
-                /*!
-                 * Creates an iterator over all variables.
-                 */
-                VariableSetIterator(VariableSet& variableSet, boost::variant<bool_iter, bint_iter, int_iter> initialIterator);
-                
-                // Methods to advance the iterator.
-                VariableSetIterator& operator++();
-                VariableSetIterator& operator++(int);
-                
-                Variable& operator*();
-
-                bool operator==(VariableSetIterator const& other) const;
-                bool operator!=(VariableSetIterator const& other) const;
-                
-            private:
-                // Moves the iterator to the next position.
-                void incrementIterator();
-                
-                // The underlying variable set.
-                VariableSet& variableSet;
-
-                // The current iterator position.
-                boost::variant<bool_iter, bint_iter, int_iter> it;
+                VariableType& operator()(std::shared_ptr<VariableType> const& d);
             };
             
-            class ConstVariableSetIterator {
-            private:
-                typedef std::vector<BooleanVariable>::const_iterator bool_iter;
-                typedef std::vector<BoundedIntegerVariable>::const_iterator bint_iter;
-                typedef std::vector<UnboundedIntegerVariable>::const_iterator int_iter;
-                
+            template<typename VariableType>
+            class Variables {
             public:
-                /*!
-                 * Creates an iterator over all variables.
-                 */
-                ConstVariableSetIterator(VariableSet const& variableSet, boost::variant<bool_iter, bint_iter, int_iter> initialIterator);
+                typedef typename std::vector<std::shared_ptr<VariableType>>::iterator input_iterator;
+                typedef typename std::vector<std::shared_ptr<VariableType>>::const_iterator const_input_iterator;
+                typedef boost::transform_iterator<Dereferencer<VariableType>, input_iterator> iterator;
+                typedef boost::transform_iterator<Dereferencer<VariableType const>, const_input_iterator> const_iterator;
                 
-                // Methods to advance the iterator.
-                ConstVariableSetIterator& operator++();
-                ConstVariableSetIterator& operator++(int);
+                Variables(input_iterator it, input_iterator ite);
                 
-                Variable const& operator*();
-                
-                bool operator==(ConstVariableSetIterator const& other) const;
-                bool operator!=(ConstVariableSetIterator const& other) const;
+                iterator begin();
+                iterator end();
                 
             private:
-                // Moves the iterator to the next position.
-                void incrementIterator();
-                
-                // The underlying variable set.
-                VariableSet const& variableSet;
-                
-                // The current iterator position.
-                boost::variant<bool_iter, bint_iter, int_iter> it;
+                input_iterator it;
+                input_iterator ite;
             };
-            
-            class IntegerVariables {
-            public:
-                IntegerVariables(VariableSet& variableSet);
-                
-                /*!
-                 * Retrieves an iterator to all integer variables (bounded and unbounded) in the variable set.
-                 */
-                VariableSetIterator begin();
 
-                /*!
-                 * Retrieves the end iterator to all integer variables (bounded and unbounded) in the variable set.
-                 */
-                VariableSetIterator end();
-                
-            private:
-                // The underlying variable set.
-                VariableSet& variableSet;
-            };
-            
-            class ConstIntegerVariables {
+            template<typename VariableType>
+            class ConstVariables {
             public:
-                ConstIntegerVariables(VariableSet const& variableSet);
+                typedef typename std::vector<std::shared_ptr<VariableType>>::iterator input_iterator;
+                typedef typename std::vector<std::shared_ptr<VariableType>>::const_iterator const_input_iterator;
+                typedef boost::transform_iterator<Dereferencer<VariableType>, input_iterator> iterator;
+                typedef boost::transform_iterator<Dereferencer<VariableType const>, const_input_iterator> const_iterator;
                 
-                /*!
-                 * Retrieves an iterator to all integer variables (bounded and unbounded) in the variable set.
-                 */
-                ConstVariableSetIterator begin() const;
+                ConstVariables(const_input_iterator it, const_input_iterator ite);
                 
-                /*!
-                 * Retrieves the end iterator to all integer variables (bounded and unbounded) in the variable set.
-                 */
-                ConstVariableSetIterator end() const;
+                const_iterator begin();
+                const_iterator end();
                 
             private:
-                // The underlying variable set.
-                VariableSet const& variableSet;
+                input_iterator it;
+                input_iterator ite;
             };
         }
         
         class VariableSet {
         public:
-            friend class detail::VariableSetIterator;
-            
-            typedef detail::VariableSetIterator iterator;
-            typedef detail::ConstVariableSetIterator const_iterator;
-            typedef detail::IntegerVariables IntegerVariables;
-            typedef detail::ConstIntegerVariables ConstIntegerVariables;
+            typedef typename std::vector<std::shared_ptr<Variable>>::iterator input_iterator;
+            typedef typename std::vector<std::shared_ptr<Variable>>::const_iterator const_input_iterator;
+            typedef boost::transform_iterator<detail::Dereferencer<Variable>, input_iterator> iterator;
+            typedef boost::transform_iterator<detail::Dereferencer<Variable>, const_input_iterator> const_iterator;
             
             /*!
              * Creates an empty variable set.
@@ -136,42 +74,32 @@ namespace storm {
             /*!
              * Retrieves the boolean variables in this set.
              */
-            std::vector<BooleanVariable>& getBooleanVariables();
+            detail::Variables<BooleanVariable> getBooleanVariables();
 
             /*!
              * Retrieves the boolean variables in this set.
              */
-            std::vector<BooleanVariable> const& getBooleanVariables() const;
+            detail::ConstVariables<BooleanVariable> getBooleanVariables() const;
 
             /*!
              * Retrieves the bounded integer variables in this set.
              */
-            std::vector<BoundedIntegerVariable>& getBoundedIntegerVariables();
+            detail::Variables<BoundedIntegerVariable> getBoundedIntegerVariables();
 
             /*!
              * Retrieves the bounded integer variables in this set.
              */
-            std::vector<BoundedIntegerVariable> const& getBoundedIntegerVariables() const;
+            detail::ConstVariables<BoundedIntegerVariable> getBoundedIntegerVariables() const;
 
             /*!
              * Retrieves the unbounded integer variables in this set.
              */
-            std::vector<UnboundedIntegerVariable>& getUnboundedIntegerVariables();
+            detail::Variables<UnboundedIntegerVariable> getUnboundedIntegerVariables();
 
             /*!
              * Retrieves the unbounded integer variables in this set.
              */
-            std::vector<UnboundedIntegerVariable> const& getUnboundedIntegerVariables() const;
-
-            /*!
-             * Retrieves an iterable object to all integer (bounded and unbounded) variables in the variable set.
-             */
-            IntegerVariables getIntegerVariables();
-            
-            /*!
-             * Retrieves an iterable object to all integer (bounded and unbounded) variables in the variable set.
-             */
-            ConstIntegerVariables getIntegerVariables() const;
+            detail::ConstVariables<UnboundedIntegerVariable> getUnboundedIntegerVariables() const;
             
             /*!
              * Adds the given boolean variable to this set.
@@ -228,21 +156,39 @@ namespace storm {
              */
             const_iterator end() const;
 
+            /*!
+             * Retrieves whether the set of variables contains a boolean variable.
+             */
+            bool containsBooleanVariable() const;
+
+            /*!
+             * Retrieves whether the set of variables contains a bounded integer variable.
+             */
+            bool containsBoundedIntegerVariable() const;
+
+            /*!
+             * Retrieves whether the set of variables contains an unbounded integer variable.
+             */
+            bool containsUnboundedIntegerVariables() const;
+
         private:
+            /// The vector of all variables.
+            std::vector<std::shared_ptr<Variable>> variables;
+            
             /// The boolean variables in this set.
-            std::vector<BooleanVariable> booleanVariables;
+            std::vector<std::shared_ptr<BooleanVariable>> booleanVariables;
 
             /// The bounded integer variables in this set.
-            std::vector<BoundedIntegerVariable> boundedIntegerVariables;
+            std::vector<std::shared_ptr<BoundedIntegerVariable>> boundedIntegerVariables;
 
             /// The unbounded integer variables in this set.
-            std::vector<UnboundedIntegerVariable> unboundedIntegerVariables;
+            std::vector<std::shared_ptr<UnboundedIntegerVariable>> unboundedIntegerVariables;
             
             /// A set of all variable names currently in use.
             std::map<std::string, storm::expressions::Variable> nameToVariable;
             
             /// A mapping from expression variables to their variable objects.
-            std::map<storm::expressions::Variable, std::pair<uint8_t, uint64_t>> variableToVariable;
+            std::map<storm::expressions::Variable, std::shared_ptr<Variable>> variableToVariable;
         };
         
     }

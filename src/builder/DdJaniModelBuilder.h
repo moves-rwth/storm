@@ -19,7 +19,7 @@ namespace storm {
     namespace builder {
         
         template <storm::dd::DdType Type, typename ValueType = double>
-        class DdJaniModelBuilder : public storm::jani::CompositionVisitor {
+        class DdJaniModelBuilder {
         public:            
             struct Options {
                 /*!
@@ -108,11 +108,7 @@ namespace storm {
              * @return The translated model.
              */
             storm::jani::Model const& getTranslatedModel() const;
-            
-            virtual boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) override;
-            virtual boost::any visit(storm::jani::RenameComposition const& composition, boost::any const& data) override;
-            virtual boost::any visit(storm::jani::ParallelComposition const& composition, boost::any const& data) override;
-            
+                        
         private:
             /// The model to translate.
             boost::optional<storm::jani::Model> model;

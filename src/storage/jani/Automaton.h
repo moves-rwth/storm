@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include "src/storage/jani/VariableSet.h"
-#include "src/storage/jani/EdgeSet.h"
+#include "src/storage/jani/Edge.h"
 #include "src/storage/jani/Location.h"
 
 namespace storm {
@@ -14,108 +14,58 @@ namespace storm {
         class Automaton;
         
         namespace detail {
-            class EdgeIterator {
-            private:
-                typedef std::vector<EdgeSet>::iterator outer_iter;
-                typedef EdgeSet::iterator inner_iter;
-                
-            public:
-                /*!
-                 * Creates an iterator over all edges.
-                 */
-                EdgeIterator(Automaton& automaton, outer_iter out_it, outer_iter out_ite, inner_iter in_it);
-                
-                // Methods to advance the iterator.
-                EdgeIterator& operator++();
-                EdgeIterator& operator++(int);
-                
-                Edge& operator*();
-                
-                bool operator==(EdgeIterator const& other) const;
-                bool operator!=(EdgeIterator const& other) const;
-                
-            private:
-                // Moves the iterator to the next position.
-                void incrementIterator();
-                
-                // The underlying automaton.
-                Automaton& automaton;
-                
-                // The current iterator positions.
-                outer_iter out_it;
-                outer_iter out_ite;
-                inner_iter in_it;
-            };
-            
-            class ConstEdgeIterator {
-            private:
-                typedef std::vector<EdgeSet>::const_iterator outer_iter;
-                typedef EdgeSet::const_iterator inner_iter;
-                
-            public:
-                /*!
-                 * Creates an iterator over all edges.
-                 */
-                ConstEdgeIterator(Automaton const& automaton, outer_iter out_it, outer_iter out_ite, inner_iter in_it);
-                
-                // Methods to advance the iterator.
-                ConstEdgeIterator& operator++();
-                ConstEdgeIterator& operator++(int);
-                
-                Edge const& operator*() const;
-                
-                bool operator==(ConstEdgeIterator const& other) const;
-                bool operator!=(ConstEdgeIterator const& other) const;
-                
-            private:
-                // Moves the iterator to the next position.
-                void incrementIterator();
-                
-                // The underlying automaton.
-                Automaton const& automaton;
-                
-                // The current iterator positions.
-                outer_iter out_it;
-                outer_iter out_ite;
-                inner_iter in_it;
-            };
-            
             class Edges {
             public:
-                Edges(Automaton& automaton);
+                typedef std::vector<Edge>::iterator iterator;
+                typedef std::vector<Edge>::const_iterator const_iterator;
+                
+                Edges(iterator it, iterator ite);
                 
                 /*!
-                 * Retrieves an iterator to all edges of the automaton.
+                 * Retrieves an iterator to the edges.
                  */
-                EdgeIterator begin();
+                iterator begin() const;
                 
                 /*!
-                 * Retrieves the end iterator to edges of the automaton.
+                 * Retrieves an end iterator to the edges.
                  */
-                EdgeIterator end();
+                iterator end() const;
+                
+                /*!
+                 * Determines whether this set of edges is empty.
+                 */
+                bool empty() const;
                 
             private:
-                // The underlying automaton.
-                Automaton& automaton;
+                iterator it;
+                iterator ite;
             };
             
             class ConstEdges {
             public:
-                ConstEdges(Automaton const& automaton);
+                typedef std::vector<Edge>::iterator iterator;
+                typedef std::vector<Edge>::const_iterator const_iterator;
+                
+                ConstEdges(const_iterator it, const_iterator ite);
                 
                 /*!
-                 * Retrieves an iterator to all edges of the automaton.
+                 * Retrieves an iterator to the edges.
                  */
-                ConstEdgeIterator begin() const;
+                const_iterator begin() const;
                 
                 /*!
-                 * Retrieves the end iterator to edges of the automaton.
+                 * Retrieves an end iterator to the edges.
                  */
-                ConstEdgeIterator end() const;
+                const_iterator end() const;
+
+                /*!
+                 * Determines whether this set of edges is empty.
+                 */
+                bool empty() const;
                 
             private:
-                // The underlying automaton.
-                Automaton const& automaton;
+                const_iterator it;
+                const_iterator ite;
             };
         }
         
@@ -209,16 +159,26 @@ namespace storm {
              * Retrieves the index of the initial location.
              */
             uint64_t getInitialLocationIndex() const;
+
+            /*!
+             * Retrieves the edges of the location with the given name.
+             */
+            Edges getEdgesFromLocation(std::string const& name);
+            
+            /*!
+             * Retrieves the edges of the location with the given index.
+             */
+            Edges getEdgesFromLocation(uint64_t index);
             
             /*!
              * Retrieves the edges of the location with the given name.
              */
-            EdgeSet const& getEdgesFromLocation(std::string const& name) const;
+            ConstEdges getEdgesFromLocation(std::string const& name) const;
 
             /*!
              * Retrieves the edges of the location with the given index.
              */
-            EdgeSet const& getEdgesFromLocation(uint64_t index) const;
+            ConstEdges getEdgesFromLocation(uint64_t index) const;
             
             /*!
              * Adds an edge to the automaton.
@@ -228,35 +188,44 @@ namespace storm {
             /*!
              * Retrieves the edges of the automaton.
              */
-            Edges getEdges();
+            std::vector<Edge>& getEdges();
 
             /*!
              * Retrieves the edges of the automaton.
              */
-            ConstEdges getEdges() const;
+            std::vector<Edge> const& getEdges() const;
 
             /*!
              * Retrieves the number of locations.
              */
             uint64_t getNumberOfLocations() const;
-            
+
+            /*!
+             * Retrieves the number of edges.
+             */
+            uint64_t getNumberOfEdges() const;
+
         private:
-            // The name of the automaton.
+            /// The name of the automaton.
             std::string name;
 
-            // The set of variables of this automaton.
+            /// The set of variables of this automaton.
             VariableSet variables;
             
-            // The locations of the automaton.
+            /// The locations of the automaton.
             std::vector<Location> locations;
             
-            // A mapping of location names to their indices.
+            /// A mapping of location names to their indices.
             std::unordered_map<std::string, uint64_t> locationToIndex;
             
-            // All edges of the automaton. The edges at index i are the edges of the location with index i.
-            std::vector<EdgeSet> edges;
+            /// All edges of the automaton
+            std::vector<Edge> edges;
+            
+            /// A mapping from location indices to the starting indices. If l is mapped to i, it means that the edges
+            /// leaving location l start at index i of the edges vector.
+            std::vector<uint64_t> locationToStartingIndex;
 
-            // The index of the initial location.
+            /// The index of the initial location.
             uint64_t initialLocationIndex;
         };
         

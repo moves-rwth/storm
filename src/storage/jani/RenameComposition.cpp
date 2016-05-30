@@ -20,6 +20,10 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
+        std::map<std::string, boost::optional<std::string>> const& RenameComposition::getRenaming() const {
+            return renaming;
+        }
+        
         void RenameComposition::write(std::ostream& stream) const {
             std::vector<std::string> renamingStrings;
             

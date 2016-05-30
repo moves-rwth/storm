@@ -73,6 +73,11 @@ namespace storm {
             Action const& getAction(uint64_t index) const;
             
             /*!
+             * Retrieves the actions of the model.
+             */
+            std::vector<Action> const& getActions() const;
+            
+            /*!
              * Adds the given constant to the model.
              */
             uint64_t addConstant(Constant const& constant);
@@ -157,6 +162,11 @@ namespace storm {
              */
             Automaton const& getAutomaton(std::string const& name) const;
 
+            /*!
+             * Retrieves the number of automata in this model.
+             */
+            std::size_t getNumberOfAutomata() const;
+            
             /*!
              * Sets the system composition expression of the JANI model.
              */
