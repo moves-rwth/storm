@@ -1518,31 +1518,24 @@ namespace storm {
             
             // Because of the rules of JANI, we have to make all variables of modules global that are read by other modules.
 
-            // Create a mapping from variables to the indices of module indices that read the variable.
-            std::map<storm::expressions::Variable, std::set<uint_fast64_t>> variablesToReadingModuleIndices;
-            for (auto const& module : modules) {
-                for (auto const& variable : module.getBooleanVariables()) {
-                    variablesToReadingModuleIndices.emplace(variable.getExpressionVariable(), std::set<uint_fast64_t>());
-                }
-                for (auto const& variable : module.getIntegerVariables()) {
-                    variablesToReadingModuleIndices.emplace(variable.getExpressionVariable(), std::set<uint_fast64_t>());
-                }
-            }
+            // Create a mapping from variables to the indices of module indices that write/read the variable.
+            std::map<storm::expressions::Variable, std::set<uint_fast64_t>> variablesToAccessingModuleIndices;
             for (uint_fast64_t index = 0; index < modules.size(); ++index) {
                 storm::prism::Module const& module = modules[index];
                 
                 for (auto const& command : module.getCommands()) {
                     std::set<storm::expressions::Variable> variables = command.getGuardExpression().getVariables();
                     for (auto const& variable : variables) {
-                        variablesToReadingModuleIndices[variable].insert(index);
+                        variablesToAccessingModuleIndices[variable].insert(index);
                     }
                     
                     for (auto const& update : command.getUpdates()) {
                         for (auto const& assignment : update.getAssignments()) {
                             variables = assignment.getExpression().getVariables();
                             for (auto const& variable : variables) {
-                                variablesToReadingModuleIndices[variable].insert(index);
+                                variablesToAccessingModuleIndices[variable].insert(index);
                             }
+                            variablesToAccessingModuleIndices[assignment.getVariable()].insert(index);
                         }
                     }
                 }
@@ -1554,23 +1547,23 @@ namespace storm {
                 storm::jani::Automaton automaton(module.getName());
                 for (auto const& variable : module.getBooleanVariables()) {
                     storm::jani::BooleanVariable newBooleanVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression());
-                    std::set<uint_fast64_t> const& readingModuleIndices = variablesToReadingModuleIndices[variable.getExpressionVariable()];
-                    if (readingModuleIndices.size() == 1) {
-                        // In this case, we can move the variable to the automaton.
+                    std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
+                    // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
+                    if (accessingModuleIndices.size() == 1) {
                         automaton.addBooleanVariable(newBooleanVariable);
-                    } else {
-                        // In this case, we need to make the variable global.
+                    } else { // if (accessingModuleIndices.size() > 1) {
+                        // Otherwise, we need to make it global.
                         janiModel.addBooleanVariable(newBooleanVariable);
                     }
                 }
                 for (auto const& variable : module.getIntegerVariables()) {
                     storm::jani::BoundedIntegerVariable newIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getLowerBoundExpression(), variable.getUpperBoundExpression(), variable.getInitialValueExpression());
-                    std::set<uint_fast64_t> const& readingModuleIndices = variablesToReadingModuleIndices[variable.getExpressionVariable()];
-                    if (readingModuleIndices.size() == 1) {
-                        // In this case, we can move the variable to the automaton.
+                    std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
+                    // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
+                    if (accessingModuleIndices.size() == 1) {
                         automaton.addBoundedIntegerVariable(newIntegerVariable);
-                    } else {
-                        // In this case, we need to make the variable global.
+                    } else { //if (accessingModuleIndices.size() > 1) {
+                        // Otherwise, we need to make it global.
                         janiModel.addBoundedIntegerVariable(newIntegerVariable);
                     }
                 }

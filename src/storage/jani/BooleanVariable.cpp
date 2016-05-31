@@ -7,5 +7,9 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        bool BooleanVariable::isBooleanVariable() const {
+            return true;
+        }
+        
     }
 }

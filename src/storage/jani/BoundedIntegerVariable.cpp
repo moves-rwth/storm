@@ -23,5 +23,9 @@ namespace storm {
             this->upperBound = expression;
         }
         
+        bool BoundedIntegerVariable::isBoundedIntegerVariable() const {
+            return true;
+        }
+        
     }
 }

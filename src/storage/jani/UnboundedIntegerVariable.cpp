@@ -7,5 +7,9 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        bool UnboundedIntegerVariable::isUnboundedIntegerVariable() const {
+            return true;
+        }
+        
     }
 }

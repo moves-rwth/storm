@@ -196,6 +196,11 @@ namespace storm {
             std::vector<Edge> const& getEdges() const;
 
             /*!
+             * Retrieves the set of action indices that are labels of edges of this automaton.
+             */
+            std::set<uint64_t> getActionIndices() const;
+            
+            /*!
              * Retrieves the number of locations.
              */
             uint64_t getNumberOfLocations() const;

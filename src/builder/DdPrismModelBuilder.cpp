@@ -1067,10 +1067,30 @@ namespace storm {
                 
                 return result;
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                // Simply add all actions.
-                storm::dd::Add<Type, ValueType> result = module.independentAction.transitionsDd;
+                // Simply add all actions, but make sure to include the missing global variable identities.
+                
+                // Compute missing global variable identities in independent action.
+                std::set<storm::expressions::Variable> missingIdentities;
+                std::set_difference(generationInfo.allGlobalVariables.begin(), generationInfo.allGlobalVariables.end(), module.independentAction.assignedGlobalVariables.begin(), module.independentAction.assignedGlobalVariables.end(), std::inserter(missingIdentities, missingIdentities.begin()));
+                storm::dd::Add<Type, ValueType> identityEncoding = generationInfo.manager->template getAddOne<ValueType>();
+                for (auto const& variable : missingIdentities) {
+                    STORM_LOG_TRACE("Multiplying identity of global variable " << variable.getName() << " to independent action.");
+                    identityEncoding *= generationInfo.variableToIdentityMap.at(variable);
+                }
+
+                storm::dd::Add<Type, ValueType> result = identityEncoding * module.independentAction.transitionsDd;
+                
                 for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
-                    result += synchronizingAction.second.transitionsDd;
+                    // Compute missing global variable identities in synchronizing actions.
+                    missingIdentities = std::set<storm::expressions::Variable>();
+                    std::set_difference(generationInfo.allGlobalVariables.begin(), generationInfo.allGlobalVariables.end(), synchronizingAction.second.assignedGlobalVariables.begin(), synchronizingAction.second.assignedGlobalVariables.end(), std::inserter(missingIdentities, missingIdentities.begin()));
+                    identityEncoding = generationInfo.manager->template getAddOne<ValueType>();
+                    for (auto const& variable : missingIdentities) {
+                        STORM_LOG_TRACE("Multiplying identity of global variable " << variable.getName() << " to synchronizing action '" << synchronizingAction.first << "'.");
+                        identityEncoding *= generationInfo.variableToIdentityMap.at(variable);
+                    }
+                    
+                    result += identityEncoding * synchronizingAction.second.transitionsDd;
                 }
                 return result;
             } else {
@@ -1084,6 +1104,14 @@ namespace storm {
             ModuleDecisionDiagram system = composer.compose(generationInfo.program.specifiesSystemComposition() ? generationInfo.program.getSystemCompositionConstruct().getSystemComposition() : *generationInfo.program.getDefaultSystemComposition());
             
             storm::dd::Add<Type, ValueType> result = createSystemFromModule(generationInfo, system);
+            result.exportToDot("result_prism.dot");
+            std::cout << "nnz: " << result.getNonZeroCount() << std::endl;
+            std::cout << "nodecnt: " << result.getNodeCount() << std::endl;
+            std::cout << "meta var: " << std::endl;
+            for (auto const& var : result.getContainedMetaVariables()) {
+                std::cout << var.getName() << std::endl;
+            }
+            std::cout << std::endl;
             
             // Create an auxiliary DD that is used later during the construction of reward models.
             storm::dd::Add<Type, ValueType> stateActionDd = result.sumAbstract(generationInfo.columnMetaVariables);

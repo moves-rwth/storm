@@ -103,9 +103,14 @@ namespace storm {
             STORM_LOG_THROW(!this->hasMetaVariable(name), storm::exceptions::InvalidArgumentException, "A meta variable '" << name << "' already exists.");
             
             // Check that the range is legal.
-            STORM_LOG_THROW(high != low, storm::exceptions::InvalidArgumentException, "Range of meta variable must be at least 2 elements.");
+            STORM_LOG_THROW(high >= low, storm::exceptions::InvalidArgumentException, "Illegal empty range for meta variable.");
             
             std::size_t numberOfBits = static_cast<std::size_t>(std::ceil(std::log2(high - low + 1)));
+            
+            // For the case where low and high coincide, we need to have a single bit.
+            if (numberOfBits == 0) {
+                ++numberOfBits;
+            }
             
             storm::expressions::Variable unprimed = manager->declareBitVectorVariable(name, numberOfBits);
             storm::expressions::Variable primed = manager->declareBitVectorVariable(name + "'", numberOfBits);

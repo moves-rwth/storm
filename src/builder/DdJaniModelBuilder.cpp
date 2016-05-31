@@ -154,10 +154,10 @@ namespace storm {
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
 
             // A mapping from automata to the meta variable encoding their location.
-            std::map<std::string, storm::expressions::Variable> automatonToLocationVariableMap;
+            std::map<std::string, std::pair<storm::expressions::Variable, storm::expressions::Variable>> automatonToLocationVariableMap;
             
-            // The meta variables used to encode the actions.
-            std::vector<storm::expressions::Variable> actionVariables;
+            // A mapping from action indices to the meta variables used to encode these actions.
+            std::map<uint64_t, storm::expressions::Variable> actionVariablesMap;
             
             // The meta variables used to encode the remaining nondeterminism.
             std::vector<storm::expressions::Variable> nondeterminismVariables;
@@ -224,7 +224,7 @@ namespace storm {
                 for (auto const& action : this->model.getActions()) {
                     if (this->model.getActionIndex(action.getName()) != this->model.getSilentActionIndex()) {
                         std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(action.getName());
-                        result.actionVariables.push_back(variablePair.first);
+                        result.actionVariablesMap[this->model.getActionIndex(action.getName())] = variablePair.first;
                     }
                 }
                 
@@ -252,8 +252,8 @@ namespace storm {
                     storm::dd::Bdd<Type> range = result.manager->getBddOne();
                     
                     // Start by creating a meta variable for the location of the automaton.
-                    std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("l_" + automaton.getName(), 0, automaton.getNumberOfLocations());
-                    result.automatonToLocationVariableMap[automaton.getName()] = variablePair.first;
+                    std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("l_" + automaton.getName(), 0, automaton.getNumberOfLocations() - 1);
+                    result.automatonToLocationVariableMap[automaton.getName()] = variablePair;
                     storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(variablePair.first).equals(result.manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * result.manager->getRange(variablePair.first).template toAdd<ValueType>() * result.manager->getRange(variablePair.second).template toAdd<ValueType>();
                     identity &= variableIdentity.toBdd();
                     range &= result.manager->getRange(variablePair.first);
@@ -278,6 +278,7 @@ namespace storm {
             }
             
             void createVariable(storm::jani::BoundedIntegerVariable const& variable, CompositionVariables<Type, ValueType>& result) {
+                std::cout << "creating int variable " << variable.getName() << std::endl;
                 int_fast64_t low = variable.getLowerBound().evaluateAsInt();
                 int_fast64_t high = variable.getUpperBound().evaluateAsInt();
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getName(), low, high);
@@ -298,6 +299,7 @@ namespace storm {
             }
             
             void createVariable(storm::jani::BooleanVariable const& variable, CompositionVariables<Type, ValueType>& result) {
+                std::cout << "creating bool variable " << variable.getName() << std::endl;
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getName());
                 
                 STORM_LOG_TRACE("Created meta variables for global boolean variable: " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");
@@ -404,6 +406,8 @@ namespace storm {
             
             return result;
         }
+        
+        static int c = 0;
         
         // A class that is responsible for performing the actual composition.
         template <storm::dd::DdType Type, typename ValueType>
@@ -523,11 +527,11 @@ namespace storm {
                     storm::dd::Add<Type, ValueType> writtenVariable = variables.manager->template getIdentity<ValueType>(primedMetaVariable);
                     
                     // Translate the expression that is being assigned.
-                    storm::dd::Add<Type, ValueType> updateExpression = variables.rowExpressionAdapter->translateExpression(assignment.getExpressionVariable());
+                    storm::dd::Add<Type, ValueType> updateExpression = variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
                     
                     // Combine the update expression with the guard.
                     storm::dd::Add<Type, ValueType> result = updateExpression * guard;
-                    
+
                     // Combine the variable and the assigned expression.
                     result = result.equals(writtenVariable).template toAdd<ValueType>();
                     result *= guard;
@@ -535,6 +539,7 @@ namespace storm {
                     // Restrict the transitions to the range of the written variable.
                     result = result * variables.manager->getRange(primedMetaVariable).template toAdd<ValueType>();
                     
+                    // Combine the assignment DDs.
                     transitionsDd *= result;
                 }
                 
@@ -558,7 +563,7 @@ namespace storm {
                     }
                 }
                 
-                return EdgeDestinationDd<Type, ValueType>(transitionsDd * variables.rowExpressionAdapter->translateExpression(destination.getProbability()), assignedGlobalVariables);
+                return EdgeDestinationDd<Type, ValueType>(variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).second, destination.getLocationId()).template toAdd<ValueType>() * transitionsDd * variables.rowExpressionAdapter->translateExpression(destination.getProbability()), assignedGlobalVariables);
             }
             
             /*!
@@ -607,7 +612,10 @@ namespace storm {
                         transitionsDd += destinationDd.transitionsDd;
                     }
                     
-                    return EdgeDd<Type, ValueType>(guard, guard * transitionsDd, globalVariablesInSomeUpdate);
+                    transitionsDd.exportToDot("trans_edge" + std::to_string(c) + ".dot");
+                    ++c;
+                    
+                    return EdgeDd<Type, ValueType>(guard, variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationId()).template toAdd<ValueType>() * guard * transitionsDd, globalVariablesInSomeUpdate);
                 } else {
                     return EdgeDd<Type, ValueType>(variables.manager->template getAddZero<ValueType>(), variables.manager->template getAddZero<ValueType>());
                 }
@@ -639,12 +647,120 @@ namespace storm {
         };
         
         template <storm::dd::DdType Type, typename ValueType>
+        storm::dd::Add<Type, ValueType> encodeAction(uint64_t trueIndex, std::vector<storm::expressions::Variable> const& actionVariables, CompositionVariables<Type, ValueType> const& variables) {
+            storm::dd::Add<Type, ValueType> encoding = variables.manager->template getAddZero<ValueType>();
+            
+            trueIndex = actionVariables.size() - (trueIndex + 1);
+            uint64_t index = 0;
+            for (auto it = actionVariables.rbegin(), ite = actionVariables.rend(); it != ite; ++it, ++index) {
+                if (index == trueIndex) {
+                    encoding *= variables.manager->getEncoding(*it, 1).template toAdd<ValueType>();
+                } else {
+                    encoding *= variables.manager->getEncoding(*it, 0).template toAdd<ValueType>();
+                }
+            }
+            
+            return encoding;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        storm::dd::Add<Type, ValueType> computeMissingGlobalVariableIdentities(EdgeDd<Type, ValueType> const& edge, CompositionVariables<Type, ValueType> const& variables) {
+            std::set<storm::expressions::Variable> missingIdentities;
+            std::set_difference(variables.allGlobalVariables.begin(), variables.allGlobalVariables.end(), edge.writtenGlobalVariables.begin(), edge.writtenGlobalVariables.end(), std::inserter(missingIdentities, missingIdentities.begin()));
+            storm::dd::Add<Type, ValueType> identityEncoding = variables.manager->template getAddOne<ValueType>();
+            for (auto const& variable : missingIdentities) {
+                identityEncoding *= variables.variableToIdentityMap.at(variable);
+            }
+            return identityEncoding;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        storm::dd::Add<Type, ValueType> encodeIndex(uint64_t index, std::vector<storm::expressions::Variable> const& nondeterminismVariables, CompositionVariables<Type, ValueType> const& variables) {
+            storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
+            
+            STORM_LOG_TRACE("Encoding " << index << " with " << nondeterminismVariables.size() << " binary variable(s).");
+            
+            std::map<storm::expressions::Variable, int_fast64_t> metaVariableNameToValueMap;
+            for (uint_fast64_t i = 0; i < nondeterminismVariables.size(); ++i) {
+                if (index & (1ull << (nondeterminismVariables.size() - i - 1))) {
+                    metaVariableNameToValueMap.emplace(nondeterminismVariables[i], 1);
+                } else {
+                    metaVariableNameToValueMap.emplace(nondeterminismVariables[i], 0);
+                }
+            }
+            
+            result.setValue(metaVariableNameToValueMap, 1);
+            return result;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        storm::dd::Add<Type, ValueType> createGlobalTransitionRelation(storm::jani::Model const& model, AutomatonDd<Type, ValueType> const& automatonDd, CompositionVariables<Type, ValueType> const& variables) {
+            // If the model is an MDP, we need to encode the nondeterminism using additional variables.
+            if (model.getModelType() == storm::jani::ModelType::MDP) {
+                // Determine how many nondeterminism variables we need.
+                std::vector<storm::expressions::Variable> actionVariables;
+                std::map<uint64_t, uint64_t> actionIndexToVariableIndex;
+                uint64_t maximalNumberOfEdgesPerAction = 0;
+                for (auto const& action : automatonDd.actionIndexToEdges) {
+                    actionVariables.push_back(variables.actionVariablesMap.at(action.first));
+                    actionIndexToVariableIndex[action.first] = actionVariables.size() - 1;
+                    maximalNumberOfEdgesPerAction = std::max(maximalNumberOfEdgesPerAction, static_cast<uint64_t>(action.second.size()));
+                }
+                uint64_t numberOfNondeterminismVariables = static_cast<uint64_t>(std::ceil(std::log2(maximalNumberOfEdgesPerAction)));
+                std::vector<storm::expressions::Variable> nondeterminismVariables(numberOfNondeterminismVariables);
+                std::copy(variables.nondeterminismVariables.begin(), variables.nondeterminismVariables.begin() + numberOfNondeterminismVariables, nondeterminismVariables.begin());
+                
+                // Prepare result.
+                storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
+                
+                // Add edges to the result.
+                for (auto const& action : automatonDd.actionIndexToEdges) {
+                    storm::dd::Add<Type, ValueType> edgesForAction = variables.manager->template getAddZero<ValueType>();
+                    
+                    uint64_t edgeIndex = 0;
+                    for (auto const& edge : action.second) {
+                        edgesForAction += edge.transitionsDd * computeMissingGlobalVariableIdentities(edge, variables) * encodeIndex(edgeIndex, nondeterminismVariables, variables);
+                        ++edgeIndex;
+                    }
+                    
+                    result += edgesForAction * encodeAction<Type, ValueType>(actionIndexToVariableIndex.at(action.first), actionVariables, variables);
+                }
+            } else if (model.getModelType() == storm::jani::ModelType::DTMC || model.getModelType() == storm::jani::ModelType::CTMC) {
+                // Simply add all actions, but make sure to include the missing global variable identities.
+                storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
+                for (auto const& action : automatonDd.actionIndexToEdges) {
+                    uint64_t edgeIndex = 0;
+                    for (auto const& edge : action.second) {
+                        result += edge.transitionsDd * computeMissingGlobalVariableIdentities(edge, variables);
+                        edge.transitionsDd.exportToDot("edge_" + std::to_string(edgeIndex) + ".dot");
+                        ++edgeIndex;
+                    }
+                }
+                result.exportToDot("result.dot");
+                std::cout << "nnz: " << result.getNonZeroCount() << std::endl;
+                std::cout << "nodecnt: " << result.getNodeCount() << std::endl;
+                std::cout << "meta var: " << std::endl;
+                for (auto const& var : result.getContainedMetaVariables()) {
+                    std::cout << var.getName() << std::endl;
+                }
+                std::cout << std::endl;
+                return result;
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
+            }
+            return storm::dd::Add<Type, ValueType>();
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::translate() {
             CompositionVariableCreator<Type, ValueType> variableCreator(*this->model);
             CompositionVariables<Type, ValueType> variables = variableCreator.create();
             
             AutomatonComposer<Type, ValueType> composer(*this->model, variables);
             AutomatonDd<Type, ValueType> system = composer.compose();
+            
+            storm::dd::Add<Type, ValueType> transitions = createGlobalTransitionRelation(*this->model, system, variables);
+            transitions.exportToDot("trans.dot");
             
             // FIXME
             return nullptr;

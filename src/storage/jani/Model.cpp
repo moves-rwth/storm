@@ -156,12 +156,33 @@ namespace storm {
         }
         
         std::shared_ptr<Composition> Model::getStandardSystemComposition() const {
-            std::set<std::string> fullSynchronizationAlphabet = getActionNames(false);
-            
             std::shared_ptr<Composition> current;
             current = std::make_shared<AutomatonComposition>(this->automata.front().getName());
+            std::set<uint64_t> leftHandActionIndices = this->automata.front().getActionIndices();
+            
             for (uint64_t index = 1; index < automata.size(); ++index) {
-                current = std::make_shared<ParallelComposition>(current, std::make_shared<AutomatonComposition>(automata[index].getName()), fullSynchronizationAlphabet);
+                std::set<uint64_t> newActionIndices = automata[index].getActionIndices();
+                
+                // Compute the intersection of actions of the left- and right-hand side.
+                std::set<uint64_t> intersectionActions;
+                std::set_intersection(leftHandActionIndices.begin(), leftHandActionIndices.end(), newActionIndices.begin(), newActionIndices.end(), std::inserter(intersectionActions, intersectionActions.begin()));
+                
+                // If the silent action is in the intersection, we remove it since we cannot synchronize over it.
+                auto it = intersectionActions.find(this->getSilentActionIndex());
+                if (it != intersectionActions.end()) {
+                    intersectionActions.erase(it);
+                }
+                
+                // Then join the actions to reflect the actions of the new left-hand side.
+                leftHandActionIndices.insert(newActionIndices.begin(), newActionIndices.end());
+                
+                // Create the set of strings that represents the actions over which to synchronize.
+                std::set<std::string> intersectionActionNames;
+                for (auto const& actionIndex : intersectionActions) {
+                    intersectionActionNames.insert(this->getAction(actionIndex).getName());
+                }
+
+                current = std::make_shared<ParallelComposition>(current, std::make_shared<AutomatonComposition>(automata[index].getName()), intersectionActionNames);
             }
             return current;
         }

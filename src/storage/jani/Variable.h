@@ -9,6 +9,10 @@
 namespace storm {
     namespace jani {
         
+        class BooleanVariable;
+        class BoundedIntegerVariable;
+        class UnboundedIntegerVariable;
+        
         class Variable {
         public:
             /*!
@@ -40,6 +44,19 @@ namespace storm {
              * Retrieves whether the variable has an initial value.
              */
             bool hasInitialValue() const;
+            
+            // Methods to determine the type of the variable.
+            virtual bool isBooleanVariable() const;
+            virtual bool isBoundedIntegerVariable() const;
+            virtual bool isUnboundedIntegerVariable() const;
+            
+            // Methods to get the variable as a different type.
+            BooleanVariable& asBooleanVariable();
+            BooleanVariable const& asBooleanVariable() const;
+            BoundedIntegerVariable& asBoundedIntegerVariable();
+            BoundedIntegerVariable const& asBoundedIntegerVariable() const;
+            UnboundedIntegerVariable& asUnboundedIntegerVariable();
+            UnboundedIntegerVariable const& asUnboundedIntegerVariable() const;
             
         private:
             // The name of the variable.

@@ -164,6 +164,14 @@ namespace storm {
             return edges;
         }
         
+        std::set<uint64_t> Automaton::getActionIndices() const {
+            std::set<uint64_t> result;
+            for (auto const& edge : edges) {
+                result.insert(edge.getActionId());
+            }
+            return result;
+        }
+        
         uint64_t Automaton::getNumberOfLocations() const {
             return locations.size();
         }
