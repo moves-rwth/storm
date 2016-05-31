@@ -173,6 +173,9 @@ namespace storm {
             
             // DDs representing the valid ranges of the variables of each automaton.
             std::map<std::string, storm::dd::Add<Type, ValueType>> automatonToRangeMap;
+            
+            // A DD representing the valid ranges of the global variables.
+            storm::dd::Add<Type, ValueType> globalVariableRanges;
         };
         
         // A class responsible for creating the necessary variables for a subsequent composition of automata.
@@ -239,12 +242,16 @@ namespace storm {
                 }
                 
                 // Create global variables.
+                storm::dd::Bdd<Type> globalVariableRanges = result.manager->getBddOne();
                 for (auto const& variable : this->model.getGlobalVariables().getBoundedIntegerVariables()) {
                     createVariable(variable, result);
+                    globalVariableRanges &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
                 }
                 for (auto const& variable : this->model.getGlobalVariables().getBooleanVariables()) {
                     createVariable(variable, result);
+                    globalVariableRanges &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
                 }
+                result.globalVariableRanges = globalVariableRanges.template toAdd<ValueType>();
 
                 // Create the variables for the individual automata.
                 for (auto const& automaton : this->model.getAutomata()) {
@@ -271,14 +278,13 @@ namespace storm {
                     }
                     
                     result.automatonToIdentityMap[automaton.getName()] = identity.template toAdd<ValueType>();
-                    result.automatonToRangeMap[automaton.getName()] = range.template toAdd<ValueType>();
+                    result.automatonToRangeMap[automaton.getName()] = (range && globalVariableRanges).template toAdd<ValueType>();
                 }
                 
                 return result;
             }
             
             void createVariable(storm::jani::BoundedIntegerVariable const& variable, CompositionVariables<Type, ValueType>& result) {
-                std::cout << "creating int variable " << variable.getName() << std::endl;
                 int_fast64_t low = variable.getLowerBound().evaluateAsInt();
                 int_fast64_t high = variable.getUpperBound().evaluateAsInt();
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getName(), low, high);
@@ -299,7 +305,6 @@ namespace storm {
             }
             
             void createVariable(storm::jani::BooleanVariable const& variable, CompositionVariables<Type, ValueType>& result) {
-                std::cout << "creating bool variable " << variable.getName() << std::endl;
                 std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(variable.getName());
                 
                 STORM_LOG_TRACE("Created meta variables for global boolean variable: " << variablePair.first.getName() << " and " << variablePair.second.getName() << ".");
@@ -612,10 +617,15 @@ namespace storm {
                         transitionsDd += destinationDd.transitionsDd;
                     }
                     
-                    transitionsDd.exportToDot("trans_edge" + std::to_string(c) + ".dot");
-                    ++c;
+                    // Add the source location and the guard.
+                    transitionsDd *= variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationId()).template toAdd<ValueType>() * guard;
+
+                    // If we Multiply the ranges of global variables if we wrote at least one to make sure everything stays within its bounds.
+                    if (!globalVariablesInSomeUpdate.empty()) {
+                        transitionsDd *= variables.globalVariableRanges;
+                    }
                     
-                    return EdgeDd<Type, ValueType>(guard, variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationId()).template toAdd<ValueType>() * guard * transitionsDd, globalVariablesInSomeUpdate);
+                    return EdgeDd<Type, ValueType>(guard, transitionsDd, globalVariablesInSomeUpdate);
                 } else {
                     return EdgeDd<Type, ValueType>(variables.manager->template getAddZero<ValueType>(), variables.manager->template getAddZero<ValueType>());
                 }
@@ -729,21 +739,10 @@ namespace storm {
                 // Simply add all actions, but make sure to include the missing global variable identities.
                 storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
                 for (auto const& action : automatonDd.actionIndexToEdges) {
-                    uint64_t edgeIndex = 0;
                     for (auto const& edge : action.second) {
                         result += edge.transitionsDd * computeMissingGlobalVariableIdentities(edge, variables);
-                        edge.transitionsDd.exportToDot("edge_" + std::to_string(edgeIndex) + ".dot");
-                        ++edgeIndex;
                     }
                 }
-                result.exportToDot("result.dot");
-                std::cout << "nnz: " << result.getNonZeroCount() << std::endl;
-                std::cout << "nodecnt: " << result.getNodeCount() << std::endl;
-                std::cout << "meta var: " << std::endl;
-                for (auto const& var : result.getContainedMetaVariables()) {
-                    std::cout << var.getName() << std::endl;
-                }
-                std::cout << std::endl;
                 return result;
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
@@ -760,7 +759,6 @@ namespace storm {
             AutomatonDd<Type, ValueType> system = composer.compose();
             
             storm::dd::Add<Type, ValueType> transitions = createGlobalTransitionRelation(*this->model, system, variables);
-            transitions.exportToDot("trans.dot");
             
             // FIXME
             return nullptr;

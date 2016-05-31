@@ -1104,14 +1104,6 @@ namespace storm {
             ModuleDecisionDiagram system = composer.compose(generationInfo.program.specifiesSystemComposition() ? generationInfo.program.getSystemCompositionConstruct().getSystemComposition() : *generationInfo.program.getDefaultSystemComposition());
             
             storm::dd::Add<Type, ValueType> result = createSystemFromModule(generationInfo, system);
-            result.exportToDot("result_prism.dot");
-            std::cout << "nnz: " << result.getNonZeroCount() << std::endl;
-            std::cout << "nodecnt: " << result.getNodeCount() << std::endl;
-            std::cout << "meta var: " << std::endl;
-            for (auto const& var : result.getContainedMetaVariables()) {
-                std::cout << var.getName() << std::endl;
-            }
-            std::cout << std::endl;
             
             // Create an auxiliary DD that is used later during the construction of reward models.
             storm::dd::Add<Type, ValueType> stateActionDd = result.sumAbstract(generationInfo.columnMetaVariables);

@@ -43,7 +43,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Dtmc) {
     std::cout << "lead: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << std::endl;
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
-
+    
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/nand-5-2.pm");
     t1 = std::chrono::high_resolution_clock::now();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
@@ -59,11 +59,6 @@ TEST(DdPrismModelBuilderTest_Cudd, Dtmc) {
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
-
-//    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-2-2.pm");
-//    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
-//
-//    exit(-1);
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
@@ -79,7 +74,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Dtmc) {
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
-    
+        
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/nand-5-2.pm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     EXPECT_EQ(1728ul, model->getNumberOfStates());
