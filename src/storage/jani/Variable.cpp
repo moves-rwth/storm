@@ -7,7 +7,7 @@
 namespace storm {
     namespace jani {
         
-        Variable::Variable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValue) : name(name), variable(variable), initialValue(initialValue) {
+        Variable::Variable(std::string const& name, storm::expressions::Variable const& variable) : name(name), variable(variable) {
             // Intentionally left empty.
         }
         
@@ -15,20 +15,8 @@ namespace storm {
             return variable;
         }
 
-        bool Variable::hasInitialValue() const {
-            return initialValue.isInitialized();
-        }
-        
         std::string const& Variable::getName() const {
             return name;
-        }
-        
-        storm::expressions::Expression const& Variable::getInitialValue() const {
-            return initialValue;
-        }
-        
-        void Variable::setInitialValue(storm::expressions::Expression const& initialValue) {
-            this->initialValue = initialValue;
         }
         
         bool Variable::isBooleanVariable() const {

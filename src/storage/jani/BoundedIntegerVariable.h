@@ -11,7 +11,7 @@ namespace storm {
             /*!
              * Creates a bounded integer variable.
              */
-            BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound, storm::expressions::Expression const& initialValue = storm::expressions::Expression());
+            BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound);
             
             /*!
              * Retrieves the expression defining the lower bound of the variable.

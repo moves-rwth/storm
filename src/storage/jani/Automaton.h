@@ -210,6 +210,21 @@ namespace storm {
              */
             uint64_t getNumberOfEdges() const;
 
+            /*!
+             * Retrieves whether there is an expression defining the legal initial values of the automaton's variables.
+             */
+            bool hasInitialStatesExpression() const;
+            
+            /*!
+             * Retrieves the expression defining the legal initial values of the automaton's variables.
+             */
+            storm::expressions::Expression const& getInitialStatesExpression() const;
+            
+            /*!
+             * Sets the expression defining the legal initial values of the automaton's variables.
+             */
+            void setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression);
+            
         private:
             /// The name of the automaton.
             std::string name;
@@ -232,6 +247,9 @@ namespace storm {
 
             /// The index of the initial location.
             uint64_t initialLocationIndex;
+            
+            // The expression characterizing the legal initial values of the variables of the automaton.
+            storm::expressions::Expression initialStatesExpression;
         };
         
     }

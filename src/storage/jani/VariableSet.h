@@ -167,6 +167,11 @@ namespace storm {
              */
             bool containsUnboundedIntegerVariables() const;
 
+            /*!
+             * Retrieves whether this variable set is empty.
+             */
+            bool empty() const;
+            
         private:
             /// The vector of all variables.
             std::vector<std::shared_ptr<Variable>> variables;

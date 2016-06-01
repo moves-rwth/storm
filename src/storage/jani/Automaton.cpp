@@ -180,5 +180,17 @@ namespace storm {
             return edges.size();
         }
 
+        bool Automaton::hasInitialStatesExpression() const {
+            return initialStatesExpression.isInitialized();
+        }
+        
+        storm::expressions::Expression const& Automaton::getInitialStatesExpression() const {
+            return initialStatesExpression;
+        }
+        
+        void Automaton::setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression) {
+            this->initialStatesExpression = initialStatesExpression;
+        }
+        
     }
 }

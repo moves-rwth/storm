@@ -149,6 +149,10 @@ namespace storm {
             return !unboundedIntegerVariables.empty();
         }
         
+        bool VariableSet::empty() const {
+            return !(containsBooleanVariable() || containsBoundedIntegerVariable() || containsUnboundedIntegerVariables());
+        }
+        
         template class detail::Dereferencer<Variable>;
         template class detail::Dereferencer<BooleanVariable>;
         template class detail::Dereferencer<BoundedIntegerVariable>;

@@ -18,7 +18,7 @@ namespace storm {
             /*!
              * Creates a new variable.
              */
-            Variable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& initialValue);
+            Variable(std::string const& name, storm::expressions::Variable const& variable);
             
             /*!
              * Retrieves the associated expression variable
@@ -29,22 +29,7 @@ namespace storm {
              * Retrieves the name of the variable.
              */
             std::string const& getName() const;
-            
-            /*!
-             * Retrieves the initial value of the variable.
-             */
-            storm::expressions::Expression const& getInitialValue() const;
-            
-            /*!
-             * Sets a new value as the initial value of the variable.
-             */
-            void setInitialValue(storm::expressions::Expression const& initialValue);
-            
-            /*!
-             * Retrieves whether the variable has an initial value.
-             */
-            bool hasInitialValue() const;
-            
+                        
             // Methods to determine the type of the variable.
             virtual bool isBooleanVariable() const;
             virtual bool isBoundedIntegerVariable() const;
@@ -64,9 +49,6 @@ namespace storm {
             
             // The expression variable associated with this variable.
             storm::expressions::Variable variable;
-            
-            // The expression defining the initial value of the variable.
-            storm::expressions::Expression initialValue;
         };
         
     }

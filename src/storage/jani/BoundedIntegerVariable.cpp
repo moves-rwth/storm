@@ -3,7 +3,7 @@
 namespace storm {
     namespace jani {
         
-        BoundedIntegerVariable::BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound, storm::expressions::Expression const& initialValue) : Variable(name, variable, initialValue), lowerBound(lowerBound), upperBound(upperBound) {
+        BoundedIntegerVariable::BoundedIntegerVariable(std::string const& name, storm::expressions::Variable const& variable, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : Variable(name, variable), lowerBound(lowerBound), upperBound(upperBound) {
             // Intentionally left empty.
         }
         

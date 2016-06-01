@@ -281,22 +281,25 @@ namespace storm {
             }
             
             // Substitute constants in all global variables.
-            for (auto& variable : result.getGlobalVariables()) {
-                variable.setInitialValue(variable.getInitialValue().substitute(constantSubstitution));
-            }
             for (auto& variable : result.getGlobalVariables().getBoundedIntegerVariables()) {
                 variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
                 variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
             }
             
+            // Substitute constants in initial states expression.
+            if (this->hasInitialStatesExpression()) {
+                result.setInitialStatesExpression(this->getInitialStatesExpression().substitute(constantSubstitution));
+            }
+            
             // Substitute constants in variables of automata and their edges.
             for (auto& automaton : result.getAutomata()) {
-                for (auto& variable : automaton.getVariables()) {
-                    variable.setInitialValue(variable.getInitialValue().substitute(constantSubstitution));
-                }
                 for (auto& variable : automaton.getVariables().getBoundedIntegerVariables()) {
                     variable.setLowerBound(variable.getLowerBound().substitute(constantSubstitution));
                     variable.setUpperBound(variable.getUpperBound().substitute(constantSubstitution));
+                }
+                
+                if (automaton.hasInitialStatesExpression()) {
+                    automaton.setInitialStatesExpression(automaton.getInitialStatesExpression().substitute(constantSubstitution));
                 }
                 
                 for (auto& edge : automaton.getEdges()) {
@@ -314,6 +317,40 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        std::map<storm::expressions::Variable, storm::expressions::Expression> Model::getConstantsSubstitution() const {
+            std::map<storm::expressions::Variable, storm::expressions::Expression> result;
+            
+            for (auto const& constant : constants) {
+                if (constant.isDefined()) {
+                    result.emplace(constant.getExpressionVariable(), constant.getExpression());
+                }
+            }
+            
+            return result;
+        }
+        
+        bool Model::hasInitialStatesExpression() const {
+            return initialStatesExpression.isInitialized();
+        }
+     
+        storm::expressions::Expression Model::getInitialStatesExpression(bool includeAutomataInitialStatesExpressions) const {
+            STORM_LOG_THROW(globalVariables.empty() || this->hasInitialStatesExpression(), storm::exceptions::InvalidOperationException, "Cannot retrieve global initial states expression, because there is none.");
+            storm::expressions::Expression result = this->hasInitialStatesExpression() ? initialStatesExpression : expressionManager->boolean(true);
+            if (includeAutomataInitialStatesExpressions) {
+                for (auto const& automaton : automata) {
+                    STORM_LOG_THROW(automaton.getVariables().empty() || automaton.hasInitialStatesExpression(), storm::exceptions::InvalidOperationException, "Cannot retrieve initial states expression from automaton '" << automaton.getName() << "', because there is none.");
+                    if (!automaton.getVariables().empty()) {
+                        result = result && automaton.getInitialStatesExpression();
+                    }
+                }
+            }
+            return result;
+        }
+        
+        void Model::setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression) {
+            this->initialStatesExpression = initialStatesExpression;
         }
         
         bool Model::checkValidity(bool logdbg) const {

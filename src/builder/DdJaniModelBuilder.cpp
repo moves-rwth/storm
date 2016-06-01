@@ -15,6 +15,10 @@
 #include "src/storage/dd/Bdd.h"
 #include "src/adapters/AddExpressionAdapter.h"
 
+#include "src/models/symbolic/Dtmc.h"
+#include "src/models/symbolic/Ctmc.h"
+#include "src/models/symbolic/Mdp.h"
+
 #include "src/utility/macros.h"
 #include "src/utility/jani.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -412,8 +416,6 @@ namespace storm {
             return result;
         }
         
-        static int c = 0;
-        
         // A class that is responsible for performing the actual composition.
         template <storm::dd::DdType Type, typename ValueType>
         class AutomatonComposer : public storm::jani::CompositionVisitor {
@@ -704,7 +706,18 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> createGlobalTransitionRelation(storm::jani::Model const& model, AutomatonDd<Type, ValueType> const& automatonDd, CompositionVariables<Type, ValueType> const& variables) {
+        struct SystemDd {
+            SystemDd(storm::dd::Add<Type, ValueType> const& transitionsDd, storm::dd::Add<Type, ValueType> const& stateActionDd, uint64_t numberOfNondeterminismVariables = 0) : transitionsDd(transitionsDd), stateActionDd(stateActionDd), numberOfNondeterminismVariables(numberOfNondeterminismVariables) {
+                // Intentionally left empty.
+            }
+            
+            storm::dd::Add<Type, ValueType> transitionsDd;
+            storm::dd::Add<Type, ValueType> stateActionDd;
+            uint64_t numberOfNondeterminismVariables;
+        };
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        SystemDd<Type, ValueType> buildSystemDd(storm::jani::Model const& model, AutomatonDd<Type, ValueType> const& automatonDd, CompositionVariables<Type, ValueType> const& variables) {
             // If the model is an MDP, we need to encode the nondeterminism using additional variables.
             if (model.getModelType() == storm::jani::ModelType::MDP) {
                 // Determine how many nondeterminism variables we need.
@@ -735,6 +748,8 @@ namespace storm {
                     
                     result += edgesForAction * encodeAction<Type, ValueType>(actionIndexToVariableIndex.at(action.first), actionVariables, variables);
                 }
+                
+                return SystemDd<Type, ValueType>(result, result.sumAbstract(variables.columnMetaVariables), numberOfNondeterminismVariables);
             } else if (model.getModelType() == storm::jani::ModelType::DTMC || model.getModelType() == storm::jani::ModelType::CTMC) {
                 // Simply add all actions, but make sure to include the missing global variable identities.
                 storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
@@ -743,25 +758,95 @@ namespace storm {
                         result += edge.transitionsDd * computeMissingGlobalVariableIdentities(edge, variables);
                     }
                 }
-                return result;
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
+                
+                return SystemDd<Type, ValueType>(result, result.sumAbstract(variables.columnMetaVariables));
             }
-            return storm::dd::Add<Type, ValueType>();
+
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        struct ModelComponents {
+            storm::dd::Bdd<Type> reachableStates;
+            storm::dd::Bdd<Type> initialStates;
+            storm::dd::Add<Type, ValueType> transitionMatrix;
+            std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> rewardModels;
+        };
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> createModel(storm::jani::ModelType const& modelType, CompositionVariables<Type, ValueType> const& variables, ModelComponents<Type, ValueType> const& modelComponents) {
+            if (modelType == storm::jani::ModelType::DTMC) {
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
+            } else if (modelType == storm::jani::ModelType::CTMC) {
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
+            } else if (modelType == storm::jani::ModelType::MDP) {
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid model type.");
+            }
+
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        void postprocessSystemDd(storm::jani::Model const& model, SystemDd<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
+            // For DTMCs, we normalize each row to 1 (to account for non-determinism).
+            if (model.getModelType() == storm::jani::ModelType::DTMC) {
+                system.transitionsDd = system.transitionsDd / system.stateActionDd;
+            }
+            
+            
+            // If we were asked to treat some states as terminal states, we cut away their transitions now.
+            if (options.terminalStates || options.negatedTerminalStates) {
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = model.getConstantsSubstitution();
+                
+                storm::dd::Bdd<Type> terminalStatesBdd = variables.manager->getBddZero();
+                if (options.terminalStates) {
+                    storm::expressions::Expression terminalExpression = options.terminalStates.get().substitute(constantsSubstitution);
+                    STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
+                    terminalStatesBdd = variables.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
+                }
+                if (options.negatedTerminalStates) {
+                    storm::expressions::Expression negatedTerminalExpression = options.negatedTerminalStates.get().substitute(constantsSubstitution);
+                    STORM_LOG_TRACE("Making the states *not* satisfying " << negatedTerminalExpression << " terminal.");
+                    terminalStatesBdd |= !variables.rowExpressionAdapter->translateExpression(negatedTerminalExpression).toBdd();
+                }
+                
+                system.transitionMatrix *= (!terminalStatesBdd).template toAdd<ValueType>();
+            }
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        storm::dd::Bdd<Type> computeInitial(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables) {
+            storm::dd::Bdd<Type> initialStates = variables.rowExpressionAdapter->translateExpression( generationInfo.program.getInitialConstruct().getInitialStatesExpression()).toBdd();
+            
+            for (auto const& metaVariable : generationInfo.rowMetaVariables) {
+                initialStates &= generationInfo.manager->getRange(metaVariable);
+            }
+            
+            return initialStates;
         }
         
         template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::translate() {
+            // Create all necessary variables.
             CompositionVariableCreator<Type, ValueType> variableCreator(*this->model);
             CompositionVariables<Type, ValueType> variables = variableCreator.create();
             
+            // Compose the automata to a single automaton.
             AutomatonComposer<Type, ValueType> composer(*this->model, variables);
-            AutomatonDd<Type, ValueType> system = composer.compose();
+            AutomatonDd<Type, ValueType> globalAutomaton = composer.compose();
             
-            storm::dd::Add<Type, ValueType> transitions = createGlobalTransitionRelation(*this->model, system, variables);
+            // Combine the edges of the single automaton to the full system DD.
+            SystemDd<Type, ValueType> system = buildSystemDd(*this->model, globalAutomaton, variables);
+
+            // Postprocess the system. This modifies the systemDd in place.
+            postprocessSystemDd(*this->model, system, variables, options);
             
-            // FIXME
-            return nullptr;
+            
+            ModelComponents<Type, ValueType> modelComponents;
+    
+            
+            return createModel(this->model->getModelType(), variables, modelComponents);
         }
         
         template class DdJaniModelBuilder<storm::dd::DdType::CUDD, double>;

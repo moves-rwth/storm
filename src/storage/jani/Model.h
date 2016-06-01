@@ -220,6 +220,30 @@ namespace storm {
             Model substituteConstants() const;
             
             /*!
+             * Retrieves a mapping from expression variables associated with defined constants of the model to their
+             * (the constants') defining expression.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
+            
+            /*!
+             * Retrieves whether there is an expression defining the legal initial values of the global variables.
+             */
+            bool hasInitialStatesExpression() const;
+            
+            /*!
+             * Retrieves the expression defining the legal initial values of the variables.
+             *
+             * @param includeAutomataInitialStatesExpressions If set to true, the expression defines the legal initial
+             * states not only for the global variables but also for the variables of each automaton.
+             */
+            storm::expressions::Expression getInitialStatesExpression(bool includeAutomataInitialStatesExpressions = false) const;
+            
+            /*!
+             * Sets the expression defining the legal initial values of the global variables.
+             */
+            void setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression);
+            
+            /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.
              */
             bool checkValidity(bool logdbg = true) const;
@@ -263,6 +287,9 @@ namespace storm {
             
             /// An expression describing how the system is composed of the automata.
             std::shared_ptr<Composition> composition;
+            
+            // The expression characterizing the legal initial values of the global variables.
+            storm::expressions::Expression initialStatesExpression;
         };
     }
 }
