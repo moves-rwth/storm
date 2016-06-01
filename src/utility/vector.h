@@ -6,12 +6,13 @@
 #include "tbb/tbb.h"
 #endif
 
-#include "constants.h"
 #include <iostream>
 #include <algorithm>
 #include <functional>
+#include <numeric>
 
 #include "src/storage/BitVector.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/solver/OptimizationDirection.h"
 
@@ -347,32 +348,15 @@ namespace storm {
             }
             
             /*!
-             * Converts the numbers in the given vector to the target representation
-             *
-             * @param target The target vector in which the resulting numbers are written.
-             * @param source The source vector whose numbers are converted
-             */
-            template<class SourceType, class TargetType>
-            void convertVector(std::vector<SourceType> const& source, std::vector<TargetType>& target) {
-                applyPointwise<SourceType, TargetType>(source, target, [&] (SourceType const& argument) -> TargetType { return convertNumber<TargetType>(argument); });
-            }
-            
-            /*!
-             * Multiplies the two given vectors (scalar product) and returns the result
+             * Computes the dot product (aka scalar product) and returns the result
              *
              * @param firstOperand The first operand.
              * @param secondOperand The second operand
              * @return firstOperand*secondOperand
              */
             template<class T>
-            T multiplyVectors(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand) {
-                T res = storm::utility::zero<T>();
-                auto it1 = firstOperand.begin();
-                auto it2 = secondOperand.begin();
-                for(; it1<firstOperand.end(); ++it1, ++it2){
-                    res += (*it1) * (*it2);
-                }
-                return res;
+            T dotProduct(std::vector<T> const& firstOperand, std::vector<T> const& secondOperand) {
+                return std::inner_product(firstOperand.begin(), firstOperand.end(), secondOperand.begin(), storm::utility::zero<T>());
             }
             
             /*!
@@ -731,6 +715,11 @@ namespace storm {
                 }
                 STORM_LOG_ASSERT(result.size() == filter.getNumberOfSetBits(), "Result does not match.");
                 return result;
+            }
+            
+            template<typename T>
+            bool hasNegativeEntries(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return value < storm::utility::zero<T>();});
             }
             
             /*!
