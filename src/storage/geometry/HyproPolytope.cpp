@@ -157,7 +157,7 @@ namespace storm {
                 }
                 // Add Halfspaces to bound the polytope in each (positive) direction
                 for(uint_fast64_t dim = 0; dim < internPolytope.dimension(); ++dim){
-                    hypro::vector_t<ValueType> direction = hypro::vector_t<ValueType>::Zero(dim);
+                    hypro::vector_t<ValueType> direction = hypro::vector_t<ValueType>::Zero(internPolytope.dimension());
                     direction(dim) = storm::utility::one<ValueType>();
                     if(upperBounds){
                         ValueType upperBound = (*upperBounds)[dim];
