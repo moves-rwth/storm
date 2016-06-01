@@ -6,9 +6,10 @@
 
 #ifdef STORM_HAVE_HYPRO
 
-#include </Users/tim/hypro/src/lib/datastructures/Halfspace.h>
-//#include <lib/types.h>
-#include <lib/representations/Polytope/Polytope.h>
+#include <lib/datastructures/Halfspace.h>
+#include <lib/typedefs.h>
+#include <lib/representations/conversion/Converter.h>
+#include <lib/representations/Polytopes/HPolytope/HPolytope.h>
 
 #include "src/adapters/CarlAdapter.h"
 #include "src/storage/geometry/HalfSpace.h"
@@ -33,12 +34,14 @@ namespace storm {
         
         template <typename T>
         hypro::Halfspace<T> toHypro(storm::storage::geometry::Halfspace<T> const& h){
-            return hypro::Halfspace<T>(toHypro(h.normalVector()), h.offset());
+            T offset = h.offset();
+            return hypro::Halfspace<T>(toHypro(h.normalVector()), std::move(offset));
         }
         
         template <typename T>
-        hypro::Halfspace<T> fromHypro(hypro::Halfspace<T> const& h){
-            return storm::storage::geometry::Halfspace<T>(fromHypro(h.normal()), h.offset());
+        storm::storage::geometry::Halfspace<T> fromHypro(hypro::Halfspace<T> const& h){
+            T offset = h.offset();
+            return storm::storage::geometry::Halfspace<T>(fromHypro(h.normal()), std::move(offset));
         }
         
     }
