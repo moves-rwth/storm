@@ -57,9 +57,13 @@ TEST(DdPrismModelBuilderTest_Cudd, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model->getTransitionMatrix().exportToDot("trans_prism.dot");
+    std::cout << "nnz: " << model->getTransitionMatrix().getNonZeroCount() << std::endl;
+    std::cout << "nodes: " << model->getTransitionMatrix().getNodeCount() << std::endl;
+    std::cout << "vars: " << model->getTransitionMatrix().getContainedMetaVariables().size() << std::endl;
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
-    
+        
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     EXPECT_EQ(677ul, model->getNumberOfStates());

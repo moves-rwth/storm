@@ -256,8 +256,6 @@ namespace storm {
             static SystemResult createSystemDecisionDiagram(GenerationInformation& generationInfo);
             
             static storm::dd::Bdd<Type> createInitialStatesDecisionDiagram(GenerationInformation& generationInfo);
-
-            static storm::dd::Bdd<Type> computeReachableStates(GenerationInformation& generationInfo, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitions);
             
             // This member holds the program that was most recently translated (if any).
             boost::optional<storm::prism::Program> preparedProgram;

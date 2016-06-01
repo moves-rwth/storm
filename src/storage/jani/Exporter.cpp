@@ -88,10 +88,6 @@ namespace storm {
             out << ",";
             clearLine(out);
             appendIndent(out, indent);
-            appendField(out, "initial-value");
-            appendValue(out, expressionToString(variable.getInitialValue()));
-            clearLine(out);
-            appendIndent(out, indent);
             out << "}";
         }
 
@@ -137,10 +133,6 @@ namespace storm {
             appendBoundedIntegerVariableType(out, variable, indent + 2);
             out << ",";
             clearLine(out);
-            appendIndent(out, indent + 1);
-            appendField(out, "initial-value");
-            appendValue(out, expressionToString(variable.getInitialValue()));
-            clearLine(out);
             appendIndent(out, indent);
             out << "}";
         }
@@ -158,10 +150,6 @@ namespace storm {
             appendField(out, "type");
             appendValue(out, "int");
             out << ",";
-            clearLine(out);
-            appendIndent(out, indent + 1);
-            appendField(out, "initial-value");
-            appendValue(out, expressionToString(variable.getInitialValue()));
             clearLine(out);
             appendIndent(out, indent);
             out << "}";
@@ -359,6 +347,21 @@ namespace storm {
             appendField(out, "initial-location");
             appendValue(out, std::to_string(automaton.getInitialLocationIndex()));
             clearLine(out);
+            if (automaton.hasInitialStatesExpression()) {
+                appendIndent(out, indent + 1);
+                appendField(out, "initial-states");
+                clearLine(out);
+                appendIndent(out, indent + 2);
+                out << "{";
+                clearLine(out);
+                appendIndent(out, indent + 3);
+                appendField(out, "exp");
+                appendValue(out, expressionToString(automaton.getInitialStatesExpression()));
+                clearLine(out);
+                appendIndent(out, indent + 2);
+                out << "}";
+                clearLine(out);
+            }
             
             appendEdges(out, model, automaton, indent + 1);
             
@@ -401,6 +404,23 @@ namespace storm {
             clearLine(out);
             appendVariables(out, model.getGlobalVariables(), 1);
             clearLine(out);
+            
+            if (model.hasInitialStatesExpression()) {
+                appendIndent(out, 1);
+                appendField(out, "initial-states");
+                clearLine(out);
+                appendIndent(out, 2);
+                out << "{";
+                clearLine(out);
+                appendIndent(out, 3);
+                appendField(out, "exp");
+                appendValue(out, expressionToString(model.getInitialStatesExpression()));
+                clearLine(out);
+                appendIndent(out, 2);
+                out << "}";
+                clearLine(out);
+            }
+            
             appendAutomata(out, model, 1);
             clearLine(out);
             out << "}" << std::endl;

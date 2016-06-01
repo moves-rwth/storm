@@ -7,7 +7,6 @@
 #include "src/models/symbolic/Mdp.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 
-#include "src/storage/dd/DdManager.h"
 #include "src/settings/SettingsManager.h"
 
 #include "src/exceptions/InvalidStateException.h"
@@ -16,9 +15,11 @@
 
 #include "src/utility/prism.h"
 #include "src/utility/math.h"
+#include "src/utility/dd.h"
+
+#include "src/storage/dd/DdManager.h"
 #include "src/storage/prism/Program.h"
 #include "src/storage/prism/Compositions.h"
-
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/cudd/CuddAddIterator.h"
 #include "src/storage/dd/Bdd.h"
@@ -1328,7 +1329,7 @@ namespace storm {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
             }
             
-            storm::dd::Bdd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrixBdd);
+            storm::dd::Bdd<Type> reachableStates = storm::utility::dd::computeReachableStates<Type>(initialStates, transitionMatrixBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
             storm::dd::Add<Type, ValueType> reachableStatesAdd = reachableStates.template toAdd<ValueType>();
             transitionMatrix *= reachableStatesAdd;
             stateActionDd *= reachableStatesAdd;
@@ -1347,17 +1348,23 @@ namespace storm {
                         STORM_LOG_INFO((*it).first.toPrettyString(generationInfo.rowMetaVariables) << std::endl);
                     }
                     
-                    if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+                    if (program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::CTMC) {
+                        storm::dd::Add<Type, ValueType> identity = globalModule.identity;
+                        
+                        // Make sure that global variables do not change along the introduced self-loops.
+                        for (auto const& var : generationInfo.allGlobalVariables) {
+                            identity *= generationInfo.variableToIdentityMap.at(var);
+                        }
+
                         // For DTMCs, we can simply add the identity of the global module for all deadlock states.
-                        transitionMatrix += deadlockStates * globalModule.identity;
+                        transitionMatrix += deadlockStates * identity;
                     } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                         // For MDPs, however, we need to select an action associated with the self-loop, if we do not
                         // want to attach a lot of self-loops to the deadlock states.
                         storm::dd::Add<Type, ValueType> action = generationInfo.manager->template getAddOne<ValueType>();
-                        std::for_each(generationInfo.allNondeterminismVariables.begin(), generationInfo.allNondeterminismVariables.end(),
-                                      [&action, &generationInfo] (storm::expressions::Variable const& metaVariable) {
-                                          action *= generationInfo.manager->template getIdentity<ValueType>(metaVariable);
-                                      });
+                        for (auto const& metaVariable : generationInfo.allNondeterminismVariables) {
+                            action *= generationInfo.manager->template getIdentity<ValueType>(metaVariable);
+                        }
                         // Make sure that global variables do not change along the introduced self-loops.
                         for (auto const& var : generationInfo.allGlobalVariables) {
                             action *= generationInfo.variableToIdentityMap.at(var);
@@ -1419,32 +1426,6 @@ namespace storm {
             }
             
             return initialStates;
-        }
-        
-        template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Bdd<Type> DdPrismModelBuilder<Type, ValueType>::computeReachableStates(GenerationInformation& generationInfo, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitionBdd) {
-            storm::dd::Bdd<Type> reachableStates = initialStates;
-            
-            // Perform the BFS to discover all reachable states.
-            bool changed = true;
-            uint_fast64_t iteration = 0;
-            do {
-                STORM_LOG_TRACE("Iteration " << iteration << " of reachability analysis.");
-                changed = false;
-                storm::dd::Bdd<Type> tmp = reachableStates.relationalProduct(transitionBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
-                storm::dd::Bdd<Type> newReachableStates = tmp && (!reachableStates);
-                
-                // Check whether new states were indeed discovered.
-                if (!newReachableStates.isZero()) {
-                    changed = true;
-                }
-                
-                reachableStates |= newReachableStates;
-                
-                ++iteration;
-            } while (changed);
-            
-            return reachableStates;
         }
         
         // Explicitly instantiate the symbolic model builder.

@@ -1494,7 +1494,8 @@ namespace storm {
                 default: modelType = storm::jani::ModelType::UNDEFINED;
             }
             storm::jani::Model janiModel("jani_from_prism", modelType, 1, manager);
-            
+            storm::expressions::Expression globalInitialStatesExpression;
+
             // Add all constants of the PRISM program to the JANI model.
             for (auto const& constant : constants) {
                 janiModel.addConstant(storm::jani::Constant(constant.getName(), constant.getExpressionVariable(), constant.isDefined() ? boost::optional<storm::expressions::Expression>(constant.getExpression()) : boost::none));
@@ -1502,10 +1503,14 @@ namespace storm {
             
             // Add all global variables of the PRISM program to the JANI model.
             for (auto const& variable : globalBooleanVariables) {
-                janiModel.addBooleanVariable(storm::jani::BooleanVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression()));
+                janiModel.addBooleanVariable(storm::jani::BooleanVariable(variable.getName(), variable.getExpressionVariable()));
+                storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
             }
             for (auto const& variable : globalIntegerVariables) {
-                janiModel.addBoundedIntegerVariable(storm::jani::BoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getLowerBoundExpression(), variable.getUpperBoundExpression(), variable.getInitialValueExpression()));
+                janiModel.addBoundedIntegerVariable(storm::jani::BoundedIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getLowerBoundExpression(), variable.getUpperBoundExpression()));
+                storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
+                globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
             }
             
             // Add all actions of the PRISM program to the JANI model.
@@ -1545,28 +1550,41 @@ namespace storm {
             // previously built mapping to make variables global that are read by more than one module.
             for (auto const& module : modules) {
                 storm::jani::Automaton automaton(module.getName());
+                storm::expressions::Expression initialStatesExpression;
+
                 for (auto const& variable : module.getBooleanVariables()) {
-                    storm::jani::BooleanVariable newBooleanVariable(variable.getName(), variable.getExpressionVariable(), variable.getInitialValueExpression());
+                    storm::jani::BooleanVariable newBooleanVariable(variable.getName(), variable.getExpressionVariable());
                     std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
                     // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
                     if (accessingModuleIndices.size() == 1) {
                         automaton.addBooleanVariable(newBooleanVariable);
-                    } else { // if (accessingModuleIndices.size() > 1) {
+                        storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                        initialStatesExpression = initialStatesExpression.isInitialized() ? initialStatesExpression && variableInitialExpression : variableInitialExpression;
+                    } else if (accessingModuleIndices.size() > 1) {
                         // Otherwise, we need to make it global.
                         janiModel.addBooleanVariable(newBooleanVariable);
+                        storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
+                        globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
                     }
                 }
                 for (auto const& variable : module.getIntegerVariables()) {
-                    storm::jani::BoundedIntegerVariable newIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getLowerBoundExpression(), variable.getUpperBoundExpression(), variable.getInitialValueExpression());
+                    storm::jani::BoundedIntegerVariable newIntegerVariable(variable.getName(), variable.getExpressionVariable(), variable.getLowerBoundExpression(), variable.getUpperBoundExpression());
                     std::set<uint_fast64_t> const& accessingModuleIndices = variablesToAccessingModuleIndices[variable.getExpressionVariable()];
                     // If there is exactly one module reading and writing the variable, we can make the variable local to this module.
                     if (accessingModuleIndices.size() == 1) {
                         automaton.addBoundedIntegerVariable(newIntegerVariable);
-                    } else { //if (accessingModuleIndices.size() > 1) {
+                        storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
+                        initialStatesExpression = initialStatesExpression.isInitialized() ? initialStatesExpression && variableInitialExpression : variableInitialExpression;
+                    } else if (accessingModuleIndices.size() > 1) {
                         // Otherwise, we need to make it global.
                         janiModel.addBoundedIntegerVariable(newIntegerVariable);
+                        storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
+                        globalInitialStatesExpression = globalInitialStatesExpression.isInitialized() ? globalInitialStatesExpression && variableInitialExpression : variableInitialExpression;
                     }
                 }
+                
+                // Set the proper expression characterizing the initial values of the automaton's variables.
+                automaton.setInitialStatesExpression(initialStatesExpression);
                 
                 // Create a single location that will have all the edges.
                 uint64_t onlyLocation = automaton.addLocation(storm::jani::Location("l"));
@@ -1602,6 +1620,9 @@ namespace storm {
                 
                 janiModel.addAutomaton(automaton);
             }
+            
+            // Set the proper expression characterizing the initial values of the global variables.
+            janiModel.setInitialStatesExpression(globalInitialStatesExpression);
             
             // Set the standard system composition. This is possible, because we reject non-standard compositions anyway.
             janiModel.setSystemComposition(janiModel.getStandardSystemComposition());
