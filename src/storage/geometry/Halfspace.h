@@ -45,11 +45,13 @@ namespace storm {
                         if(it != normalVector().begin()){
                             stream << ", ";
                         }
+                        std::stringstream numberStream;
                         if(numbersAsDouble) {
-                            stream << std::setw(10) << storm::utility::convertNumber<double>(*it);
+                            numberStream << storm::utility::convertNumber<double>(*it);
                         } else {
-                            stream << std::setw(10) << *it;
+                            numberStream << *it;
                         }
+                        stream << std::setw(10) << numberStream.str();
                     }
                     stream << ") * x <= " << offset();
                     return stream.str();

@@ -25,11 +25,7 @@ namespace storm {
             
         template <typename T>
         hypro::vector_t<T> toHypro(std::vector<T> const& v) {
-            hypro::vector_t<T> res(v.size());
-            for ( auto const& value : v){
-                res << value;
-            }
-            return res;
+            return hypro::vector_t<T>::Map(v.data(), v.size());
         }
         
         template <typename T>
