@@ -27,7 +27,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Dtmc) {
     std::cout << "brp: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << std::endl;
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
-
+    
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     t1 = std::chrono::high_resolution_clock::now();
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
@@ -57,10 +57,6 @@ TEST(DdPrismModelBuilderTest_Cudd, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
     std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
-    model->getTransitionMatrix().exportToDot("trans_prism.dot");
-    std::cout << "nnz: " << model->getTransitionMatrix().getNonZeroCount() << std::endl;
-    std::cout << "nodes: " << model->getTransitionMatrix().getNodeCount() << std::endl;
-    std::cout << "vars: " << model->getTransitionMatrix().getContainedMetaVariables().size() << std::endl;
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
         
@@ -68,7 +64,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Dtmc) {
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
-    
+
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     EXPECT_EQ(8607ul, model->getNumberOfStates());
@@ -78,7 +74,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Dtmc) {
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
-        
+    
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/nand-5-2.pm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     EXPECT_EQ(1728ul, model->getNumberOfStates());

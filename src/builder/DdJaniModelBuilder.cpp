@@ -252,13 +252,19 @@ namespace storm {
                     result.nondeterminismVariables.insert(variablePair.first);
                 }
                 
+                for (auto const& automaton : this->model.getAutomata()) {
+                    // Start by creating a meta variable for the location of the automaton.
+                    std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("l_" + automaton.getName(), 0, automaton.getNumberOfLocations() - 1);
+                    result.automatonToLocationVariableMap[automaton.getName()] = variablePair;
+                    
+                    // Add the location variable to the row/column variables.
+                    result.rowMetaVariables.insert(variablePair.first);
+                    result.columnMetaVariables.insert(variablePair.second);
+                }
+                
                 // Create global variables.
                 storm::dd::Bdd<Type> globalVariableRanges = result.manager->getBddOne();
-                for (auto const& variable : this->model.getGlobalVariables().getBoundedIntegerVariables()) {
-                    createVariable(variable, result);
-                    globalVariableRanges &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
-                }
-                for (auto const& variable : this->model.getGlobalVariables().getBooleanVariables()) {
+                for (auto const& variable : this->model.getGlobalVariables()) {
                     createVariable(variable, result);
                     globalVariableRanges &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
                 }
@@ -269,24 +275,14 @@ namespace storm {
                     storm::dd::Bdd<Type> identity = result.manager->getBddOne();
                     storm::dd::Bdd<Type> range = result.manager->getBddOne();
                     
-                    // Start by creating a meta variable for the location of the automaton.
-                    std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("l_" + automaton.getName(), 0, automaton.getNumberOfLocations() - 1);
-                    result.automatonToLocationVariableMap[automaton.getName()] = variablePair;
-                    storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(variablePair.first).equals(result.manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * result.manager->getRange(variablePair.first).template toAdd<ValueType>() * result.manager->getRange(variablePair.second).template toAdd<ValueType>();
+                    // Add the identity and ranges of the location variables to the ones of the automaton.
+                    std::pair<storm::expressions::Variable, storm::expressions::Variable> const& locationVariables = result.automatonToLocationVariableMap[automaton.getName()];
+                    storm::dd::Add<Type, ValueType> variableIdentity = result.manager->template getIdentity<ValueType>(locationVariables.first).equals(result.manager->template getIdentity<ValueType>(locationVariables.second)).template toAdd<ValueType>() * result.manager->getRange(locationVariables.first).template toAdd<ValueType>() * result.manager->getRange(locationVariables.second).template toAdd<ValueType>();
                     identity &= variableIdentity.toBdd();
-                    range &= result.manager->getRange(variablePair.first);
-                    
-                    // Add the location variable to the row/column variables.
-                    result.rowMetaVariables.insert(variablePair.first);
-                    result.columnMetaVariables.insert(variablePair.second);
+                    range &= result.manager->getRange(locationVariables.first);
                     
                     // Then create variables for the variables of the automaton.
-                    for (auto const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
-                        createVariable(variable, result);
-                        identity &= result.variableToIdentityMap.at(variable.getExpressionVariable()).toBdd();
-                        range &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
-                    }
-                    for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
+                    for (auto const& variable : automaton.getVariables()) {
                         createVariable(variable, result);
                         identity &= result.variableToIdentityMap.at(variable.getExpressionVariable()).toBdd();
                         range &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
@@ -297,6 +293,16 @@ namespace storm {
                 }
                 
                 return result;
+            }
+            
+            void createVariable(storm::jani::Variable const& variable, CompositionVariables<Type, ValueType>& result) {
+                if (variable.isBooleanVariable()) {
+                    createVariable(variable.asBooleanVariable(), result);
+                } else if (variable.isBoundedIntegerVariable()) {
+                    createVariable(variable.asBoundedIntegerVariable(), result);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid type of variable in JANI model.");
+                }
             }
             
             void createVariable(storm::jani::BoundedIntegerVariable const& variable, CompositionVariables<Type, ValueType>& result) {
@@ -399,6 +405,14 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         EdgeDd<Type, ValueType> composeEdgesInParallel(EdgeDd<Type, ValueType> const& edge1, EdgeDd<Type, ValueType> const& edge2) {
             EdgeDd<Type, ValueType> result;
+
+            // Compose the guards.
+            result.guardDd = edge1.guardDd * edge2.guardDd;
+            
+            // If the composed guard is already zero, we can immediately return an empty result.
+            if (result.guardDd.isZero()) {
+                result.transitionsDd = edge1.transitionsDd.getDdManager().template getAddZero<ValueType>();
+            }
             
             // Compute the set of variables written multiple times by the composition.
             std::set<storm::expressions::Variable> oldVariablesWrittenMultipleTimes;
@@ -494,6 +508,7 @@ namespace storm {
                 
                 // First, consider all actions in the left subcomposition.
                 AutomatonDd<Type, ValueType> result(leftSubautomaton.identity * rightSubautomaton.identity);
+                uint64_t index = 0;
                 for (auto const& actionEdges : leftSubautomaton.actionIndexToEdges) {
                     // If we need to synchronize over this action, do so now.
                     if (synchronizingActionIndices.find(actionEdges.first) != synchronizingActionIndices.end()) {
@@ -501,7 +516,11 @@ namespace storm {
                         if (rightIt != rightSubautomaton.actionIndexToEdges.end()) {
                             for (auto const& edge1 : actionEdges.second) {
                                 for (auto const& edge2 : rightIt->second) {
-                                    result.actionIndexToEdges[actionEdges.first].push_back(composeEdgesInParallel(edge1, edge2));
+                                    EdgeDd<Type, ValueType> edgeDd = composeEdgesInParallel(edge1, edge2);
+                                    if (!edgeDd.guardDd.isZero()) {
+                                        result.actionIndexToEdges[actionEdges.first].push_back(edgeDd);
+                                    }
+                                    index++;
                                 }
                             }
                         }
@@ -900,10 +919,10 @@ namespace storm {
             // Compose the automata to a single automaton.
             AutomatonComposer<Type, ValueType> composer(*this->model, variables);
             AutomatonDd<Type, ValueType> globalAutomaton = composer.compose();
-            
+
             // Combine the edges of the single automaton to the full system DD.
             SystemDd<Type, ValueType> system = buildSystemDd(*this->model, globalAutomaton, variables);
-
+            
             // Postprocess the system. This modifies the systemDd in place.
             postprocessSystemAndVariables(*this->model, system, variables, options);
             
@@ -918,19 +937,15 @@ namespace storm {
             if (this->model->getModelType() == storm::jani::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.nondeterminismVariables);
             }
-            transitionMatrixBdd.template toAdd<ValueType>().exportToDot("trans_before_reach.dot");
-            modelComponents.initialStates.template toAdd<ValueType>().exportToDot("initial.dot");
             modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables);
-            modelComponents.reachableStates.template toAdd<ValueType>().exportToDot("reach.dot");
 
             // Cut transitions to reachable states.
             storm::dd::Add<Type, ValueType> reachableStatesAdd = modelComponents.reachableStates.template toAdd<ValueType>();
             modelComponents.transitionMatrix = system.transitionsDd * reachableStatesAdd;
-            system.transitionsDd.exportToDot("trans_full.dot");
             system.stateActionDd *= reachableStatesAdd;
 
             // Fix deadlocks if existing.
-            // fixDeadlocks(this->model->getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
+            fixDeadlocks(this->model->getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
             
             // Finally, create the model.
             return createModel(this->model->getModelType(), variables, modelComponents);

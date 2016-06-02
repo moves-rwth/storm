@@ -33,7 +33,7 @@ namespace storm {
              */
             void setUpperBound(storm::expressions::Expression const& expression);
 
-            virtual bool isBoundedIntegerVariable() const;
+            virtual bool isBoundedIntegerVariable() const override;
 
         private:
             // The expression defining the lower bound of the variable.

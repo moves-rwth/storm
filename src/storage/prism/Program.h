@@ -558,7 +558,7 @@ namespace storm {
             /*!
              * Converts the PRISM model into an equivalent JANI model.
              */
-            storm::jani::Model toJani() const;
+            storm::jani::Model toJani(bool allVariablesGlobal = false) const;
             
         private:
             /*!
