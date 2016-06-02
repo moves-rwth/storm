@@ -1324,6 +1324,11 @@ namespace storm {
             
             // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
+            
+            transitionMatrix.exportToDot("trans_prism.dot");
+            std::cout << "nnz: " << transitionMatrix.getNonZeroCount() << std::endl;
+            std::cout << "size: " << transitionMatrix.getNodeCount() << std::endl;
+            
             storm::dd::Bdd<Type> transitionMatrixBdd = transitionMatrix.notZero();
             if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);

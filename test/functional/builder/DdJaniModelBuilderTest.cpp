@@ -171,3 +171,153 @@ TEST(DdJaniModelBuilderTest_Cudd, Ctmc) {
     EXPECT_EQ(66ul, model->getNumberOfStates());
     EXPECT_EQ(189ul, model->getNumberOfTransitions());
 }
+
+TEST(DdJaniModelBuilderTest_Sylvan, Mdp) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    storm::jani::Model janiModel = program.toJani(true);
+    storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double> builder(janiModel);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(169ul, mdp->getNumberOfStates());
+    EXPECT_EQ(436ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(254ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(364ul, mdp->getNumberOfStates());
+    EXPECT_EQ(654ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(573ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(272ul, mdp->getNumberOfStates());
+    EXPECT_EQ(492ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(400ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(1038ul, mdp->getNumberOfStates());
+    EXPECT_EQ(1282ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(1054ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/firewire3-0.5.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(4093ul, mdp->getNumberOfStates());
+    EXPECT_EQ(5585ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(5519ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
+    
+    EXPECT_EQ(37ul, mdp->getNumberOfStates());
+    EXPECT_EQ(59ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(59ul, mdp->getNumberOfChoices());
+}
+
+TEST(DdJaniModelBuilderTest_Cudd, Mdp) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
+    storm::jani::Model janiModel = program.toJani(true);
+    storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double> builder(janiModel);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(169ul, mdp->getNumberOfStates());
+    EXPECT_EQ(436ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(254ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(364ul, mdp->getNumberOfStates());
+    EXPECT_EQ(654ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(573ul, mdp->getNumberOfChoices());
+    
+    exit(-1);
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(272ul, mdp->getNumberOfStates());
+    EXPECT_EQ(492ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(400ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(1038ul, mdp->getNumberOfStates());
+    EXPECT_EQ(1282ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(1054ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/firewire3-0.5.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(4093ul, mdp->getNumberOfStates());
+    EXPECT_EQ(5585ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(5519ul, mdp->getNumberOfChoices());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
+    janiModel = program.toJani(true);
+    builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);
+    model = builder.translate();
+    
+    EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
+    mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
+    
+    EXPECT_EQ(37ul, mdp->getNumberOfStates());
+    EXPECT_EQ(59ul, mdp->getNumberOfTransitions());
+    EXPECT_EQ(59ul, mdp->getNumberOfChoices());
+}

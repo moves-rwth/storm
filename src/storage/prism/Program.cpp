@@ -1560,7 +1560,7 @@ namespace storm {
                         automaton.addBoundedIntegerVariable(newIntegerVariable);
                         storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
                         initialStatesExpression = initialStatesExpression.isInitialized() ? initialStatesExpression && variableInitialExpression : variableInitialExpression;
-                    } else if (!accessingModuleIndices.empty()) {
+                    } else { //if (!accessingModuleIndices.empty()) {
                         // Otherwise, we need to make it global.
                         janiModel.addBoundedIntegerVariable(newIntegerVariable);
                         storm::expressions::Expression variableInitialExpression = variable.getExpressionVariable() == variable.getInitialValueExpression();
@@ -1575,7 +1575,7 @@ namespace storm {
                         automaton.addBooleanVariable(newBooleanVariable);
                         storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
                         initialStatesExpression = initialStatesExpression.isInitialized() ? initialStatesExpression && variableInitialExpression : variableInitialExpression;
-                    } else if (!accessingModuleIndices.empty()) {
+                    } else { //if (!accessingModuleIndices.empty()) {
                         // Otherwise, we need to make it global.
                         janiModel.addBooleanVariable(newBooleanVariable);
                         storm::expressions::Expression variableInitialExpression = storm::expressions::iff(variable.getExpressionVariable(), variable.getInitialValueExpression());
