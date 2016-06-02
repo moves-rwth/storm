@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "src/adapters/CarlAdapter.h"
 #include "src/adapters/HyproAdapter.h"
 #include "src/storage/geometry/HyproPolytope.h"
 #include "src/utility/macros.h"
@@ -21,17 +22,26 @@ namespace storm {
                 return create(boost::none, points);
             }
             
-            template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::create(boost::optional<std::vector<Halfspace<ValueType>>> const& halfspaces,
+#ifdef STORM_HAVE_CARL
+            template <>
+            std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<storm::RationalNumber>::create(boost::optional<std::vector<Halfspace<storm::RationalNumber>>> const& halfspaces,
                                                                              boost::optional<std::vector<Point>> const& points) {
 #ifdef STORM_HAVE_HYPRO
-                return HyproPolytope<ValueType>::create(halfspaces, points);
+                return HyproPolytope<storm::RationalNumber>::create(halfspaces, points);
 #endif
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "No polytope implementation specified.");
                 return nullptr;
             }
+#endif
             
-            //Protected  default constructor
+            template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::create(boost::optional<std::vector<Halfspace<ValueType>>> const& halfspaces,
+                                                                             boost::optional<std::vector<Point>> const& points) {
+                //Note: hypro polytopes (currently) do not work with non-exact arithmetic (e.g., double)
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "No polytope implementation specified.");
+                return nullptr;
+            }
+            
             template <typename ValueType>
             Polytope<ValueType>::Polytope() {
                 // Intentionally left empty
@@ -124,19 +134,11 @@ namespace storm {
                 return false;
             }
             
-            template <typename ValueType>
-            HyproPolytope<ValueType> const& Polytope<ValueType>::asHyproPolytope() const {
-                return dynamic_cast<HyproPolytope<ValueType> const&>(*this);
-            }
-            
-            template <typename ValueType>
-            HyproPolytope<ValueType>& Polytope<ValueType>::asHyproPolytope() {
-                return dynamic_cast<HyproPolytope<ValueType>&>(*this);
-            }
-            
 #ifdef STORM_HAVE_CARL
             template class Polytope<storm::RationalNumber>;
 #endif
+            template class Polytope<double>;
+            // Note that HyproPolytopes only support exact arithmetic
         }
     }
 }

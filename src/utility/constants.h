@@ -12,6 +12,8 @@
 #include <limits>
 #include <cstdint>
 
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     
     // Forward-declare MatrixEntry class.
@@ -52,7 +54,13 @@ namespace storm {
         storm::storage::MatrixEntry<IndexType, ValueType>&& simplify(storm::storage::MatrixEntry<IndexType, ValueType>&& matrixEntry);
         
         template<typename TargetType, typename SourceType>
-        TargetType convertNumber(SourceType const& number);
+        TargetType convertNumber(SourceType const& number) {
+#ifdef STORM_HAVE_CARL
+            return carl::convert<SourceType, TargetType>(number);
+#else
+            return static_cast<TargetType>(number);
+#endif
+        }
     }
 }
 

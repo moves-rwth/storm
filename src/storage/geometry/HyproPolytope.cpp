@@ -1,4 +1,6 @@
 #include "src/storage/geometry/HyproPolytope.h"
+#
+#ifdef STORM_HAVE_HYPRO
 
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -114,13 +116,13 @@ namespace storm {
             template <typename ValueType>
             bool HyproPolytope<ValueType>::contains(std::shared_ptr<Polytope<ValueType>> const& other) const {
                 STORM_LOG_THROW(other->isHyproPolytope(), storm::exceptions::InvalidArgumentException, "Invoked operation between a HyproPolytope and a different polytope implementation. This is not supported");
-                return internPolytope.contains(other->asHyproPolytope().internPolytope);
+                return internPolytope.contains(dynamic_cast<HyproPolytope<ValueType> const&>(*other).internPolytope);
             }
             
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> HyproPolytope<ValueType>::intersection(std::shared_ptr<Polytope<ValueType>> const& rhs) const{
                 STORM_LOG_THROW(rhs->isHyproPolytope(), storm::exceptions::InvalidArgumentException, "Invoked operation between a HyproPolytope and a different polytope implementation. This is not supported");
-                return std::make_shared<HyproPolytope<ValueType>>(internPolytope.intersect(rhs->asHyproPolytope().internPolytope));
+                return std::make_shared<HyproPolytope<ValueType>>(internPolytope.intersect(dynamic_cast<HyproPolytope<ValueType> const&>(*rhs).internPolytope));
             }
             
             template <typename ValueType>
@@ -133,13 +135,13 @@ namespace storm {
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> HyproPolytope<ValueType>::convexUnion(std::shared_ptr<Polytope<ValueType>> const& rhs) const{
                 STORM_LOG_THROW(rhs->isHyproPolytope(), storm::exceptions::InvalidArgumentException, "Invoked operation between a HyproPolytope and a different polytope implementation. This is not supported");
-                return std::make_shared<HyproPolytope<ValueType>>(internPolytope.unite(rhs->asHyproPolytope().internPolytope));
+                return std::make_shared<HyproPolytope<ValueType>>(internPolytope.unite(dynamic_cast<HyproPolytope<ValueType> const&>(*rhs).internPolytope));
             }
             
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> HyproPolytope<ValueType>::minkowskiSum(std::shared_ptr<Polytope<ValueType>> const& rhs) const{
                 STORM_LOG_THROW(rhs->isHyproPolytope(), storm::exceptions::InvalidArgumentException, "Invoked operation between a HyproPolytope and a different polytope implementation. This is not supported");
-                return std::make_shared<HyproPolytope<ValueType>>(internPolytope.minkowskiSum(rhs->asHyproPolytope().internPolytope));
+                return std::make_shared<HyproPolytope<ValueType>>(internPolytope.minkowskiSum(dynamic_cast<HyproPolytope<ValueType> const&>(*rhs).internPolytope));
             }
             
             template <typename ValueType>
@@ -190,6 +192,8 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             template class HyproPolytope<storm::RationalNumber>;
 #endif
+            // Note that hypro's polytopes only support exact arithmetic
         }
     }
 }
+#endif

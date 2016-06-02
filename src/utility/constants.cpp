@@ -131,16 +131,6 @@ namespace storm {
             value.simplify();
             return std::move(value);
         }
-        
-        template<>
-        double convertNumber(RationalNumber const& number){
-            return carl::toDouble(number);
-        }
-        
-        template<>
-        RationalNumber convertNumber(double const& number){
-            return carl::rationalize<RationalNumber>(number);
-        }
 
 #endif
         
@@ -255,9 +245,6 @@ namespace storm {
         template RationalNumber one();
         template RationalNumber zero();
        
-        template double convertNumber(RationalNumber const& number);
-        template RationalNumber convertNumber(double const& number);
-        
         template bool isOne(Interval const& value);
         template bool isZero(Interval const& value);
         template bool isConstant(Interval const& value);

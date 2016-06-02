@@ -11,10 +11,6 @@ namespace storm {
     namespace storage {
         namespace geometry {
             
-            // Forward declaration
-            template <typename ValueType>
-            class HyproPolytope;
-            
             template <typename ValueType>
             class Polytope {
             public:
@@ -100,9 +96,6 @@ namespace storm {
                
                 
                 virtual bool isHyproPolytope() const;
-                
-                HyproPolytope<ValueType>& asHyproPolytope();
-                HyproPolytope<ValueType> const& asHyproPolytope() const;
                 
             protected:
                 
