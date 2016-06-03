@@ -26,6 +26,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/jani.h"
 #include "src/utility/dd.h"
+#include "src/utility/math.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
@@ -161,7 +162,7 @@ namespace storm {
             
             // All pairs of row/column meta variables.
             std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> rowColumnMetaVariablePairs;
-
+            
             // A mapping from automata to the meta variable encoding their location.
             std::map<std::string, std::pair<storm::expressions::Variable, storm::expressions::Variable>> automatonToLocationVariableMap;
             
@@ -170,7 +171,7 @@ namespace storm {
             
             // The meta variables used to encode the remaining nondeterminism.
             std::vector<storm::expressions::Variable> localNondeterminismVariables;
-
+            
             // The meta variables used to encode the actions and nondeterminism.
             std::set<storm::expressions::Variable> allNondeterminismVariables;
             
@@ -236,16 +237,6 @@ namespace storm {
             CompositionVariables<Type, ValueType> createVariables() {
                 CompositionVariables<Type, ValueType> result;
                 
-                for (auto const& automaton : this->model.getAutomata()) {
-                    // Start by creating a meta variable for the location of the automaton.
-                    std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("l_" + automaton.getName(), 0, automaton.getNumberOfLocations() - 1);
-                    result.automatonToLocationVariableMap[automaton.getName()] = variablePair;
-                    
-                    // Add the location variable to the row/column variables.
-                    result.rowMetaVariables.insert(variablePair.first);
-                    result.columnMetaVariables.insert(variablePair.second);
-                }
-                
                 for (auto const& action : this->model.getActions()) {
                     if (this->model.getActionIndex(action.getName()) != this->model.getSilentActionIndex()) {
                         std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable(action.getName());
@@ -265,6 +256,16 @@ namespace storm {
                     result.allNondeterminismVariables.insert(variablePair.first);
                 }
                 
+                for (auto const& automaton : this->model.getAutomata()) {
+                    // Start by creating a meta variable for the location of the automaton.
+                    std::pair<storm::expressions::Variable, storm::expressions::Variable> variablePair = result.manager->addMetaVariable("l_" + automaton.getName(), 0, automaton.getNumberOfLocations() - 1);
+                    result.automatonToLocationVariableMap[automaton.getName()] = variablePair;
+                    
+                    // Add the location variable to the row/column variables.
+                    result.rowMetaVariables.insert(variablePair.first);
+                    result.columnMetaVariables.insert(variablePair.second);
+                }
+                
                 // Create global variables.
                 storm::dd::Bdd<Type> globalVariableRanges = result.manager->getBddOne();
                 for (auto const& variable : this->model.getGlobalVariables()) {
@@ -272,7 +273,7 @@ namespace storm {
                     globalVariableRanges &= result.manager->getRange(result.variableToRowMetaVariableMap->at(variable.getExpressionVariable()));
                 }
                 result.globalVariableRanges = globalVariableRanges.template toAdd<ValueType>();
-
+                
                 // Create the variables for the individual automata.
                 for (auto const& automaton : this->model.getAutomata()) {
                     storm::dd::Bdd<Type> identity = result.manager->getBddOne();
@@ -408,13 +409,14 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         EdgeDd<Type, ValueType> composeEdgesInParallel(EdgeDd<Type, ValueType> const& edge1, EdgeDd<Type, ValueType> const& edge2) {
             EdgeDd<Type, ValueType> result;
-
+            
             // Compose the guards.
             result.guardDd = edge1.guardDd * edge2.guardDd;
             
             // If the composed guard is already zero, we can immediately return an empty result.
             if (result.guardDd.isZero()) {
                 result.transitionsDd = edge1.transitionsDd.getDdManager().template getAddZero<ValueType>();
+                return result;
             }
             
             // Compute the set of variables written multiple times by the composition.
@@ -571,7 +573,7 @@ namespace storm {
                     
                     // Combine the update expression with the guard.
                     storm::dd::Add<Type, ValueType> result = updateExpression * guard;
-
+                    
                     // Combine the variable and the assigned expression.
                     result = result.equals(writtenVariable).template toAdd<ValueType>();
                     result *= guard;
@@ -654,7 +656,7 @@ namespace storm {
                     
                     // Add the source location and the guard.
                     transitionsDd *= variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationId()).template toAdd<ValueType>() * guard;
-
+                    
                     // If we multiply the ranges of global variables, make sure everything stays within its bounds.
                     if (!globalVariablesInSomeUpdate.empty()) {
                         transitionsDd *= variables.globalVariableRanges;
@@ -697,18 +699,14 @@ namespace storm {
         };
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> encodeAction(boost::optional<uint64_t> trueIndex, std::vector<storm::expressions::Variable> const& actionVariables, CompositionVariables<Type, ValueType> const& variables) {
+        storm::dd::Add<Type, ValueType> encodeAction(boost::optional<uint64_t> const& actionIndex, CompositionVariables<Type, ValueType> const& variables) {
             storm::dd::Add<Type, ValueType> encoding = variables.manager->template getAddOne<ValueType>();
-
-            if (trueIndex) {
-                *trueIndex = actionVariables.size() - (*trueIndex + 1);
-            }
-            uint64_t index = 0;
-            for (auto it = actionVariables.rbegin(), ite = actionVariables.rend(); it != ite; ++it, ++index) {
-                if (trueIndex && index == trueIndex) {
-                    encoding *= variables.manager->getEncoding(*it, 1).template toAdd<ValueType>();
+            
+            for (auto it = variables.actionVariablesMap.rbegin(), ite = variables.actionVariablesMap.rend(); it != ite; ++it) {
+                if (actionIndex && it->first == actionIndex.get()) {
+                    encoding *= variables.manager->getEncoding(it->second, 1).template toAdd<ValueType>();
                 } else {
-                    encoding *= variables.manager->getEncoding(*it, 0).template toAdd<ValueType>();
+                    encoding *= variables.manager->getEncoding(it->second, 0).template toAdd<ValueType>();
                 }
             }
             
@@ -727,17 +725,15 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> encodeIndex(uint64_t index, std::vector<storm::expressions::Variable> const& localNondeterminismVariables, CompositionVariables<Type, ValueType> const& variables) {
+        storm::dd::Add<Type, ValueType> encodeIndex(uint64_t index, uint64_t localNondeterminismVariableOffset, uint64_t numberOfLocalNondeterminismVariables, CompositionVariables<Type, ValueType> const& variables) {
             storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
             
-            STORM_LOG_TRACE("Encoding " << index << " with " << localNondeterminismVariables.size() << " binary variable(s).");
-            
             std::map<storm::expressions::Variable, int_fast64_t> metaVariableNameToValueMap;
-            for (uint_fast64_t i = 0; i < localNondeterminismVariables.size(); ++i) {
-                if (index & (1ull << (localNondeterminismVariables.size() - i - 1))) {
-                    metaVariableNameToValueMap.emplace(localNondeterminismVariables[i], 1);
+            for (uint_fast64_t i = 0; i < numberOfLocalNondeterminismVariables; ++i) {
+                if (index & (1ull << (numberOfLocalNondeterminismVariables - i - 1))) {
+                    metaVariableNameToValueMap.emplace(variables.localNondeterminismVariables[localNondeterminismVariableOffset + i], 1);
                 } else {
-                    metaVariableNameToValueMap.emplace(localNondeterminismVariables[i], 0);
+                    metaVariableNameToValueMap.emplace(variables.localNondeterminismVariables[localNondeterminismVariableOffset + i], 0);
                 }
             }
             
@@ -746,8 +742,8 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        struct SystemDd {
-            SystemDd(storm::dd::Add<Type, ValueType> const& transitionsDd, storm::dd::Add<Type, ValueType> const& stateActionDd, uint64_t numberOfNondeterminismVariables = 0) : transitionsDd(transitionsDd), stateActionDd(stateActionDd), numberOfNondeterminismVariables(numberOfNondeterminismVariables) {
+        struct BuilderResult {
+            BuilderResult(storm::dd::Add<Type, ValueType> const& transitionsDd, storm::dd::Add<Type, ValueType> const& stateActionDd, uint64_t numberOfNondeterminismVariables = 0) : transitionsDd(transitionsDd), stateActionDd(stateActionDd), numberOfNondeterminismVariables(numberOfNondeterminismVariables) {
                 // Intentionally left empty.
             }
             
@@ -757,66 +753,136 @@ namespace storm {
         };
         
         template <storm::dd::DdType Type, typename ValueType>
-        SystemDd<Type, ValueType> buildSystemDd(storm::jani::Model const& model, AutomatonDd<Type, ValueType> const& automatonDd, CompositionVariables<Type, ValueType>& variables) {
+        storm::dd::Add<Type, ValueType> combineEdgesBySummation(std::vector<EdgeDd<Type, ValueType>> const& edges, CompositionVariables<Type, ValueType> const& variables) {
+            storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
+            for (auto const& edge : edges) {
+                // Simply add all actions, but make sure to include the missing global variable identities.
+                result += edge.transitionsDd * computeMissingGlobalVariableIdentities(edge, variables);
+            }
+            return result;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        std::pair<uint64_t, storm::dd::Add<Type, ValueType>> combineEdgesByNondeterministicChoice(std::vector<EdgeDd<Type, ValueType>>& edges, CompositionVariables<Type, ValueType> const& variables) {
+            // Complete all edges by adding the missing global variable identities.
+            for (auto& edge : edges) {
+                edge.transitionsDd *= computeMissingGlobalVariableIdentities(edge, variables);
+            }
+            
+            // Sum all guards, so we can read off the maximal number of nondeterministic choices in any given state.
+            storm::dd::Add<Type, ValueType> sumOfGuards = variables.manager->template getAddZero<ValueType>();
+            for (auto const& edge : edges) {
+                sumOfGuards += edge.guardDd;
+            }
+            uint_fast64_t maxChoices = static_cast<uint_fast64_t>(sumOfGuards.getMax());
+            STORM_LOG_TRACE("Found " << maxChoices << " local choices.");
+            
+            // Depending on the maximal number of nondeterminstic choices, we need to use some variables to encode the nondeterminism.
+            if (maxChoices == 0) {
+                return std::make_pair(0, variables.manager->template getAddZero<ValueType>());
+            } else if (maxChoices == 1) {
+                return std::make_pair(0, combineEdgesBySummation(edges, variables));
+            } else {
+                // Calculate number of required variables to encode the nondeterminism.
+                uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
+                
+                storm::dd::Add<Type, ValueType> allEdges = variables.manager->template getAddZero<ValueType>();
+                
+                storm::dd::Bdd<Type> equalsNumberOfChoicesDd;
+                std::vector<storm::dd::Add<Type, ValueType>> choiceDds(maxChoices, variables.manager->template getAddZero<ValueType>());
+                std::vector<storm::dd::Bdd<Type>> remainingDds(maxChoices, variables.manager->getBddZero());
+                
+                for (uint_fast64_t currentChoices = 1; currentChoices <= maxChoices; ++currentChoices) {
+                    // Determine the set of states with exactly currentChoices choices.
+                    equalsNumberOfChoicesDd = sumOfGuards.equals(variables.manager->getConstant(static_cast<double>(currentChoices)));
+                    
+                    // If there is no such state, continue with the next possible number of choices.
+                    if (equalsNumberOfChoicesDd.isZero()) {
+                        continue;
+                    }
+                    
+                    // Reset the previously used intermediate storage.
+                    for (uint_fast64_t j = 0; j < currentChoices; ++j) {
+                        choiceDds[j] = variables.manager->template getAddZero<ValueType>();
+                        remainingDds[j] = equalsNumberOfChoicesDd;
+                    }
+                    
+                    for (std::size_t j = 0; j < edges.size(); ++j) {
+                        // Check if edge guard overlaps with equalsNumberOfChoicesDd. That is, there are states with exactly currentChoices
+                        // choices such that one outgoing choice is given by the j-th edge.
+                        storm::dd::Bdd<Type> guardChoicesIntersection = edges[j].guardDd.toBdd() && equalsNumberOfChoicesDd;
+                        
+                        // If there is no such state, continue with the next command.
+                        if (guardChoicesIntersection.isZero()) {
+                            continue;
+                        }
+                        
+                        // Split the currentChoices nondeterministic choices.
+                        for (uint_fast64_t k = 0; k < currentChoices; ++k) {
+                            // Calculate the overlapping part of command guard and the remaining DD.
+                            storm::dd::Bdd<Type> remainingGuardChoicesIntersection = guardChoicesIntersection && remainingDds[k];
+                            
+                            // Check if we can add some overlapping parts to the current index.
+                            if (!remainingGuardChoicesIntersection.isZero()) {
+                                // Remove overlapping parts from the remaining DD.
+                                remainingDds[k] = remainingDds[k] && !remainingGuardChoicesIntersection;
+                                
+                                // Combine the overlapping part of the guard with command updates and add it to the resulting DD.
+                                choiceDds[k] += remainingGuardChoicesIntersection.template toAdd<ValueType>() * edges[j].transitionsDd;
+                            }
+                            
+                            // Remove overlapping parts from the command guard DD
+                            guardChoicesIntersection = guardChoicesIntersection && !remainingGuardChoicesIntersection;
+                            
+                            // If the guard DD has become equivalent to false, we can stop here.
+                            if (guardChoicesIntersection.isZero()) {
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Add the meta variables that encode the nondeterminisim to the different choices.
+                    for (uint_fast64_t j = 0; j < currentChoices; ++j) {
+                        allEdges += encodeIndex(j, 0, numberOfBinaryVariables, variables) * choiceDds[j];
+                    }
+                    
+                    // Delete currentChoices out of overlapping DD
+                    sumOfGuards = sumOfGuards * (!equalsNumberOfChoicesDd).template toAdd<ValueType>();
+                }
+                
+                return std::make_pair(numberOfBinaryVariables, allEdges);
+            }
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        BuilderResult<Type, ValueType> buildSystemFromSingleAutomaton(storm::jani::Model const& model, AutomatonDd<Type, ValueType>& automatonDd, CompositionVariables<Type, ValueType> const& variables) {
             // If the model is an MDP, we need to encode the nondeterminism using additional variables.
             if (model.getModelType() == storm::jani::ModelType::MDP) {
-                // Determine how many nondeterminism variables we need.
-                std::vector<storm::expressions::Variable> orderedActionVariables;
-                std::set<storm::expressions::Variable> actionVariables;
-                std::map<uint64_t, boost::optional<uint64_t>> actionIndexToVariableIndex;
-                uint64_t maximalNumberOfEdgesPerAction = 0;
-                for (auto const& action : automatonDd.actionIndexToEdges) {
-                    if (action.first != model.getSilentActionIndex()) {
-                        orderedActionVariables.push_back(variables.actionVariablesMap.at(action.first));
-                        actionVariables.insert(orderedActionVariables.back());
-                        actionIndexToVariableIndex[action.first] = orderedActionVariables.size() - 1;
-                    } else {
-                        actionIndexToVariableIndex[action.first] = boost::none;
-                    }
-                    maximalNumberOfEdgesPerAction = std::max(maximalNumberOfEdgesPerAction, static_cast<uint64_t>(action.second.size()));
+                std::map<uint64_t, std::pair<uint64_t, storm::dd::Add<Type, ValueType>>> actionIndexToUsedVariablesAndDd;
+                
+                // Combine the edges of each action individually and keep track of how many local nondeterminism variables
+                // were used.
+                uint64_t highestNumberOfUsedNondeterminismVariables = 0;
+                for (auto& action : automatonDd.actionIndexToEdges) {
+                    std::pair<uint64_t, storm::dd::Add<Type, ValueType>> usedVariablesAndDd = combineEdgesByNondeterministicChoice<Type, ValueType>(action.second, variables);
+                    actionIndexToUsedVariablesAndDd.emplace(action.first, usedVariablesAndDd);
+                    highestNumberOfUsedNondeterminismVariables = std::max(highestNumberOfUsedNondeterminismVariables, usedVariablesAndDd.first);
                 }
                 
-                // If the maximal number of edges per action is zero, which can happen if the model only has unsatisfiable guards,
-                // then we must not compute the number of variables.
-                if (maximalNumberOfEdgesPerAction == 0) {
-                    return SystemDd<Type, ValueType>(variables.manager->template getAddZero<ValueType>(), variables.manager->template getAddZero<ValueType>(), 0);
-                }
-                
-                uint64_t numberOfNondeterminismVariables = static_cast<uint64_t>(std::ceil(std::log2(maximalNumberOfEdgesPerAction)));
-                std::vector<storm::expressions::Variable> localNondeterminismVariables(numberOfNondeterminismVariables);
-                std::copy(variables.localNondeterminismVariables.begin(), variables.localNondeterminismVariables.begin() + numberOfNondeterminismVariables, localNondeterminismVariables.begin());
-                
-                // Prepare result.
                 storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
-                
-                // Add edges to the result.
-                for (auto const& action : automatonDd.actionIndexToEdges) {
-                    storm::dd::Add<Type, ValueType> edgesForAction = variables.manager->template getAddZero<ValueType>();
-                    
-                    uint64_t edgeIndex = 0;
-                    for (auto const& edge : action.second) {
-                        storm::dd::Add<Type, ValueType> dd = edge.transitionsDd * computeMissingGlobalVariableIdentities(edge, variables) * encodeIndex(edgeIndex, localNondeterminismVariables, variables);
-                        dd.exportToDot("add" + std::to_string(edgeIndex) + ".dot");
-                        edgesForAction += edge.transitionsDd * computeMissingGlobalVariableIdentities(edge, variables) * encodeIndex(edgeIndex, localNondeterminismVariables, variables);
-                        ++edgeIndex;
-                    }
-                    
-                    result += edgesForAction * encodeAction<Type, ValueType>(actionIndexToVariableIndex.at(action.first), orderedActionVariables, variables);
+                for (auto const& element : actionIndexToUsedVariablesAndDd) {
+                    result += element.second.second * encodeAction(element.first, variables) * encodeIndex(0, element.second.first, highestNumberOfUsedNondeterminismVariables - element.second.first, variables);
                 }
                 
-                return SystemDd<Type, ValueType>(result, result.sumAbstract(variables.columnMetaVariables), numberOfNondeterminismVariables);
+                return BuilderResult<Type, ValueType>(result, result.sumAbstract(variables.columnMetaVariables), highestNumberOfUsedNondeterminismVariables);
             } else if (model.getModelType() == storm::jani::ModelType::DTMC || model.getModelType() == storm::jani::ModelType::CTMC) {
-                // Simply add all actions, but make sure to include the missing global variable identities.
                 storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
                 for (auto const& action : automatonDd.actionIndexToEdges) {
-                    for (auto const& edge : action.second) {
-                        result += edge.transitionsDd * computeMissingGlobalVariableIdentities(edge, variables);
-                    }
+                    result += combineEdgesBySummation(action.second, variables);
                 }
-                
-                return SystemDd<Type, ValueType>(result, result.sumAbstract(variables.columnMetaVariables));
+                return BuilderResult<Type, ValueType>(result, result.sumAbstract(variables.columnMetaVariables));
             }
-
+            
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
         }
         
@@ -839,17 +905,31 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid model type.");
             }
-
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        void postprocessSystemAndVariables(storm::jani::Model const& model, SystemDd<Type, ValueType>& system, CompositionVariables<Type, ValueType>& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
-            // Get rid of the nondeterminism variables that were not used.
+        void postprocessVariables(storm::jani::ModelType const& modelType, BuilderResult<Type, ValueType>& system, CompositionVariables<Type, ValueType>& variables) {
+            // Add all action/row/column variables to the DD. If we omitted multiplying edges in the construction, this will
+            // introduce the variables so they can later be abstracted without raising an error.
+            system.transitionsDd.addMetaVariables(variables.rowMetaVariables);
+            system.transitionsDd.addMetaVariables(variables.columnMetaVariables);
+            
+            // If the model is an MDP, we also add all action variables.
+            if (modelType == storm::jani::ModelType::MDP) {
+                for (auto const& actionVariablePair : variables.actionVariablesMap) {
+                    system.transitionsDd.addMetaVariable(actionVariablePair.second);
+                }
+            }
+            
+            // Get rid of the local nondeterminism variables that were not used.
             for (uint64_t index = system.numberOfNondeterminismVariables; index < variables.localNondeterminismVariables.size(); ++index) {
                 variables.allNondeterminismVariables.erase(variables.localNondeterminismVariables[index]);
             }
             variables.localNondeterminismVariables.resize(system.numberOfNondeterminismVariables);
-            
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        void postprocessSystem(storm::jani::Model const& model, BuilderResult<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
             if (model.getModelType() == storm::jani::ModelType::DTMC) {
                 system.transitionsDd = system.transitionsDd / system.stateActionDd;
@@ -934,42 +1014,60 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
+        class SeparateEdgesSystemBuilder {
+        public:
+            SeparateEdgesSystemBuilder(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables) : model(model), variables(variables) {
+                // Intentional
+            }
+            
+            BuilderResult<Type, ValueType> build() {
+                // Compose the automata to a single automaton.
+                AutomatonComposer<Type, ValueType> composer(this->model, variables);
+                AutomatonDd<Type, ValueType> globalAutomaton = composer.compose();
+                
+                // Combine the edges of the single automaton to the full system DD.
+                return buildSystemFromSingleAutomaton<Type, ValueType>(this->model, globalAutomaton, variables);
+            }
+            
+        private:
+            storm::jani::Model const& model;
+            CompositionVariables<Type, ValueType> const& variables;
+        };
+        
+        template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::translate() {
             // Create all necessary variables.
             CompositionVariableCreator<Type, ValueType> variableCreator(*this->model);
             CompositionVariables<Type, ValueType> variables = variableCreator.create();
             
-            // Compose the automata to a single automaton.
-            AutomatonComposer<Type, ValueType> composer(*this->model, variables);
-            AutomatonDd<Type, ValueType> globalAutomaton = composer.compose();
-
-            // Combine the edges of the single automaton to the full system DD.
-            SystemDd<Type, ValueType> system = buildSystemDd(*this->model, globalAutomaton, variables);
+            // Create a builder to compose and build the model.
+            SeparateEdgesSystemBuilder<Type, ValueType> builder(*this->model, variables);
+            BuilderResult<Type, ValueType> system = builder.build();
             
-            // Postprocess the system. This modifies the systemDd in place.
-            postprocessSystemAndVariables(*this->model, system, variables, options);
+            // Postprocess the variables in place.
+            postprocessVariables(this->model->getModelType(), system, variables);
+            
+            // Postprocess the system in place.
+            postprocessSystem(*this->model, system, variables, options);
             
             // Start creating the model components.
             ModelComponents<Type, ValueType> modelComponents;
             
             // Build initial states.
             modelComponents.initialStates = computeInitialStates(*this->model, variables);
-    
+            
             // Perform reachability analysis to obtain reachable states.
-            system.transitionsDd.exportToDot("trans.dot");
-            std::cout << "nnz: " << system.transitionsDd.getNonZeroCount() << std::endl;
-            std::cout << "size: " << system.transitionsDd.getNodeCount() << std::endl;
             storm::dd::Bdd<Type> transitionMatrixBdd = system.transitionsDd.notZero();
             if (this->model->getModelType() == storm::jani::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
             }
             modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables);
-
+            
             // Cut transitions to reachable states.
             storm::dd::Add<Type, ValueType> reachableStatesAdd = modelComponents.reachableStates.template toAdd<ValueType>();
             modelComponents.transitionMatrix = system.transitionsDd * reachableStatesAdd;
             system.stateActionDd *= reachableStatesAdd;
-
+            
             // Fix deadlocks if existing.
             fixDeadlocks(this->model->getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
             

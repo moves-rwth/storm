@@ -1103,7 +1103,7 @@ namespace storm {
         typename DdPrismModelBuilder<Type, ValueType>::SystemResult DdPrismModelBuilder<Type, ValueType>::createSystemDecisionDiagram(GenerationInformation& generationInfo) {
             ModuleComposer<Type, ValueType> composer(generationInfo);
             ModuleDecisionDiagram system = composer.compose(generationInfo.program.specifiesSystemComposition() ? generationInfo.program.getSystemCompositionConstruct().getSystemComposition() : *generationInfo.program.getDefaultSystemComposition());
-            
+
             storm::dd::Add<Type, ValueType> result = createSystemFromModule(generationInfo, system);
             
             // Create an auxiliary DD that is used later during the construction of reward models.
@@ -1324,11 +1324,7 @@ namespace storm {
             
             // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
-            
-            transitionMatrix.exportToDot("trans_prism.dot");
-            std::cout << "nnz: " << transitionMatrix.getNonZeroCount() << std::endl;
-            std::cout << "size: " << transitionMatrix.getNodeCount() << std::endl;
-            
+                        
             storm::dd::Bdd<Type> transitionMatrixBdd = transitionMatrix.notZero();
             if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);

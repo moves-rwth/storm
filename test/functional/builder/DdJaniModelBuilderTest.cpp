@@ -270,9 +270,7 @@ TEST(DdJaniModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(364ul, mdp->getNumberOfStates());
     EXPECT_EQ(654ul, mdp->getNumberOfTransitions());
     EXPECT_EQ(573ul, mdp->getNumberOfChoices());
-    
-    exit(-1);
-    
+        
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
     janiModel = program.toJani(true);
     builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);

@@ -211,8 +211,6 @@ TEST(DdPrismModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(654ul, mdp->getNumberOfTransitions());
     EXPECT_EQ(573ul, mdp->getNumberOfChoices());
     
-    exit(-1);
-
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
     model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
     
