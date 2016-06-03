@@ -31,4 +31,6 @@ class Action:
         """ Get transitions associated with the action
         :return List of tranistions
         """
-        return self.model.transition_matrix().get_row(self.row + self.row_group_start)
+        row = self.row_group_start + self.row
+        #return self.model.transition_matrix().get_row(self.row_group_start + self.row)
+        return self.model.transition_matrix().row_iter(row, row)
