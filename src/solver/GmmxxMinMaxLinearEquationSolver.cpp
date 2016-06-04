@@ -28,7 +28,6 @@ namespace storm {
         template<typename ValueType>
         void GmmxxMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			if (this->useValueIteration) {
-                STORM_LOG_THROW(!this->isTrackSchedulerSet(), storm::exceptions::InvalidSettingsException, "Unable to produce a scheduler when using value iteration. Use policy iteration instead.");
 
                 // Set up the environment for the power method. If scratch memory was not provided, we need to create it.
 				bool multiplyResultMemoryProvided = true;
@@ -43,6 +42,14 @@ namespace storm {
 					newX = new std::vector<ValueType>(x.size());
 					xMemoryProvided = false;
 				}
+                
+                std::vector<storm::storage::sparse::state_type> currentScheduler;
+                std::vector<storm::storage::sparse::state_type> newScheduler;
+                if(this->trackScheduler){
+                    //Allocate memory for the schedulers and initialize them with valid choices
+                    currentScheduler = std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupCount());
+                    newScheduler = std::vector<storm::storage::sparse::state_type>(this->A.getRowGroupCount());
+                }
 				uint_fast64_t iterations = 0;
 				bool converged = false;
 
@@ -56,8 +63,24 @@ namespace storm {
 					gmm::mult(*gmmxxMatrix, *currentX, *multiplyResult);
 					gmm::add(b, *multiplyResult);
 
-					// Reduce the vector x by applying min/max over all nondeterministic choices.
-					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices);
+                    if(this->trackScheduler){
+                        // Reduce the vector x by applying min/max over all nondeterministic choices. Also keep track of the choices made
+                        storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices, &newScheduler);
+                        // We update the currentScheduler conservatively
+                        // This is to prevent that e.g. a choice for a selfloop with probability 1 is taken
+                        auto currentChoice = currentScheduler.begin();
+                        auto newChoice = newScheduler.begin();
+                        for(storm::storage::sparse::state_type state = 0; state<currentScheduler.size(); ++state) {
+                            if(*currentChoice != *newChoice && !storm::utility::vector::equalModuloPrecision((*multiplyResult)[state + (*currentChoice)], (*multiplyResult)[state + (*newChoice)], this->precision, this->relative)){
+                                *currentChoice = *newChoice;
+                            }
+                            ++currentChoice;
+                            ++newChoice;
+                        }
+                    } else {
+                        // Reduce the vector x by applying min/max over all nondeterministic choices.
+                        storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices);
+                    }
 					
 					// Determine whether the method converged.
 					converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, this->precision, this->relative);
@@ -74,6 +97,11 @@ namespace storm {
 					STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations.");
 				}
 
+                // If requested, we store the scheduler for retrieval.
+                if (this->isTrackSchedulerSet()) {
+                    this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(currentScheduler));
+                }
+                
 				// If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
 				// is currently stored in currentX, but x is the output vector.
 				if (currentX == copyX) {
