@@ -25,7 +25,7 @@ namespace storm {
                  * @param originalModel The considered model
                  * @param originalFormula the considered formula. The subformulas should only contain one OperatorFormula at top level, i.e., the formula is simple.
                  */
-                static Information preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseMdpModelType originalModel);
+                static Information preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseMdpModelType const& originalModel);
                 
             private:
                 

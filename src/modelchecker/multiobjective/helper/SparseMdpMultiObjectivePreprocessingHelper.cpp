@@ -22,10 +22,10 @@ namespace storm {
         namespace helper {
             
             template<typename SparseMdpModelType>
-            SparseMultiObjectiveModelCheckerInformation<SparseMdpModelType> SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseMdpModelType originalModel) {
+            SparseMultiObjectiveModelCheckerInformation<SparseMdpModelType> SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseMdpModelType const& originalModel) {
                 Information info(std::move(originalModel));
                 //Initialize the state mapping.
-                info.newToOldStateIndexMapping = storm::utility::vector::buildVectorForRange(0, info.model.getNumberOfStates());
+                info.newToOldStateIndexMapping = storm::utility::vector::buildVectorForRange(0, info.preprocessedModel.getNumberOfStates());
                 //Gather information regarding the individual objectives
                 for(auto const& subFormula : originalFormula.getSubFormulas()){
                     addObjective(subFormula, info);
@@ -46,7 +46,7 @@ namespace storm {
                 //We can now remove all original reward models to save some memory
                 std::set<std::string> origRewardModels =  originalFormula.getReferencedRewardModels();
                 for (auto const& rewModel : origRewardModels){
-                    info.model.removeRewardModel(rewModel);
+                    info.preprocessedModel.removeRewardModel(rewModel);
                 }
                 return info;
             }
@@ -70,7 +70,7 @@ namespace storm {
                 }
                 objective.rewardModelName = "objective" + std::to_string(info.objectives.size());
                 // Make sure the new reward model gets a unique name
-                while(info.model.hasRewardModel(objective.rewardModelName)){
+                while(info.preprocessedModel.hasRewardModel(objective.rewardModelName)){
                     objective.rewardModelName = "_" + objective.rewardModelName;
                 }
                 setStepBoundOfObjective(objective);
@@ -145,8 +145,8 @@ namespace storm {
                 STORM_LOG_THROW(info.negatedRewardsConsidered == currentObjective.originalFormulaMinimizes, storm::exceptions::InvalidPropertyException, "Decided to consider " << (info.negatedRewardsConsidered ? "negated" : "non-negated") << "rewards, but the formula " << formula << (currentObjective.originalFormulaMinimizes ? " minimizes" : "maximizes") << ". Reward objectives should either all minimize or all maximize.");
                 
                 // Check if the reward model is uniquely specified
-                STORM_LOG_THROW((formula.hasRewardModelName() && info.model.hasRewardModel(formula.getRewardModelName()))
-                                || info.model.hasUniqueRewardModel(), storm::exceptions::InvalidPropertyException, "The reward model is not unique and the formula " << formula << " does not specify a reward model.");
+                STORM_LOG_THROW((formula.hasRewardModelName() && info.preprocessedModel.hasRewardModel(formula.getRewardModelName()))
+                                || info.preprocessedModel.hasUniqueRewardModel(), storm::exceptions::InvalidPropertyException, "The reward model is not unique and the formula " << formula << " does not specify a reward model.");
                 
                 if(info.negatedRewardsConsidered && currentObjective.threshold){
                     *(currentObjective.threshold) *= -storm::utility::one<ValueType>();
@@ -166,13 +166,13 @@ namespace storm {
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocessFormula(storm::logic::UntilFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective) {
                 CheckTask<storm::logic::Formula> phiTask(formula.getLeftSubformula());
                 CheckTask<storm::logic::Formula> psiTask(formula.getRightSubformula());
-                storm::modelchecker::SparsePropositionalModelChecker<SparseMdpModelType> mc(info.model);
+                storm::modelchecker::SparsePropositionalModelChecker<SparseMdpModelType> mc(info.preprocessedModel);
                 STORM_LOG_THROW(mc.canHandle(phiTask) && mc.canHandle(psiTask), storm::exceptions::InvalidPropertyException, "The subformulas of " << formula << " should be propositional.");
                 storm::storage::BitVector phiStates = mc.check(phiTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 storm::storage::BitVector psiStates = mc.check(psiTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 
-                auto duplicatorResult = storm::transformer::StateDuplicator<SparseMdpModelType>::transform(info.model, ~phiStates | psiStates);
-                info.model = std::move(*duplicatorResult.model);
+                auto duplicatorResult = storm::transformer::StateDuplicator<SparseMdpModelType>::transform(info.preprocessedModel, ~phiStates | psiStates);
+                info.preprocessedModel = std::move(*duplicatorResult.model);
                 // duplicatorResult.newToOldStateIndexMapping now reffers to the indices of the model we had before preprocessing this formula.
                 // This might not be the actual original model.
                 for(auto & originalModelStateIndex : duplicatorResult.newToOldStateIndexMapping){
@@ -181,21 +181,21 @@ namespace storm {
                 info.newToOldStateIndexMapping = std::move(duplicatorResult.newToOldStateIndexMapping);
                 
                 // build stateAction reward vector that gives (one*transitionProbability) reward whenever a transition leads from the firstCopy to a psiState
-                storm::storage::BitVector newPsiStates(info.model.getNumberOfStates(), false);
+                storm::storage::BitVector newPsiStates(info.preprocessedModel.getNumberOfStates(), false);
                 for(auto const& oldPsiState : psiStates){
                     //note that psiStates are always located in the second copy
                     newPsiStates.set(duplicatorResult.secondCopyOldToNewStateIndexMapping[oldPsiState], true);
                 }
-                std::vector<ValueType> objectiveRewards(info.model.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> objectiveRewards(info.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
                 for (auto const& firstCopyState : duplicatorResult.firstCopy) {
-                    for (uint_fast64_t row = info.model.getTransitionMatrix().getRowGroupIndices()[firstCopyState]; row < info.model.getTransitionMatrix().getRowGroupIndices()[firstCopyState + 1]; ++row) {
-                        objectiveRewards[row] = info.model.getTransitionMatrix().getConstrainedRowSum(row, newPsiStates);
+                    for (uint_fast64_t row = info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[firstCopyState]; row < info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[firstCopyState + 1]; ++row) {
+                        objectiveRewards[row] = info.preprocessedModel.getTransitionMatrix().getConstrainedRowSum(row, newPsiStates);
                     }
                 }
                 if(info.negatedRewardsConsidered){
                     storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
                 }
-                info.model.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
+                info.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
             }
             
             template<typename SparseMdpModelType>
@@ -218,13 +218,13 @@ namespace storm {
                 STORM_LOG_THROW(formula.isReachabilityRewardFormula(), storm::exceptions::InvalidPropertyException, "The formula " << formula << " neither considers reachability Probabilities nor reachability rewards");
                 
                 CheckTask<storm::logic::Formula> targetTask(formula.getSubformula());
-                storm::modelchecker::SparsePropositionalModelChecker<SparseMdpModelType> mc(info.model);
+                storm::modelchecker::SparsePropositionalModelChecker<SparseMdpModelType> mc(info.preprocessedModel);
                 STORM_LOG_THROW(mc.canHandle(targetTask), storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " should be propositional.");
                 storm::storage::BitVector targetStates = mc.check(targetTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 
                 STORM_LOG_WARN("There is no check for reward finiteness yet"); //TODO
-                auto duplicatorResult = storm::transformer::StateDuplicator<SparseMdpModelType>::transform(info.model, targetStates);
-                info.model = std::move(*duplicatorResult.model);
+                auto duplicatorResult = storm::transformer::StateDuplicator<SparseMdpModelType>::transform(info.preprocessedModel, targetStates);
+                info.preprocessedModel = std::move(*duplicatorResult.model);
                 // duplicatorResult.newToOldStateIndexMapping now reffers to the indices of the model we had before preprocessing this formula.
                 // This might not be the actual original model.
                 for(auto & originalModelStateIndex : duplicatorResult.newToOldStateIndexMapping){
@@ -233,21 +233,21 @@ namespace storm {
                 info.newToOldStateIndexMapping = std::move(duplicatorResult.newToOldStateIndexMapping);
                 
                 // Add a reward model that gives zero reward to the states of the second copy.
-                std::vector<ValueType> objectiveRewards = info.model.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(info.model.getTransitionMatrix());
+                std::vector<ValueType> objectiveRewards = info.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(info.preprocessedModel.getTransitionMatrix());
                 storm::utility::vector::setVectorValues(objectiveRewards, duplicatorResult.secondCopy, storm::utility::zero<ValueType>());
                 if(info.negatedRewardsConsidered){
                     storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
                 }
-                info.model.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
+                info.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
             }
             
             template<typename SparseMdpModelType>
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocessFormula(storm::logic::CumulativeRewardFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
-                std::vector<ValueType> objectiveRewards = info.model.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(info.model.getTransitionMatrix());
+                std::vector<ValueType> objectiveRewards = info.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(info.preprocessedModel.getTransitionMatrix());
                 if(info.negatedRewardsConsidered){
                     storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
                 }
-                info.model.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
+                info.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
             }
             
             template class SparseMdpMultiObjectivePreprocessingHelper<storm::models::sparse::Mdp<double>>;

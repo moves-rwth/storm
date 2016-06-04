@@ -11,6 +11,12 @@ namespace storm {
         
         class TotalScheduler : public Scheduler {
         public:
+            
+            TotalScheduler(TotalScheduler const& other) = default;
+            TotalScheduler(TotalScheduler&& other) = default;
+            TotalScheduler& operator=(TotalScheduler const& other) = default;
+            TotalScheduler& operator=(TotalScheduler&& other) = default;
+            
             /*!
              * Creates a total scheduler that defines a choice for the given number of states. By default, all choices
              * are initialized to zero.
@@ -32,6 +38,8 @@ namespace storm {
              * @param choices A vector whose i-th entry defines the choice of state i.
              */
             TotalScheduler(std::vector<uint_fast64_t>&& choices);
+            
+            bool operator==(TotalScheduler const& other) const;
 
             void setChoice(uint_fast64_t state, uint_fast64_t choice) override;
             
@@ -39,7 +47,10 @@ namespace storm {
             
             uint_fast64_t getChoice(uint_fast64_t state) const override;
             
+            std::vector<uint_fast64_t> const& getChoices() const;
+            
             friend std::ostream& operator<<(std::ostream& out, TotalScheduler const& scheduler);
+            friend struct std::hash<storm::storage::TotalScheduler>;
             
         private:
             // A vector that stores the choice for each state.
@@ -47,5 +58,13 @@ namespace storm {
         };
     } // namespace storage
 } // namespace storm
+
+
+namespace std {
+    template <>
+    struct hash<storm::storage::TotalScheduler> {
+        std::size_t operator()(storm::storage::TotalScheduler const& totalScheduler) const;
+    };
+}
 
 #endif /* STORM_STORAGE_TOTALSCHEDULER_H_ */

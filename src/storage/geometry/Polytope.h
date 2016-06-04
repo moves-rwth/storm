@@ -32,6 +32,16 @@ namespace storm {
                 static std::shared_ptr<Polytope<ValueType>> create(std::vector<Point> const& points);
                 
                 /*!
+                 * Creates the universal polytope (i.e., the set R^n)
+                 */
+                static std::shared_ptr<Polytope<ValueType>> createUniversalPolytope();
+                
+                /*!
+                 * Creates the empty polytope (i.e., emptyset)
+                 */
+                static std::shared_ptr<Polytope<ValueType>> createEmptyPolytope();
+                
+                /*!
                  * Returns the vertices of this polytope.
                  */
                 virtual std::vector<Point> getVertices() const;
@@ -87,6 +97,17 @@ namespace storm {
                  * @param upperBounds If given, this vector is considered for y (hence, max{x_i | x i \in P does not need to be computed)
                  */
                 virtual std::shared_ptr<Polytope<ValueType>> downwardClosure(boost::optional<Point> const& upperBounds = boost::none) const;
+                
+                /*!
+                 * Returns a halfspace h that separates this polytope from the given point p, i.e.,
+                 * - p lies on the border of h and
+                 * - for each x in this polytope, it holds that h contains x
+                 *
+                 * A halfspace with maximal distance to the polytope is preferred.
+                 *
+                 * @param pointToBeSeparated the point that is to be seperated
+                 */
+                virtual Halfspace<ValueType> findSeparatingHalfspace(Point const& pointToBeSeparated) const;
                 
                 /*
                  * Returns a string representation of this polytope.

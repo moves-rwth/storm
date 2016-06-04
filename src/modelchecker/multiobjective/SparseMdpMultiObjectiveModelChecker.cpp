@@ -9,8 +9,9 @@
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
-#include "src/modelchecker/multiobjective/helper/SparseMdpMultiObjectivePreprocessingHelper.h"
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveModelCheckerInformation.h"
+#include "src/modelchecker/multiobjective/helper/SparseMdpMultiObjectivePreprocessingHelper.h"
+#include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveModelCheckerHelper.h"
 
 #include "src/exceptions/NotImplementedException.h"
 
@@ -35,11 +36,19 @@ namespace storm {
         std::unique_ptr<CheckResult> SparseMdpMultiObjectiveModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula> const& checkTask) {
             
             helper::SparseMultiObjectiveModelCheckerInformation<SparseMdpModelType> info = helper::SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocess(checkTask.getFormula(), this->getModel());
-            
             std::cout << std::endl;
+            std::cout << "Preprocessed Information:" << std::endl;
             info.printInformationToStream(std::cout);
             
+#ifdef STORM_HAVE_CARL
+            helper::SparseMultiObjectiveModelCheckerHelper<SparseMdpModelType, storm::RationalNumber> helper(info);
+            helper.achievabilityQuery();
+#else
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Multi objective model checking currently requires carl.");
+#endif
             
+            std::cout << "Information after helper call: " << std::endl;
+            info.printInformationToStream(std::cout);
             
             return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult());
         }

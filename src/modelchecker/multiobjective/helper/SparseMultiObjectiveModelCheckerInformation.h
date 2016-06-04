@@ -49,15 +49,12 @@ namespace storm {
                 };
                 
                 
-                SparseMultiObjectiveModelCheckerInformation(SparseModelType const& model) : model(model) {
+                SparseMultiObjectiveModelCheckerInformation(SparseModelType const& model) : preprocessedModel(model),  originalModel(model) {
                     //Intentionally left empty
                 }
-                
-                SparseMultiObjectiveModelCheckerInformation(SparseModelType && model) : model(model) {
-                    //Intentionally left empty
-                }
-                
-                SparseModelType model;
+
+                SparseModelType preprocessedModel;
+                SparseModelType const& originalModel;
                 std::vector<uint_fast64_t> newToOldStateIndexMapping;
                 bool negatedRewardsConsidered;
                 
@@ -75,8 +72,11 @@ namespace storm {
                     }
                     out << "--------------------------------------------------------------" << std::endl;
                     out << std::endl;
+                    out << "Original Model Information:" << std::endl;
+                    originalModel.printModelInformationToStream(out);
+                    out << std::endl;
                     out << "Preprocessed Model Information:" << std::endl;
-                    model.printModelInformationToStream(out);
+                    preprocessedModel.printModelInformationToStream(out);
                     out << std::endl;
                     if(negatedRewardsConsidered){
                         out << "The rewards in the preprocessed model are negated" << std::endl;

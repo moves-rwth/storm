@@ -22,6 +22,16 @@ namespace storm {
                 return create(boost::none, points);
             }
             
+            template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createUniversalPolytope() {
+                return create(std::vector<Halfspace<ValueType>>(), boost::none);
+            }
+            
+            template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createEmptyPolytope() {
+                return create(boost::none, std::vector<Point>());
+            }
+            
 #ifdef STORM_HAVE_CARL
             template <>
             std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<storm::RationalNumber>::create(boost::optional<std::vector<Halfspace<storm::RationalNumber>>> const& halfspaces,
@@ -116,6 +126,12 @@ namespace storm {
             std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::downwardClosure(boost::optional<Point> const& upperBounds) const {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
                 return nullptr;
+            }
+            
+            template <typename ValueType>
+            Halfspace<ValueType> Polytope<ValueType>::findSeparatingHalfspace(Point const& pointToBeSeparated) const {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
+                return Halfspace<ValueType>(Point(), storm::utility::zero<ValueType>());
             }
             
             template <typename ValueType>
