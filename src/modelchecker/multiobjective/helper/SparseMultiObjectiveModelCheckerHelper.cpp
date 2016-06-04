@@ -4,6 +4,7 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/utility/constants.h"
+#include "src/utility/vector.h"
 
 #include "src/exceptions/UnexpectedException.h"
 
@@ -99,7 +100,7 @@ namespace storm {
             void SparseMultiObjectiveModelCheckerHelper<SparseModelType, RationalNumberType>::updateOverApproximation(Point const& newPoint, WeightVector const& newWeightVector) {
                 storm::storage::geometry::Halfspace<RationalNumberType> h(newWeightVector, storm::utility::vector::dotProduct(newWeightVector, newPoint));
                 overApproximation = overApproximation->intersection(h);
-                STORM_LOG_DEBUG("Updated OverApproximation to polytope " << overApproximation->toString(true));
+                STORM_LOG_DEBUG("Updated OverApproximation to " << overApproximation->toString(true));
             }
             
             template <class SparseModelType, typename RationalNumberType>
@@ -109,6 +110,12 @@ namespace storm {
                 for(auto const& paretoPoint : paretoOptimalPoints) {
                     paretoPointsVec.push_back(paretoPoint.first);
                 }
+                
+                STORM_LOG_WARN("REMOVE ADDING ADDITIONAL VERTICES AS SOON AS HYPRO WORKS FOR DEGENERATED POLYTOPES");
+                Point p1 = {-1, 0};
+                Point p2 = {0, -1};
+                paretoPointsVec.push_back(p1);
+                paretoPointsVec.push_back(p2);
                 
                 boost::optional<Point> upperBounds;
                 if(!paretoPointsVec.empty()){
@@ -126,7 +133,7 @@ namespace storm {
                 }
                 
                 underApproximation = storm::storage::geometry::Polytope<RationalNumberType>::create(paretoPointsVec)->downwardClosure(upperBounds);
-                STORM_LOG_DEBUG("Updated UnderApproximation to polytope " << overApproximation->toString(true));
+                STORM_LOG_DEBUG("Updated UnderApproximation to " << underApproximation->toString(true));
             }
             
 #ifdef STORM_HAVE_CARL
