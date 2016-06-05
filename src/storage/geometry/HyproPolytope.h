@@ -107,6 +107,15 @@ namespace storm {
                  * @param upperBounds If given, this vector is considered for y (hence, max{x_i | x i \in P does not need to be computed)
                  */
                 virtual std::shared_ptr<Polytope<ValueType>> downwardClosure(boost::optional<Point> const& upperBounds = boost::none) const override;
+                
+                /*!
+                 * Finds an optimal point inside this polytope w.r.t. the given direction, i.e.,
+                 * a point that maximizes dotPorduct(point, direction).
+                 * If such a point does not exist, the returned bool is false. There are two reasons for this:
+                 * - The polytope is empty
+                 * - The polytope is not bounded in the given direction
+                 */
+                virtual std::pair<Point, bool> optimize(Point const& direction) const override;
             
                 virtual bool isHyproPolytope() const override;
                 

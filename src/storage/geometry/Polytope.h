@@ -99,15 +99,13 @@ namespace storm {
                 virtual std::shared_ptr<Polytope<ValueType>> downwardClosure(boost::optional<Point> const& upperBounds = boost::none) const;
                 
                 /*!
-                 * Returns a halfspace h that separates this polytope from the given point p, i.e.,
-                 * - p lies on the border of h and
-                 * - for each x in this polytope, it holds that h contains x
-                 *
-                 * A halfspace with maximal distance to the polytope is preferred.
-                 *
-                 * @param pointToBeSeparated the point that is to be seperated
+                 * Finds an optimal point inside this polytope w.r.t. the given direction, i.e.,
+                 * a point that maximizes dotPorduct(point, direction).
+                 * If such a point does not exist, the returned bool is false. There are two reasons for this:
+                 * - The polytope is empty
+                 * - The polytope is not bounded in the given direction
                  */
-                virtual Halfspace<ValueType> findSeparatingHalfspace(Point const& pointToBeSeparated) const;
+                virtual std::pair<Point, bool> optimize(Point const& direction) const;
                 
                 /*
                  * Returns a string representation of this polytope.

@@ -148,7 +148,7 @@ namespace storm {
             std::shared_ptr<Polytope<ValueType>> HyproPolytope<ValueType>::downwardClosure(boost::optional<Point> const& upperBounds) const {
                 if(this->isUniversal() || this->isEmpty()) {
                     // In these cases, the polytope does not change, i.e., we return a copy of this
-                    return std::make_shared<HyproPolytope<ValueType>>(internPolytope);
+                    return std::make_shared<HyproPolytope<ValueType>>(*this);
                 }
                 // Only keep the halfspaces where all entries of the normal vector are non-negative
                 std::vector<hypro::Halfspace<ValueType>> halfspaces;
@@ -182,6 +182,22 @@ namespace storm {
                     }
                 }
                 return std::make_shared<HyproPolytope<ValueType>>(HyproPolytopeType(std::move(halfspaces)));
+            }
+            
+            
+            template <typename ValueType>
+            std::pair<typename HyproPolytope<ValueType>::Point, bool> HyproPolytope<ValueType>::optimize(Point const& direction) const {
+                hypro::EvaluationResult<ValueType> evalRes = internPolytope.evaluate(storm::adapters::toHypro(direction));
+                switch (evalRes.errorCode) {
+                    case hypro::SOLUTION::FEAS:
+                        return std::make_pair(storm::adapters::fromHypro(evalRes.optimumValue), true);
+                    case hypro::SOLUTION::UNKNOWN:
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected eror code for Polytope evaluation");
+                        return std::make_pair(Point(), false);
+                    default:
+                        //solution is infinity or infeasible
+                        return std::make_pair(Point(), false);
+                }
             }
             
             template <typename ValueType>

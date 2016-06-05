@@ -93,7 +93,46 @@ namespace storm {
                         return h;
                     }
                 }
-                return underApproximation->findSeparatingHalfspace(pointToBeSeparated);
+                
+                // We now use LP solving to find a seperating halfspace.
+                // Note that StoRM's LPSover does not support rational numbers. Hence, we optimize a polytope instead.
+                // The variables of the LP are the normalVector entries w_0 ... w_{n-1} and the minimal distance d between the halfspace and the paretoOptimalPoints
+                uint_fast64_t numVariables = pointToBeSeparated.size() + 1;
+                std::vector<storm::storage::geometry::Halfspace<RationalNumberType>> constraints;
+                constraints.reserve((numVariables-1) + 2 + paretoOptimalPoints.size());
+                // w_i >= 0 and d>= 0   <==>  -w_i <= 0 and -d <= 0
+                for(uint_fast64_t i = 0; i<numVariables; ++i) {
+                    WeightVector constraintCoefficients(numVariables, storm::utility::zero<RationalNumberType>());
+                    constraintCoefficients[i] = -storm::utility::one<RationalNumberType>();
+                    RationalNumberType constraintOffset = storm::utility::zero<RationalNumberType>();
+                    constraints.emplace_back(std::move(constraintCoefficients), std::move(constraintOffset));
+                }
+                // sum_i w_i == 1   <==>   sum_i w_i <=1 and sum_i -w_i <= -1
+                {
+                    WeightVector constraintCoefficients(numVariables, storm::utility::one<RationalNumberType>());
+                    constraintCoefficients.back() = storm::utility::zero<RationalNumberType>();
+                    RationalNumberType constraintOffset = storm::utility::one<RationalNumberType>();
+                    constraints.emplace_back(constraintCoefficients, constraintOffset);
+                    storm::utility::vector::scaleVectorInPlace(constraintCoefficients, -storm::utility::one<RationalNumberType>());
+                    constraintOffset = -storm::utility::one<RationalNumberType>();
+                    constraints.emplace_back(std::move(constraintCoefficients), std::move(constraintOffset));
+                }
+                // let q=pointToBeSeparated. For each paretoPoint x: q*w - x*w >= d  <==> (x-q) * w + d <= 0
+                for(auto const& paretoPoint : paretoOptimalPoints){
+                    WeightVector constraintCoefficients(numVariables-1);
+                    storm::utility::vector::subtractVectors(paretoPoint.first, pointToBeSeparated, constraintCoefficients);
+                    constraintCoefficients.push_back(storm::utility::one<RationalNumberType>());
+                    RationalNumberType constraintOffset = storm::utility::zero<RationalNumberType>();
+                    constraints.emplace_back(std::move(constraintCoefficients), std::move(constraintOffset));
+                }
+                
+                WeightVector optimizationVector(numVariables);
+                optimizationVector.back() = storm::utility::one<RationalNumberType>(); // maximize d
+                std::pair<WeightVector, bool> optimizeResult = storm::storage::geometry::Polytope<RationalNumberType>::create(constraints)->optimize(optimizationVector);
+                STORM_LOG_THROW(optimizeResult.second, storm::exceptions::UnexpectedException, "There seems to be no seperating halfspace.");
+                optimizeResult.first.pop_back(); //drop the distance
+                RationalNumberType offset = storm::utility::vector::dotProduct(optimizeResult.first, pointToBeSeparated);
+                return storm::storage::geometry::Halfspace<RationalNumberType>(std::move(optimizeResult.first), std::move(offset));
             }
             
             template <class SparseModelType, typename RationalNumberType>

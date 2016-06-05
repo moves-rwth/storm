@@ -129,9 +129,9 @@ namespace storm {
             }
             
             template <typename ValueType>
-            Halfspace<ValueType> Polytope<ValueType>::findSeparatingHalfspace(Point const& pointToBeSeparated) const {
+            std::pair<typename Polytope<ValueType>::Point, bool> Polytope<ValueType>::optimize(Point const& direction) const {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return Halfspace<ValueType>(Point(), storm::utility::zero<ValueType>());
+                return std::make_pair(Point(), false);
             }
             
             template <typename ValueType>
