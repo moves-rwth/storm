@@ -788,7 +788,7 @@ namespace storm {
                 STORM_LOG_WARN_COND(temporary.isZero() || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC, "Guard of a command overlaps with previous guards.");
                 
                 allGuards += commandDd.guardDd;
-                allCommands += commandDd.guardDd * commandDd.transitionsDd;
+                allCommands += commandDd.transitionsDd;
             }
             
             return ActionDecisionDiagram(allGuards, allCommands, assignedGlobalVariables);
@@ -873,7 +873,7 @@ namespace storm {
                             continue;
                         }
                         
-                        // Split the currentChoices nondeterministic choices.
+                        // Split the nondeterministic choices.
                         for (uint_fast64_t k = 0; k < currentChoices; ++k) {
                             // Calculate the overlapping part of command guard and the remaining DD.
                             storm::dd::Bdd<Type> remainingGuardChoicesIntersection = guardChoicesIntersection && remainingDds[k];
