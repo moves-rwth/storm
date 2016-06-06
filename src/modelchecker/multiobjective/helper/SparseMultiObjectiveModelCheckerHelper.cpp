@@ -31,44 +31,60 @@ namespace storm {
                     STORM_LOG_THROW(obj.threshold, storm::exceptions::UnexpectedException, "Can not perform achievabilityQuery: No threshold given for at least one objective.");
                     queryPoint.push_back(storm::utility::convertNumber<RationalNumberType>(*obj.threshold));
                 }
-                achievabilityQuery(queryPoint);
-            }
-            
-            template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveModelCheckerHelper<SparseModelType, RationalNumberType>::achievabilityQuery(Point const& queryPoint) {
                 storm::storage::BitVector individualObjectivesToBeChecked(info.objectives.size(), true);
                 while(true) { //TODO introduce convergence criterion? (like max num of iterations)
                     storm::storage::geometry::Halfspace<RationalNumberType> separatingHalfspace = findSeparatingHalfspace(queryPoint, individualObjectivesToBeChecked);
-                    
-                    weightedObjectivesChecker.check(storm::utility::vector::convertNumericVector<ModelValueType>(separatingHalfspace.normalVector()));
-                    storm::storage::TotalScheduler scheduler = weightedObjectivesChecker.getScheduler();
-                    Point weightedObjectivesResult = storm::utility::vector::convertNumericVector<RationalNumberType>(weightedObjectivesChecker.getInitialStateResultOfObjectives());
-                    
-                    // Insert the computed scheduler and check whether we have already seen it before
-                    auto schedulerInsertRes = schedulers.insert(std::make_pair(std::move(scheduler), paretoOptimalPoints.end()));
-                    if(schedulerInsertRes.second){
-                        // The scheduler is new, so insert the newly computed pareto optimal point.
-                        // To each scheduler, we assign the (unique) pareto optimal point it induces.
-                        schedulerInsertRes.first->second = paretoOptimalPoints.insert(std::make_pair(std::move(weightedObjectivesResult), std::vector<WeightVector>())).first;
-                    }
-                    // In the case where the scheduler is not new, we assume that the corresponding pareto optimal points for the old and new scheduler are equal
-                    // Note that the values might not be exactly equal due to numerical issues.
-                    
-                    Point const& paretoPoint = schedulerInsertRes.first->second->first;
-                    std::vector<WeightVector>& weightVectors = schedulerInsertRes.first->second->second;
-                    weightVectors.push_back(std::move(separatingHalfspace.normalVector()));
-                    
-                    updateOverApproximation(paretoPoint, weightVectors.back());
+                    refineSolution(separatingHalfspace.normalVector());
                     if(!overApproximation->contains(queryPoint)){
                         std::cout << "PROPERTY VIOLATED" << std::endl;
                         return;
                     }
-                    updateUnderApproximation();
                     if(underApproximation->contains(queryPoint)){
                         std::cout << "PROPERTY SATISFIED" << std::endl;
                         return;
                     }
                 }
+            }
+            
+            template <class SparseModelType, typename RationalNumberType>
+            void SparseMultiObjectiveModelCheckerHelper<SparseModelType, RationalNumberType>::refineSolution(WeightVector const& direction) {
+                weightedObjectivesChecker.check(storm::utility::vector::convertNumericVector<ModelValueType>(direction));
+            
+                storm::storage::TotalScheduler scheduler = weightedObjectivesChecker.getScheduler();
+                Point weightedObjectivesResult = storm::utility::vector::convertNumericVector<RationalNumberType>(weightedObjectivesChecker.getInitialStateResultOfObjectives());
+                
+                // Insert the computed scheduler and check whether we have already seen it before
+                auto schedulerInsertRes = schedulers.insert(std::make_pair(std::move(scheduler), paretoOptimalPoints.end()));
+                if(schedulerInsertRes.second){
+                    // The scheduler is new, so insert the newly computed pareto optimal point.
+                    // Due to numerical issues, however, it might be the case that the updated overapproximation will not contain the underapproximation,
+                    // e.g., when the new point is strictly contained in the underapproximation. Check if this is the case.
+                    RationalNumberType computedOffset = storm::utility::vector::dotProduct(weightedObjectivesResult, direction);
+                    RationalNumberType minimumOffset = computedOffset;
+                    for(auto const& paretoPoint : paretoOptimalPoints){
+                        minimumOffset = std::max(minimumOffset, storm::utility::vector::dotProduct(paretoPoint.first, direction));
+                    }
+                    if(minimumOffset > computedOffset){
+                        // We correct the issue by shifting the weightedObjectivesResult in the given direction such that
+                        // it lies on the hyperplane given by direction and minimumOffset
+                        WeightVector correction(direction);
+                        storm::utility::vector::scaleVectorInPlace(correction, (minimumOffset - computedOffset) / storm::utility::vector::dotProduct(direction, direction));
+                        storm::utility::vector::addVectors(weightedObjectivesResult, correction, weightedObjectivesResult);
+                        STORM_LOG_WARN("Numerical issues: The weightedObjectivesResult has to be shifted by " << storm::utility::sqrt(storm::utility::vector::dotProduct(correction, correction)));
+                    }
+                    // Now insert the point. For the corresponding scheduler, we safe the entry in the map.
+                    schedulerInsertRes.first->second = paretoOptimalPoints.insert(std::make_pair(std::move(weightedObjectivesResult), std::vector<WeightVector>())).first;
+                }
+                // In the case where the scheduler is not new, we assume that the corresponding pareto optimal points for the old and new scheduler are equal.
+                // hence, no additional point will be inserted.
+                // Note that the values might not be exactly equal due to numerical issues.
+                    
+                Point const& paretoPoint = schedulerInsertRes.first->second->first;
+                std::vector<WeightVector>& weightVectors = schedulerInsertRes.first->second->second;
+                weightVectors.push_back(direction);
+
+                updateOverApproximation(paretoPoint, weightVectors.back());
+                updateUnderApproximation();
             }
             
             template <class SparseModelType, typename RationalNumberType>

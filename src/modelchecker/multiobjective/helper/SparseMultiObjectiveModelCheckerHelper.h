@@ -29,10 +29,16 @@ namespace storm {
                 ~SparseMultiObjectiveModelCheckerHelper();
                 
                 void achievabilityQuery();
+                void numericalQuery();
+                void paretoQuery();
 
 
             private:
-                void achievabilityQuery(Point const& queryPoint);
+                
+                /*
+                 * Refines the solution w.r.t. the given direction vector
+                 */
+                void refineSolution(WeightVector const& direction);
                 
                 /*
                  * Returns a halfspace h that separates the underapproximation from the given point p, i.e.,

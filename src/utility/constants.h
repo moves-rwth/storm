@@ -11,6 +11,7 @@
 
 #include <limits>
 #include <cstdint>
+#include <cmath>
 
 #include "src/adapters/CarlAdapter.h"
 
@@ -59,6 +60,15 @@ namespace storm {
             return carl::convert<SourceType, TargetType>(number);
 #else
             return static_cast<TargetType>(number);
+#endif
+        }
+        
+        template<typename ValueType>
+        ValueType sqrt(ValueType const& value) {
+#ifdef STORM_HAVE_CARL
+            return carl::sqrt(value);
+#else
+            return std::sqrt(value);
 #endif
         }
     }
