@@ -354,12 +354,11 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         struct ComposerResult {
-            ComposerResult(storm::dd::Add<Type, ValueType> const& transitions, storm::dd::Add<Type, ValueType> const& stateActionDd, uint64_t numberOfNondeterminismVariables = 0) : transitions(transitions), stateActionDd(stateActionDd), numberOfNondeterminismVariables(numberOfNondeterminismVariables) {
+            ComposerResult(storm::dd::Add<Type, ValueType> const& transitions, storm::dd::Bdd<Type> const& illegalFragment, uint64_t numberOfNondeterminismVariables = 0) : transitions(transitions), numberOfNondeterminismVariables(numberOfNondeterminismVariables) {
                 // Intentionally left empty.
             }
             
             storm::dd::Add<Type, ValueType> transitions;
-            storm::dd::Add<Type, ValueType> stateActionDd;
             uint64_t numberOfNondeterminismVariables;
         };
         
@@ -494,7 +493,8 @@ namespace storm {
             
             ComposerResult<Type, ValueType> compose() override {
                 AutomatonDd globalAutomaton = boost::any_cast<AutomatonDd>(this->model.getSystemComposition().accept(*this, boost::none));
-                return buildSystem(this->model, globalAutomaton, this->variables);
+                // FIXME: use correct illegal fragment.
+                return buildSystem(this->model, globalAutomaton, this->variables.manager->getBddZero(), this->variables);
             }
             
             boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) override {
@@ -600,14 +600,14 @@ namespace storm {
                 return result;
             }
             
-            std::pair<uint64_t, storm::dd::Add<Type, ValueType>> combineEdgesByNondeterministicChoice(std::vector<EdgeDd>& edges, CompositionVariables<Type, ValueType> const& variables) {
+            std::pair<uint64_t, storm::dd::Add<Type, ValueType>> combineEdgesByNondeterministicChoice(std::vector<EdgeDd>& edges) {
                 // Complete all edges by adding the missing global variable identities.
                 for (auto& edge : edges) {
-                    edge.transitions *= computeMissingGlobalVariableIdentities(edge, variables);
+                    edge.transitions *= computeMissingGlobalVariableIdentities(edge, this->variables);
                 }
                 
                 // Sum all guards, so we can read off the maximal number of nondeterministic choices in any given state.
-                storm::dd::Add<Type, ValueType> sumOfGuards = variables.manager->template getAddZero<ValueType>();
+                storm::dd::Add<Type, ValueType> sumOfGuards = this->variables.manager->template getAddZero<ValueType>();
                 for (auto const& edge : edges) {
                     sumOfGuards += edge.guard;
                 }
@@ -616,22 +616,22 @@ namespace storm {
                 
                 // Depending on the maximal number of nondeterminstic choices, we need to use some variables to encode the nondeterminism.
                 if (maxChoices == 0) {
-                    return std::make_pair(0, variables.manager->template getAddZero<ValueType>());
+                    return std::make_pair(0, this->variables.manager->template getAddZero<ValueType>());
                 } else if (maxChoices == 1) {
-                    return std::make_pair(0, combineEdgesBySummation(edges, variables));
+                    return std::make_pair(0, combineEdgesBySummation(edges, this->variables));
                 } else {
                     // Calculate number of required variables to encode the nondeterminism.
                     uint_fast64_t numberOfBinaryVariables = static_cast<uint_fast64_t>(std::ceil(storm::utility::math::log2(maxChoices)));
                     
-                    storm::dd::Add<Type, ValueType> allEdges = variables.manager->template getAddZero<ValueType>();
+                    storm::dd::Add<Type, ValueType> allEdges = this->variables.manager->template getAddZero<ValueType>();
                     
                     storm::dd::Bdd<Type> equalsNumberOfChoicesDd;
-                    std::vector<storm::dd::Add<Type, ValueType>> choiceDds(maxChoices, variables.manager->template getAddZero<ValueType>());
-                    std::vector<storm::dd::Bdd<Type>> remainingDds(maxChoices, variables.manager->getBddZero());
+                    std::vector<storm::dd::Add<Type, ValueType>> choiceDds(maxChoices, this->variables.manager->template getAddZero<ValueType>());
+                    std::vector<storm::dd::Bdd<Type>> remainingDds(maxChoices, this->variables.manager->getBddZero());
                     
                     for (uint_fast64_t currentChoices = 1; currentChoices <= maxChoices; ++currentChoices) {
                         // Determine the set of states with exactly currentChoices choices.
-                        equalsNumberOfChoicesDd = sumOfGuards.equals(variables.manager->getConstant(static_cast<double>(currentChoices)));
+                        equalsNumberOfChoicesDd = sumOfGuards.equals(this->variables.manager->getConstant(static_cast<double>(currentChoices)));
                         
                         // If there is no such state, continue with the next possible number of choices.
                         if (equalsNumberOfChoicesDd.isZero()) {
@@ -640,7 +640,7 @@ namespace storm {
                         
                         // Reset the previously used intermediate storage.
                         for (uint_fast64_t j = 0; j < currentChoices; ++j) {
-                            choiceDds[j] = variables.manager->template getAddZero<ValueType>();
+                            choiceDds[j] = this->variables.manager->template getAddZero<ValueType>();
                             remainingDds[j] = equalsNumberOfChoicesDd;
                         }
                         
@@ -680,7 +680,7 @@ namespace storm {
                         
                         // Add the meta variables that encode the nondeterminisim to the different choices.
                         for (uint_fast64_t j = 0; j < currentChoices; ++j) {
-                            allEdges += encodeIndex(j, 0, numberOfBinaryVariables, variables) * choiceDds[j];
+                            allEdges += encodeIndex(j, 0, numberOfBinaryVariables, this->variables) * choiceDds[j];
                         }
                         
                         // Delete currentChoices out of overlapping DD
@@ -700,7 +700,7 @@ namespace storm {
                     // were used.
                     uint64_t highestNumberOfUsedNondeterminismVariables = 0;
                     for (auto& action : automatonDd.actionIndexToEdges) {
-                        std::pair<uint64_t, storm::dd::Add<Type, ValueType>> usedVariablesAndDd = combineEdgesByNondeterministicChoice(action.second, this->variables);
+                        std::pair<uint64_t, storm::dd::Add<Type, ValueType>> usedVariablesAndDd = combineEdgesByNondeterministicChoice(action.second);
                         actionIndexToUsedVariablesAndDd.emplace(action.first, usedVariablesAndDd);
                         highestNumberOfUsedNondeterminismVariables = std::max(highestNumberOfUsedNondeterminismVariables, usedVariablesAndDd.first);
                     }
@@ -888,11 +888,11 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
-                uint64_t getLowestLocalNondeterminismVariable() {
+                uint64_t getLowestLocalNondeterminismVariable() const {
                     return localNondeterminismVariables.first;
                 }
 
-                uint64_t getHighestLocalNondeterminismVariable() {
+                uint64_t getHighestLocalNondeterminismVariable() const {
                     return localNondeterminismVariables.second;
                 }
 
@@ -916,12 +916,35 @@ namespace storm {
             
             // This structure represents a subcomponent of a composition.
             struct AutomatonDd {
-                AutomatonDd(storm::dd::Add<Type, ValueType> const& identity) : identity(identity) {
+                AutomatonDd(storm::dd::Add<Type, ValueType> const& identity) : actionIndexToAction(), identity(identity), localNondeterminismVariables(std::make_pair<uint64_t, uint64_t>(0, 0)) {
                     // Intentionally left empty.
                 }
                 
+                uint64_t getLowestLocalNondeterminismVariable() const {
+                    return localNondeterminismVariables.first;
+                }
+
+                void setLowestLocalNondeterminismVariable(uint64_t newValue) {
+                    localNondeterminismVariables.first = newValue;
+                }
+                
+                uint64_t getHighestLocalNondeterminismVariable() const {
+                    return localNondeterminismVariables.second;
+                }
+
+                void setHighestLocalNondeterminismVariable(uint64_t newValue) {
+                    localNondeterminismVariables.second = newValue;
+                }
+                
+                // A mapping from action indices to the action DDs.
                 std::map<uint64_t, ActionDd> actionIndexToAction;
+                
+                // The identity of the automaton's variables.
                 storm::dd::Add<Type, ValueType> identity;
+                
+                // The local nondeterminism variables used by this action DD, given as the lowest
+                std::pair<uint64_t, uint64_t> localNondeterminismVariables;
+
             };
             
             CombinedEdgesSystemComposer(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables) : SystemComposer<Type, ValueType>(model, variables) {
@@ -935,7 +958,7 @@ namespace storm {
                 }
                 
                 AutomatonDd globalAutomaton = boost::any_cast<AutomatonDd>(this->model.getSystemComposition().accept(*this, actionIndexToLocalNondeterminismVariableOffset));
-                return buildSystem(globalAutomaton);
+                return buildSystemFromAutomaton(globalAutomaton);
             }
             
             boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) override {
@@ -1009,12 +1032,14 @@ namespace storm {
             AutomatonDd composeInParallel(AutomatonDd const& automaton1, AutomatonDd const& automaton2, std::set<uint64_t> const& synchronizingActionIndices) {
                 AutomatonDd result(automaton1);
                 
+                // Treat all actions of the first automaton.
                 for (auto const& action1 : automaton1.actionIndexToAction) {
                     // If we need to synchronize over this action index, we try to do so now.
                     if (synchronizingActionIndices.find(action1.first) != synchronizingActionIndices.end()) {
                         auto action2It = automaton2.actionIndexToAction.find(action1.first);
                         if (action2It != automaton2.actionIndexToAction.end()) {
                             result.actionIndexToAction[action1.first] = combineSynchronizingActions(action1.second, action2It->second);
+                            std::cout << "synchonizing: " << result.actionIndexToAction[action1.first].transitions.getNonZeroCount() << "nnz" << std::endl;
                         }
                     } else {
                         // If we don't synchronize over this action, we need to construct the interleaving.
@@ -1023,79 +1048,35 @@ namespace storm {
                         auto action2It = automaton2.actionIndexToAction.find(action1.first);
                         if (action2It != automaton2.actionIndexToAction.end()) {
                             result.actionIndexToAction[action1.first] = combineUnsynchronizedActions(action1.second, action2It->second, automaton1.identity, automaton2.identity);
+                            std::cout << "not-synchonizing (1): index " << action1.first << ", " << result.actionIndexToAction[action1.first].transitions.getNonZeroCount() << "nnz" << std::endl;
                         } else {
                             // If only the first automaton has this action, we only need to apply the identity of the
                             // second automaton.
-                            result.actionIndexToAction[action1.first] = ActionDd(action1.second.guard, action1.second.transitions * automaton2.identity, action1.localNondeterminismVariables, action1.variableToWritingFragment, action1.illegalFragment);
+                            result.actionIndexToAction[action1.first] = ActionDd(action1.second.guard, action1.second.transitions * automaton2.identity, action1.second.localNondeterminismVariables, action1.second.variableToWritingFragment, action1.second.illegalFragment);
+                            std::cout << "not-synchonizing (2): index " << action1.first << ", " << result.actionIndexToAction[action1.first].transitions.getNonZeroCount() << "nnz" << std::endl;
                         }
-                        
                     }
                 }
                 
-                
-                
-                
-                
-                
-                
-                // Combine the tau action.
-                uint_fast64_t numberOfUsedNondeterminismVariables = right.independentAction.numberOfUsedNondeterminismVariables;
-                left.independentAction = DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(generationInfo, left.independentAction, right.independentAction, left.identity, right.identity);
-                numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, left.independentAction.numberOfUsedNondeterminismVariables);
-                
-                // Create an empty action for the case where one of the modules does not have a certain action.
-                typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram emptyAction(*generationInfo.manager);
-                
-                // Treat all non-tau actions of the left module.
-                for (auto& action : left.synchronizingActionToDecisionDiagramMap) {
-                    // If we need to synchronize over this action index, we try to do so now.
-                    if (synchronizationActionIndices.find(action.first) != synchronizationActionIndices.end()) {
-                        // If we are to synchronize over an action that does not exist in the second module, the result
-                        // is that the synchronization is the empty action.
-                        if (!right.hasSynchronizingAction(action.first)) {
-                            action.second = emptyAction;
-                        } else {
-                            // Otherwise, the actions of the modules are synchronized.
-                            action.second = DdPrismModelBuilder<Type, ValueType>::combineSynchronizingActions(generationInfo, action.second, right.synchronizingActionToDecisionDiagramMap[action.first]);
-                        }
-                    } else {
-                        // If we don't synchronize over this action, we need to construct the interleaving.
-                        
-                        // If both modules contain the action, we need to mutually multiply the other identity.
-                        if (right.hasSynchronizingAction(action.first)) {
-                            action.second = DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(generationInfo, action.second, right.synchronizingActionToDecisionDiagramMap[action.first], left.identity, right.identity);
-                        } else {
-                            // If only the first module has this action, we need to use a dummy action decision diagram
-                            // for the second module.
-                            action.second = DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(generationInfo, action.second, emptyAction, left.identity, right.identity);
+                // Treat the actions of the second automaton.
+                for (auto const& action2 : automaton2.actionIndexToAction) {
+                    // Here, we only need to treat actions that the first automaton does not have, because we have handled
+                    // this case earlier. Likewise, we have to consider non-synchronizing actions only.
+                    if (automaton1.actionIndexToAction.find(action2.first) == automaton1.actionIndexToAction.end()) {
+                        if (synchronizingActionIndices.find(action2.first) == synchronizingActionIndices.end()) {
+                            // If only the second automaton has this action, we only need to apply the identity of the
+                            // first automaton.
+                            result.actionIndexToAction[action2.first] = ActionDd(action2.second.guard, action2.second.transitions * automaton1.identity, action2.second.localNondeterminismVariables, action2.second.variableToWritingFragment, action2.second.illegalFragment);
+                            std::cout << "not-synchonizing (3): index " << action2.first << ", " << result.actionIndexToAction[action2.first].transitions.getNonZeroCount() << "nnz" << std::endl;
                         }
                     }
-                    numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, action.second.numberOfUsedNondeterminismVariables);
+                    result.setLowestLocalNondeterminismVariable(std::max(result.getLowestLocalNondeterminismVariable(), action2.second.getLowestLocalNondeterminismVariable()));
+                    result.setHighestLocalNondeterminismVariable(std::max(result.getHighestLocalNondeterminismVariable(), action2.second.getHighestLocalNondeterminismVariable()));
                 }
                 
-                // Treat all non-tau actions of the right module.
-                for (auto const& actionIndex : right.getSynchronizingActionIndices()) {
-                    // Here, we only need to treat actions that the first module does not have, because we have handled
-                    // this case earlier.
-                    if (!left.hasSynchronizingAction(actionIndex)) {
-                        if (synchronizationActionIndices.find(actionIndex) != synchronizationActionIndices.end()) {
-                            // If we are to synchronize over this action that does not exist in the first module, the
-                            // result is that the synchronization is the empty action.
-                            left.synchronizingActionToDecisionDiagramMap[actionIndex] = emptyAction;
-                        } else {
-                            // If only the second module has this action, we need to use a dummy action decision diagram
-                            // for the first module.
-                            left.synchronizingActionToDecisionDiagramMap[actionIndex] = DdPrismModelBuilder<Type, ValueType>::combineUnsynchronizedActions(generationInfo, emptyAction, right.synchronizingActionToDecisionDiagramMap[actionIndex], left.identity, right.identity);
-                        }
-                    }
-                    numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, left.synchronizingActionToDecisionDiagramMap[actionIndex].numberOfUsedNondeterminismVariables);
-                }
+                result.identity = automaton1.identity * automaton2.identity;
                 
-                // Combine identity matrices.
-                left.identity = left.identity * right.identity;
-                
-                // Keep track of the number of nondeterminism variables used.
-                left.numberOfUsedNondeterminismVariables = std::max(left.numberOfUsedNondeterminismVariables, numberOfUsedNondeterminismVariables);
+                return result;
             }
             
             ActionDd combineSynchronizingActions(ActionDd action1, ActionDd action2) {
@@ -1125,11 +1106,11 @@ namespace storm {
                 return ActionDd(action1.guard * action2.guard, action1.transitions * action2.transitions, std::make_pair(std::min(action1.getLowestLocalNondeterminismVariable(), action2.getLowestLocalNondeterminismVariable()), std::max(action1.getHighestLocalNondeterminismVariable(), action2.getHighestLocalNondeterminismVariable())), globalVariableToWritingFragment, illegalFragment);
             }
             
-            ActionDd combineUnsynchronizedActions(ActionDd action1, ActionDd action2, storm::dd::Add<Type, ValueType> const& identityDd1, storm::dd::Add<Type, ValueType> const& identityDd2) {
+            ActionDd combineUnsynchronizedActions(ActionDd action1, ActionDd action2, storm::dd::Add<Type, ValueType> const& identity1, storm::dd::Add<Type, ValueType> const& identity2) {
                 // First extend the action DDs by the other identities.
                 STORM_LOG_TRACE("Multiplying identities to combine unsynchronized actions.");
-                action1.transitionsDd = action1.transitionsDd * identityDd2;
-                action2.transitionsDd = action2.transitionsDd * identityDd1;
+                action1.transitions = action1.transitions * identity2;
+                action2.transitions = action2.transitions * identity1;
                 
                 // Then combine the extended action DDs.
                 return combineUnsynchronizedActions(action1, action2);
@@ -1334,6 +1315,7 @@ namespace storm {
                     }
                 }
                 
+                std::cout << "combining edges to action yields " << allTransitions.getNonZeroCount() << " nnz" << std::endl;
                 return ActionDd(allGuards.template toAdd<ValueType>(), allTransitions, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment, this->variables.manager->getBddZero());
             }
             
@@ -1473,17 +1455,55 @@ namespace storm {
                 storm::jani::Automaton const& automaton = this->model.getAutomaton(automatonName);
                 for (auto const& action : this->model.getActions()) {
                     uint64_t actionIndex = this->model.getActionIndex(action.getName());
-                    
-                    result.actionIndexToAction[actionIndex] = buildActionDdForActionIndex(automaton, actionIndex, actionIndexToLocalNondeterminismVariableOffset.at(actionIndex));
+                    ActionDd actionDd = buildActionDdForActionIndex(automaton, actionIndex, actionIndexToLocalNondeterminismVariableOffset.at(actionIndex));
+                    std::cout << "action DD for action " << action.getName() << " (" << actionIndex << ") has " << actionDd.transitions.getNonZeroCount() << " nnz" << std::endl;
+                    result.actionIndexToAction[actionIndex] = actionDd;
+                    result.setLowestLocalNondeterminismVariable(std::max(result.getLowestLocalNondeterminismVariable(), actionDd.getLowestLocalNondeterminismVariable()));
+                    result.setHighestLocalNondeterminismVariable(std::max(result.getHighestLocalNondeterminismVariable(), actionDd.getHighestLocalNondeterminismVariable()));
                 }
                 return result;
             }
 
-            ComposerResult<Type, ValueType> buildSystem(AutomatonDd& automatonDd) {
-                // FIXME: do the real thing.
-                return ComposerResult<Type, ValueType>(this->variables.manager->template getAddZero<ValueType>(), this->variables.manager->template getAddZero<ValueType>(), 0);
+            void addMissingGlobalVariableIdentities(ActionDd& action) {
+                // Build a DD that we can multiply to the transitions and adds all missing global variable identities that way.
+                storm::dd::Add<Type, ValueType> missingIdentities = this->variables.manager->template getAddOne<ValueType>();
+                
+                for (auto const& variable : this->variables.allGlobalVariables) {
+                    auto it = action.variableToWritingFragment.find(variable);
+                    if (it != action.variableToWritingFragment.end()) {
+                        missingIdentities *= (it->second).ite(this->variables.manager->template getAddOne<ValueType>(), this->variables.variableToIdentityMap.at(variable));
+                    } else {
+                        missingIdentities *= this->variables.variableToIdentityMap.at(variable);
+                    }
+                }
+                
+                action.transitions *= missingIdentities;
             }
             
+            ComposerResult<Type, ValueType> buildSystemFromAutomaton(AutomatonDd& automaton) {
+                // If the model is an MDP, we need to encode the nondeterminism using additional variables.
+                if (this->model.getModelType() == storm::jani::ModelType::MDP) {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
+                } else if (this->model.getModelType() == storm::jani::ModelType::DTMC || this->model.getModelType() == storm::jani::ModelType::CTMC) {
+                    // Simply add all actions, but make sure to include the missing global variable identities.
+
+                    storm::dd::Add<Type, ValueType> result = this->variables.manager->template getAddZero<ValueType>();
+                    storm::dd::Bdd<Type> illegalFragment = this->variables.manager->getBddZero();
+                    for (auto& action : automaton.actionIndexToAction) {
+                        illegalFragment |= action.second.illegalFragment;
+                        std::cout << "adding" << action.second.transitions.getNonZeroCount() << std::endl;
+                        addMissingGlobalVariableIdentities(action.second);
+                        result += action.second.transitions;
+                    }
+
+                    std::cout << "result, nnz: " << result.getNonZeroCount() << ", nodes: " << result.getNodeCount() << std::endl;
+                    result.exportToDot("trans.dot");
+                    
+                    return ComposerResult<Type, ValueType>(result, illegalFragment, 0);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
+                }
+            }
         };
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1564,7 +1584,7 @@ namespace storm {
         void postprocessSystem(storm::jani::Model const& model, ComposerResult<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
             if (model.getModelType() == storm::jani::ModelType::DTMC) {
-                system.transitions = system.transitions / system.stateActionDd;
+                system.transitions = system.transitions / system.transitions.sumAbstract(variables.columnMetaVariables);
             }
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
@@ -1678,7 +1698,6 @@ namespace storm {
             // Cut transitions to reachable states.
             storm::dd::Add<Type, ValueType> reachableStatesAdd = modelComponents.reachableStates.template toAdd<ValueType>();
             modelComponents.transitionMatrix = system.transitions * reachableStatesAdd;
-            system.stateActionDd *= reachableStatesAdd;
             
             // Fix deadlocks if existing.
             fixDeadlocks(this->model->getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);

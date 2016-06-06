@@ -63,12 +63,16 @@ TEST(DdJaniModelBuilderTest_Cudd, Dtmc) {
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
     
+    std::cout << "brp starts here -----" << std::endl;
+    
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
     janiModel = program.toJani(true);
     builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);
     model = builder.translate();
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
+
+    //    exit(-1);
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     janiModel = program.toJani(true);
