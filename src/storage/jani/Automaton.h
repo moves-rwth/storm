@@ -225,6 +225,11 @@ namespace storm {
              */
             void setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression);
             
+            /*!
+             * Retrieves whether there is an edge labeled with the action with the given index in this automaton.
+             */
+            bool hasEdgeLabeledWithActionIndex(uint64_t actionIndex) const;
+            
         private:
             /// The name of the automaton.
             std::string name;
@@ -248,8 +253,11 @@ namespace storm {
             /// The index of the initial location.
             uint64_t initialLocationIndex;
             
-            // The expression characterizing the legal initial values of the variables of the automaton.
+            /// The expression characterizing the legal initial values of the variables of the automaton.
             storm::expressions::Expression initialStatesExpression;
+            
+            /// The set of action indices that label some action in this automaton.
+            std::set<uint64_t> actionIndices;
         };
         
     }

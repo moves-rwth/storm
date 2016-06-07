@@ -63,8 +63,6 @@ TEST(DdJaniModelBuilderTest_Cudd, Dtmc) {
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
     
-    std::cout << "brp starts here -----" << std::endl;
-    
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
     janiModel = program.toJani(true);
     builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);
@@ -72,8 +70,6 @@ TEST(DdJaniModelBuilderTest_Cudd, Dtmc) {
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
 
-    //    exit(-1);
-    
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
     janiModel = program.toJani(true);
     builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);
@@ -262,7 +258,7 @@ TEST(DdJaniModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(169ul, mdp->getNumberOfStates());
     EXPECT_EQ(436ul, mdp->getNumberOfTransitions());
     EXPECT_EQ(254ul, mdp->getNumberOfChoices());
-    
+        
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
     janiModel = program.toJani(true);
     builder = storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double>(janiModel);
@@ -322,4 +318,11 @@ TEST(DdJaniModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(37ul, mdp->getNumberOfStates());
     EXPECT_EQ(59ul, mdp->getNumberOfTransitions());
     EXPECT_EQ(59ul, mdp->getNumberOfChoices());
+}
+
+TEST(DdJaniModelBuilderTest_Cudd, IllegalFragment) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2-illegalSynchronizingWrite.nm");
+    storm::jani::Model janiModel = program.toJani(true);
+    storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double> builder(janiModel);
+    EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.translate(), storm::exceptions::WrongFormatException);
 }

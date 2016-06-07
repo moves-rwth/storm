@@ -407,6 +407,7 @@ namespace storm {
              * module is modified in place and will contain the composition after a call to this method.
              */
             void composeInParallel(typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& left, typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram& right, std::set<uint_fast64_t> const& synchronizationActionIndices) const {
+                auto t1 = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Composing two modules.");
                 
                 // Combine the tau action.
@@ -467,6 +468,9 @@ namespace storm {
                 
                 // Keep track of the number of nondeterminism variables used.
                 left.numberOfUsedNondeterminismVariables = std::max(left.numberOfUsedNondeterminismVariables, numberOfUsedNondeterminismVariables);
+                
+                auto t2 = std::chrono::high_resolution_clock::now();
+                std::cout << "parallel composition took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
             }
             
             typename DdPrismModelBuilder<Type, ValueType>::GenerationInformation& generationInfo;
@@ -588,9 +592,11 @@ namespace storm {
             STORM_LOG_TRACE("Translating update " << update);
             
             // Iterate over all assignments (boolean and integer) and build the DD for it.
+            auto t1 = std::chrono::high_resolution_clock::now();
             std::vector<storm::prism::Assignment> assignments = update.getAssignments();
             std::set<storm::expressions::Variable> assignedVariables;
             for (auto const& assignment : assignments) {
+                std::cout << "assignment to variable " << assignment.getVariable().getName() << " expr " << assignment.getExpression() << std::endl;
                 // Record the variable as being written.
                 STORM_LOG_TRACE("Assigning to variable " << generationInfo.variableToRowMetaVariableMap->at(assignment.getVariable()).getName());
                 assignedVariables.insert(assignment.getVariable());
@@ -614,6 +620,8 @@ namespace storm {
                 
                 updateDd *= result;
             }
+            auto t2 = std::chrono::high_resolution_clock::now();
+            std::cout << "assignments took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
             
             // Compute the set of assigned global variables.
             std::set<storm::expressions::Variable> assignedGlobalVariables;
@@ -693,6 +701,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         typename DdPrismModelBuilder<Type, ValueType>::ActionDecisionDiagram DdPrismModelBuilder<Type, ValueType>::createActionDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, uint_fast64_t synchronizationActionIndex, uint_fast64_t nondeterminismVariableOffset) {
             std::vector<ActionDecisionDiagram> commandDds;
+            auto t1 = std::chrono::high_resolution_clock::now();
             for (storm::prism::Command const& command : module.getCommands()) {
                 
                 // Determine whether the command is relevant for the selected action.
@@ -707,7 +716,9 @@ namespace storm {
                 // At this point, the command is known to be relevant for the action.
                 commandDds.push_back(createCommandDecisionDiagram(generationInfo, module, command));
             }
-            
+            auto t2 = std::chrono::high_resolution_clock::now();
+            std::cout << "building commands took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
+
             ActionDecisionDiagram result(*generationInfo.manager);
             if (!commandDds.empty()) {
                 switch (generationInfo.program.getModelType()){
@@ -974,6 +985,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         typename DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram DdPrismModelBuilder<Type, ValueType>::createModuleDecisionDiagram(GenerationInformation& generationInfo, storm::prism::Module const& module, std::map<uint_fast64_t, uint_fast64_t> const& synchronizingActionToOffsetMap) {
+            auto t1 = std::chrono::high_resolution_clock::now();
             // Start by creating the action DD for the independent action.
             ActionDecisionDiagram independentActionDd = createActionDecisionDiagram(generationInfo, module, 0, 0);
             uint_fast64_t numberOfUsedNondeterminismVariables = independentActionDd.numberOfUsedNondeterminismVariables;
@@ -981,12 +993,17 @@ namespace storm {
             // Create module DD for all synchronizing actions of the module.
             std::map<uint_fast64_t, ActionDecisionDiagram> actionIndexToDdMap;
             for (auto const& actionIndex : module.getSynchronizingActionIndices()) {
+                auto inner1 = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Creating DD for action '" << actionIndex << "'.");
                 ActionDecisionDiagram tmp = createActionDecisionDiagram(generationInfo, module, actionIndex, synchronizingActionToOffsetMap.at(actionIndex));
                 numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, tmp.numberOfUsedNondeterminismVariables);
                 actionIndexToDdMap.emplace(actionIndex, tmp);
+                auto inner2 = std::chrono::high_resolution_clock::now();
+                std::cout << "building action " << generationInfo.program.getActionName(actionIndex) << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(inner2 - inner1).count() << "ms" << std::endl;
             }
-            
+
+            auto t2 = std::chrono::high_resolution_clock::now();
+            std::cout << "creating module " << module.getName() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
             return ModuleDecisionDiagram(independentActionDd, actionIndexToDdMap, generationInfo.moduleToIdentityMap.at(module.getName()), numberOfUsedNondeterminismVariables);
         }
         

@@ -154,6 +154,9 @@ namespace storm {
             for (uint64_t locationIndex = edge.getSourceLocationId() + 1; locationIndex < locationToStartingIndex.size(); ++locationIndex) {
                 ++locationToStartingIndex[locationIndex];
             }
+            
+            // Update the set of action indices of this automaton.
+            actionIndices.insert(edge.getActionId());
         }
         
         std::vector<Edge>& Automaton::getEdges() {
@@ -190,6 +193,10 @@ namespace storm {
         
         void Automaton::setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression) {
             this->initialStatesExpression = initialStatesExpression;
+        }
+        
+        bool Automaton::hasEdgeLabeledWithActionIndex(uint64_t actionIndex) const {
+            return actionIndices.find(actionIndex) != actionIndices.end();
         }
         
     }

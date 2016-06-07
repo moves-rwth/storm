@@ -27,6 +27,7 @@
 #include "src/utility/jani.h"
 #include "src/utility/dd.h"
 #include "src/utility/math.h"
+#include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/InvalidStateException.h"
 
@@ -354,11 +355,12 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         struct ComposerResult {
-            ComposerResult(storm::dd::Add<Type, ValueType> const& transitions, storm::dd::Bdd<Type> const& illegalFragment, uint64_t numberOfNondeterminismVariables = 0) : transitions(transitions), numberOfNondeterminismVariables(numberOfNondeterminismVariables) {
+            ComposerResult(storm::dd::Add<Type, ValueType> const& transitions, storm::dd::Bdd<Type> const& illegalFragment, uint64_t numberOfNondeterminismVariables = 0) : transitions(transitions), illegalFragment(illegalFragment), numberOfNondeterminismVariables(numberOfNondeterminismVariables) {
                 // Intentionally left empty.
             }
             
             storm::dd::Add<Type, ValueType> transitions;
+            storm::dd::Bdd<Type> illegalFragment;
             uint64_t numberOfNondeterminismVariables;
         };
         
@@ -397,9 +399,11 @@ namespace storm {
             
             STORM_LOG_TRACE("Translating edge destination.");
             
+            auto t1 = std::chrono::high_resolution_clock::now();
             // Iterate over all assignments (boolean and integer) and build the DD for it.
             std::set<storm::expressions::Variable> assignedVariables;
             for (auto const& assignment : destination.getAssignments()) {
+                std::cout << "assignment to variable " << assignment.getExpressionVariable().getName() << " expr " << assignment.getAssignedExpression() << std::endl;
                 // Record the variable as being written.
                 STORM_LOG_TRACE("Assigning to variable " << variables.variableToRowMetaVariableMap->at(assignment.getExpressionVariable()).getName());
                 assignedVariables.insert(assignment.getExpressionVariable());
@@ -409,21 +413,37 @@ namespace storm {
                 storm::dd::Add<Type, ValueType> writtenVariable = variables.manager->template getIdentity<ValueType>(primedMetaVariable);
                 
                 // Translate the expression that is being assigned.
-                storm::dd::Add<Type, ValueType> updateExpression = variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
+                storm::dd::Add<Type, ValueType> assignedExpression = variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
                 
                 // Combine the update expression with the guard.
-                storm::dd::Add<Type, ValueType> result = updateExpression * guard;
+                storm::dd::Add<Type, ValueType> result = assignedExpression * guard;
                 
+                auto inner1 = std::chrono::high_resolution_clock::now();
                 // Combine the variable and the assigned expression.
+                storm::dd::Add<Type, ValueType> tmp = result;
                 result = result.equals(writtenVariable).template toAdd<ValueType>();
+                auto inner2 = std::chrono::high_resolution_clock::now();
+                std::cout << "inner-1 took " << std::chrono::duration_cast<std::chrono::milliseconds>(inner2 - inner1).count() << "ms" << std::endl;
+                if (std::chrono::duration_cast<std::chrono::milliseconds>(inner2 - inner1).count() > 30) {
+                    writtenVariable.exportToDot("writtenVar.dot");
+                    tmp.exportToDot("result.dot");
+                    assignedExpression.exportToDot("assignedExpressions.dot");
+                    guard.exportToDot("guard.dot");
+                    exit(-1);
+                }
+                inner1 = std::chrono::high_resolution_clock::now();
                 result *= guard;
-                
+                inner2 = std::chrono::high_resolution_clock::now();
+                std::cout << "inner-2 took " << std::chrono::duration_cast<std::chrono::milliseconds>(inner2 - inner1).count() << "ms" << std::endl;
+
                 // Restrict the transitions to the range of the written variable.
                 result = result * variables.manager->getRange(primedMetaVariable).template toAdd<ValueType>();
                 
                 // Combine the assignment DDs.
                 transitions *= result;
             }
+            auto t2 = std::chrono::high_resolution_clock::now();
+            std::cout << "assignments took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
             
             // Compute the set of assigned global variables.
             std::set<storm::expressions::Variable> assignedGlobalVariables;
@@ -445,7 +465,41 @@ namespace storm {
                 }
             }
             
-            return EdgeDestinationDd<Type, ValueType>(variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).second, destination.getLocationId()).template toAdd<ValueType>() * transitions * variables.rowExpressionAdapter->translateExpression(destination.getProbability()), assignedGlobalVariables);
+            transitions *= variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).second, destination.getLocationId()).template toAdd<ValueType>();
+            
+            return EdgeDestinationDd<Type, ValueType>(transitions, assignedGlobalVariables);
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        storm::dd::Add<Type, ValueType> encodeAction(boost::optional<uint64_t> const& actionIndex, CompositionVariables<Type, ValueType> const& variables) {
+            storm::dd::Add<Type, ValueType> encoding = variables.manager->template getAddOne<ValueType>();
+            
+            for (auto it = variables.actionVariablesMap.rbegin(), ite = variables.actionVariablesMap.rend(); it != ite; ++it) {
+                if (actionIndex && it->first == actionIndex.get()) {
+                    encoding *= variables.manager->getEncoding(it->second, 1).template toAdd<ValueType>();
+                } else {
+                    encoding *= variables.manager->getEncoding(it->second, 0).template toAdd<ValueType>();
+                }
+            }
+            
+            return encoding;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        storm::dd::Add<Type, ValueType> encodeIndex(uint64_t index, uint64_t localNondeterminismVariableOffset, uint64_t numberOfLocalNondeterminismVariables, CompositionVariables<Type, ValueType> const& variables) {
+            storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
+            
+            std::map<storm::expressions::Variable, int_fast64_t> metaVariableNameToValueMap;
+            for (uint_fast64_t i = 0; i < numberOfLocalNondeterminismVariables; ++i) {
+                if (index & (1ull << (numberOfLocalNondeterminismVariables - i - 1))) {
+                    metaVariableNameToValueMap.emplace(variables.localNondeterminismVariables[localNondeterminismVariableOffset + i], 1);
+                } else {
+                    metaVariableNameToValueMap.emplace(variables.localNondeterminismVariables[localNondeterminismVariableOffset + i], 0);
+                }
+            }
+            
+            result.setValue(metaVariableNameToValueMap, 1);
+            return result;
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -493,8 +547,7 @@ namespace storm {
             
             ComposerResult<Type, ValueType> compose() override {
                 AutomatonDd globalAutomaton = boost::any_cast<AutomatonDd>(this->model.getSystemComposition().accept(*this, boost::none));
-                // FIXME: use correct illegal fragment.
-                return buildSystem(this->model, globalAutomaton, this->variables.manager->getBddZero(), this->variables);
+                return buildSystemFromAutomaton(globalAutomaton);
             }
             
             boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const& data) override {
@@ -691,7 +744,23 @@ namespace storm {
                 }
             }
             
-            ComposerResult<Type, ValueType> buildSystem(AutomatonDd& automatonDd) {
+            storm::dd::Bdd<Type> computeIllegalFragmentFromEdges(std::map<uint64_t, std::vector<EdgeDd>> const& actionIndexToEdges) {
+                // Create the illegal fragment. For this, we need to find the edges that write global variables multiple times.
+                storm::dd::Bdd<Type> illegalFragment = this->variables.manager->getBddZero();
+                for (auto const& action : actionIndexToEdges) {
+                    for (auto const& edge : action.second) {
+                        if (!edge.globalVariablesWrittenMultipleTimes.empty()) {
+                            for (auto const& variable : edge.globalVariablesWrittenMultipleTimes) {
+                                STORM_LOG_WARN("The global variable '" << variable.getName() << "' is written along multiple synchronizing edges. If such a transition is contained in the reachable state space, an error is raised.");
+                                illegalFragment |= edge.guard.toBdd();
+                            }
+                        }
+                    }
+                }
+                return illegalFragment;
+            }
+            
+            ComposerResult<Type, ValueType> buildSystemFromAutomaton(AutomatonDd& automatonDd) {
                 // If the model is an MDP, we need to encode the nondeterminism using additional variables.
                 if (this->model.getModelType() == storm::jani::ModelType::MDP) {
                     std::map<uint64_t, std::pair<uint64_t, storm::dd::Add<Type, ValueType>>> actionIndexToUsedVariablesAndDd;
@@ -707,16 +776,16 @@ namespace storm {
                     
                     storm::dd::Add<Type, ValueType> result = this->variables.manager->template getAddZero<ValueType>();
                     for (auto const& element : actionIndexToUsedVariablesAndDd) {
-                        result += element.second.second * encodeAction(element.first, this->variables) * encodeIndex(0, element.second.first, highestNumberOfUsedNondeterminismVariables - element.second.first, this->variables);
+                        result += element.second.second * encodeAction(element.first != this->model.getSilentActionIndex() ? boost::optional<uint64_t>(element.first) : boost::none, this->variables) * encodeIndex(0, element.second.first, highestNumberOfUsedNondeterminismVariables - element.second.first, this->variables);
                     }
                     
-                    return ComposerResult<Type, ValueType>(result, result.sumAbstract(this->variables.columnMetaVariables), highestNumberOfUsedNondeterminismVariables);
+                    return ComposerResult<Type, ValueType>(result, computeIllegalFragmentFromEdges(automatonDd.actionIndexToEdges), highestNumberOfUsedNondeterminismVariables);
                 } else if (this->model.getModelType() == storm::jani::ModelType::DTMC || this->model.getModelType() == storm::jani::ModelType::CTMC) {
                     storm::dd::Add<Type, ValueType> result = this->variables.manager->template getAddZero<ValueType>();
                     for (auto const& action : automatonDd.actionIndexToEdges) {
                         result += combineEdgesBySummation(action.second, this->variables);
                     }
-                    return ComposerResult<Type, ValueType>(result, result.sumAbstract(this->variables.columnMetaVariables));
+                    return ComposerResult<Type, ValueType>(result, computeIllegalFragmentFromEdges(automatonDd.actionIndexToEdges), 0);
                 }
                 
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
@@ -793,7 +862,7 @@ namespace storm {
                         
                         STORM_LOG_WARN_COND(!destinationDds.back().transitions.isZero(), "Destination does not have any effect.");
                     }
-                    
+
                     // Start by gathering all variables that were written in at least one update.
                     std::set<storm::expressions::Variable> globalVariablesInSomeUpdate;
                     
@@ -837,7 +906,6 @@ namespace storm {
                     if (edge.hasRate()) {
                         transitions *= this->variables.rowExpressionAdapter->translateExpression(edge.getRate());
                     }
-                    
                     return EdgeDd(guard, transitions, globalVariablesInSomeUpdate);
                 } else {
                     return EdgeDd(this->variables.manager->template getAddZero<ValueType>(), this->variables.manager->template getAddZero<ValueType>());
@@ -895,6 +963,10 @@ namespace storm {
                 uint64_t getHighestLocalNondeterminismVariable() const {
                     return localNondeterminismVariables.second;
                 }
+                
+                std::pair<uint64_t, uint64_t> const& getLocalNondeterminismVariables() const {
+                    return localNondeterminismVariables;
+                }
 
                 // A DD that represents all states that have this edge enabled.
                 storm::dd::Add<Type, ValueType> guard;
@@ -934,6 +1006,11 @@ namespace storm {
 
                 void setHighestLocalNondeterminismVariable(uint64_t newValue) {
                     localNondeterminismVariables.second = newValue;
+                }
+                
+                void extendLocalNondeterminismVariables(std::pair<uint64_t, uint64_t> const& localNondeterminismVariables) {
+                    setLowestLocalNondeterminismVariable(std::min(localNondeterminismVariables.first, getLowestLocalNondeterminismVariable()));
+                    setHighestLocalNondeterminismVariable(std::max(localNondeterminismVariables.second, getHighestLocalNondeterminismVariable()));
                 }
                 
                 // A mapping from action indices to the action DDs.
@@ -1030,6 +1107,7 @@ namespace storm {
             
         private:
             AutomatonDd composeInParallel(AutomatonDd const& automaton1, AutomatonDd const& automaton2, std::set<uint64_t> const& synchronizingActionIndices) {
+                auto t1 = std::chrono::high_resolution_clock::now();
                 AutomatonDd result(automaton1);
                 
                 // Treat all actions of the first automaton.
@@ -1038,22 +1116,23 @@ namespace storm {
                     if (synchronizingActionIndices.find(action1.first) != synchronizingActionIndices.end()) {
                         auto action2It = automaton2.actionIndexToAction.find(action1.first);
                         if (action2It != automaton2.actionIndexToAction.end()) {
-                            result.actionIndexToAction[action1.first] = combineSynchronizingActions(action1.second, action2It->second);
-                            std::cout << "synchonizing: " << result.actionIndexToAction[action1.first].transitions.getNonZeroCount() << "nnz" << std::endl;
+                            ActionDd newAction = combineSynchronizingActions(action1.second, action2It->second);
+                            result.actionIndexToAction[action1.first] = newAction;
+                            result.extendLocalNondeterminismVariables(newAction.getLocalNondeterminismVariables());
                         }
                     } else {
                         // If we don't synchronize over this action, we need to construct the interleaving.
                         
-                        // If both modules contain the action, we need to mutually multiply the other identity.
+                        // If both automata contain the action, we need to combine the actions in an unsynchronized way.
                         auto action2It = automaton2.actionIndexToAction.find(action1.first);
                         if (action2It != automaton2.actionIndexToAction.end()) {
-                            result.actionIndexToAction[action1.first] = combineUnsynchronizedActions(action1.second, action2It->second, automaton1.identity, automaton2.identity);
-                            std::cout << "not-synchonizing (1): index " << action1.first << ", " << result.actionIndexToAction[action1.first].transitions.getNonZeroCount() << "nnz" << std::endl;
+                            ActionDd newAction = combineUnsynchronizedActions(action1.second, action2It->second, automaton1.identity, automaton2.identity);
+                            result.actionIndexToAction[action1.first] = newAction;
+                            result.extendLocalNondeterminismVariables(newAction.getLocalNondeterminismVariables());
                         } else {
                             // If only the first automaton has this action, we only need to apply the identity of the
                             // second automaton.
                             result.actionIndexToAction[action1.first] = ActionDd(action1.second.guard, action1.second.transitions * automaton2.identity, action1.second.localNondeterminismVariables, action1.second.variableToWritingFragment, action1.second.illegalFragment);
-                            std::cout << "not-synchonizing (2): index " << action1.first << ", " << result.actionIndexToAction[action1.first].transitions.getNonZeroCount() << "nnz" << std::endl;
                         }
                     }
                 }
@@ -1067,14 +1146,14 @@ namespace storm {
                             // If only the second automaton has this action, we only need to apply the identity of the
                             // first automaton.
                             result.actionIndexToAction[action2.first] = ActionDd(action2.second.guard, action2.second.transitions * automaton1.identity, action2.second.localNondeterminismVariables, action2.second.variableToWritingFragment, action2.second.illegalFragment);
-                            std::cout << "not-synchonizing (3): index " << action2.first << ", " << result.actionIndexToAction[action2.first].transitions.getNonZeroCount() << "nnz" << std::endl;
                         }
                     }
-                    result.setLowestLocalNondeterminismVariable(std::max(result.getLowestLocalNondeterminismVariable(), action2.second.getLowestLocalNondeterminismVariable()));
-                    result.setHighestLocalNondeterminismVariable(std::max(result.getHighestLocalNondeterminismVariable(), action2.second.getHighestLocalNondeterminismVariable()));
                 }
                 
                 result.identity = automaton1.identity * automaton2.identity;
+                
+                auto t2 = std::chrono::high_resolution_clock::now();
+                std::cout << "parallel composition took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
                 
                 return result;
             }
@@ -1087,6 +1166,7 @@ namespace storm {
                 
                 // Cross-multiply the guards to the other fragments that write global variables and check for overlapping
                 // parts. This finds illegal parts in which a global variable is written multiple times.
+                auto t1 = std::chrono::high_resolution_clock::now();
                 std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> globalVariableToWritingFragment;
                 for (auto& entry : action1.variableToWritingFragment) {
                     entry.second &= guard2;
@@ -1096,12 +1176,16 @@ namespace storm {
                     entry.second &= guard1;
                     auto it = globalVariableToWritingFragment.find(entry.first);
                     if (it != globalVariableToWritingFragment.end()) {
-                        illegalFragment |= it->second && entry.second;
-                        it->second |= entry.second;
+                        auto action1LocalNondeterminismVariableSet = std::set<storm::expressions::Variable>(this->variables.localNondeterminismVariables.begin() + action1.getLowestLocalNondeterminismVariable(), this->variables.localNondeterminismVariables.begin() + action1.getHighestLocalNondeterminismVariable());
+                        auto action2LocalNondeterminismVariableSet = std::set<storm::expressions::Variable>(this->variables.localNondeterminismVariables.begin() + action2.getLowestLocalNondeterminismVariable(), this->variables.localNondeterminismVariables.begin() + action2.getHighestLocalNondeterminismVariable());
+                        illegalFragment |= it->second.existsAbstract(action1LocalNondeterminismVariableSet) && entry.second.existsAbstract(action2LocalNondeterminismVariableSet);
+                        it->second &= entry.second;
                     } else {
                         globalVariableToWritingFragment[entry.first] = entry.second;
                     }
                 }
+                auto t2 = std::chrono::high_resolution_clock::now();
+                totalTime += t2 - t1;
                 
                 return ActionDd(action1.guard * action2.guard, action1.transitions * action2.transitions, std::make_pair(std::min(action1.getLowestLocalNondeterminismVariable(), action2.getLowestLocalNondeterminismVariable()), std::max(action1.getHighestLocalNondeterminismVariable(), action2.getHighestLocalNondeterminismVariable())), globalVariableToWritingFragment, illegalFragment);
             }
@@ -1201,6 +1285,7 @@ namespace storm {
                 STORM_LOG_WARN_COND(!guard.isZero(), "The guard '" << edge.getGuard() << "' is unsatisfiable.");
                 
                 if (!guard.isZero()) {
+                    auto t1 = std::chrono::high_resolution_clock::now();
                     // Create the DDs representing the individual updates.
                     std::vector<EdgeDestinationDd<Type, ValueType>> destinationDds;
                     for (storm::jani::EdgeDestination const& destination : edge.getDestinations()) {
@@ -1209,24 +1294,29 @@ namespace storm {
                         STORM_LOG_WARN_COND(!destinationDds.back().transitions.isZero(), "Destination does not have any effect.");
                     }
                     
-                    // Start by gathering all variables that were written in at least one update.
-                    std::set<storm::expressions::Variable> globalVariablesInSomeUpdate;
+                    auto t2 = std::chrono::high_resolution_clock::now();
+                    std::cout << "building destinations took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
+                    
+                    t1 = std::chrono::high_resolution_clock::now();
+
+                    // Start by gathering all variables that were written in at least one destination.
+                    std::set<storm::expressions::Variable> globalVariablesInSomeDestination;
                     
                     // If the edge is not labeled with the silent action, we have to analyze which portion of the global
                     // variables was written by any of the updates and make all update results equal w.r.t. this set. If
                     // the edge is labeled with the silent action, we can already multiply the identities of all global variables.
                     if (edge.getActionId() != this->model.getSilentActionIndex()) {
                         for (auto const& edgeDestinationDd : destinationDds) {
-                            globalVariablesInSomeUpdate.insert(edgeDestinationDd.writtenGlobalVariables.begin(), edgeDestinationDd.writtenGlobalVariables.end());
+                            globalVariablesInSomeDestination.insert(edgeDestinationDd.writtenGlobalVariables.begin(), edgeDestinationDd.writtenGlobalVariables.end());
                         }
                     } else {
-                        globalVariablesInSomeUpdate = this->variables.allGlobalVariables;
+                        globalVariablesInSomeDestination = this->variables.allGlobalVariables;
                     }
                     
                     // Then, multiply the missing identities.
                     for (auto& destinationDd : destinationDds) {
                         std::set<storm::expressions::Variable> missingIdentities;
-                        std::set_difference(globalVariablesInSomeUpdate.begin(), globalVariablesInSomeUpdate.end(), destinationDd.writtenGlobalVariables.begin(), destinationDd.writtenGlobalVariables.end(), std::inserter(missingIdentities, missingIdentities.begin()));
+                        std::set_difference(globalVariablesInSomeDestination.begin(), globalVariablesInSomeDestination.end(), destinationDd.writtenGlobalVariables.begin(), destinationDd.writtenGlobalVariables.end(), std::inserter(missingIdentities, missingIdentities.begin()));
                         
                         for (auto const& variable : missingIdentities) {
                             STORM_LOG_TRACE("Multiplying identity for variable " << variable.getName() << " to destination DD.");
@@ -1236,15 +1326,16 @@ namespace storm {
                     
                     // Now combine the destination DDs to the edge DD.
                     storm::dd::Add<Type, ValueType> transitions = this->variables.manager->template getAddZero<ValueType>();
-                    for (auto const& destinationDd : destinationDds) {
-                        transitions += destinationDd.transitions;
+                    auto destinationDdIt = destinationDds.begin();
+                    for (auto destinationIt = edge.getDestinations().begin(), destinationIte = edge.getDestinations().end(); destinationIt != destinationIte; ++destinationIt, ++destinationDdIt) {
+                        transitions += destinationDdIt->transitions * this->variables.rowExpressionAdapter->translateExpression(destinationIt->getProbability());
                     }
                     
                     // Add the source location and the guard.
                     transitions *= this->variables.manager->getEncoding(this->variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationId()).template toAdd<ValueType>() * guard;
                     
                     // If we multiply the ranges of global variables, make sure everything stays within its bounds.
-                    if (!globalVariablesInSomeUpdate.empty()) {
+                    if (!globalVariablesInSomeDestination.empty()) {
                         transitions *= this->variables.globalVariableRanges;
                     }
                     
@@ -1253,7 +1344,10 @@ namespace storm {
                         transitions *= this->variables.rowExpressionAdapter->translateExpression(edge.getRate());
                     }
                     
-                    return EdgeDd(guard, transitions, globalVariablesInSomeUpdate);
+                    t2 = std::chrono::high_resolution_clock::now();
+                    std::cout << "rest took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
+
+                    return EdgeDd(guard, guard * transitions, globalVariablesInSomeDestination);
                 } else {
                     return EdgeDd(this->variables.manager->template getAddZero<ValueType>(), this->variables.manager->template getAddZero<ValueType>());
                 }
@@ -1261,12 +1355,15 @@ namespace storm {
             
             ActionDd buildActionDdForActionIndex(storm::jani::Automaton const& automaton, uint64_t actionIndex, uint64_t localNondeterminismVariableOffset) {
                 // Translate the individual edges.
+                auto t1 = std::chrono::high_resolution_clock::now();
                 std::vector<EdgeDd> edgeDds;
                 for (auto const& edge : automaton.getEdges()) {
                     if (edge.getActionId() == actionIndex) {
                         edgeDds.push_back(buildEdgeDd(automaton, edge));
                     }
                 }
+                auto t2 = std::chrono::high_resolution_clock::now();
+                std::cout << "building edges for index took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
                 
                 // Now combine the edges to a single action.
                 if (!edgeDds.empty()) {
@@ -1305,6 +1402,7 @@ namespace storm {
                     allTransitions += edgeDd.transitions;
                     
                     // Keep track of the fragment that is writing global variables.
+                    auto t1 = std::chrono::high_resolution_clock::now();
                     for (auto const& variable : edgeDd.writtenGlobalVariables) {
                         auto it = globalVariableToWritingFragment.find(variable);
                         if (it != globalVariableToWritingFragment.end()) {
@@ -1313,22 +1411,29 @@ namespace storm {
                             globalVariableToWritingFragment[variable] = guardBdd;
                         }
                     }
+                    auto t2 = std::chrono::high_resolution_clock::now();
+                    totalTime += t2 - t1;
                 }
                 
-                std::cout << "combining edges to action yields " << allTransitions.getNonZeroCount() << " nnz" << std::endl;
                 return ActionDd(allGuards.template toAdd<ValueType>(), allTransitions, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment, this->variables.manager->getBddZero());
             }
             
+            mutable std::chrono::duration<uint64_t, std::nano> totalTime = std::chrono::duration<uint64_t, std::nano>(0);
+            
             void addToVariableWritingFragmentMap(std::map<storm::expressions::Variable, storm::dd::Bdd<Type>>& globalVariableToWritingFragment, storm::expressions::Variable const& variable, storm::dd::Bdd<Type> const& partToAdd) const {
+                auto t1 = std::chrono::high_resolution_clock::now();
                 auto it = globalVariableToWritingFragment.find(variable);
                 if (it != globalVariableToWritingFragment.end()) {
                     it->second |= partToAdd;
                 } else {
                     globalVariableToWritingFragment.emplace(variable, partToAdd);
                 }
+                auto t2 = std::chrono::high_resolution_clock::now();
+                totalTime += t2 - t1;
             }
             
             std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> joinVariableWritingFragmentMaps(std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& globalVariableToWritingFragment1, std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> const& globalVariableToWritingFragment2) {
+                auto t1 = std::chrono::high_resolution_clock::now();
                 std::map<storm::expressions::Variable, storm::dd::Bdd<Type>> result = globalVariableToWritingFragment1;
                 
                 for (auto const& entry : globalVariableToWritingFragment2) {
@@ -1339,6 +1444,8 @@ namespace storm {
                         result[entry.first] = entry.second;
                     }
                 }
+                auto t2 = std::chrono::high_resolution_clock::now();
+                totalTime += t2 - t1;
                 
                 return result;
             }
@@ -1352,7 +1459,7 @@ namespace storm {
                         addToVariableWritingFragmentMap(globalVariableToWritingFragment, variable, edge.guard.toBdd());
                     }
                 }
-                return ActionDd(guard, transitions, std::make_pair<uint64_t, uint64_t>(0, 0), {}, this->variables.manager->getBddZero());
+                return ActionDd(guard, transitions, std::make_pair<uint64_t, uint64_t>(0, 0), globalVariableToWritingFragment, this->variables.manager->getBddZero());
             }
             
             ActionDd combineEdgesToActionMdp(std::vector<EdgeDd> const& edges, uint64_t localNondeterminismVariableOffset) {
@@ -1379,6 +1486,11 @@ namespace storm {
                     storm::dd::Bdd<Type> equalsNumberOfChoicesDd;
                     std::vector<storm::dd::Add<Type, ValueType>> choiceDds(maxChoices, this->variables.manager->template getAddZero<ValueType>());
                     std::vector<storm::dd::Bdd<Type>> remainingDds(maxChoices, this->variables.manager->getBddZero());
+                    std::vector<std::pair<storm::dd::Bdd<Type>, storm::dd::Add<Type, ValueType>>> indicesEncodedWithLocalNondeterminismVariables;
+                    for (uint64_t j = 0; j < maxChoices; ++j) {
+                        storm::dd::Add<Type, ValueType> indexEncoding = encodeIndex(j, localNondeterminismVariableOffset, numberOfBinaryVariables, this->variables);
+                        indicesEncodedWithLocalNondeterminismVariables.push_back(std::make_pair(indexEncoding.toBdd(), indexEncoding));
+                    }
                     
                     for (uint_fast64_t currentChoices = 1; currentChoices <= maxChoices; ++currentChoices) {
                         // Determine the set of states with exactly currentChoices choices.
@@ -1421,9 +1533,12 @@ namespace storm {
                                     choiceDds[k] += remainingGuardChoicesIntersection.template toAdd<ValueType>() * currentEdge.transitions;
                                     
                                     // Keep track of the written global variables of the fragment.
+                                    auto t1 = std::chrono::high_resolution_clock::now();
                                     for (auto const& variable : currentEdge.writtenGlobalVariables) {
-                                        addToVariableWritingFragmentMap(globalVariableToWritingFragment, variable, remainingGuardChoicesIntersection && encodeIndex(j, 0, numberOfBinaryVariables, this->variables).toBdd());
+                                        addToVariableWritingFragmentMap(globalVariableToWritingFragment, variable, remainingGuardChoicesIntersection && indicesEncodedWithLocalNondeterminismVariables[k].first);
                                     }
+                                    auto t2 = std::chrono::high_resolution_clock::now();
+                                    totalTime += t2 - t1;
                                 }
                                 
                                 // Remove overlapping parts from the command guard DD
@@ -1438,7 +1553,7 @@ namespace storm {
                         
                         // Add the meta variables that encode the nondeterminisim to the different choices.
                         for (uint_fast64_t j = 0; j < currentChoices; ++j) {
-                            allEdges += encodeIndex(j, 0, numberOfBinaryVariables, this->variables) * choiceDds[j];
+                            allEdges += indicesEncodedWithLocalNondeterminismVariables[j].second * choiceDds[j];
                         }
                         
                         // Delete currentChoices out of overlapping DD
@@ -1450,17 +1565,25 @@ namespace storm {
             }
             
             AutomatonDd buildAutomatonDd(std::string const& automatonName, std::map<uint_fast64_t, uint_fast64_t> const& actionIndexToLocalNondeterminismVariableOffset) {
+                auto t1 = std::chrono::high_resolution_clock::now();
                 AutomatonDd result(this->variables.automatonToIdentityMap.at(automatonName));
                 
                 storm::jani::Automaton const& automaton = this->model.getAutomaton(automatonName);
                 for (auto const& action : this->model.getActions()) {
                     uint64_t actionIndex = this->model.getActionIndex(action.getName());
+                    if (!automaton.hasEdgeLabeledWithActionIndex(actionIndex)) {
+                        continue;
+                    }
+                    auto inner1 = std::chrono::high_resolution_clock::now();
                     ActionDd actionDd = buildActionDdForActionIndex(automaton, actionIndex, actionIndexToLocalNondeterminismVariableOffset.at(actionIndex));
-                    std::cout << "action DD for action " << action.getName() << " (" << actionIndex << ") has " << actionDd.transitions.getNonZeroCount() << " nnz" << std::endl;
                     result.actionIndexToAction[actionIndex] = actionDd;
                     result.setLowestLocalNondeterminismVariable(std::max(result.getLowestLocalNondeterminismVariable(), actionDd.getLowestLocalNondeterminismVariable()));
                     result.setHighestLocalNondeterminismVariable(std::max(result.getHighestLocalNondeterminismVariable(), actionDd.getHighestLocalNondeterminismVariable()));
+                    auto inner2 = std::chrono::high_resolution_clock::now();
+                    std::cout << "building action " << action.getName() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(inner2 - inner1).count() << "ms" << std::endl;
                 }
+                auto t2 = std::chrono::high_resolution_clock::now();
+                std::cout << "building automaton " << automatonName << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
                 return result;
             }
 
@@ -1483,7 +1606,28 @@ namespace storm {
             ComposerResult<Type, ValueType> buildSystemFromAutomaton(AutomatonDd& automaton) {
                 // If the model is an MDP, we need to encode the nondeterminism using additional variables.
                 if (this->model.getModelType() == storm::jani::ModelType::MDP) {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
+                    storm::dd::Add<Type, ValueType> result = this->variables.manager->template getAddZero<ValueType>();
+                    storm::dd::Bdd<Type> illegalFragment = this->variables.manager->getBddZero();
+                    
+                    // First, determine the highest number of nondeterminism variables that is used in any action and make
+                    // all actions use the same amout of nondeterminism variables.
+                    uint64_t numberOfUsedNondeterminismVariables = automaton.getHighestLocalNondeterminismVariable();
+                    
+                    // Add missing global variable identities, action and nondeterminism encodings.
+                    for (auto& action : automaton.actionIndexToAction) {
+                        auto t1 = std::chrono::high_resolution_clock::now();
+                        illegalFragment |= action.second.illegalFragment;
+                        addMissingGlobalVariableIdentities(action.second);
+                        auto t2 = std::chrono::high_resolution_clock::now();
+                        totalTime += t2 - t1;
+                        storm::dd::Add<Type, ValueType> actionEncoding = encodeAction(action.first != this->model.getSilentActionIndex() ? boost::optional<uint64_t>(action.first) : boost::none, this->variables);
+                        storm::dd::Add<Type, ValueType> missingNondeterminismEncoding = encodeIndex(0, action.second.getHighestLocalNondeterminismVariable(), numberOfUsedNondeterminismVariables - action.second.getHighestLocalNondeterminismVariable(), this->variables);
+                        storm::dd::Add<Type, ValueType> extendedTransitions = actionEncoding * missingNondeterminismEncoding * action.second.transitions;
+                        result += extendedTransitions;
+                    }
+                    
+                    std::cout << "accumulated: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalTime).count() << "ms" << std::endl;
+                    return ComposerResult<Type, ValueType>(result, illegalFragment, numberOfUsedNondeterminismVariables);
                 } else if (this->model.getModelType() == storm::jani::ModelType::DTMC || this->model.getModelType() == storm::jani::ModelType::CTMC) {
                     // Simply add all actions, but make sure to include the missing global variable identities.
 
@@ -1491,52 +1635,16 @@ namespace storm {
                     storm::dd::Bdd<Type> illegalFragment = this->variables.manager->getBddZero();
                     for (auto& action : automaton.actionIndexToAction) {
                         illegalFragment |= action.second.illegalFragment;
-                        std::cout << "adding" << action.second.transitions.getNonZeroCount() << std::endl;
                         addMissingGlobalVariableIdentities(action.second);
                         result += action.second.transitions;
                     }
 
-                    std::cout << "result, nnz: " << result.getNonZeroCount() << ", nodes: " << result.getNodeCount() << std::endl;
-                    result.exportToDot("trans.dot");
-                    
                     return ComposerResult<Type, ValueType>(result, illegalFragment, 0);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Illegal model type.");
                 }
             }
         };
-        
-        template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> encodeAction(boost::optional<uint64_t> const& actionIndex, CompositionVariables<Type, ValueType> const& variables) {
-            storm::dd::Add<Type, ValueType> encoding = variables.manager->template getAddOne<ValueType>();
-            
-            for (auto it = variables.actionVariablesMap.rbegin(), ite = variables.actionVariablesMap.rend(); it != ite; ++it) {
-                if (actionIndex && it->first == actionIndex.get()) {
-                    encoding *= variables.manager->getEncoding(it->second, 1).template toAdd<ValueType>();
-                } else {
-                    encoding *= variables.manager->getEncoding(it->second, 0).template toAdd<ValueType>();
-                }
-            }
-            
-            return encoding;
-        }
-        
-        template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Add<Type, ValueType> encodeIndex(uint64_t index, uint64_t localNondeterminismVariableOffset, uint64_t numberOfLocalNondeterminismVariables, CompositionVariables<Type, ValueType> const& variables) {
-            storm::dd::Add<Type, ValueType> result = variables.manager->template getAddZero<ValueType>();
-            
-            std::map<storm::expressions::Variable, int_fast64_t> metaVariableNameToValueMap;
-            for (uint_fast64_t i = 0; i < numberOfLocalNondeterminismVariables; ++i) {
-                if (index & (1ull << (numberOfLocalNondeterminismVariables - i - 1))) {
-                    metaVariableNameToValueMap.emplace(variables.localNondeterminismVariables[localNondeterminismVariableOffset + i], 1);
-                } else {
-                    metaVariableNameToValueMap.emplace(variables.localNondeterminismVariables[localNondeterminismVariableOffset + i], 0);
-                }
-            }
-            
-            result.setValue(metaVariableNameToValueMap, 1);
-            return result;
-        }
         
         template <storm::dd::DdType Type, typename ValueType>
         struct ModelComponents {
@@ -1694,6 +1802,10 @@ namespace storm {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
             }
             modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables);
+            
+            // Check that the reachable fragment does not overlap with the illegal fragment.
+            storm::dd::Bdd<Type> reachableIllegalFragment = modelComponents.reachableStates && system.illegalFragment;
+            STORM_LOG_THROW(reachableIllegalFragment.isZero(), storm::exceptions::WrongFormatException, "There are reachable states in the model that have synchronizing edges enabled that write the same global variable.");
             
             // Cut transitions to reachable states.
             storm::dd::Add<Type, ValueType> reachableStatesAdd = modelComponents.reachableStates.template toAdd<ValueType>();
