@@ -31,7 +31,7 @@ namespace storm {
                     addObjective(subFormula, info);
                 }
                 // Find out whether negated rewards should be considered.
-                setWhetherNegatedRewardsAreConsidered(info);
+                //setWhetherNegatedRewardsAreConsidered(info);
                 //Invoke preprocessing on objectives
                 for (auto& obj : info.objectives){
                     STORM_LOG_DEBUG("Preprocessing objective " << *obj.originalFormula << ".");
@@ -57,25 +57,11 @@ namespace storm {
                 
                 typename Information::ObjectiveInformation objective;
                 objective.originalFormula = formula;
-                
-                storm::logic::OperatorFormula const& opFormula = formula->asOperatorFormula();
-                if(opFormula.hasBound()){
-                    objective.threshold = opFormula.getBound().threshold;
-                    objective.thresholdIsStrict = storm::logic::isStrict(opFormula.getBound().comparisonType);
-                    // Note that we minimize if the comparison type is an upper bound since we are interested in the EXISTENCE of a scheduler.
-                    objective.originalFormulaMinimizes = !storm::logic::isLowerBound(opFormula.getBound().comparisonType);
-                } else if (opFormula.hasOptimalityType()){
-                    objective.thresholdIsStrict = false;
-                    objective.originalFormulaMinimizes = storm::solver::minimize(opFormula.getOptimalityType());
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Current objective " << opFormula << " does not specify whether to minimize or maximize");
-                }
                 objective.rewardModelName = "objective" + std::to_string(info.objectives.size());
                 // Make sure the new reward model gets a unique name
                 while(info.preprocessedModel.hasRewardModel(objective.rewardModelName)){
                     objective.rewardModelName = "_" + objective.rewardModelName;
                 }
-                setStepBoundOfObjective(objective);
                 info.objectives.push_back(std::move(objective));
             }
             
@@ -102,7 +88,7 @@ namespace storm {
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::setWhetherNegatedRewardsAreConsidered(Information& info) {
                 // Negative Rewards are considered  whenever there is an unbounded reward objective that requires to minimize.
                 // If there is no unbounded reward objective, we make a majority vote.
-                uint_fast64_t numOfMinimizingObjectives = 0;
+           /*     uint_fast64_t numOfMinimizingObjectives = 0;
                 for(auto const& obj : info.objectives){
                     if(obj.originalFormula->isRewardOperatorFormula() && !obj.stepBound){
                         info.negatedRewardsConsidered = obj.originalFormulaMinimizes;
@@ -112,39 +98,23 @@ namespace storm {
                 }
                 // Reaching this point means that we make a majority vote
                 info.negatedRewardsConsidered = (numOfMinimizingObjectives*2) > info.objectives.size();
-            }
+            */}
             
             template<typename SparseMdpModelType>
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocessFormula(storm::logic::ProbabilityOperatorFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective) {
-                // We might need to adapt the threshold for the given objective
-                if(currentObjective.threshold) {
-                    if(formula.getSubformula().isGloballyFormula()) {
-                        // the threshold changes from e.g. '< p' to '>= 1-p'
-                        currentObjective.threshold = storm::utility::one<double>() - *currentObjective.threshold;
-                        currentObjective.thresholdIsStrict = !currentObjective.thresholdIsStrict;
-                        if(!currentObjective.originalFormulaMinimizes) {
-                            *(currentObjective.threshold) *= -storm::utility::one<ValueType>();
-                        }
-                    } else {
-                        if(currentObjective.originalFormulaMinimizes) {
-                            *(currentObjective.threshold) *= -storm::utility::one<ValueType>();
-                        }
+                //Set the information for the objective
+                if(formula.hasBound()) {
+                    currentObjective.threshold = formula.getBound().threshold;
+                    currentObjective.thresholdIsStrict = storm::logic::isStrict(formula.getBound().comparisonType);
+                    currentObjective.isNegative = !storm::logic::isLowerBound(formula.getBound().comparisonType);
+                    if(currentObjective.isNegative) {
+                        *currentObjective.threshold *= -storm::utility::one<double>();
                     }
+                } else if (formula.hasOptimalityType()){
+                    currentObjective.isNegative = storm::solver::minimize(formula.getOptimalityType());
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Current objective " << formula << " does not specify whether to minimize or maximize");
                 }
-                
-                
-                /* Old version for the case that properties are flipped
-                // Check if we need to complement the property, e.g., P<0.3 [ F "a" ] ---> P >=0.7 [ G !"a" ]
-                // This is the case if the formula requires to minimize and positive rewards are considered or vice versa
-                if(info.negatedRewardsConsidered != currentObjective.originalFormulaMinimizes){
-                    STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Inverting of properties not supported yet");
-                    //TODO
-                }
-                
-                if(info.negatedRewardsConsidered && currentObjective.threshold){
-                    *(currentObjective.threshold) *= -storm::utility::one<ValueType>();
-                }
-                */
                 
                 // Invoke preprocessing for subformula
                 if(formula.getSubformula().isUntilFormula()){
@@ -162,15 +132,25 @@ namespace storm {
 
             template<typename SparseMdpModelType>
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocessFormula(storm::logic::RewardOperatorFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective) {
-                // Make sure that our decision for negative rewards is consistent with the formula
-                STORM_LOG_THROW(info.negatedRewardsConsidered == currentObjective.originalFormulaMinimizes, storm::exceptions::InvalidPropertyException, "Decided to consider " << (info.negatedRewardsConsidered ? "negated" : "non-negated") << "rewards, but the formula " << formula << (currentObjective.originalFormulaMinimizes ? " minimizes" : "maximizes") << ". Reward objectives should either all minimize or all maximize.");
+                //TODO  Make sure that our decision for negative rewards is consistent with the formula
+               // STORM_LOG_THROW(info.negatedRewardsConsidered == currentObjective.originalFormulaMinimizes, storm::exceptions::InvalidPropertyException, "Decided to consider " << (info.negatedRewardsConsidered ? "negated" : "non-negated") << "rewards, but the formula " << formula << (currentObjective.originalFormulaMinimizes ? " minimizes" : "maximizes") << ". Reward objectives should either all minimize or all maximize.");
                 
                 // Check if the reward model is uniquely specified
                 STORM_LOG_THROW((formula.hasRewardModelName() && info.preprocessedModel.hasRewardModel(formula.getRewardModelName()))
                                 || info.preprocessedModel.hasUniqueRewardModel(), storm::exceptions::InvalidPropertyException, "The reward model is not unique and the formula " << formula << " does not specify a reward model.");
                 
-                if(info.negatedRewardsConsidered && currentObjective.threshold){
-                    *(currentObjective.threshold) *= -storm::utility::one<ValueType>();
+                //Set the information for the objective
+                if(formula.hasBound()) {
+                    currentObjective.threshold = formula.getBound().threshold;
+                    currentObjective.thresholdIsStrict = storm::logic::isStrict(formula.getBound().comparisonType);
+                    currentObjective.isNegative = !storm::logic::isLowerBound(formula.getBound().comparisonType);
+                    if(currentObjective.isNegative) {
+                        *currentObjective.threshold *= -storm::utility::one<double>();
+                    }
+                } else if (formula.hasOptimalityType()){
+                    currentObjective.isNegative = storm::solver::minimize(formula.getOptimalityType());
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Current objective " << formula << " does not specify whether to minimize or maximize");
                 }
                 
                 // Invoke preprocessing for subformula
@@ -213,7 +193,7 @@ namespace storm {
                         objectiveRewards[row] = info.preprocessedModel.getTransitionMatrix().getConstrainedRowSum(row, newPsiStates);
                     }
                 }
-                if(info.negatedRewardsConsidered){
+                if(currentObjective.isNegative){
                     storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
                 }
                 info.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
@@ -221,12 +201,25 @@ namespace storm {
             
             template<typename SparseMdpModelType>
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocessFormula(storm::logic::BoundedUntilFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective) {
+                STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with a discrete time bound but got " << formula << ".");
+                currentObjective.stepBound = formula.getDiscreteTimeBound();
                     preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), info, currentObjective);
             }
             
             template<typename SparseMdpModelType>
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocessFormula(storm::logic::GloballyFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective) {
                 // The formula will be transformed to an until formula for the complementary event
+                currentObjective.isInverted = true;
+                if(currentObjective.threshold) {
+                    // the threshold changes from e.g. '> -p' to '>= 1-p' and '> p' to '>= p-1'
+                    if(currentObjective.isNegative) {
+                        *currentObjective.threshold += storm::utility::one<double>();
+                    } else {
+                        *currentObjective.threshold -= storm::utility::one<double>();
+                    }
+                    currentObjective.thresholdIsStrict = !currentObjective.thresholdIsStrict;
+                }
+                currentObjective.isNegative = !currentObjective.isNegative;
                 auto negatedSubformula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, formula.getSubformula().asSharedPointer());
                 preprocessFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), negatedSubformula), info, currentObjective);
             }
@@ -257,7 +250,7 @@ namespace storm {
                 // Add a reward model that gives zero reward to the states of the second copy.
                 std::vector<ValueType> objectiveRewards = info.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(info.preprocessedModel.getTransitionMatrix());
                 storm::utility::vector::setVectorValues(objectiveRewards, duplicatorResult.secondCopy, storm::utility::zero<ValueType>());
-                if(info.negatedRewardsConsidered){
+                if(currentObjective.isNegative){
                     storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
                 }
                 info.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
@@ -265,8 +258,11 @@ namespace storm {
             
             template<typename SparseMdpModelType>
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocessFormula(storm::logic::CumulativeRewardFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
+                STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
+                currentObjective.stepBound = formula.getDiscreteTimeBound();
+                
                 std::vector<ValueType> objectiveRewards = info.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(info.preprocessedModel.getTransitionMatrix());
-                if(info.negatedRewardsConsidered){
+                if(currentObjective.isNegative){
                     storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
                 }
                 info.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));

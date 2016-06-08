@@ -21,16 +21,18 @@ namespace storm {
                 
                 struct ObjectiveInformation {
                     std::shared_ptr<storm::logic::Formula const> originalFormula;
-                    bool originalFormulaMinimizes;
-                    boost::optional<double> threshold;
-                    bool thresholdIsStrict;
                     std::string rewardModelName;
+                    bool isNegative = false;
+                    bool isInverted = false;
+                    boost::optional<double> threshold;
+                    bool thresholdIsStrict = false;
                     boost::optional<uint_fast64_t> stepBound;
                     
                     void printInformationToStream(std::ostream& out) const {
                         out << std::setw(30) << originalFormula->toString();
                         out << " \t(";
-                        out << (originalFormulaMinimizes ? "minimizes, \t" : "maximizes, \t");
+                        out << (isNegative ? "-x, " : "    ");
+                        out << (isInverted ? "1-x, " : "     ");
                         out << "intern threshold:";
                         if(threshold){
                             out << (thresholdIsStrict ? " >" : ">=");
@@ -58,7 +60,6 @@ namespace storm {
                 SparseModelType preprocessedModel;
                 SparseModelType const& originalModel;
                 std::vector<uint_fast64_t> newToOldStateIndexMapping;
-                bool negatedRewardsConsidered;
                 
                 std::vector<ObjectiveInformation> objectives;
                 
@@ -80,10 +81,6 @@ namespace storm {
                     out << "Preprocessed Model Information:" << std::endl;
                     preprocessedModel.printModelInformationToStream(out);
                     out << std::endl;
-                    if(negatedRewardsConsidered){
-                        out << "The rewards in the preprocessed model are negated" << std::endl;
-                        out << std::endl;
-                    }
                     out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
                 }
                 
