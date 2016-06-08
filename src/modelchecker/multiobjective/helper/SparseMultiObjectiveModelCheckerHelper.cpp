@@ -94,7 +94,7 @@ namespace storm {
                 }
                 STORM_LOG_ASSERT(optimizingObjIndex < info.objectives.size(), "Numerical Query invoked but there are no objectives without threshold");
                 auto thresholdsAsPolytope = storm::storage::geometry::Polytope<RationalNumberType>::create(thresholdConstraints);
-                WeightVector directionOfOptimizingObjective(info.objectives.size());
+                WeightVector directionOfOptimizingObjective(info.objectives.size(), storm::utility::zero<RationalNumberType>());
                 directionOfOptimizingObjective[optimizingObjIndex] = storm::utility::one<RationalNumberType>();
                 
                 // Try to find one valid solution
@@ -187,6 +187,7 @@ namespace storm {
             
                 storm::storage::TotalScheduler scheduler = weightedObjectivesChecker.getScheduler();
                 Point weightedObjectivesResult = storm::utility::vector::convertNumericVector<RationalNumberType>(weightedObjectivesChecker.getInitialStateResultOfObjectives());
+                STORM_LOG_DEBUG("Result with weighted objectives is " << storm::utility::vector::toString(weightedObjectivesResult));
                 
                 // Insert the computed scheduler and check whether we have already seen it before
                 auto schedulerInsertRes = schedulers.insert(std::make_pair(std::move(scheduler), paretoOptimalPoints.end()));

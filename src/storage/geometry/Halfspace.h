@@ -73,7 +73,12 @@ namespace storm {
                         }
                         stream << std::setw(10) << numberStream.str();
                     }
-                    stream << ") * x <= " << offset();
+                    stream << ") * x <= ";
+                    if(numbersAsDouble) {
+                        stream << storm::utility::convertNumber<double>(offset());
+                    } else {
+                        stream << offset();
+                    }
                     return stream.str();
                 }
                 
