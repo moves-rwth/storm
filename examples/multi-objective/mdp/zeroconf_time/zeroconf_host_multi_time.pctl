@@ -1,0 +1,13 @@
+// Max probability of component violating assumption property (checked separately)
+const double p_fail = 
+K=2 ? 0.19 :
+K=4 ? 0.006859000000000001 :
+K=6 ? 2.476099000000001E-4 :
+K=8 ? 8.938717390000006E-6 :
+0;
+
+// Assume-guarantee check via multi-objective
+"num_ag": multi(Pmax=? [ F time_error=1 ] , P>=1-p_fail [ G (error=0) ])
+
+// Pareto query for assume-guarantee check
+"pareto": multi(Pmax=? [ F time_error=1 ] , Pmax=? [ G (error=0) ])

@@ -1,0 +1,45 @@
+
+// Max probability of completing task 1
+"single_task1": Pmax=? [ F task1_completed ]
+
+// Max possible expected W1 (size of successful team)
+"single_w1": R{"w_1_total"}max=? [ F "end" ]
+
+// Max possible expected W2 (num tasks completed)
+"single_w2": R{"w_2_total"}max=? [ F "end" ]
+
+// Values computed using above queries:
+const double q1 =
+n_sensors=2 ? 0.9795918367346945 :
+n_sensors=3 ? 2.3265306122448983 :
+n_sensors=4 ? 2.551020408163265 :
+n_sensors=5 ? 2.8979591836734775 :
+0.0;
+
+const double q2 =
+n_sensors=2 ? 0.7142857142857146 :
+n_sensors=3 ? 1.2448979591836744 :
+n_sensors=4 ? 1.4285714285714293 :
+n_sensors=5 ? 1.6734693877551006 :
+0.0;
+
+// Numerical: maximise probability of completing task 1
+// with 95% of possible value for expected W1 (size of successful team)
+"num_task1": multi(Pmax=? [ F task1_completed ], R{"w_1_total"}>=(0.95*q1) [ F true ])
+
+// Numerical (3-objective): maximise probability of completing task 1
+// with 95% of possible value for expected W1 (size of successful team)
+// and also at least 0.5 probability of completing task 2
+"num_task1_3": multi(Pmax=? [ F task1_completed ], R{"w_1_total"}>=(0.95*q1) [ F true ], P>=0.5 [ F task2_completed ])
+
+// Other numerical queries:
+
+multi(R{"w_1_total"}max=? [ F true ], R{"w_2_total"}>=(0.95*q2) [ F true ])
+
+multi(R{"w_2_total"}max=? [ F true ], R{"w_1_total"}>=(0.95*q1) [ F true ])
+
+// Pareto: maximise probability of completing task 1 and expected W1 (size of successful team)
+"pareto": multi(Pmax=? [ F task1_completed ], R{"w_1_total"}max=? [ F true ])
+
+// Pareto (3-objective): maximise probability of completing tasks 1/2 and expected W1 (size of successful team)
+"pareto3": multi(Pmax=? [ F task1_completed ], R{"w_1_total"}max=? [ F true ], Pmax=? [ F task2_completed ])
