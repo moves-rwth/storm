@@ -46,7 +46,7 @@
 #include "src/storage/jani/Model.h"
 
 // Headers of builders.
-#include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/builder/ExplicitModelBuilder.h"
 #include "src/builder/DdPrismModelBuilder.h"
 
 // Headers for model processing.
@@ -109,8 +109,8 @@ namespace storm {
 
         // Customize and perform model-building.
         if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse) {
-            typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options options;
-            options = typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options(formulas);
+            typename storm::builder::ExplicitModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options options;
+            options = typename storm::builder::ExplicitModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constants);
 
             // Generate command labels if we are going to build a counterexample later.
@@ -118,7 +118,7 @@ namespace storm {
                 options.buildCommandLabels = true;
             }
 
-            storm::builder::ExplicitPrismModelBuilder<ValueType> builder(program, options);
+            storm::builder::ExplicitModelBuilder<ValueType> builder(program, options);
             result.model = builder.translate();
             translatedProgram = builder.getTranslatedProgram();
         } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Dd || storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {

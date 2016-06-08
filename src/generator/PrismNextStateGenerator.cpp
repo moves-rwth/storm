@@ -2,6 +2,10 @@
 
 #include <boost/container/flat_map.hpp>
 
+#include "src/models/sparse/StateLabeling.h"
+
+#include "src/storage/BitVectorHashMap.h"
+
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -10,21 +14,15 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling) : program(program), selectedRewardModels(), buildChoiceLabeling(buildChoiceLabeling), variableInformation(variableInformation), evaluator(program.getManager()), state(nullptr), comparator() {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options) : NextStateGenerator(options), program(program), rewardModels(), variableInformation(VariableInformation(program)), evaluator(program.getManager()), state(nullptr), comparator() {
             STORM_LOG_THROW(!program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
+            
+            // Extract the reward models from the program based on the names we were given.
+            for (auto const& rewardModelName : this->options.getRewardModelNames()) {
+                rewardModels.push_back(program.getRewardModel(rewardModelName));
+            }
         }
                 
-        template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::addRewardModel(storm::prism::RewardModel const& rewardModel) {
-            selectedRewardModels.push_back(rewardModel);
-            hasStateActionRewards |= rewardModel.hasStateActionRewards();
-        }
-        
-        template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::setTerminalExpression(storm::expressions::Expression const& terminalExpression) {
-            this->terminalExpression = terminalExpression;
-        }
-        
         template<typename ValueType, typename StateType>
         bool PrismNextStateGenerator<ValueType, StateType>::isDeterministicModel() const {
             return program.isDeterministicModel();
@@ -72,7 +70,7 @@ namespace storm {
             
             // First, construct the state rewards, as we may return early if there are no choices later and we already
             // need the state rewards then.
-            for (auto const& rewardModel : selectedRewardModels) {
+            for (auto const& rewardModel : rewardModels) {
                 ValueType stateRewardValue = storm::utility::zero<ValueType>();
                 if (rewardModel.get().hasStateRewards()) {
                     for (auto const& stateReward : rewardModel.get().getStateRewards()) {
@@ -85,8 +83,12 @@ namespace storm {
             }
             
             // If a terminal expression was set and we must not expand this state, return now.
-            if (terminalExpression && evaluator.asBool(terminalExpression.get())) {
-                return result;
+            if (this->options.hasTerminalExpression()) {
+                for (auto const& expression : this->options.getTerminalExpressions()) {
+                    if (evaluator.asBool(expression) {
+                        return result;
+                    }
+                }
             }
             
             // Get all choices for the state.
@@ -126,13 +128,13 @@ namespace storm {
                         totalExitRate += choice.getTotalMass();
                     }
                     
-                    if (buildChoiceLabeling) {
+                    if (this->options.isBuildChoiceLabelsSet()) {
                         globalChoice.addChoiceLabels(choice.getChoiceLabels());
                     }
                 }
                 
                 // Now construct the state-action reward for all selected reward models.
-                for (auto const& rewardModel : selectedRewardModels) {
+                for (auto const& rewardModel : rewardModels) {
                     ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
                     if (rewardModel.get().hasStateActionRewards()) {
                         for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
@@ -262,7 +264,7 @@ namespace storm {
                     Choice<ValueType>& choice = result.back();
                     
                     // Remember the command labels only if we were asked to.
-                    if (buildChoiceLabeling) {
+                    if (this->options.isBuildChoiceLabelsSet()) {
                         choice.addChoiceLabel(command.getGlobalIndex());
                     }
                     
@@ -282,7 +284,7 @@ namespace storm {
                     }
                     
                     // Create the state-action reward for the newly created choice.
-                    for (auto const& rewardModel : selectedRewardModels) {
+                    for (auto const& rewardModel : rewardModels) {
                         ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
                         if (rewardModel.get().hasStateActionRewards()) {
                             for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
@@ -365,7 +367,7 @@ namespace storm {
                         Choice<ValueType>& choice = result.back();
                         
                         // Remember the command labels only if we were asked to.
-                        if (buildChoiceLabeling) {
+                        if (this->options.isBuildChoiceLabelsSet()) {
                             // Add the labels of all commands to this choice.
                             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                                 choice.addChoiceLabel(iteratorList[i]->get().getGlobalIndex());
@@ -384,7 +386,7 @@ namespace storm {
                         STORM_LOG_THROW(!program.isDiscreteTimeModel() || !comparator.isConstant(probabilitySum) || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
                         
                         // Create the state-action reward for the newly created choice.
-                        for (auto const& rewardModel : selectedRewardModels) {
+                        for (auto const& rewardModel : rewardModels) {
                             ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
                             if (rewardModel.get().hasStateActionRewards()) {
                                 for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
@@ -415,6 +417,36 @@ namespace storm {
                         done = !movedIterator;
                     }
                 }
+            }
+            
+            return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::generateLabeling(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices) {
+            std::vector<storm::prism::Label> const& labels = program.getLabels();
+            
+            storm::models::sparse::StateLabeling result(states.size());
+            
+            // Initialize labeling.
+            for (auto const& label : labels) {
+                result.addLabel(label.getName());
+            }
+            for (auto const& stateIndexPair : states) {
+                unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, evaluator);
+                
+                for (auto const& label : labels) {
+                    // Add label to state, if the corresponding expression is true.
+                    if (evaluator.asBool(label.getStatePredicateExpression())) {
+                        result.addLabelToState(label.getName(), stateIndexPair.second);
+                    }
+                }
+            }
+            
+            // Also label the initial state with the special label "init".
+            result.addLabel("init");
+            for (auto index : initialStateIndices) {
+                result.addLabelToState("init", index);
             }
             
             return result;

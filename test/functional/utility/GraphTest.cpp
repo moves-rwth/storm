@@ -9,7 +9,7 @@
 #include "src/models/sparse/Mdp.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/builder/DdPrismModelBuilder.h"
-#include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/builder/ExplicitModelBuilder.h"
 #include "src/utility/graph.h"
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/Bdd.h"
@@ -181,7 +181,7 @@ TEST(GraphTest, SymbolicProb01MinMax_Sylvan) {
 
 TEST(GraphTest, ExplicitProb01) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).translate();
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     
@@ -202,7 +202,7 @@ TEST(GraphTest, ExplicitProb01) {
 
 TEST(GraphTest, ExplicitProb01MinMax) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).translate();
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
@@ -217,7 +217,7 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     EXPECT_EQ(364ul, statesWithProbability01.second.getNumberOfSetBits());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
-    model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    model = storm::builder::ExplicitModelBuilder<double>(program).translate();
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     
@@ -238,7 +238,7 @@ TEST(GraphTest, ExplicitProb01MinMax) {
     EXPECT_EQ(35ul, statesWithProbability01.second.getNumberOfSetBits());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
-    model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    model = storm::builder::ExplicitModelBuilder<double>(program).translate();
     
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     

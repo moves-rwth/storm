@@ -15,7 +15,7 @@
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrismParser.h"
-#include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/builder/ExplicitModelBuilder.h"
 
 TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.tra", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.lab", "", STORM_CPP_BASE_PATH "/examples/mdp/two_dice/two_dice.flip.trans.rew");
@@ -197,7 +197,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).translate();
     EXPECT_EQ(4ul, model->getNumberOfStates());
     EXPECT_EQ(11ul, model->getNumberOfTransitions());
     
@@ -247,7 +247,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, tiny_rewards) {
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
     
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).translate();
     EXPECT_EQ(3ul, model->getNumberOfStates());
     EXPECT_EQ(4ul, model->getNumberOfTransitions());
     

@@ -17,17 +17,7 @@ namespace storm {
         public:
             typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
             
-            PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling);
-                        
-            /*!
-             * Adds a reward model to the list of selected reward models ()
-             */
-            void addRewardModel(storm::prism::RewardModel const& rewardModel);
-            
-            /*!
-             * Sets an expression such that if it evaluates to true in a state, prevents the exploration.
-             */
-            void setTerminalExpression(storm::expressions::Expression const& terminalExpression);
+            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
             
             virtual bool isDeterministicModel() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
@@ -35,6 +25,8 @@ namespace storm {
             virtual void load(CompressedState const& state) override;
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
             virtual bool satisfies(storm::expressions::Expression const& expression) const override;
+
+            virtual storm::models::sparse::StateLabeling generateLabeling(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}) override;
 
         private:
             /*!
@@ -89,18 +81,13 @@ namespace storm {
             // A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
             
-            // A flag that stores whether or not to build the choice labeling.
-            bool buildChoiceLabeling;
-            
-            // An optional expression that governs which states must not be explored.
-            boost::optional<storm::expressions::Expression> terminalExpression;
-
             // Information about how the variables are packed.
             VariableInformation const& variableInformation;
             
             // An evaluator used to evaluate expressions.
             storm::expressions::ExpressionEvaluator<ValueType> evaluator;
             
+            // The currently loaded state.
             CompressedState const* state;
             
             // A comparator used to compare constants.
