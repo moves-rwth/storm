@@ -116,6 +116,24 @@ namespace storm {
             
             template<typename SparseMdpModelType>
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocessFormula(storm::logic::ProbabilityOperatorFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective) {
+                // We might need to adapt the threshold for the given objective
+                if(currentObjective.threshold) {
+                    if(formula.getSubformula().isGloballyFormula()) {
+                        // the threshold changes from e.g. '< p' to '>= 1-p'
+                        currentObjective.threshold = storm::utility::one<double>() - *currentObjective.threshold;
+                        currentObjective.thresholdIsStrict = !currentObjective.thresholdIsStrict;
+                        if(!currentObjective.originalFormulaMinimizes) {
+                            *(currentObjective.threshold) *= -storm::utility::one<ValueType>();
+                        }
+                    } else {
+                        if(currentObjective.originalFormulaMinimizes) {
+                            *(currentObjective.threshold) *= -storm::utility::one<ValueType>();
+                        }
+                    }
+                }
+                
+                
+                /* Old version for the case that properties are flipped
                 // Check if we need to complement the property, e.g., P<0.3 [ F "a" ] ---> P >=0.7 [ G !"a" ]
                 // This is the case if the formula requires to minimize and positive rewards are considered or vice versa
                 if(info.negatedRewardsConsidered != currentObjective.originalFormulaMinimizes){
@@ -126,6 +144,7 @@ namespace storm {
                 if(info.negatedRewardsConsidered && currentObjective.threshold){
                     *(currentObjective.threshold) *= -storm::utility::one<ValueType>();
                 }
+                */
                 
                 // Invoke preprocessing for subformula
                 if(formula.getSubformula().isUntilFormula()){
@@ -207,8 +226,9 @@ namespace storm {
             
             template<typename SparseMdpModelType>
             void SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocessFormula(storm::logic::GloballyFormula const& formula, Information& info, typename Information::ObjectiveInformation& currentObjective) {
-                //TODO
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Globally not yet implemented");
+                // The formula will be transformed to an until formula for the complementary event
+                auto negatedSubformula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, formula.getSubformula().asSharedPointer());
+                preprocessFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), negatedSubformula), info, currentObjective);
             }
             
             template<typename SparseMdpModelType>
