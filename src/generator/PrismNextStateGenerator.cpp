@@ -4,7 +4,7 @@
 
 #include "src/models/sparse/StateLabeling.h"
 
-#include "src/storage/BitVectorHashMap.h"
+#include "src/storage/expressions/SimpleValuation.h"
 
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
@@ -14,15 +14,43 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options) : NextStateGenerator(options), program(program), rewardModels(), variableInformation(VariableInformation(program)), evaluator(program.getManager()), state(nullptr), comparator() {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options) : NextStateGenerator<ValueType, StateType>(options), program(program), rewardModels(), variableInformation(program), evaluator(program.getManager()), state(nullptr), comparator() {
             STORM_LOG_THROW(!program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             
             // Extract the reward models from the program based on the names we were given.
             for (auto const& rewardModelName : this->options.getRewardModelNames()) {
                 rewardModels.push_back(program.getRewardModel(rewardModelName));
             }
+            
+            // If there are terminal states we need to handle, we now need to translate all labels to expressions.
+            if (this->options.hasTerminalStates()) {
+                for (auto const& expressionOrLabelAndBool : this->options.getTerminalStates()) {
+                    if (expressionOrLabelAndBool.first.isExpression()) {
+                        terminalStates.push_back(std::make_pair(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second));
+                    } else {
+                        terminalStates.push_back(std::make_pair(program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
+                    }
+                }
+            }
         }
-                
+        
+        template<typename ValueType, typename StateType>
+        uint64_t PrismNextStateGenerator<ValueType, StateType>::getStateSize() const {
+            return variableInformation.getTotalBitOffset(true);
+        }
+        
+        template<typename ValueType, typename StateType>
+        ModelType PrismNextStateGenerator<ValueType, StateType>::getModelType() const {
+            switch (program.getModelType()) {
+                case storm::prism::Program::ModelType::DTMC: return ModelType::DTMC;
+                case storm::prism::Program::ModelType::CTMC: return ModelType::CTMC;
+                case storm::prism::Program::ModelType::MDP: return ModelType::MDP;
+                case storm::prism::Program::ModelType::MA: return ModelType::MA;
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Invalid model type.");
+            }
+        }
+        
         template<typename ValueType, typename StateType>
         bool PrismNextStateGenerator<ValueType, StateType>::isDeterministicModel() const {
             return program.isDeterministicModel();
@@ -83,9 +111,9 @@ namespace storm {
             }
             
             // If a terminal expression was set and we must not expand this state, return now.
-            if (this->options.hasTerminalExpression()) {
-                for (auto const& expression : this->options.getTerminalExpressions()) {
-                    if (evaluator.asBool(expression) {
+            if (!terminalStates.empty()) {
+                for (auto const& expressionBool : terminalStates) {
+                    if (evaluator.asBool(expressionBool.first) == expressionBool.second) {
                         return result;
                     }
                 }
@@ -423,22 +451,38 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::generateLabeling(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices) {
-            std::vector<storm::prism::Label> const& labels = program.getLabels();
+        storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices) {
+            // Gather a vector of labels and their expressions so we can iterate it over it a lot.
+            std::vector<std::pair<std::string, storm::expressions::Expression>> labels;
+            for (auto const& label : this->options.getLabels()) {
+                labels.push_back(std::make_pair(label, program.getLabelExpression(label)));
+            }
             
+            // Make the labels unique.
+            std::sort(labels.begin(), labels.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first < b.first; } );
+            auto it = std::unique(labels.begin(), labels.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first == b.first; } );
+            labels.resize(std::distance(labels.begin(), it));
+            
+            for (auto const& expression : this->options.getExpressionLabels()) {
+                std::stringstream stream;
+                stream << expression;
+                labels.push_back(std::make_pair(stream.str(), expression));
+            }
+
+            // Prepare result.
             storm::models::sparse::StateLabeling result(states.size());
             
             // Initialize labeling.
             for (auto const& label : labels) {
-                result.addLabel(label.getName());
+                result.addLabel(label.first);
             }
             for (auto const& stateIndexPair : states) {
                 unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, evaluator);
                 
                 for (auto const& label : labels) {
                     // Add label to state, if the corresponding expression is true.
-                    if (evaluator.asBool(label.getStatePredicateExpression())) {
-                        result.addLabelToState(label.getName(), stateIndexPair.second);
+                    if (evaluator.asBool(label.second)) {
+                        result.addLabelToState(label.first, stateIndexPair.second);
                     }
                 }
             }
@@ -450,6 +494,17 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        RewardModelInformation PrismNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
+            storm::prism::RewardModel const& rewardModel = rewardModels[index].get();
+            return RewardModelInformation(rewardModel.getName(), rewardModel.hasStateRewards(), rewardModel.hasStateActionRewards(), rewardModel.hasTransitionRewards());
+        }
+        
+        template<typename ValueType, typename StateType>
+        storm::expressions::SimpleValuation PrismNextStateGenerator<ValueType, StateType>::toValuation(CompressedState const& state) const {
+            return unpackStateIntoValuation(state, variableInformation, program.getManager());
         }
         
         template class PrismNextStateGenerator<double>;

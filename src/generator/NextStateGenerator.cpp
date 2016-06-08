@@ -34,6 +34,10 @@ namespace storm {
             return boost::get<storm::expressions::Expression const&>(labelOrExpression);
         }
         
+        NextStateGeneratorOptions::NextStateGeneratorOptions() : buildChoiceLabels(false) {
+            // Intentionally left empty.
+        }
+        
         NextStateGeneratorOptions::NextStateGeneratorOptions(storm::logic::Formula const& formula) {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
@@ -112,8 +116,8 @@ namespace storm {
             return labels;
         }
         
-        std::vector<storm::expressions::Expression> const& NextStateGeneratorOptions::getLabelExpressions() const {
-            return labelExpressions;
+        std::vector<storm::expressions::Expression> const& NextStateGeneratorOptions::getExpressionLabels() const {
+            return expressionLabels;
         }
         
         std::vector<std::pair<LabelOrExpression, bool>> const& NextStateGeneratorOptions::getTerminalStates() const {
@@ -138,7 +142,7 @@ namespace storm {
         }
         
         NextStateGeneratorOptions& NextStateGeneratorOptions::addLabel(storm::expressions::Expression const& expression) {
-            labelExpressions.emplace_back(expression);
+            expressionLabels.emplace_back(expression);
             return *this;
         }
         
@@ -162,9 +166,39 @@ namespace storm {
             return *this;
         }
         
+        RewardModelInformation::RewardModelInformation(std::string const& name, bool stateRewards, bool stateActionRewards, bool transitionRewards) : name(name), stateRewards(stateRewards), stateActionRewards(stateActionRewards), transitionRewards(transitionRewards) {
+            // Intentionally left empty.
+        }
+        
+        std::string const& RewardModelInformation::getName() const {
+            return name;
+        }
+        
+        bool RewardModelInformation::hasStateRewards() const {
+            return stateRewards;
+        }
+        
+        bool RewardModelInformation::hasStateActionRewards() const {
+            return stateActionRewards;
+        }
+        
+        bool RewardModelInformation::hasTransitionRewards() const {
+            return transitionRewards;
+        }
+        
         template<typename ValueType, typename StateType>
         NextStateGenerator<ValueType, StateType>::NextStateGenerator(NextStateGeneratorOptions const& options) : options(options) {
             // Intentionally left empty.
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::size_t NextStateGenerator<ValueType, StateType>::getNumberOfRewardModels() const {
+            return this->options.getRewardModelNames().size();
+        }
+        
+        template<typename ValueType, typename StateType>
+        NextStateGeneratorOptions const& NextStateGenerator<ValueType, StateType>::getOptions() const {
+            return options;
         }
         
         template class NextStateGenerator<double>;

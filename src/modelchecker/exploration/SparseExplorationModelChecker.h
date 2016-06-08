@@ -74,9 +74,6 @@ namespace storm {
             // The program that defines the model to check.
             storm::prism::Program program;
             
-            // The variable information.
-            storm::generator::VariableInformation variableInformation;
-            
             // The random number generator.
             mutable std::default_random_engine randomGenerator;
             

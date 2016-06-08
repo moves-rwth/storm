@@ -19,6 +19,8 @@ namespace storm {
             
             PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
             
+            virtual uint64_t getStateSize() const override;
+            virtual ModelType getModelType() const override;
             virtual bool isDeterministicModel() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
 
@@ -26,7 +28,11 @@ namespace storm {
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
             virtual bool satisfies(storm::expressions::Expression const& expression) const override;
 
-            virtual storm::models::sparse::StateLabeling generateLabeling(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}) override;
+            virtual RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
+            
+            virtual storm::expressions::SimpleValuation toValuation(CompressedState const& state) const override;
+            
+            virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}) override;
 
         private:
             /*!
@@ -76,13 +82,16 @@ namespace storm {
             storm::prism::Program const& program;
             
             // The reward models that need to be considered.
-            std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
+            std::vector<std::reference_wrapper<storm::prism::RewardModel const>> rewardModels;
+            
+            // The expressions that define terminal states.
+            std::vector<std::pair<storm::expressions::Expression, bool>> terminalStates;
             
             // A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
             
             // Information about how the variables are packed.
-            VariableInformation const& variableInformation;
+            VariableInformation variableInformation;
             
             // An evaluator used to evaluate expressions.
             storm::expressions::ExpressionEvaluator<ValueType> evaluator;

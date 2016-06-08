@@ -14,11 +14,8 @@
 
 #include "storm-config.h"
 
-
-
 // Headers that provide auxiliary functionality.
 #include "src/settings/SettingsManager.h"
-
 
 #include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/modules/IOSettings.h"
@@ -75,6 +72,9 @@
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 
+// Headers related to program preprocessing.
+#include "src/utility/prism.h"
+
 // Headers related to exception handling.
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -82,9 +82,6 @@
 #include "src/exceptions/InvalidTypeException.h"
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/NotSupportedException.h"
-
-// Notice: The implementation for the template functions must stay in the header.
-// Otherwise the linker complains.
 
 namespace storm {
 
@@ -105,7 +102,9 @@ namespace storm {
         storm::prism::Program translatedProgram;
 
         // Get the string that assigns values to the unknown currently undefined constants in the model.
-        std::string constants = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
+        std::string constantDefinitionString = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
+        translatedProgram = storm::utility::prism::preprocess<ValueType>(program, constantDefinitionString);
+        std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = translatedProgram.getConstantsSubstitution();
 
         // Customize and perform model-building.
         if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse) {
@@ -120,29 +119,20 @@ namespace storm {
 
             storm::builder::ExplicitModelBuilder<ValueType> builder(program, options);
             result.model = builder.translate();
-            translatedProgram = builder.getTranslatedProgram();
         } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Dd || storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
-            options.addConstantDefinitionsFromString(program, constants);
+            options.addConstantDefinitionsFromString(program, constantDefinitionString);
 
             storm::builder::DdPrismModelBuilder<LibraryType> builder;
             result.model = builder.translateProgram(program, options);
             translatedProgram = builder.getTranslatedProgram();
         }
+        
         // There may be constants of the model appearing in the formulas, so we replace all their occurrences
         // by their definitions in the translated program.
-
-        // Start by building a mapping from constants of the (translated) model to their defining expressions.
-        std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
-        for (auto const& constant : translatedProgram.getConstants()) {
-            if (constant.isDefined()) {
-                constantSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression());
-            }
-        }
-
         for (auto const& formula : formulas) {
-            result.formulas.emplace_back(formula->substitute(constantSubstitution));
+            result.formulas.emplace_back(formula->substitute(constantsSubstitution));
         }
         return result;
     }

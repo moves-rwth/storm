@@ -30,21 +30,21 @@ namespace storm {
          * A structure that is used to keep track of a reward model currently being built.
          */
         template <typename ValueType>
-        struct RewardModelBuilder {
+        class RewardModelBuilder {
         public:
-            RewardModelBuilder(std::string const& rewardModelName) : rewardModelName(rewardModelName), stateRewardVector(), stateActionRewardVector() {
-                // Intentionally left empty.
+            RewardModelBuilder(storm::generator::RewardModelInformation const& rewardModelInformation) : rewardModelName(rewardModelInformation.getName()), stateRewards(rewardModelInformation.hasStateRewards()), stateRewardVector(), stateActionRewards(rewardModelInformation.hasStateActionRewards()), stateActionRewardVector() {
+                STORM_LOG_THROW(!rewardModelInformation.hasTransitionRewards(), storm::exceptions::InvalidArgumentException, "Unable to treat transition rewards.");
             }
             
             storm::models::sparse::StandardRewardModel<ValueType> build(uint_fast64_t rowCount, uint_fast64_t columnCount, uint_fast64_t rowGroupCount) {
                 boost::optional<std::vector<ValueType>> optionalStateRewardVector;
-                if (!stateRewardVector.empty()) {
+                if (hasStateRewards()) {
                     stateRewardVector.resize(rowGroupCount);
                     optionalStateRewardVector = std::move(stateRewardVector);
                 }
                 
                 boost::optional<std::vector<ValueType>> optionalStateActionRewardVector;
-                if (!stateActionRewardVector.empty()) {
+                if (hasStateActionRewards()) {
                     stateActionRewardVector.resize(rowCount);
                     optionalStateActionRewardVector = std::move(stateActionRewardVector);
                 }
@@ -52,7 +52,31 @@ namespace storm {
                 return storm::models::sparse::StandardRewardModel<ValueType>(std::move(optionalStateRewardVector), std::move(optionalStateActionRewardVector));
             }
             
+            std::string const& getName() const {
+                return rewardModelName;
+            }
+            
+            void addStateReward(ValueType const& value) {
+                stateRewardVector.push_back(value);
+            }
+
+            void addStateActionReward(ValueType const& value) {
+                stateActionRewardVector.push_back(value);
+            }
+            
+            bool hasStateRewards() const {
+                return stateRewards;
+            }
+            
+            bool hasStateActionRewards() const {
+                return stateActionRewards;
+            }
+            
+        private:
             std::string rewardModelName;
+
+            bool stateRewards;
+            bool stateActionRewards;
             
             // The state reward vector.
             std::vector<ValueType> stateRewardVector;
@@ -72,7 +96,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ExplicitModelBuilder(storm::prism::Program const& program, Options const& options) : program(storm::utility::prism::preprocessProgram<ValueType>(program, options.constantDefinitions, !options.buildAllLabels ? options.labelsToBuild : boost::none, options.expressionLabels)), options(options), variableInformation(this->program), stateStorage(variableInformation.getTotalBitOffset(true)) {
+        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ExplicitModelBuilder(std::shared_ptr<storm::generator::NextStateGenerator<ValueType, StateType>> const& generator, Options const& options) : generator(generator), options(options), stateStorage(generator->getStateSize()) {
             // Intentionally left empty.
         }
         
@@ -84,39 +108,18 @@ namespace storm {
         
         template <typename ValueType, typename RewardModelType, typename StateType>
         std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> ExplicitModelBuilder<ValueType, RewardModelType, StateType>::translate() {
-            STORM_LOG_DEBUG("Building representation of program:" << std::endl << program << std::endl);
             STORM_LOG_DEBUG("Exploration order is: " << options.explorationOrder);
-            
-            // First, we make sure that all selected reward models actually exist.
-            for (auto const& rewardModelName : options.rewardModelsToBuild) {
-                STORM_LOG_THROW(rewardModelName.empty() || program.hasRewardModel(rewardModelName), storm::exceptions::InvalidArgumentException, "Model does not possess a reward model with the name '" << rewardModelName << "'.");
-            }
-            
-            std::vector<std::string> selectedRewardModels;
-            if (options.buildAllRewardModels) {
-//                for (auto const& rewardModel : program.getRewardModels()) {
-//                    selectedRewardModels.push_back(rewardModel);
-//                }
-            } else {
-                selectedRewardModels = std::vector<std::string>(options.rewardModelsToBuild.begin(), options.rewardModelsToBuild.end());
-            }
-//            // If no reward model was selected until now and a referenced reward model appears to be unique, we build
-//            // the only existing reward model (given that no explicit name was given for the referenced reward model).
-//            if (selectedRewardModels.empty() && program.getNumberOfRewardModels() == 1 && options.rewardModelsToBuild.size() == 1 && *options.rewardModelsToBuild.begin() == "") {
-//                selectedRewardModels.push_back(program.getRewardModel(0));
-//            }
-            
-            ModelComponents modelComponents = buildModelComponents(selectedRewardModels);
+            ModelComponents modelComponents = buildModelComponents();
             
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> result;
-            switch (program.getModelType()) {
-                case storm::prism::Program::ModelType::DTMC:
+            switch (generator->getModelType()) {
+                case storm::generator::ModelType::DTMC:
                     result = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Dtmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
-                case storm::prism::Program::ModelType::CTMC:
+                case storm::generator::ModelType::CTMC:
                     result = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Ctmc<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
-                case storm::prism::Program::ModelType::MDP:
+                case storm::generator::ModelType::MDP:
                     result = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Mdp<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
                 default:
@@ -151,20 +154,11 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(std::vector<std::reference_wrapper<storm::prism::RewardModel const>> const& selectedRewardModels, storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression) {
+        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders) {
             // Create choice labels, if requested,
             boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabels;
-            if (options.buildCommandLabels) {
+            if (generator->getOptions().isBuildChoiceLabelsSet()) {
                 choiceLabels = std::vector<boost::container::flat_set<uint_fast64_t>>();
-            }
-
-            // Create a generator that is able to expand states.
-            storm::generator::PrismNextStateGenerator<ValueType, StateType> generator(program, variableInformation, options.buildCommandLabels);
-            if (terminalExpression) {
-                generator.setTerminalExpression(terminalExpression.get());
-            }
-            for (auto const& rewardModel : selectedRewardModels) {
-                generator.addRewardModel(rewardModel.get());
             }
 
             // Create a callback for the next-state generator to enable it to request the index of states.
@@ -178,7 +172,7 @@ namespace storm {
             }
             
             // Let the generator create all initial states.
-            this->stateStorage.initialStateIndices = generator.getInitialStates(stateToIdCallback);
+            this->stateStorage.initialStateIndices = generator->getInitialStates(stateToIdCallback);
             
             // Now explore the current state until there is no more reachable state.
             uint_fast64_t currentRowGroup = 0;
@@ -199,62 +193,56 @@ namespace storm {
                 
                 STORM_LOG_TRACE("Exploring state with id " << currentIndex << ".");
                 
-                generator.load(currentState);
-                storm::generator::StateBehavior<ValueType, StateType> behavior = generator.expand(stateToIdCallback);
+                generator->load(currentState);
+                storm::generator::StateBehavior<ValueType, StateType> behavior = generator->expand(stateToIdCallback);
                 
                 // If there is no behavior, we might have to introduce a self-loop.
                 if (behavior.empty()) {
                     if (!storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet() || !behavior.wasExpanded()) {
-                        if (options.buildCommandLabels) {
+                        if (generator->getOptions().isBuildChoiceLabelsSet()) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.get().push_back(boost::container::flat_set<uint_fast64_t>());
                         }
-                        if (!generator.isDeterministicModel()) {
+                        if (!generator->isDeterministicModel()) {
                             transitionMatrixBuilder.newRowGroup(currentRow);
                         }
                         
                         transitionMatrixBuilder.addNextValue(currentRow, currentIndex, storm::utility::one<ValueType>());
                         
-                        auto builderIt = rewardModelBuilders.begin();
-                        for (auto const& rewardModel : selectedRewardModels) {
-                            if (rewardModel.get().hasStateRewards()) {
-                                builderIt->stateRewardVector.push_back(storm::utility::zero<ValueType>());
+                        for (auto& rewardModelBuilder : rewardModelBuilders) {
+                            if (rewardModelBuilder.hasStateRewards()) {
+                                rewardModelBuilder.addStateReward(storm::utility::zero<ValueType>());
                             }
                             
-                            if (rewardModel.get().hasStateActionRewards()) {
-                                builderIt->stateActionRewardVector.push_back(storm::utility::zero<ValueType>());
+                            if (rewardModelBuilder.hasStateActionRewards()) {
+                                rewardModelBuilder.addStateActionReward(storm::utility::zero<ValueType>());
                             }
-                            ++builderIt;
                         }
                         
                         ++currentRow;
                         ++currentRowGroup;
                     } else {
-                        std::cout << storm::generator::unpackStateIntoValuation(currentState, variableInformation, program.getManager()).toString(true) << std::endl;
-                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException,
-                                        "Error while creating sparse matrix from probabilistic program: found deadlock state. For fixing these, please provide the appropriate option.");
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from probabilistic program: found deadlock state (" << generator->toValuation(currentState).toString(true) << "). For fixing these, please provide the appropriate option.");
                     }
                 } else {
                     // Add the state rewards to the corresponding reward models.
-                    auto builderIt = rewardModelBuilders.begin();
                     auto stateRewardIt = behavior.getStateRewards().begin();
-                    for (auto const& rewardModel : selectedRewardModels) {
-                        if (rewardModel.get().hasStateRewards()) {
-                            builderIt->stateRewardVector.push_back(*stateRewardIt);
+                    for (auto& rewardModelBuilder : rewardModelBuilders) {
+                        if (rewardModelBuilder.hasStateRewards()) {
+                            rewardModelBuilder.addStateReward(*stateRewardIt);
                         }
                         ++stateRewardIt;
-                        ++builderIt;
                     }
                     
                     // If the model is nondeterministic, we need to open a row group.
-                    if (!generator.isDeterministicModel()) {
+                    if (!generator->isDeterministicModel()) {
                         transitionMatrixBuilder.newRowGroup(currentRow);
                     }
                     
                     // Now add all choices.
                     for (auto const& choice : behavior) {
                         // Add command labels if requested.
-                        if (options.buildCommandLabels) {
+                        if (generator->getOptions().isBuildChoiceLabelsSet()) {
                             choiceLabels.get().push_back(choice.getChoiceLabels());
                         }
                         
@@ -264,14 +252,12 @@ namespace storm {
                         }
                         
                         // Add the rewards to the reward models.
-                        auto builderIt = rewardModelBuilders.begin();
                         auto choiceRewardIt = choice.getChoiceRewards().begin();
-                        for (auto const& rewardModel : selectedRewardModels) {
-                            if (rewardModel.get().hasStateActionRewards()) {
-                                builderIt->stateActionRewardVector.push_back(*choiceRewardIt);
+                        for (auto& rewardModelBuilder : rewardModelBuilders) {
+                            if (rewardModelBuilder.hasStateActionRewards()) {
+                                rewardModelBuilder.addStateActionReward(*choiceRewardIt);
                             }
                             ++choiceRewardIt;
-                            ++builderIt;
                         }
                         ++currentRow;
                     }
@@ -307,58 +293,26 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        typename ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ModelComponents ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildModelComponents(std::vector<std::string> const& selectedRewardModels) {
+        typename ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ModelComponents ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildModelComponents() {
             ModelComponents modelComponents;
                         
             // Determine whether we have to combine different choices to one or whether this model can have more than
             // one choice per state.
-            bool deterministicModel = program.isDeterministicModel();
+            bool deterministicModel = generator->isDeterministicModel();
             
             // Prepare the transition matrix builder and the reward model builders.
             storm::storage::SparseMatrixBuilder<ValueType> transitionMatrixBuilder(0, 0, 0, false, !deterministicModel, 0);
             std::vector<RewardModelBuilder<typename RewardModelType::ValueType>> rewardModelBuilders;
-            for (auto const& rewardModelName : selectedRewardModels) {
-                rewardModelBuilders.emplace_back(rewardModelName);
+            for (uint64_t i = 0; i < generator->getNumberOfRewardModels(); ++i) {
+                rewardModelBuilders.emplace_back(generator->getRewardModelInformation(i));
             }
             
-            // If we were asked to treat some states as terminal states, we determine an expression characterizing the
-            // terminal states of the model that we pass on to the matrix building routine.
-            boost::optional<storm::expressions::Expression> terminalExpression;
-            if (options.terminalStates) {
-                if (options.terminalStates.get().type() == typeid(storm::expressions::Expression)) {
-                    terminalExpression = boost::get<storm::expressions::Expression>(options.terminalStates.get());
-                } else {
-                    std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
-                    terminalExpression = program.getLabelExpression(labelName);
-                }
-            }
-            if (options.negatedTerminalStates) {
-                if (options.negatedTerminalStates.get().type() == typeid(storm::expressions::Expression)) {
-                    if (terminalExpression) {
-                        terminalExpression = terminalExpression.get() || !boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
-                    } else {
-                        terminalExpression = !boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
-                    }
-                } else {
-                    std::string const& labelName = boost::get<std::string>(options.negatedTerminalStates.get());
-                    if (terminalExpression) {
-                        terminalExpression = terminalExpression.get() || !program.getLabelExpression(labelName);
-                    } else {
-                        terminalExpression = !program.getLabelExpression(labelName);
-                    }
-                }
-            }
-            if (terminalExpression) {
-                STORM_LOG_TRACE("Making the states satisfying " << terminalExpression.get() << " terminal.");
-            }
-            
-            modelComponents.choiceLabeling = buildMatrices(selectedRewardModels, transitionMatrixBuilder, rewardModelBuilders, terminalExpression);
+            modelComponents.choiceLabeling = buildMatrices(transitionMatrixBuilder, rewardModelBuilders);
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();
             
             // Now finalize all reward models.
-            auto builderIt = rewardModelBuilders.begin();
-            for (auto rewardModelIt = selectedRewardModels.begin(), rewardModelIte = selectedRewardModels.end(); rewardModelIt != rewardModelIte; ++rewardModelIt, ++builderIt) {
-                modelComponents.rewardModels.emplace(rewardModelIt->get().getName(), builderIt->build(modelComponents.transitionMatrix.getRowCount(), modelComponents.transitionMatrix.getColumnCount(), modelComponents.transitionMatrix.getRowGroupCount()));
+            for (auto& rewardModelBuilder : rewardModelBuilders) {
+                modelComponents.rewardModels.emplace(rewardModelBuilder.getName(), rewardModelBuilder.build(modelComponents.transitionMatrix.getRowCount(), modelComponents.transitionMatrix.getColumnCount(), modelComponents.transitionMatrix.getRowGroupCount()));
             }
             
             // Build the state labeling.
@@ -368,7 +322,7 @@ namespace storm {
             if (options.buildStateValuations) {
                 stateValuations = storm::storage::sparse::StateValuations(stateStorage.getNumberOfStates());
                 for (auto const& bitVectorIndexPair : stateStorage.stateToId) {
-                    stateValuations.get().valuations[bitVectorIndexPair.second] = unpackStateIntoValuation(bitVectorIndexPair.first, variableInformation, program.getManager());
+                    stateValuations.get().valuations[bitVectorIndexPair.second] = generator->toValuation(bitVectorIndexPair.first);
                 }
             }
             
@@ -377,8 +331,7 @@ namespace storm {
         
         template <typename ValueType, typename RewardModelType, typename StateType>
         storm::models::sparse::StateLabeling ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildStateLabeling() {
-            storm::generator::PrismStateLabelingGenerator<ValueType, StateType> generator(program, variableInformation);
-            return generator.generate(stateStorage.stateToId, stateStorage.initialStateIndices);
+            return generator->label(stateStorage.stateToId, stateStorage.initialStateIndices);
         }
         
         // Explicitly instantiate the class.

@@ -162,7 +162,7 @@ namespace storm {
                 modelFormulasPair.model->printModelInformationToStream(std::cout);
 
                 // Verify the model, if a formula was given.
-                if (!formulas.empty()) {
+                if (!modelFormulasPair.formulas.empty()) {
                     if (modelFormulasPair.model->isSparseModel()) {
                         if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCounterexampleSet()) {
                             // If we were requested to generate a counterexample, we now do so for each formula.

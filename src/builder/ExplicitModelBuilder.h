@@ -13,7 +13,6 @@
 #include <src/models/sparse/StandardRewardModel.h>
 
 #include "src/storage/prism/Program.h"
-#include "src/storage/expressions/SimpleValuation.h"
 #include "src/storage/expressions/ExpressionEvaluator.h"
 #include "src/storage/BitVectorHashMap.h"
 #include "src/logic/Formulas.h"
@@ -88,7 +87,7 @@ namespace storm {
             /*!
              * Creates an explicit model builder that uses the provided generator..
              *
-             * @param generator The generator to build.
+             * @param generator The generator to use.
              */
             ExplicitModelBuilder(std::shared_ptr<storm::generator::NextStateGenerator<ValueType, StateType>> const& generator, Options const& options = Options());
             
@@ -129,19 +128,17 @@ namespace storm {
              *
              * @param transitionMatrixBuilder The builder of the transition matrix.
              * @param rewardModelBuilders The builders for the selected reward models.
-             * @param terminalExpression If given, states satisfying this expression are not explored further.
              * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
              * and a vector containing the labels associated with each choice.
              */
-            boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<storm::expressions::Expression> const& terminalExpression);
+            boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders);
             
             /*!
              * Explores the state space of the given program and returns the components of the model as a result.
              *
-             * @param selectedRewardModels The reward models that are to be considered.
              * @return A structure containing the components of the resulting model.
              */
-            ModelComponents buildModelComponents(std::vector<std::string> const& selectedRewardModels);
+            ModelComponents buildModelComponents();
             
             /*!
              * Builds the state labeling for the given program.
