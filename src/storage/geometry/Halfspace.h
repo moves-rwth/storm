@@ -30,8 +30,28 @@ namespace storm {
                 /*
                  * Returns true iff the given point is contained in this halfspace, i.e., normalVector*point <= offset holds.
                  */
-                bool contains(std::vector<ValueType> const& point) {
+                bool contains(std::vector<ValueType> const& point) const {
                     return storm::utility::vector::dotProduct(point, normalVector()) <= offset();
+                }
+                
+                /*
+                 * Returns the (scaled) distance of the given point from the hyperplane defined by normalVector*x = offset.
+                 * The point is inside this halfspace iff the returned value is >=0
+                 * The returned value is the euclidean distance times the 2-norm of the normalVector.
+                 * In contrast to the euclideanDistance method, there are no inaccuracies introduced (providing ValueType is exact for +, -, and *)
+                 */
+                ValueType distance(std::vector<ValueType> const& point) const {
+                    return offset() - storm::utility::vector::dotProduct(point, normalVector());
+                }
+                
+                /*
+                 * Returns the euclidean distance of the point from the hyperplane defined by this.
+                 * The point is inside this halfspace iff the distance is >=0
+                 * Note that the euclidean distance is in general not a rational number (which can introduce inaccuracies).
+                 */
+                ValueType euclideanDistance(std::vector<ValueType> const& point) const {
+                    // divide with the 2-norm of the normal vector
+                    return distance(point) / storm::utility::sqrt(storm::utility::vector::dotProduct(normalVector(), normalVector()));
                 }
 
                 /*

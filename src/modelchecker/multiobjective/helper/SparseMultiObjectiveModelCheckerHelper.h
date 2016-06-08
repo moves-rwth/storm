@@ -24,6 +24,9 @@ namespace storm {
                 typedef std::vector<RationalNumberType> Point;
                 typedef std::vector<RationalNumberType> WeightVector;
                 
+                static void check(Information& info);
+                
+            private:
                 SparseMultiObjectiveModelCheckerHelper(Information& info);
                 
                 ~SparseMultiObjectiveModelCheckerHelper();
@@ -33,7 +36,6 @@ namespace storm {
                 void paretoQuery();
 
 
-            private:
                 
                 /*
                  * Refines the solution w.r.t. the given direction vector
@@ -41,16 +43,22 @@ namespace storm {
                 void refineSolution(WeightVector const& direction);
                 
                 /*
-                 * Returns a halfspace h that separates the underapproximation from the given point p, i.e.,
-                 * - p lies on the border of h and
-                 * - for each x in the underApproximation, it holds that h contains x
+                 * Returns a weight vector w that separates the underapproximation from the given point p, i.e.,
+                 * For each x in the underApproximation, it holds that w*x <= w*p
                  *
                  * @param pointToBeSeparated the point that is to be seperated
                  * @param objectivesToBeCheckedIndividually stores for each objective whether it still makes sense to check for this objective individually (i.e., with weight vector given by w_{objIndex} = 1 )
                  */
-                storm::storage::geometry::Halfspace<RationalNumberType>  findSeparatingHalfspace(Point const& pointToBeSeparated, storm::storage::BitVector& individualObjectivesToBeChecked);
+                WeightVector findSeparatingVector(Point const& pointToBeSeparated, storm::storage::BitVector& individualObjectivesToBeChecked) const;
+                
                 void updateOverApproximation(Point const& newPoint, WeightVector const& newWeightVector);
                 void updateUnderApproximation();
+                
+                /*
+                 * Returns true iff there is a point in the given polytope that satisfies the given thresholds.
+                 * It is assumed that the given polytope contains the downward closure of its vertices.
+                 */
+                bool checkIfThresholdsAreSatisfied(std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>> const& polytope, Point const& thresholds, storm::storage::BitVector const& strictThresholds) const;
                 
                 Information& info;
                 SparseWeightedObjectivesModelCheckerHelper<SparseModelType> weightedObjectivesChecker;

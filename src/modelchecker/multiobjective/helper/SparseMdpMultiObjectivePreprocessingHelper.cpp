@@ -61,9 +61,11 @@ namespace storm {
                 storm::logic::OperatorFormula const& opFormula = formula->asOperatorFormula();
                 if(opFormula.hasBound()){
                     objective.threshold = opFormula.getBound().threshold;
+                    objective.thresholdIsStrict = storm::logic::isStrict(opFormula.getBound().comparisonType);
                     // Note that we minimize if the comparison type is an upper bound since we are interested in the EXISTENCE of a scheduler.
                     objective.originalFormulaMinimizes = !storm::logic::isLowerBound(opFormula.getBound().comparisonType);
                 } else if (opFormula.hasOptimalityType()){
+                    objective.thresholdIsStrict = false;
                     objective.originalFormulaMinimizes = storm::solver::minimize(opFormula.getOptimalityType());
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Current objective " << opFormula << " does not specify whether to minimize or maximize");

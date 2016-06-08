@@ -23,6 +23,7 @@ namespace storm {
                     std::shared_ptr<storm::logic::Formula const> originalFormula;
                     bool originalFormulaMinimizes;
                     boost::optional<double> threshold;
+                    bool thresholdIsStrict;
                     std::string rewardModelName;
                     boost::optional<uint_fast64_t> stepBound;
                     
@@ -32,9 +33,10 @@ namespace storm {
                         out << (originalFormulaMinimizes ? "minimizes, \t" : "maximizes, \t");
                         out << "intern threshold:";
                         if(threshold){
+                            out << (thresholdIsStrict ? " >" : ">=");
                             out << std::setw(5) << (*threshold) << ",";
                         } else {
-                            out << " none,";
+                            out << "   none,";
                         }
                         out << " \t";
                         out << "intern reward model: " << std::setw(10) << rewardModelName << ", \t";

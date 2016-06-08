@@ -41,8 +41,7 @@ namespace storm {
             info.printInformationToStream(std::cout);
             
 #ifdef STORM_HAVE_CARL
-            helper::SparseMultiObjectiveModelCheckerHelper<SparseMdpModelType, storm::RationalNumber> helper(info);
-            helper.achievabilityQuery();
+            helper::SparseMultiObjectiveModelCheckerHelper<SparseMdpModelType, storm::RationalNumber>::check(info);
 #else
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Multi objective model checking currently requires carl.");
 #endif
