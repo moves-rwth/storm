@@ -10,6 +10,8 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
+#ifdef STORM_HAVE_GUROBI
+
 TEST(MilpPermissiveSchedulerTest, DieSelection) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die_c1.nm");
     storm::parser::FormulaParser formulaParser(program.getManager().getSharedPointer());
@@ -22,12 +24,8 @@ TEST(MilpPermissiveSchedulerTest, DieSelection) {
     auto formula001b = formulaParser.parseSingleFormulaFromString("P<=0.17 [ F \"one\"]")->asProbabilityOperatorFormula();
     
     // Customize and perform model-building.
-    typename storm::builder::ExplicitModelBuilder<double>::Options options;
-    
-    options = typename storm::builder::ExplicitModelBuilder<double>::Options(formula02);
-    options.addConstantDefinitionsFromString(program, "");
-    options.buildCommandLabels = true;
-    
+    storm::generator::NextStateGeneratorOptions options;
+    options.setBuildAllLabels().setBuildChoiceLabels(true);
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     
     boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms = storm::ps::computePermissiveSchedulerViaMILP<>(*mdp, formula02);
@@ -58,3 +56,5 @@ TEST(MilpPermissiveSchedulerTest, DieSelection) {
     //
     
 }
+
+#endif

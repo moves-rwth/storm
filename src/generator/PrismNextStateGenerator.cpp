@@ -15,30 +15,35 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options) : NextStateGenerator<ValueType, StateType>(options), program(program), rewardModels(), variableInformation(program), evaluator(program.getManager()), state(nullptr), comparator() {
-            STORM_LOG_THROW(!program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options) : NextStateGenerator<ValueType, StateType>(options), program(program.substituteConstants()), rewardModels(), variableInformation(this->program), evaluator(this->program.getManager()), state(nullptr), comparator() {
+            STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             
             if (this->options.isBuildAllRewardModelsSet()) {
-                for (auto const& rewardModel : program.getRewardModels()) {
+                for (auto const& rewardModel : this->program.getRewardModels()) {
                     rewardModels.push_back(rewardModel);
                 }
             } else {
                 // Extract the reward models from the program based on the names we were given.
                 for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                    if (program.hasRewardModel(rewardModelName)) {
-                        rewardModels.push_back(program.getRewardModel(rewardModelName));
+                    if (this->program.hasRewardModel(rewardModelName)) {
+                        rewardModels.push_back(this->program.getRewardModel(rewardModelName));
                     } else {
                         STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
-                        STORM_LOG_THROW(program.getNumberOfRewardModels() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
-                        STORM_LOG_THROW(program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
+                        STORM_LOG_THROW(this->program.getNumberOfRewardModels() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                        STORM_LOG_THROW(this->program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
                     }
                 }
                 
                 // If no reward model was yet added, but there was one that was given in the options, we try to build
                 // standard reward model.
                 if (rewardModels.empty() && !this->options.getRewardModelNames().empty()) {
-                    rewardModels.push_back(program.getRewardModel(0));
+                    rewardModels.push_back(this->program.getRewardModel(0));
                 }
+            }
+            
+            // Determine whether any reward model has state action rewards.
+            for (auto const& rewardModel : rewardModels) {
+                hasStateActionRewards |= rewardModel.get().hasStateActionRewards();
             }
             
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.
@@ -47,7 +52,7 @@ namespace storm {
                     if (expressionOrLabelAndBool.first.isExpression()) {
                         terminalStates.push_back(std::make_pair(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second));
                     } else {
-                        terminalStates.push_back(std::make_pair(program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
+                        terminalStates.push_back(std::make_pair(this->program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
                     }
                 }
             }
@@ -519,6 +524,11 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::size_t PrismNextStateGenerator<ValueType, StateType>::getNumberOfRewardModels() const {
+            return rewardModels.size();
         }
         
         template<typename ValueType, typename StateType>

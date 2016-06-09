@@ -28,6 +28,7 @@ namespace storm {
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
             virtual bool satisfies(storm::expressions::Expression const& expression) const override;
 
+            virtual std::size_t getNumberOfRewardModels() const override;
             virtual RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
             
             virtual storm::expressions::SimpleValuation toValuation(CompressedState const& state) const override;
@@ -79,7 +80,7 @@ namespace storm {
             std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback);
             
             // The program used for the generation of next states.
-            storm::prism::Program const& program;
+            storm::prism::Program program;
             
             // The reward models that need to be considered.
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> rewardModels;

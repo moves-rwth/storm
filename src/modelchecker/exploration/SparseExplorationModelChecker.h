@@ -36,7 +36,7 @@ namespace storm {
             typedef StateType ActionType;
             typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
             
-            SparseExplorationModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions = boost::none);
+            SparseExplorationModelChecker(storm::prism::Program const& program);
             
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
             

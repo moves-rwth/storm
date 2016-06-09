@@ -40,17 +40,7 @@ namespace storm {
                  * @param formula Thes formula based on which to choose the building options.
                  */
                 Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
-                
-                /*!
-                 * Sets the constants definitions from the given string. The string must be of the form 'X=a,Y=b,Z=c',
-                 * etc. where X,Y,Z are the variable names and a,b,c are the values of the constants.
-                 *
-                 * @param program The program managing the constants that shall be defined. Note that the program itself
-                 * is not modified whatsoever.
-                 * @param constantDefinitionString The string from which to parse the constants' values.
-                 */
-                void addConstantDefinitionsFromString(storm::jani::Model const& model, std::string const& constantDefinitionString);
-                
+                                
                 /*!
                  * Changes the options in a way that ensures that the given formula can be checked on the model once it
                  * has been built.

@@ -59,8 +59,15 @@ namespace storm {
             for (auto const& formula : formulas) {
                 STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
-                storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
-                storm::modelchecker::SparseExplorationModelChecker<ValueType> checker(program, storm::utility::prism::parseConstantDefinitionString(program, storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString()));
+                
+                std::string constantDefinitionString = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
+                storm::prism::Program preprocessedProgram = storm::utility::prism::preprocess<ValueType>(program, constantDefinitionString);
+                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preprocessedProgram.getConstantsSubstitution();
+
+                storm::modelchecker::SparseExplorationModelChecker<ValueType> checker(program);
+
+                std::shared_ptr<storm::logic::Formula> substitutedFormula = formula->substitute(constantsSubstitution);
+                storm::modelchecker::CheckTask<storm::logic::Formula> task(*substitutedFormula, onlyInitialStatesRelevant);
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
                 if (checker.canHandle(task)) {
                     result = checker.check(task);

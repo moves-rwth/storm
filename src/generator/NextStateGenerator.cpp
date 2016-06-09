@@ -210,12 +210,7 @@ namespace storm {
         NextStateGenerator<ValueType, StateType>::NextStateGenerator(NextStateGeneratorOptions const& options) : options(options) {
             // Intentionally left empty.
         }
-        
-        template<typename ValueType, typename StateType>
-        std::size_t NextStateGenerator<ValueType, StateType>::getNumberOfRewardModels() const {
-            return this->options.getRewardModelNames().size();
-        }
-        
+                
         template<typename ValueType, typename StateType>
         NextStateGeneratorOptions const& NextStateGenerator<ValueType, StateType>::getOptions() const {
             return options;

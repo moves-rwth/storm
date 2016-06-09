@@ -103,29 +103,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        void DdJaniModelBuilder<Type, ValueType>::Options::addConstantDefinitionsFromString(storm::jani::Model const& model, std::string const& constantDefinitionString) {
-            std::map<storm::expressions::Variable, storm::expressions::Expression> newConstantDefinitions = storm::utility::jani::parseConstantDefinitionString(model, constantDefinitionString);
-            
-            // If there is at least one constant that is defined, and the constant definition map does not yet exist,
-            // we need to create it.
-            if (!constantDefinitions && !newConstantDefinitions.empty()) {
-                constantDefinitions = std::map<storm::expressions::Variable, storm::expressions::Expression>();
-            }
-            
-            // Now insert all the entries that need to be defined.
-            for (auto const& entry : newConstantDefinitions) {
-                constantDefinitions.get().insert(entry);
-            }
-        }
-        
-        template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::DdJaniModelBuilder(storm::jani::Model const& model, Options const& options) : options(options) {
-            if (options.constantDefinitions) {
-                this->model = model.defineUndefinedConstants(options.constantDefinitions.get());
-            } else {
-                this->model = model;
-            }
-            
+        DdJaniModelBuilder<Type, ValueType>::DdJaniModelBuilder(storm::jani::Model const& model, Options const& options) : model(model), options(options) {
             if (this->model->hasUndefinedConstants()) {
                 std::vector<std::reference_wrapper<storm::jani::Constant const>> undefinedConstants = this->model->getUndefinedConstants();
                 std::vector<std::string> strings;

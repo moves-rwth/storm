@@ -10,7 +10,7 @@
 #include <boost/container/flat_set.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/variant.hpp>
-#include <src/models/sparse/StandardRewardModel.h>
+#include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/storage/prism/Program.h"
 #include "src/storage/expressions/ExpressionEvaluator.h"
@@ -28,17 +28,13 @@
 
 #include "src/builder/ExplorationOrder.h"
 
+#include "src/generator/NextStateGenerator.h"
 #include "src/generator/CompressedState.h"
 #include "src/generator/VariableInformation.h"
 
 namespace storm {
     namespace utility {
         template<typename ValueType> class ConstantsComparator;
-    }
-
-    namespace generator {
-        template<typename ValueType, typename StateType>
-        class NextStateGenerator;
     }
     
     namespace builder {
@@ -85,11 +81,18 @@ namespace storm {
             };
             
             /*!
-             * Creates an explicit model builder that uses the provided generator..
+             * Creates an explicit model builder that uses the provided generator.
              *
              * @param generator The generator to use.
              */
             ExplicitModelBuilder(std::shared_ptr<storm::generator::NextStateGenerator<ValueType, StateType>> const& generator, Options const& options = Options());
+
+            /*!
+             * Creates an explicit model builder for the given PRISM program..
+             *
+             * @param program The program for which to build the model.
+             */
+            ExplicitModelBuilder(storm::prism::Program const& program, storm::generator::NextStateGeneratorOptions const& generatorOptions = storm::generator::NextStateGeneratorOptions(), Options const& builderOptions = Options());
             
             /*!
              * Convert the program given at construction time to an abstract model. The type of the model is the one

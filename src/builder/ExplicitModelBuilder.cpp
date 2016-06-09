@@ -101,6 +101,11 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
+        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ExplicitModelBuilder(storm::prism::Program const& program, storm::generator::NextStateGeneratorOptions const& generatorOptions, Options const& builderOptions) : ExplicitModelBuilder(std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, StateType>>(program, generatorOptions), builderOptions) {
+            // Intentionally left empty.
+        }
+        
+        template <typename ValueType, typename RewardModelType, typename StateType>
         storm::storage::sparse::StateValuations const& ExplicitModelBuilder<ValueType, RewardModelType, StateType>::getStateValuations() const {
             STORM_LOG_THROW(static_cast<bool>(stateValuations), storm::exceptions::InvalidOperationException, "The state information was not properly build.");
             return stateValuations.get();

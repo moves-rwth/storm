@@ -166,7 +166,7 @@ namespace storm {
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
             virtual bool satisfies(storm::expressions::Expression const& expression) const = 0;
             
-            std::size_t getNumberOfRewardModels() const;
+            virtual std::size_t getNumberOfRewardModels() const = 0;
             virtual RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
             
             virtual storm::expressions::SimpleValuation toValuation(CompressedState const& state) const = 0;
