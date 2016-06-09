@@ -8,6 +8,7 @@
 
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
+#include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
@@ -19,7 +20,19 @@ namespace storm {
             
             // Extract the reward models from the program based on the names we were given.
             for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                rewardModels.push_back(program.getRewardModel(rewardModelName));
+                if (program.hasRewardModel(rewardModelName)) {
+                    rewardModels.push_back(program.getRewardModel(rewardModelName));
+                } else {
+                    STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
+                    STORM_LOG_THROW(program.getNumberOfRewardModels() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                    STORM_LOG_THROW(program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
+                }
+            }
+            
+            // If no reward model was yet added, but there was one that was given in the options, we try to build
+            // standard reward model.
+            if (rewardModels.empty() && !this->options.getRewardModelNames().empty()) {
+                rewardModels.push_back(program.getRewardModel(0));
             }
             
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.

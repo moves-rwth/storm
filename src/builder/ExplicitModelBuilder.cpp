@@ -32,7 +32,7 @@ namespace storm {
         template <typename ValueType>
         class RewardModelBuilder {
         public:
-            RewardModelBuilder(storm::generator::RewardModelInformation const& rewardModelInformation) : rewardModelName(rewardModelInformation.getName()), stateRewards(rewardModelInformation.hasStateRewards()), stateRewardVector(), stateActionRewards(rewardModelInformation.hasStateActionRewards()), stateActionRewardVector() {
+            RewardModelBuilder(storm::generator::RewardModelInformation const& rewardModelInformation) : rewardModelName(rewardModelInformation.getName()), stateRewards(rewardModelInformation.hasStateRewards()), stateActionRewards(rewardModelInformation.hasStateActionRewards()), stateRewardVector(), stateActionRewardVector() {
                 STORM_LOG_THROW(!rewardModelInformation.hasTransitionRewards(), storm::exceptions::InvalidArgumentException, "Unable to treat transition rewards.");
             }
             
