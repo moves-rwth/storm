@@ -473,18 +473,18 @@ namespace storm {
         };
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), buildAllLabels(true), labelsToBuild(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), terminalStates(), negatedTerminalStates() {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -551,22 +551,6 @@ namespace storm {
                 if (sub.isEventuallyFormula() || sub.isUntilFormula()) {
                     this->setTerminalStatesFromFormula(sub);
                 }
-            }
-        }
-        
-        template <storm::dd::DdType Type, typename ValueType>
-        void DdPrismModelBuilder<Type, ValueType>::Options::addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
-            std::map<storm::expressions::Variable, storm::expressions::Expression> newConstantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
-            
-            // If there is at least one constant that is defined, and the constant definition map does not yet exist,
-            // we need to create it.
-            if (!constantDefinitions && !newConstantDefinitions.empty()) {
-                constantDefinitions = std::map<storm::expressions::Variable, storm::expressions::Expression>();
-            }
-            
-            // Now insert all the entries that need to be defined.
-            for (auto const& entry : newConstantDefinitions) {
-                constantDefinitions.get().insert(entry);
             }
         }
         
@@ -1248,11 +1232,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program, Options const& options) {
-            if (options.constantDefinitions) {
-                preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
-            } else {
-                preparedProgram = program;
-            }
+            preparedProgram = program;
             
             if (preparedProgram->hasUndefinedConstants()) {
                 std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram->getUndefinedConstants();

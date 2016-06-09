@@ -48,7 +48,7 @@ namespace storm {
             /*!
              * Creates an object representing the default options.
              */
-            NextStateGeneratorOptions();
+            NextStateGeneratorOptions(bool buildAllRewardModels = false, bool buildAllLabels = false);
             
             /*!
              * Creates an object representing the suggested building options assuming that the given formula is the
@@ -85,26 +85,37 @@ namespace storm {
             void setTerminalStatesFromFormula(storm::logic::Formula const& formula);
             
             std::vector<std::string> const& getRewardModelNames() const;
-            std::set<std::string> const& getLabels() const;
+            std::set<std::string> const& getLabelNames() const;
             std::vector<storm::expressions::Expression> const& getExpressionLabels() const;
             std::vector<std::pair<LabelOrExpression, bool>> const& getTerminalStates() const;
             bool hasTerminalStates() const;
             void clearTerminalStates();
             bool isBuildChoiceLabelsSet() const;
+            bool isBuildAllRewardModelsSet() const;
+            bool isBuildAllLabelsSet() const;
             
+            NextStateGeneratorOptions& setBuildAllRewardModels();
             NextStateGeneratorOptions& addRewardModel(std::string const& rewardModelName);
+            NextStateGeneratorOptions& setBuildAllLabels();
             NextStateGeneratorOptions& addLabel(storm::expressions::Expression const& expression);
-            NextStateGeneratorOptions& addLabel(std::string const& label);
+            NextStateGeneratorOptions& addLabel(std::string const& labelName);
             NextStateGeneratorOptions& addTerminalExpression(storm::expressions::Expression const& expression, bool value);
             NextStateGeneratorOptions& addTerminalLabel(std::string const& label, bool value);
             NextStateGeneratorOptions& setBuildChoiceLabels(bool newValue);
             
         private:
+            /// A flag that indicates whether all reward models are to be built. In this case, the reward model names are
+            /// to be ignored.
+            bool buildAllRewardModels;
+            
             /// The names of the reward models to generate.
             std::vector<std::string> rewardModelNames;
 
+            /// A flag that indicates whether all labels are to be built. In this case, the label names are to be ignored.
+            bool buildAllLabels;
+            
             /// A set of labels to build.
-            std::set<std::string> labels;
+            std::set<std::string> labelNames;
             
             /// The expression that are to be used for creating the state labeling.
             std::vector<storm::expressions::Expression> expressionLabels;

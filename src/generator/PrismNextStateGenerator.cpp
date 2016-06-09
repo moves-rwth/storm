@@ -18,21 +18,27 @@ namespace storm {
         PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options) : NextStateGenerator<ValueType, StateType>(options), program(program), rewardModels(), variableInformation(program), evaluator(program.getManager()), state(nullptr), comparator() {
             STORM_LOG_THROW(!program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             
-            // Extract the reward models from the program based on the names we were given.
-            for (auto const& rewardModelName : this->options.getRewardModelNames()) {
-                if (program.hasRewardModel(rewardModelName)) {
-                    rewardModels.push_back(program.getRewardModel(rewardModelName));
-                } else {
-                    STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
-                    STORM_LOG_THROW(program.getNumberOfRewardModels() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
-                    STORM_LOG_THROW(program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
+            if (this->options.isBuildAllRewardModelsSet()) {
+                for (auto const& rewardModel : program.getRewardModels()) {
+                    rewardModels.push_back(rewardModel);
                 }
-            }
-            
-            // If no reward model was yet added, but there was one that was given in the options, we try to build
-            // standard reward model.
-            if (rewardModels.empty() && !this->options.getRewardModelNames().empty()) {
-                rewardModels.push_back(program.getRewardModel(0));
+            } else {
+                // Extract the reward models from the program based on the names we were given.
+                for (auto const& rewardModelName : this->options.getRewardModelNames()) {
+                    if (program.hasRewardModel(rewardModelName)) {
+                        rewardModels.push_back(program.getRewardModel(rewardModelName));
+                    } else {
+                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
+                        STORM_LOG_THROW(program.getNumberOfRewardModels() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                        STORM_LOG_THROW(program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
+                    }
+                }
+                
+                // If no reward model was yet added, but there was one that was given in the options, we try to build
+                // standard reward model.
+                if (rewardModels.empty() && !this->options.getRewardModelNames().empty()) {
+                    rewardModels.push_back(program.getRewardModel(0));
+                }
             }
             
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.
@@ -467,10 +473,16 @@ namespace storm {
         storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices) {
             // Gather a vector of labels and their expressions so we can iterate it over it a lot.
             std::vector<std::pair<std::string, storm::expressions::Expression>> labels;
-            for (auto const& label : this->options.getLabels()) {
-                labels.push_back(std::make_pair(label, program.getLabelExpression(label)));
+            if (this->options.isBuildAllLabelsSet()) {
+                for (auto const& label : program.getLabels()) {
+                    labels.push_back(std::make_pair(label.getName(), label.getStatePredicateExpression()));
+                }
+            } else {
+                for (auto const& labelName : this->options.getLabelNames()) {
+                    labels.push_back(std::make_pair(labelName, program.getLabelExpression(labelName)));
+                }
             }
-            
+        
             // Make the labels unique.
             std::sort(labels.begin(), labels.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first < b.first; } );
             auto it = std::unique(labels.begin(), labels.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first == b.first; } );

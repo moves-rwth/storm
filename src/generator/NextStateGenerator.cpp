@@ -5,7 +5,7 @@
 #include "src/logic/Formulas.h"
 
 #include "src/utility/macros.h"
-#include "src/exceptions/InvalidArgumentException.h"
+#include "src/exceptions/InvalidSettingsException.h"
 
 namespace storm {
     namespace generator {
@@ -34,16 +34,16 @@ namespace storm {
             return boost::get<storm::expressions::Expression const&>(labelOrExpression);
         }
         
-        NextStateGeneratorOptions::NextStateGeneratorOptions() : buildChoiceLabels(false) {
+        NextStateGeneratorOptions::NextStateGeneratorOptions(bool buildAllRewardModels, bool buildAllLabels) : buildAllRewardModels(buildAllRewardModels), buildAllLabels(buildAllLabels), buildChoiceLabels(false) {
             // Intentionally left empty.
         }
         
-        NextStateGeneratorOptions::NextStateGeneratorOptions(storm::logic::Formula const& formula) {
+        NextStateGeneratorOptions::NextStateGeneratorOptions(storm::logic::Formula const& formula) : NextStateGeneratorOptions() {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
         }
         
-        NextStateGeneratorOptions::NextStateGeneratorOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        NextStateGeneratorOptions::NextStateGeneratorOptions(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : NextStateGeneratorOptions() {
             if (!formulas.empty()) {
                 for (auto const& formula : formulas) {
                     this->preserveFormula(*formula);
@@ -112,8 +112,8 @@ namespace storm {
             return rewardModelNames;
         }
         
-        std::set<std::string> const& NextStateGeneratorOptions::getLabels() const {
-            return labels;
+        std::set<std::string> const& NextStateGeneratorOptions::getLabelNames() const {
+            return labelNames;
         }
         
         std::vector<storm::expressions::Expression> const& NextStateGeneratorOptions::getExpressionLabels() const {
@@ -135,19 +135,39 @@ namespace storm {
         bool NextStateGeneratorOptions::isBuildChoiceLabelsSet() const {
             return buildChoiceLabels;
         }
+        
+        bool NextStateGeneratorOptions::isBuildAllRewardModelsSet() const {
+            return buildAllRewardModels;
+        }
+        
+        bool NextStateGeneratorOptions::isBuildAllLabelsSet() const {
+            return buildAllLabels;
+        }
 
-        NextStateGeneratorOptions& NextStateGeneratorOptions::addRewardModel(std::string const& rewardModelName) {
-            rewardModelNames.emplace_back(rewardModelName);
+        NextStateGeneratorOptions& NextStateGeneratorOptions::setBuildAllRewardModels() {
+            buildAllRewardModels = true;
             return *this;
         }
         
+        NextStateGeneratorOptions& NextStateGeneratorOptions::addRewardModel(std::string const& rewardModelName) {
+            STORM_LOG_THROW(!buildAllRewardModels, storm::exceptions::InvalidSettingsException, "Cannot add reward model, because all reward models are built anyway.");
+            rewardModelNames.emplace_back(rewardModelName);
+            return *this;
+        }
+
+        NextStateGeneratorOptions& NextStateGeneratorOptions::setBuildAllLabels() {
+            buildAllLabels = true;
+            return *this;
+        }
+
         NextStateGeneratorOptions& NextStateGeneratorOptions::addLabel(storm::expressions::Expression const& expression) {
             expressionLabels.emplace_back(expression);
             return *this;
         }
         
-        NextStateGeneratorOptions& NextStateGeneratorOptions::addLabel(std::string const& label) {
-            labels.insert(label);
+        NextStateGeneratorOptions& NextStateGeneratorOptions::addLabel(std::string const& labelName) {
+            STORM_LOG_THROW(!buildAllLabels, storm::exceptions::InvalidSettingsException, "Cannot add label, because all labels are built anyway.");
+            labelNames.insert(labelName);
             return *this;
         }
         

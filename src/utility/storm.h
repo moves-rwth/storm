@@ -121,7 +121,6 @@ namespace storm {
         } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Dd || storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
-            options.addConstantDefinitionsFromString(program, constantDefinitionString);
 
             storm::builder::DdPrismModelBuilder<LibraryType> builder;
             result.model = builder.build(program, options);
