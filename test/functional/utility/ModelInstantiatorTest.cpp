@@ -33,7 +33,7 @@ TEST(ModelInstantiatorTest, BrpProb) {
     typename storm::builder::ExplicitModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program, constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).translate()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
     
     storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>> modelInstantiator(*dtmc);
     EXPECT_FALSE(dtmc->hasRewardModel());
@@ -154,7 +154,7 @@ TEST(ModelInstantiatorTest, Brp_Rew) {
     typename storm::builder::ExplicitModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program, constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).translate()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build()->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<double>> modelInstantiator(*dtmc);
     
@@ -227,7 +227,7 @@ TEST(ModelInstantiatorTest, Consensus) {
     typename storm::builder::ExplicitModelBuilder<storm::RationalFunction>::Options options = storm::builder::ExplicitModelBuilder<storm::RationalFunction>::Options(*formulas[0]);
     options.addConstantDefinitionsFromString(program, constantsAsString); 
     options.preserveFormula(*formulas[0]);
-    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).translate()->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build()->as<storm::models::sparse::Mdp<storm::RationalFunction>>();
 
     storm::utility::ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<double>> modelInstantiator(*mdp);
     

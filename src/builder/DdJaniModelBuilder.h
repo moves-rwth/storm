@@ -99,7 +99,7 @@ namespace storm {
              * @param model The model to translate.
              * @return A pointer to the resulting model.
              */
-            std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> translate();
+            std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> build();
             
             /*!
              * Retrieves the model that was actually translated (i.e. including constant substitutions etc.). Note

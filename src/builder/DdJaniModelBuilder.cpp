@@ -1731,7 +1731,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::translate() {
+        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdJaniModelBuilder<Type, ValueType>::build() {
             // Create all necessary variables.
             CompositionVariableCreator<Type, ValueType> variableCreator(*this->model);
             CompositionVariables<Type, ValueType> variables = variableCreator.create();

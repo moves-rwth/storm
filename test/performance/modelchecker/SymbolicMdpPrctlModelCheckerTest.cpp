@@ -31,7 +31,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Cudd) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program, options);
     EXPECT_EQ(27299ul, model->getNumberOfStates());
     EXPECT_EQ(74365ul, model->getNumberOfTransitions());
     
@@ -83,7 +83,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, AsynchronousLeader_Sylvan) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("rounds");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program, options);
     EXPECT_EQ(27299ul, model->getNumberOfStates());
     EXPECT_EQ(74365ul, model->getNumberOfTransitions());
     
@@ -137,7 +137,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, CSMA_Cudd) {
     options.rewardModelsToBuild.insert("time");
     
     storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD> builder;
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(program, options);
     storm::prism::Program translatedProgram = builder.getTranslatedProgram();
     
     EXPECT_EQ(36850ul, model->getNumberOfStates());
@@ -194,7 +194,7 @@ TEST(SymbolicMdpPrctlModelCheckerTest, CSMA_Sylvan) {
     options.rewardModelsToBuild.insert("time");
     
     storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan> builder;
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.translateProgram(program, options);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(program, options);
     storm::prism::Program translatedProgram = builder.getTranslatedProgram();
     
     EXPECT_EQ(36850ul, model->getNumberOfStates());

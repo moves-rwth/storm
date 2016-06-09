@@ -35,7 +35,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Cluster) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("num_repairs");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
@@ -118,7 +118,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Embedded) {
 #endif
     options.buildAllRewardModels = false;
     options.rewardModelsToBuild.insert("up");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
@@ -180,7 +180,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Polling) {
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model.
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
@@ -227,7 +227,7 @@ TEST(GmmxxCtmcCslModelCheckerTest, Tandem) {
 	typename storm::builder::ExplicitModelBuilder<double>::Options options;
 #endif
     options.rewardModelsToBuild.insert("customers");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();

@@ -101,7 +101,7 @@ namespace storm {
              * @param rewardModel The reward model that is to be built.
              * @return The explicit model that was given by the probabilistic program.
              */
-            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> translate();
+            std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> build();
             
             /*!
              * If requested in the options, information about the variable valuations in the reachable states can be

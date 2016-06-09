@@ -13,27 +13,27 @@
 TEST(DdPrismModelBuilderTest_Sylvan, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(8607ul, model->getNumberOfStates());
     EXPECT_EQ(15113ul, model->getNumberOfTransitions());
 
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader-3-5.pm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/nand-5-2.pm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(1728ul, model->getNumberOfStates());
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
 }
@@ -41,27 +41,27 @@ TEST(DdPrismModelBuilderTest_Sylvan, Dtmc) {
 TEST(DdPrismModelBuilderTest_Cudd, Dtmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
         
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/brp-16-2.pm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(677ul, model->getNumberOfStates());
     EXPECT_EQ(867ul, model->getNumberOfTransitions());
 
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/crowds-5-5.pm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(8607ul, model->getNumberOfStates());
     EXPECT_EQ(15113ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader-3-5.pm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(273ul, model->getNumberOfStates());
     EXPECT_EQ(397ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/nand-5-2.pm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(1728ul, model->getNumberOfStates());
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
 }
@@ -72,27 +72,27 @@ TEST(DdPrismModelBuilderTest_Sylvan, Ctmc) {
     
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(276ul, model->getNumberOfStates());
     EXPECT_EQ(1120ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(3478ul, model->getNumberOfStates());
     EXPECT_EQ(14639ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
 
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/fms2.sm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(810ul, model->getNumberOfStates());
     EXPECT_EQ(3699ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     EXPECT_EQ(66ul, model->getNumberOfStates());
     EXPECT_EQ(189ul, model->getNumberOfTransitions());
 }
@@ -103,34 +103,34 @@ TEST(DdPrismModelBuilderTest_Cudd, Ctmc) {
 
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/cluster2.sm");
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(276ul, model->getNumberOfStates());
     EXPECT_EQ(1120ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/embedded2.sm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(3478ul, model->getNumberOfStates());
     EXPECT_EQ(14639ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/polling2.sm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(12ul, model->getNumberOfStates());
     EXPECT_EQ(22ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/fms2.sm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(810ul, model->getNumberOfStates());
     EXPECT_EQ(3699ul, model->getNumberOfTransitions());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/tandem5.sm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     EXPECT_EQ(66ul, model->getNumberOfStates());
     EXPECT_EQ(189ul, model->getNumberOfTransitions());
 }
 
 TEST(DdPrismModelBuilderTest_Sylvan, Mdp) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
@@ -140,7 +140,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Mdp) {
     EXPECT_EQ(254ul, mdp->getNumberOfChoices());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
@@ -150,7 +150,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Mdp) {
     EXPECT_EQ(573ul, mdp->getNumberOfChoices());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
@@ -160,7 +160,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Mdp) {
     EXPECT_EQ(400ul, mdp->getNumberOfChoices());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
@@ -170,7 +170,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Mdp) {
     EXPECT_EQ(1054ul, mdp->getNumberOfChoices());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/firewire3-0.5.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
@@ -180,7 +180,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Mdp) {
     EXPECT_EQ(5519ul, mdp->getNumberOfChoices());
 
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
@@ -192,7 +192,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Mdp) {
 
 TEST(DdPrismModelBuilderTest_Cudd, Mdp) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
@@ -202,7 +202,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(254ul, mdp->getNumberOfChoices());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/leader3.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
 
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
@@ -212,7 +212,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(573ul, mdp->getNumberOfChoices());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
@@ -222,7 +222,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(400ul, mdp->getNumberOfChoices());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/csma2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
@@ -232,7 +232,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(1054ul, mdp->getNumberOfChoices());
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/firewire3-0.5.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
@@ -242,7 +242,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(5519ul, mdp->getNumberOfChoices());
 
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/wlan0-2-2.nm");
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
@@ -255,7 +255,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Mdp) {
 TEST(DdPrismModelBuilderTest_Sylvan, Composition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition.nm");
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
@@ -266,7 +266,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Composition) {
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition2.nm");
     
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan>>();
@@ -279,7 +279,7 @@ TEST(DdPrismModelBuilderTest_Sylvan, Composition) {
 TEST(DdPrismModelBuilderTest_Cudd, Composition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition.nm");
     
-    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     std::shared_ptr<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>> mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();
@@ -290,7 +290,7 @@ TEST(DdPrismModelBuilderTest_Cudd, Composition) {
     
     program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition2.nm");
     
-    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().translateProgram(program);
+    model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::CUDD>().build(program);
     
     EXPECT_TRUE(model->getType() == storm::models::ModelType::Mdp);
     mdp = model->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD>>();

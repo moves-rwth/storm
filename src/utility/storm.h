@@ -117,14 +117,14 @@ namespace storm {
 
             std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(preprocessedProgram, options);
             storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
-            result.model = builder.translate();
+            result.model = builder.build();
         } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Dd || storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
             options.addConstantDefinitionsFromString(program, constantDefinitionString);
 
             storm::builder::DdPrismModelBuilder<LibraryType> builder;
-            result.model = builder.translateProgram(program, options);
+            result.model = builder.build(program, options);
         }
         
         // There may be constants of the model appearing in the formulas, so we replace all their occurrences

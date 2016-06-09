@@ -1247,7 +1247,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::translateProgram(storm::prism::Program const& program, Options const& options) {
+        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program, Options const& options) {
             if (options.constantDefinitions) {
                 preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
             } else {
