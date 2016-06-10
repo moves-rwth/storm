@@ -327,8 +327,8 @@ namespace storm {
                 }
                 
                 STORM_LOG_WARN("REMOVE ADDING ADDITIONAL VERTICES AS SOON AS HYPRO WORKS FOR DEGENERATED POLYTOPES");
-                Point p1 = {-1000, 0};
-                Point p2 = {0, -1000};
+                Point p1 = {-1000, -999};
+                Point p2 = {-999, -1000};
                 paretoPointsVec.push_back(p1);
                 paretoPointsVec.push_back(p2);
                 

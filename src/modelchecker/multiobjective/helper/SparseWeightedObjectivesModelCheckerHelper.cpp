@@ -5,6 +5,7 @@
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "src/solver/LinearEquationSolver.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
+#include "src/transformer/EffectlessMECRemover.h"
 #include "src/utility/graph.h"
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
@@ -70,55 +71,59 @@ namespace storm {
                 
                 //std::cout << "weighted reward vector is " << storm::utility::vector::toString(weightedRewardVector) << std::endl;
                 
-                storm::storage::BitVector actionsWithRewards = storm::utility::vector::filter<ValueType>(weightedRewardVector, [&] (ValueType const& value) -> bool {return !storm::utility::isZero(value);});
-                storm::storage::BitVector statesWithRewards(info.preprocessedModel.getNumberOfStates(), false);
-                uint_fast64_t currActionIndex = actionsWithRewards.getNextSetIndex(0);
-                auto endOfRowGroup = info.preprocessedModel.getTransitionMatrix().getRowGroupIndices().begin() + 1;
-                for(uint_fast64_t state = 0; state<info.preprocessedModel.getNumberOfStates(); ++state){
-                    if(currActionIndex < *endOfRowGroup){
-                        statesWithRewards.set(state);
-                        currActionIndex = actionsWithRewards.getNextSetIndex(*endOfRowGroup);
-                    }
-                    ++endOfRowGroup;
-                }
+                // Remove end components in which no reward is earned
+                auto removerResult = storm::transformer::EffectlessMECRemover<ValueType>::transform(info.preprocessedModel.getTransitionMatrix(), weightedRewardVector, storm::storage::BitVector(info.preprocessedModel.getTransitionMatrix().getRowGroupCount(), true));
                 
-                STORM_LOG_WARN("REMOVE VALIDATION CODE");
-                for(uint_fast64_t state = 0; state<info.preprocessedModel.getNumberOfStates(); ++state){
-                    bool stateHasReward=false;
-                    for(uint_fast64_t row = info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; row< info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
-                        stateHasReward |= actionsWithRewards.get(row);
-                    }
-                    STORM_LOG_ERROR_COND(stateHasReward == statesWithRewards.get(state), "statesWithRewardsVector is wrong!!!!");
-                }
-                
-                //Get the states from which a state with reward can be reached.
-                storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0E(info.preprocessedModel.getTransitionMatrix(),
-                                                                                                    info.preprocessedModel.getTransitionMatrix().getRowGroupIndices(),
-                                                                                                    info.preprocessedModel.getBackwardTransitions(),
-                                                                                                    storm::storage::BitVector(info.preprocessedModel.getNumberOfStates(), true),
-                                                                                                    statesWithRewards);
-                this->weightedResult = std::vector<ValueType>(info.preprocessedModel.getNumberOfStates());
-                this->scheduler = storm::storage::TotalScheduler(info.preprocessedModel.getNumberOfStates());
-                
-                storm::storage::SparseMatrix<ValueType> submatrix = info.preprocessedModel.getTransitionMatrix().getSubmatrix(true, maybeStates, maybeStates, false);
-                std::vector<ValueType> b(submatrix.getRowCount());
-                storm::utility::vector::selectVectorValues(b, maybeStates, info.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), weightedRewardVector);
-                std::vector<ValueType> x(submatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> subResult(removerResult.matrix.getRowGroupCount());
                 
                 storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> solverFactory;
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(submatrix, true);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(removerResult.matrix, true);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
-                solver->solveEquationSystem(x, b);
+                solver->solveEquationSystem(subResult, removerResult.vector);
                 
-                storm::utility::vector::setVectorValues(this->weightedResult, maybeStates, x);
-                storm::utility::vector::setVectorValues(this->weightedResult, ~maybeStates, storm::utility::zero<ValueType>());
-                
-                uint_fast64_t currentSubState = 0;
-                for (auto maybeState : maybeStates) {
-                    this->scheduler.setChoice(maybeState, solver->getScheduler().getChoice(currentSubState));
-                    ++currentSubState;
+                this->weightedResult = std::vector<ValueType>(info.preprocessedModel.getNumberOfStates());
+                this->scheduler = storm::storage::TotalScheduler(info.preprocessedModel.getNumberOfStates());
+                storm::storage::BitVector statesWithUndefinedScheduler(info.preprocessedModel.getNumberOfStates(), false);
+                for(uint_fast64_t state = 0; state < info.preprocessedModel.getNumberOfStates(); ++state) {
+                    uint_fast64_t stateInReducedModel = removerResult.oldToNewStateMapping[state];
+                    // Check if the state exists in the reduced model
+                    if(stateInReducedModel < removerResult.matrix.getRowGroupCount()) {
+                        this->weightedResult[state] = subResult[stateInReducedModel];
+                        // Check if the chosen row originaly belonged to the current state
+                        uint_fast64_t chosenRowInReducedModel = removerResult.matrix.getRowGroupIndices()[stateInReducedModel] + solver->getScheduler().getChoice(stateInReducedModel);
+                        uint_fast64_t chosenRowInOriginalModel = removerResult.newToOldRowMapping[chosenRowInReducedModel];
+                        if(chosenRowInOriginalModel >= info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state] &&
+                           chosenRowInOriginalModel <  info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]) {
+                            this->scheduler.setChoice(state, chosenRowInOriginalModel - info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]);
+                        } else {
+                            statesWithUndefinedScheduler.set(state);
+                        }
+                    } else {
+                        // if the state does not exist in the reduced model, it means that the result is always zero, independent of the scheduler.
+                        // Hence, we don't have to set the scheduler explicitly
+                        this->weightedResult[state] = storm::utility::zero<ValueType>();
+                    }
                 }
-                // Note that the choices for the ~maybeStates are arbitrary as no states with rewards are reachable any way.
+                while(!statesWithUndefinedScheduler.empty()) {
+                    for(auto state : statesWithUndefinedScheduler) {
+                        // Try to find a choice that stays inside the EC (i.e., for which all successors are represented by the same state in the reduced model)
+                        // And at least one successor has a defined scheduler.
+                        // This way, a scheduler is chosen that leads (with probability one) to the state from which the EC can be left
+                        uint_fast64_t stateInReducedModel = removerResult.oldToNewStateMapping[state];
+                        for(uint_fast64_t row = info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; row < info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
+                            bool rowStaysInEC = true;
+                            bool rowLeadsToDefinedScheduler = false;
+                            for(auto const& entry : info.preprocessedModel.getTransitionMatrix().getRow(row)) {
+                                rowStaysInEC &= ( stateInReducedModel == removerResult.oldToNewStateMapping[entry.getColumn()]);
+                                rowLeadsToDefinedScheduler |= !statesWithUndefinedScheduler.get(entry.getColumn());
+                            }
+                            if(rowStaysInEC && rowLeadsToDefinedScheduler) {
+                                this->scheduler.setChoice(state, row - info.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]);
+                                statesWithUndefinedScheduler.set(state, false);
+                            }
+                        }
+                    }
+                }
             }
             
             template <class SparseModelType>
