@@ -170,9 +170,14 @@ namespace storm {
                         for(auto const& entry : originalMatrix.getRow(oldRow)){
                             if(result.firstCopy.get(newState) && !result.gateStates.get(entry.getColumn())){
                                 builder.addNextValue(newRow, result.firstCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
-                            } else {
+                            } else if (!result.duplicatedStates.get(entry.getColumn())){
                                 builder.addNextValue(newRow, result.secondCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
-                                
+                            }
+                        }
+                        //To add values in the right order, transitions to duplicated states have to be added in a second run.
+                        for(auto const& entry : originalMatrix.getRow(oldRow)){
+                            if (result.secondCopy.get(newState) && result.duplicatedStates.get(entry.getColumn())){
+                                builder.addNextValue(newRow, result.secondCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
                             }
                         }
                         ++newRow;
