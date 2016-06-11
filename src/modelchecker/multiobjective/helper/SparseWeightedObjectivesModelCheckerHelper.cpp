@@ -5,7 +5,7 @@
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "src/solver/LinearEquationSolver.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
-#include "src/transformer/EffectlessMECRemover.h"
+#include "src/transformer/NeutralECRemover.h"
 #include "src/utility/graph.h"
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
@@ -72,7 +72,7 @@ namespace storm {
                 //std::cout << "weighted reward vector is " << storm::utility::vector::toString(weightedRewardVector) << std::endl;
                 
                 // Remove end components in which no reward is earned
-                auto removerResult = storm::transformer::EffectlessMECRemover<ValueType>::transform(info.preprocessedModel.getTransitionMatrix(), weightedRewardVector, storm::storage::BitVector(info.preprocessedModel.getTransitionMatrix().getRowGroupCount(), true));
+                auto removerResult = storm::transformer::NeutralECRemover<ValueType>::transform(info.preprocessedModel.getTransitionMatrix(), weightedRewardVector, storm::storage::BitVector(info.preprocessedModel.getTransitionMatrix().getRowGroupCount(), true));
                 
                 std::vector<ValueType> subResult(removerResult.matrix.getRowGroupCount());
                 
