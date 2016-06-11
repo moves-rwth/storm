@@ -70,9 +70,9 @@ namespace storm {
                     bool ecGetsEmptyRow = false;
                     for (auto const& stateActionsPair : ec) {
                         result.oldToNewStateMapping[stateActionsPair.first] = newRowGroupIndices.size()-1;
-                        for(uint_fast64_t choice = 0; choice < originalMatrix.getRowGroupSize(stateActionsPair.first); ++choice) {
-                            if(stateActionsPair.second.find(choice) == stateActionsPair.second.end()) {
-                                result.newToOldRowMapping.push_back(originalMatrix.getRowGroupIndices()[stateActionsPair.first] + choice);
+                        for(uint_fast64_t row = originalMatrix.getRowGroupIndices()[stateActionsPair.first]; row < originalMatrix.getRowGroupIndices()[stateActionsPair.first +1]; ++row) {
+                            if(stateActionsPair.second.find(row) == stateActionsPair.second.end()) {
+                                result.newToOldRowMapping.push_back(row);
                             }
                         }
                         ecGetsEmptyRow |= allowEmptyRow.get(stateActionsPair.first);
