@@ -1,6 +1,4 @@
-// sum of two dice as the asynchronous parallel composition of
-// two copies of Knuth's model of a fair die using only fair coins
-
+ 
 mdp
 
 module simple
@@ -10,6 +8,7 @@ module simple
 
 	[A] s=0 -> 0.2 : (s'=1) + 0.8 : (s'=0);
 	[B] s=0 -> 1 : (s'=2);
+	[C] s=0 -> 1 : (s'=0);
 	[]  s>0 -> 1 : (s'=s);
 endmodule
 

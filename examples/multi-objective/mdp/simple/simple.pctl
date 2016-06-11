@@ -1,2 +1,2 @@
-multi(P>0.4 [ F "a"], P>0.3 [ F "b"] )
+multi(P<0.4 [ F "a"], P<0.3 [ F "b"] )
 //multi(Pmin=? [ F<=10 "a"], R<0.3 [ F "b" | "a"] )
