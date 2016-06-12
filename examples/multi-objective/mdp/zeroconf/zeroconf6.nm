@@ -117,7 +117,7 @@ endmodule
 //-------------------------------------------------------------
 // error automaton for the environment assumption
 // do not get a reply when K probes are sent
-const int M; // time between sending and receiving a message
+const int M=1; // time between sending and receiving a message
 
 module env_error6
 

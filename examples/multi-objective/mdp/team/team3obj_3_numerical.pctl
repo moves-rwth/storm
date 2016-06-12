@@ -1,0 +1,1 @@
+ multi(Pmax=? [ F task1_completed ], R{"w_1_total"}>=2.210204082 [ C ],  P>=0.5 [ F task2_completed ]) 
