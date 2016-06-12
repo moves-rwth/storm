@@ -67,6 +67,8 @@ namespace storm {
                 std::map<Point, std::vector<WeightVector>> paretoOptimalPoints;
                 std::unordered_map<storm::storage::TotalScheduler, typename std::map<Point, std::vector<WeightVector>>::iterator> schedulers;
                 
+                uint_fast64_t numIterations;
+                
                 std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>> overApproximation;
                 std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>> underApproximation;
             };

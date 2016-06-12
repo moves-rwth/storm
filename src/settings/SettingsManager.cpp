@@ -29,6 +29,7 @@
 #include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 #include "src/settings/modules/ExplorationSettings.h"
+#include "src/settings/modules/MultiObjectiveSettings.h"
 #include "src/utility/macros.h"
 #include "src/settings/Option.h"
 
@@ -516,6 +517,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::ParametricSettings>();
             storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
+            storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();
         }
 
     }

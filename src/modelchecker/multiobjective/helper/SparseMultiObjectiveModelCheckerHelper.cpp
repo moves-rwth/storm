@@ -5,12 +5,26 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/utility/constants.h"
 #include "src/utility/vector.h"
+#include "src/settings//SettingsManager.h"
+#include "src/settings/modules/MultiObjectiveSettings.h"
+
 
 #include "src/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace modelchecker {
         namespace helper {
+            
+            template <class SparseModelType, typename RationalNumberType>
+            SparseMultiObjectiveModelCheckerHelper<SparseModelType, RationalNumberType>::SparseMultiObjectiveModelCheckerHelper(Information& info) : info(info), weightedObjectivesChecker(info), numIterations(0) {
+                overApproximation = storm::storage::geometry::Polytope<RationalNumberType>::createUniversalPolytope();
+                underApproximation = storm::storage::geometry::Polytope<RationalNumberType>::createEmptyPolytope();
+            }
+            
+            template <class SparseModelType, typename RationalNumberType>
+            SparseMultiObjectiveModelCheckerHelper<SparseModelType, RationalNumberType>::~SparseMultiObjectiveModelCheckerHelper() {
+                // Intentionally left empty
+            }
             
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveModelCheckerHelper<SparseModelType, RationalNumberType>::check(Information & info) {
@@ -21,7 +35,6 @@ namespace storm {
                         ++numOfObjectivesWithoutThreshold;
                     }
                 }
-                
                 if(numOfObjectivesWithoutThreshold == 0) {
                     helper.achievabilityQuery();
                 } else if (numOfObjectivesWithoutThreshold == 1) {
@@ -31,17 +44,6 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The number of objecties without threshold is not valid. It should be either 0 (achievabilityQuery), 1 (numericalQuery), or " << info.objectives.size() << " (paretoQuery). Got " << numOfObjectivesWithoutThreshold << " instead.");
                 }
-            }
-            
-            template <class SparseModelType, typename RationalNumberType>
-            SparseMultiObjectiveModelCheckerHelper<SparseModelType, RationalNumberType>::SparseMultiObjectiveModelCheckerHelper(Information& info) : info(info), weightedObjectivesChecker(info) {
-                overApproximation = storm::storage::geometry::Polytope<RationalNumberType>::createUniversalPolytope();
-                underApproximation = storm::storage::geometry::Polytope<RationalNumberType>::createEmptyPolytope();
-            }
-            
-            template <class SparseModelType, typename RationalNumberType>
-            SparseMultiObjectiveModelCheckerHelper<SparseModelType, RationalNumberType>::~SparseMultiObjectiveModelCheckerHelper() {
-                // Intentionally left empty
             }
             
             template <class SparseModelType, typename RationalNumberType>
@@ -56,18 +58,22 @@ namespace storm {
                 }
                 
                 storm::storage::BitVector individualObjectivesToBeChecked(info.objectives.size(), true);
-                while(true) { //TODO introduce convergence criterion? (like max num of iterations)
+                bool converged=false;
+                do {
                     WeightVector separatingVector = findSeparatingVector(thresholds, individualObjectivesToBeChecked);
                     refineSolution(separatingVector);
+                    ++numIterations;
+                    // Check for convergence
                     if(!checkIfThresholdsAreSatisfied(overApproximation, thresholds, strictThresholds)){
                         std::cout << "PROPERTY VIOLATED" << std::endl;
-                        return;
+                        converged=true;
                     }
                     if(checkIfThresholdsAreSatisfied(underApproximation, thresholds, strictThresholds)){
                         std::cout << "PROPERTY SATISFIED" << std::endl;
-                        return;
+                        converged=true;
                     }
-                }
+                    converged |= (storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isMaxIterationsSet() && numIterations >= storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getMaxIterations());
+                } while(!converged);
             }
             
             template <class SparseModelType, typename RationalNumberType>
@@ -129,8 +135,7 @@ namespace storm {
                     if(optimizationRes.second) {
                         RationalNumberType upperBoundOnOptimum = optimizationRes.first[optimizingObjIndex];
                         STORM_LOG_DEBUG("Solution can be improved by at most " << storm::utility::convertNumber<double>(upperBoundOnOptimum - thresholds[optimizingObjIndex]));
-                        if(storm::utility::convertNumber<double>(upperBoundOnOptimum - thresholds[optimizingObjIndex]) < 0.0001) { //TODO get this value from settings
-                            std::cout << "Found Optimum: " << storm::utility::convertNumber<double>(thresholds[optimizingObjIndex]) << "." << std::endl;
+                        if(storm::utility::convertNumber<double>(upperBoundOnOptimum - thresholds[optimizingObjIndex]) < storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision()) {                            std::cout << "Found Optimum: " << storm::utility::convertNumber<double>(thresholds[optimizingObjIndex]) << "." << std::endl;
                             if(!checkIfThresholdsAreSatisfied(underApproximation, thresholds, strictThresholds)) {
                                 std::cout << "Optimum is only the supremum" << std::endl;
                             }
@@ -169,7 +174,7 @@ namespace storm {
                         }
                     }
                     STORM_LOG_DEBUG("Farest distance between under- and overApproximation is " << storm::utility::convertNumber<double>(farestDistance));
-                    if(storm::utility::convertNumber<double>(farestDistance) > -0.0001) { //todo take this value from settings
+                    if(-storm::utility::convertNumber<double>(farestDistance) < storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision()) {
                         std::cout << "DONE computing the pareto curve" << std::endl;
                         return;
                     }
