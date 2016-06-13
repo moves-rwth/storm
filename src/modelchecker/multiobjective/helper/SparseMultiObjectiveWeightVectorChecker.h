@@ -1,9 +1,9 @@
-#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEWEIGHTEDOBJECTIVESMODELCHECKERHELPER_H_
-#define STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEWEIGHTEDOBJECTIVESMODELCHECKERHELPER_H_
+#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEWEIGHTVECTORCHECKER_H_
+#define STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEWEIGHTVECTORCHECKER_H_
 
 #include <vector>
 
-#include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveModelCheckerInformation.h"
+#include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePreprocessorReturnType.h"
 #include "src/storage/TotalScheduler.h"
 
 namespace storm {
@@ -11,13 +11,13 @@ namespace storm {
         namespace helper {
             
             /*!
-             * Helper Class that takes a MultiObjectiveInformation and a weight vector and ...
+             * Helper Class that takes preprocessed multi objective data and a weight vector and ...
              * - computes the maximal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
              * - extracts the scheduler that induces this maximum
              * - computes for each objective the value induced by this scheduler
              */
             template <class SparseModelType>
-            class SparseWeightedObjectivesModelCheckerHelper {
+            class SparseMultiObjectiveWeightVectorChecker {
             public:
                 typedef typename SparseModelType::ValueType ValueType;
                 typedef typename SparseModelType::RewardModelType RewardModelType;
@@ -87,4 +87,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEWEIGHTEDOBJECTIVESMODELCHECKERHELPER_H_ */
+#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEWEIGHTEDVECTORCHECKER_H_ */

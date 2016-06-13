@@ -405,6 +405,18 @@ namespace storm {
                 return filter(values,  fnc);
             }
             
+            /*!
+             * Retrieves a bit vector containing all the indices for which the value at this position is equal to zero
+             *
+             * @param values The vector of values.
+             * @return The resulting bit vector.
+             */
+            template<class T>
+            storm::storage::BitVector filterZero(std::vector<T> const& values) {
+                std::function<bool (T const&)> fnc = [] (T const& value) -> bool { return storm::utility::isZero(value); };
+                return filter(values,  fnc);
+            }
+            
             /**
              * Sum the entries from values that are set to one in the filter vector.
              * @param values

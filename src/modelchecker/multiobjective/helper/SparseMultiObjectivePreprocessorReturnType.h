@@ -1,9 +1,10 @@
-#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEMODELCHECKERINFORMATION_H_
-#define STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEMODELCHECKERINFORMATION_H_
+#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEPREPROCESSORRETURNTYPE_H_
+#define STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEPREPROCESSORRETURNTYPE_H_
 
 #include <vector>
 #include <memory>
 #include <iomanip>
+#include <boost/optional.hpp>
 
 #include "src/logic/Formulas.h"
 
@@ -28,7 +29,7 @@ namespace storm {
                     bool thresholdIsStrict = false;
                     boost::optional<uint_fast64_t> stepBound;
                     
-                    void printInformationToStream(std::ostream& out) const {
+                    void printToStream(std::ostream& out) const {
                         out << std::setw(30) << originalFormula->toString();
                         out << " \t(";
                         out << (isNegative ? "-x, " : "    ");
@@ -52,26 +53,19 @@ namespace storm {
                      }
                 };
                 
-                
                 SparseMultiObjectiveModelCheckerInformation(SparseModelType const& model) : preprocessedModel(model),  originalModel(model) {
                     //Intentionally left empty
                 }
-
-                SparseModelType preprocessedModel;
-                SparseModelType const& originalModel;
-                std::vector<uint_fast64_t> newToOldStateIndexMapping;
                 
-                std::vector<ObjectiveInformation> objectives;
-                
-                void printInformationToStream(std::ostream& out) {
+                void printToStream(std::ostream& out) {
                     out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
-                    out << "                                                   Multi-objective Model Checker Information                                           " << std::endl;
+                    out << "                                                      Multi-objective Preprocessor Result                                              " << std::endl;
                     out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
                     out << std::endl;
                     out << "Objectives:" << std::endl;
                     out << "--------------------------------------------------------------" << std::endl;
                     for (auto const& obj : objectives) {
-                        obj.printInformationToStream(out);
+                        obj.printToStream(out);
                     }
                     out << "--------------------------------------------------------------" << std::endl;
                     out << std::endl;
@@ -84,10 +78,14 @@ namespace storm {
                     out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
                 }
                 
+                SparseModelType preprocessedModel;
+                SparseModelType const& originalModel;
+                std::vector<uint_fast64_t> newToOldStateIndexMapping;
+                std::vector<ObjectiveInformation> objectives;
                 
             };
         }
     }
 }
 
-#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEMODELCHECKERINFORMATION_H_ */
+#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEPREPROCESSORRETURNTYPE_H_ */

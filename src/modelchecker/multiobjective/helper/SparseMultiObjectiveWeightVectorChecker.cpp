@@ -144,7 +144,7 @@ namespace storm {
                         //std::cout << "stateActionRewardVector for objective " << objIndex << " is " << storm::utility::vector::toString(info.preprocessedModel.getRewardModel(info.objectives[objIndex].rewardModelName).getStateActionRewardVector()) << std::endl;
                         //std::cout << "deterministic state rewards for objective " << objIndex << " are " << storm::utility::vector::toString(deterministicStateRewards) << std::endl;
                         
-                        storm::storage::BitVector statesWithRewards =  storm::utility::vector::filter<ValueType>(deterministicStateRewards, [&] (ValueType const& value) -> bool {return !storm::utility::isZero(value);});
+                        storm::storage::BitVector statesWithRewards =  ~storm::utility::vector::filterZero(deterministicStateRewards);
                         // As target states, we take the states from which no reward is reachable.
                         STORM_LOG_WARN("TODO: target state selection is currently only valid for reachability properties...");
                         //TODO: we should be able to give some hint to the solver..
