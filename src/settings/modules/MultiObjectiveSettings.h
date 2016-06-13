@@ -37,19 +37,19 @@ namespace storm {
 				double getPrecision() const;
 				
                 /*!
-                 * Retrieves whether or not a threshold for the number of performed iterations is given.
+                 * Retrieves whether or not a threshold for the number of performed refinement steps is given.
                  *
-                 * @return True if a threshold for the number of performed iterations is given.
+                 * @return True if a threshold for the number of performed refinement steps is given.
                  */
-                bool isMaxIterationsSet() const;
+                bool isMaxStepsSet() const;
                 
                 
                 /*!
-                 * Retrieves The maximum number of iterations that should be performed (if given).
+                 * Retrieves The maximum number of refinement steps that should be performed (if given).
                  *
-                 * @return the maximum number of iterations that should be performed (if given).
+                 * @return the maximum number of refinement steps that should be performed (if given).
                  */
-                uint_fast64_t getMaxIterations() const;
+                uint_fast64_t getMaxSteps() const;
                 
                 
                 const static std::string moduleName;
@@ -57,7 +57,7 @@ namespace storm {
             private:
 				const static std::string exportResultFileOptionName;
 				const static std::string precisionOptionName;
-				const static std::string maxIterationsOptionName;
+				const static std::string maxStepsOptionName;
             };
             
         } // namespace modules

@@ -15,7 +15,7 @@ namespace storm {
         namespace helper {
             
             template <class SparseModelType>
-            struct SparseMultiObjectiveModelCheckerInformation {
+            struct SparseMultiObjectivePreprocessorReturnType {
                 
                 typedef typename SparseModelType::ValueType ValueType;
                 typedef typename SparseModelType::RewardModelType RewardModelType;
@@ -53,7 +53,7 @@ namespace storm {
                      }
                 };
                 
-                SparseMultiObjectiveModelCheckerInformation(SparseModelType const& model) : preprocessedModel(model),  originalModel(model) {
+                SparseMultiObjectivePreprocessorReturnType(SparseModelType const& model) : preprocessedModel(model),  originalModel(model) , produceSchedulers(false) {
                     //Intentionally left empty
                 }
                 
@@ -82,7 +82,7 @@ namespace storm {
                 SparseModelType const& originalModel;
                 std::vector<uint_fast64_t> newToOldStateIndexMapping;
                 std::vector<ObjectiveInformation> objectives;
-                
+                bool produceSchedulers;
             };
         }
     }

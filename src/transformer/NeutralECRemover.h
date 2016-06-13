@@ -89,7 +89,7 @@ namespace storm {
                 result.matrix = buildTransformedMatrix(originalMatrix, newRowGroupIndices, result.newToOldRowMapping, result.oldToNewStateMapping, emptyRows);
                 result.vector = buildTransformedVector(originalVector, result.newToOldRowMapping);
                 
-                STORM_LOG_DEBUG("NeutralECRemover is done. Resulting  matrix has " << result.matrix.getRowGroupCount() << " row groups. Resulting Matrix: " << std::endl << result.matrix << std::endl << " resulting vector: " << result.vector );
+                STORM_LOG_DEBUG("NeutralECRemover is done. Resulting  matrix has " << result.matrix.getRowGroupCount() << " row groups.");
                 return result;
             }
             

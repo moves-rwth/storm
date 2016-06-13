@@ -21,9 +21,9 @@ namespace storm {
             public:
                 typedef typename SparseModelType::ValueType ValueType;
                 typedef typename SparseModelType::RewardModelType RewardModelType;
-                typedef SparseMultiObjectiveModelCheckerInformation<SparseModelType> Information;
+                typedef SparseMultiObjectivePreprocessorReturnType<SparseModelType> PreprocessorData;
             
-                SparseWeightedObjectivesModelCheckerHelper(Information const& info);
+                SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data);
                 
                 /*!
                  * - computes the maximal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
@@ -37,7 +37,8 @@ namespace storm {
                  * Note that check(..) has to be called before retrieving results. Otherwise, an exception is thrown.
                  */
                 // The results of the individual objectives at the initial state of the given model
-                std::vector<ValueType> getInitialStateResultOfObjectives() const;
+                template<typename TargetValueType = ValueType>
+                std::vector<TargetValueType> getInitialStateResultOfObjectives() const;
                 // A scheduler that induces the optimal values
                 storm::storage::TotalScheduler const& getScheduler() const;
                 
@@ -69,7 +70,7 @@ namespace storm {
                 void boundedPhase(std::vector<ValueType> const& weightVector);
                 
                 // stores the considered information of the multi-objective model checking problem
-                Information const& info;
+                PreprocessorData const& data;
                 
                 // becomes true after the first call of check(..)
                 bool checkHasBeenCalled;

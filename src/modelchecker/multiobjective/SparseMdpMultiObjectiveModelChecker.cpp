@@ -34,7 +34,7 @@ namespace storm {
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpMultiObjectiveModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula> const& checkTask) {
             
-            auto preprocessedData = helper::SparseMdpMultiObjectivePreprocessingHelper<SparseMdpModelType>::preprocess(checkTask.getFormula(), this->getModel());
+            auto preprocessedData = helper::SparseMultiObjectivePreprocessor<SparseMdpModelType>::preprocess(checkTask.getFormula(), this->getModel());
             std::cout << std::endl;
             std::cout << "Preprocessing done." << std::endl;
             preprocessedData.printToStream(std::cout);
