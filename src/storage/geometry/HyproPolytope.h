@@ -98,6 +98,15 @@ namespace storm {
                 virtual std::shared_ptr<Polytope<ValueType>> minkowskiSum(std::shared_ptr<Polytope<ValueType>> const& rhs) const override;
                 
                 /*!
+                 * Returns the linear transformation of this polytope P w.r.t. the given matrix A and vector b.
+                 * The result is the set {A*x+b | x \in P}
+                 * 
+                 * @param matrix the transformation matrix, given as vector of rows
+                 * @param vector the transformation offset
+                 */
+                virtual std::shared_ptr<Polytope<ValueType>> linearTransformation(std::vector<Point> const& matrix, Point const& vector) const;
+                
+                /*!
                  * Returns the downward closure of this, i.e., the set { x | ex. y \in P : x<=y} where P is this Polytope.
                  * Put differently, the resulting polytope corresponds to this polytope, where
                  * 1. a vector y with y_i=max{x_i | x \in P} is computed and for each i, a halfspace with offset y_i and

@@ -145,6 +145,16 @@ namespace storm {
             }
             
             template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> HyproPolytope<ValueType>::linearTransformation(std::vector<Point> const& matrix, Point const& vector) const{
+                STORM_LOG_THROW(!matrix.empty(), storm::exceptions::InvalidArgumentException, "Invoked linear transformation with a matrix without rows.");
+                hypro::matrix_t<ValueType> hyproMatrix(matrix.size(), matrix.front().size());
+                for(uint_fast64_t row = 0; row < matrix.size(); ++row) {
+                    hyproMatrix.row(row) = storm::adapters::toHypro(matrix[row]);
+                }
+                return std::make_shared<HyproPolytope<ValueType>>(internPolytope.linearTransformation(std::move(hyproMatrix), storm::adapters::toHypro(vector)));
+            }
+            
+            template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> HyproPolytope<ValueType>::downwardClosure(boost::optional<Point> const& upperBounds) const {
                 if(this->isUniversal() || this->isEmpty()) {
                     // In these cases, the polytope does not change, i.e., we return a copy of this

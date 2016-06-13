@@ -123,6 +123,12 @@ namespace storm {
             }
             
             template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::linearTransformation(std::vector<Point> const& matrix, Point const& vector) const {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
+                return nullptr;
+            }
+            
+            template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::downwardClosure(boost::optional<Point> const& upperBounds) const {
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
                 return nullptr;
