@@ -31,25 +31,13 @@ namespace storm {
             private:
                 
                 /*!
-                 * Inserts the information regarding the given formula (i.e. objective) into info.objectives
-                 *
-                 * @param formula OperatorFormula representing the objective
-                 * @param the information collected so far
-                 */
-                static void addObjective(std::shared_ptr<storm::logic::Formula const> const& formula, ReturnType& data);
-                
-                /*!
-                 * Sets the timeBound for the given objective
-                 */
-                static void setStepBoundOfObjective(ObjectiveInformation& currentObjective);
-                
-                /*!
                  * Apply the neccessary preprocessing for the given formula.
                  * @param formula the current (sub)formula
                  * @param data the information collected so far
                  * @param currentObjective the currently considered objective. The given formula should be a a (sub)formula of this objective
                  * @param optionalRewardModelName the reward model name that is considered for the formula (if available)
                  */
+                static void preprocessFormula(storm::logic::OperatorFormula const& formula, ReturnType& info, ObjectiveInformation& currentObjective);
                 static void preprocessFormula(storm::logic::ProbabilityOperatorFormula const& formula, ReturnType& info, ObjectiveInformation& currentObjective);
                 static void preprocessFormula(storm::logic::RewardOperatorFormula const& formula, ReturnType& info, ObjectiveInformation& currentObjective);
                 static void preprocessFormula(storm::logic::UntilFormula const& formula, ReturnType& info, ObjectiveInformation& currentObjective);
