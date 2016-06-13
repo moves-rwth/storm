@@ -1,0 +1,69 @@
+PRISM
+=====
+
+Version: 4.3
+Date: Mon Jun 13 12:04:02 CEST 2016
+Hostname: Tims-iMac.fritz.box
+Memory limits: cudd=1g, java(heap)=2.7g
+Command line: prism scheduler/scheduler50.nm scheduler/scheduler50_numerical.pctl -epsilon 0.000001 -paretoepsilon 0.0001 -sparse -javamaxmem 3g
+
+Parsing model file "scheduler/scheduler50.nm"...
+
+Parsing properties file "scheduler/scheduler50_numerical.pctl"...
+
+1 property:
+(1) multi(R{"time"}min=? [ C ], R{"energy"}<=1.45 [ C ])
+
+Type:        MDP
+Modules:     scheduler P1 P2 
+Variables:   task1 task2 task3 task4 task5 task6 p1 c1 x1 p2 c2 x2 
+
+---------------------------------------------------------------------
+
+Model checking: multi(R{"time"}min=? [ C ], R{"energy"}<=1.45 [ C ])
+
+Building model...
+
+Computing reachable states...
+
+Reachability (BFS): 819 iterations in 26.33 seconds (average 0.032154, setup 0.00)
+
+Time for model construction: 26.732 seconds.
+
+Type:        MDP
+States:      2457510 (1 initial)
+Transitions: 4564394
+Choices:     4542575
+
+Transition matrix: 45541 nodes (5 terminal), 4564394 minterms, vars: 37r/37c/10nd
+
+States:      2457510 (1 initial)
+Transitions: 4564394
+Choices:     4542575
+
+Transition matrix: 45541 nodes (5 terminal), 4564394 minterms, vars: 37r/37c/10nd
+
+Prob0A: 1 iterations in 0.01 seconds (average 0.011000, setup 0.00)
+
+yes = 0, no = 0, maybe = 2457510
+
+Computing remaining probabilities...
+Engine: Sparse
+Iterative method: 1077 iterations in 156.35 seconds (average 0.145150, setup 0.02)
+Iterative method: 1076 iterations in 217.65 seconds (average 0.202246, setup 0.04)
+Iterative method: 2045 iterations in 421.85 seconds (average 0.206265, setup 0.04)
+Iterative method: 1715 iterations in 348.82 seconds (average 0.203373, setup 0.03)
+Iterative method: 1163 iterations in 234.00 seconds (average 0.201176, setup 0.03)
+Iterative method: 1028 iterations in 211.41 seconds (average 0.205620, setup 0.03)
+Iterative method: 1058 iterations in 214.38 seconds (average 0.202599, setup 0.03)
+Iterative method: 1059 iterations in 212.69 seconds (average 0.200815, setup 0.03)
+The value iteration(s) took 2036.128 seconds altogether.
+Number of weight vectors used: 8
+Multi-objective value iterations took 2036.128 s.
+
+Value in the initial state: 15.773985890650346
+
+Time for model checking: 2055.074 seconds.
+
+Result: 15.773985890650346 (value in the initial state)
+

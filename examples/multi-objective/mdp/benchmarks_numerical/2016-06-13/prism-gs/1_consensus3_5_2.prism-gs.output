@@ -1,0 +1,96 @@
+PRISM
+=====
+
+Version: 4.3
+Date: Mon Jun 13 12:39:11 CEST 2016
+Hostname: Tims-iMac.fritz.box
+Memory limits: cudd=1g, java(heap)=2.7g
+Command line: prism consensus/consensus3_5_2.nm consensus/consensus3_5_2_numerical.pctl -epsilon 0.000001 -paretoepsilon 0.0001 -sparse -javamaxmem 3g -gs
+
+Parsing model file "consensus/consensus3_5_2.nm"...
+
+Parsing properties file "consensus/consensus3_5_2_numerical.pctl"...
+
+1 property:
+(1) multi(Pmax=? [ F "one_proc_err" ], P>=0.9879770423 [ G "one_coin_ok" ])
+
+Type:        MDP
+Modules:     process1 process2 process3 coin1_error coin2_error coin3_error 
+Variables:   s1 r1 p1 s2 r2 p2 s3 r3 p3 c1 v1 c2 v2 c3 v3 
+
+---------------------------------------------------------------------
+
+Model checking: multi(Pmax=? [ F "one_proc_err" ], P>=0.9879770423 [ G "one_coin_ok" ])
+
+Building model...
+
+Computing reachable states...
+
+Reachability (BFS): 50 iterations in 0.43 seconds (average 0.008700, setup 0.00)
+
+Time for model construction: 0.671 seconds.
+
+Type:        MDP
+States:      181129 (1 initial)
+Transitions: 487456
+Choices:     487456
+
+Transition matrix: 39636 nodes (2 terminal), 487456 minterms, vars: 33r/33c/40nd
+
+Building deterministic Rabin automaton (for F "L0")...
+Taking deterministic Rabin automaton from library...
+DRA has 2 states, , 1 Rabin pairs.Time for Rabin translation: 0.013 seconds.
+
+Constructing MDP-DRA product...
+
+Reachability (BFS): 50 iterations in 0.55 seconds (average 0.011040, setup 0.00)
+States:      181129 (1 initial)
+Transitions: 487456
+Choices:     487456
+
+Transition matrix: 43778 nodes (2 terminal), 487456 minterms, vars: 34r/34c/40nd
+
+Building deterministic Rabin automaton (for G "L0")...
+Taking deterministic Rabin automaton from library...
+DRA has 2 states, , 1 Rabin pairs.Time for Rabin translation: 0.0 seconds.
+
+Constructing MDP-DRA product...
+
+Reachability (BFS): 50 iterations in 0.49 seconds (average 0.009900, setup 0.00)
+States:      181129 (1 initial)
+Transitions: 487456
+Choices:     487456
+
+Transition matrix: 46178 nodes (2 terminal), 487456 minterms, vars: 35r/35c/40nd
+
+States:      181129 (1 initial)
+Transitions: 487456
+Choices:     487456
+
+Transition matrix: 46178 nodes (2 terminal), 487456 minterms, vars: 35r/35c/40nd
+
+Finding accepting end components for F "one_proc_err"...
+Time for end component identification: 0.02 seconds.
+
+Finding accepting end components for G "one_coin_ok"...
+Time for end component identification: 0.01 seconds.
+
+Prob0A: 24 iterations in 0.45 seconds (average 0.018583, setup 0.00)
+
+yes = 1416, no = 29808, maybe = 149905
+
+Computing remaining probabilities...
+Engine: Sparse
+Iterative method: 32 iterations in 0.46 seconds (average 0.014094, setup 0.00)
+Iterative method: 12 iterations in 0.17 seconds (average 0.013917, setup 0.00)
+Iterative method: 32 iterations in 0.46 seconds (average 0.014250, setup 0.00)
+The value iteration(s) took 1.666 seconds altogether.
+Number of weight vectors used: 3
+Multi-objective value iterations took 1.667 s.
+
+Value in the initial state: 0.012022957700000277
+
+Time for model checking: 6.56 seconds.
+
+Result: 0.012022957700000277 (value in the initial state)
+

@@ -1,0 +1,95 @@
+PRISM
+=====
+
+Version: 4.3
+Date: Mon Jun 13 09:16:24 CEST 2016
+Hostname: Tims-iMac.fritz.box
+Memory limits: cudd=1g, java(heap)=2.7g
+Command line: prism team/team3obj_5.nm team/team3obj_5_numerical.pctl -epsilon 0.000001 -paretoepsilon 0.0001 -sparse -javamaxmem 3g
+
+Parsing model file "team/team3obj_5.nm"...
+
+Parsing properties file "team/team3obj_5_numerical.pctl"...
+
+1 property:
+(1) multi(Pmax=? [ F task1_completed ], R{"w_1_total"}>=2.753061224 [ C ], P>=0.5 [ F task2_completed ])
+
+Type:        MDP
+Modules:     controller sensor1 sensor2 sensor3 sensor4 sensor5 
+Variables:   status t1_r1 t1_r2 t1_r3 t2_r1 t2_r2 t2_r3 turn1 turn2 turn3 turn4 turn5 state1 m1_t1 m1_t2 state2 m2_t1 m2_t2 state3 m3_t1 m3_t2 state4 m4_t1 m4_t2 state5 m5_t1 m5_t2 
+
+---------------------------------------------------------------------
+
+Model checking: multi(Pmax=? [ F task1_completed ], R{"w_1_total"}>=2.753061224 [ C ], P>=0.5 [ F task2_completed ])
+
+Building model...
+
+Computing reachable states...
+
+Reachability (BFS): 19 iterations in 1.42 seconds (average 0.074737, setup 0.00)
+
+Time for model construction: 4.426 seconds.
+
+Type:        MDP
+States:      907993 (1 initial)
+Transitions: 1084752
+Choices:     1078873
+
+Transition matrix: 361071 nodes (4 terminal), 1084752 minterms, vars: 40r/40c/16nd
+
+Building deterministic Rabin automaton (for F "L0")...
+Taking deterministic Rabin automaton from library...
+DRA has 2 states, , 1 Rabin pairs.Time for Rabin translation: 0.02 seconds.
+
+Constructing MDP-DRA product...
+
+Reachability (BFS): 19 iterations in 1.32 seconds (average 0.069579, setup 0.00)
+States:      907993 (1 initial)
+Transitions: 1084752
+Choices:     1078873
+
+Transition matrix: 388712 nodes (4 terminal), 1084752 minterms, vars: 41r/41c/16nd
+
+Building deterministic Rabin automaton (for F "L0")...
+Taking deterministic Rabin automaton from library...
+DRA has 2 states, , 1 Rabin pairs.Time for Rabin translation: 0.0 seconds.
+
+Constructing MDP-DRA product...
+
+Reachability (BFS): 19 iterations in 1.24 seconds (average 0.065105, setup 0.00)
+States:      907993 (1 initial)
+Transitions: 1084752
+Choices:     1078873
+
+Transition matrix: 449699 nodes (4 terminal), 1084752 minterms, vars: 42r/42c/16nd
+
+States:      907993 (1 initial)
+Transitions: 1084752
+Choices:     1078873
+
+Transition matrix: 449699 nodes (4 terminal), 1084752 minterms, vars: 42r/42c/16nd
+
+Finding accepting end components for F task1_completed...
+Time for end component identification: 1.892 seconds.
+
+Finding accepting end components for F task2_completed...
+Time for end component identification: 1.139 seconds.
+
+Prob0A: 15 iterations in 2.55 seconds (average 0.169867, setup 0.00)
+
+yes = 90960, no = 0, maybe = 817033
+
+Computing remaining probabilities...
+Engine: Sparse
+Iterative method: 20 iterations in 1.27 seconds (average 0.062050, setup 0.03)
+Iterative method: 20 iterations in 1.25 seconds (average 0.061150, setup 0.03)
+The value iteration(s) took 5.736 seconds altogether.
+Number of weight vectors used: 2
+Multi-objective value iterations took 5.736 s.
+
+Value in the initial state: 1.0
+
+Time for model checking: 9760.251 seconds.
+
+Result: 1.0 (value in the initial state)
+

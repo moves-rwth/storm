@@ -1,0 +1,95 @@
+PRISM
+=====
+
+Version: 4.3
+Date: Mon Jun 13 12:40:58 CEST 2016
+Hostname: Tims-iMac.fritz.box
+Memory limits: cudd=1g, java(heap)=2.7g
+Command line: prism zeroconf-tb/zeroconf-tb4_14.nm zeroconf-tb/zeroconf-tb4_14_numerical.pctl -epsilon 0.000001 -paretoepsilon 0.0001 -sparse -javamaxmem 3g -gs
+
+Parsing model file "zeroconf-tb/zeroconf-tb4_14.nm"...
+
+Parsing properties file "zeroconf-tb/zeroconf-tb4_14_numerical.pctl"...
+
+1 property:
+(1) multi(Pmax=? [ F time_error=1 ], P>=0.993141 [ G (error=0) ])
+
+Type:        MDP
+Modules:     host0 env_error4 time_error 
+Variables:   x y coll probes mess defend ip l env k c1 c2 c3 c4 error time_error done t 
+
+---------------------------------------------------------------------
+
+Model checking: multi(Pmax=? [ F time_error=1 ], P>=0.993141 [ G (error=0) ])
+
+Building model...
+
+Computing reachable states...
+
+Reachability (BFS): 132 iterations in 0.44 seconds (average 0.003311, setup 0.00)
+
+Time for model construction: 0.534 seconds.
+
+Type:        MDP
+States:      42968 (1 initial)
+Transitions: 138025
+Choices:     130735
+
+Transition matrix: 14874 nodes (4 terminal), 138025 minterms, vars: 42r/42c/8nd
+
+Building deterministic Rabin automaton (for F "L0")...
+Taking deterministic Rabin automaton from library...
+DRA has 2 states, , 1 Rabin pairs.Time for Rabin translation: 0.012 seconds.
+
+Constructing MDP-DRA product...
+
+Reachability (BFS): 132 iterations in 0.53 seconds (average 0.004000, setup 0.00)
+States:      42968 (1 initial)
+Transitions: 138025
+Choices:     130735
+
+Transition matrix: 16458 nodes (4 terminal), 138025 minterms, vars: 43r/43c/8nd
+
+Building deterministic Rabin automaton (for G "L0")...
+Taking deterministic Rabin automaton from library...
+DRA has 2 states, , 1 Rabin pairs.Time for Rabin translation: 0.0 seconds.
+
+Constructing MDP-DRA product...
+
+Reachability (BFS): 132 iterations in 0.52 seconds (average 0.003909, setup 0.00)
+States:      42968 (1 initial)
+Transitions: 138025
+Choices:     130735
+
+Transition matrix: 19902 nodes (4 terminal), 138025 minterms, vars: 44r/44c/8nd
+
+States:      42968 (1 initial)
+Transitions: 138025
+Choices:     130735
+
+Transition matrix: 19902 nodes (4 terminal), 138025 minterms, vars: 44r/44c/8nd
+
+Finding accepting end components for F time_error=1...
+Time for end component identification: 0.321 seconds.
+
+Finding accepting end components for G (error=0)...
+Time for end component identification: 0.353 seconds.
+
+Prob0A: 12 iterations in 0.04 seconds (average 0.003417, setup 0.00)
+
+yes = 38966, no = 1353, maybe = 2649
+
+Computing remaining probabilities...
+Engine: Sparse
+Iterative method: 20 iterations in 0.05 seconds (average 0.002450, setup 0.00)
+Iterative method: 20 iterations in 0.05 seconds (average 0.002250, setup 0.00)
+The value iteration(s) took 0.203 seconds altogether.
+Number of weight vectors used: 2
+Multi-objective value iterations took 0.204 s.
+
+Value in the initial state: 3.075787401574803E-4
+
+Time for model checking: 72.996 seconds.
+
+Result: 3.075787401574803E-4 (value in the initial state)
+

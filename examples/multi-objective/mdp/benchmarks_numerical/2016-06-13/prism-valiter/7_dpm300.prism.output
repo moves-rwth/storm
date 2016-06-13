@@ -1,0 +1,66 @@
+PRISM
+=====
+
+Version: 4.3
+Date: Mon Jun 13 12:38:52 CEST 2016
+Hostname: Tims-iMac.fritz.box
+Memory limits: cudd=1g, java(heap)=2.7g
+Command line: prism dpm/dpm300.nm dpm/dpm300_numerical.pctl -epsilon 0.000001 -paretoepsilon 0.0001 -sparse -javamaxmem 3g
+
+Parsing model file "dpm/dpm300.nm"...
+
+Parsing properties file "dpm/dpm300_numerical.pctl"...
+
+1 property:
+(1) multi(R{"power"}min=? [ C<=300 ], R{"queue"}<=270 [ C<=300 ])
+
+Type:        MDP
+Modules:     timer PM SR SP SQ 
+Variables:   c pm sr sp q 
+
+---------------------------------------------------------------------
+
+Model checking: multi(R{"power"}min=? [ C<=300 ], R{"queue"}<=270 [ C<=300 ])
+
+Building model...
+
+Computing reachable states...
+
+Reachability (BFS): 13 iterations in 0.00 seconds (average 0.000154, setup 0.00)
+
+Time for model construction: 0.031 seconds.
+
+Type:        MDP
+States:      636 (1 initial)
+Transitions: 2550
+Choices:     1860
+
+Transition matrix: 772 nodes (30 terminal), 2550 minterms, vars: 11r/11c/5nd
+
+States:      636 (1 initial)
+Transitions: 2550
+Choices:     1860
+
+Transition matrix: 772 nodes (30 terminal), 2550 minterms, vars: 11r/11c/5nd
+
+Prob0A: 1 iterations in 0.00 seconds (average 0.000000, setup 0.00)
+
+yes = 0, no = 0, maybe = 636
+
+Computing remaining probabilities...
+Engine: Sparse
+Iterative method: 302 iterations in 0.02 seconds (average 0.000063, setup 0.00)
+Iterative method: 302 iterations in 0.03 seconds (average 0.000083, setup 0.00)
+Iterative method: 302 iterations in 0.03 seconds (average 0.000096, setup 0.00)
+Iterative method: 302 iterations in 0.03 seconds (average 0.000083, setup 0.00)
+Iterative method: 302 iterations in 0.03 seconds (average 0.000083, setup 0.00)
+The value iteration(s) took 0.136 seconds altogether.
+Number of weight vectors used: 5
+Multi-objective value iterations took 0.136 s.
+
+Value in the initial state: 46.48477803835034
+
+Time for model checking: 0.15 seconds.
+
+Result: 46.48477803835034 (value in the initial state)
+
