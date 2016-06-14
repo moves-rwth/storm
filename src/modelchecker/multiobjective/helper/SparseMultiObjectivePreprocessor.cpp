@@ -128,6 +128,8 @@ namespace storm {
                     preprocessFormula(formula.getSubformula().asEventuallyFormula(), data, currentObjective, formula.getOptionalRewardModelName());
                 } else if(formula.getSubformula().isCumulativeRewardFormula()) {
                     preprocessFormula(formula.getSubformula().asCumulativeRewardFormula(), data, currentObjective, formula.getOptionalRewardModelName());
+                } else if(formula.getSubformula().isTotalRewardFormula()) {
+                    preprocessFormula(formula.getSubformula().asTotalRewardFormula(), data, currentObjective, formula.getOptionalRewardModelName());
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " is not supported.");
                 }
@@ -233,6 +235,15 @@ namespace storm {
                 STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
                 currentObjective.stepBound = formula.getDiscreteTimeBound();
                 
+                std::vector<ValueType> objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
+                if(!currentObjective.rewardsArePositive){
+                    storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
+                }
+                data.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
+            }
+            
+            template<typename SparseModelType>
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::TotalRewardFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
                 std::vector<ValueType> objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
                 if(!currentObjective.rewardsArePositive){
                     storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());

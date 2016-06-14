@@ -10,6 +10,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/solver.h"
 #include "src/utility/vector.h"
+
 #include "src/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
@@ -61,11 +62,18 @@ namespace storm {
             
             template <class SparseModelType>
             void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightVector) {
+                bool hasUnboundedObjective;
                 std::vector<ValueType> weightedRewardVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
                 for(uint_fast64_t objIndex = 0; objIndex < weightVector.size(); ++objIndex) {
                     if(!data.objectives[objIndex].stepBound){
+                        hasUnboundedObjective = true;
                         storm::utility::vector::addScaledVector(weightedRewardVector, data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector(), weightVector[objIndex]);
                     }
+                }
+                if(!hasUnboundedObjective) {
+                    this->weightedResult = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>());
+                    this->scheduler = storm::storage::TotalScheduler(data.preprocessedModel.getNumberOfStates());
+                    return;
                 }
                 
                 // TODO check for +/- infty reward...
@@ -163,7 +171,9 @@ namespace storm {
             
             template <class SparseModelType>
             void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::boundedPhase(std::vector<ValueType> const& weightVector) {
-                STORM_LOG_WARN("bounded properties not yet implemented");
+                for(uint_fast64_t objIndex = 0; objIndex < weightVector.size(); ++objIndex) {
+                    STORM_LOG_THROW(!data.objectives[objIndex].stepBound, storm::exceptions::IllegalFunctionCallException, "Bounded objectives not yet implemented.");
+                }
             }
                 
      
