@@ -230,6 +230,11 @@ namespace storm {
              */
             bool hasEdgeLabeledWithActionIndex(uint64_t actionIndex) const;
             
+            /*!
+             * Retrieves a list of expressions that characterize the legal values of the variables in this automaton.
+             */
+            std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
         private:
             /// The name of the automaton.
             std::string name;

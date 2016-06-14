@@ -5,6 +5,7 @@
 namespace storm {
     namespace jani {
         
+        class Composition;
         class AutomatonComposition;
         class RenameComposition;
         class ParallelComposition;

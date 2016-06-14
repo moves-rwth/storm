@@ -58,6 +58,12 @@ namespace storm {
             std::vector<RewardIncrement> const& getRewardIncrements() const;
             
         private:
+            /*!
+             * Sorts the assignments to make all assignments to boolean variables precede all others and order the
+             * assignments within one variable group by the expression variables.
+             */
+            void sortAssignments();
+            
             // The id of the destination location.
             uint64_t locationId;
 

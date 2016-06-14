@@ -23,6 +23,10 @@ namespace storm {
             this->upperBound = expression;
         }
         
+        storm::expressions::Expression BoundedIntegerVariable::getRangeExpression() const {
+            return this->getLowerBound() <= this->getExpressionVariable() && this->getExpressionVariable() <= this->getUpperBound();
+        }
+
         bool BoundedIntegerVariable::isBoundedIntegerVariable() const {
             return true;
         }

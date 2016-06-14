@@ -249,6 +249,11 @@ namespace storm {
             bool isDeterministicModel() const;
             
             /*!
+             * Retrieves a list of expressions that characterize the legal values of the variables in this model.
+             */
+            std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
+            /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.
              */
             bool checkValidity(bool logdbg = true) const;

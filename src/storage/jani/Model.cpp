@@ -357,6 +357,19 @@ namespace storm {
             return this->getModelType() == ModelType::DTMC || this->getModelType() == ModelType::CTMC;
         }
         
+        std::vector<storm::expressions::Expression> Model::getAllRangeExpressions() const {
+            std::vector<storm::expressions::Expression> result;
+            for (auto const& variable : this->getGlobalVariables().getBoundedIntegerVariables()) {
+                result.push_back(variable.getRangeExpression());
+            }
+            
+            for (auto const& automaton : automata) {
+                std::vector<storm::expressions::Expression> automatonRangeExpressions = automaton.getAllRangeExpressions();
+                result.insert(result.end(), automatonRangeExpressions.begin(), automatonRangeExpressions.end());
+            }
+            return result;
+        }
+        
         bool Model::checkValidity(bool logdbg) const {
             // TODO switch to exception based return value.
             

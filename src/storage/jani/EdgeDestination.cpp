@@ -7,7 +7,7 @@ namespace storm {
     namespace jani {
         
         EdgeDestination::EdgeDestination(uint64_t locationId, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments, std::vector<RewardIncrement> const& rewardIncrements) : locationId(locationId), probability(probability), assignments(assignments), rewardIncrements(rewardIncrements) {
-            // Intentionally left empty.
+            sortAssignments();
         }
         
         void EdgeDestination::addAssignment(Assignment const& assignment) {
@@ -16,6 +16,7 @@ namespace storm {
                 STORM_LOG_THROW(oldAssignment.getExpressionVariable() != assignment.getExpressionVariable(), storm::exceptions::WrongFormatException, "Cannot add assignment '" << assignment << "', because another assignment '" << assignment << "' writes to the same target variable.");
             }
             assignments.push_back(assignment);
+            sortAssignments();
         }
         
         void EdgeDestination::addRewardIncrement(RewardIncrement const& rewardIncrement) {
@@ -44,6 +45,17 @@ namespace storm {
         
         std::vector<RewardIncrement> const& EdgeDestination::getRewardIncrements() const {
             return rewardIncrements;
+        }
+        
+        void EdgeDestination::sortAssignments() {
+            std::sort(this->assignments.begin(), this->assignments.end(), [] (storm::jani::Assignment const& assignment1, storm::jani::Assignment const& assignment2) {
+                bool smaller = assignment1.getExpressionVariable().getType().isBooleanType() && !assignment2.getExpressionVariable().getType().isBooleanType();
+                if (!smaller) {
+                    smaller = assignment1.getExpressionVariable() < assignment2.getExpressionVariable();
+                }
+                return smaller;
+            });
+
         }
         
     }

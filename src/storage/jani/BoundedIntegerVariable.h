@@ -33,6 +33,11 @@ namespace storm {
              */
             void setUpperBound(storm::expressions::Expression const& expression);
 
+            /*!
+             * Retrieves an expression characterizing the legal range of the bounded integer variable.
+             */
+            storm::expressions::Expression getRangeExpression() const;
+            
             virtual bool isBoundedIntegerVariable() const override;
 
         private:

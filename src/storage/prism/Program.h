@@ -200,6 +200,20 @@ namespace storm {
             IntegerVariable const& getGlobalIntegerVariable(std::string const& variableName) const;
 
             /*!
+             * Retrieves all expression variables used by this program.
+             *
+             * @return The set of expression variables used by this program.
+             */
+            std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+            
+            /*!
+             * Retrieves a list of expressions that characterize the legal ranges of all variables.
+             *
+             * @return A list of expressions that characterize the legal ranges of all variables.
+             */
+            std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
+            /*!
              * Retrieves the number of global boolean variables of the program.
              *
              * @return The number of global boolean variables of the program.

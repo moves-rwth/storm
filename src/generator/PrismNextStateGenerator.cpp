@@ -6,6 +6,8 @@
 
 #include "src/storage/expressions/SimpleValuation.h"
 
+#include "src/solver/SmtSolver.h"
+
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -20,7 +22,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(program.getManager(), VariableInformation(program), options), program(program.substituteConstants()), rewardModels() {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(program.getManager(), VariableInformation(program), options), program(program), rewardModels() {
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             
             if (this->options.isBuildAllRewardModelsSet()) {
@@ -82,20 +84,48 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
-            // FIXME: This only works for models with exactly one initial state. We should make this more general.
-            CompressedState initialState(this->variableInformation.getTotalBitOffset());
+            // Prepare an SMT solver to enumerate all initial states.
+            storm::utility::solver::SmtSolverFactory factory;
+            std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(program.getManager());
             
-            // We need to initialize the values of the variables to their initial value.
-            for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
-                initialState.set(booleanVariable.bitOffset, booleanVariable.initialValue);
+            std::vector<storm::expressions::Expression> rangeExpressions = program.getAllRangeExpressions();
+            for (auto const& expression : rangeExpressions) {
+                solver->add(expression);
             }
-            for (auto const& integerVariable : this->variableInformation.integerVariables) {
-                initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(integerVariable.initialValue - integerVariable.lowerBound));
+            solver->add(program.getInitialConstruct().getInitialStatesExpression());
+            
+            // Proceed ss long as the solver can still enumerate initial states.
+            std::vector<StateType> initialStateIndices;
+            while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
+                // Create fresh state.
+                CompressedState initialState(this->variableInformation.getTotalBitOffset());
+                
+                // Read variable assignment from the solution of the solver. Also, create an expression we can use to
+                // prevent the variable assignment from being enumerated again.
+                storm::expressions::Expression blockingExpression;
+                std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
+                for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
+                    bool variableValue = model->getBooleanValue(booleanVariable.variable);
+                    storm::expressions::Expression localBlockingExpression = variableValue ? !booleanVariable.variable : booleanVariable.variable;
+                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                    initialState.set(booleanVariable.bitOffset, variableValue);
+                }
+                for (auto const& integerVariable : this->variableInformation.integerVariables) {
+                    int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
+                    storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
+                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                    initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
+                }
+                
+                // Register initial state and return it.
+                StateType id = stateToIdCallback(initialState);
+                initialStateIndices.push_back(id);
+                
+                // Block the current initial state to search for the next one.
+                solver->add(blockingExpression);
             }
-
-            // Register initial state and return it.
-            StateType id = stateToIdCallback(initialState);
-            return {id};
+            
+            return initialStateIndices;
         }
         
         template<typename ValueType, typename StateType>
@@ -201,6 +231,11 @@ namespace storm {
         template<typename ValueType, typename StateType>
         CompressedState PrismNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::prism::Update const& update) {
             CompressedState newState(state);
+            
+            // NOTE: the following process assumes that the assignments of the update are ordered in such a way that the
+            // assignments to boolean variables precede the assignments to all integer variables and that within the
+            // types, the assignments to variables are ordered (in ascending order) by the expression variables.
+            // This is guaranteed for PRISM models, by sorting the assignments as soon as an update is created.
             
             auto assignmentIt = update.getAssignments().begin();
             auto assignmentIte = update.getAssignments().end();

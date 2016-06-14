@@ -199,5 +199,12 @@ namespace storm {
             return actionIndices.find(actionIndex) != actionIndices.end();
         }
         
+        std::vector<storm::expressions::Expression> Automaton::getAllRangeExpressions() const {
+            std::vector<storm::expressions::Expression> result;
+            for (auto const& variable : this->getVariables().getBoundedIntegerVariables()) {
+                result.push_back(variable.getRangeExpression());
+            }
+            return result;
+        }
     }
 }
