@@ -216,6 +216,11 @@ namespace storm {
             return result;
         }
         
+        boost::any FragmentChecker::visit(TotalRewardFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            return inherited.getSpecification().areTotalRewardFormulasAllowed();
+        }
+        
         boost::any FragmentChecker::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areUnaryBooleanStateFormulasAllowed();

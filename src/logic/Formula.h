@@ -76,6 +76,7 @@ namespace storm {
             virtual bool isInstantaneousRewardFormula() const;
             virtual bool isReachabilityRewardFormula() const;
             virtual bool isLongRunAverageRewardFormula() const;
+            virtual bool isTotalRewardFormula() const;
             
             // Expected time formulas.
             virtual bool isReachabilityTimeFormula() const;
@@ -168,6 +169,9 @@ namespace storm {
             
             CumulativeRewardFormula& asCumulativeRewardFormula();
             CumulativeRewardFormula const& asCumulativeRewardFormula() const;
+            
+            TotalRewardFormula& asTotalRewardFormula();
+            TotalRewardFormula const& asTotalRewardFormula() const;
             
             InstantaneousRewardFormula& asInstantaneousRewardFormula();
             InstantaneousRewardFormula const& asInstantaneousRewardFormula() const;

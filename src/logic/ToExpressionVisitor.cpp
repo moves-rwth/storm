@@ -98,6 +98,10 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
         
+        boost::any ToExpressionVisitor::visit(TotalRewardFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+        }
+        
         boost::any ToExpressionVisitor::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {
             storm::expressions::Expression subexpression = boost::any_cast<storm::expressions::Expression>(f.getSubformula().accept(*this, data));
             switch (f.getOperator()) {

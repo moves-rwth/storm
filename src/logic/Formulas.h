@@ -20,6 +20,7 @@
 #include "src/logic/LongRunAverageOperatorFormula.h"
 #include "src/logic/MultiObjectiveFormula.h"
 #include "src/logic/TimeOperatorFormula.h"
+#include "src/logic/TotalRewardFormula.h"
 #include "src/logic/UnaryBooleanStateFormula.h"
 #include "src/logic/UnaryPathFormula.h"
 #include "src/logic/UnaryStateFormula.h"

@@ -81,6 +81,10 @@ namespace storm {
             return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this)).setContainsRewardOperator();
         }
         
+        boost::any FormulaInformationVisitor::visit(TotalRewardFormula const& f, boost::any const& data) const {
+            return FormulaInformation();
+        }
+        
         boost::any FormulaInformationVisitor::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this);
         }

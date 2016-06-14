@@ -94,9 +94,9 @@ namespace storm {
             multiObjective.setRewardOperatorsAllowed(true);
             multiObjective.setReachabilityRewardFormulasAllowed(true);
             multiObjective.setCumulativeRewardFormulasAllowed(true);
+            multiObjective.setTotalRewardFormulasAllowed(true);
             multiObjective.setBoundedUntilFormulasAllowed(true);
-            multiObjective.setStepBoundedUntilFormulasAllowed(true);
- //           multiObjective.setTimeBoundedUntilFormulasAllowed(true); //probably better to activate this only when an MA is given...
+            
 
             return multiObjective;
         }
@@ -125,6 +125,7 @@ namespace storm {
             instantaneousRewardFormula = false;
             reachabilityRewardFormula = false;
             longRunAverageRewardFormula = false;
+            totalRewardFormula = false;
             
             conditionalProbabilityFormula = false;
             conditionalRewardFormula = false;
@@ -318,6 +319,16 @@ namespace storm {
             
         FragmentSpecification& FragmentSpecification::setLongRunAverageRewardFormulasAllowed(bool newValue) {
             this->longRunAverageRewardFormula = newValue;
+            return *this;
+        }
+        
+        
+        bool FragmentSpecification::areTotalRewardFormulasAllowed() const {
+            return totalRewardFormula;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setTotalRewardFormulasAllowed(bool newValue) {
+            this->totalRewardFormula = newValue;
             return *this;
         }
         

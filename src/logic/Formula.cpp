@@ -133,6 +133,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isTotalRewardFormula() const {
+            return false;
+        }
+        
         bool Formula::isReachabilityTimeFormula() const {
             return false;
         }
@@ -361,6 +365,14 @@ namespace storm {
         
         CumulativeRewardFormula const& Formula::asCumulativeRewardFormula() const {
             return dynamic_cast<CumulativeRewardFormula const&>(*this);
+        }
+        
+        TotalRewardFormula& Formula::asTotalRewardFormula() {
+            return dynamic_cast<TotalRewardFormula&>(*this);
+        }
+        
+        TotalRewardFormula const& Formula::asTotalRewardFormula() const {
+            return dynamic_cast<TotalRewardFormula const&>(*this);
         }
         
         InstantaneousRewardFormula& Formula::asInstantaneousRewardFormula() {

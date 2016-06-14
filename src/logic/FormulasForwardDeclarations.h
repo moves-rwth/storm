@@ -27,6 +27,7 @@ namespace storm {
         class ProbabilityOperatorFormula;
         class RewardOperatorFormula;
         class StateFormula;
+        class TotalRewardFormula;
         class UnaryBooleanStateFormula;
         class UnaryPathFormula;
         class UnaryStateFormula;

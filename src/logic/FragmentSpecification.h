@@ -69,6 +69,9 @@ namespace storm {
             
             bool areLongRunAverageRewardFormulasAllowed() const;
             FragmentSpecification& setLongRunAverageRewardFormulasAllowed(bool newValue);
+            
+            bool areTotalRewardFormulasAllowed() const;
+            FragmentSpecification& setTotalRewardFormulasAllowed(bool newValue);
 
             bool areConditionalProbabilityFormulasAllowed() const;
             FragmentSpecification& setConditionalProbabilityFormulasAllowed(bool newValue);
@@ -141,6 +144,7 @@ namespace storm {
             bool instantaneousRewardFormula;
             bool reachabilityRewardFormula;
             bool longRunAverageRewardFormula;
+            bool totalRewardFormula;
             
             bool conditionalProbabilityFormula;
             bool conditionalRewardFormula;
