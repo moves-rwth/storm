@@ -3,16 +3,16 @@
 namespace storm {
     namespace jani {
         
-        Edge::Edge(uint64_t sourceLocationId, uint64_t actionId, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations) : sourceLocationId(sourceLocationId), actionId(actionId), rate(rate), guard(guard), destinations(destinations) {
+        Edge::Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations) : sourceLocationIndex(sourceLocationIndex), actionIndex(actionIndex), rate(rate), guard(guard), destinations(destinations) {
             // Intentionally left empty.
         }
         
-        uint64_t Edge::getSourceLocationId() const {
-            return sourceLocationId;
+        uint64_t Edge::getSourceLocationIndex() const {
+            return sourceLocationIndex;
         }
         
-        uint64_t Edge::getActionId() const {
-            return actionId;
+        uint64_t Edge::getActionIndex() const {
+            return actionIndex;
         }
         
         bool Edge::hasRate() const {

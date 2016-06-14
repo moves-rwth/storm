@@ -4,6 +4,8 @@
 #include <set>
 #include <cstdint>
 
+#include <boost/optional.hpp>
+
 #include "src/storage/jani/CompositionVisitor.h"
 
 namespace storm {
@@ -20,7 +22,7 @@ namespace storm {
             
             void addNonsilentAction(std::string const& actionName);
             std::set<std::string> const& getNonsilentActions() const;
-            void renameNonsilentActions(std::map<std::string, std::string> const& renaming);
+            static std::set<std::string> renameNonsilentActions(std::set<std::string> const& nonsilentActions, std::map<std::string, boost::optional<std::string>> const& renaming);
             
             void setContainsRenameComposition();
             bool containsRenameComposition() const;

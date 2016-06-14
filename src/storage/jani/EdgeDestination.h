@@ -15,7 +15,7 @@ namespace storm {
             /*!
              * Creates a new edge destination.
              */
-            EdgeDestination(uint64_t locationId, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments = {}, std::vector<RewardIncrement> const& rewardIncrements = {});
+            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments = {}, std::vector<RewardIncrement> const& rewardIncrements = {});
             
             /*!
              * Additionally performs the given assignment when choosing this destination.
@@ -30,7 +30,7 @@ namespace storm {
             /*!
              * Retrieves the id of the destination location.
              */
-            uint64_t getLocationId() const;
+            uint64_t getLocationIndex() const;
             
             /*!
              * Retrieves the probability of choosing this destination.
@@ -64,8 +64,8 @@ namespace storm {
              */
             void sortAssignments();
             
-            // The id of the destination location.
-            uint64_t locationId;
+            // The index of the destination location.
+            uint64_t locationIndex;
 
             // The probability to go to the destination.
             storm::expressions::Expression probability;

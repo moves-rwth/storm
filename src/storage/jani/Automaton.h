@@ -123,7 +123,7 @@ namespace storm {
              *
              * @name the name of the location
              */
-            uint64_t getLocationId(std::string const& name) const;
+            uint64_t getLocationIndex(std::string const& name) const;
             
             /*!
              * Retrieves the locations of the automaton.

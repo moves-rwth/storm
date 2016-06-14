@@ -15,15 +15,26 @@ namespace storm {
         }
         
         void CompositionInformation::addNonsilentAction(std::string const& actionName) {
-            // FIXME
+            nonsilentActions.insert(actionName);
         }
         
         std::set<std::string> const& CompositionInformation::getNonsilentActions() const {
-            // FIXME
+            return nonsilentActions;
         }
         
-        void CompositionInformation::renameNonsilentActions(std::map<std::string, std::string> const& renaming) {
-            // FIXME
+        std::set<std::string> CompositionInformation::renameNonsilentActions(std::set<std::string> const& nonsilentActions, std::map<std::string, boost::optional<std::string>> const& renaming) {
+            std::set<std::string> newNonsilentActions;
+            for (auto const& entry : nonsilentActions) {
+                auto it = renaming.find(entry);
+                if (it != renaming.end()) {
+                    if (it->second) {
+                        newNonsilentActions.insert(it->second.get());
+                    }
+                } else {
+                    newNonsilentActions.insert(entry);
+                }
+            }
+            return newNonsilentActions;
         }
         
         void CompositionInformation::setContainsRenameComposition() {
@@ -59,19 +70,26 @@ namespace storm {
         }
         
         boost::any CompositionInformationVisitor::visit(AutomatonComposition const& composition, boost::any const& data) {
+            Model const& model = boost::any_cast<Model const&>(data);
+            Automaton const& automaton = model.getAutomaton(composition.getAutomatonName());
+            
             CompositionInformation result;
             result.increaseAutomatonMultiplicity(composition.getAutomatonName());
+            for (auto const& actionIndex : automaton.getActionIndices()) {
+                if (actionIndex != model.getSilentActionIndex()) {
+                    result.addNonsilentAction(model.getAction(actionIndex).getName());
+                }
+            }
             return result;
         }
         
         boost::any CompositionInformationVisitor::visit(RenameComposition const& composition, boost::any const& data) {
             CompositionInformation subresult = boost::any_cast<CompositionInformation>(composition.getSubcomposition().accept(*this, data));
-            subresult.setContainsRenameComposition();
-            return subresult;
+            std::set<std::string> nonsilentActions = CompositionInformation::renameNonsilentActions(subresult.getNonsilentActions(), composition.getRenaming());
+            return CompositionInformation(subresult.getAutomatonToMultiplicityMap(), nonsilentActions, true, subresult.containsRestrictedParallelComposition());
         }
         
         boost::any CompositionInformationVisitor::visit(ParallelComposition const& composition, boost::any const& data) {
-            Model const& model = boost::any_cast<Model const&>(data);
             CompositionInformation left = boost::any_cast<CompositionInformation>(composition.getLeftSubcomposition().accept(*this, data));
             CompositionInformation right = boost::any_cast<CompositionInformation>(composition.getRightSubcomposition().accept(*this, data));
 
@@ -80,12 +98,19 @@ namespace storm {
             bool containsRestrictedParallelComposition = left.containsRestrictedParallelComposition() || right.containsRestrictedParallelComposition();
             std::map<std::string, uint64_t> joinedAutomatonToMultiplicity = CompositionInformation::joinMultiplicityMaps(left.getAutomatonToMultiplicityMap(), right.getAutomatonToMultiplicityMap());
             
+            std::set<std::string> nonsilentActions;
+            std::set_union(left.getNonsilentActions().begin(), left.getNonsilentActions().end(), right.getNonsilentActions().begin(), right.getNonsilentActions().end(), std::inserter(nonsilentActions, nonsilentActions.begin()));
+            
             // If there was no restricted parallel composition yet, maybe the current composition is one, so check it.
             if (!containsRestrictedParallelComposition) {
-                // FIXME.
+                std::set<std::string> commonNonsilentActions;
+                std::set_intersection(left.getNonsilentActions().begin(), left.getNonsilentActions().end(), right.getNonsilentActions().begin(), right.getNonsilentActions().end(), std::inserter(commonNonsilentActions, commonNonsilentActions.begin()));
+                if (commonNonsilentActions != composition.getSynchronizationAlphabet()) {
+                    containsRestrictedParallelComposition = true;
+                }
             }
             
-            return CompositionInformation(joinedAutomatonToMultiplicity, containsRenameComposition, containsRestrictedParallelComposition);
+            return CompositionInformation(joinedAutomatonToMultiplicity, nonsilentActions, containsRenameComposition, containsRestrictedParallelComposition);
         }
         
     }

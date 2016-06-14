@@ -437,7 +437,7 @@ namespace storm {
                 }
             }
             
-            transitions *= variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).second, destination.getLocationId()).template toAdd<ValueType>();
+            transitions *= variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).second, destination.getLocationIndex()).template toAdd<ValueType>();
             
             return EdgeDestinationDd<Type, ValueType>(transitions, assignedGlobalVariables);
         }
@@ -841,7 +841,7 @@ namespace storm {
                     // If the edge is not labeled with the silent action, we have to analyze which portion of the global
                     // variables was written by any of the updates and make all update results equal w.r.t. this set. If
                     // the edge is labeled with the silent action, we can already multiply the identities of all global variables.
-                    if (edge.getActionId() != this->model.getSilentActionIndex()) {
+                    if (edge.getActionIndex() != this->model.getSilentActionIndex()) {
                         for (auto const& edgeDestinationDd : destinationDds) {
                             globalVariablesInSomeUpdate.insert(edgeDestinationDd.writtenGlobalVariables.begin(), edgeDestinationDd.writtenGlobalVariables.end());
                         }
@@ -867,7 +867,7 @@ namespace storm {
                     }
                     
                     // Add the source location and the guard.
-                    transitions *= this->variables.manager->getEncoding(this->variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationId()).template toAdd<ValueType>() * guard;
+                    transitions *= this->variables.manager->getEncoding(this->variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex()).template toAdd<ValueType>() * guard;
                     
                     // If we multiply the ranges of global variables, make sure everything stays within its bounds.
                     if (!globalVariablesInSomeUpdate.empty()) {
@@ -895,7 +895,7 @@ namespace storm {
                     // Build the edge and add it if it adds transitions.
                     EdgeDd edgeDd = buildEdgeDd(automaton, edge);
                     if (!edgeDd.guard.isZero()) {
-                        result.actionIndexToEdges[edge.getActionId()].push_back(edgeDd);
+                        result.actionIndexToEdges[edge.getActionIndex()].push_back(edgeDd);
                     }
                 }
                 
@@ -1271,7 +1271,7 @@ namespace storm {
                     // If the edge is not labeled with the silent action, we have to analyze which portion of the global
                     // variables was written by any of the updates and make all update results equal w.r.t. this set. If
                     // the edge is labeled with the silent action, we can already multiply the identities of all global variables.
-                    if (edge.getActionId() != this->model.getSilentActionIndex()) {
+                    if (edge.getActionIndex() != this->model.getSilentActionIndex()) {
                         for (auto const& edgeDestinationDd : destinationDds) {
                             globalVariablesInSomeDestination.insert(edgeDestinationDd.writtenGlobalVariables.begin(), edgeDestinationDd.writtenGlobalVariables.end());
                         }
@@ -1297,7 +1297,7 @@ namespace storm {
                     }
                     
                     // Add the source location and the guard.
-                    transitions *= this->variables.manager->getEncoding(this->variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationId()).template toAdd<ValueType>() * guard;
+                    transitions *= this->variables.manager->getEncoding(this->variables.automatonToLocationVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex()).template toAdd<ValueType>() * guard;
                     
                     // If we multiply the ranges of global variables, make sure everything stays within its bounds.
                     if (!globalVariablesInSomeDestination.empty()) {
@@ -1319,7 +1319,7 @@ namespace storm {
                 // Translate the individual edges.
                 std::vector<EdgeDd> edgeDds;
                 for (auto const& edge : automaton.getEdges()) {
-                    if (edge.getActionId() == actionIndex) {
+                    if (edge.getActionIndex() == actionIndex) {
                         edgeDds.push_back(buildEdgeDd(automaton, edge));
                     }
                 }

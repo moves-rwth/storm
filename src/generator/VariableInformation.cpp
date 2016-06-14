@@ -17,6 +17,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        LocationVariableInformation::LocationVariableInformation(uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth) {
+            // Intentionally left empty.
+        }
+        
         VariableInformation::VariableInformation(storm::prism::Program const& program) : totalBitOffset(0) {
             for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
                 booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset);
@@ -42,7 +46,7 @@ namespace storm {
                     totalBitOffset += bitwidth;
                 }
             }
-
+            
             sortVariables();
         }
         
@@ -59,6 +63,10 @@ namespace storm {
                 totalBitOffset += bitwidth;
             }
             for (auto const& automaton : model.getAutomata()) {
+                uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(automaton.getNumberOfLocations())));
+                locationVariables.emplace_back(automaton.getNumberOfLocations() - 1, totalBitOffset, bitwidth);
+                totalBitOffset += bitwidth;
+                
                 for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
                     booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset);
                     ++totalBitOffset;

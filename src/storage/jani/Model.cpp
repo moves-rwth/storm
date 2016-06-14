@@ -2,9 +2,8 @@
 
 #include "src/storage/expressions/ExpressionManager.h"
 
-#include "src/storage/jani/AutomatonComposition.h"
-#include "src/storage/jani/ParallelComposition.h"
-#include "src/storage/jani/RenameComposition.h"
+#include "src/storage/jani/Compositions.h"
+#include "src/storage/jani/CompositionInformationVisitor.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/WrongFormatException.h"
@@ -357,6 +356,10 @@ namespace storm {
             return this->getModelType() == ModelType::DTMC || this->getModelType() == ModelType::CTMC;
         }
         
+        bool Model::isDiscreteTimeModel() const {
+            return this->getModelType() == ModelType::DTMC || this->getModelType() == ModelType::MDP;
+        }
+        
         std::vector<storm::expressions::Expression> Model::getAllRangeExpressions() const {
             std::vector<storm::expressions::Expression> result;
             for (auto const& variable : this->getGlobalVariables().getBoundedIntegerVariables()) {
@@ -390,6 +393,20 @@ namespace storm {
             // All checks passed.
             return true;
             
+        }
+        
+        bool Model::hasDefaultComposition() const {
+            CompositionInformationVisitor visitor;
+            CompositionInformation info = visitor.getInformation(this->getSystemComposition(), *this);
+            if (info.containsRestrictedParallelComposition() || info.containsRenameComposition()) {
+                return false;
+            }
+            for (auto const& multiplicity : info.getAutomatonToMultiplicityMap()) {
+                if (multiplicity.second > 1) {
+                    return false;
+                }
+            }
+            return true;
         }
         
     }

@@ -242,7 +242,7 @@ namespace storm {
             
             appendIndent(out, indent + 1);
             appendField(out, "location");
-            appendValue(out, automaton.getLocation(destination.getLocationId()).getName());
+            appendValue(out, automaton.getLocation(destination.getLocationIndex()).getName());
             out << ",";
             clearLine(out);
             
@@ -275,13 +275,13 @@ namespace storm {
             
             appendIndent(out, indent + 1);
             appendField(out, "location");
-            appendValue(out, automaton.getLocation(edge.getSourceLocationId()).getName());
+            appendValue(out, automaton.getLocation(edge.getSourceLocationIndex()).getName());
             out << ",";
             clearLine(out);
             
             appendIndent(out, indent + 1);
             appendField(out, "action");
-            appendValue(out, model.getAction(edge.getActionId()).getName());
+            appendValue(out, model.getAction(edge.getActionIndex()).getName());
             out << ",";
             clearLine(out);
             

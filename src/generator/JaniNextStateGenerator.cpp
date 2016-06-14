@@ -24,6 +24,7 @@ namespace storm {
         JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), VariableInformation(model), options), model(model) {
             STORM_LOG_THROW(!this->model.hasDefaultComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             STORM_LOG_THROW(!this->options.isBuildAllRewardModelsSet() && this->options.getRewardModelNames().empty(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support building reward models.");
+            STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
             
             // If there are terminal states we need to handle, we now need to translate all labels to expressions.
             if (this->options.hasTerminalStates()) {
@@ -52,6 +53,11 @@ namespace storm {
         template<typename ValueType, typename StateType>
         bool JaniNextStateGenerator<ValueType, StateType>::isDeterministicModel() const {
             return model.isDeterministicModel();
+        }
+        
+        template<typename ValueType, typename StateType>
+        bool JaniNextStateGenerator<ValueType, StateType>::isDiscreteTimeModel() const {
+            return model.isDiscreteTimeModel();
         }
 
         template<typename ValueType, typename StateType>
@@ -104,6 +110,11 @@ namespace storm {
         CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination) {
             CompressedState newState(state);
             
+            // NOTE: the following process assumes that the assignments of the destination are ordered in such a way
+            // that the assignments to boolean variables precede the assignments to all integer variables and that
+            // within the types, the assignments to variables are ordered (in ascending order) by the expression variables.
+            // This is guaranteed for JANI models, by sorting the assignments as soon as an edge destination is created.
+            
             auto assignmentIt = destination.getAssignments().begin();
             auto assignmentIte = destination.getAssignments().end();
             
@@ -136,12 +147,114 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> JaniNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
+            // Prepare the result, in case we return early.
+            StateBehavior<ValueType, StateType> result;
             
+            // If a terminal expression was set and we must not expand this state, return now.
+            if (!this->terminalStates.empty()) {
+                for (auto const& expressionBool : this->terminalStates) {
+                    if (this->evaluator.asBool(expressionBool.first) == expressionBool.second) {
+                        return result;
+                    }
+                }
+            }
+            
+            // Get all choices for the state.
+            std::vector<Choice<ValueType>> allChoices = getSilentActionChoices(*this->state, stateToIdCallback);
+            std::vector<Choice<ValueType>> allLabeledChoices = getNonsilentActionChoices(*this->state, stateToIdCallback);
+            for (auto& choice : allLabeledChoices) {
+                allChoices.push_back(std::move(choice));
+            }
+            
+            std::size_t totalNumberOfChoices = allChoices.size();
+            
+            // If there is not a single choice, we return immediately, because the state has no behavior (other than
+            // the state reward).
+            if (totalNumberOfChoices == 0) {
+                return result;
+            }
+            
+            // If the model is a deterministic model, we need to fuse the choices into one.
+            if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
+                Choice<ValueType> globalChoice;
+                
+                // Iterate over all choices and combine the probabilities/rates into one choice.
+                for (auto const& choice : allChoices) {
+                    for (auto const& stateProbabilityPair : choice) {
+                        if (this->isDiscreteTimeModel()) {
+                            globalChoice.addProbability(stateProbabilityPair.first, stateProbabilityPair.second / totalNumberOfChoices);
+                        } else {
+                            globalChoice.addProbability(stateProbabilityPair.first, stateProbabilityPair.second);
+                        }
+                    }
+                    
+                    if (this->options.isBuildChoiceLabelsSet()) {
+                        globalChoice.addChoiceLabels(choice.getChoiceLabels());
+                    }
+                }
+                
+                // Move the newly fused choice in place.
+                allChoices.clear();
+                allChoices.push_back(std::move(globalChoice));
+            }
+            
+            // Move all remaining choices in place.
+            for (auto& choice : allChoices) {
+                result.addChoice(std::move(choice));
+            }
+            
+            result.setExpanded();
+            return result;
         }
         
         template<typename ValueType, typename StateType>
         std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getSilentActionChoices(CompressedState const& state, StateToIdCallback stateToIdCallback) {
+            std::vector<Choice<ValueType>> result;
             
+            // Iterate over all automata.
+            auto locationVariableIt = this->variableInformation.locationVariables.begin();
+            for (auto const& automaton : model.getAutomata()) {
+                
+                // Determine the location of the automaton in the given state.
+                uint64_t locationIndex = state.getAsInt(locationVariableIt->bitOffset, locationVariableIt->bitWidth);
+                
+                // Iterate over all edges from the source location.
+                for (auto const& edge : automaton.getEdgesFromLocation(locationIndex)) {
+                    // Skip the edge if it is labeled with a non-silent action.
+                    if (edge.getActionIndex() != model.getSilentActionIndex()) {
+                        continue;
+                    }
+                    
+                    // Skip the command, if it is not enabled.
+                    if (!this->evaluator.asBool(edge.getGuard())) {
+                        continue;
+                    }
+                    
+                    result.push_back(Choice<ValueType>(edge.getActionIndex()));
+                    Choice<ValueType>& choice = result.back();
+                    
+                    // Iterate over all updates of the current command.
+                    ValueType probabilitySum = storm::utility::zero<ValueType>();
+                    for (auto const& destination : edge.getDestinations()) {
+                        // Obtain target state index and add it to the list of known states. If it has not yet been
+                        // seen, we also add it to the set of states that have yet to be explored.
+                        StateType stateIndex = stateToIdCallback(applyUpdate(state, destination));
+                        
+                        // Update the choice by adding the probability/target state to it.
+                        ValueType probability = this->evaluator.asRational(destination.getProbability());
+                        choice.addProbability(stateIndex, probability);
+                        probabilitySum += probability;
+                    }
+                    
+                    // Check that the resulting distribution is in fact a distribution.
+                    STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
+                }
+                
+                // After we have processed all edges of the current automaton, move to the next location variable.
+                ++locationVariableIt;
+            }
+            
+            return result;
         }
         
         template<typename ValueType, typename StateType>

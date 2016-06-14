@@ -10,16 +10,26 @@ namespace storm {
         class RewardIncrement {
         public:
             /*!
-             * Creates an increment of a reward (given by its id) by the given expression.
+             * Creates an increment of a reward (given by its index) by the given expression.
              *
-             * @param rewardId The id of the reward to increment.
+             * @param rewardIndex The index of the reward to increment.
              * @param value The expression defining the amount the reward is the incremented.
              */
-            RewardIncrement(uint64_t rewardId, storm::expressions::Expression const& value);
+            RewardIncrement(uint64_t rewardIndex, storm::expressions::Expression const& value);
+
+            /*!
+             * Retrieves the index of the reward to increment.
+             */
+            uint64_t getRewardIndex() const;
+            
+            /*!
+             * Retrieves the expression defining the amount by which the reward is to be incremented.
+             */
+            storm::expressions::Expression const& getValue() const;
             
         private:
-            // The id of the reward that is to be incremented.
-            uint64_t rewardId;
+            // The index of the reward that is to be incremented.
+            uint64_t rewardIndex;
             
             // The expression defining the amount the reward is to be incremented.
             storm::expressions::Expression value;

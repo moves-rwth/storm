@@ -249,9 +249,20 @@ namespace storm {
             bool isDeterministicModel() const;
             
             /*!
+             * Determines whether this model is a discrete-time model.
+             */
+            bool isDiscreteTimeModel() const;
+            
+            /*!
              * Retrieves a list of expressions that characterize the legal values of the variables in this model.
              */
             std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
+            /*!
+             * Retrieves whether this model has the default composition, that is it composes all automata in parallel
+             * and synchronizes over all common actions.
+             */
+            bool hasDefaultComposition() const;
             
             /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.

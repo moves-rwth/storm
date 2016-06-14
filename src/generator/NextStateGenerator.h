@@ -165,6 +165,7 @@ namespace storm {
             uint64_t getStateSize() const;
             virtual ModelType getModelType() const = 0;
             virtual bool isDeterministicModel() const = 0;
+            virtual bool isDiscreteTimeModel() const = 0;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
             
             void load(CompressedState const& state);

@@ -9,17 +9,17 @@ namespace storm {
         
         class Edge {
         public:
-            Edge(uint64_t sourceLocationId, uint64_t actionId, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations = {});
+            Edge(uint64_t sourceLocationIndex, uint64_t actionIndex, boost::optional<storm::expressions::Expression> const& rate, storm::expressions::Expression const& guard, std::vector<EdgeDestination> destinations = {});
             
             /*!
-             * Retrieves the id of the source location.
+             * Retrieves the index of the source location.
              */
-            uint64_t getSourceLocationId() const;
+            uint64_t getSourceLocationIndex() const;
             
             /*!
              * Retrieves the id of the action with which this edge is labeled.
              */
-            uint64_t getActionId() const;
+            uint64_t getActionIndex() const;
             
             /*!
              * Retrieves whether this edge has an associated rate.
@@ -62,11 +62,11 @@ namespace storm {
             void addDestination(EdgeDestination const& destination);
             
         private:
-            // The id of the source location.
-            uint64_t sourceLocationId;
+            // The index of the source location.
+            uint64_t sourceLocationIndex;
             
-            // The id of the action with which this edge is labeled.
-            uint64_t actionId;
+            // The index of the action with which this edge is labeled.
+            uint64_t actionIndex;
             
             // The rate with which this edge is taken. This only applies to continuous-time models. For discrete-time
             // models, this must be set to none.

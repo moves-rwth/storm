@@ -6,7 +6,7 @@
 namespace storm {
     namespace jani {
         
-        EdgeDestination::EdgeDestination(uint64_t locationId, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments, std::vector<RewardIncrement> const& rewardIncrements) : locationId(locationId), probability(probability), assignments(assignments), rewardIncrements(rewardIncrements) {
+        EdgeDestination::EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments, std::vector<RewardIncrement> const& rewardIncrements) : locationIndex(locationIndex), probability(probability), assignments(assignments), rewardIncrements(rewardIncrements) {
             sortAssignments();
         }
         
@@ -23,8 +23,8 @@ namespace storm {
             rewardIncrements.push_back(rewardIncrement);
         }
         
-        uint64_t EdgeDestination::getLocationId() const {
-            return locationId;
+        uint64_t EdgeDestination::getLocationIndex() const {
+            return locationIndex;
         }
         
         storm::expressions::Expression const& EdgeDestination::getProbability() const {

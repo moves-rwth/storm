@@ -83,6 +83,11 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        bool PrismNextStateGenerator<ValueType, StateType>::isDiscreteTimeModel() const {
+            return program.isDiscreteTimeModel();
+        }
+        
+        template<typename ValueType, typename StateType>
         std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
             // Prepare an SMT solver to enumerate all initial states.
             storm::utility::solver::SmtSolverFactory factory;
@@ -172,24 +177,24 @@ namespace storm {
             }
             
             // If the model is a deterministic model, we need to fuse the choices into one.
-            if (program.isDeterministicModel() && totalNumberOfChoices > 1) {
+            if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
                 Choice<ValueType> globalChoice;
                 
                 // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
                 // this is equal to the number of choices, which is why we initialize it like this here.
-                ValueType totalExitRate = program.isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
+                ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
                 
                 // Iterate over all choices and combine the probabilities/rates into one choice.
                 for (auto const& choice : allChoices) {
                     for (auto const& stateProbabilityPair : choice) {
-                        if (program.isDiscreteTimeModel()) {
+                        if (this->isDiscreteTimeModel()) {
                             globalChoice.addProbability(stateProbabilityPair.first, stateProbabilityPair.second / totalNumberOfChoices);
                         } else {
                             globalChoice.addProbability(stateProbabilityPair.first, stateProbabilityPair.second);
                         }
                     }
                     
-                    if (hasStateActionRewards && !program.isDiscreteTimeModel()) {
+                    if (hasStateActionRewards && !this->isDiscreteTimeModel()) {
                         totalExitRate += choice.getTotalMass();
                     }
                     

@@ -90,7 +90,7 @@ namespace storm {
             return locations.size() - 1;
         }
 
-        uint64_t Automaton::getLocationId(std::string const& name) const {
+        uint64_t Automaton::getLocationIndex(std::string const& name) const {
             assert(hasLocation(name));
             return locationToIndex.at(name);
         }
@@ -143,20 +143,20 @@ namespace storm {
         }
         
         void Automaton::addEdge(Edge const& edge) {
-            STORM_LOG_THROW(edge.getSourceLocationId() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationId() << "'.");
+            STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
             
             // Find the right position for the edge and insert it properly.
             auto posIt = edges.begin();
-            std::advance(posIt, locationToStartingIndex[edge.getSourceLocationId() + 1]);
+            std::advance(posIt, locationToStartingIndex[edge.getSourceLocationIndex() + 1]);
             edges.insert(posIt, edge);
             
             // Now update the starting indices of all subsequent locations.
-            for (uint64_t locationIndex = edge.getSourceLocationId() + 1; locationIndex < locationToStartingIndex.size(); ++locationIndex) {
+            for (uint64_t locationIndex = edge.getSourceLocationIndex() + 1; locationIndex < locationToStartingIndex.size(); ++locationIndex) {
                 ++locationToStartingIndex[locationIndex];
             }
             
             // Update the set of action indices of this automaton.
-            actionIndices.insert(edge.getActionId());
+            actionIndices.insert(edge.getActionIndex());
         }
         
         std::vector<Edge>& Automaton::getEdges() {
@@ -170,7 +170,7 @@ namespace storm {
         std::set<uint64_t> Automaton::getActionIndices() const {
             std::set<uint64_t> result;
             for (auto const& edge : edges) {
-                result.insert(edge.getActionId());
+                result.insert(edge.getActionIndex());
             }
             return result;
         }

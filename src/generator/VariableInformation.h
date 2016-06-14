@@ -17,7 +17,7 @@ namespace storm {
     
     namespace generator {
         
-        // A structure storing information about the boolean variables of the program.
+        // A structure storing information about the boolean variables of the model.
         struct BooleanVariableInformation {
             BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset);
             
@@ -28,7 +28,7 @@ namespace storm {
             uint_fast64_t bitOffset;
         };
         
-        // A structure storing information about the integer variables of the program.
+        // A structure storing information about the integer variables of the model.
         struct IntegerVariableInformation {
             IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth);
             
@@ -48,6 +48,20 @@ namespace storm {
             uint_fast64_t bitWidth;
         };
         
+        // A structure storing information about the location variables of the model.
+        struct LocationVariableInformation {
+            LocationVariableInformation(uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth);
+
+            // The highest possible location value.
+            uint64_t highestValue;
+            
+            // Its bit offset in the compressed state.
+            uint_fast64_t bitOffset;
+            
+            // Its bit width in the compressed state.
+            uint_fast64_t bitWidth;
+        };
+        
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
             VariableInformation(storm::prism::Program const& program);
@@ -56,13 +70,16 @@ namespace storm {
             VariableInformation() = default;
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;
             
-            // The total bit offset over all variables.
+            /// The total bit offset over all variables.
             uint_fast64_t totalBitOffset;
             
-            // The known boolean variables.
+            /// The location variables.
+            std::vector<LocationVariableInformation> locationVariables;
+            
+            /// The boolean variables.
             std::vector<BooleanVariableInformation> booleanVariables;
             
-            // The known integer variables.
+            /// The integer variables.
             std::vector<IntegerVariableInformation> integerVariables;
             
         private:
