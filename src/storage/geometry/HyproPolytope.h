@@ -104,7 +104,7 @@ namespace storm {
                  * @param matrix the transformation matrix, given as vector of rows
                  * @param vector the transformation offset
                  */
-                virtual std::shared_ptr<Polytope<ValueType>> linearTransformation(std::vector<Point> const& matrix, Point const& vector) const;
+                virtual std::shared_ptr<Polytope<ValueType>> linearTransformation(std::vector<Point> const& matrix, Point const& vector) const override;
                 
                 /*!
                  * Returns the downward closure of this, i.e., the set { x | ex. y \in P : x<=y} where P is this Polytope.
