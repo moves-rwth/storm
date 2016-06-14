@@ -1622,7 +1622,7 @@ namespace storm {
                 
                 // Create a single location that will have all the edges.
                 uint64_t onlyLocation = automaton.addLocation(storm::jani::Location("l"));
-                automaton.setInitialLocation(onlyLocation);
+                automaton.addInitialLocation(onlyLocation);
                 
                 for (auto const& command : module.getCommands()) {
                     boost::optional<storm::expressions::Expression> rateExpression;

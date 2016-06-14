@@ -95,6 +95,8 @@ namespace storm {
                     initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
                 }
                 
+                // FIXME: iterate through all combinations of initial locations and set them in the initial state.
+                
                 // Register initial state and return it.
                 StateType id = stateToIdCallback(initialState);
                 initialStateIndices.push_back(id);

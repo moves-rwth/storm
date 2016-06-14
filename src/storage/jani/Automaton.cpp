@@ -95,23 +95,19 @@ namespace storm {
             return locationToIndex.at(name);
         }
 
-        void Automaton::setInitialLocation(std::string const& name) {
+        void Automaton::addInitialLocation(std::string const& name) {
             auto it = locationToIndex.find(name);
             STORM_LOG_THROW(it != locationToIndex.end(), storm::exceptions::InvalidArgumentException, "Cannot make unknown location '" << name << "' the initial location.");
-            return setInitialLocation(it->second);
+            return addInitialLocation(it->second);
         }
         
-        void Automaton::setInitialLocation(uint64_t index) {
+        void Automaton::addInitialLocation(uint64_t index) {
             STORM_LOG_THROW(index < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot make location with index " << index << " initial: out of bounds.");
-            initialLocationIndex = index;
+            initialLocationIndices.insert(index);
         }
         
-        Location const& Automaton::getInitialLocation() const {
-            return locations[getInitialLocationIndex()];
-        }
-        
-        uint64_t Automaton::getInitialLocationIndex() const {
-            return initialLocationIndex;
+        std::set<uint64_t> Automaton::getInitialLocationIndices() const {
+            return initialLocationIndices;
         }
 
         Automaton::Edges Automaton::getEdgesFromLocation(std::string const& name) {

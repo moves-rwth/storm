@@ -1654,7 +1654,11 @@ namespace storm {
         storm::dd::Bdd<Type> computeInitialStates(storm::jani::Model const& model, CompositionVariables<Type, ValueType> const& variables) {
             storm::dd::Bdd<Type> initialStates = variables.rowExpressionAdapter->translateExpression(model.getInitialStatesExpression(true)).toBdd();
             for (auto const& automaton : model.getAutomata()) {
-                initialStates &= variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).first, automaton.getInitialLocationIndex());
+                storm::dd::Bdd<Type> initialLocationIndices = variables.manager->getBddZero();
+                for (auto const& locationIndex : automaton.getInitialLocationIndices()) {
+                    initialLocationIndices |= variables.manager->getEncoding(variables.automatonToLocationVariableMap.at(automaton.getName()).first, locationIndex);
+                }
+                initialStates &= initialLocationIndices;
             }
             for (auto const& metaVariable : variables.rowMetaVariables) {
                 initialStates &= variables.variableToRangeMap.at(metaVariable);

@@ -141,24 +141,19 @@ namespace storm {
             uint64_t addLocation(Location const& location);
             
             /*!
-             * Uses the location with the given name as the initial location.
+             * Adds the location with the given name to the initial locations.
              */
-            void setInitialLocation(std::string const& name);
+            void addInitialLocation(std::string const& name);
 
             /*!
-             * Uses the location with the given index as the initial location.
+             * Adds the location with the given index to the initial locations.
              */
-            void setInitialLocation(uint64_t index);
+            void addInitialLocation(uint64_t index);
             
             /*!
-             * Retrieves the initial location of the automaton.
+             * Retrieves the indices of the initial locations.
              */
-            Location const& getInitialLocation() const;
-            
-            /*!
-             * Retrieves the index of the initial location.
-             */
-            uint64_t getInitialLocationIndex() const;
+            std::set<uint64_t> getInitialLocationIndices() const;
 
             /*!
              * Retrieves the edges of the location with the given name.
@@ -255,8 +250,8 @@ namespace storm {
             /// leaving location l start at index i of the edges vector.
             std::vector<uint64_t> locationToStartingIndex;
 
-            /// The index of the initial location.
-            uint64_t initialLocationIndex;
+            /// The indices of the initial locations.
+            std::set<uint64_t> initialLocationIndices;
             
             /// The expression characterizing the legal initial values of the variables of the automaton.
             storm::expressions::Expression initialStatesExpression;

@@ -344,8 +344,16 @@ namespace storm {
             out << ",";
             clearLine(out);
             appendIndent(out, indent + 1);
-            appendField(out, "initial-location");
-            appendValue(out, std::to_string(automaton.getInitialLocationIndex()));
+            appendField(out, "initial-locations");
+            out << " [";
+            clearLine(out);
+            for (auto const& index : automaton.getInitialLocationIndices()) {
+                appendIndent(out, indent + 2);
+                appendValue(out, automaton.getLocation(index).getName());
+                clearLine(out);
+            }
+            appendIndent(out, indent + 1);
+            out << "]";
             clearLine(out);
             if (automaton.hasInitialStatesExpression()) {
                 appendIndent(out, indent + 1);
