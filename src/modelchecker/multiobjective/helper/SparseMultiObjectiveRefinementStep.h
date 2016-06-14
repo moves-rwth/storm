@@ -1,5 +1,5 @@
-#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEHELPERREFINEMENTSTEP_H_
-#define STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEHELPERREFINEMENTSTEP_H_
+#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEREFINEMENTSTEP_H_
+#define STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEREFINEMENTSTEP_H_
 
 #include <vector>
 #include <boost/optional.hpp>
@@ -11,22 +11,22 @@ namespace storm {
         namespace helper {
             
             template <typename RationalNumberType>
-            class SparseMultiObjectiveHelperRefinementStep {
+            class SparseMultiObjectiveRefinementStep {
                 
             public:
-                SparseMultiObjectiveHelperRefinementStep(std::vector<RationalNumberType> const& weightVector, std::vector<RationalNumberType> const& point, storm::storage::TotalScheduler const& scheduler) : weightVector(weightVector), point(point), scheduler(scheduler) {
+                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType> const& weightVector, std::vector<RationalNumberType> const& point, storm::storage::TotalScheduler const& scheduler) : weightVector(weightVector), point(point), scheduler(scheduler) {
                     //Intentionally left empty
                 }
                 
-                SparseMultiObjectiveHelperRefinementStep(std::vector<RationalNumberType>&& weightVector, std::vector<RationalNumberType>&& point, storm::storage::TotalScheduler&& scheduler) : weightVector(weightVector), point(point), scheduler(scheduler) {
+                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType>&& weightVector, std::vector<RationalNumberType>&& point, storm::storage::TotalScheduler&& scheduler) : weightVector(weightVector), point(point), scheduler(scheduler) {
                     //Intentionally left empty
                 }
                 
-                SparseMultiObjectiveHelperRefinementStep(std::vector<RationalNumberType> const& weightVector, std::vector<RationalNumberType> const& point) : weightVector(weightVector), point(point) {
+                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType> const& weightVector, std::vector<RationalNumberType> const& point) : weightVector(weightVector), point(point) {
                     //Intentionally left empty
                 }
                 
-                SparseMultiObjectiveHelperRefinementStep(std::vector<RationalNumberType>&& weightVector, std::vector<RationalNumberType>&& point) : weightVector(weightVector), point(point) {
+                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType>&& weightVector, std::vector<RationalNumberType>&& point) : weightVector(weightVector), point(point) {
                     //Intentionally left empty
                 }
                 
@@ -55,4 +55,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEHELPERREFINEMENTSTEP_H_ */
+#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEREFINEMENTSTEP_H_ */

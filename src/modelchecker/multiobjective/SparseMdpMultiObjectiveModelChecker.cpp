@@ -11,6 +11,7 @@
 
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePreprocessor.h"
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveHelper.h"
+#include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePostprocessor.h"
 
 #include "src/exceptions/NotImplementedException.h"
 
@@ -33,19 +34,21 @@ namespace storm {
         
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpMultiObjectiveModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula> const& checkTask) {
-            
-            auto preprocessedData = helper::SparseMultiObjectivePreprocessor<SparseMdpModelType>::preprocess(checkTask.getFormula(), this->getModel());
-            std::cout << std::endl;
-            std::cout << "Preprocessing done." << std::endl;
-            preprocessedData.printToStream(std::cout);
+            std::unique_ptr<CheckResult> result;
             
 #ifdef STORM_HAVE_CARL
-            helper::SparseMultiObjectiveHelper<SparseMdpModelType, storm::RationalNumber>::check(preprocessedData);
+            auto preprocessorData = helper::SparseMultiObjectivePreprocessor<SparseMdpModelType>::preprocess(checkTask.getFormula(), this->getModel());
+            std::cout << std::endl;
+            std::cout << "Preprocessing done." << std::endl;
+            preprocessorData.printToStream(std::cout);
+            auto resultData = helper::SparseMultiObjectiveHelper<SparseMdpModelType, storm::RationalNumber>::check(preprocessorData);
+            std::cout << "Modelchecking done." << std::endl;
+            result = helper::SparseMultiObjectivePostprocessor<SparseMdpModelType, storm::RationalNumber>::postprocess(preprocessorData, resultData);
+            std::cout << "Postprocessing done." << std::endl;
 #else
             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Multi objective model checking requires carl.");
 #endif
-            
-            return std::unique_ptr<CheckResult>(new ExplicitQualitativeCheckResult());
+            return result;
         }
         
         

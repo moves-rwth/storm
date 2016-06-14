@@ -3,6 +3,7 @@
 #include "src/adapters/CarlAdapter.h"
 #include "src/models/sparse/Mdp.h"
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveObjectiveInformation.h"
 #include "src/utility/constants.h"
 #include "src/utility/vector.h"
 #include "src/settings//SettingsManager.h"
@@ -16,94 +17,92 @@ namespace storm {
             
             
             template <class SparseModelType, typename RationalNumberType>
-            typename SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::ReturnType SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::check(PreprocessorData const& data) {
-                ReturnType result;
-                result.overApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createUniversalPolytope();
-                result.underApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createEmptyPolytope();
+            typename SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::ResultData SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::check(PreprocessorData const& preprocessorData) {
+                ResultData resultData;
+                resultData.overApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createUniversalPolytope();
+                resultData.underApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createEmptyPolytope();
                 
-                uint_fast64_t numOfObjectivesWithoutThreshold = 0;
-                for(auto const& obj : data.objectives) {
-                    if(!obj.threshold) {
-                        ++numOfObjectivesWithoutThreshold;
-                    }
+                switch(preprocessorData.queryType) {
+                    case PreprocessorData::QueryType::Achievability:
+                        achievabilityQuery(preprocessorData, resultData);
+                        break;
+                    case PreprocessorData::QueryType::Numerical:
+                        numericalQuery(preprocessorData, resultData);
+                        break;
+                    case PreprocessorData::QueryType::Pareto:
+                        paretoQuery(preprocessorData, resultData);
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown Query Type");
                 }
-                if(numOfObjectivesWithoutThreshold == 0) {
-                    achievabilityQuery(data, result);
-                } else if (numOfObjectivesWithoutThreshold == 1) {
-                    numericalQuery(data, result);
-                } else if (numOfObjectivesWithoutThreshold == data.objectives.size()) {
-                    paretoQuery(data, result);
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The number of objecties without threshold is not valid. It should be either 0 (achievabilityQuery), 1 (numericalQuery), or " << data.objectives.size() << " (paretoQuery). Got " << numOfObjectivesWithoutThreshold << " instead.");
-                }
-                return result;
+                return resultData;
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::achievabilityQuery(PreprocessorData const& data, ReturnType& result) {
+            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::achievabilityQuery(PreprocessorData const& preprocessorData, ResultData& resultData) {
                 Point thresholds;
-                thresholds.reserve(data.objectives.size());
-                storm::storage::BitVector strictThresholds(data.objectives.size());
-                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    thresholds.push_back(storm::utility::convertNumber<RationalNumberType>(*data.objectives[objIndex].threshold));
-                    strictThresholds.set(objIndex, data.objectives[objIndex].thresholdIsStrict);
+                thresholds.reserve(preprocessorData.objectives.size());
+                storm::storage::BitVector strictThresholds(preprocessorData.objectives.size());
+                for(uint_fast64_t objIndex = 0; objIndex < preprocessorData.objectives.size(); ++objIndex) {
+                    thresholds.push_back(storm::utility::convertNumber<RationalNumberType>(*preprocessorData.objectives[objIndex].threshold));
+                    strictThresholds.set(objIndex, preprocessorData.objectives[objIndex].thresholdIsStrict);
                 }
                 
-                storm::storage::BitVector individualObjectivesToBeChecked(data.objectives.size(), true);
-                SparseMultiObjectiveWeightVectorChecker<SparseModelType> weightVectorChecker(data);
+                storm::storage::BitVector individualObjectivesToBeChecked(preprocessorData.objectives.size(), true);
+                SparseMultiObjectiveWeightVectorChecker<SparseModelType> weightVectorChecker(preprocessorData);
                 do {
-                    WeightVector separatingVector = findSeparatingVector(thresholds, result.underApproximation(), individualObjectivesToBeChecked);
-                    performRefinementStep(separatingVector, data.produceSchedulers, weightVectorChecker, result);
-                    if(!checkIfThresholdsAreSatisfied(result.overApproximation(), thresholds, strictThresholds)){
-                        result.setThresholdsAreAchievable(false);
+                    WeightVector separatingVector = findSeparatingVector(thresholds, resultData.underApproximation(), individualObjectivesToBeChecked);
+                    performRefinementStep(separatingVector, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
+                    if(!checkIfThresholdsAreSatisfied(resultData.overApproximation(), thresholds, strictThresholds)){
+                        resultData.setThresholdsAreAchievable(false);
                     }
-                    if(checkIfThresholdsAreSatisfied(result.underApproximation(), thresholds, strictThresholds)){
-                        result.setThresholdsAreAchievable(true);
+                    if(checkIfThresholdsAreSatisfied(resultData.underApproximation(), thresholds, strictThresholds)){
+                        resultData.setThresholdsAreAchievable(true);
                     }
-                } while(!result.isThresholdsAreAchievableSet() && !maxStepsPerformed(result));
+                } while(!resultData.isThresholdsAreAchievableSet() && !maxStepsPerformed(resultData));
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::numericalQuery(PreprocessorData const& data, ReturnType& result) {
+            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::numericalQuery(PreprocessorData const& preprocessorData, ResultData& resultData) {
+                STORM_LOG_ASSERT(preprocessorData.indexOfOptimizingObjective, "Detected numerical query but index of optimizing objective is not set.");
+                uint_fast64_t optimizingObjIndex = *preprocessorData.indexOfOptimizingObjective;
                 Point thresholds;
-                thresholds.reserve(data.objectives.size());
-                storm::storage::BitVector strictThresholds(data.objectives.size());
+                thresholds.reserve(preprocessorData.objectives.size());
+                storm::storage::BitVector strictThresholds(preprocessorData.objectives.size());
                 std::vector<storm::storage::geometry::Halfspace<RationalNumberType>> thresholdConstraints;
-                thresholdConstraints.reserve(data.objectives.size()-1);
-                uint_fast64_t optimizingObjIndex = data.objectives.size(); // init with invalid value...
-                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    if(data.objectives[objIndex].threshold) {
-                        thresholds.push_back(storm::utility::convertNumber<RationalNumberType>(*data.objectives[objIndex].threshold));
-                        WeightVector normalVector(data.objectives.size(), storm::utility::zero<RationalNumberType>());
+                thresholdConstraints.reserve(preprocessorData.objectives.size()-1);
+                for(uint_fast64_t objIndex = 0; objIndex < preprocessorData.objectives.size(); ++objIndex) {
+                    if(preprocessorData.objectives[objIndex].threshold) {
+                        thresholds.push_back(storm::utility::convertNumber<RationalNumberType>(*preprocessorData.objectives[objIndex].threshold));
+                        WeightVector normalVector(preprocessorData.objectives.size(), storm::utility::zero<RationalNumberType>());
                         normalVector[objIndex] = -storm::utility::one<RationalNumberType>();
                         thresholdConstraints.emplace_back(std::move(normalVector), -thresholds.back());
-                        strictThresholds.set(objIndex, data.objectives[objIndex].thresholdIsStrict);
+                        strictThresholds.set(objIndex, preprocessorData.objectives[objIndex].thresholdIsStrict);
                     } else {
-                        optimizingObjIndex = objIndex;
                         thresholds.push_back(storm::utility::zero<RationalNumberType>());
                     }
                 }
                 auto thresholdsAsPolytope = storm::storage::geometry::Polytope<RationalNumberType>::create(thresholdConstraints);
-                WeightVector directionOfOptimizingObjective(data.objectives.size(), storm::utility::zero<RationalNumberType>());
+                WeightVector directionOfOptimizingObjective(preprocessorData.objectives.size(), storm::utility::zero<RationalNumberType>());
                 directionOfOptimizingObjective[optimizingObjIndex] = storm::utility::one<RationalNumberType>();
                 
                 // Try to find one valid solution
-                storm::storage::BitVector individualObjectivesToBeChecked(data.objectives.size(), true);
+                storm::storage::BitVector individualObjectivesToBeChecked(preprocessorData.objectives.size(), true);
                 individualObjectivesToBeChecked.set(optimizingObjIndex, false);
-                SparseMultiObjectiveWeightVectorChecker<SparseModelType> weightVectorChecker(data);
+                SparseMultiObjectiveWeightVectorChecker<SparseModelType> weightVectorChecker(preprocessorData);
                 do {
-                    WeightVector separatingVector = findSeparatingVector(thresholds, result.underApproximation(), individualObjectivesToBeChecked);
-                    performRefinementStep(separatingVector, data.produceSchedulers, weightVectorChecker, result);
+                    WeightVector separatingVector = findSeparatingVector(thresholds, resultData.underApproximation(), individualObjectivesToBeChecked);
+                    performRefinementStep(separatingVector, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
                     //Pick the threshold for the optimizing objective low enough so valid solutions are not excluded
-                    thresholds[optimizingObjIndex] = std::min(thresholds[optimizingObjIndex], result.refinementSteps().back().getPoint()[optimizingObjIndex]);
-                    if(!checkIfThresholdsAreSatisfied(result.overApproximation(), thresholds, strictThresholds)){
-                        result.setThresholdsAreAchievable(false);
+                    thresholds[optimizingObjIndex] = std::min(thresholds[optimizingObjIndex], resultData.refinementSteps().back().getPoint()[optimizingObjIndex]);
+                    if(!checkIfThresholdsAreSatisfied(resultData.overApproximation(), thresholds, strictThresholds)){
+                        resultData.setThresholdsAreAchievable(false);
                     }
-                    if(checkIfThresholdsAreSatisfied(result.underApproximation(), thresholds, strictThresholds)){
-                        result.setThresholdsAreAchievable(true);
+                    if(checkIfThresholdsAreSatisfied(resultData.underApproximation(), thresholds, strictThresholds)){
+                        resultData.setThresholdsAreAchievable(true);
                     }
-                } while(!result.isThresholdsAreAchievableSet() && !maxStepsPerformed(result));
-                if(result.getThresholdsAreAchievable()) {
+                } while(!resultData.isThresholdsAreAchievableSet() && !maxStepsPerformed(resultData));
+                if(resultData.getThresholdsAreAchievable()) {
                     STORM_LOG_DEBUG("Found a solution that satisfies the objective thresholds.");
                     individualObjectivesToBeChecked.clear();
                     // Improve the found solution.
@@ -111,41 +110,41 @@ namespace storm {
                     // the supremum over all strategies. Hence, one could combine a scheduler inducing the optimum value (but possibly violating strict
                     // thresholds) and (with very low probability) a scheduler that satisfies all (possibly strict) thresholds.
                     while(true) {
-                        std::pair<Point, bool> optimizationRes = result.underApproximation()->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
+                        std::pair<Point, bool> optimizationRes = resultData.underApproximation()->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
                         STORM_LOG_THROW(optimizationRes.second, storm::exceptions::UnexpectedException, "The underapproximation is either unbounded or empty.");
                         thresholds[optimizingObjIndex] = optimizationRes.first[optimizingObjIndex];
-                        result.setNumericalResult(thresholds[optimizingObjIndex]);
-                        STORM_LOG_DEBUG("Best solution found so far is " << result.template getNumericalResult<double>() << ".");
+                        resultData.setNumericalResult(thresholds[optimizingObjIndex]);
+                        STORM_LOG_DEBUG("Best solution found so far is " << resultData.template getNumericalResult<double>() << ".");
                         //Compute an upper bound for the optimum and check for convergence
-                        optimizationRes = result.overApproximation()->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
+                        optimizationRes = resultData.overApproximation()->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
                         if(optimizationRes.second) {
-                            result.setPrecisionOfResult(optimizationRes.first[optimizingObjIndex] - thresholds[optimizingObjIndex]);
-                            STORM_LOG_DEBUG("Solution can be improved by at most " << result.template getPrecisionOfResult<double>());
+                            resultData.setPrecisionOfResult(optimizationRes.first[optimizingObjIndex] - thresholds[optimizingObjIndex]);
+                            STORM_LOG_DEBUG("Solution can be improved by at most " << resultData.template getPrecisionOfResult<double>());
                         }
-                        if(targetPrecisionReached(result) || maxStepsPerformed(result)) {
-                            result.setOptimumIsAchievable(checkIfThresholdsAreSatisfied(result.underApproximation(), thresholds, strictThresholds));
+                        if(targetPrecisionReached(resultData) || maxStepsPerformed(resultData)) {
+                            resultData.setOptimumIsAchievable(checkIfThresholdsAreSatisfied(resultData.underApproximation(), thresholds, strictThresholds));
                             break;
                         }
-                        WeightVector separatingVector = findSeparatingVector(thresholds, result.underApproximation(), individualObjectivesToBeChecked);
-                        performRefinementStep(separatingVector, data.produceSchedulers, weightVectorChecker, result);
+                        WeightVector separatingVector = findSeparatingVector(thresholds, resultData.underApproximation(), individualObjectivesToBeChecked);
+                        performRefinementStep(separatingVector, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
                     }
                 }
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::paretoQuery(PreprocessorData const& data, ReturnType& result) {
-                SparseMultiObjectiveWeightVectorChecker<SparseModelType> weightVectorChecker(data);
+            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::paretoQuery(PreprocessorData const& preprocessorData, ResultData& resultData) {
+                SparseMultiObjectiveWeightVectorChecker<SparseModelType> weightVectorChecker(preprocessorData);
                 //First consider the objectives individually
-                for(uint_fast64_t objIndex = 0; objIndex<data.objectives.size() && !maxStepsPerformed(result); ++objIndex) {
-                    WeightVector direction(data.objectives.size(), storm::utility::zero<RationalNumberType>());
+                for(uint_fast64_t objIndex = 0; objIndex<preprocessorData.objectives.size() && !maxStepsPerformed(resultData); ++objIndex) {
+                    WeightVector direction(preprocessorData.objectives.size(), storm::utility::zero<RationalNumberType>());
                     direction[objIndex] = storm::utility::one<RationalNumberType>();
-                    performRefinementStep(direction, data.produceSchedulers, weightVectorChecker, result);
+                    performRefinementStep(direction, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
                 }
                 
                 while(true) {
                     // Get the halfspace of the underApproximation with maximal distance to a vertex of the overApproximation
-                    std::vector<storm::storage::geometry::Halfspace<RationalNumberType>> underApproxHalfspaces = result.underApproximation()->getHalfspaces();
-                    std::vector<Point> overApproxVertices = result.overApproximation()->getVertices();
+                    std::vector<storm::storage::geometry::Halfspace<RationalNumberType>> underApproxHalfspaces = resultData.underApproximation()->getHalfspaces();
+                    std::vector<Point> overApproxVertices = resultData.overApproximation()->getVertices();
                     uint_fast64_t farestHalfspaceIndex = underApproxHalfspaces.size();
                     RationalNumberType farestDistance = storm::utility::zero<RationalNumberType>();
                     for(uint_fast64_t halfspaceIndex = 0; halfspaceIndex < underApproxHalfspaces.size(); ++halfspaceIndex) {
@@ -157,13 +156,13 @@ namespace storm {
                             }
                         }
                     }
-                    result.setPrecisionOfResult(farestDistance);
-                    STORM_LOG_DEBUG("Current precision of the approximation of the pareto curve is " << result.template getPrecisionOfResult<double>());
-                    if(targetPrecisionReached(result) || maxStepsPerformed(result)) {
+                    resultData.setPrecisionOfResult(farestDistance);
+                    STORM_LOG_DEBUG("Current precision of the approximation of the pareto curve is " << resultData.template getPrecisionOfResult<double>());
+                    if(targetPrecisionReached(resultData) || maxStepsPerformed(resultData)) {
                         break;
                     }
                     WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
-                    performRefinementStep(direction, data.produceSchedulers, weightVectorChecker, result);
+                    performRefinementStep(direction, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
                 }
             }
             
@@ -211,7 +210,7 @@ namespace storm {
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::performRefinementStep(WeightVector const& direction, bool saveScheduler, SparseMultiObjectiveWeightVectorChecker<SparseModelType>& weightVectorChecker, ReturnType& result) {
+            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::performRefinementStep(WeightVector const& direction, bool saveScheduler, SparseMultiObjectiveWeightVectorChecker<SparseModelType>& weightVectorChecker, ResultData& result) {
                 weightVectorChecker.check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
                 STORM_LOG_DEBUG("weighted objectives checker result is " << weightVectorChecker.getInitialStateResultOfObjectives());
                 if(saveScheduler) {
@@ -306,17 +305,17 @@ namespace storm {
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            bool SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::targetPrecisionReached(ReturnType& result) {
-                result.setTargetPrecisionReached(result.isPrecisionOfResultSet() &&
-                                                 result.getPrecisionOfResult() < storm::utility::convertNumber<RationalNumberType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision()));
-                return result.getTargetPrecisionReached();
+            bool SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::targetPrecisionReached(ResultData& resultData) {
+                resultData.setTargetPrecisionReached(resultData.isPrecisionOfResultSet() &&
+                                                 resultData.getPrecisionOfResult() < storm::utility::convertNumber<RationalNumberType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision()));
+                return resultData.getTargetPrecisionReached();
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            bool SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::maxStepsPerformed(ReturnType& result) {
-                result.setMaxStepsPerformed(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isMaxStepsSet() &&
-                                            result.refinementSteps().size() >= storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getMaxSteps());
-                return result.getMaxStepsPerformed();
+            bool SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::maxStepsPerformed(ResultData& resultData) {
+                resultData.setMaxStepsPerformed(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().isMaxStepsSet() &&
+                                            resultData.refinementSteps().size() >= storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getMaxSteps());
+                return resultData.getMaxStepsPerformed();
             }
             
 #ifdef STORM_HAVE_CARL

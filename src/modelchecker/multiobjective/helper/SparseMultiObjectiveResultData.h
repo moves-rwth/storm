@@ -1,11 +1,11 @@
-#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEHELPERRETURNTYPE_H_
-#define STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEHELPERRETURNTYPE_H_
+#ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVERESULTDATA_H_
+#define STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVERESULTDATA_H_
 
 #include <vector>
 #include <memory>
 #include <boost/optional.hpp>
 
-#include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveHelperRefinementStep.h"
+#include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveRefinementStep.h"
 #include "src/storage/geometry/Polytope.h"
 #include "src/utility/macros.h"
 
@@ -16,13 +16,13 @@ namespace storm {
         namespace helper {
 
             template <typename RationalNumberType>
-            class SparseMultiObjectiveHelperReturnType {
+            class SparseMultiObjectiveResultData {
                 
             public:
-                std::vector<SparseMultiObjectiveHelperRefinementStep<RationalNumberType>>& refinementSteps() {
+                std::vector<SparseMultiObjectiveRefinementStep<RationalNumberType>>& refinementSteps() {
                     return steps;
                 }
-                std::vector<SparseMultiObjectiveHelperRefinementStep<RationalNumberType>> const& refinementSteps() const {
+                std::vector<SparseMultiObjectiveRefinementStep<RationalNumberType>> const& refinementSteps() const {
                     return steps;
                 }
                 
@@ -103,7 +103,7 @@ namespace storm {
                 enum class Tribool { FF, TT, INDETERMINATE };
                 
                 //Stores the results for the individual iterations
-                std::vector<SparseMultiObjectiveHelperRefinementStep<RationalNumberType>> steps;
+                std::vector<SparseMultiObjectiveRefinementStep<RationalNumberType>> steps;
                 //Stores an overapproximation of the set of achievable values
                 std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>> overApprox;
                 //Stores an underapproximation of the set of achievable values
@@ -131,4 +131,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEHELPERRETURNTYPE_H_ */
+#endif /* STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVERESULTDATA_H_ */

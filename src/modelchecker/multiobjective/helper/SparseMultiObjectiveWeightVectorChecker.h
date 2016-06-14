@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePreprocessorReturnType.h"
+#include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePreprocessorData.h"
 #include "src/storage/TotalScheduler.h"
 
 namespace storm {
@@ -21,7 +21,7 @@ namespace storm {
             public:
                 typedef typename SparseModelType::ValueType ValueType;
                 typedef typename SparseModelType::RewardModelType RewardModelType;
-                typedef SparseMultiObjectivePreprocessorReturnType<SparseModelType> PreprocessorData;
+                typedef SparseMultiObjectivePreprocessorData<SparseModelType> PreprocessorData;
             
                 SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data);
                 

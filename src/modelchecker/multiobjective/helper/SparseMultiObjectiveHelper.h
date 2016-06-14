@@ -1,9 +1,9 @@
 #ifndef STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEHELPER_H_
 #define STORM_MODELCHECKER_MULTIOBJECTIVE_HELPER_SPARSEMULTIOBJECTIVEHELPER_H_
 
-#include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePreprocessorReturnType.h"
-#include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveHelperReturnType.h"
-#include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveHelperRefinementStep.h"
+#include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePreprocessorData.h"
+#include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveResultData.h"
+#include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveRefinementStep.h"
 #include "src/modelchecker/multiObjective/helper/SparseMultiObjectiveWeightVectorChecker.h"
 #include "src/storage/geometry/Polytope.h"
 #include "src/storage/TotalScheduler.h"
@@ -16,20 +16,20 @@ namespace storm {
             template <class SparseModelType, typename RationalNumberType>
             class SparseMultiObjectiveHelper {
             public:
-                typedef SparseMultiObjectivePreprocessorReturnType<SparseModelType> PreprocessorData;
-                typedef SparseMultiObjectiveHelperReturnType<RationalNumberType> ReturnType;
-                typedef SparseMultiObjectiveHelperRefinementStep<RationalNumberType> RefinementStep;
+                typedef SparseMultiObjectivePreprocessorData<SparseModelType> PreprocessorData;
+                typedef SparseMultiObjectiveResultData<RationalNumberType> ResultData;
+                typedef SparseMultiObjectiveRefinementStep<RationalNumberType> RefinementStep;
                 
                 typedef std::vector<RationalNumberType> Point;
                 typedef std::vector<RationalNumberType> WeightVector;
                 
-                static ReturnType check(PreprocessorData const& data);
+                static ResultData check(PreprocessorData const& preprocessorData);
                 
             private:
                 
-                static void achievabilityQuery(PreprocessorData const& data, ReturnType& result);
-                static void numericalQuery(PreprocessorData const& data, ReturnType& result);
-                static void paretoQuery(PreprocessorData const& data, ReturnType& result);
+                static void achievabilityQuery(PreprocessorData const& preprocessorData, ResultData& resultData);
+                static void numericalQuery(PreprocessorData const& preprocessorData, ResultData& resultData);
+                static void paretoQuery(PreprocessorData const& preprocessorData, ResultData& resultData);
                 
                 /*
                  * Returns a weight vector w that separates the under approximation from the given point p, i.e.,
@@ -44,7 +44,7 @@ namespace storm {
                 /*
                  * Refines the current result w.r.t. the given direction vector
                  */
-                static void performRefinementStep(WeightVector const& direction, bool saveScheduler, SparseMultiObjectiveWeightVectorChecker<SparseModelType>& weightVectorChecker, ReturnType& result);
+                static void performRefinementStep(WeightVector const& direction, bool saveScheduler, SparseMultiObjectiveWeightVectorChecker<SparseModelType>& weightVectorChecker, ResultData& resultData);
                 
                 /*
                  * Updates the overapproximation after a refinement step has been performed
@@ -70,16 +70,16 @@ namespace storm {
                 
                 /*
                  * Returns whether the desired precision (as given in the settings) is reached by the current result.
-                 * If the given result does not specify a precisionOfResult, false is returned.
-                 * Also sets the result.targetPrecisionReached flag accordingly.
+                 * If the given resultData does not specify a precisionOfResult, false is returned.
+                 * Also sets the resultData.targetPrecisionReached flag accordingly.
                  */
-                static bool targetPrecisionReached(ReturnType& result);
+                static bool targetPrecisionReached(ResultData& resultData);
                 
                 /*
                  * Returns whether a maximum number of refinement steps is given in the settings and this threshold has been reached.
-                 * Also sets the result.maxStepsPerformed flag accordingly.
+                 * Also sets the resultData.maxStepsPerformed flag accordingly.
                  */
-                static bool maxStepsPerformed(ReturnType& result);
+                static bool maxStepsPerformed(ResultData& resultData);
             };
             
         }
