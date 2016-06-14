@@ -2,12 +2,8 @@
 #define STORM_GENERATOR_PRISMNEXTSTATEGENERATOR_H_
 
 #include "src/generator/NextStateGenerator.h"
-#include "src/generator/VariableInformation.h"
 
 #include "src/storage/prism/Program.h"
-#include "src/storage/expressions/ExpressionEvaluator.h"
-
-#include "src/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace generator {
@@ -19,23 +15,25 @@ namespace storm {
             
             PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
             
-            virtual uint64_t getStateSize() const override;
             virtual ModelType getModelType() const override;
             virtual bool isDeterministicModel() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
 
-            virtual void load(CompressedState const& state) override;
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
-            virtual bool satisfies(storm::expressions::Expression const& expression) const override;
 
             virtual std::size_t getNumberOfRewardModels() const override;
             virtual RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
             
-            virtual storm::expressions::SimpleValuation toValuation(CompressedState const& state) const override;
-            
             virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}) override;
 
         private:
+            /*!
+             * A delegate constructor that is used to preprocess the program before the constructor of the superclass is
+             * being called. The last argument is only present to distinguish the signature of this constructor from the
+             * public one.
+             */
+            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag);
+            
             /*!
              * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
              * the given compressed state.
@@ -85,23 +83,8 @@ namespace storm {
             // The reward models that need to be considered.
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> rewardModels;
             
-            // The expressions that define terminal states.
-            std::vector<std::pair<storm::expressions::Expression, bool>> terminalStates;
-            
             // A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
-            
-            // Information about how the variables are packed.
-            VariableInformation variableInformation;
-            
-            // An evaluator used to evaluate expressions.
-            storm::expressions::ExpressionEvaluator<ValueType> evaluator;
-            
-            // The currently loaded state.
-            CompressedState const* state;
-            
-            // A comparator used to compare constants.
-            storm::utility::ConstantsComparator<ValueType> comparator;
         };
         
     }

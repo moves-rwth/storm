@@ -244,6 +244,11 @@ namespace storm {
             void setInitialStatesExpression(storm::expressions::Expression const& initialStatesExpression);
             
             /*!
+             * Determines whether this model is a deterministic one in the sense that each state only has one choice.
+             */
+            bool isDeterministicModel() const;
+            
+            /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.
              */
             bool checkValidity(bool logdbg = true) const;

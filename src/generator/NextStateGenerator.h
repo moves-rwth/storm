@@ -8,13 +8,18 @@
 
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/BitVectorHashMap.h"
+#include "src/storage/expressions/ExpressionEvaluator.h"
 
+#include "src/generator/VariableInformation.h"
 #include "src/generator/CompressedState.h"
 #include "src/generator/StateBehavior.h"
+
+#include "src/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace expressions {
         class Expression;
+        class ExpressionManager;
     }
     
     namespace models {
@@ -155,28 +160,52 @@ namespace storm {
         public:
             typedef std::function<StateType (CompressedState const&)> StateToIdCallback;
 
-            NextStateGenerator(NextStateGeneratorOptions const& options);
+            NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options);
             
-            virtual uint64_t getStateSize() const = 0;
+            uint64_t getStateSize() const;
             virtual ModelType getModelType() const = 0;
             virtual bool isDeterministicModel() const = 0;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
             
-            virtual void load(CompressedState const& state) = 0;
+            void load(CompressedState const& state);
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
-            virtual bool satisfies(storm::expressions::Expression const& expression) const = 0;
+            bool satisfies(storm::expressions::Expression const& expression) const;
             
             virtual std::size_t getNumberOfRewardModels() const = 0;
             virtual RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
             
-            virtual storm::expressions::SimpleValuation toValuation(CompressedState const& state) const = 0;
+            storm::expressions::SimpleValuation toValuation(CompressedState const& state) const;
             
             virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}) = 0;
             
             NextStateGeneratorOptions const& getOptions() const;
             
         protected:
+            /*!
+             * Creates the state labeling for the given states using the provided labels and expressions.
+             */
+            storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
+            
+            /// The options to be used for next-state generation.
             NextStateGeneratorOptions options;
+            
+            /// The expression manager used for evaluating expressions.
+            std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager;
+            
+            /// The expressions that define terminal states.
+            std::vector<std::pair<storm::expressions::Expression, bool>> terminalStates;
+            
+            /// Information about how the variables are packed.
+            VariableInformation variableInformation;
+            
+            /// An evaluator used to evaluate expressions.
+            storm::expressions::ExpressionEvaluator<ValueType> evaluator;
+            
+            /// The currently loaded state.
+            CompressedState const* state;
+            
+            /// A comparator used to compare constants.
+            storm::utility::ConstantsComparator<ValueType> comparator;
         };
     }
 }

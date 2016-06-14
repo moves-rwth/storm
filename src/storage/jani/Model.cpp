@@ -353,6 +353,10 @@ namespace storm {
             this->initialStatesExpression = initialStatesExpression;
         }
         
+        bool Model::isDeterministicModel() const {
+            return this->getModelType() == ModelType::DTMC || this->getModelType() == ModelType::CTMC;
+        }
+        
         bool Model::checkValidity(bool logdbg) const {
             // TODO switch to exception based return value.
             

@@ -4,6 +4,11 @@
 
 #include "src/logic/Formulas.h"
 
+#include "src/storage/expressions/ExpressionManager.h"
+#include "src/storage/expressions/SimpleValuation.h"
+
+#include "src/models/sparse/StateLabeling.h"
+
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidSettingsException.h"
 
@@ -207,15 +212,82 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        NextStateGenerator<ValueType, StateType>::NextStateGenerator(NextStateGeneratorOptions const& options) : options(options) {
+        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(variableInformation), evaluator(expressionManager), state(nullptr) {
             // Intentionally left empty.
         }
-                
+        
         template<typename ValueType, typename StateType>
         NextStateGeneratorOptions const& NextStateGenerator<ValueType, StateType>::getOptions() const {
             return options;
         }
         
+        template<typename ValueType, typename StateType>
+        uint64_t NextStateGenerator<ValueType, StateType>::getStateSize() const {
+            return variableInformation.getTotalBitOffset(true);
+        }
+        
+        template<typename ValueType, typename StateType>
+        void NextStateGenerator<ValueType, StateType>::load(CompressedState const& state) {
+            // Since almost all subsequent operations are based on the evaluator, we load the state into it now.
+            unpackStateIntoEvaluator(state, variableInformation, evaluator);
+            
+            // Also, we need to store a pointer to the state itself, because we need to be able to access it when expanding it.
+            this->state = &state;
+        }
+        
+        template<typename ValueType, typename StateType>
+        bool NextStateGenerator<ValueType, StateType>::satisfies(storm::expressions::Expression const& expression) const {
+            if (expression.isTrue()) {
+                return true;
+            }
+            return evaluator.asBool(expression);
+        }
+        
+        template<typename ValueType, typename StateType>
+        storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
+            // Make the labels unique.
+            std::sort(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first < b.first; } );
+            auto it = std::unique(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first == b.first; } );
+            labelsAndExpressions.resize(std::distance(labelsAndExpressions.begin(), it));
+            
+            for (auto const& expression : this->options.getExpressionLabels()) {
+                std::stringstream stream;
+                stream << expression;
+                labelsAndExpressions.push_back(std::make_pair(stream.str(), expression));
+            }
+            
+            // Prepare result.
+            storm::models::sparse::StateLabeling result(states.size());
+            
+            // Initialize labeling.
+            for (auto const& label : labelsAndExpressions) {
+                result.addLabel(label.first);
+            }
+            for (auto const& stateIndexPair : states) {
+                unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, this->evaluator);
+                
+                for (auto const& label : labelsAndExpressions) {
+                    // Add label to state, if the corresponding expression is true.
+                    if (evaluator.asBool(label.second)) {
+                        result.addLabelToState(label.first, stateIndexPair.second);
+                    }
+                }
+            }
+            
+            // Also label the initial state with the special label "init".
+            result.addLabel("init");
+            for (auto index : initialStateIndices) {
+                result.addLabelToState("init", index);
+            }
+            
+            return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        storm::expressions::SimpleValuation NextStateGenerator<ValueType, StateType>::toValuation(CompressedState const& state) const {
+            return unpackStateIntoValuation(state, variableInformation, *expressionManager);
+        }
+
         template class NextStateGenerator<double>;
         template class NextStateGenerator<storm::RationalFunction>;
         
