@@ -34,6 +34,7 @@ namespace storm {
         
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpMultiObjectiveModelChecker<SparseMdpModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula> const& checkTask) {
+            STORM_LOG_ASSERT(this->getModel().getInitialStates().getNumberOfSetBits() == 1, "Multi Objective Model checking on model with multiple initial states is not supported.");
             std::unique_ptr<CheckResult> result;
             
 #ifdef STORM_HAVE_CARL

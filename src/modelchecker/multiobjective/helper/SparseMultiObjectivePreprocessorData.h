@@ -10,8 +10,6 @@
 
 namespace storm {
     namespace modelchecker {
-        
-
         namespace helper {
             
             template <class SparseModelType>
