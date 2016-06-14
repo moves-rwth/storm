@@ -22,6 +22,31 @@ const int e31=e13;
 const int e32=e23;
 
 
+
+
+// agent is committed to some team
+formula committed = (m1_t1+m1_t2) > 0;
+
+// formulae to compute team sizes
+formula team_size_t1 = m1_t1+m2_t1+m3_t1;
+formula team_size_t2 = m1_t2+m2_t2+m3_t2;
+
+// formulae to check whether the agent can join the team
+formula can_join_t1 = e12*m2_t1 + e13*m3_t1 > 0;
+formula can_join_t2 = e12*m2_t2 + e13*m3_t2  > 0;
+
+// formulae to check whether agent has the resource required by the task
+formula has_resource_t1 = ( (t1_r1=1&resource1=1) | (t1_r2=1&resource1=2) | (t1_r3=1&resource1=3) );
+formula has_resource_t2 = ( (t2_r1=1&resource1=1) | (t2_r2=1&resource1=2) | (t2_r3=1&resource1=3) );
+
+// formulae to check whether the resource of an agent has been already filled in the team
+formula resource_filled_t1 = (m2_t1=1 & resource1=resource2) | (m3_t1=1 & resource1=resource3);
+formula resource_filled_t2 = (m2_t2=1 & resource1=resource2) | (m3_t2=1 & resource1=resource3);
+
+// formula to compute team initiation probability (assuming each agent has at least one connection)
+formula IP = (e12*(1-((m2_t1+m2_t2)=0?0:1))+e13*(1-((m3_t1+m3_t2)=0?0:1))) / (e12+e13);
+
+
 module controller // schedules the algorithm
 
 	// algorithm status
@@ -210,30 +235,6 @@ module sensor3 = sensor1
 	e35=e15
 ] 
 endmodule
-
-
-
-// agent is committed to some team
-formula committed = (m1_t1+m1_t2) > 0;
-
-// formulae to compute team sizes
-formula team_size_t1 = m1_t1+m2_t1+m3_t1;
-formula team_size_t2 = m1_t2+m2_t2+m3_t2;
-
-// formulae to check whether the agent can join the team
-formula can_join_t1 = e12*m2_t1 + e13*m3_t1 > 0;
-formula can_join_t2 = e12*m2_t2 + e13*m3_t2  > 0;
-
-// formulae to check whether agent has the resource required by the task
-formula has_resource_t1 = ( (t1_r1=1&resource1=1) | (t1_r2=1&resource1=2) | (t1_r3=1&resource1=3) );
-formula has_resource_t2 = ( (t2_r1=1&resource1=1) | (t2_r2=1&resource1=2) | (t2_r3=1&resource1=3) );
-
-// formulae to check whether the resource of an agent has been already filled in the team
-formula resource_filled_t1 = (m2_t1=1 & resource1=resource2) | (m3_t1=1 & resource1=resource3);
-formula resource_filled_t2 = (m2_t2=1 & resource1=resource2) | (m3_t2=1 & resource1=resource3);
-
-// formula to compute team initiation probability (assuming each agent has at least one connection)
-formula IP = (e12*(1-((m2_t1+m2_t2)=0?0:1))+e13*(1-((m3_t1+m3_t2)=0?0:1))) / (e12+e13);
 
 
 
