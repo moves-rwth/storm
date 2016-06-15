@@ -88,11 +88,18 @@ namespace storm {
             ExplicitModelBuilder(std::shared_ptr<storm::generator::NextStateGenerator<ValueType, StateType>> const& generator, Options const& options = Options());
 
             /*!
-             * Creates an explicit model builder for the given PRISM program..
+             * Creates an explicit model builder for the given PRISM program.
              *
              * @param program The program for which to build the model.
              */
             ExplicitModelBuilder(storm::prism::Program const& program, storm::generator::NextStateGeneratorOptions const& generatorOptions = storm::generator::NextStateGeneratorOptions(), Options const& builderOptions = Options());
+
+            /*!
+             * Creates an explicit model builder for the given JANI model.
+             *
+             * @param model The JANI model for which to build the model.
+             */
+            ExplicitModelBuilder(storm::jani::Model const& model, storm::generator::NextStateGeneratorOptions const& generatorOptions = storm::generator::NextStateGeneratorOptions(), Options const& builderOptions = Options());
             
             /*!
              * Convert the program given at construction time to an abstract model. The type of the model is the one

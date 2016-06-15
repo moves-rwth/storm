@@ -14,7 +14,7 @@
 
 namespace storm {
     namespace generator {
-     
+        
         template<typename ValueType, typename StateType>
         JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options) : JaniNextStateGenerator(model.substituteConstants(), options, false) {
             // Intentionally left empty.
@@ -22,7 +22,7 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), VariableInformation(model), options), model(model) {
-            STORM_LOG_THROW(!this->model.hasDefaultComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
+            STORM_LOG_THROW(!model.hasDefaultComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             STORM_LOG_THROW(!this->options.isBuildAllRewardModelsSet() && this->options.getRewardModelNames().empty(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support building reward models.");
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
             
@@ -59,7 +59,35 @@ namespace storm {
         bool JaniNextStateGenerator<ValueType, StateType>::isDiscreteTimeModel() const {
             return model.isDiscreteTimeModel();
         }
-
+        
+        template<typename ValueType, typename StateType>
+        uint64_t JaniNextStateGenerator<ValueType, StateType>::getLocation(CompressedState const& state, LocationVariableInformation const& locationVariable) const {
+            if (locationVariable.bitWidth == 0) {
+                return 0;
+            } else {
+                return state.getAsInt(locationVariable.bitOffset, locationVariable.bitWidth);
+            }
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::setLocation(CompressedState& state, LocationVariableInformation const& locationVariable, uint64_t locationIndex) const {
+            if (locationVariable.bitWidth != 0) {
+                state.setFromInt(locationVariable.bitOffset, locationVariable.bitWidth, locationIndex);
+            }
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::vector<uint64_t> JaniNextStateGenerator<ValueType, StateType>::getLocations(CompressedState const& state) const {
+            std::vector<uint64_t> result(this->variableInformation.locationVariables.size());
+            
+            auto resultIt = result.begin();
+            for (auto it = this->variableInformation.locationVariables.begin(), ite = this->variableInformation.locationVariables.end(); it != ite; ++it, ++resultIt) {
+                *resultIt = getLocation(state, *it);
+            }
+            
+            return result;
+        }
+        
         template<typename ValueType, typename StateType>
         std::vector<StateType> JaniNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
             // Prepare an SMT solver to enumerate all initial states.
@@ -72,7 +100,7 @@ namespace storm {
             }
             solver->add(model.getInitialStatesExpression(true));
             
-            // Proceed ss long as the solver can still enumerate initial states.
+            // Proceed as long as the solver can still enumerate initial states.
             std::vector<StateType> initialStateIndices;
             while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
                 // Create fresh state.
@@ -95,11 +123,35 @@ namespace storm {
                     initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
                 }
                 
-                // FIXME: iterate through all combinations of initial locations and set them in the initial state.
+                // Gather iterators to the initial locations of all the automata.
+                std::vector<std::set<uint64_t>::const_iterator> initialLocationsIterators;
+                for (auto const& automaton : this->model.getAutomata()) {
+                    initialLocationsIterators.push_back(automaton.getInitialLocationIndices().cbegin());
+                }
                 
-                // Register initial state and return it.
-                StateType id = stateToIdCallback(initialState);
-                initialStateIndices.push_back(id);
+                // Now iterate through all combinations of initial locations.
+                while (true) {
+                    uint64_t index = 0;
+                    for (; index < initialLocationsIterators.size(); ++index) {
+                        ++initialLocationsIterators[index];
+                        if (initialLocationsIterators[index] == this->model.getAutomata()[index].getInitialLocationIndices().cend()) {
+                            initialLocationsIterators[index] = this->model.getAutomata()[index].getInitialLocationIndices().cbegin();
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    // If we are at the end, leave the loop. Otherwise, create the next initial state.
+                    if (index == initialLocationsIterators.size()) {
+                        break;
+                    } else {
+                        setLocation(initialState, this->variableInformation.locationVariables[index], *initialLocationsIterators[index]);
+
+                        // Register initial state and return it.
+                        StateType id = stateToIdCallback(initialState);
+                        initialStateIndices.push_back(id);
+                    }
+                }
                 
                 // Block the current initial state to search for the next one.
                 solver->add(blockingExpression);
@@ -107,7 +159,7 @@ namespace storm {
             
             return initialStateIndices;
         }
-
+        
         template<typename ValueType, typename StateType>
         CompressedState JaniNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::jani::EdgeDestination const& destination) {
             CompressedState newState(state);
@@ -161,9 +213,12 @@ namespace storm {
                 }
             }
             
+            // Retrieve the locations from the state.
+            std::vector<uint64_t> locations = getLocations(*this->state);
+            
             // Get all choices for the state.
-            std::vector<Choice<ValueType>> allChoices = getSilentActionChoices(*this->state, stateToIdCallback);
-            std::vector<Choice<ValueType>> allLabeledChoices = getNonsilentActionChoices(*this->state, stateToIdCallback);
+            std::vector<Choice<ValueType>> allChoices = getSilentActionChoices(locations, *this->state, stateToIdCallback);
+            std::vector<Choice<ValueType>> allLabeledChoices = getNonsilentActionChoices(locations, *this->state, stateToIdCallback);
             for (auto& choice : allLabeledChoices) {
                 allChoices.push_back(std::move(choice));
             }
@@ -210,18 +265,16 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getSilentActionChoices(CompressedState const& state, StateToIdCallback stateToIdCallback) {
+        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getSilentActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback) {
             std::vector<Choice<ValueType>> result;
             
             // Iterate over all automata.
-            auto locationVariableIt = this->variableInformation.locationVariables.begin();
+            uint64_t automatonIndex = 0;
             for (auto const& automaton : model.getAutomata()) {
-                
-                // Determine the location of the automaton in the given state.
-                uint64_t locationIndex = state.getAsInt(locationVariableIt->bitOffset, locationVariableIt->bitWidth);
+                uint64_t location = locations[automatonIndex];
                 
                 // Iterate over all edges from the source location.
-                for (auto const& edge : automaton.getEdgesFromLocation(locationIndex)) {
+                for (auto const& edge : automaton.getEdgesFromLocation(location)) {
                     // Skip the edge if it is labeled with a non-silent action.
                     if (edge.getActionIndex() != model.getSilentActionIndex()) {
                         continue;
@@ -252,16 +305,146 @@ namespace storm {
                     STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
                 }
                 
-                // After we have processed all edges of the current automaton, move to the next location variable.
-                ++locationVariableIt;
+                ++automatonIndex;
             }
             
             return result;
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getNonsilentActionChoices(CompressedState const& state, StateToIdCallback stateToIdCallback) {
+        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getNonsilentActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback) {
+            std::vector<Choice<ValueType>> result;
             
+            for (uint64_t actionIndex : model.getNonsilentActionIndices()) {
+                std::vector<std::vector<storm::jani::Edge const*>> enabledEdges = getEnabledEdges(locations, actionIndex);
+                
+                // Only process this action, if there is at least one feasible solution.
+                if (!enabledEdges.empty()) {
+                    std::vector<std::vector<storm::jani::Edge const*>::const_iterator> iteratorList(enabledEdges.size());
+                    
+                    // Initialize the list of iterators.
+                    for (size_t i = 0; i < enabledEdges.size(); ++i) {
+                        iteratorList[i] = enabledEdges[i].cbegin();
+                    }
+                    
+                    // As long as there is one feasible combination of commands, keep on expanding it.
+                    bool done = false;
+                    while (!done) {
+                        boost::container::flat_map<CompressedState, ValueType>* currentTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                        boost::container::flat_map<CompressedState, ValueType>* newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                        
+                        currentTargetStates->emplace(state, storm::utility::one<ValueType>());
+                        
+                        for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
+                            storm::jani::Edge const& edge = **iteratorList[i];
+                            
+                            for (auto const& destination : edge.getDestinations()) {
+                                for (auto const& stateProbabilityPair : *currentTargetStates) {
+                                    // Compute the new state under the current update and add it to the set of new target states.
+                                    CompressedState newTargetState = applyUpdate(stateProbabilityPair.first, destination);
+                                    
+                                    // If the new state was already found as a successor state, update the probability
+                                    // and otherwise insert it.
+                                    auto targetStateIt = newTargetStates->find(newTargetState);
+                                    if (targetStateIt != newTargetStates->end()) {
+                                        targetStateIt->second += stateProbabilityPair.second * this->evaluator.asRational(destination.getProbability());
+                                    } else {
+                                        newTargetStates->emplace(newTargetState, stateProbabilityPair.second * this->evaluator.asRational(destination.getProbability()));
+                                    }
+                                }
+                            }
+                            
+                            // If there is one more command to come, shift the target states one time step back.
+                            if (i < iteratorList.size() - 1) {
+                                delete currentTargetStates;
+                                currentTargetStates = newTargetStates;
+                                newTargetStates = new boost::container::flat_map<CompressedState, ValueType>();
+                            }
+                        }
+                        
+                        // At this point, we applied all commands of the current command combination and newTargetStates
+                        // contains all target states and their respective probabilities. That means we are now ready to
+                        // add the choice to the list of transitions.
+                        result.push_back(Choice<ValueType>(actionIndex));
+                        
+                        // Now create the actual distribution.
+                        Choice<ValueType>& choice = result.back();
+                        
+                        // Add the probabilities/rates to the newly created choice.
+                        ValueType probabilitySum = storm::utility::zero<ValueType>();
+                        for (auto const& stateProbabilityPair : *newTargetStates) {
+                            StateType actualIndex = stateToIdCallback(stateProbabilityPair.first);
+                            choice.addProbability(actualIndex, stateProbabilityPair.second);
+                            probabilitySum += stateProbabilityPair.second;
+                        }
+                        
+                        // Check that the resulting distribution is in fact a distribution.
+                        STORM_LOG_THROW(!this->isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        
+                        // Dispose of the temporary maps.
+                        delete currentTargetStates;
+                        delete newTargetStates;
+                        
+                        // Now, check whether there is one more command combination to consider.
+                        bool movedIterator = false;
+                        for (uint64_t j = 0; !movedIterator && j < iteratorList.size(); ++j) {
+                            ++iteratorList[j];
+                            if (iteratorList[j] != enabledEdges[j].end()) {
+                                movedIterator = true;
+                            } else {
+                                // Reset the iterator to the beginning of the list.
+                                iteratorList[j] = enabledEdges[j].begin();
+                            }
+                        }
+                        
+                        done = !movedIterator;
+                    }
+                }
+            }
+            
+            return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::vector<std::vector<storm::jani::Edge const*>> JaniNextStateGenerator<ValueType, StateType>::getEnabledEdges(std::vector<uint64_t> const& locationIndices, uint64_t actionIndex) {
+            std::vector<std::vector<storm::jani::Edge const*>> result;
+            
+            // Iterate over all automata.
+            uint64_t automatonIndex = 0;
+            for (auto const& automaton : model.getAutomata()) {
+                
+                // If the automaton has no edge labeled with the given action, we can skip it.
+                if (!automaton.hasEdgeLabeledWithActionIndex(actionIndex)) {
+                    continue;
+                }
+                
+                auto edges = automaton.getEdgesFromLocation(locationIndices[automatonIndex], actionIndex);
+                
+                // If the automaton contains the action, but there is no edge available labeled with
+                // this action, we don't have any feasible command combinations.
+                if (edges.empty()) {
+                    return std::vector<std::vector<storm::jani::Edge const*>>();
+                }
+                
+                std::vector<storm::jani::Edge const*> edgePointers;
+                edgePointers.reserve(edges.size());
+                for (auto const& edge : edges) {
+                    if (this->evaluator.asBool(edge.getGuard())) {
+                        edgePointers.push_back(&edge);
+                    }
+                }
+                
+                // If there was no enabled edge although the automaton has some edge with the required action, we must
+                // not return anything.
+                if (edgePointers.size() == 0) {
+                    return std::vector<std::vector<storm::jani::Edge const*>>();
+                }
+                
+                result.emplace_back(std::move(edgePointers));
+                ++automatonIndex;
+            }
+            
+            return result;
         }
         
         template<typename ValueType, typename StateType>
@@ -279,7 +462,7 @@ namespace storm {
         storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices) {
             return NextStateGenerator<ValueType, StateType>::label(states, initialStateIndices, {});
         }
-
+        
         template class JaniNextStateGenerator<double>;
         template class JaniNextStateGenerator<storm::RationalFunction>;
         

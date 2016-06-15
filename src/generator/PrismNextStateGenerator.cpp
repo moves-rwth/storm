@@ -479,7 +479,7 @@ namespace storm {
                         
                         // Now, check whether there is one more command combination to consider.
                         bool movedIterator = false;
-                        for (int_fast64_t j = iteratorList.size() - 1; j >= 0; --j) {
+                        for (int_fast64_t j = iteratorList.size() - 1; !movedIterator && j >= 0; --j) {
                             ++iteratorList[j];
                             if (iteratorList[j] != activeCommandList[j].end()) {
                                 movedIterator = true;

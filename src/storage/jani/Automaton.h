@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdint>
 #include <unordered_map>
+#include <boost/container/flat_set.hpp>
 
 #include "src/storage/jani/VariableSet.h"
 #include "src/storage/jani/Edge.h"
@@ -36,6 +37,11 @@ namespace storm {
                  */
                 bool empty() const;
                 
+                /*!
+                 * Retrieves the number of edges.
+                 */
+                std::size_t size() const;
+                
             private:
                 iterator it;
                 iterator ite;
@@ -62,6 +68,11 @@ namespace storm {
                  * Determines whether this set of edges is empty.
                  */
                 bool empty() const;
+
+                /*!
+                 * Retrieves the number of edges.
+                 */
+                std::size_t size() const;
                 
             private:
                 const_iterator it;
@@ -174,6 +185,16 @@ namespace storm {
              * Retrieves the edges of the location with the given index.
              */
             ConstEdges getEdgesFromLocation(uint64_t index) const;
+            
+            /*!
+             * Retrieves the edges of the location with the given index labeled with the given action index.
+             */
+            Edges getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex);
+            
+            /*!
+             * Retrieves the edges of the location with the given index.
+             */
+            ConstEdges getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) const;
             
             /*!
              * Adds an edge to the automaton.

@@ -47,6 +47,9 @@ namespace storm {
             STORM_LOG_THROW(it == actionToIndex.end(), storm::exceptions::WrongFormatException, "Action with name '" << action.getName() << "' already exists");
             actionToIndex.emplace(action.getName(), actions.size());
             actions.push_back(action);
+            if (action.getName() != SILENT_ACTION_NAME) {
+                nonsilentActionIndices.insert(actions.size() - 1);
+            }
             return actions.size() - 1;
         }
         
@@ -66,6 +69,10 @@ namespace storm {
         
         std::vector<Action> const& Model::getActions() const {
             return actions;
+        }
+        
+        boost::container::flat_set<uint64_t> const& Model::getNonsilentActionIndices() const {
+            return nonsilentActionIndices;
         }
         
         uint64_t Model::addConstant(Constant const& constant) {

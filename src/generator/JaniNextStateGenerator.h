@@ -28,6 +28,21 @@ namespace storm {
             
         private:
             /*!
+             * Retrieves the location index from the given state.
+             */
+            uint64_t getLocation(CompressedState const& state, LocationVariableInformation const& locationVariable) const;
+            
+            /*!
+             * Sets the location index from the given state.
+             */
+            void setLocation(CompressedState& state, LocationVariableInformation const& locationVariable, uint64_t locationIndex) const;
+            
+            /*!
+             * Retrieves the tuple of locations of the given state.
+             */
+            std::vector<uint64_t> getLocations(CompressedState const& state) const;
+            
+            /*!
              * A delegate constructor that is used to preprocess the model before the constructor of the superclass is
              * being called. The last argument is only present to distinguish the signature of this constructor from the
              * public one.
@@ -46,18 +61,27 @@ namespace storm {
             /*!
              * Retrieves all choices labeled with the silent action possible from the given state.
              *
+             * @param locations The current locations of all automata.
              * @param state The state for which to retrieve the silent choices.
              * @return The silent action choices of the state.
              */
-            std::vector<Choice<ValueType>> getSilentActionChoices(CompressedState const& state, StateToIdCallback stateToIdCallback);
+            std::vector<Choice<ValueType>> getSilentActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback);
             
             /*!
              * Retrieves all choices labeled with some non-silent action possible from the given state.
              *
+             * @param locations THe current locations of all automata.
              * @param state The state for which to retrieve the non-silent choices.
              * @return The non-silent action choices of the state.
              */
-            std::vector<Choice<ValueType>> getNonsilentActionChoices(CompressedState const& state, StateToIdCallback stateToIdCallback);
+            std::vector<Choice<ValueType>> getNonsilentActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback);
+            
+            /*!
+             * Retrieves a list of lists of edges such that the list at index i are all edges of automaton i enabled in 
+             * the current state. If the list is empty, it means there was at least one automaton containing edges with
+             * the desired action, but none of them were enabled.
+             */
+            std::vector<std::vector<storm::jani::Edge const*>> getEnabledEdges(std::vector<uint64_t> const& locationIndices, uint64_t actionIndex);
             
             // The model used for the generation of next states.
             storm::jani::Model model;

@@ -78,6 +78,11 @@ namespace storm {
             std::vector<Action> const& getActions() const;
             
             /*!
+             * Retrieves all non-silent action indices of the model.
+             */
+            boost::container::flat_set<uint64_t> const& getNonsilentActionIndices() const;
+            
+            /*!
              * Adds the given constant to the model.
              */
             uint64_t addConstant(Constant const& constant);
@@ -287,6 +292,9 @@ namespace storm {
             
             /// A mapping from names to action indices.
             std::unordered_map<std::string, uint64_t> actionToIndex;
+            
+            /// The set of non-silent action indices.
+            boost::container::flat_set<uint64_t> nonsilentActionIndices;
             
             /// The index of the silent action.
             uint64_t silentActionIndex;

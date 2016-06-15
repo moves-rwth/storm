@@ -13,6 +13,7 @@
 #include "src/settings/modules/IOSettings.h"
 
 #include "src/generator/PrismNextStateGenerator.h"
+#include "src/generator/JaniNextStateGenerator.h"
 
 #include "src/utility/prism.h"
 #include "src/utility/constants.h"
@@ -102,6 +103,11 @@ namespace storm {
         
         template <typename ValueType, typename RewardModelType, typename StateType>
         ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ExplicitModelBuilder(storm::prism::Program const& program, storm::generator::NextStateGeneratorOptions const& generatorOptions, Options const& builderOptions) : ExplicitModelBuilder(std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, StateType>>(program, generatorOptions), builderOptions) {
+            // Intentionally left empty.
+        }
+        
+        template <typename ValueType, typename RewardModelType, typename StateType>
+        ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ExplicitModelBuilder(storm::jani::Model const& model, storm::generator::NextStateGeneratorOptions const& generatorOptions, Options const& builderOptions) : ExplicitModelBuilder(std::make_shared<storm::generator::JaniNextStateGenerator<ValueType, StateType>>(model, generatorOptions), builderOptions) {
             // Intentionally left empty.
         }
         

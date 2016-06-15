@@ -24,6 +24,10 @@ namespace storm {
                 return it == ite;
             }
             
+            std::size_t Edges::size() const {
+                return std::distance(it, ite);
+            }
+            
             ConstEdges::ConstEdges(const_iterator it, const_iterator ite) : it(it), ite(ite) {
                 // Intentionally left empty.
             }
@@ -38,6 +42,10 @@ namespace storm {
 
             bool ConstEdges::empty() const {
                 return it == ite;
+            }
+
+            std::size_t ConstEdges::size() const {
+                return std::distance(it, ite);
             }
         }
         
@@ -138,6 +146,100 @@ namespace storm {
             return ConstEdges(it, ite);
         }
         
+        Automaton::Edges Automaton::getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) {
+            typedef std::vector<Edge>::iterator ForwardIt;
+
+            // Perform binary search for start of edges with the given action index.
+            auto first = edges.begin();
+            std::advance(first, locationToStartingIndex[locationIndex]);
+            auto last = edges.begin();
+            std::advance(last, locationToStartingIndex[locationIndex + 1]);
+            typename std::iterator_traits<ForwardIt>::difference_type count, step;
+            count = std::distance(first, last);
+            
+            ForwardIt it1;
+            while (count > 0) {
+                it1 = first;
+                step = count / 2;
+                std::advance(it1, step);
+                if (it1->getActionIndex() < actionIndex) {
+                    first = ++it1;
+                    count -= step + 1;
+                }
+                else {
+                    count = step;
+                }
+            }
+            
+            // If there is no such edge, we can return now.
+            if (it1 != last && it1->getActionIndex() > actionIndex) {
+                return Edges(last, last);
+            }
+            
+            // Otherwise, perform a binary search for the end of the edges with the given action index.
+            count = std::distance(first,last);
+            
+            ForwardIt it2;
+            while (count > 0) {
+                it2 = it1;
+                step = count / 2;
+                std::advance(it2, step);
+                if (!(actionIndex < it2->getActionIndex())) {
+                    first = ++it2;
+                    count -= step + 1;
+                } else count = step;
+            }
+            
+            return Edges(it1, it2);
+        }
+        
+        Automaton::ConstEdges Automaton::getEdgesFromLocation(uint64_t locationIndex, uint64_t actionIndex) const {
+            typedef std::vector<Edge>::const_iterator ForwardIt;
+            
+            // Perform binary search for start of edges with the given action index.
+            auto first = edges.begin();
+            std::advance(first, locationToStartingIndex[locationIndex]);
+            auto last = edges.begin();
+            std::advance(last, locationToStartingIndex[locationIndex + 1]);
+            typename std::iterator_traits<ForwardIt>::difference_type count, step;
+            count = std::distance(first, last);
+            
+            ForwardIt it1;
+            while (count > 0) {
+                it1 = first;
+                step = count / 2;
+                std::advance(it1, step);
+                if (it1->getActionIndex() < actionIndex) {
+                    first = ++it1;
+                    count -= step + 1;
+                }
+                else {
+                    count = step;
+                }
+            }
+            
+            // If there is no such edge, we can return now.
+            if (it1 != last && it1->getActionIndex() > actionIndex) {
+                return ConstEdges(last, last);
+            }
+            
+            // Otherwise, perform a binary search for the end of the edges with the given action index.
+            count = std::distance(first,last);
+            
+            ForwardIt it2;
+            while (count > 0) {
+                it2 = it1;
+                step = count / 2;
+                std::advance(it2, step);
+                if (!(actionIndex < it2->getActionIndex())) {
+                    first = ++it2;
+                    count -= step + 1;
+                } else count = step;
+            }
+            
+            return ConstEdges(it1, it2);
+        }
+        
         void Automaton::addEdge(Edge const& edge) {
             STORM_LOG_THROW(edge.getSourceLocationIndex() < locations.size(), storm::exceptions::InvalidArgumentException, "Cannot add edge with unknown source location index '" << edge.getSourceLocationIndex() << "'.");
             
@@ -150,6 +252,13 @@ namespace storm {
             for (uint64_t locationIndex = edge.getSourceLocationIndex() + 1; locationIndex < locationToStartingIndex.size(); ++locationIndex) {
                 ++locationToStartingIndex[locationIndex];
             }
+            
+            // Sort all edges form the source location of the newly introduced edge by their action indices.
+            auto it = edges.begin();
+            std::advance(it, locationToStartingIndex[edge.getSourceLocationIndex()]);
+            auto ite = edges.begin();
+            std::advance(ite, locationToStartingIndex[edge.getSourceLocationIndex() + 1]);
+            std::sort(it, ite, [] (Edge const& a, Edge const& b) { return a.getActionIndex() < b.getActionIndex(); } );
             
             // Update the set of action indices of this automaton.
             actionIndices.insert(edge.getActionIndex());
