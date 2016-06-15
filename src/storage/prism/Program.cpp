@@ -20,6 +20,7 @@
 
 #include "src/storage/prism/CompositionVisitor.h"
 #include "src/storage/prism/Compositions.h"
+#include "src/storage/prism/CompositionToJaniVisitor.h"
 
 namespace storm {
     namespace prism {
@@ -1510,8 +1511,6 @@ namespace storm {
         }
         
         storm::jani::Model Program::toJani(bool allVariablesGlobal) const {
-            STORM_LOG_THROW(!this->specifiesSystemComposition(), storm::exceptions::InvalidOperationException, "Cannot translate PRISM program with custom system composition to JANI.");
-            
             // Start by creating an empty JANI model.
             storm::jani::ModelType modelType;
             switch (this->getModelType()) {
@@ -1659,7 +1658,12 @@ namespace storm {
             janiModel.setInitialStatesExpression(globalInitialStatesExpression);
             
             // Set the standard system composition. This is possible, because we reject non-standard compositions anyway.
-            janiModel.setSystemComposition(janiModel.getStandardSystemComposition());
+            if (this->specifiesSystemComposition()) {
+                CompositionToJaniVisitor visitor;
+                janiModel.setSystemComposition(visitor.toJani(this->getSystemCompositionConstruct().getSystemComposition(), janiModel));
+            } else {
+                janiModel.setSystemComposition(janiModel.getStandardSystemComposition());
+            }
             
             return janiModel;
         }

@@ -15,7 +15,7 @@ namespace storm {
         
         class CompositionInformation {
         public:
-            CompositionInformation() = default;
+            CompositionInformation();
             CompositionInformation(std::map<std::string, uint64_t> const& automatonNameToMultiplicity, std::set<std::string> const& nonsilentActions, bool containsRenaming, bool containsRestrictedParallelComposition);
 
             void increaseAutomatonMultiplicity(std::string const& automatonName, uint64_t count = 1);

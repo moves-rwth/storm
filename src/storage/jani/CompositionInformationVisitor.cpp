@@ -6,6 +6,10 @@
 namespace storm {
     namespace jani {
         
+        CompositionInformation::CompositionInformation() : automatonNameToMultiplicity(), nonsilentActions(), renameComposition(false), restrictedParallelComposition(false) {
+            // Intentionally left empty.
+        }
+        
         CompositionInformation::CompositionInformation(std::map<std::string, uint64_t> const& automatonNameToMultiplicity, std::set<std::string> const& nonsilentActions, bool containsRenameComposition, bool containsRestrictedParallelComposition) : automatonNameToMultiplicity(automatonNameToMultiplicity), nonsilentActions(nonsilentActions), renameComposition(containsRenameComposition), restrictedParallelComposition(containsRestrictedParallelComposition) {
             // Intentionally left empty.
         }
@@ -105,9 +109,8 @@ namespace storm {
             if (!containsRestrictedParallelComposition) {
                 std::set<std::string> commonNonsilentActions;
                 std::set_intersection(left.getNonsilentActions().begin(), left.getNonsilentActions().end(), right.getNonsilentActions().begin(), right.getNonsilentActions().end(), std::inserter(commonNonsilentActions, commonNonsilentActions.begin()));
-                if (commonNonsilentActions != composition.getSynchronizationAlphabet()) {
-                    containsRestrictedParallelComposition = true;
-                }
+                bool allCommonActionsIncluded = std::includes(commonNonsilentActions.begin(), commonNonsilentActions.end(), composition.getSynchronizationAlphabet().begin(), composition.getSynchronizationAlphabet().end());
+                containsRestrictedParallelComposition = !allCommonActionsIncluded;
             }
             
             return CompositionInformation(joinedAutomatonToMultiplicity, nonsilentActions, containsRenameComposition, containsRestrictedParallelComposition);

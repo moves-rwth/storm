@@ -50,7 +50,7 @@ namespace storm {
             sortVariables();
         }
         
-        VariableInformation::VariableInformation(storm::jani::Model const& model) {
+        VariableInformation::VariableInformation(storm::jani::Model const& model) : totalBitOffset(0) {
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
                 booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset);
                 ++totalBitOffset;

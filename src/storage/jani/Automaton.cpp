@@ -114,7 +114,7 @@ namespace storm {
             initialLocationIndices.insert(index);
         }
         
-        std::set<uint64_t> Automaton::getInitialLocationIndices() const {
+        std::set<uint64_t> const& Automaton::getInitialLocationIndices() const {
             return initialLocationIndices;
         }
 
@@ -170,14 +170,15 @@ namespace storm {
                     count = step;
                 }
             }
-            
+            it1 = first;
+
             // If there is no such edge, we can return now.
             if (it1 != last && it1->getActionIndex() > actionIndex) {
                 return Edges(last, last);
             }
             
             // Otherwise, perform a binary search for the end of the edges with the given action index.
-            count = std::distance(first,last);
+            count = std::distance(it1,last);
             
             ForwardIt it2;
             while (count > 0) {
@@ -189,6 +190,7 @@ namespace storm {
                     count -= step + 1;
                 } else count = step;
             }
+            it2 = first;
             
             return Edges(it1, it2);
         }
@@ -217,6 +219,7 @@ namespace storm {
                     count = step;
                 }
             }
+            it1 = first;
             
             // If there is no such edge, we can return now.
             if (it1 != last && it1->getActionIndex() > actionIndex) {
@@ -224,11 +227,11 @@ namespace storm {
             }
             
             // Otherwise, perform a binary search for the end of the edges with the given action index.
-            count = std::distance(first,last);
+            count = std::distance(it1,last);
             
             ForwardIt it2;
             while (count > 0) {
-                it2 = it1;
+                it2 = first;
                 step = count / 2;
                 std::advance(it2, step);
                 if (!(actionIndex < it2->getActionIndex())) {
@@ -236,6 +239,7 @@ namespace storm {
                     count -= step + 1;
                 } else count = step;
             }
+            it2 = first;
             
             return ConstEdges(it1, it2);
         }

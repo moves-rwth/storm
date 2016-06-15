@@ -164,7 +164,7 @@ namespace storm {
             /*!
              * Retrieves the indices of the initial locations.
              */
-            std::set<uint64_t> getInitialLocationIndices() const;
+            std::set<uint64_t> const& getInitialLocationIndices() const;
 
             /*!
              * Retrieves the edges of the location with the given name.

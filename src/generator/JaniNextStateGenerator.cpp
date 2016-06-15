@@ -22,7 +22,7 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         JaniNextStateGenerator<ValueType, StateType>::JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(model.getExpressionManager(), VariableInformation(model), options), model(model) {
-            STORM_LOG_THROW(!model.hasDefaultComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
+            STORM_LOG_THROW(model.hasDefaultComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
             STORM_LOG_THROW(!this->options.isBuildAllRewardModelsSet() && this->options.getRewardModelNames().empty(), storm::exceptions::InvalidSettingsException, "The explicit next-state generator currently does not support building reward models.");
             STORM_LOG_THROW(!this->options.isBuildChoiceLabelsSet(), storm::exceptions::InvalidSettingsException, "JANI next-state generator cannot generate choice labels.");
             
@@ -125,12 +125,21 @@ namespace storm {
                 
                 // Gather iterators to the initial locations of all the automata.
                 std::vector<std::set<uint64_t>::const_iterator> initialLocationsIterators;
+                uint64_t currentLocationVariable = 0;
                 for (auto const& automaton : this->model.getAutomata()) {
                     initialLocationsIterators.push_back(automaton.getInitialLocationIndices().cbegin());
+                    
+                    // Initialize the locations to the first possible combination.
+                    setLocation(initialState, this->variableInformation.locationVariables[currentLocationVariable], *initialLocationsIterators.back());
+                    ++currentLocationVariable;
                 }
                 
                 // Now iterate through all combinations of initial locations.
                 while (true) {
+                    // Register initial state.
+                    StateType id = stateToIdCallback(initialState);
+                    initialStateIndices.push_back(id);
+                    
                     uint64_t index = 0;
                     for (; index < initialLocationsIterators.size(); ++index) {
                         ++initialLocationsIterators[index];
@@ -145,11 +154,9 @@ namespace storm {
                     if (index == initialLocationsIterators.size()) {
                         break;
                     } else {
-                        setLocation(initialState, this->variableInformation.locationVariables[index], *initialLocationsIterators[index]);
-
-                        // Register initial state and return it.
-                        StateType id = stateToIdCallback(initialState);
-                        initialStateIndices.push_back(id);
+                        for (uint64_t j = 0; j <= index; ++j) {
+                            setLocation(initialState, this->variableInformation.locationVariables[j], *initialLocationsIterators[j]);
+                        }
                     }
                 }
                 
@@ -178,7 +185,7 @@ namespace storm {
                 while (assignmentIt->getExpressionVariable() != boolIt->variable) {
                     ++boolIt;
                 }
-                newState.set(boolIt->bitOffset, this->evaluator.asBool(assignmentIt->getExpressionVariable()));
+                newState.set(boolIt->bitOffset, this->evaluator.asBool(assignmentIt->getAssignedExpression()));
             }
             
             // Iterate over all integer assignments and carry them out.
@@ -427,7 +434,6 @@ namespace storm {
                 }
                 
                 std::vector<storm::jani::Edge const*> edgePointers;
-                edgePointers.reserve(edges.size());
                 for (auto const& edge : edges) {
                     if (this->evaluator.asBool(edge.getGuard())) {
                         edgePointers.push_back(&edge);
@@ -436,7 +442,7 @@ namespace storm {
                 
                 // If there was no enabled edge although the automaton has some edge with the required action, we must
                 // not return anything.
-                if (edgePointers.size() == 0) {
+                if (edgePointers.empty()) {
                     return std::vector<std::vector<storm::jani::Edge const*>>();
                 }
                 
