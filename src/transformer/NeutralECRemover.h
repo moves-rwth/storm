@@ -80,7 +80,7 @@ namespace storm {
                     if(ecGetsEmptyRow) {
                         STORM_LOG_ASSERT(result.newToOldRowMapping.size() < originalMatrix.getRowCount(), "Didn't expect to see more rows in the reduced matrix than in the original one.");
                         emptyRows.set(result.newToOldRowMapping.size(), true);
-                        result.newToOldRowMapping.push_back(originalMatrix.getRowGroupIndices()[ec.begin()->first] + (*ec.begin()->second.begin()));
+                        result.newToOldRowMapping.push_back(*ec.begin()->second.begin());
                     }
                 }
                 newRowGroupIndices.push_back(result.newToOldRowMapping.size());
