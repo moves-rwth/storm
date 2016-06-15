@@ -25,20 +25,14 @@ namespace storm {
             
             template <class SparseModelType>
             void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::check(std::vector<ValueType> const& weightVector) {
-                //STORM_LOG_DEBUG("Checking weighted objectives with weight vector " << std::endl << "\t" << weightVector);
-                unboundedWeightedPhase(weightVector);
-                //STORM_LOG_DEBUG("Unbounded weighted phase resulted in " << std::endl << "\t Result: " << weightedResult << std::endl << "\t Scheduler: " << scheduler);
-                unboundedIndividualPhase(weightVector);
-                //STORM_LOG_DEBUG("Unbounded individual phase resulted in...");
-                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                //    STORM_LOG_DEBUG("\t objective " << objIndex << ":" << objectiveResults[objIndex]);
-                }
-                boundedPhase(weightVector);
-               // STORM_LOG_DEBUG("Bounded phase resulted in...");
-                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-               //     STORM_LOG_DEBUG("\t objective " << objIndex << ":" << objectiveResults[objIndex]);
-                }
                 checkHasBeenCalled=true;
+                STORM_LOG_DEBUG("Invoked WeightVectorChecker with weights " << std::endl << "\t" << weightVector);
+                unboundedWeightedPhase(weightVector);
+                STORM_LOG_DEBUG("Unbounded weighted phase result: " << weightedResult[data.preprocessedModel.getInitialStates().getNextSetIndex(0)] << " (value in initial state).");
+                unboundedIndividualPhase(weightVector);
+                STORM_LOG_DEBUG("Unbounded individual phase results in initial state: " << getInitialStateResultOfObjectives());
+                boundedPhase(weightVector);
+                STORM_LOG_DEBUG("Bounded individual phase results in initial state: " << getInitialStateResultOfObjectives() << " ...WeightVectorChecker done.");
             }
             
             template <class SparseModelType>
@@ -146,19 +140,15 @@ namespace storm {
                 //Also only compute values for objectives with weightVector != zero,
                 //one check can be omitted as the result can be computed back from the weighed result and the results from the remaining objectives
                 for(uint_fast64_t objIndex = 0; objIndex < weightVector.size(); ++objIndex) {
-                    if(!data.objectives[objIndex].stepBound){
-                    
+                    if(data.objectives[objIndex].stepBound){
+                        objectiveResults[objIndex] = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>());
+                    } else {
                         storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector());
-                        
-                        //std::cout << "stateActionRewardVector for objective " << objIndex << " is " << storm::utility::vector::toString(data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector()) << std::endl;
-                        //std::cout << "deterministic state rewards for objective " << objIndex << " are " << storm::utility::vector::toString(deterministicStateRewards) << std::endl;
-                        
                         storm::storage::BitVector statesWithRewards =  ~storm::utility::vector::filterZero(deterministicStateRewards);
-                        // As target states, we take the states from which no reward is reachable.
-                        STORM_LOG_WARN("TODO: target state selection is currently only valid for reachability properties...");
-                        //TODO: we should be able to give some hint to the solver..
-                        storm::storage::BitVector targetStates = storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
-                        targetStates.complement();
+                        // As target states, we pick the states from which no reward is reachable.
+                        storm::storage::BitVector targetStates = ~storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
+                    
+                        //TODO: we could give the solver some hint for the result (e.g., weightVector[ObjIndex] * weightedResult or  (weightedResult - sum_i=0^objIndex-1 objectiveResult) * weightVector[objIndex]/ sum_i=objIndex^n weightVector[i] )
                         objectiveResults[objIndex] = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(deterministicMatrix,
                                                                                                        deterministicBackwardTransitions,
                                                                                                        deterministicStateRewards,
