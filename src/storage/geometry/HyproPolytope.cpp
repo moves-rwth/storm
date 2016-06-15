@@ -155,47 +155,6 @@ namespace storm {
             }
             
             template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> HyproPolytope<ValueType>::downwardClosure(boost::optional<Point> const& upperBounds) const {
-                if(this->isUniversal() || this->isEmpty()) {
-                    // In these cases, the polytope does not change, i.e., we return a copy of this
-                    return std::make_shared<HyproPolytope<ValueType>>(*this);
-                }
-                // Only keep the halfspaces where all entries of the normal vector are non-negative
-                std::vector<hypro::Halfspace<ValueType>> halfspaces;
-                for(auto& h : internPolytope.constraints()){
-                    if((h.normal().array() >= storm::utility::zero<ValueType>()).all()){
-                        halfspaces.push_back(h);
-                    }
-                }
-                // Add Halfspaces to bound the polytope in each (positive) direction
-                for(uint_fast64_t dim = 0; dim < internPolytope.dimension(); ++dim){
-                    hypro::vector_t<ValueType> direction = hypro::vector_t<ValueType>::Zero(internPolytope.dimension());
-                    direction(dim) = storm::utility::one<ValueType>();
-                    if(upperBounds){
-                        ValueType upperBound = (*upperBounds)[dim];
-                        halfspaces.emplace_back(std::move(direction), std::move(upperBound));
-                    } else {
-                        // Compute max{x_dim | x \in P }
-                        hypro::EvaluationResult<ValueType> evalRes = internPolytope.evaluate(direction);
-                        switch (evalRes.errorCode) {
-                            case hypro::SOLUTION::FEAS:
-                                halfspaces.emplace_back(std::move(direction), std::move(evalRes.supportValue));
-                                break;
-                            case hypro::SOLUTION::INFTY:
-                                // if this polytope is not bounded in the current direction, no halfspace needs to be added
-                                break;
-                            default:
-                                // there should never be an infeasible solution as we already excluded the empty polytope.
-                                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected eror code for Polytope evaluation");
-                                break;
-                        }
-                    }
-                }
-                return std::make_shared<HyproPolytope<ValueType>>(HyproPolytopeType(std::move(halfspaces)));
-            }
-            
-            
-            template <typename ValueType>
             std::pair<typename HyproPolytope<ValueType>::Point, bool> HyproPolytope<ValueType>::optimize(Point const& direction) const {
                 hypro::EvaluationResult<ValueType> evalRes = internPolytope.evaluate(storm::adapters::toHypro(direction));
                 switch (evalRes.errorCode) {

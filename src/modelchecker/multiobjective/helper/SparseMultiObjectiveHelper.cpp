@@ -243,43 +243,12 @@ namespace storm {
             
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::updateUnderApproximation(std::vector<RefinementStep> const& refinementSteps, std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>>& underApproximation) {
-                std::vector<Point> paretoPointsVec;
-                paretoPointsVec.reserve(refinementSteps.size());
+                std::vector<Point> paretoPoints;
+                paretoPoints.reserve(refinementSteps.size());
                 for(auto const& step : refinementSteps) {
-                    paretoPointsVec.push_back(step.getPoint());
+                    paretoPoints.push_back(step.getPoint());
                 }
-                
-                STORM_LOG_WARN("REMOVE ADDING ADDITIONAL VERTICES AS SOON AS HYPRO WORKS FOR DEGENERATED POLYTOPES");
-                if(paretoPointsVec.front().size()==2) {
-                    Point p1 = {-10000, -9999};
-                    Point p2 = {-9999, -10000};
-                    paretoPointsVec.push_back(p1);
-                    paretoPointsVec.push_back(p2);
-                } else {
-                    Point p1 = {-10000, -9999, -9999};
-                    Point p2 = {-9999, -10000, -9999};
-                    Point p3 = {-9999, -9999, -10000};
-                    paretoPointsVec.push_back(p1);
-                    paretoPointsVec.push_back(p2);
-                    paretoPointsVec.push_back(p3);
-                }
-                
-                boost::optional<Point> upperBounds;
-                if(!paretoPointsVec.empty()){
-                    //Get the pointwise maximum of the pareto points
-                    upperBounds = paretoPointsVec.front();
-                    for(auto paretoPointIt = paretoPointsVec.begin()+1; paretoPointIt != paretoPointsVec.end(); ++paretoPointIt){
-                        auto upperBoundIt = upperBounds->begin();
-                        for(auto const& paretoPointCoordinate : *paretoPointIt){
-                            if(paretoPointCoordinate>*upperBoundIt){
-                                *upperBoundIt = paretoPointCoordinate;
-                            }
-                            ++upperBoundIt;
-                        }
-                    }
-                }
-                
-                underApproximation = storm::storage::geometry::Polytope<RationalNumberType>::create(paretoPointsVec)->downwardClosure(upperBounds);
+                underApproximation = storm::storage::geometry::Polytope<RationalNumberType>::createDownwardClosure(paretoPoints);
                 STORM_LOG_DEBUG("Updated UnderApproximation to " << underApproximation->toString(true));
             }
             

@@ -53,6 +53,43 @@ namespace storm {
             }
             
             template <typename ValueType>
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::createDownwardClosure(std::vector<Point> const& points) {
+                if(points.empty()) {
+                    // In this case, the downwardclosure is empty
+                    return createEmptyPolytope();
+                }
+                uint_fast64_t const dimensions = points.front().size();
+                std::vector<Halfspace<ValueType>> halfspaces;
+                // We build the convex hull of the given points.
+                // However, auxiliary points (that will always be in the downward closure) are added.
+                // Then, the halfspaces of the resulting polytope are a superset of the halfspaces of the downward closure.
+                std::vector<Point> auxiliaryPoints = points;
+                auxiliaryPoints.reserve(auxiliaryPoints.size()*(1+dimensions));
+                for(auto const& point : points) {
+                    for(uint_fast64_t dim=0; dim<dimensions; ++dim) {
+                        auxiliaryPoints.push_back(point);
+                        auxiliaryPoints.back()[dim] -= storm::utility::one<ValueType>();
+                    }
+                }
+                std::vector<Halfspace<ValueType>> auxiliaryHalfspaces = create(auxiliaryPoints)->getHalfspaces();
+                // The downward closure is obtained by selecting the halfspaces for which the normal vector is non-negative (coordinate wise).
+                // Note that due to the auxiliary points, the polytope is never degenerated and thus there is always one unique halfspace-representation which is necessary:
+                // Consider, e.g., the convex hull of two points (1,0,0) and (0,1,1).
+                // There are multiple halfspace-representations for this set. In particular, there is one where all but one normalVectors have negative entries.
+                // However, the downward closure of this set can only be represented with 5 halfspaces.
+                for(auto& h : auxiliaryHalfspaces){
+                    bool allGreaterZero = true;
+                    for(auto const& value : h.normalVector()) {
+                        allGreaterZero &= (value >= storm::utility::zero<ValueType>());
+                    }
+                    if(allGreaterZero){
+                        halfspaces.push_back(std::move(h));
+                    }
+                }
+                return create(halfspaces);
+            }
+            
+            template <typename ValueType>
             Polytope<ValueType>::Polytope() {
                 // Intentionally left empty
             }
@@ -129,9 +166,8 @@ namespace storm {
             }
             
             template <typename ValueType>
-            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::downwardClosure(boost::optional<Point> const& upperBounds) const {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
-                return nullptr;
+            std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::downwardClosure() const {
+                return createDownwardClosure(this->getVertices());
             }
             
             template <typename ValueType>

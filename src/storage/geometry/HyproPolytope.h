@@ -107,17 +107,6 @@ namespace storm {
                 virtual std::shared_ptr<Polytope<ValueType>> linearTransformation(std::vector<Point> const& matrix, Point const& vector) const override;
                 
                 /*!
-                 * Returns the downward closure of this, i.e., the set { x | ex. y \in P : x<=y} where P is this Polytope.
-                 * Put differently, the resulting polytope corresponds to this polytope, where
-                 * 1. a vector y with y_i=max{x_i | x \in P} is computed and for each i, a halfspace with offset y_i and
-                 *    normal vector n (where n_i = 1 and the remaining entries are 0) is inserted.
-                 * 2. all halfspaces where the normal vector has at least one negative entry are removed
-                 *
-                 * @param upperBounds If given, this vector is considered for y (hence, max{x_i | x i \in P does not need to be computed)
-                 */
-                virtual std::shared_ptr<Polytope<ValueType>> downwardClosure(boost::optional<Point> const& upperBounds = boost::none) const override;
-                
-                /*!
                  * Finds an optimal point inside this polytope w.r.t. the given direction, i.e.,
                  * a point that maximizes dotPorduct(point, direction).
                  * If such a point does not exist, the returned bool is false. There are two reasons for this:

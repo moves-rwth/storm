@@ -42,6 +42,12 @@ namespace storm {
                 static std::shared_ptr<Polytope<ValueType>> createEmptyPolytope();
                 
                 /*!
+                 * Creates the downward closure of the given points (i.e., the set { x | ex. y \in conv(points) : x<=y }
+                 * If the vector of points is empty, the resulting polytope be empty.
+                 */
+                static std::shared_ptr<Polytope<ValueType>> createDownwardClosure(std::vector<Point> const& points);
+                
+                /*!
                  * Returns the vertices of this polytope.
                  */
                 virtual std::vector<Point> getVertices() const;
@@ -98,14 +104,8 @@ namespace storm {
                 
                 /*!
                  * Returns the downward closure of this, i.e., the set { x | ex. y \in P : x<=y} where P is this Polytope.
-                 * Put differently, the resulting polytope corresponds to this polytope, where
-                 * 1. a vector y with y_i=max{x_i | x \in P} is computed and for each i, a halfspace with offset y_i and
-                 *    normal vector n (where n_i = 1 and the remaining entries are 0) is inserted.
-                 * 2. all halfspaces where the normal vector has at least one negative entry are removed
-                 *
-                 * @param upperBounds If given, this vector is considered for y (hence, max{x_i | x i \in P does not need to be computed)
                  */
-                virtual std::shared_ptr<Polytope<ValueType>> downwardClosure(boost::optional<Point> const& upperBounds = boost::none) const;
+                virtual std::shared_ptr<Polytope<ValueType>> downwardClosure() const;
                 
                 /*!
                  * Finds an optimal point inside this polytope w.r.t. the given direction, i.e.,
