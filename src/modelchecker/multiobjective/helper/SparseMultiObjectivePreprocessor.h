@@ -3,6 +3,7 @@
 
 #include "src/logic/Formulas.h"
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePreprocessorData.h"
+#include "src/storage/BitVector.h"
 
 namespace storm {
     namespace modelchecker {
@@ -25,8 +26,10 @@ namespace storm {
                  * Preprocesses the given model w.r.t. the given formulas.
                  * @param originalModel The considered model
                  * @param originalFormula the considered formula. The subformulas should only contain one OperatorFormula at top level, i.e., the formula is simple.
+                 * @param subsystem the states of the original model which should be considered. Choices that have a transition leading outside of the subsystem will be
+                 *                  removed. Hence, every state in the subsystem has to have one choice that stays inside the subsystem.
                  */
-                static PreprocessorData preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel);
+                static PreprocessorData preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel,  storm::storage::BitVector const& subsystem);
                 
             private:
                 

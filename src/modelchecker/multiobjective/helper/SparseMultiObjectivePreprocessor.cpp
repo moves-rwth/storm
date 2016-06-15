@@ -4,8 +4,8 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "src/storage/BitVector.h"
 #include "src/transformer/StateDuplicator.h"
+#include "src/transformer/SubsystemBuilder.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
@@ -18,10 +18,11 @@ namespace storm {
         namespace helper {
             
             template<typename SparseModelType>
-            typename SparseMultiObjectivePreprocessor<SparseModelType>::PreprocessorData SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel) {
-                PreprocessorData data(std::move(originalModel));
-                //Initialize the state mapping.
-                data.newToOldStateIndexMapping = storm::utility::vector::buildVectorForRange(0, data.preprocessedModel.getNumberOfStates());
+            typename SparseMultiObjectivePreprocessor<SparseModelType>::PreprocessorData SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel, storm::storage::BitVector const& subsystem) {
+                
+                auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(originalModel, subsystem);
+                PreprocessorData data(originalModel, std::move(*subsystemBuilderResult.model), std::move(subsystemBuilderResult.newToOldStateIndexMapping));
+                
                 //Invoke preprocessing on the individual objectives
                 for(auto const& subFormula : originalFormula.getSubFormulas()){
                     STORM_LOG_DEBUG("Preprocessing objective " << *subFormula<< ".");

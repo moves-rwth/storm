@@ -17,8 +17,8 @@ namespace storm {
                 
                 enum class QueryType { Achievability, Numerical, Pareto };
                 
-                SparseModelType preprocessedModel;
                 SparseModelType const& originalModel;
+                SparseModelType preprocessedModel;
                 std::vector<uint_fast64_t> newToOldStateIndexMapping;
                 
                 QueryType queryType;
@@ -27,7 +27,7 @@ namespace storm {
                 
                 bool produceSchedulers;
                 
-                SparseMultiObjectivePreprocessorData(SparseModelType const& model) : preprocessedModel(model),  originalModel(model), produceSchedulers(false) {
+                SparseMultiObjectivePreprocessorData(SparseModelType const& originalModel, SparseModelType&& preprocessedModel, std::vector<uint_fast64_t>&& newToOldStateIndexMapping) : originalModel(originalModel), preprocessedModel(preprocessedModel), newToOldStateIndexMapping(newToOldStateIndexMapping), produceSchedulers(false) {
                     //Intentionally left empty
                 }
                 
