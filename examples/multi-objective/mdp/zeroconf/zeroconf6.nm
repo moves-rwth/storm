@@ -26,6 +26,7 @@ const int TIME_MAX_Z = 1;  // max value of clock z
 
 // OTHER CONSTANTS
 const int MAXCOLL = 10;  // maximum number of collisions before long wait
+const int M=1; // time between sending and receiving a message
 
 
 //-------------------------------------------------------------
@@ -117,7 +118,6 @@ endmodule
 //-------------------------------------------------------------
 // error automaton for the environment assumption
 // do not get a reply when K probes are sent
-const int M=1; // time between sending and receiving a message
 
 module env_error6
 
