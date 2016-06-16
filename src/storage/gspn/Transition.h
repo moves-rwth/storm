@@ -185,6 +185,20 @@ namespace storm {
              * @return cardinality or 0 if the arc does not exists
              */
             uint_fast64_t getOutputArcMultiplicity(storm::gspn::Place const& place) const;
+
+            /*!
+             * Sets the priority of this transtion.
+             *
+             * @param priority The new priority.
+             */
+            void setPriority(uint_fast64_t const& priority);
+
+            /*!
+             * Returns the priority of this transition.
+             *
+             * @return The priority.
+             */
+            uint_fast64_t getPriority() const;
         private:
             /*!
              * Comparator which defines an total order on places.
@@ -216,6 +230,9 @@ namespace storm {
 
             // list of all places connected to this transition via an inhibition arc
             std::vector<std::shared_ptr<storm::gspn::Place>> inhibitionPlaces;
+
+            // priority of this transition
+            uint_fast64_t priority;
         };
     }
 }

@@ -183,5 +183,13 @@ namespace storm {
                 return 0;
             }
         }
+
+        void Transition::setPriority(uint_fast64_t const& priority) {
+            this->priority = priority;
+        }
+
+        uint_fast64_t Transition::getPriority() const {
+            return this->priority;
+        }
     }
 }
