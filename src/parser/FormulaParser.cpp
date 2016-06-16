@@ -406,8 +406,8 @@ namespace storm {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(boost::get<unsigned>(timeBound))));
             } else {
                 double timeBoundAsDouble = boost::get<double>(timeBound);
-                STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Cumulative reward property must have non-negative bound.");
-                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::InstantaneousRewardFormula(static_cast<uint_fast64_t>(timeBoundAsDouble)));
+                STORM_LOG_THROW(timeBoundAsDouble >= 0, storm::exceptions::WrongFormatException, "Instantaneous reward property must have non-negative bound.");
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::InstantaneousRewardFormula(timeBoundAsDouble));
             }
         }
         
