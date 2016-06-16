@@ -228,8 +228,14 @@ namespace storm {
                 storm::gspn::Marking const& marking) {
             std::vector<std::shared_ptr<storm::gspn::TimedTransition<double>>>result;
 
+            uint_fast64_t highestSeenPriority = 0;
+
             for (auto& trans_ptr : gspn.getTimedTransitions()) {
                 if (trans_ptr->isEnabled(marking)) {
+                    if (trans_ptr->getPriority() > highestSeenPriority) {
+                        highestSeenPriority = trans_ptr->getPriority();
+                        result.clear();
+                    }
                     result.push_back(trans_ptr);
                 }
             }
@@ -242,8 +248,14 @@ namespace storm {
                 storm::gspn::Marking const& marking) {
             std::vector<std::shared_ptr<storm::gspn::ImmediateTransition<double>>>result;
 
+            uint_fast64_t highestSeenPriority = 0;
+
             for (auto& trans_ptr : gspn.getImmediateTransitions()) {
                 if (trans_ptr->isEnabled(marking)) {
+                    if (trans_ptr->getPriority() > highestSeenPriority) {
+                        highestSeenPriority = trans_ptr->getPriority();
+                        result.clear();
+                    }
                     result.push_back(trans_ptr);
                 }
             }

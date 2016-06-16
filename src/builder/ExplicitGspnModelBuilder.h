@@ -95,7 +95,8 @@ namespace storm {
             void computeCapacities(storm::gspn::GSPN const& gspn);
 
             /*!
-             * Returns the vector of enabled timed transition.
+             * Returns the vector of enabled timed transition with the highest priority.
+             *
              *
              * @param marking The current marking which is considered.
              * @return The vector of enabled timed transitions.
@@ -104,7 +105,7 @@ namespace storm {
                     storm::gspn::Marking const& marking);
 
             /*!
-             * Returns the vector of active immediate transition
+             * Returns the vector of active immediate transition with the highest priority.
              *
              * @param marking The current marking which is considered.
              * @return The vector of enabled immediate transitions.
