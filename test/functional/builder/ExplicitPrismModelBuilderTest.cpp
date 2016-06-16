@@ -99,7 +99,7 @@ TEST(ExplicitPrismModelBuilderTest, Mdp) {
     EXPECT_EQ(59ul, model->getNumberOfTransitions());
 }
 
-TEST(ExplicitPrismModelBuilderTest, Fail) {
+TEST(ExplicitPrismModelBuilderTest, FailComposition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition.nm");
 
     ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(program).build(), storm::exceptions::WrongFormatException);

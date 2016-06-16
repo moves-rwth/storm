@@ -320,7 +320,7 @@ TEST(DdJaniModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(59ul, mdp->getNumberOfChoices());
 }
 
-TEST(DdJaniModelBuilderTest_Cudd, IllegalFragment) {
+TEST(DdJaniModelBuilderTest_Cudd, IllegalSynchronizingWrites) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2-illegalSynchronizingWrite.nm");
     storm::jani::Model janiModel = program.toJani(true);
     storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double> builder(janiModel);

@@ -80,6 +80,8 @@ namespace storm {
             };
         }
         
+        class Model;
+        
         class Automaton {
         public:
             friend class detail::Edges;
@@ -250,6 +252,12 @@ namespace storm {
              * Retrieves a list of expressions that characterize the legal values of the variables in this automaton.
              */
             std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
+            /*!
+             * Finalizes the building of this automaton. Subsequent changes to the automaton require another call to this
+             * method. Note that this method is invoked by a call to <code>finalize</code> to the containing model.
+             */
+            void finalize(Model const& containingModel);
             
         private:
             /// The name of the automaton.

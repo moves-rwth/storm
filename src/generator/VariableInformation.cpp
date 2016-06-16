@@ -9,11 +9,11 @@
 namespace storm {
     namespace generator {
         
-        BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset) : variable(variable), bitOffset(bitOffset) {
+        BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global) : variable(variable), bitOffset(bitOffset), global(global) {
             // Intentionally left empty.
         }
         
-        IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth) {
+        IntegerVariableInformation::IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global) : variable(variable), lowerBound(lowerBound), upperBound(upperBound), bitOffset(bitOffset), bitWidth(bitWidth), global(global) {
             // Intentionally left empty.
         }
         
@@ -23,14 +23,14 @@ namespace storm {
         
         VariableInformation::VariableInformation(storm::prism::Program const& program) : totalBitOffset(0) {
             for (auto const& booleanVariable : program.getGlobalBooleanVariables()) {
-                booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset);
+                booleanVariables.emplace_back(booleanVariable.getExpressionVariable(), totalBitOffset, true);
                 ++totalBitOffset;
             }
             for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
                 int_fast64_t lowerBound = integerVariable.getLowerBoundExpression().evaluateAsInt();
                 int_fast64_t upperBound = integerVariable.getUpperBoundExpression().evaluateAsInt();
                 uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth);
+                integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
                 totalBitOffset += bitwidth;
             }
             for (auto const& module : program.getModules()) {
@@ -52,14 +52,14 @@ namespace storm {
         
         VariableInformation::VariableInformation(storm::jani::Model const& model) : totalBitOffset(0) {
             for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
-                booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset);
+                booleanVariables.emplace_back(variable.getExpressionVariable(), totalBitOffset, true);
                 ++totalBitOffset;
             }
             for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
                 int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
                 int_fast64_t upperBound = variable.getUpperBound().evaluateAsInt();
                 uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
-                integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth);
+                integerVariables.emplace_back(variable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, true);
                 totalBitOffset += bitwidth;
             }
             for (auto const& automaton : model.getAutomata()) {

@@ -19,18 +19,21 @@ namespace storm {
         
         // A structure storing information about the boolean variables of the model.
         struct BooleanVariableInformation {
-            BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset);
+            BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global = false);
             
             // The boolean variable.
             storm::expressions::Variable variable;
             
             // Its bit offset in the compressed state.
             uint_fast64_t bitOffset;
+
+            // A flag indicating whether the variable is a global one.
+            bool global;
         };
         
         // A structure storing information about the integer variables of the model.
         struct IntegerVariableInformation {
-            IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth);
+            IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global = false);
             
             // The integer variable.
             storm::expressions::Variable variable;
@@ -46,6 +49,9 @@ namespace storm {
             
             // Its bit width in the compressed state.
             uint_fast64_t bitWidth;
+            
+            // A flag indicating whether the variable is a global one.
+            bool global;
         };
         
         // A structure storing information about the location variables of the model.

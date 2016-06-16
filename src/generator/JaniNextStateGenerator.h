@@ -83,7 +83,13 @@ namespace storm {
              */
             std::vector<std::vector<storm::jani::Edge const*>> getEnabledEdges(std::vector<uint64_t> const& locationIndices, uint64_t actionIndex);
             
-            // The model used for the generation of next states.
+            /*!
+             * Checks the list of enabled edges (obtained by a call to <code>getEnabledEdges</code>) for multiple
+             * synchronized writes to the same global variable.
+             */
+            void checkGlobalVariableWritesValid(std::vector<std::vector<storm::jani::Edge const*>> const& enabledEdges) const;
+            
+            /// The model used for the generation of next states.
             storm::jani::Model model;
         };
         

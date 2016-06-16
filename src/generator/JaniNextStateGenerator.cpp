@@ -327,6 +327,9 @@ namespace storm {
                 
                 // Only process this action, if there is at least one feasible solution.
                 if (!enabledEdges.empty()) {
+                    // Check whether a global variable is written multiple times in any combination.
+                    checkGlobalVariableWritesValid(enabledEdges);
+                    
                     std::vector<std::vector<storm::jani::Edge const*>::const_iterator> iteratorList(enabledEdges.size());
                     
                     // Initialize the list of iterators.
@@ -451,6 +454,25 @@ namespace storm {
             }
             
             return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::checkGlobalVariableWritesValid(std::vector<std::vector<storm::jani::Edge const*>> const& enabledEdges) const {
+            std::map<storm::expressions::Variable, uint64_t> writtenGlobalVariables;
+            for (auto edgeSetIt = enabledEdges.begin(), edgeSetIte = enabledEdges.end(); edgeSetIt != edgeSetIte; ++edgeSetIt) {
+                for (auto const& edge : *edgeSetIt) {
+                    for (auto const& globalVariable : edge->getWrittenGlobalVariables()) {
+                        auto it = writtenGlobalVariables.find(globalVariable);
+                        
+                        auto index = std::distance(enabledEdges.begin(), edgeSetIt);
+                        if (it != writtenGlobalVariables.end()) {
+                            STORM_LOG_THROW(it->second == index, storm::exceptions::WrongFormatException, "Multiple writes to global variable '" << globalVariable.getName() << "' in synchronizing edges.");
+                        } else {
+                            writtenGlobalVariables.emplace(globalVariable, index);
+                        }
+                    }
+                }
+            }
         }
         
         template<typename ValueType, typename StateType>

@@ -1,5 +1,7 @@
 #include "src/storage/jani/Edge.h"
 
+#include "src/storage/jani/Model.h"
+
 namespace storm {
     namespace jani {
         
@@ -47,5 +49,18 @@ namespace storm {
             destinations.push_back(destination);
         }
         
+        void Edge::finalize(Model const& containingModel) {
+            for (auto const& destination : getDestinations()) {
+                for (auto const& assignment : destination.getAssignments()) {
+                    if (containingModel.getGlobalVariables().hasVariable(assignment.getExpressionVariable())) {
+                        writtenGlobalVariables.insert(assignment.getExpressionVariable());
+                    }
+                }
+            }
+        }
+        
+        boost::container::flat_set<storm::expressions::Variable> const& Edge::getWrittenGlobalVariables() const {
+            return writtenGlobalVariables;
+        }
     }
 }

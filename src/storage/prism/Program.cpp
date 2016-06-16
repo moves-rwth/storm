@@ -1665,6 +1665,8 @@ namespace storm {
                 janiModel.setSystemComposition(janiModel.getStandardSystemComposition());
             }
             
+            janiModel.finalize();
+            
             return janiModel;
         }
         

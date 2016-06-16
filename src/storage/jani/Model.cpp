@@ -380,6 +380,12 @@ namespace storm {
             return result;
         }
         
+        void Model::finalize() {
+            for (auto& automaton : getAutomata()) {
+                automaton.finalize(*this);
+            }
+        }
+        
         bool Model::checkValidity(bool logdbg) const {
             // TODO switch to exception based return value.
             

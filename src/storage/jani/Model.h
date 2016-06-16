@@ -270,6 +270,13 @@ namespace storm {
             bool hasDefaultComposition() const;
             
             /*!
+             * After adding all components to the model, this method has to be called. It recursively calls
+             * <code>finalize</code> on all contained elements. All subsequent changes to the model require another call
+             * to this method.
+             */
+            void finalize();
+            
+            /*!
              *  Checks if the model is valid JANI, which should be verified before any further operations are applied to a model.
              */
             bool checkValidity(bool logdbg = true) const;

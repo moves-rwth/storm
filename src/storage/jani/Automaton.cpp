@@ -315,5 +315,12 @@ namespace storm {
             }
             return result;
         }
+        
+        void Automaton::finalize(Model const& containingModel) {
+            for (auto& edge : edges) {
+                edge.finalize(containingModel);
+            }
+        }
+
     }
 }

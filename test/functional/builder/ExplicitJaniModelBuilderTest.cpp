@@ -116,9 +116,17 @@ TEST(ExplicitJaniModelBuilderTest, Mdp) {
     EXPECT_EQ(59ul, model->getNumberOfTransitions());
 }
 
-TEST(ExplicitJaniModelBuilderTest, Fail) {
+TEST(ExplicitJaniModelBuilderTest, FailComposition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/system_composition.nm");
     storm::jani::Model janiModel = program.toJani();
 
     ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
 }
+
+TEST(ExplicitJaniModelBuilderTest, IllegalSynchronizingWrites) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/coin2-2-illegalSynchronizingWrite.nm");
+    storm::jani::Model janiModel = program.toJani();
+    
+    ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
+}
+
