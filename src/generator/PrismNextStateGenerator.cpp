@@ -389,7 +389,7 @@ namespace storm {
                             if (rewardModel.get().hasStateActionRewards()) {
                                 for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                                     if (stateActionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                        stateActionRewardValue += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass();
+                                        stateActionRewardValue += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression()));
                                     }
                                 }
                             }

@@ -67,8 +67,6 @@ namespace storm {
                 this->optionalStateRewardVector.get()[state] = newReward;
             }
 
-
-
             template<typename ValueType>
             bool StandardRewardModel<ValueType>::hasStateActionRewards() const {
                 return static_cast<bool>(this->optionalStateActionRewardVector);
