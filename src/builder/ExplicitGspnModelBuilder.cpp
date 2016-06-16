@@ -4,12 +4,15 @@
 
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
+#include "src/storage/expressions/ExpressionManager.h"
+#include "src/parser/FormulaParser.h"
+#include "src/storage/expressions/ExpressionEvaluator.h"
 
 namespace storm {
     namespace builder {
 
         template<typename ValueType>
-        storm::models::sparse::MarkovAutomaton<ValueType> ExplicitGspnModelBuilder<ValueType>::translateGspn(storm::gspn::GSPN const& gspn) {
+        storm::models::sparse::MarkovAutomaton<ValueType> ExplicitGspnModelBuilder<ValueType>::translateGspn(storm::gspn::GSPN const& gspn, std::string const& formula) {
             // set the given gspn and compute the limits of the net
             this->gspn = gspn;
             computeCapacities(gspn);
@@ -70,7 +73,44 @@ namespace storm {
             }
 
             auto matrix = builder.build();
-            auto labeling = getStateLabeling();
+
+            // create expression manager and add variables from the gspn
+            auto expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
+            for (auto& place : gspn.getPlaces()) {
+                expressionManager->declareIntegerVariable(place.getName());
+            }
+
+            // parse formula
+            storm::parser::FormulaParser formulaParser(expressionManager);
+            auto formulaPtr = formulaParser.parseSingleFormulaFromString(formula);
+            auto atomicFormulas = formulaPtr->getAtomicExpressionFormulas();
+
+            // create empty state labeling
+            storm::models::sparse::StateLabeling labeling(markings.size());
+            storm::expressions::ExpressionEvaluator<double> expressionEvaluator(*expressionManager);
+
+            std::cout << std::endl;
+            std::cout << "build labeling:" << std::endl;
+            for (auto& atomicFormula : atomicFormulas) {
+                std::cout << atomicFormula;
+                auto label = atomicFormula->toString();
+                labeling.addLabel(label);
+
+                for (auto statePair : markings) {
+                    auto marking = storm::gspn::Marking(gspn.getNumberOfPlaces(), numberOfBits, statePair.first);
+                    for (auto& place : gspn.getPlaces()) {
+                        auto variable = expressionManager->getVariable(place.getName());
+                        expressionEvaluator.setIntegerValue(variable, marking.getNumberOfTokensAt(place.getID()));
+                    }
+                    bool hold = expressionEvaluator.asBool(atomicFormula->getExpression());
+                    if (hold) {
+                        labeling.addLabelToState(label, statePair.second);
+                    }
+                }
+
+            }
+
+            //auto labeling = getStateLabeling();
 
             return storm::models::sparse::MarkovAutomaton<double>(matrix, labeling, markovianStates, exitRates);
         }

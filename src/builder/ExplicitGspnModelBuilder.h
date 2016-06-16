@@ -1,6 +1,8 @@
 #ifndef STORM_BUILDER_EXPLICITGSPNMODELBUILDER_H_
 #define STORM_BUILDER_EXPLICITGSPNMODELBUILDER_H_
 
+#include <String>
+
 #include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/storage/Bitvector.h"
@@ -25,7 +27,7 @@ namespace storm {
              * @param gspn The gspn whose semantic is covered by the MarkovAutomaton
              * @return The resulting MarkovAutomaton
              */
-            storm::models::sparse::MarkovAutomaton<ValueType> translateGspn(storm::gspn::GSPN const& gspn);
+            storm::models::sparse::MarkovAutomaton<ValueType> translateGspn(storm::gspn::GSPN const& gspn, std::string const& formula);
         private:
 
             /*!
