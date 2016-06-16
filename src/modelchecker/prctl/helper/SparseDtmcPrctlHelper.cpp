@@ -143,10 +143,10 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeInstantaneousRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward this->getModel().
-                STORM_LOG_THROW(rewardModel.hasStateRewards() || rewardModel.hasStateActionRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
+                STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
                 // Initialize result to state rewards of the model.
-                std::vector<ValueType> result = rewardModel.getTotalStateActionRewardVector(transitionMatrix.getRowCount(), transitionMatrix.getRowGroupIndices());
+                std::vector<ValueType> result = rewardModel.getStateRewardVector();
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix);
