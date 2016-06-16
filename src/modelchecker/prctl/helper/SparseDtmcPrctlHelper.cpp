@@ -127,11 +127,11 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeCumulativeRewards(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+                // Initialize result to the null vector.
+                std::vector<ValueType> result(transitionMatrix.getRowCount());
+                
                 // Compute the reward vector to add in each step based on the available reward models.
                 std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(transitionMatrix);
-                
-                // Initialize result to either the state rewards of the model or the null vector.
-                std::vector<ValueType> result = rewardModel.getTotalStateActionRewardVector(transitionMatrix.getRowCount(), transitionMatrix.getRowGroupIndices());
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix);
