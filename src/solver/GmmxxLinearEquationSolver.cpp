@@ -10,6 +10,8 @@
 #include "src/exceptions/InvalidStateException.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 
+#include "src/solver/NativeLinearEquationSolver.h"
+
 #include "src/utility/gmm.h"
 
 namespace storm {

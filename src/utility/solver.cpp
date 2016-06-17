@@ -63,12 +63,14 @@ namespace storm {
             NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory() {
                 switch (storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getLinearEquationSystemMethod()) {
                     case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::Jacobi:
-                    this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::Jacobi;
-                    break;
+                        this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::Jacobi;
+                        break;
                     case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::GaussSeidel:
-                    this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::GaussSeidel;
+                        this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::GaussSeidel;
+                        break;
                     case settings::modules::NativeEquationSolverSettings::LinearEquationMethod::SOR:
-                    this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::SOR;
+                        this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::SOR;
+                        break;
                 }
                 omega = storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getOmega();
             }
@@ -116,7 +118,7 @@ namespace storm {
                         p1.reset(new storm::solver::GmmxxMinMaxLinearEquationSolver<ValueType>(matrix, this->prefTech));
                         break;
                     }
-                    case storm::solver::EquationSolverType::Native: 
+                    case storm::solver::EquationSolverType::Native:
                     {
                         p1.reset(new storm::solver::NativeMinMaxLinearEquationSolver<ValueType>(matrix, this->prefTech));
                         break;
@@ -131,12 +133,12 @@ namespace storm {
                 p1->setTrackScheduler(trackScheduler);
                 return p1;
             }
-
+            
             template<typename ValueType>
             std::unique_ptr<storm::solver::GameSolver<ValueType>> GameSolverFactory<ValueType>::create(storm::storage::SparseMatrix<storm::storage::sparse::state_type> const& player1Matrix, storm::storage::SparseMatrix<ValueType> const& player2Matrix) const {
                 return std::unique_ptr<storm::solver::GameSolver<ValueType>>(new storm::solver::GameSolver<ValueType>(player1Matrix, player2Matrix));
             }
-
+            
             std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
                 storm::solver::LpSolverType t;
                 if(solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
@@ -157,7 +159,7 @@ namespace storm {
             std::unique_ptr<storm::solver::LpSolver> GlpkLpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Glpk);
             }
-
+            
             std::unique_ptr<storm::solver::LpSolver> GurobiLpSolverFactory::create(std::string const& name) const {
                 return LpSolverFactory::create(name, storm::solver::LpSolverTypeSelection::Gurobi);
             }
@@ -187,7 +189,7 @@ namespace storm {
                 std::unique_ptr<storm::utility::solver::SmtSolverFactory> factory(new MathsatSmtSolverFactory());
                 return factory->create(manager);
             }
-
+            
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;
             template class SymbolicLinearEquationSolverFactory<storm::dd::DdType::Sylvan, double>;
             template class SymbolicMinMaxLinearEquationSolverFactory<storm::dd::DdType::CUDD, double>;

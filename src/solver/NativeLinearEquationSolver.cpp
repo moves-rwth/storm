@@ -80,7 +80,7 @@ namespace storm {
                 std::vector<ValueType> const* copyX = nextX;
                 std::vector<ValueType>* currentX = &x;
                 
-                // Target vector for precision calculation.
+                // Target vector for multiplication.
                 std::vector<ValueType> tmpX(x.size());
                 
                 // Set up additional environment variables.

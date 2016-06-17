@@ -1,6 +1,8 @@
 #ifndef STORM_SOLVER_NATIVELINEAREQUATIONSOLVER_H_
 #define STORM_SOLVER_NATIVELINEAREQUATIONSOLVER_H_
 
+#include <ostream>
+
 #include "LinearEquationSolver.h"
 
 namespace storm {
@@ -10,6 +12,8 @@ namespace storm {
         enum class NativeLinearEquationSolverSolutionMethod {
             Jacobi, GaussSeidel, SOR
         };
+        
+        std::ostream& operator<<(std::ostream& out, NativeLinearEquationSolverSolutionMethod const& method);
         
         /*!
          * A class that uses StoRM's native matrix operations to implement the LinearEquationSolver interface.
@@ -24,7 +28,7 @@ namespace storm {
              * @param A The matrix defining the coefficients of the linear equation system.
              * @param method The method to use for solving linear equations.
              */
-            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSolutionMethod method = NativeLinearEquationSolverSolutionMethod::Jacobi);
+            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSolutionMethod method = NativeLinearEquationSolverSolutionMethod::GaussSeidel);
 
             /*!
              * Constructs a linear equation solver with the given parameters.
