@@ -212,6 +212,16 @@ include_directories(${GMMXX_INCLUDE_DIR})
 
 #############################################################
 ##
+##	Eigen
+##
+#############################################################
+
+# Add the shipped version of Eigen to the include pathes
+set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.2.6")
+include_directories(${EIGEN_INCLUDE_DIR})
+
+#############################################################
+##
 ##	gmp
 ##
 #############################################################
