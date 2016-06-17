@@ -59,7 +59,12 @@ namespace storm {
                     if (expressionOrLabelAndBool.first.isExpression()) {
                         this->terminalStates.push_back(std::make_pair(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second));
                     } else {
-                        this->terminalStates.push_back(std::make_pair(this->program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
+                        if (program.hasLabel(expressionOrLabelAndBool.first.getLabel())) {
+                            this->terminalStates.push_back(std::make_pair(this->program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
+                        } else {
+                            // If the label is not present in the program and is not a special one, we raise an error.
+                            STORM_LOG_THROW(expressionOrLabelAndBool.first.getLabel() == "init" || expressionOrLabelAndBool.first.getLabel() == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
+                        }
                     }
                 }
             }
@@ -162,6 +167,7 @@ namespace storm {
             }
             
             // Get all choices for the state.
+            result.setExpanded();
             std::vector<Choice<ValueType>> allChoices = getUnlabeledChoices(*this->state, stateToIdCallback);
             std::vector<Choice<ValueType>> allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback);
             for (auto& choice : allLabeledChoices) {
@@ -229,7 +235,6 @@ namespace storm {
                 result.addChoice(std::move(choice));
             }
             
-            result.setExpanded();
             return result;
         }
         
@@ -498,7 +503,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices) {
+        storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
             // Gather a vector of labels and their expressions.
             std::vector<std::pair<std::string, storm::expressions::Expression>> labels;
             if (this->options.isBuildAllLabelsSet()) {
@@ -507,11 +512,15 @@ namespace storm {
                 }
             } else {
                 for (auto const& labelName : this->options.getLabelNames()) {
-                    labels.push_back(std::make_pair(labelName, program.getLabelExpression(labelName)));
+                    if (program.hasLabel(labelName)) {
+                        labels.push_back(std::make_pair(labelName, program.getLabelExpression(labelName)));
+                    } else {
+                        STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Cannot build labeling for unknown label '" << labelName << "'.");
+                    }
                 }
             }
             
-            return NextStateGenerator<ValueType, StateType>::label(states, initialStateIndices, labels);
+            return NextStateGenerator<ValueType, StateType>::label(states, initialStateIndices, deadlockStateIndices, labels);
         }
         
         template<typename ValueType, typename StateType>

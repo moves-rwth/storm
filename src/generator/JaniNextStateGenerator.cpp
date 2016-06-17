@@ -32,7 +32,7 @@ namespace storm {
                     if (expressionOrLabelAndBool.first.isExpression()) {
                         this->terminalStates.push_back(std::make_pair(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second));
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Cannot make label terminal for JANI models.");
+                        STORM_LOG_THROW(expressionOrLabelAndBool.first.getLabel() == "init" || expressionOrLabelAndBool.first.getLabel() == "deadlock", storm::exceptions::InvalidSettingsException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                     }
                 }
             }
@@ -487,8 +487,8 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices) {
-            return NextStateGenerator<ValueType, StateType>::label(states, initialStateIndices, {});
+        storm::models::sparse::StateLabeling JaniNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
+            return NextStateGenerator<ValueType, StateType>::label(states, initialStateIndices, deadlockStateIndices, {});
         }
         
         template class JaniNextStateGenerator<double>;

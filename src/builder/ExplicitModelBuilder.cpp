@@ -210,6 +210,11 @@ namespace storm {
                 // If there is no behavior, we might have to introduce a self-loop.
                 if (behavior.empty()) {
                     if (!storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet() || !behavior.wasExpanded()) {
+                        // If the behavior was actually expanded and yet there are no transitions, then we have a deadlock state.
+                        if (behavior.wasExpanded()) {
+                            this->stateStorage.deadlockStateIndices.push_back(currentIndex);
+                        }
+                        
                         if (generator->getOptions().isBuildChoiceLabelsSet()) {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.get().push_back(boost::container::flat_set<uint_fast64_t>());
@@ -342,7 +347,7 @@ namespace storm {
         
         template <typename ValueType, typename RewardModelType, typename StateType>
         storm::models::sparse::StateLabeling ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildStateLabeling() {
-            return generator->label(stateStorage.stateToId, stateStorage.initialStateIndices);
+            return generator->label(stateStorage.stateToId, stateStorage.initialStateIndices, stateStorage.deadlockStateIndices);
         }
         
         // Explicitly instantiate the class.

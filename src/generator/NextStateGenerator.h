@@ -177,7 +177,7 @@ namespace storm {
             
             storm::expressions::SimpleValuation toValuation(CompressedState const& state) const;
             
-            virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}) = 0;
+            virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) = 0;
             
             NextStateGeneratorOptions const& getOptions() const;
             
@@ -185,7 +185,7 @@ namespace storm {
             /*!
              * Creates the state labeling for the given states using the provided labels and expressions.
              */
-            storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
+            storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
             
             /// The options to be used for next-state generation.
             NextStateGeneratorOptions options;

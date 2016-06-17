@@ -1585,6 +1585,7 @@ namespace storm {
         struct ModelComponents {
             storm::dd::Bdd<Type> reachableStates;
             storm::dd::Bdd<Type> initialStates;
+            storm::dd::Bdd<Type> deadlockStates;
             storm::dd::Add<Type, ValueType> transitionMatrix;
             std::unordered_map<std::string, storm::models::symbolic::StandardRewardModel<Type, ValueType>> rewardModels;
         };
@@ -1592,11 +1593,11 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> createModel(storm::jani::ModelType const& modelType, CompositionVariables<Type, ValueType> const& variables, ModelComponents<Type, ValueType> const& modelComponents) {
             if (modelType == storm::jani::ModelType::DTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Dtmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
             } else if (modelType == storm::jani::ModelType::CTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Ctmc<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
             } else if (modelType == storm::jani::ModelType::MDP) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>>(new storm::models::symbolic::Mdp<Type, ValueType>(variables.manager, modelComponents.reachableStates, modelComponents.initialStates, modelComponents.deadlockStates, modelComponents.transitionMatrix, variables.rowMetaVariables, variables.rowExpressionAdapter, variables.columnMetaVariables, variables.columnExpressionAdapter, variables.rowColumnMetaVariablePairs, variables.allNondeterminismVariables, std::map<std::string, storm::expressions::Expression>(), modelComponents.rewardModels));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid model type.");
             }
@@ -1624,7 +1625,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        void postprocessSystem(storm::jani::Model const& model, ComposerResult<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
+        storm::dd::Bdd<Type> postprocessSystem(storm::jani::Model const& model, ComposerResult<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
             if (model.getModelType() == storm::jani::ModelType::DTMC) {
                 system.transitions = system.transitions / system.transitions.sumAbstract(variables.columnMetaVariables);
@@ -1647,7 +1648,9 @@ namespace storm {
                 }
                 
                 system.transitions *= (!terminalStatesBdd).template toAdd<ValueType>();
+                return terminalStatesBdd;
             }
+            return variables.manager->getBddZero();
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1667,18 +1670,19 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        void fixDeadlocks(storm::jani::ModelType const& modelType, storm::dd::Add<Type, ValueType>& transitionMatrix, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& reachableStates, CompositionVariables<Type, ValueType> const& variables) {
+        storm::dd::Bdd<Type> fixDeadlocks(storm::jani::ModelType const& modelType, storm::dd::Add<Type, ValueType>& transitionMatrix, storm::dd::Bdd<Type> const& transitionMatrixBdd, storm::dd::Bdd<Type> const& reachableStates, CompositionVariables<Type, ValueType> const& variables) {
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(variables.columnMetaVariables);
-            storm::dd::Add<Type, ValueType> deadlockStates = (reachableStates && !statesWithTransition).template toAdd<ValueType>();
+            storm::dd::Bdd<Type> deadlockStates = reachableStates && !statesWithTransition;
             
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
                 if (!storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet()) {
                     STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
                     
+                    storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();
                     uint_fast64_t count = 0;
-                    for (auto it = deadlockStates.begin(), ite = deadlockStates.end(); it != ite && count < 3; ++it, ++count) {
+                    for (auto it = deadlockStatesAdd.begin(), ite = deadlockStatesAdd.end(); it != ite && count < 3; ++it, ++count) {
                         STORM_LOG_INFO((*it).first.toPrettyString(variables.rowMetaVariables) << std::endl);
                     }
                     
@@ -1693,7 +1697,7 @@ namespace storm {
                     
                     if (modelType == storm::jani::ModelType::DTMC || modelType == storm::jani::ModelType::CTMC) {
                         // For DTMCs, we can simply add the identity of the global module for all deadlock states.
-                        transitionMatrix += deadlockStates * globalIdentity;
+                        transitionMatrix += deadlockStatesAdd * globalIdentity;
                     } else if (modelType == storm::jani::ModelType::MDP) {
                         // For MDPs, however, we need to select an action associated with the self-loop, if we do not
                         // want to attach a lot of self-loops to the deadlock states.
@@ -1704,12 +1708,13 @@ namespace storm {
                         for (auto const& variable : variables.localNondeterminismVariables) {
                             action *= variables.manager->template getIdentity<ValueType>(variable);
                         }
-                        transitionMatrix += deadlockStates * globalIdentity * action;
+                        transitionMatrix += deadlockStatesAdd * globalIdentity * action;
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The model contains " << deadlockStates.getNonZeroCount() << " deadlock states. Please unset the option to not fix deadlocks, if you want to fix them automatically.");
                 }
             }
+            return deadlockStates;
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1726,8 +1731,8 @@ namespace storm {
             // Postprocess the variables in place.
             postprocessVariables(this->model->getModelType(), system, variables);
             
-            // Postprocess the system in place.
-            postprocessSystem(*this->model, system, variables, options);
+            // Postprocess the system in place and get the states that were terminal (i.e. whose transitions were cut off).
+            storm::dd::Bdd<Type> terminalStates = postprocessSystem(*this->model, system, variables, options);
             
             // Start creating the model components.
             ModelComponents<Type, ValueType> modelComponents;
@@ -1751,7 +1756,10 @@ namespace storm {
             modelComponents.transitionMatrix = system.transitions * reachableStatesAdd;
             
             // Fix deadlocks if existing.
-            fixDeadlocks(this->model->getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
+            modelComponents.deadlockStates = fixDeadlocks(this->model->getModelType(), modelComponents.transitionMatrix, transitionMatrixBdd, modelComponents.reachableStates, variables);
+            
+            // Cut the deadlock states by removing all states that we 'converted' to deadlock states by making them terminal.
+            modelComponents.deadlockStates = modelComponents.deadlockStates && !terminalStates;
             
             // Finally, create the model.
             return createModel(this->model->getModelType(), variables, modelComponents);

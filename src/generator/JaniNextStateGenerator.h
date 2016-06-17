@@ -24,7 +24,7 @@ namespace storm {
             virtual std::size_t getNumberOfRewardModels() const override;
             virtual RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
                         
-            virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}) override;
+            virtual storm::models::sparse::StateLabeling label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) override;
             
         private:
             /*!

@@ -244,7 +244,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
+        storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
             // Make the labels unique.
             std::sort(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first < b.first; } );
             auto it = std::unique(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first == b.first; } );
@@ -274,10 +274,18 @@ namespace storm {
                 }
             }
             
-            // Also label the initial state with the special label "init".
-            result.addLabel("init");
-            for (auto index : initialStateIndices) {
-                result.addLabelToState("init", index);
+            if (!result.containsLabel("init")) {
+                // Also label the initial state with the special label "init".
+                result.addLabel("init");
+                for (auto index : initialStateIndices) {
+                    result.addLabelToState("init", index);
+                }
+            }
+            if (!result.containsLabel("deadlock")) {
+                result.addLabel("deadlock");
+                for (auto index : deadlockStateIndices) {
+                    result.addLabelToState("deadlock", index);
+                }
             }
             
             return result;

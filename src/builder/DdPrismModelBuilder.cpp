@@ -1265,39 +1265,51 @@ namespace storm {
             storm::dd::Add<Type, ValueType> stateActionDd = system.stateActionDd;
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
+            storm::dd::Bdd<Type> terminalStatesBdd = generationInfo.manager->getBddZero();
             if (options.terminalStates || options.negatedTerminalStates) {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preparedProgram->getConstantsSubstitution();
                 
-                storm::dd::Bdd<Type> terminalStatesBdd = generationInfo.manager->getBddZero();
                 if (options.terminalStates) {
                     storm::expressions::Expression terminalExpression;
                     if (options.terminalStates.get().type() == typeid(storm::expressions::Expression)) {
                         terminalExpression = boost::get<storm::expressions::Expression>(options.terminalStates.get());
                     } else {
                         std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
-                        terminalExpression = preparedProgram->getLabelExpression(labelName);
+                        if (program.hasLabel(labelName)) {
+                            terminalExpression = preparedProgram->getLabelExpression(labelName);
+                        } else {
+                            STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
+                        }
+                        }
+                    
+                    if (terminalExpression.isInitialized()) {
+                        // If the expression refers to constants of the model, we need to substitute them.
+                        terminalExpression = terminalExpression.substitute(constantsSubstitution);
+                        
+                        STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
+                        terminalStatesBdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
                     }
-                    
-                    // If the expression refers to constants of the model, we need to substitute them.
-                    terminalExpression = terminalExpression.substitute(constantsSubstitution);
-                    
-                    STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
-                    terminalStatesBdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
                 }
                 if (options.negatedTerminalStates) {
                     storm::expressions::Expression negatedTerminalExpression;
                     if (options.negatedTerminalStates.get().type() == typeid(storm::expressions::Expression)) {
                         negatedTerminalExpression = boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
                     } else {
-                        std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
-                        negatedTerminalExpression = preparedProgram->getLabelExpression(labelName);
+                        std::string const& labelName = boost::get<std::string>(options.negatedTerminalStates.get());
+                        if (program.hasLabel(labelName)) {
+                            negatedTerminalExpression = preparedProgram->getLabelExpression(labelName);
+                        } else {
+                            STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
+                        }
                     }
                     
-                    // If the expression refers to constants of the model, we need to substitute them.
-                    negatedTerminalExpression = negatedTerminalExpression.substitute(constantsSubstitution);
-                    
-                    STORM_LOG_TRACE("Making the states *not* satisfying " << negatedTerminalExpression << " terminal.");
-                    terminalStatesBdd |= !generationInfo.rowExpressionAdapter->translateExpression(negatedTerminalExpression).toBdd();
+                    if (negatedTerminalExpression.isInitialized()) {
+                        // If the expression refers to constants of the model, we need to substitute them.
+                        negatedTerminalExpression = negatedTerminalExpression.substitute(constantsSubstitution);
+                        
+                        STORM_LOG_TRACE("Making the states *not* satisfying " << negatedTerminalExpression << " terminal.");
+                        terminalStatesBdd |= !generationInfo.rowExpressionAdapter->translateExpression(negatedTerminalExpression).toBdd();
+                    }
                 }
                 
                 transitionMatrix *= (!terminalStatesBdd).template toAdd<ValueType>();
@@ -1318,15 +1330,17 @@ namespace storm {
             
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);
-            storm::dd::Add<Type, ValueType> deadlockStates = (reachableStates && !statesWithTransition).template toAdd<ValueType>();
+            storm::dd::Bdd<Type> deadlockStates = reachableStates && !statesWithTransition;
             
+            // If there are deadlocks, either fix them or raise an error.
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
                 if (!storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet()) {
                     STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
-                    
+
+                    storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();
                     uint_fast64_t count = 0;
-                    for (auto it = deadlockStates.begin(), ite = deadlockStates.end(); it != ite && count < 3; ++it, ++count) {
+                    for (auto it = deadlockStatesAdd.begin(), ite = deadlockStatesAdd.end(); it != ite && count < 3; ++it, ++count) {
                         STORM_LOG_INFO((*it).first.toPrettyString(generationInfo.rowMetaVariables) << std::endl);
                     }
                     
@@ -1339,7 +1353,7 @@ namespace storm {
                         }
 
                         // For DTMCs, we can simply add the identity of the global module for all deadlock states.
-                        transitionMatrix += deadlockStates * identity;
+                        transitionMatrix += deadlockStatesAdd * identity;
                     } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                         // For MDPs, however, we need to select an action associated with the self-loop, if we do not
                         // want to attach a lot of self-loops to the deadlock states.
@@ -1351,12 +1365,15 @@ namespace storm {
                         for (auto const& var : generationInfo.allGlobalVariables) {
                             action *= generationInfo.variableToIdentityMap.at(var);
                         }
-                        transitionMatrix += deadlockStates * globalModule.identity * action;
+                        transitionMatrix += deadlockStatesAdd * globalModule.identity * action;
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The model contains " << deadlockStates.getNonZeroCount() << " deadlock states. Please unset the option to not fix deadlocks, if you want to fix them automatically.");
                 }
             }
+            
+            // Reduce the deadlock states by the states that we did simply not explore.
+            deadlockStates = deadlockStates && !terminalStatesBdd;
             
             // Now build the reward models.
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
@@ -1389,11 +1406,11 @@ namespace storm {
             }
             
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Dtmc<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Dtmc<Type>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Ctmc<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Ctmc<Type>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Mdp<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Mdp<Type>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, rewardModels));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid model type.");
             }
