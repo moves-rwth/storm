@@ -107,6 +107,12 @@ namespace storm {
             };
             
             template<typename ValueType>
+            class EigenLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
+            public:
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
+            };
+            
+            template<typename ValueType>
             class MinMaxLinearEquationSolverFactory {
             public:
                 MinMaxLinearEquationSolverFactory(storm::solver::EquationSolverTypeSelection solverType = storm::solver::EquationSolverTypeSelection::FROMSETTINGS);

@@ -20,6 +20,7 @@
 #include "src/settings/modules/CounterexampleGeneratorSettings.h"
 #include "src/settings/modules/CuddSettings.h"
 #include "src/settings/modules/SylvanSettings.h"
+#include "src/settings/modules/EigenEquationSolverSettings.h"
 #include "src/settings/modules/GmmxxEquationSolverSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/modules/BisimulationSettings.h"
@@ -508,6 +509,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::CuddSettings>();
             storm::settings::addModule<storm::settings::modules::SylvanSettings>();
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::GlpkSettings>();

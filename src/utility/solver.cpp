@@ -7,6 +7,7 @@
 #include "src/solver/SymbolicGameSolver.h"
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
+#include "src/solver/EigenLinearEquationSolver.h"
 #include "src/solver/GameSolver.h"
 
 #include "src/solver/NativeMinMaxLinearEquationSolver.h"
@@ -50,6 +51,7 @@ namespace storm {
                 switch (equationSolver) {
                     case storm::solver::EquationSolverType::Gmmxx: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
                     case storm::solver::EquationSolverType::Native: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix));
+                    case storm::solver::EquationSolverType::Eigen: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::EigenLinearEquationSolver<ValueType>(matrix));
                     default: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
                 }
             }
@@ -57,6 +59,11 @@ namespace storm {
             template<typename ValueType>
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
                 return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
+            }
+
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
+                return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::EigenLinearEquationSolver<ValueType>(matrix));
             }
             
             template<typename ValueType>
