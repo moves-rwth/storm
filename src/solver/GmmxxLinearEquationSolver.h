@@ -97,7 +97,7 @@ namespace storm {
             // The preconditioner to use when solving the linear equation system.
             Preconditioner preconditioner;
 
-            // Sets whether the relative or absolute error is to be considered for convergence detection. Not that this
+            // Sets whether the relative or absolute error is to be considered for convergence detection. Note that this
             // only applies to the Jacobi method for this solver.
             bool relative;
 
