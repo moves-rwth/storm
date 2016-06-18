@@ -1,6 +1,11 @@
 #include "src/solver/stateelimination/StateEliminator.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 #include "src/storage/BitVector.h"
+
+#include "src/utility/stateelimination.h"
+#include "src/utility/macros.h"
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidStateException.h"
@@ -9,13 +14,15 @@ namespace storm {
     namespace solver {
         namespace stateelimination {
             
-            template<typename SparseModelType>
-            StateEliminator<SparseModelType>::StateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions) : transitionMatrix(transitionMatrix), backwardTransitions(backwardTransitions) {
+            using namespace storm::utility::stateelimination;
+            
+            template<typename ValueType>
+            StateEliminator<ValueType>::StateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions) : transitionMatrix(transitionMatrix), backwardTransitions(backwardTransitions) {
+                // Intentionally left empty.
             }
             
-            template<typename SparseModelType>
-            void StateEliminator<SparseModelType>::eliminateState(storm::storage::sparse::state_type state, bool removeForwardTransitions, storm::storage::BitVector predecessorConstraint) {
-                
+            template<typename ValueType>
+            void StateEliminator<ValueType>::eliminateState(storm::storage::sparse::state_type state, bool removeForwardTransitions, storm::storage::BitVector predecessorConstraint) {
                 STORM_LOG_TRACE("Eliminating state " << state << ".");
                 
                 // Start by finding loop probability.
@@ -124,7 +131,6 @@ namespace storm {
                             auto successorEntry = storm::utility::simplify(std::move(*first2 * multiplyFactor));
                             *result = successorEntry;
                             newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, successorEntry.getValue());
-                            //                        std::cout << "(1) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
                             ++first2;
                             ++successorOffsetInNewBackwardTransitions;
                         } else if (first1->getColumn() < first2->getColumn()) {
@@ -134,7 +140,6 @@ namespace storm {
                             auto probability = storm::utility::simplify(first1->getValue() + storm::utility::simplify(multiplyFactor * first2->getValue()));
                             *result = storm::storage::MatrixEntry<typename storm::storage::FlexibleSparseMatrix<ValueType>::index_type, typename storm::storage::FlexibleSparseMatrix<ValueType>::value_type>(first1->getColumn(), probability);
                             newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, probability);
-                            //                        std::cout << "(2) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
                             ++first1;
                             ++first2;
                             ++successorOffsetInNewBackwardTransitions;
@@ -145,7 +150,6 @@ namespace storm {
                             auto stateProbability = storm::utility::simplify(std::move(*first2 * multiplyFactor));
                             *result = stateProbability;
                             newBackwardProbabilities[successorOffsetInNewBackwardTransitions].emplace_back(predecessor, stateProbability.getValue());
-                            //                        std::cout << "(3) adding " << first2->getColumn() << " -> " << newBackwardProbabilities[successorOffsetInNewBackwardTransitions].back() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
                             ++successorOffsetInNewBackwardTransitions;
                         }
                     }
@@ -168,10 +172,6 @@ namespace storm {
                     }
                     
                     FlexibleRowType& successorBackwardTransitions = backwardTransitions.getRow(successorEntry.getColumn());
-                    //                std::cout << "old backward trans of " << successorEntry.getColumn() << std::endl;
-                    //                for (auto const& trans : successorBackwardTransitions) {
-                    //                    std::cout << trans << std::endl;
-                    //                }
                     
                     // Delete the current state as a predecessor of the successor state only if we are going to remove the
                     // current state's forward transitions.
@@ -185,11 +185,6 @@ namespace storm {
                     FlexibleRowIterator last1 = successorBackwardTransitions.end();
                     FlexibleRowIterator first2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].begin();
                     FlexibleRowIterator last2 = newBackwardProbabilities[successorOffsetInNewBackwardTransitions].end();
-                    
-                    //                std::cout << "adding backward trans " << successorEntry.getColumn() << "[" << successorOffsetInNewBackwardTransitions << "]" << std::endl;
-                    //                for (auto const& trans : newBackwardProbabilities[successorOffsetInNewBackwardTransitions]) {
-                    //                    std::cout << trans << std::endl;
-                    //                }
                     
                     FlexibleRowType newPredecessors;
                     newPredecessors.reserve((last1 - first1) + (last2 - first2));
@@ -206,7 +201,7 @@ namespace storm {
                             }
                             ++first2;
                         } else if (first1->getColumn() == first2->getColumn()) {
-                            if (storm::modelchecker::estimateComplexity(first1->getValue()) > storm::modelchecker::estimateComplexity(first2->getValue())) {
+                            if (estimateComplexity(first1->getValue()) > estimateComplexity(first2->getValue())) {
                                 *result = *first1;
                             } else {
                                 *result = *first2;
@@ -225,10 +220,6 @@ namespace storm {
                     }
                     // Now move the new predecessors in place.
                     successorBackwardTransitions = std::move(newPredecessors);
-                    //                std::cout << "new backward trans of " << successorEntry.getColumn() << std::endl;
-                    //                for (auto const& trans : successorBackwardTransitions) {
-                    //                    std::cout << trans << std::endl;
-                    //                }
                     ++successorOffsetInNewBackwardTransitions;
                 }
                 STORM_LOG_TRACE("Fixed predecessor lists of successor states.");
@@ -244,13 +235,38 @@ namespace storm {
                     currentStatePredecessors.clear();
                     currentStatePredecessors.shrink_to_fit();
                 }
-
             }
             
-            template class StateEliminator<storm::models::sparse::Dtmc<double>>;
+            template<typename ValueType>
+            void StateEliminator<ValueType>::updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) {
+                // Intentionally left empty.
+            }
+            
+            template<typename ValueType>
+            void StateEliminator<ValueType>::updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) {
+                // Intentionally left empty.
+            }
+            
+            template<typename ValueType>
+            void StateEliminator<ValueType>::updatePriority(storm::storage::sparse::state_type const& state) {
+                // Intentionally left empty.
+            }
+            
+            template<typename ValueType>
+            bool StateEliminator<ValueType>::filterPredecessor(storm::storage::sparse::state_type const& state) {
+                STORM_LOG_ASSERT(false, "Must not filter predecessors.");
+                return false;
+            }
+            
+            template<typename ValueType>
+            bool StateEliminator<ValueType>::isFilterPredecessor() const {
+                return false;
+            }
+            
+            template class StateEliminator<double>;
             
 #ifdef STORM_HAVE_CARL
-            template class StateEliminator<storm::models::sparse::Dtmc<storm::RationalFunction>>;
+            template class StateEliminator<storm::RationalFunction>;
 #endif
             
         } // namespace stateelimination

@@ -9,14 +9,11 @@ namespace storm {
     namespace solver {
         namespace stateelimination {
             
-            template<typename SparseModelType>
-            class ConditionalEliminator : public StateEliminator<SparseModelType> {
-
-                typedef typename SparseModelType::ValueType ValueType;
-
-                enum SpecificState { NONE, PHI, PSI};
-                
+            template<typename ValueType>
+            class ConditionalEliminator : public StateEliminator<ValueType> {
             public:
+                enum class StateLabel { NONE, PHI, PSI };
+                
                 ConditionalEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector& phiStates, storm::storage::BitVector& psiStates);
                 
                 // Instantiaton of Virtual methods
@@ -26,24 +23,16 @@ namespace storm {
                 bool filterPredecessor(storm::storage::sparse::state_type const& state) override;
                 bool isFilterPredecessor() const override;
                 
-                void setStatePsi() {
-                    specificState = PSI;
-                }
-                
-                void setStatePhi() {
-                    specificState = PHI;
-                }
-                
-                void clearState() {
-                    specificState = NONE;
-                }
+                void setFilterPhi();
+                void setFilterPsi();
+                void setFilter(StateLabel const& stateLabel);
+                void unsetFilter();
                 
             private:
                 std::vector<ValueType>& oneStepProbabilities;
                 storm::storage::BitVector& phiStates;
                 storm::storage::BitVector& psiStates;
-                SpecificState specificState;
-                
+                StateLabel filterLabel;
             };
             
         } // namespace stateelimination

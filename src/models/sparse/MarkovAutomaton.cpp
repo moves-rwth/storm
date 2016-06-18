@@ -5,7 +5,7 @@
 #include "src/adapters/CarlAdapter.h"
 #include "src/storage/FlexibleSparseMatrix.h"
 #include "src/models/sparse/Dtmc.h"
-#include "src/solver/stateelimination/MAEliminator.h"
+#include "src/solver/stateelimination/StateEliminator.h"
 #include "src/utility/vector.h"
 
 namespace storm {
@@ -273,7 +273,7 @@ namespace storm {
                 // Initialize
                 storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(this->getTransitionMatrix());
                 storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(this->getTransitionMatrix().transpose());
-                storm::solver::stateelimination::MAEliminator<storm::models::sparse::Dtmc<ValueType>> stateEliminator(flexibleMatrix, flexibleBackwardTransitions);
+                storm::solver::stateelimination::StateEliminator<ValueType> stateEliminator(flexibleMatrix, flexibleBackwardTransitions);
                 
                 for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
                     assert(!this->isHybridState(state));
