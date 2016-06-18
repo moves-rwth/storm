@@ -72,6 +72,11 @@ namespace storm {
                 // stores the considered information of the multi-objective model checking problem
                 PreprocessorData const& data;
                 
+                // stores the set of states for which it is allowed to visit them infinitely often
+                // This means that, if one of the states is part of a neutral EC, it is allowed to
+                // stay in this EC forever.
+                storm::storage::BitVector statesThatAreAllowedToBeVisitedInfinitelyOften;
+                
                 // becomes true after the first call of check(..)
                 bool checkHasBeenCalled;
                 

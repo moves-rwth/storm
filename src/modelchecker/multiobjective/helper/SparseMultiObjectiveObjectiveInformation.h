@@ -34,6 +34,9 @@ namespace storm {
                 // The (discrete) stepBound for the formula (if given by the originalFormula)
                 boost::optional<uint_fast64_t> stepBound;
                 
+                // Stores whether reward finiteness has been checked for this objective.
+                bool rewardFinitenessChecked;
+                
                 void printToStream(std::ostream& out) const {
                     out << std::setw(30) << originalFormula->toString();
                     out << " \t(toOrigVal:" << std::setw(3) << toOriginalValueTransformationFactor << "*x +" << std::setw(3) << toOriginalValueTransformationOffset << ", \t";

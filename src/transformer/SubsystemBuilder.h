@@ -31,23 +31,24 @@ namespace storm {
             struct SubsystemBuilderReturnType {
                 // The resulting model
                 std::shared_ptr<SparseModelType> model;
-                // Gives for each state in the resulting model the corresponding state in the original model and vice versa.
-                // If a state does not exist in the other model, an invalid index is given.
+                // Gives for each state in the resulting model the corresponding state in the original model.
                 std::vector<uint_fast64_t> newToOldStateIndexMapping;
-                std::vector<uint_fast64_t> oldToNewStateIndexMapping;
                 // marks the actions of the original model that are still available in the subsystem
                 storm::storage::BitVector subsystemActions;
             };
             
             /*
              * Removes all states that are not part of the subsystem
-             * all actions (i.e. rows) that lead outside of the subsystem are erased. Note that this might introduce deadlock states.
+             * all actions (i.e. rows) that lead outside of the subsystem are erased.
+             * An exception is thrown if this introduces a deadlock state.
              * 
              * @param originalModel The model to be duplicated
              * @param subsystem The states that will be kept
+             * @param consideredActions The actions that are considered to be part of the subsystem. The remaining ones will be ignored.
              */
-            static SubsystemBuilderReturnType transform(SparseModelType const& originalModel, storm::storage::BitVector const& subsystem) {
+            static SubsystemBuilderReturnType transform(SparseModelType const& originalModel, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& consideredActions) {
                 STORM_LOG_DEBUG("Invoked subsystem builder on model with " << originalModel.getNumberOfStates() << " states.");
+                STORM_LOG_THROW(!(originalModel.getInitialStates() & subsystem).empty(), storm::exceptions::InvalidArgumentException, "The subsystem would not contain any initial states");
                 SubsystemBuilderReturnType result;
                 
                 uint_fast64_t subsystemStateCount = subsystem.getNumberOfSetBits();
@@ -55,30 +56,32 @@ namespace storm {
                 if(subsystemStateCount == subsystem.size()) {
                     result.model = std::make_shared<SparseModelType>(originalModel);
                     result.newToOldStateIndexMapping = storm::utility::vector::buildVectorForRange(0, result.model->getNumberOfStates());
-                    result.oldToNewStateIndexMapping = result.newToOldStateIndexMapping;
                     result.subsystemActions = storm::storage::BitVector(result.model->getTransitionMatrix().getRowCount(), true);
                     return result;
                 }
                 
                 result.newToOldStateIndexMapping.reserve(subsystemStateCount);
-                result.oldToNewStateIndexMapping = std::vector<uint_fast64_t>(subsystem.size(), std::numeric_limits<uint_fast64_t>::max());
                 result.subsystemActions = storm::storage::BitVector(result.model->getTransitionMatrix().getRowCount(), false);
                 for(auto subsysState : subsystem) {
-                    result.oldToNewStateIndexMapping[subsysState] = result.newToOldStateIndexMapping.size();
                     result.newToOldStateIndexMapping.push_back(subsysState);
-                    for(uint_fast64_t row = originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState]; row < originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState+1]; ++row) {
+                    bool stateHasOneChoiceLeft = false;
+                    for(uint_fast64_t row = consideredActions.getNextSetIndex(originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState]); row < originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState+1]; row = consideredActions.getNextSetIndex(row+1)) {
+                        bool allRowEntriesStayInSubsys = true;
                         result.subsystemActions.set(row, true);
                         for(auto const& entry : originalModel.getTransitionMatrix().getRow(row)) {
                             if(!subsystem.get(entry.getColumn())) {
-                                result.subsystemActions.set(row, false);
+                                allRowEntriesStayInSubsys = false;
                                 break;
                             }
                         }
+                        stateHasOneChoiceLeft |= allRowEntriesStayInSubsys;
+                        result.subsystemActions.set(row, allRowEntriesStayInSubsys);
                     }
+                     STORM_LOG_THROW(stateHasOneChoiceLeft, storm::exceptions::InvalidArgumentException, "The subsystem would contain a deadlock state.");
                 }
                 
                 // Transform the ingedients of the model
-                storm::storage::SparseMatrix<typename SparseModelType::ValueType> matrix = transformMatrix(originalModel.getTransitionMatrix(), result);
+                storm::storage::SparseMatrix<typename SparseModelType::ValueType> matrix = transformMatrix(originalModel.getTransitionMatrix(), subsystem, result.subsystemActions);
                 storm::models::sparse::StateLabeling labeling(matrix.getRowGroupCount());
                 for(auto const& label : originalModel.getStateLabeling().getLabels()){
                     storm::storage::BitVector newBitVectorForLabel = transformStateBitVector(originalModel.getStateLabeling().getStates(label), subsystem);
@@ -86,13 +89,13 @@ namespace storm {
                 }
                 std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
                 for(auto const& rewardModel : originalModel.getRewardModels()){
-                    rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, originalModel.getTransitionMatrix().getRowGroupIndices(), subsystem, result)));
+                    rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, subsystem, result.subsystemActions)));
                 }
                 boost::optional<std::vector<storm::models::sparse::LabelSet>> choiceLabeling;
                 if(originalModel.hasChoiceLabeling()){
                     choiceLabeling = transformActionValueVector<storm::models::sparse::LabelSet>(originalModel.getChoiceLabeling(), result.subsystemActions);
                 }
-                result.model = std::make_shared<SparseModelType>(createTransformedModel(originalModel, subsystem, result, matrix, labeling, rewardModels, choiceLabeling));
+                result.model = std::make_shared<SparseModelType>(createTransformedModel(originalModel, subsystem, matrix, labeling, rewardModels, choiceLabeling));
                 STORM_LOG_DEBUG("Subsystem Builder is done. Resulting model has " << result.model->getNumberOfStates() << " states.");
                 return result;
             }
@@ -100,7 +103,7 @@ namespace storm {
         private:
             template<typename ValueType = typename SparseModelType::ValueType, typename RewardModelType = typename SparseModelType::RewardModelType>
             static typename std::enable_if<std::is_same<RewardModelType, storm::models::sparse::StandardRewardModel<ValueType>>::value, RewardModelType>::type
-            transformRewardModel(RewardModelType const& originalRewardModel, std::vector<uint_fast64_t> const& originalRowGroupIndices, storm::storage::BitVector const& subsystem, SubsystemBuilderReturnType const& result) {
+            transformRewardModel(RewardModelType const& originalRewardModel, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& subsystemActions) {
                 boost::optional<std::vector<ValueType>> stateRewardVector;
                 boost::optional<std::vector<ValueType>> stateActionRewardVector;
                 boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewardMatrix;
@@ -108,40 +111,17 @@ namespace storm {
                     stateRewardVector = transformStateValueVector(originalRewardModel.getStateRewardVector(), subsystem);
                 }
                 if(originalRewardModel.hasStateActionRewards()){
-                    stateActionRewardVector = transformActionValueVector(originalRewardModel.getStateActionRewardVector(), result.subsystemActions);
+                    stateActionRewardVector = transformActionValueVector(originalRewardModel.getStateActionRewardVector(), subsystemActions);
                 }
                 if(originalRewardModel.hasTransitionRewards()){
-                    transitionRewardMatrix = transformMatrix(originalRewardModel.getTransitionRewardMatrix(), result);
+                    transitionRewardMatrix = transformMatrix(originalRewardModel.getTransitionRewardMatrix(), subsystem, subsystemActions);
                 }
                 return RewardModelType(std::move(stateRewardVector), std::move(stateActionRewardVector), std::move(transitionRewardMatrix));
             }
             
             template<typename ValueType = typename SparseModelType::ValueType>
-            static storm::storage::SparseMatrix<ValueType> transformMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix, SubsystemBuilderReturnType const& result) {
-                // Build the builder
-                uint_fast64_t const numStates = result.newToOldStateIndexMapping.size();
-                uint_fast64_t const numRows = result.subsystemActions.getNumberOfSetBits();
-                uint_fast64_t numEntries = 0;
-                for(auto row : result.subsystemActions) {
-                    numEntries += originalMatrix.getRow(row).getNumberOfEntries();
-                }
-                storm::storage::SparseMatrixBuilder<ValueType> builder(numRows, numStates, numEntries, true, !originalMatrix.hasTrivialRowGrouping(), originalMatrix.hasTrivialRowGrouping() ? 0 : numStates);
-                
-                // Fill in the data
-                uint_fast64_t newRow = 0;
-                for(uint_fast64_t newState = 0; newState < numStates; ++newState){
-                    if(!originalMatrix.hasTrivialRowGrouping()){
-                        builder.newRowGroup(newRow);
-                    }
-                    uint_fast64_t oldState = result.newToOldStateIndexMapping[newState];
-                    for (uint_fast64_t oldRow = result.subsystemActions.getNextSetIndex(originalMatrix.getRowGroupIndices()[oldState]); oldRow < originalMatrix.getRowGroupIndices()[oldState+1]; oldRow = result.subsystemActions.getNextSetIndex(oldRow+1)){
-                        for(auto const& entry : originalMatrix.getRow(oldRow)){
-                            builder.addNextValue(newRow, result.oldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
-                        }
-                        ++newRow;
-                    }
-                }
-                return builder.build();
+            static storm::storage::SparseMatrix<ValueType> transformMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& subsystem, storm::storage::BitVector const& subsystemActions) {
+                return originalMatrix.getSubmatrix(false, subsystemActions, subsystem);
             }
             
             
@@ -178,7 +158,6 @@ namespace storm {
             MT>::type
             createTransformedModel(MT const& originalModel,
                                    storm::storage::BitVector const& subsystem,
-                                   SubsystemBuilderReturnType const& result,
                                    storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
                                    storm::models::sparse::StateLabeling& stateLabeling,
                                    std::unordered_map<std::string,
@@ -193,7 +172,6 @@ namespace storm {
             MT>::type
             createTransformedModel(MT const& originalModel,
                                    storm::storage::BitVector const& subsystem,
-                                   SubsystemBuilderReturnType const& result,
                                    storm::storage::SparseMatrix<typename MT::ValueType>& matrix,
                                    storm::models::sparse::StateLabeling& stateLabeling,
                                    std::unordered_map<std::string,

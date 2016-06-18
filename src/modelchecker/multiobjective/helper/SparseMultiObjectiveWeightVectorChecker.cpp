@@ -20,7 +20,9 @@ namespace storm {
 
             template <class SparseModelType>
             SparseMultiObjectiveWeightVectorChecker<SparseModelType>::SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : data(data), checkHasBeenCalled(false) , objectiveResults(data.objectives.size()){
-                //Intentionally left empty
+                
+                // Enlarge the set of prob1 states to the states that are only reachable via prob1 states
+                statesThatAreAllowedToBeVisitedInfinitelyOften = ~storm::utility::graph::getReachableStates(data.preprocessedModel.getTransitionMatrix(), data.preprocessedModel.getInitialStates(), ~data.preprocessedModel.getStates(data.prob1StatesLabel), storm::storage::BitVector(data.preprocessedModel.getNumberOfStates(), false));
             }
             
             template <class SparseModelType>
