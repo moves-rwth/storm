@@ -6,7 +6,7 @@
 
 #include "src/adapters/CarlAdapter.h"
 
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/EliminationSettings.h"
 #include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/SettingsManager.h"
 
@@ -193,7 +193,7 @@ namespace storm {
             
             std::chrono::high_resolution_clock::time_point modelCheckingStart = std::chrono::high_resolution_clock::now();
             
-            storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getEliminationOrder();
+            storm::settings::modules::EliminationSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder();
             boost::optional<std::vector<uint_fast64_t>> distanceBasedPriorities;
             if (eliminationOrderNeedsDistances(order)) {
                 distanceBasedPriorities = getDistanceBasedPriorities(transitionMatrix, backwardTransitions, initialStates, stateValues,
@@ -607,7 +607,7 @@ namespace storm {
             storm::storage::BitVector trueStates(this->getModel().getNumberOfStates(), true);
             
             // Do some sanity checks to establish some required properties.
-            // STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::State, "The chosen elimination method is not available for computing conditional probabilities. Falling back to regular state elimination.");
+            // STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationMethod() == storm::settings::modules::EliminationSettings::EliminationMethod::State, "The chosen elimination method is not available for computing conditional probabilities. Falling back to regular state elimination.");
             STORM_LOG_THROW(this->getModel().getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::IllegalArgumentException, "Input model is required to have exactly one initial state.");
             STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::IllegalArgumentException, "Cannot compute conditional probabilities for all states.");
             storm::storage::sparse::state_type initialState = *this->getModel().getInitialStates().begin();
@@ -668,7 +668,7 @@ namespace storm {
             // Before starting the model checking process, we assign priorities to states so we can use them to
             // impose ordering constraints later.
             boost::optional<std::vector<uint_fast64_t>> distanceBasedPriorities;
-            storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getEliminationOrder();
+            storm::settings::modules::EliminationSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder();
             if (eliminationOrderNeedsDistances(order)) {
                 distanceBasedPriorities = getDistanceBasedPriorities(submatrix, submatrixTransposed, newInitialStates, oneStepProbabilities,
                                                                      eliminationOrderNeedsForwardDistances(order),
@@ -836,10 +836,10 @@ namespace storm {
             // When using the hybrid technique, we recursively treat the SCCs up to some size.
             std::vector<storm::storage::sparse::state_type> entryStateQueue;
             STORM_LOG_DEBUG("Eliminating " << subsystem.size() << " states using the hybrid elimination technique." << std::endl);
-            uint_fast64_t maximalDepth = treatScc(transitionMatrix, values, initialStates, subsystem, initialStates, forwardTransitions, backwardTransitions, false, 0, storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getMaximalSccSize(), entryStateQueue, computeResultsForInitialStatesOnly, distanceBasedPriorities);
+            uint_fast64_t maximalDepth = treatScc(transitionMatrix, values, initialStates, subsystem, initialStates, forwardTransitions, backwardTransitions, false, 0, storm::settings::getModule<storm::settings::modules::EliminationSettings>().getMaximalSccSize(), entryStateQueue, computeResultsForInitialStatesOnly, distanceBasedPriorities);
             
             // If the entry states were to be eliminated last, we need to do so now.
-            if (storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().isEliminateEntryStatesLastSet()) {
+            if (storm::settings::getModule<storm::settings::modules::EliminationSettings>().isEliminateEntryStatesLastSet()) {
                 STORM_LOG_DEBUG("Eliminating " << entryStateQueue.size() << " entry states as a last step.");
                 std::vector<storm::storage::sparse::state_type> sortedStates(entryStateQueue.begin(), entryStateQueue.end());
                 std::shared_ptr<StatePriorityQueue> queuePriorities = std::make_shared<StaticStatePriorityQueue>(sortedStates);
@@ -855,7 +855,7 @@ namespace storm {
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(transitionMatrix);
             storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardTransitions);
             
-            storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getEliminationOrder();
+            storm::settings::modules::EliminationSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder();
             boost::optional<std::vector<uint_fast64_t>> distanceBasedPriorities;
             if (eliminationOrderNeedsDistances(order)) {
                 distanceBasedPriorities = getDistanceBasedPriorities(transitionMatrix, backwardTransitions, initialStates, oneStepProbabilitiesToTarget,
@@ -866,9 +866,9 @@ namespace storm {
             storm::storage::BitVector subsystem = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
             
             uint_fast64_t maximalDepth = 0;
-            if (storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::State) {
+            if (storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationMethod() == storm::settings::modules::EliminationSettings::EliminationMethod::State) {
                 performOrdinaryStateElimination(flexibleMatrix, flexibleBackwardTransitions, subsystem, initialStates, computeResultsForInitialStatesOnly, values, distanceBasedPriorities);
-            } else if (storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getEliminationMethod() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationMethod::Hybrid) {
+            } else if (storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationMethod() == storm::settings::modules::EliminationSettings::EliminationMethod::Hybrid) {
                 maximalDepth = performHybridStateElimination(transitionMatrix, flexibleMatrix, flexibleBackwardTransitions, subsystem, initialStates, computeResultsForInitialStatesOnly, values, distanceBasedPriorities);
             }
             
@@ -934,7 +934,7 @@ namespace storm {
                     }
                     
                     // Recursively descend in SCC-hierarchy.
-                    uint_fast64_t depth = treatScc(matrix, values, entryStates, newSccAsBitVector, initialStates, forwardTransitions, backwardTransitions, eliminateEntryStates || !storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().isEliminateEntryStatesLastSet(), level + 1, maximalSccSize, entryStateQueue, computeResultsForInitialStatesOnly, distanceBasedPriorities);
+                    uint_fast64_t depth = treatScc(matrix, values, entryStates, newSccAsBitVector, initialStates, forwardTransitions, backwardTransitions, eliminateEntryStates || !storm::settings::getModule<storm::settings::modules::EliminationSettings>().isEliminateEntryStatesLastSet(), level + 1, maximalSccSize, entryStateQueue, computeResultsForInitialStatesOnly, distanceBasedPriorities);
                     maximalDepth = std::max(maximalDepth, depth);
                 }
             } else {
@@ -970,8 +970,8 @@ namespace storm {
             }
             
             std::vector<std::size_t> distances = getStateDistances(transitionMatrix, transitionMatrixTransposed, initialStates, oneStepProbabilities,
-                                                                   storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getEliminationOrder() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::Forward ||
-                                                                   storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getEliminationOrder() == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::ForwardReversed);
+                                                                   storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder() == storm::settings::modules::EliminationSettings::EliminationOrder::Forward ||
+                                                                   storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder() == storm::settings::modules::EliminationSettings::EliminationOrder::ForwardReversed);
             
             // In case of the forward or backward ordering, we can sort the states according to the distances.
             if (forward ^ reverse) {

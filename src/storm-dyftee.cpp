@@ -21,7 +21,7 @@
 //#include "src/settings/modules/GurobiSettings.h"
 //#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 //#include "src/settings/modules/ParametricSettings.h"
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/EliminationSettings.h"
 
 /*!
  * Load DFT from filename, build corresponding Model and check against given property.
@@ -65,7 +65,7 @@ void initializeSettings() {
     //storm::settings::addModule<storm::settings::modules::GurobiSettings>();
     //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
     //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
-    storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
+    storm::settings::addModule<storm::settings::modules::EliminationSettings>();
 }
 
 /*!

@@ -1,5 +1,5 @@
-#ifndef STORM_SETTINGS_MODULES_SPARSEDTMCELIMINATIONMODELCHECKERSETTINGS_H_
-#define STORM_SETTINGS_MODULES_SPARSEDTMCELIMINATIONMODELCHECKERSETTINGS_H_
+#ifndef STORM_SETTINGS_MODULES_ELIMINATIONSETTINGS_H_
+#define STORM_SETTINGS_MODULES_ELIMINATIONSETTINGS_H_
 
 #include "src/settings/modules/ModuleSettings.h"
 
@@ -8,9 +8,9 @@ namespace storm {
         namespace modules {
             
             /*!
-             * This class represents the settings for the elimination-based DTMC model checker.
+             * This class represents the settings for the elimination-based procedures.
              */
-            class SparseDtmcEliminationModelCheckerSettings : public ModuleSettings {
+            class EliminationSettings : public ModuleSettings {
             public:
                 /*!
                  * An enum that contains all available state elimination orders.
@@ -18,14 +18,14 @@ namespace storm {
                 enum class EliminationOrder { Forward, ForwardReversed, Backward, BackwardReversed, Random, StaticPenalty, DynamicPenalty, RegularExpression };
 				
                 /*!
-                 * An enum that contains all available techniques to solve parametric systems.
+                 * An enum that contains all available elimination methods.
                  */
                 enum class EliminationMethod { State, Scc, Hybrid};
                 
                 /*!
                  * Creates a new set of parametric model checking settings.
                  */
-                SparseDtmcEliminationModelCheckerSettings();
+                EliminationSettings();
                 
                 /*!
                  * Retrieves the selected elimination method.
@@ -68,4 +68,4 @@ namespace storm {
     } // namespace settings
 } // namespace storm
 
-#endif /* STORM_SETTINGS_MODULES_SPARSEDTMCELIMINATIONMODELCHECKERSETTINGS_H_ */
+#endif /* STORM_SETTINGS_MODULES_ELIMINATIONSETTINGS_H_ */

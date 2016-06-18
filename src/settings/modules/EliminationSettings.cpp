@@ -1,4 +1,4 @@
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/EliminationSettings.h"
 
 #include "src/settings/Option.h"
 #include "src/settings/OptionBuilder.h"
@@ -10,13 +10,13 @@ namespace storm {
     namespace settings {
         namespace modules {
             
-            const std::string SparseDtmcEliminationModelCheckerSettings::moduleName = "sparseelim";
-            const std::string SparseDtmcEliminationModelCheckerSettings::eliminationMethodOptionName = "method";
-            const std::string SparseDtmcEliminationModelCheckerSettings::eliminationOrderOptionName = "order";
-            const std::string SparseDtmcEliminationModelCheckerSettings::entryStatesLastOptionName = "entrylast";
-            const std::string SparseDtmcEliminationModelCheckerSettings::maximalSccSizeOptionName = "sccsize";
+            const std::string EliminationSettings::moduleName = "sparseelim";
+            const std::string EliminationSettings::eliminationMethodOptionName = "method";
+            const std::string EliminationSettings::eliminationOrderOptionName = "order";
+            const std::string EliminationSettings::entryStatesLastOptionName = "entrylast";
+            const std::string EliminationSettings::maximalSccSizeOptionName = "sccsize";
             
-            SparseDtmcEliminationModelCheckerSettings::SparseDtmcEliminationModelCheckerSettings() : ModuleSettings(moduleName) {
+            EliminationSettings::EliminationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> orders = {"fw", "fwrev", "bw", "bwrev", "rand", "spen", "dpen", "regex"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eliminationOrderOptionName, true, "The order that is to be used for the elimination techniques. Available are {fw, fwrev, bw, bwrev, rand, spen, dpen}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the order in which states are chosen for elimination.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(orders)).setDefaultValueString("fwrev").build()).build());
                 
@@ -28,7 +28,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxsize", "The maximal size of an SCC on which state elimination is applied.").setDefaultValueUnsignedInteger(20).setIsOptional(true).build()).build());
             }
             
-            SparseDtmcEliminationModelCheckerSettings::EliminationMethod SparseDtmcEliminationModelCheckerSettings::getEliminationMethod() const {
+            EliminationSettings::EliminationMethod EliminationSettings::getEliminationMethod() const {
                 std::string eliminationMethodAsString = this->getOption(eliminationMethodOptionName).getArgumentByName("name").getValueAsString();
                 if (eliminationMethodAsString == "state") {
                     return EliminationMethod::State;
@@ -39,7 +39,7 @@ namespace storm {
                 }
             }
             
-            SparseDtmcEliminationModelCheckerSettings::EliminationOrder SparseDtmcEliminationModelCheckerSettings::getEliminationOrder() const {
+            EliminationSettings::EliminationOrder EliminationSettings::getEliminationOrder() const {
                 std::string eliminationOrderAsString = this->getOption(eliminationOrderOptionName).getArgumentByName("name").getValueAsString();
                 if (eliminationOrderAsString == "fw") {
                     return EliminationOrder::Forward;
@@ -62,11 +62,11 @@ namespace storm {
                 }
             }
             
-            bool SparseDtmcEliminationModelCheckerSettings::isEliminateEntryStatesLastSet() const {
+            bool EliminationSettings::isEliminateEntryStatesLastSet() const {
                 return this->getOption(entryStatesLastOptionName).getHasOptionBeenSet();
             }
             
-            uint_fast64_t SparseDtmcEliminationModelCheckerSettings::getMaximalSccSize() const {
+            uint_fast64_t EliminationSettings::getMaximalSccSize() const {
                 return this->getOption(maximalSccSizeOptionName).getArgumentByName("maxsize").getValueAsUnsignedInteger();
             }
         } // namespace modules

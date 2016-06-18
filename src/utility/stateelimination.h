@@ -9,7 +9,7 @@
 
 #include "src/adapters/CarlAdapter.h"
 
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/EliminationSettings.h"
 
 namespace storm {
     namespace solver {
@@ -30,11 +30,11 @@ namespace storm {
             
             using namespace storm::solver::stateelimination;
             
-            bool eliminationOrderNeedsDistances(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order);
-            bool eliminationOrderNeedsForwardDistances(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order);
-            bool eliminationOrderNeedsReversedDistances(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order);
-            bool eliminationOrderIsPenaltyBased(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order);
-            bool eliminationOrderIsStatic(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order);
+            bool eliminationOrderNeedsDistances(storm::settings::modules::EliminationSettings::EliminationOrder const& order);
+            bool eliminationOrderNeedsForwardDistances(storm::settings::modules::EliminationSettings::EliminationOrder const& order);
+            bool eliminationOrderNeedsReversedDistances(storm::settings::modules::EliminationSettings::EliminationOrder const& order);
+            bool eliminationOrderIsPenaltyBased(storm::settings::modules::EliminationSettings::EliminationOrder const& order);
+            bool eliminationOrderIsStatic(storm::settings::modules::EliminationSettings::EliminationOrder const& order);
             
             template<typename ValueType>
             uint_fast64_t estimateComplexity(ValueType const& value);

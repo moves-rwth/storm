@@ -20,31 +20,31 @@ namespace storm {
     namespace utility {
         namespace stateelimination {
 
-            bool eliminationOrderNeedsDistances(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order) {
-                return order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::Forward ||
-                order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::ForwardReversed ||
-                order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::Backward ||
-                order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::BackwardReversed;
+            bool eliminationOrderNeedsDistances(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
+                return order == storm::settings::modules::EliminationSettings::EliminationOrder::Forward ||
+                order == storm::settings::modules::EliminationSettings::EliminationOrder::ForwardReversed ||
+                order == storm::settings::modules::EliminationSettings::EliminationOrder::Backward ||
+                order == storm::settings::modules::EliminationSettings::EliminationOrder::BackwardReversed;
             }
             
-            bool eliminationOrderNeedsForwardDistances(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order) {
-                return order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::Forward ||
-                order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::ForwardReversed;
+            bool eliminationOrderNeedsForwardDistances(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
+                return order == storm::settings::modules::EliminationSettings::EliminationOrder::Forward ||
+                order == storm::settings::modules::EliminationSettings::EliminationOrder::ForwardReversed;
             }
             
-            bool eliminationOrderNeedsReversedDistances(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order) {
-                return order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::ForwardReversed ||
-                order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::BackwardReversed;
+            bool eliminationOrderNeedsReversedDistances(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
+                return order == storm::settings::modules::EliminationSettings::EliminationOrder::ForwardReversed ||
+                order == storm::settings::modules::EliminationSettings::EliminationOrder::BackwardReversed;
             }
             
-            bool eliminationOrderIsPenaltyBased(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order) {
-                return order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::StaticPenalty ||
-                order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::DynamicPenalty ||
-                order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::RegularExpression;
+            bool eliminationOrderIsPenaltyBased(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
+                return order == storm::settings::modules::EliminationSettings::EliminationOrder::StaticPenalty ||
+                order == storm::settings::modules::EliminationSettings::EliminationOrder::DynamicPenalty ||
+                order == storm::settings::modules::EliminationSettings::EliminationOrder::RegularExpression;
             }
             
-            bool eliminationOrderIsStatic(storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder const& order) {
-                return eliminationOrderNeedsDistances(order) || order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::StaticPenalty;
+            bool eliminationOrderIsStatic(storm::settings::modules::EliminationSettings::EliminationOrder const& order) {
+                return eliminationOrderNeedsDistances(order) || order == storm::settings::modules::EliminationSettings::EliminationOrder::StaticPenalty;
             }
             
             template<typename ValueType>
@@ -100,11 +100,11 @@ namespace storm {
                 STORM_LOG_TRACE("Creating state priority queue for states " << states);
                 
                 // Get the settings to customize the priority queue.
-                storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>().getEliminationOrder();
+                storm::settings::modules::EliminationSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder();
                 
                 std::vector<storm::storage::sparse::state_type> sortedStates(states.begin(), states.end());
                 
-                if (order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::Random) {
+                if (order == storm::settings::modules::EliminationSettings::EliminationOrder::Random) {
                     std::random_device randomDevice;
                     std::mt19937 generator(randomDevice());
                     std::shuffle(sortedStates.begin(), sortedStates.end(), generator);
@@ -116,7 +116,7 @@ namespace storm {
                         return std::make_unique<StaticStatePriorityQueue>(sortedStates);
                     } else if (eliminationOrderIsPenaltyBased(order)) {
                         std::vector<std::pair<storm::storage::sparse::state_type, uint_fast64_t>> statePenalties(sortedStates.size());
-                        typename DynamicStatePriorityQueue<ValueType>::PenaltyFunctionType penaltyFunction = order == storm::settings::modules::SparseDtmcEliminationModelCheckerSettings::EliminationOrder::RegularExpression ?  computeStatePenaltyRegularExpression<ValueType> : computeStatePenalty<ValueType>;
+                        typename DynamicStatePriorityQueue<ValueType>::PenaltyFunctionType penaltyFunction = order == storm::settings::modules::EliminationSettings::EliminationOrder::RegularExpression ?  computeStatePenaltyRegularExpression<ValueType> : computeStatePenalty<ValueType>;
                         for (uint_fast64_t index = 0; index < sortedStates.size(); ++index) {
                             statePenalties[index] = std::make_pair(sortedStates[index], penaltyFunction(sortedStates[index], transitionMatrix, backwardTransitions, oneStepProbabilities));
                         }
