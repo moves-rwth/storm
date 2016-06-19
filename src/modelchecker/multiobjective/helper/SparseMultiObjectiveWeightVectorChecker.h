@@ -48,9 +48,10 @@ namespace storm {
                 /*!
                  * Determines the scheduler that maximizes the weighted reward vector of the unbounded objectives
                  *
-                 * @param weightVector the weight vector of the current check
+                 * @param unboundedObjectives the objectives without a stepBound
+                 * @param weightedRewardVector the weighted rewards (only considering the unbounded objectives)
                  */
-                void unboundedWeightedPhase(std::vector<ValueType> const& weightVector);
+                void unboundedWeightedPhase(storm::storage::BitVector const& unboundedObjectives, std::vector<ValueType> const& weightedRewardVector);
                 
                 /*!
                  * Computes the values of the objectives that do not have a stepBound w.r.t. the scheduler computed in the unboundedWeightedPhase
@@ -66,8 +67,10 @@ namespace storm {
                  * - computes the values of these objectives w.r.t. this scheduler
                  *
                  * @param weightVector the weight vector of the current check
+                 * @param boundedObjectives the objectives with a stepBound
+                 * @param weightedRewardVector the weighted rewards (initially only considering the unbounded objectives, will be extended to all objectives)
                  */
-                void boundedPhase(std::vector<ValueType> const& weightVector);
+                void boundedPhase(std::vector<ValueType> const& weightVector, storm::storage::BitVector const& unboundedObjectives, std::vector<ValueType>& weightedRewardVector);
                 
                 // stores the considered information of the multi-objective model checking problem
                 PreprocessorData const& data;
