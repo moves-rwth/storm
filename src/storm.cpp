@@ -3,6 +3,7 @@
 #include "src/utility/macros.h"
 #include "src/cli/cli.h"
 #include "src/utility/initialize.h"
+#include "src/utility/Stopwatch.h"
 
 #include "src/settings/SettingsManager.h"
 
@@ -12,6 +13,8 @@
 int main(const int argc, const char** argv) {
 
     try {
+        storm::utility::Stopwatch stopwatch;
+        
         storm::utility::setUp();
         storm::cli::printHeader("SToRM", argc, argv);
         storm::settings::initializeAll("SToRM", "storm");
@@ -25,6 +28,10 @@ int main(const int argc, const char** argv) {
         
         // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cleanUp();
+        
+        storm::cli::printUsage();
+        std::cout << "OVERALL_TIME; " << stopwatch << std::endl;
+        
         return 0;
     } catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused StoRM to terminate. The message of the exception is: " << exception.what());
