@@ -138,9 +138,13 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Illegal elimination order selected.");
             }
             
-            std::shared_ptr<StatePriorityQueue> createNaivePriorityQueue(storm::storage::BitVector const& states) {
+            std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(storm::storage::BitVector const& states) {
                 std::vector<storm::storage::sparse::state_type> sortedStates(states.begin(), states.end());
                 return std::make_shared<StaticStatePriorityQueue>(sortedStates);
+            }
+            
+            std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(std::vector<storm::storage::sparse::state_type> const& states) {
+                return std::make_shared<StaticStatePriorityQueue>(states);
             }
             
             template uint_fast64_t estimateComplexity(double const& value);
@@ -148,6 +152,7 @@ namespace storm {
             template uint_fast64_t computeStatePenalty(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<double> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<double> const& backwardTransitions, std::vector<double> const& oneStepProbabilities);
             template uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<double> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<double> const& backwardTransitions, std::vector<double> const& oneStepProbabilities);
 
+            template uint_fast64_t estimateComplexity(storm::RationalNumber const& value);
             
 #ifdef STORM_HAVE_CARL
             template uint_fast64_t estimateComplexity(storm::RationalFunction const& value);

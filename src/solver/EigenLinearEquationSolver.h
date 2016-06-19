@@ -34,7 +34,7 @@ namespace storm {
             storm::storage::SparseMatrix<ValueType> const* originalA;
             
             // The (eigen) matrix associated with this equation solver.
-            std::unique_ptr<Eigen::SparseMatrix<double>> eigenA;
+            std::unique_ptr<Eigen::SparseMatrix<ValueType>> eigenA;
 
             // The method to use for solving linear equation systems.
             SolutionMethod method;
@@ -49,5 +49,52 @@ namespace storm {
             Preconditioner preconditioner;
         };
         
+        template<>
+        class EigenLinearEquationSolver<storm::RationalNumber> : public LinearEquationSolver<storm::RationalNumber> {
+        public:
+            enum class SolutionMethod {
+                SparseLU
+            };
+            
+            EigenLinearEquationSolver(storm::storage::SparseMatrix<storm::RationalNumber> const& A, SolutionMethod method = SolutionMethod::SparseLU);
+            
+            virtual void solveEquationSystem(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const& b, std::vector<storm::RationalNumber>* multiplyResult = nullptr) const override;
+            
+            virtual void performMatrixVectorMultiplication(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const* b, uint_fast64_t n = 1, std::vector<storm::RationalNumber>* multiplyResult = nullptr) const override;
+            
+        private:
+            // A pointer to the original sparse matrix given to this solver.
+            storm::storage::SparseMatrix<storm::RationalNumber> const* originalA;
+            
+            // The (eigen) matrix associated with this equation solver.
+            std::unique_ptr<Eigen::SparseMatrix<storm::RationalNumber>> eigenA;
+            
+            // The method to use for solving linear equation systems.
+            SolutionMethod method;
+        };
+        
+        template<>
+        class EigenLinearEquationSolver<storm::RationalFunction> : public LinearEquationSolver<storm::RationalFunction> {
+        public:
+            enum class SolutionMethod {
+                SparseLU
+            };
+            
+            EigenLinearEquationSolver(storm::storage::SparseMatrix<storm::RationalFunction> const& A, SolutionMethod method = SolutionMethod::SparseLU);
+            
+            virtual void solveEquationSystem(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const& b, std::vector<storm::RationalFunction>* multiplyResult = nullptr) const override;
+            
+            virtual void performMatrixVectorMultiplication(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const* b, uint_fast64_t n = 1, std::vector<storm::RationalFunction>* multiplyResult = nullptr) const override;
+            
+        private:
+            // A pointer to the original sparse matrix given to this solver.
+            storm::storage::SparseMatrix<storm::RationalFunction> const* originalA;
+            
+            // The (eigen) matrix associated with this equation solver.
+            std::unique_ptr<Eigen::SparseMatrix<storm::RationalFunction>> eigenA;
+            
+            // The method to use for solving linear equation systems.
+            SolutionMethod method;
+        };
     }
 }

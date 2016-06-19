@@ -264,6 +264,7 @@ namespace storm {
             }
             
             template class StateEliminator<double>;
+            template class StateEliminator<storm::RationalNumber>;
             
 #ifdef STORM_HAVE_CARL
             template class StateEliminator<storm::RationalFunction>;

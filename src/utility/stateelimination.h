@@ -53,7 +53,8 @@ namespace storm {
             template<typename ValueType>
             std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& stateDistances, storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector const& states);
             
-            std::shared_ptr<StatePriorityQueue> createNaivePriorityQueue(storm::storage::BitVector const& states);
+            std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(storm::storage::BitVector const& states);
+            std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(std::vector<storm::storage::sparse::state_type> const& states);
             
         }
     }

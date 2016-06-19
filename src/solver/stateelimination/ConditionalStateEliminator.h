@@ -1,5 +1,5 @@
-#ifndef STORM_SOLVER_STATEELIMINATION_CONDITIONALELIMINATOR_H_
-#define STORM_SOLVER_STATEELIMINATION_CONDITIONALELIMINATOR_H_
+#ifndef STORM_SOLVER_STATEELIMINATION_CONDITIONALSTATEELIMINATOR_H_
+#define STORM_SOLVER_STATEELIMINATION_CONDITIONALSTATEELIMINATOR_H_
 
 #include "src/solver/stateelimination/StateEliminator.h"
 
@@ -10,16 +10,15 @@ namespace storm {
         namespace stateelimination {
             
             template<typename ValueType>
-            class ConditionalEliminator : public StateEliminator<ValueType> {
+            class ConditionalStateEliminator : public StateEliminator<ValueType> {
             public:
                 enum class StateLabel { NONE, PHI, PSI };
                 
-                ConditionalEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector& phiStates, storm::storage::BitVector& psiStates);
+                ConditionalStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector& phiStates, storm::storage::BitVector& psiStates);
                 
                 // Instantiaton of Virtual methods
                 void updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) override;
                 void updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) override;
-                void updatePriority(storm::storage::sparse::state_type const& state) override;
                 bool filterPredecessor(storm::storage::sparse::state_type const& state) override;
                 bool isFilterPredecessor() const override;
                 
@@ -39,4 +38,4 @@ namespace storm {
     } // namespace storage
 } // namespace storm
 
-#endif // STORM_SOLVER_STATEELIMINATION_CONDITIONALELIMINATOR_H_
+#endif // STORM_SOLVER_STATEELIMINATION_CONDITIONALSTATEELIMINATOR_H_

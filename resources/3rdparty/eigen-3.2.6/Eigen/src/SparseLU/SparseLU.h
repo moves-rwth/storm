@@ -86,7 +86,7 @@ class SparseLU : public internal::SparseLUImpl<typename _MatrixType::Scalar, typ
     typedef internal::SparseLUImpl<Scalar, Index> Base;
     
   public:
-    SparseLU():m_isInitialized(true),m_lastError(""),m_Ustore(0,0,0,0,0,0),m_symmetricmode(false),m_diagpivotthresh(1.0),m_detPermR(1)
+    SparseLU():m_isInitialized(true),m_lastError(""),m_Ustore(0,0,0,0,0,0),m_symmetricmode(false),m_diagpivotthresh(1),m_detPermR(1)
     {
       initperfvalues(); 
     }

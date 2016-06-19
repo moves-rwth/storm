@@ -1,4 +1,4 @@
-#include "src/solver/stateelimination/ConditionalEliminator.h"
+#include "src/solver/stateelimination/ConditionalStateEliminator.h"
 
 #include "src/utility/macros.h"
 #include "src/utility/constants.h"
@@ -8,26 +8,21 @@ namespace storm {
         namespace stateelimination {
             
             template<typename ValueType>
-            ConditionalEliminator<ValueType>::ConditionalEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector& phiStates, storm::storage::BitVector& psiStates) : StateEliminator<ValueType>(transitionMatrix, backwardTransitions), oneStepProbabilities(oneStepProbabilities), phiStates(phiStates), psiStates(psiStates), filterLabel(StateLabel::NONE) {
+            ConditionalStateEliminator<ValueType>::ConditionalStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions, std::vector<ValueType>& oneStepProbabilities, storm::storage::BitVector& phiStates, storm::storage::BitVector& psiStates) : StateEliminator<ValueType>(transitionMatrix, backwardTransitions), oneStepProbabilities(oneStepProbabilities), phiStates(phiStates), psiStates(psiStates), filterLabel(StateLabel::NONE) {
             }
             
             template<typename ValueType>
-            void ConditionalEliminator<ValueType>::updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) {
+            void ConditionalStateEliminator<ValueType>::updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability) {
                 oneStepProbabilities[state] = storm::utility::simplify(loopProbability * oneStepProbabilities[state]);
             }
             
             template<typename ValueType>
-            void ConditionalEliminator<ValueType>::updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) {
+            void ConditionalStateEliminator<ValueType>::updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state) {
                 oneStepProbabilities[predecessor] = storm::utility::simplify(oneStepProbabilities[predecessor] * storm::utility::simplify(probability * oneStepProbabilities[state]));
             }
-            
+                        
             template<typename ValueType>
-            void ConditionalEliminator<ValueType>::updatePriority(storm::storage::sparse::state_type const& state) {
-                // Do nothing
-            }
-            
-            template<typename ValueType>
-            bool ConditionalEliminator<ValueType>::filterPredecessor(storm::storage::sparse::state_type const& state) {
+            bool ConditionalStateEliminator<ValueType>::filterPredecessor(storm::storage::sparse::state_type const& state) {
                 // TODO find better solution than flag
                 switch (filterLabel) {
                     case StateLabel::PHI:
@@ -41,34 +36,34 @@ namespace storm {
             }
             
             template<typename ValueType>
-            bool ConditionalEliminator<ValueType>::isFilterPredecessor() const {
+            bool ConditionalStateEliminator<ValueType>::isFilterPredecessor() const {
                 return true;
             }
             
             template<typename ValueType>
-            void ConditionalEliminator<ValueType>::setFilterPhi() {
+            void ConditionalStateEliminator<ValueType>::setFilterPhi() {
                 filterLabel = StateLabel::PHI;
             }
             
             template<typename ValueType>
-            void ConditionalEliminator<ValueType>::setFilterPsi() {
+            void ConditionalStateEliminator<ValueType>::setFilterPsi() {
                 filterLabel = StateLabel::PSI;
             }
             
             template<typename ValueType>
-            void ConditionalEliminator<ValueType>::setFilter(StateLabel const& stateLabel) {
+            void ConditionalStateEliminator<ValueType>::setFilter(StateLabel const& stateLabel) {
                 filterLabel = stateLabel;
             }
             
             template<typename ValueType>
-            void ConditionalEliminator<ValueType>::unsetFilter() {
+            void ConditionalStateEliminator<ValueType>::unsetFilter() {
                 filterLabel = StateLabel::NONE;
             }
             
-            template class ConditionalEliminator<double>;
+            template class ConditionalStateEliminator<double>;
             
 #ifdef STORM_HAVE_CARL
-            template class ConditionalEliminator<storm::RationalFunction>;
+            template class ConditionalStateEliminator<storm::RationalFunction>;
 #endif
             
         } // namespace stateelimination

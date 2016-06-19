@@ -8,6 +8,7 @@
 #include "src/solver/NativeLinearEquationSolver.h"
 #include "src/solver/GmmxxLinearEquationSolver.h"
 #include "src/solver/EigenLinearEquationSolver.h"
+#include "src/solver/EliminationLinearEquationSolver.h"
 #include "src/solver/GameSolver.h"
 
 #include "src/solver/NativeMinMaxLinearEquationSolver.h"
@@ -49,11 +50,16 @@ namespace storm {
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> LinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
                 storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver();
                 switch (equationSolver) {
-                    case storm::solver::EquationSolverType::Gmmxx: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
-                    case storm::solver::EquationSolverType::Native: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix));
-                    case storm::solver::EquationSolverType::Eigen: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::EigenLinearEquationSolver<ValueType>(matrix));
-                    default: return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
+                    case storm::solver::EquationSolverType::Gmmxx: return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(matrix);
+                    case storm::solver::EquationSolverType::Native: return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>(matrix);
+                    case storm::solver::EquationSolverType::Eigen: return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(matrix);
+                    case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::EliminationLinearEquationSolver<ValueType>>(matrix);
+                    default: return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(matrix);
                 }
+            }
+            
+            std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> LinearEquationSolverFactory<storm::RationalFunction>::create(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix) const {
+                return std::make_unique<storm::solver::EigenLinearEquationSolver<storm::RationalFunction>>(matrix);
             }
             
             template<typename ValueType>
@@ -205,6 +211,7 @@ namespace storm {
             template class SymbolicGameSolverFactory<storm::dd::DdType::Sylvan, double>;
             template class LinearEquationSolverFactory<double>;
             template class GmmxxLinearEquationSolverFactory<double>;
+            template class EigenLinearEquationSolverFactory<double>;
             template class NativeLinearEquationSolverFactory<double>;
             template class MinMaxLinearEquationSolverFactory<double>;
             template class GameSolverFactory<double>;

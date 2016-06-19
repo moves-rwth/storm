@@ -19,7 +19,7 @@
 #include "src/logic/FragmentSpecification.h"
 
 #include "src/solver/stateelimination/LongRunAverageEliminator.h"
-#include "src/solver/stateelimination/ConditionalEliminator.h"
+#include "src/solver/stateelimination/ConditionalStateEliminator.h"
 #include "src/solver/stateelimination/PrioritizedStateEliminator.h"
 #include "src/solver/stateelimination/StaticStatePriorityQueue.h"
 #include "src/solver/stateelimination/DynamicStatePriorityQueue.h"
@@ -685,7 +685,7 @@ namespace storm {
             STORM_LOG_INFO("Eliminating " << numberOfStatesToEliminate << " states using the state elimination technique." << std::endl);
             performPrioritizedStateElimination(statePriorities, flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, this->getModel().getInitialStates(), true);
             
-            storm::solver::stateelimination::ConditionalEliminator<ValueType> stateEliminator = storm::solver::stateelimination::ConditionalEliminator<ValueType>(flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, phiStates, psiStates);
+            storm::solver::stateelimination::ConditionalStateEliminator<ValueType> stateEliminator = storm::solver::stateelimination::ConditionalStateEliminator<ValueType>(flexibleMatrix, flexibleBackwardTransitions, oneStepProbabilities, phiStates, psiStates);
             
             // Eliminate the transitions going into the initial state (if there are any).
             if (!flexibleBackwardTransitions.getRow(*newInitialStates.begin()).empty()) {
@@ -948,7 +948,7 @@ namespace storm {
             // Finally, eliminate the entry states (if we are required to do so).
             if (eliminateEntryStates) {
                 STORM_LOG_TRACE("Finally, eliminating entry states.");
-                std::shared_ptr<StatePriorityQueue> naivePriorities = createNaivePriorityQueue(entryStates);
+                std::shared_ptr<StatePriorityQueue> naivePriorities = createStatePriorityQueue(entryStates);
                 performPrioritizedStateElimination(naivePriorities, matrix, backwardTransitions, values, initialStates, computeResultsForInitialStatesOnly);
                 STORM_LOG_TRACE("Eliminated/added entry states.");
             } else {

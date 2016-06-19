@@ -86,7 +86,7 @@ Index SparseLUImpl<Scalar,Index>::copy_to_ucol(const Index jcol, const Index nse
           irow = glu.lsub(isub); 
           glu.usub(nextu) = perm_r(irow); // Unlike the L part, the U part is stored in its final order
           glu.ucol(nextu) = dense(irow); 
-          dense(irow) = Scalar(0.0); 
+          dense(irow) = Scalar(0); 
           nextu++;
           isub++;
         }

@@ -21,5 +21,7 @@ namespace storm {
         }
         
         template std::unique_ptr<Eigen::SparseMatrix<double>> EigenAdapter::toEigenSparseMatrix(storm::storage::SparseMatrix<double> const& matrix);
+        template std::unique_ptr<Eigen::SparseMatrix<storm::RationalNumber>> EigenAdapter::toEigenSparseMatrix(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix);
+        template std::unique_ptr<Eigen::SparseMatrix<storm::RationalFunction>> EigenAdapter::toEigenSparseMatrix(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix);
     }
 }

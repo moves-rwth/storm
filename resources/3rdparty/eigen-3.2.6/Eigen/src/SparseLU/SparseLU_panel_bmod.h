@@ -122,7 +122,7 @@ void SparseLUImpl<Scalar,Index>::panel_bmod(const Index m, const Index w, const 
         
         Index isub = lptr + no_zeros;
         Index off = u_rows-segsize;
-        for (Index i = 0; i < off; i++) U(i,u_col) = 0;
+        for (Index i = 0; i < off; i++) U(i,u_col) = Scalar(0);
         for (Index i = 0; i < segsize; i++)
         {
           Index irow = glu.lsub(isub); 
@@ -172,7 +172,7 @@ void SparseLUImpl<Scalar,Index>::panel_bmod(const Index m, const Index w, const 
         {
           Index irow = glu.lsub(isub++); 
           dense_col(irow) = U.coeff(i+off,u_col);
-          U.coeffRef(i+off,u_col) = 0;
+          U.coeffRef(i+off,u_col) = Scalar(0);
         }
         
         // Scatter l into SPA dense[]
@@ -180,7 +180,7 @@ void SparseLUImpl<Scalar,Index>::panel_bmod(const Index m, const Index w, const 
         {
           Index irow = glu.lsub(isub++); 
           dense_col(irow) -= L.coeff(i,u_col);
-          L.coeffRef(i,u_col) = 0;
+          L.coeffRef(i,u_col) = Scalar(0);
         }
         u_col++;
       }

@@ -4,8 +4,10 @@
 #include <set>
 #include <vector>
 #include <memory>
-#include <src/storage/sparse/StateType.h>
 
+#include "src/adapters/CarlAdapter.h"
+
+#include "src/storage/sparse/StateType.h"
 #include "src/storage/dd/DdType.h"
 #include "src/solver/SolverSelectionOptions.h"
 
@@ -85,6 +87,18 @@ namespace storm {
                  * @return A pointer to the newly created solver.
                  */
                 virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
+            };
+            
+            template<>
+            class LinearEquationSolverFactory<storm::RationalFunction> {
+            public:
+                /*!
+                 * Creates a new linear equation solver instance with the given matrix.
+                 *
+                 * @param matrix The matrix that defines the equation system.
+                 * @return A pointer to the newly created solver.
+                 */
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> create(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix) const;
             };
             
             template<typename ValueType>

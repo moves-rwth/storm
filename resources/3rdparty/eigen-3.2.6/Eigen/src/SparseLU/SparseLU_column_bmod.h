@@ -128,7 +128,7 @@ Index SparseLUImpl<Scalar,Index>::column_bmod(const Index jcol, const Index nseg
   {
     irow = glu.lsub(isub);
     glu.lusup(nextlu) = dense(irow);
-    dense(irow) = Scalar(0.0); 
+    dense(irow) = Scalar(0); 
     ++nextlu; 
   }
   

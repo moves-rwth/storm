@@ -71,42 +71,43 @@ Index SparseLUImpl<Scalar,Index>::pivotL(const Index jcol, const RealScalar& dia
   
   // Determine the largest abs numerical value for partial pivoting 
   Index diagind = iperm_c(jcol); // diagonal index 
-  RealScalar pivmax(-1.0);
-  Index pivptr = nsupc; 
+//  RealScalar pivmax(-1);
+  Index pivptr = nsupc;
   Index diag = emptyIdxLU; 
-  RealScalar rtemp;
-  Index isub, icol, itemp, k; 
+//  RealScalar rtemp;
+  Index isub, icol, itemp, k;
   for (isub = nsupc; isub < nsupr; ++isub) {
-    using std::abs;
-    rtemp = abs(lu_col_ptr[isub]);
-    if (rtemp > pivmax) {
-      pivmax = rtemp; 
+//    using std::abs;
+//    rtemp = abs(lu_col_ptr[isub]);
+//    if (rtemp > pivmax) {
+//      pivmax = rtemp;
       pivptr = isub;
-    } 
+//    } 
     if (lsub_ptr[isub] == diagind) diag = isub;
   }
   
   // Test for singularity
-  if ( pivmax <= RealScalar(0.0) ) {
-    // if pivmax == -1, the column is structurally empty, otherwise it is only numerically zero
-    pivrow = pivmax < RealScalar(0.0) ? diagind : lsub_ptr[pivptr];
-    perm_r(pivrow) = jcol;
-    return (jcol+1);
-  }
+//  if ( pivmax <= RealScalar(0) ) {
+//    // if pivmax == -1, the column is structurally empty, otherwise it is only numerically zero
+//    pivrow = pivmax < RealScalar(0) ? diagind : lsub_ptr[pivptr];
+//    perm_r(pivrow) = jcol;
+//    return (jcol+1);
+//  }
   
-  RealScalar thresh = diagpivotthresh * pivmax; 
+//  RealScalar thresh = diagpivotthresh * pivmax; 
   
   // Choose appropriate pivotal element 
   
   {
     // Test if the diagonal element can be used as a pivot (given the threshold value)
-    if (diag >= 0 ) 
-    {
+//    if (diag >= 0 ) 
+//    {
       // Diagonal element exists
-      using std::abs;
-      rtemp = abs(lu_col_ptr[diag]);
-      if (rtemp != 0.0 && rtemp >= thresh) pivptr = diag;
-    }
+//      using std::abs;
+//      rtemp = abs(lu_col_ptr[diag]);
+//      if (rtemp != 0.0 && rtemp >= thresh)
+          pivptr = diag;
+//    }
     pivrow = lsub_ptr[pivptr];
   }
   
@@ -125,7 +126,7 @@ Index SparseLUImpl<Scalar,Index>::pivotL(const Index jcol, const RealScalar& dia
     }
   }
   // cdiv operations
-  Scalar temp = Scalar(1.0) / lu_col_ptr[nsupc];
+  Scalar temp = Scalar(1) / lu_col_ptr[nsupc];
   for (k = nsupc+1; k < nsupr; k++)
     lu_col_ptr[k] *= temp; 
   return 0;

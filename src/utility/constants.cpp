@@ -231,6 +231,24 @@ namespace storm {
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>& matrixEntry);
         template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::storage::sparse::state_type>&& matrixEntry);
 
+        // Instantiations for rational number.
+        template bool isOne(storm::RationalNumber const& value);
+        template bool isZero(storm::RationalNumber const& value);
+        template bool isConstant(storm::RationalNumber const& value);
+        
+        template storm::RationalNumber one();
+        template storm::RationalNumber zero();
+        
+        template double convertNumber(storm::RationalNumber const& number);
+        template storm::RationalNumber convertNumber(double const& number);
+
+//        template storm::RationalNumber pow(storm::RationalNumber const& value, uint_fast64_t exponent);
+        
+        template storm::RationalNumber simplify(storm::RationalNumber value);
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber> simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber> matrixEntry);
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber>& matrixEntry);
+        template storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, storm::RationalNumber>&& matrixEntry);
+        
 #ifdef STORM_HAVE_CARL
         template bool isOne(RationalFunction const& value);
         template bool isZero(RationalFunction const& value);
@@ -247,16 +265,6 @@ namespace storm {
         
         template Polynomial one();
         template Polynomial zero();
-        
-        template bool isOne(RationalNumber const& value);
-        template bool isZero(RationalNumber const& value);
-        template bool isConstant(RationalNumber const& value);
-        
-        template RationalNumber one();
-        template RationalNumber zero();
-       
-        template double convertNumber(RationalNumber const& number);
-        template RationalNumber convertNumber(double const& number);
         
         template bool isOne(Interval const& value);
         template bool isZero(Interval const& value);
