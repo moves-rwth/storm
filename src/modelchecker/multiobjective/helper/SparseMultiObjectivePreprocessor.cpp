@@ -146,7 +146,7 @@ namespace storm {
                                 || data.preprocessedModel.hasUniqueRewardModel(), storm::exceptions::InvalidPropertyException, "The reward model is not unique and the formula " << formula << " does not specify a reward model.");
                 
                 // reward finiteness has to be checked later iff infinite reward is possible for the subformula
-                currentObjective.rewardFinitenessChecked = formula.getSubformula().isCumulativeRewardFormula();
+                currentObjective.rewardFinitenessChecked = formula.getSubformula().isCumulativeRewardFormula() || (formula.getSubformula().isEventuallyFormula() && !currentObjective.rewardsArePositive);
                 
                 if(formula.getSubformula().isEventuallyFormula()){
                     preprocessFormula(formula.getSubformula().asEventuallyFormula(), data, currentObjective, false, false, formula.getOptionalRewardModelName());
@@ -226,6 +226,7 @@ namespace storm {
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::BoundedUntilFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective) {
                 STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with a discrete time bound but got " << formula << ".");
                 currentObjective.stepBound = formula.getDiscreteTimeBound();
+                STORM_LOG_THROW(*currentObjective.stepBound > 0, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula with time bound 0. This is not supported.");
                 preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data, currentObjective, false, false);
             }
             
@@ -290,6 +291,7 @@ namespace storm {
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::CumulativeRewardFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
                 STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
                 currentObjective.stepBound = formula.getDiscreteTimeBound();
+                STORM_LOG_THROW(*currentObjective.stepBound > 0, storm::exceptions::InvalidPropertyException, "Got a cumulativeRewardFormula with time bound 0. This is not supported.");
                 
                 std::vector<ValueType> objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
                 if(!currentObjective.rewardsArePositive){
@@ -347,37 +349,12 @@ namespace storm {
                 for(uint_fast64_t state = 0; state < data.preprocessedModel.getNumberOfStates(); ++state) {
                     // state has negative reward for all choices iff there is no bit set in actionsWithNonNegativeReward for all actions of state
                     statesWithNegativeRewardForAllChoices.set(state, actionsWithNonNegativeReward.getNextSetIndex(data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]) >= data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]);
-                    if(state == 31963) {
-                        std::cout << " state 31963:" << std::endl;
-                        if(statesWithNegativeRewardForAllChoices.get(state)) {
-                            std::cout << " negative reward for all choices: " << std::endl;
-                            for(uint_fast64_t choice = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; choice < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1] ;++choice) {
-                                std::cout << choice << ": " << (actionsWithNonNegativeReward.get(choice) ? "non" : "") << "negative with values: ";
-                                for(auto& obj : data.objectives) {
-                                        std::cout << data.preprocessedModel.getRewardModel(obj.rewardModelName).getStateActionRewardVector()[choice] << ", ";
-                                }
-                                std::cout << std::endl;
-                            }
-                            
-                        }
-                    }
-                    
                 }
                 
-                storm::storage::BitVector submatrixRows = actionsWithNonNegativeReward;
-                //enable one row for the statesWithRewardForAllChoices so that the rowgroups will not be deleted when taking the submatrix
-                for(auto state : statesWithNegativeRewardForAllChoices) {
-                    submatrixRows.set(data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state], true);
-                }
                 storm::storage::BitVector allStates(data.preprocessedModel.getNumberOfStates(), true);
-                storm::storage::SparseMatrix<ValueType> transitionsWithNonNegativeReward = data.preprocessedModel.getTransitionMatrix().getSubmatrix(false, submatrixRows, allStates);
-                STORM_LOG_ASSERT(data.preprocessedModel.getTransitionMatrix().getRowGroupCount() == transitionsWithNonNegativeReward.getRowGroupCount(), "Row group count mismatch.");
-                
-                std::cout << "statesWithNegativeRewardForAllChoices: " << statesWithNegativeRewardForAllChoices << std::endl;
+                storm::storage::SparseMatrix<ValueType> transitionsWithNonNegativeReward = data.preprocessedModel.getTransitionMatrix().restrictRows(actionsWithNonNegativeReward);
                 storm::storage::BitVector statesNeverReachingNegativeRewardForSomeScheduler = storm::utility::graph::performProb0E(transitionsWithNonNegativeReward, transitionsWithNonNegativeReward.getRowGroupIndices(), transitionsWithNonNegativeReward.transpose(true), allStates, statesWithNegativeRewardForAllChoices);
-                std::cout << "statesNeverReachingNegativeRewardForSomeScheduler: " << statesNeverReachingNegativeRewardForSomeScheduler << std::endl;
                 storm::storage::BitVector statesReachingNegativeRewardsFinitelyOftenForSomeScheduler = storm::utility::graph::performProb1E(data.preprocessedModel.getTransitionMatrix(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), data.preprocessedModel.getBackwardTransitions(), allStates, statesNeverReachingNegativeRewardForSomeScheduler);
-                std::cout << "statesReachingNegativeRewardsFinitelyOftenForSomeScheduler: " << statesReachingNegativeRewardsFinitelyOftenForSomeScheduler << std::endl;
                 
                 auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(data.preprocessedModel, statesReachingNegativeRewardsFinitelyOftenForSomeScheduler, storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), true));
                 data.preprocessedModel = std::move(*subsystemBuilderResult.model);
