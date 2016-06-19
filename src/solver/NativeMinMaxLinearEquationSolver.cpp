@@ -76,6 +76,18 @@ namespace storm {
 					std::swap(x, *currentX);
 				}
 
+                // If requested, we store the scheduler for retrieval.
+                if (this->isTrackSchedulerSet()) {
+                    if(iterations==0){ //may happen due to custom termination condition. Then we need to compute x'= A*x+b
+                        this->A.multiplyWithVector(x, *multiplyResult);
+                        storm::utility::vector::addVectors(*multiplyResult, b, *multiplyResult);
+                    }
+                    std::vector<storm::storage::sparse::state_type> choices(this->A.getRowGroupCount());
+                    // Reduce the multiplyResult again and keep track of the choices made
+                    storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices(), &choices);
+                    this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(choices));
+                }
+            
 				if (!xMemoryProvided) {
 					delete copyX;
 				}
