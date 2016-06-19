@@ -1018,6 +1018,11 @@ namespace storm {
         typename std::pair<storm::storage::SparseMatrix<RationalFunction>, std::vector<RationalFunction>> SparseMatrix<RationalFunction>::getJacobiDecomposition() const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
+        
+        template<>
+        typename std::pair<storm::storage::SparseMatrix<Interval>, std::vector<Interval>> SparseMatrix<Interval>::getJacobiDecomposition() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
+        }
 #endif
         
         template<typename ValueType>
@@ -1142,6 +1147,11 @@ namespace storm {
                 *resultIterator = ((storm::utility::one<ValueType>() - omega) * *resultIterator) + (omega / diagonalElement) * (*bIt - tmpValue);
                 ++currentRow;
             }
+        }
+        
+        template<>
+        void SparseMatrix<Interval>::performSuccessiveOverRelaxationStep(Interval omega, std::vector<Interval>& x, std::vector<Interval> const& b) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
         
         template<typename ValueType>
@@ -1457,7 +1467,7 @@ namespace storm {
         template bool SparseMatrix<int>::isSubmatrixOf(SparseMatrix<storm::storage::sparse::state_type> const& matrix) const;
         
 #ifdef STORM_HAVE_CARL
-        // Rat Function
+        // Rat Number
         template class MatrixEntry<typename SparseMatrix<RationalNumber>::index_type, RationalNumber>;
         template std::ostream& operator<<(std::ostream& out, MatrixEntry<uint_fast64_t, RationalNumber> const& entry);
         template class SparseMatrixBuilder<RationalNumber>;

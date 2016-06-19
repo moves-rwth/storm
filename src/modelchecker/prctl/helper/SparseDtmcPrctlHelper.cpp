@@ -401,6 +401,7 @@ namespace storm {
             }
             
             template class SparseDtmcPrctlHelper<double>;
+            template class SparseDtmcPrctlHelper<storm::RationalFunction>;
         }
     }
 }

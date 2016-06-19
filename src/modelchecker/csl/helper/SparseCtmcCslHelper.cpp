@@ -445,7 +445,7 @@ namespace storm {
                 }
                 
                 // Start by decomposing the DTMC into its BSCCs.
-                storm::storage::StronglyConnectedComponentDecomposition<double> bsccDecomposition(probabilityMatrix, storm::storage::BitVector(probabilityMatrix.getRowCount(), true), false, true);
+                storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(probabilityMatrix, storm::storage::BitVector(probabilityMatrix.getRowCount(), true), false, true);
                 
                 STORM_LOG_DEBUG("Found " << bsccDecomposition.size() << " BSCCs.");
                 
@@ -593,7 +593,7 @@ namespace storm {
                         // At this point, all BSCCs are known to contain exactly one state, which is why we can set all values
                         // directly (based on whether or not the contained state is a psi state).
                         if (psiStates.get(*bscc.begin())) {
-                            bsccLra[bsccIndex] = 1;
+                            bsccLra[bsccIndex] = storm::utility::one<ValueType>();
                         }
                     }
                     
@@ -701,10 +701,11 @@ namespace storm {
             template std::vector<double> SparseCtmcCslHelper<double>::computeInstantaneousRewards(storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
             template std::vector<double> SparseCtmcCslHelper<double>::computeCumulativeRewards(storm::storage::SparseMatrix<double> const& rateMatrix, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
             template std::vector<double> SparseCtmcCslHelper<double>::computeReachabilityRewards(storm::storage::SparseMatrix<double> const& rateMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, std::vector<double> const& exitRateVector, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::BitVector const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<double> const& linearEquationSolverFactory);
-
+            
 #ifdef STORM_HAVE_CARL
             template std::vector<storm::RationalFunction> SparseCtmcCslHelper<storm::RationalFunction>::computeUntilProbabilitiesElimination(storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative);
             template std::vector<storm::RationalFunction> SparseCtmcCslHelper<storm::RationalFunction>::computeReachabilityTimesElimination(storm::storage::SparseMatrix<storm::RationalFunction> const& rateMatrix, storm::storage::SparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& exitRateVector, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, bool qualitative);
+            template std::vector<storm::RationalFunction> SparseCtmcCslHelper<storm::RationalFunction>::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<storm::RationalFunction> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<storm::RationalFunction> const* exitRateVector, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<storm::RationalFunction> const& linearEquationSolverFactory);
 #endif
         }
     }

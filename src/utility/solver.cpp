@@ -215,6 +215,8 @@ namespace storm {
             template class NativeLinearEquationSolverFactory<double>;
             template class MinMaxLinearEquationSolverFactory<double>;
             template class GameSolverFactory<double>;
+
+            template class EigenLinearEquationSolverFactory<storm::RationalFunction>;
         }
     }
 }
