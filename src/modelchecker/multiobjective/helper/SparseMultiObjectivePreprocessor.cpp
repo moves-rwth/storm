@@ -257,6 +257,21 @@ namespace storm {
                 auto duplicatorResult = storm::transformer::StateDuplicator<SparseModelType>::transform(data.preprocessedModel, targetStates);
                 updatePreprocessedModel(data, *duplicatorResult.model, duplicatorResult.newToOldStateIndexMapping);
                 
+                // Add a reward model that gives zero reward to the actions of states of the second copy.
+                std::vector<ValueType> objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
+                for(auto secondCopyState : duplicatorResult.secondCopy) {
+                    for(uint_fast64_t choice = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[secondCopyState]; choice < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[secondCopyState+1]; ++choice) {
+                        objectiveRewards[choice] = storm::utility::zero<ValueType>();
+                    }
+                }
+                storm::storage::BitVector positiveRewards = storm::utility::vector::filterGreaterZero(objectiveRewards);
+                storm::storage::BitVector nonNegativeRewards = positiveRewards | storm::utility::vector::filterZero(objectiveRewards);
+                STORM_LOG_THROW(nonNegativeRewards.full() || positiveRewards.empty(), storm::exceptions::InvalidPropertyException, "The reward model for the formula " << formula << " has positive and negative rewards which is not supported.");
+                if(!currentObjective.rewardsArePositive){
+                    storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
+                }
+                data.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
+                
                 // States of the first copy from which the second copy is not reachable with prob 1 under any scheduler can
                 // be removed as the expected reward is not defined for these states.
                 // We also need to enforce that the second copy will be reached eventually with prob 1.
@@ -269,17 +284,6 @@ namespace storm {
                     auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(data.preprocessedModel, subsystemStates, storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), true));
                     updatePreprocessedModel(data, *subsystemBuilderResult.model, subsystemBuilderResult.newToOldStateIndexMapping);
                 }
-                
-                // Add a reward model that gives zero reward to the states of the second copy.
-                std::vector<ValueType> objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
-                storm::utility::vector::setVectorValues(objectiveRewards, duplicatorResult.secondCopy, storm::utility::zero<ValueType>());
-                storm::storage::BitVector positiveRewards = storm::utility::vector::filterGreaterZero(objectiveRewards);
-                storm::storage::BitVector nonNegativeRewards = positiveRewards | storm::utility::vector::filterZero(objectiveRewards);
-                STORM_LOG_THROW(nonNegativeRewards.full() || positiveRewards.empty(), storm::exceptions::InvalidPropertyException, "The reward model for the formula " << formula << " has positive and negative rewards which is not supported.");
-                if(!currentObjective.rewardsArePositive){
-                    storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
-                }
-                data.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
             }
             
             template<typename SparseModelType>
@@ -343,6 +347,21 @@ namespace storm {
                 for(uint_fast64_t state = 0; state < data.preprocessedModel.getNumberOfStates(); ++state) {
                     // state has negative reward for all choices iff there is no bit set in actionsWithNonNegativeReward for all actions of state
                     statesWithNegativeRewardForAllChoices.set(state, actionsWithNonNegativeReward.getNextSetIndex(data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]) >= data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]);
+                    if(state == 31963) {
+                        std::cout << " state 31963:" << std::endl;
+                        if(statesWithNegativeRewardForAllChoices.get(state)) {
+                            std::cout << " negative reward for all choices: " << std::endl;
+                            for(uint_fast64_t choice = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; choice < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1] ;++choice) {
+                                std::cout << choice << ": " << (actionsWithNonNegativeReward.get(choice) ? "non" : "") << "negative with values: ";
+                                for(auto& obj : data.objectives) {
+                                        std::cout << data.preprocessedModel.getRewardModel(obj.rewardModelName).getStateActionRewardVector()[choice] << ", ";
+                                }
+                                std::cout << std::endl;
+                            }
+                            
+                        }
+                    }
+                    
                 }
                 
                 storm::storage::BitVector submatrixRows = actionsWithNonNegativeReward;
@@ -351,11 +370,14 @@ namespace storm {
                     submatrixRows.set(data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state], true);
                 }
                 storm::storage::BitVector allStates(data.preprocessedModel.getNumberOfStates(), true);
-                storm::storage::SparseMatrix<ValueType> transitionsWithNonNegativeReward = data.preprocessedModel.getTransitionMatrix().getSubmatrix(false, submatrixRows, allStates, true);
+                storm::storage::SparseMatrix<ValueType> transitionsWithNonNegativeReward = data.preprocessedModel.getTransitionMatrix().getSubmatrix(false, submatrixRows, allStates);
                 STORM_LOG_ASSERT(data.preprocessedModel.getTransitionMatrix().getRowGroupCount() == transitionsWithNonNegativeReward.getRowGroupCount(), "Row group count mismatch.");
                 
+                std::cout << "statesWithNegativeRewardForAllChoices: " << statesWithNegativeRewardForAllChoices << std::endl;
                 storm::storage::BitVector statesNeverReachingNegativeRewardForSomeScheduler = storm::utility::graph::performProb0E(transitionsWithNonNegativeReward, transitionsWithNonNegativeReward.getRowGroupIndices(), transitionsWithNonNegativeReward.transpose(true), allStates, statesWithNegativeRewardForAllChoices);
+                std::cout << "statesNeverReachingNegativeRewardForSomeScheduler: " << statesNeverReachingNegativeRewardForSomeScheduler << std::endl;
                 storm::storage::BitVector statesReachingNegativeRewardsFinitelyOftenForSomeScheduler = storm::utility::graph::performProb1E(data.preprocessedModel.getTransitionMatrix(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), data.preprocessedModel.getBackwardTransitions(), allStates, statesNeverReachingNegativeRewardForSomeScheduler);
+                std::cout << "statesReachingNegativeRewardsFinitelyOftenForSomeScheduler: " << statesReachingNegativeRewardsFinitelyOftenForSomeScheduler << std::endl;
                 
                 auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(data.preprocessedModel, statesReachingNegativeRewardsFinitelyOftenForSomeScheduler, storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), true));
                 data.preprocessedModel = std::move(*subsystemBuilderResult.model);
