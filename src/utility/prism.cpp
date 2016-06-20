@@ -13,37 +13,14 @@ namespace storm {
     namespace utility {
         namespace prism {
             
-            template<typename ValueType>
             storm::prism::Program preprocess(storm::prism::Program const& program, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) {
                 storm::prism::Program result = program.defineUndefinedConstants(constantDefinitions);
-                
-                // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
-                if (!std::is_same<ValueType, storm::RationalFunction>::value && result.hasUndefinedConstants()) {
-                    std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = result.getUndefinedConstants();
-                    std::stringstream stream;
-                    bool printComma = false;
-                    for (auto const& constant : undefinedConstants) {
-                        if (printComma) {
-                            stream << ", ";
-                        } else {
-                            printComma = true;
-                        }
-                        stream << constant.get().getName() << " (" << constant.get().getType() << ")";
-                    }
-                    stream << ".";
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
-                } else if (std::is_same<ValueType, storm::RationalFunction>::value && !result.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
-                }
-                
-                // Now that the program is fixed, we we need to substitute all constants with their concrete value.
                 result = result.substituteConstants();
                 return result;
             }
             
-            template<typename ValueType>
             storm::prism::Program preprocess(storm::prism::Program const& program, std::string const& constantDefinitionString) {
-                return preprocess<ValueType>(program, parseConstantDefinitionString(program, constantDefinitionString));
+                return preprocess(program, parseConstantDefinitionString(program, constantDefinitionString));
             }
             
             std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
@@ -103,12 +80,6 @@ namespace storm {
                 return constantDefinitions;
             }
             
-            template storm::prism::Program preprocess<double>(storm::prism::Program const& program, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions);
-            template storm::prism::Program preprocess<storm::RationalFunction>(storm::prism::Program const& program, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions);
-
-            template storm::prism::Program preprocess<double>(storm::prism::Program const& program, std::string const& constantDefinitionString);
-            template storm::prism::Program preprocess<storm::RationalFunction>(storm::prism::Program const& program, std::string const& constantDefinitionString);
-
         }
     }
 }

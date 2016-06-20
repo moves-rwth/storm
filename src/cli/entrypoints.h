@@ -60,14 +60,9 @@ namespace storm {
                 STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 
-                std::string constantDefinitionString = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
-                storm::prism::Program preprocessedProgram = storm::utility::prism::preprocess<ValueType>(program, constantDefinitionString);
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preprocessedProgram.getConstantsSubstitution();
-
                 storm::modelchecker::SparseExplorationModelChecker<ValueType> checker(program);
 
-                std::shared_ptr<storm::logic::Formula> substitutedFormula = formula->substitute(constantsSubstitution);
-                storm::modelchecker::CheckTask<storm::logic::Formula> task(*substitutedFormula, onlyInitialStatesRelevant);
+                storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
                 if (checker.canHandle(task)) {
                     result = checker.check(task);
@@ -109,7 +104,7 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType>
-        void verifySymbolicModelWithSymbolicEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
             for (auto const& formula : formulas) {
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithDdEngine(model, formula, onlyInitialStatesRelevant));
@@ -150,56 +145,80 @@ namespace storm {
         } \
     }
     
-        template<typename ValueType, storm::dd::DdType LibraryType>
-        void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::AbstractionRefinement) {
-                verifySymbolicModelWithAbstractionRefinementEngine<LibraryType>(program, formulas, onlyInitialStatesRelevant);
-            } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Exploration) {
-                verifySymbolicModelWithExplorationEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
+#define BRANCH_ON_SPARSE_MODELTYPE(result, model, value_type, function, ...) \
+    STORM_LOG_ASSERT(model->isSparseModel(), "Unknown model type."); \
+    if (model->isOfType(storm::models::ModelType::Dtmc)) { \
+        result = function<storm::models::sparse::Dtmc<value_type>>(model->template as<storm::models::sparse::Dtmc<value_type>>(), __VA_ARGS__); \
+    } else if (model->isOfType(storm::models::ModelType::Ctmc)) { \
+        result = function<storm::models::sparse::Ctmc<value_type>>(model->template as<storm::models::sparse::Ctmc<value_type>>(), __VA_ARGS__); \
+    } else if (model->isOfType(storm::models::ModelType::Mdp)) { \
+        result = function<storm::models::sparse::Mdp<value_type>>(model->template as<storm::models::sparse::Mdp<value_type>>(), __VA_ARGS__); \
+    } else if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) { \
+        result = function<storm::models::sparse::MarkovAutomaton<value_type>>(model->template as<storm::models::sparse::MarkovAutomaton<value_type>>(), __VA_ARGS__); \
+    } else { \
+        STORM_LOG_ASSERT(false, "Unknown model type."); \
+    }
+        
+        template<storm::dd::DdType LibraryType>
+        void buildAndCheckSymbolicModelWithSymbolicEngine(bool hybrid, storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+            // Start by building the model.
+            auto model = buildSymbolicModel<double, LibraryType>(program, formulas);
+            
+            // Print some information about the model.
+            model->printModelInformationToStream(std::cout);
+            
+            // Then select the correct engine.
+            if (hybrid) {
+                verifySymbolicModelWithHybridEngine(model, formulas, onlyInitialStatesRelevant);
             } else {
-                storm::storage::ModelFormulasPair modelFormulasPair = buildSymbolicModel<ValueType, LibraryType>(program, formulas);
-                STORM_LOG_THROW(modelFormulasPair.model != nullptr, storm::exceptions::InvalidStateException,
-                                "Model could not be constructed for an unknown reason.");
+                verifySymbolicModelWithDdEngine(model, formulas, onlyInitialStatesRelevant);
+            }
+        }
+        
+        template<typename ValueType>
+        void buildAndCheckSymbolicModelWithSparseEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+            // Start by building the model.
+            auto model = buildSparseModel<ValueType>(program, formulas);
+            
+            // Print some information about the model.
+            model->printModelInformationToStream(std::cout);
 
-                // Preprocess the model if needed.
-                BRANCH_ON_MODELTYPE(modelFormulasPair.model, modelFormulasPair.model, ValueType, LibraryType, preprocessModel, formulas);
-
-                // Print some information about the model.
-                modelFormulasPair.model->printModelInformationToStream(std::cout);
-
-                // Verify the model, if a formula was given.
-                if (!modelFormulasPair.formulas.empty()) {
-                    if (modelFormulasPair.model->isSparseModel()) {
-                        if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCounterexampleSet()) {
-                            // If we were requested to generate a counterexample, we now do so for each formula.
-                            for (auto const& formula : modelFormulasPair.formulas) {
-                                generateCounterexample<ValueType>(program, modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), formula);
-                            }
-                        } else {
-                            verifySparseModel<ValueType>(modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), modelFormulasPair.formulas, onlyInitialStatesRelevant);
-                        }
-                    } else if (modelFormulasPair.model->isSymbolicModel()) {
-                        if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
-                            verifySymbolicModelWithHybridEngine(modelFormulasPair.model->as<storm::models::symbolic::Model<LibraryType>>(),
-                                                                modelFormulasPair.formulas, onlyInitialStatesRelevant);
-                        } else {
-                            verifySymbolicModelWithSymbolicEngine(modelFormulasPair.model->as<storm::models::symbolic::Model<LibraryType>>(),
-                                                                  modelFormulasPair.formulas, onlyInitialStatesRelevant);
-                        }
-                    } else {
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Invalid input model type.");
-                    }
-                }
+            // Preprocess the model.
+            BRANCH_ON_SPARSE_MODELTYPE(model, model, ValueType, preprocessModel, formulas);
+            
+            // Finally, treat the formulas.
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCounterexampleSet()) {
+                generateCounterexamples<ValueType>(program, formulas);
+            } else {
+                verifySparseModel<ValueType>(model, formulas, onlyInitialStatesRelevant);
             }
         }
         
         template<typename ValueType>
         void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getDdLibraryType() == storm::dd::DdType::CUDD) {
-                buildAndCheckSymbolicModel<ValueType, storm::dd::DdType::CUDD>(program, formulas, onlyInitialStatesRelevant);
-            } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getDdLibraryType() == storm::dd::DdType::Sylvan) {
-                buildAndCheckSymbolicModel<ValueType, storm::dd::DdType::Sylvan>(program, formulas, onlyInitialStatesRelevant);
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::AbstractionRefinement) {
+                auto ddlib = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getDdLibraryType();
+                if (ddlib == storm::dd::DdType::CUDD) {
+                    verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::CUDD>(program, formulas, onlyInitialStatesRelevant);
+                } else {
+                    verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::Sylvan>(program, formulas, onlyInitialStatesRelevant);
+                }
+            } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Exploration) {
+                verifySymbolicModelWithExplorationEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
+            } else {
+                auto engine = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine();
+                if (engine == storm::settings::modules::MarkovChainSettings::Engine::Dd || engine == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
+                    auto ddlib = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getDdLibraryType();
+                    if (ddlib == storm::dd::DdType::CUDD) {
+                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::CUDD>(engine == storm::settings::modules::MarkovChainSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
+                    } else {
+                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::Sylvan>(engine == storm::settings::modules::MarkovChainSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
+                    }
+                } else {
+                    STORM_LOG_THROW(engine == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Illegal engine.");
+                    
+                    buildAndCheckSymbolicModelWithSparseEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
+                }
             }
         }
 

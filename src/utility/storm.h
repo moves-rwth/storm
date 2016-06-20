@@ -96,42 +96,27 @@ namespace storm {
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
 
-
+    template<typename ValueType>
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> buildSparseModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        storm::generator::NextStateGeneratorOptions options(formulas);
+        
+        // Generate command labels if we are going to build a counterexample later.
+        if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
+            options.setBuildChoiceLabels(true);
+        }
+        
+        std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(program, options);
+        storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
+        return builder.build();
+    }
+    
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
-    storm::storage::ModelFormulasPair buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-        storm::storage::ModelFormulasPair result;
-        
-        // Get the string that assigns values to the unknown currently undefined constants in the model.
-        std::string constantDefinitionString = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
-        storm::prism::Program preprocessedProgram = storm::utility::prism::preprocess<ValueType>(program, constantDefinitionString);
-        std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preprocessedProgram.getConstantsSubstitution();
+    std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
+        options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
 
-        // Customize and perform model-building.
-        if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse) {
-            storm::generator::NextStateGeneratorOptions options(formulas);
-
-            // Generate command labels if we are going to build a counterexample later.
-            if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
-                options.setBuildChoiceLabels(true);
-            }
-
-            std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(preprocessedProgram, options);
-            storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
-            result.model = builder.build();
-        } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Dd || storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
-            typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
-            options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
-
-            storm::builder::DdPrismModelBuilder<LibraryType> builder;
-            result.model = builder.build(program, options);
-        }
-        
-        // There may be constants of the model appearing in the formulas, so we replace all their occurrences
-        // by their definitions in the translated program.
-        for (auto const& formula : formulas) {
-            result.formulas.emplace_back(formula->substitute(constantsSubstitution));
-        }
-        return result;
+        storm::builder::DdPrismModelBuilder<LibraryType> builder;
+        return builder.build(program, options);
     }
     
     template<typename ModelType>
@@ -213,6 +198,13 @@ namespace storm {
         return model;
     }
     
+    
+    template<typename ValueType>
+    void generateCounterexamples(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        for (auto const& formula : formulas) {
+            generateCounterexample(program, model, formula);
+        }
+    }
     
     template<typename ValueType>
     void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
