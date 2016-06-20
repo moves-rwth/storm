@@ -477,6 +477,16 @@ formula finished = (status=7);
 label "end" = (status=8);
 
 
+formula task1_completed = finished 
+		 	 & ((t1_r1=1)=>((m1_t1=1&resource1=1)|(m2_t1=1&resource2=1)|(m3_t1=1&resource3=1)|(m4_t1=1&resource4=1)|(m5_t1=1&resource5=1)))
+			 & ((t1_r2=1)=>((m1_t1=1&resource1=2)|(m2_t1=1&resource2=2)|(m3_t1=1&resource3=2)|(m4_t1=1&resource4=2)|(m5_t1=1&resource5=2)))
+			 & ((t1_r3=1)=>((m1_t1=1&resource1=3)|(m2_t1=1&resource2=3)|(m3_t1=1&resource3=3)|(m4_t1=1&resource4=3)|(m5_t1=1&resource5=3)));
+
+formula task2_completed = finished
+			 & ((t2_r1=1)=>((m1_t2=1&resource1=1)|(m2_t2=1&resource2=1)|(m3_t2=1&resource3=1)|(m4_t2=1&resource4=1)|(m5_t2=1&resource5=1)))
+			 & ((t2_r2=1)=>((m1_t2=1&resource1=2)|(m2_t2=1&resource2=2)|(m3_t2=1&resource3=2)|(m4_t2=1&resource4=2)|(m5_t2=1&resource5=2)))
+			 & ((t2_r3=1)=>((m1_t2=1&resource1=3)|(m2_t2=1&resource2=3)|(m3_t2=1&resource3=3)|(m4_t2=1&resource4=3)|(m5_t2=1&resource5=3)));
+
 formula agent1_joins_successful_team = (task1_completed & m1_t1=1) | (task2_completed & m1_t2=1);
 formula agent1_joins_successful_team_of_1 = (task1_completed & m1_t1=1 & team_size_t1=1) | (task2_completed & m1_t2=1 & team_size_t2=1);
 formula agent1_joins_successful_team_of_2 = (task1_completed & m1_t1=1 & team_size_t1=2) | (task2_completed & m1_t2=1 & team_size_t2=2);
@@ -501,16 +511,6 @@ formula agent5_joins_successful_team = (task1_completed & m5_t1=1) | (task2_comp
 formula agent5_joins_successful_team_of_1 = (task1_completed & m5_t1=1 & team_size_t1=1) | (task2_completed & m5_t2=1 & team_size_t2=1);
 formula agent5_joins_successful_team_of_2 = (task1_completed & m5_t1=1 & team_size_t1=2) | (task2_completed & m5_t2=1 & team_size_t2=2);
 formula agent5_joins_successful_team_of_3 = (task1_completed & m5_t1=1 & team_size_t1=3) | (task2_completed & m5_t2=1 & team_size_t2=3);
-
-formula task1_completed = finished 
-		 	 & ((t1_r1=1)=>((m1_t1=1&resource1=1)|(m2_t1=1&resource2=1)|(m3_t1=1&resource3=1)|(m4_t1=1&resource4=1)|(m5_t1=1&resource5=1)))
-			 & ((t1_r2=1)=>((m1_t1=1&resource1=2)|(m2_t1=1&resource2=2)|(m3_t1=1&resource3=2)|(m4_t1=1&resource4=2)|(m5_t1=1&resource5=2)))
-			 & ((t1_r3=1)=>((m1_t1=1&resource1=3)|(m2_t1=1&resource2=3)|(m3_t1=1&resource3=3)|(m4_t1=1&resource4=3)|(m5_t1=1&resource5=3)));
-
-formula task2_completed = finished
-			 & ((t2_r1=1)=>((m1_t2=1&resource1=1)|(m2_t2=1&resource2=1)|(m3_t2=1&resource3=1)|(m4_t2=1&resource4=1)|(m5_t2=1&resource5=1)))
-			 & ((t2_r2=1)=>((m1_t2=1&resource1=2)|(m2_t2=1&resource2=2)|(m3_t2=1&resource3=2)|(m4_t2=1&resource4=2)|(m5_t2=1&resource5=2)))
-			 & ((t2_r3=1)=>((m1_t2=1&resource1=3)|(m2_t2=1&resource2=3)|(m3_t2=1&resource3=3)|(m4_t2=1&resource4=3)|(m5_t2=1&resource5=3)));
 
 // rewards
 rewards "w_1_total"
