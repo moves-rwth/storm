@@ -342,7 +342,7 @@ namespace storm {
                  * @param out The stream the information is to be printed to.
                  */
                 void printRewardModelsInformationToStream(std::ostream& out) const;
-                
+                                
             private:
                 //  A matrix representing transition relation.
                 storm::storage::SparseMatrix<ValueType> transitionMatrix;

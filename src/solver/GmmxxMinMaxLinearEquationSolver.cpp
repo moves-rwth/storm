@@ -51,7 +51,7 @@ namespace storm {
 
 				// Proceed with the iterations as long as the method did not converge or reach the user-specified maximum number
 				// of iterations.
-				while (!converged && iterations < this->maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
+				while (!converged && iterations < this->maximalNumberOfIterations) {
 					// Compute x' = A*x + b.
 					gmm::mult(*gmmxxMatrix, *currentX, *multiplyResult);
 					gmm::add(b, *multiplyResult);
@@ -60,7 +60,7 @@ namespace storm {
 					storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, rowGroupIndices);
 					
 					// Determine whether the method converged.
-					converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, this->precision, this->relative);
+					converged = storm::utility::vector::equalModuloPrecision(*currentX, *newX, this->precision, this->relative) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*newX));
 
 					// Update environment variables.
 					std::swap(currentX, newX);

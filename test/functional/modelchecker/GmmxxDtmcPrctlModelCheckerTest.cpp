@@ -14,7 +14,7 @@
 #include "src/settings/SettingMemento.h"
 #include "src/parser/AutoParser.h"
 #include "src/parser/PrismParser.h"
-#include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/builder/ExplicitModelBuilder.h"
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Die) {
     std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/die/die.tra", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.lab", "", STORM_CPP_BASE_PATH "/examples/dtmc/die/die.coin_flips.trans.rew");
@@ -284,7 +284,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, LRA) {
 TEST(GmmxxDtmcPrctlModelCheckerTest, Conditional) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/test_conditional.pm");
     
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(true, true)).build();
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     ASSERT_EQ(4ul, model->getNumberOfStates());
     ASSERT_EQ(5ul, model->getNumberOfTransitions());

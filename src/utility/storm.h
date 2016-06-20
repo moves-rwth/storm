@@ -14,11 +14,8 @@
 
 #include "storm-config.h"
 
-
-
 // Headers that provide auxiliary functionality.
 #include "src/settings/SettingsManager.h"
-
 
 #include "src/settings/modules/MarkovChainSettings.h"
 #include "src/settings/modules/IOSettings.h"
@@ -43,8 +40,10 @@
 
 #include "src/parser/AutoParser.h"
 
+#include "src/storage/jani/Model.h"
+
 // Headers of builders.
-#include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/builder/ExplicitModelBuilder.h"
 #include "src/builder/DdPrismModelBuilder.h"
 
 // Headers for model processing.
@@ -73,6 +72,10 @@
 #include "src/counterexamples/MILPMinimalLabelSetGenerator.h"
 #include "src/counterexamples/SMTMinimalCommandSetGenerator.h"
 
+// Headers related to PRISM model building.
+#include "src/generator/PrismNextStateGenerator.h"
+#include "src/utility/prism.h"
+
 // Headers related to exception handling.
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidArgumentException.h"
@@ -81,16 +84,14 @@
 #include "src/exceptions/NotImplementedException.h"
 #include "src/exceptions/NotSupportedException.h"
 
-// Notice: The implementation for the template functions must stay in the header.
-// Otherwise the linker complains.
-
 namespace storm {
 
     template<typename ValueType>
     std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitModel(std::string const& transitionsFile, std::string const& labelingFile, boost::optional<std::string> const& stateRewardsFile = boost::none, boost::optional<std::string> const& transitionRewardsFile = boost::none, boost::optional<std::string> const& choiceLabelingFile = boost::none) {
         return storm::parser::AutoParser<>::parseModel(transitionsFile, labelingFile, stateRewardsFile ? stateRewardsFile.get() : "", transitionRewardsFile ? transitionRewardsFile.get() : "", choiceLabelingFile ? choiceLabelingFile.get() : "" );
     }
-            
+
+    storm::jani::Model parseModel(std::string const& path);
     storm::prism::Program parseProgram(std::string const& path);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForExplicit(std::string const& inputString);
     std::vector<std::shared_ptr<storm::logic::Formula const>> parseFormulasForProgram(std::string const& inputString, storm::prism::Program const& program);
@@ -99,47 +100,36 @@ namespace storm {
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
     storm::storage::ModelFormulasPair buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
         storm::storage::ModelFormulasPair result;
-        storm::prism::Program translatedProgram;
-
+        
         // Get the string that assigns values to the unknown currently undefined constants in the model.
-        std::string constants = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
+        std::string constantDefinitionString = storm::settings::getModule<storm::settings::modules::IOSettings>().getConstantDefinitionString();
+        storm::prism::Program preprocessedProgram = storm::utility::prism::preprocess<ValueType>(program, constantDefinitionString);
+        std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preprocessedProgram.getConstantsSubstitution();
 
         // Customize and perform model-building.
         if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse) {
-            typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options options;
-            options = typename storm::builder::ExplicitPrismModelBuilder<ValueType, storm::models::sparse::StandardRewardModel<ValueType>>::Options(formulas);
-            options.addConstantDefinitionsFromString(program, constants);
+            storm::generator::NextStateGeneratorOptions options(formulas);
 
             // Generate command labels if we are going to build a counterexample later.
             if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
-                options.buildCommandLabels = true;
+                options.setBuildChoiceLabels(true);
             }
 
-            storm::builder::ExplicitPrismModelBuilder<ValueType> builder(program, options);
-            result.model = builder.translate();
-            translatedProgram = builder.getTranslatedProgram();
+            std::shared_ptr<storm::generator::NextStateGenerator<ValueType, uint32_t>> generator = std::make_shared<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>>(preprocessedProgram, options);
+            storm::builder::ExplicitModelBuilder<ValueType> builder(generator);
+            result.model = builder.build();
         } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Dd || storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
             typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
             options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
-            options.addConstantDefinitionsFromString(program, constants);
 
             storm::builder::DdPrismModelBuilder<LibraryType> builder;
-            result.model = builder.translateProgram(program, options);
-            translatedProgram = builder.getTranslatedProgram();
+            result.model = builder.build(program, options);
         }
+        
         // There may be constants of the model appearing in the formulas, so we replace all their occurrences
         // by their definitions in the translated program.
-
-        // Start by building a mapping from constants of the (translated) model to their defining expressions.
-        std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
-        for (auto const& constant : translatedProgram.getConstants()) {
-            if (constant.isDefined()) {
-                constantSubstitution.emplace(constant.getExpressionVariable(), constant.getExpression());
-            }
-        }
-
         for (auto const& formula : formulas) {
-            result.formulas.emplace_back(formula->substitute(constantSubstitution));
+            result.formulas.emplace_back(formula->substitute(constantsSubstitution));
         }
         return result;
     }

@@ -46,6 +46,13 @@ namespace storm {
             storm::expressions::Expression const& getUpperBoundExpression() const;
             
             /*!
+             * Retrieves an expression characterizing the legal range of the variable.
+             *
+             * @return An expression characterizing the legal range of the variable.
+             */
+            storm::expressions::Expression getRangeExpression() const;
+            
+            /*!
              * Substitutes all identifiers in the boolean variable according to the given map.
              *
              * @param substitution The substitution to perform.

@@ -265,6 +265,16 @@ include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
 
 #############################################################
 ##
+##	ModernJSON
+##
+#############################################################
+
+#use the shipped version of modernjson
+message (STATUS "StoRM - Including ModernJSON")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/modernjson/src/")
+
+#############################################################
+##
 ##	Z3 (optional)
 ##
 #############################################################

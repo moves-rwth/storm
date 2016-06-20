@@ -161,7 +161,14 @@ namespace storm {
         boost::any Expression::accept(ExpressionVisitor& visitor) const {
             return this->getBaseExpression().accept(visitor);
         }
-        
+
+        bool Expression::isInitialized() const {
+            if(this->getBaseExpressionPointer()) {
+                return true;
+            }
+            return false;
+        }
+
         std::string Expression::toString() const {
             std::stringstream stream;
             stream << *this;
@@ -229,7 +236,7 @@ namespace storm {
                 return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Xor)));
             }
         }
-        
+
         Expression operator>(Expression const& first, Expression const& second) {
             assertSameManager(first.getBaseExpression(), second.getBaseExpression());
             return Expression(std::shared_ptr<BaseExpression>(new BinaryRelationExpression(first.getBaseExpression().getManager(), first.getType().numericalComparison(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryRelationExpression::RelationType::Greater)));
@@ -275,6 +282,11 @@ namespace storm {
             assertSameManager(first.getBaseExpression(), second.getBaseExpression());
             return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Iff)));
         }
+
+        Expression xclusiveor(Expression const& first, Expression const& second) {
+            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Xor)));
+        }
         
         Expression floor(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'floor' requires numerical operand.");
@@ -285,7 +297,24 @@ namespace storm {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'ceil' requires numerical operand.");
             return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().floorCeil(), first.getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Ceil)));
         }
-        
+
+        Expression abs(Expression const& first) {
+            STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Abs is only defined for numerical operands");
+            return ite(first < first.getManager().integer(0), -first, first);
+        }
+
+        Expression sign(Expression const& first) {
+            STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Sign is only defined for numerical operands");
+            // TODO implement (via Ite?)
+            STORM_LOG_ERROR("Not yet implemented");
+        }
+
+        Expression truncate(Expression const& first) {
+            STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Truncate is only defined for numerical operands");
+            // TODO implement (via Ite?)
+            STORM_LOG_ERROR("Not yet implemented");
+        }
+
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions) {
             return apply(expressions, [] (Expression const& e1, Expression const& e2) { return e1 || e2; });
         }
@@ -311,7 +340,8 @@ namespace storm {
             
             return result;
         }
-        
+
+
 
     }
 }

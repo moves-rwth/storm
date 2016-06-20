@@ -24,7 +24,7 @@ namespace storm {
         class GlobalProgramInformation {
         public:
             // Default construct the header information.
-            GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), actionIndices(), modules(), rewardModels(), labels(), hasInitialConstruct(false), initialConstruct(), currentCommandIndex(0), currentUpdateIndex(0) {
+            GlobalProgramInformation() : modelType(), constants(), formulas(), globalBooleanVariables(), globalIntegerVariables(), moduleToIndexMap(), actionIndices(), modules(), rewardModels(), labels(), hasInitialConstruct(false), initialConstruct(), systemCompositionConstruct(boost::none), currentCommandIndex(0), currentUpdateIndex(0) {
                 // Map the empty action to index 0.
                 actionIndices.emplace("", 0);
             }
@@ -42,6 +42,7 @@ namespace storm {
             std::vector<storm::prism::Label> labels;
             bool hasInitialConstruct;
             storm::prism::InitialConstruct initialConstruct;
+            boost::optional<storm::prism::SystemCompositionConstruct> systemCompositionConstruct;
             
             // Counters to provide unique indexing for commands and updates.
             uint_fast64_t currentCommandIndex;
@@ -206,6 +207,20 @@ namespace storm {
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
             
+            // Rules for the system composition.
+            qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> systemCompositionConstruct;
+            qi::rule<Iterator, std::shared_ptr<storm::prism::Composition>(), Skipper> parallelComposition;
+            qi::rule<Iterator, qi::unused_type(), Skipper> synchronizingParallelComposition;
+            qi::rule<Iterator, qi::unused_type(), Skipper> interleavingParallelComposition;
+            qi::rule<Iterator, std::set<std::string>(), Skipper> restrictedParallelComposition;
+            qi::rule<Iterator, std::shared_ptr<storm::prism::Composition>(), Skipper> hidingOrRenamingComposition;
+            qi::rule<Iterator, std::shared_ptr<storm::prism::Composition>(), Skipper> hidingComposition;
+            qi::rule<Iterator, std::shared_ptr<storm::prism::Composition>(), Skipper> renamingComposition;
+            qi::rule<Iterator, std::shared_ptr<storm::prism::Composition>(), Skipper> atomicComposition;
+            qi::rule<Iterator, std::shared_ptr<storm::prism::Composition>(), Skipper> moduleComposition;
+            qi::rule<Iterator, std::set<std::string>(), Skipper> actionNameList;
+            qi::rule<Iterator, std::map<std::string, std::string>(), Skipper> actionRenamingList;
+
             // Rules for label definitions.
             qi::rule<Iterator, storm::prism::Label(), Skipper> labelDefinition;
             
@@ -227,7 +242,16 @@ namespace storm {
             // Helper methods used in the grammar.
             bool isValidIdentifier(std::string const& identifier);
             bool addInitialStatesConstruct(storm::expressions::Expression initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
+            bool addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation);
             
+            
+            std::shared_ptr<storm::prism::Composition> createModuleComposition(std::string const& moduleName) const;
+            std::shared_ptr<storm::prism::Composition> createRenamingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::map<std::string, std::string> const& renaming) const;
+            std::shared_ptr<storm::prism::Composition> createHidingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::set<std::string> const& actionsToHide) const;
+            std::shared_ptr<storm::prism::Composition> createSynchronizingParallelComposition(std::shared_ptr<storm::prism::Composition> const& left, std::shared_ptr<storm::prism::Composition> const& right) const;
+            std::shared_ptr<storm::prism::Composition> createInterleavingParallelComposition(std::shared_ptr<storm::prism::Composition> const& left, std::shared_ptr<storm::prism::Composition> const& right) const;
+            std::shared_ptr<storm::prism::Composition> createRestrictedParallelComposition(std::shared_ptr<storm::prism::Composition> const& left, std::set<std::string> const& synchronizingActions, std::shared_ptr<storm::prism::Composition> const& right) const;
+
             storm::prism::Constant createUndefinedBooleanConstant(std::string const& newConstant) const;
             storm::prism::Constant createUndefinedIntegerConstant(std::string const& newConstant) const;
             storm::prism::Constant createUndefinedDoubleConstant(std::string const& newConstant) const;

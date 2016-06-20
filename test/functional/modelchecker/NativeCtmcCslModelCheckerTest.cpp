@@ -4,7 +4,7 @@
 #include "src/parser/PrismParser.h"
 #include "src/parser/FormulaParser.h"
 #include "src/logic/Formulas.h"
-#include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/builder/ExplicitModelBuilder.h"
 
 #include "src/utility/solver.h"
 #include "src/models/sparse/StandardRewardModel.h"
@@ -26,14 +26,7 @@ TEST(NativeCtmcCslModelCheckerTest, Cluster) {
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model.
-#ifdef WINDOWS
-    storm::builder::ExplicitPrismModelBuilder<double>::Options options;
-#else
-	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
-#endif
-    options.buildAllRewardModels = false;
-    options.rewardModelsToBuild.insert("num_repairs");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true). addRewardModel("num_repairs")).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
@@ -102,14 +95,9 @@ TEST(NativeCtmcCslModelCheckerTest, Embedded) {
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model.
-#ifdef WINDOWS
-    storm::builder::ExplicitPrismModelBuilder<double>::Options options;
-#else
-	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
-#endif
-    options.buildAllRewardModels = false;
-    options.rewardModelsToBuild.insert("up");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate();
+    storm::generator::NextStateGeneratorOptions options;
+    options.addRewardModel("up").setBuildAllLabels();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
@@ -164,7 +152,7 @@ TEST(NativeCtmcCslModelCheckerTest, Polling) {
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model.
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
@@ -198,14 +186,7 @@ TEST(NativeCtmcCslModelCheckerTest, Tandem) {
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
     
     // Build the model with the customers reward structure.
-#ifdef WINDOWS
-    storm::builder::ExplicitPrismModelBuilder<double>::Options options;
-#else
-	typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
-#endif
-    options.buildAllRewardModels = false;
-    options.rewardModelsToBuild.insert("customers");
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true).addRewardModel("customers")).build();
     ASSERT_EQ(storm::models::ModelType::Ctmc, model->getType());
     std::shared_ptr<storm::models::sparse::Ctmc<double>> ctmc = model->as<storm::models::sparse::Ctmc<double>>();
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();

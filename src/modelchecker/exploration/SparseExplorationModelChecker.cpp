@@ -35,7 +35,7 @@ namespace storm {
     namespace modelchecker {
         
         template<typename ValueType, typename StateType>
-        SparseExplorationModelChecker<ValueType, StateType>::SparseExplorationModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions) : program(storm::utility::prism::preprocessProgram<ValueType>(program, constantDefinitions)), variableInformation(this->program), randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()), comparator(storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision()) {
+        SparseExplorationModelChecker<ValueType, StateType>::SparseExplorationModelChecker(storm::prism::Program const& program) : program(program.substituteConstants()), randomGenerator(std::chrono::system_clock::now().time_since_epoch().count()), comparator(storm::settings::getModule<storm::settings::modules::ExplorationSettings>().getPrecision()) {
             // Intentionally left empty.
         }
         
@@ -59,7 +59,7 @@ namespace storm {
             explorationInformation.newRowGroup(0);
             
             std::map<std::string, storm::expressions::Expression> labelToExpressionMapping = program.getLabelToExpressionMapping();
-            StateGeneration<StateType, ValueType> stateGeneration(program, variableInformation, explorationInformation, conditionFormula.toExpression(program.getManager(), labelToExpressionMapping), targetFormula.toExpression(program.getManager(), labelToExpressionMapping));
+            StateGeneration<StateType, ValueType> stateGeneration(program, explorationInformation, conditionFormula.toExpression(program.getManager(), labelToExpressionMapping), targetFormula.toExpression(program.getManager(), labelToExpressionMapping));
             
             
             // Compute and return result.

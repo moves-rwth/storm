@@ -36,7 +36,7 @@ namespace storm {
             typedef StateType ActionType;
             typedef std::vector<std::pair<StateType, ActionType>> StateActionStack;
             
-            SparseExplorationModelChecker(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions = boost::none);
+            SparseExplorationModelChecker(storm::prism::Program const& program);
             
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
             
@@ -73,9 +73,6 @@ namespace storm {
             
             // The program that defines the model to check.
             storm::prism::Program program;
-            
-            // The variable information.
-            storm::generator::VariableInformation variableInformation;
             
             // The random number generator.
             mutable std::default_random_engine randomGenerator;

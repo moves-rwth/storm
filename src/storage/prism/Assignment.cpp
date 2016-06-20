@@ -26,12 +26,6 @@ namespace storm {
         bool Assignment::isIdentity() const {
             if(this->expression.isVariable()) {
                 assert(this->expression.getVariables().size() == 1);
-                //if( variable == *(this->expression.getVariables().begin())) {
-                //    std::cout << variable.getName() << " == " << (this->expression.getVariables().begin())->getName() << std::endl;
-                //}
-                //else {
-                //    std::cout << "********" << variable.getName() << " != " << (this->expression.getVariables().begin())->getName() << std::endl;
-                //}
                 return variable == *(this->expression.getVariables().begin());
             }
             return false;
