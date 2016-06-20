@@ -131,6 +131,22 @@ namespace storm {
                 storm::storage::BitVector const& getStates(std::string const& label) const;
                 
                 /*!
+                 * Sets the labeling of states associated with the given label.
+                 *
+                 * @param label The name of the label.
+                 * @param labeling A bit vector that represents the set of states that will get this label.
+                 */
+                void setStates(std::string const& label, storage::BitVector const& labeling);
+                
+                /*!
+                 * Sets the labeling of states associated with the given label.
+                 *
+                 * @param label The name of the label.
+                 * @param labeling A bit vector that represents the set of states that will get this label.
+                 */
+                void setStates(std::string const& label, storage::BitVector&& labeling);
+                
+                /*!
                  * Returns (an approximation of) the size of the labeling measured in bytes.
                  *
                  * @return The size of the labeling measured in bytes.
