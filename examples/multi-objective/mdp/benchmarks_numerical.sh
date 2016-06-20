@@ -4,7 +4,7 @@ mkdir benchmarks_numerical
 
 
 executable=../../../build/src/Release/storm 
-options='--precision 0.000001 --multiobjective:precision 0.0001'
+options='--precision 0.000001 --multiobjective:precision 0.0001 --debug'
 modelcommand='-s'
 propertycommand='-prop'
 logfilepostfix='.storm.output'

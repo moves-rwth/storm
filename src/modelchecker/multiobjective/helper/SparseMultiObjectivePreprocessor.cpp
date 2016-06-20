@@ -10,6 +10,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/utility/graph.h"
+#include "src/utility/Stopwatch.h"
 
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/UnexpectedException.h"
@@ -362,8 +363,9 @@ namespace storm {
             
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::assertPositiveRewardFiniteness(PreprocessorData& data, storm::storage::BitVector const& actionsWithNegativeReward) {
-                
+                storm::utility::Stopwatch sw;
                 auto mecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(data.preprocessedModel.getTransitionMatrix(), data.preprocessedModel.getBackwardTransitions());
+                STORM_LOG_DEBUG("Maximal end component decomposition for asserting positive reward finiteness took " << sw << " seconds.");
                 if(mecDecomposition.empty()) {
                     return;
                 }
