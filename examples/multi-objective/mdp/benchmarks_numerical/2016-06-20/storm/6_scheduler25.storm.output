@@ -1,0 +1,90 @@
+SToRM
+---------------
+
+Version: 0.9.1 (+1781 commits) build from revision g5578a73 (DIRTY).
+
+Linked with GNU Linear Programming Kit v4.57.
+Linked with SMT-RAT 2.1.0.
+Linked with CARL.
+Command line arguments: -s scheduler/scheduler25.nm -prop scheduler/scheduler25_numerical.pctl --precision 0.000001 --multiobjective:precision 0.0001 
+Current working directory: /Users/tim/storm/examples/multi-objective/mdp
+
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	633735
+Transitions: 	1179444
+Choices: 	1168375
+Reward Models:  energy, time
+Labels: 	2
+   * init -> 1 state(s)
+   * tasks_complete -> 7930 state(s)
+choice labels: 	no
+Size in memory: 67562 kbytes
+-------------------------------------------------------------- 
+
+Model checking property: multi(R[exp]{"time"}min=? [F "tasks_complete"], R[exp]{"energy"}<=1.45 [F "tasks_complete"]) ...
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                       Multi-objective Preprocessor Data                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Original Formula: 
+--------------------------------------------------------------
+	multi(R[exp]{"time"}min=? [F "tasks_complete"], R[exp]{"energy"}<=1.45 [F "tasks_complete"])
+
+Objectives:
+--------------------------------------------------------------
+R[exp]{"time"}min=? [F "tasks_complete"] 	(toOrigVal: -1*x +  0, 	intern threshold:   none, 	intern reward model: objective1 (negative), 	step bound: none)
+R[exp]{"energy"}<=1.45 [F "tasks_complete"] 	(toOrigVal: -1*x +  0, 	intern threshold:>=-1.45, 	intern reward model: objective2 (negative), 	step bound: none)
+--------------------------------------------------------------
+
+Original Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	633735
+Transitions: 	1179444
+Choices: 	1168375
+Reward Models:  energy, time
+Labels: 	2
+   * init -> 1 state(s)
+   * tasks_complete -> 7930 state(s)
+choice labels: 	no
+Size in memory: 67562 kbytes
+-------------------------------------------------------------- 
+
+Preprocessed Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	633735
+Transitions: 	1179444
+Choices: 	1168375
+Reward Models:  objective2, objective1
+Labels: 	3
+   * tasks_complete -> 7930 state(s)
+   * prob1 -> 7930 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 46044 kbytes
+-------------------------------------------------------------- 
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                 Multi-objective Model Checking Statistics:                                            
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Runtimes (in seconds):
+	 Preprocessing:       1.159
+	 Value Iterations:    26.03
+	 Postprocessing:          0
+	 Combined:           27.204
+
+Performed Refinement Steps: 2
+
+---------------------------------------------------------------------------------------------------------------------------------------
+ done.
+Result (initial states): [11.65925926]
+===== Statistics ==============================
+peak memory usage: 614MB
+CPU time: 38.596 seconds
+===============================================
+OVERALL_TIME; 39.67

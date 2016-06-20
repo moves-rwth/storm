@@ -1,0 +1,87 @@
+SToRM
+---------------
+
+Version: 0.9.1 (+1781 commits) build from revision g5578a73 (DIRTY).
+
+Linked with GNU Linear Programming Kit v4.57.
+Linked with SMT-RAT 2.1.0.
+Linked with CARL.
+Command line arguments: -s dpm/dpm100.nm -prop dpm/dpm100_numerical.pctl --precision 0.000001 --multiobjective:precision 0.0001 
+Current working directory: /Users/tim/storm/examples/multi-objective/mdp
+
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	636
+Transitions: 	2550
+Choices: 	1860
+Reward Models:  queue, power
+Labels: 	1
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 109 kbytes
+-------------------------------------------------------------- 
+
+Model checking property: multi(R[exp]{"power"}min=? [C<=100], R[exp]{"queue"}<=70 [C<=100]) ...
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                       Multi-objective Preprocessor Data                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Original Formula: 
+--------------------------------------------------------------
+	multi(R[exp]{"power"}min=? [C<=100], R[exp]{"queue"}<=70 [C<=100])
+
+Objectives:
+--------------------------------------------------------------
+ R[exp]{"power"}min=? [C<=100] 	(toOrigVal: -1*x +  0, 	intern threshold:   none, 	intern reward model: objective1 (negative), 	step bound:  100)
+  R[exp]{"queue"}<=70 [C<=100] 	(toOrigVal: -1*x +  0, 	intern threshold:>=  -70, 	intern reward model: objective2 (negative), 	step bound:  100)
+--------------------------------------------------------------
+
+Original Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	636
+Transitions: 	2550
+Choices: 	1860
+Reward Models:  queue, power
+Labels: 	1
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 109 kbytes
+-------------------------------------------------------------- 
+
+Preprocessed Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	636
+Transitions: 	2550
+Choices: 	1860
+Reward Models:  objective2, objective1
+Labels: 	2
+   * prob1 -> 0 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 83 kbytes
+-------------------------------------------------------------- 
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                 Multi-objective Model Checking Statistics:                                            
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Runtimes (in seconds):
+	 Preprocessing:           0
+	 Value Iterations:    0.059
+	 Postprocessing:          0
+	 Combined:             0.06
+
+Performed Refinement Steps: 6
+
+---------------------------------------------------------------------------------------------------------------------------------------
+ done.
+Result (initial states): [121.6128842]
+===== Statistics ==============================
+peak memory usage: 190MB
+CPU time: 0.124 seconds
+===============================================
+OVERALL_TIME; 0.19

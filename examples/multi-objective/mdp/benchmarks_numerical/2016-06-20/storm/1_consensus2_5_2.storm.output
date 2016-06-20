@@ -1,0 +1,94 @@
+SToRM
+---------------
+
+Version: 0.9.1 (+1781 commits) build from revision g5578a73 (DIRTY).
+
+Linked with GNU Linear Programming Kit v4.57.
+Linked with SMT-RAT 2.1.0.
+Linked with CARL.
+Command line arguments: -s consensus/consensus2_5_2.nm -prop consensus/consensus2_5_2_numerical.pctl --precision 0.000001 --multiobjective:precision 0.0001 
+Current working directory: /Users/tim/storm/examples/multi-objective/mdp
+
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	3169
+Transitions: 	5468
+Choices: 	5468
+Reward Models:  none
+Labels: 	3
+   * init -> 1 state(s)
+   * one_coin_ok -> 1857 state(s)
+   * one_proc_err -> 304 state(s)
+choice labels: 	no
+Size in memory: 193 kbytes
+-------------------------------------------------------------- 
+
+Model checking property: multi(Pmax=? [F "one_proc_err"], P>=0.9987286134 [G "one_coin_ok"]) ...
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                       Multi-objective Preprocessor Data                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Original Formula: 
+--------------------------------------------------------------
+	multi(Pmax=? [F "one_proc_err"], P>=0.9987286134 [G "one_coin_ok"])
+
+Objectives:
+--------------------------------------------------------------
+     Pmax=? [F "one_proc_err"] 	(toOrigVal:  1*x +  0, 	intern threshold:   none, 	intern reward model: objective1 (positive), 	step bound: none)
+ P>=0.998729 [G "one_coin_ok"] 	(toOrigVal:  1*x +  1, 	intern threshold:>=-0.0012713866, 	intern reward model: objective2 (negative), 	step bound: none)
+--------------------------------------------------------------
+
+Original Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	3169
+Transitions: 	5468
+Choices: 	5468
+Reward Models:  none
+Labels: 	3
+   * init -> 1 state(s)
+   * one_coin_ok -> 1857 state(s)
+   * one_proc_err -> 304 state(s)
+choice labels: 	no
+Size in memory: 193 kbytes
+-------------------------------------------------------------- 
+
+Preprocessed Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	3169
+Transitions: 	5468
+Choices: 	5468
+Reward Models:  objective2, objective1
+Labels: 	4
+   * one_proc_err -> 304 state(s)
+   * one_coin_ok -> 1857 state(s)
+   * prob1 -> 0 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 215 kbytes
+-------------------------------------------------------------- 
+
+---------------------------------------------------------------------------------------------------------------------------------------
+WARN  (SparseMultiObjectiveHelper.cpp:238): Numerical issues: The overapproximation would not contain the underapproximation. Hence, a halfspace is shifted by 2.51215e-15.
+
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                 Multi-objective Model Checking Statistics:                                            
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Runtimes (in seconds):
+	 Preprocessing:       0.003
+	 Value Iterations:    0.018
+	 Postprocessing:          0
+	 Combined:            0.022
+
+Performed Refinement Steps: 3
+
+---------------------------------------------------------------------------------------------------------------------------------------
+ done.
+Result (initial states): [0.0012713866]
+===== Statistics ==============================
+peak memory usage: 192MB
+CPU time: 0.128 seconds
+===============================================
+OVERALL_TIME; 0.2
