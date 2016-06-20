@@ -4,7 +4,7 @@ namespace storm {
     namespace adapters {
      
         template<typename ValueType>
-        static std::unique_ptr<Eigen::SparseMatrix<ValueType>> toEigenSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) {
+        std::unique_ptr<Eigen::SparseMatrix<ValueType>> EigenAdapter::toEigenSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix) {
             // Build a list of triplets and let Eigen care about the insertion.
             std::vector<Eigen::Triplet<ValueType>> triplets;
             triplets.reserve(matrix.getNonzeroEntryCount());
@@ -20,6 +20,6 @@ namespace storm {
             return result;
         }
         
-        template std::unique_ptr<Eigen::SparseMatrix<double>> toEigenSparseMatrix(storm::storage::SparseMatrix<double> const& matrix);
+        template std::unique_ptr<Eigen::SparseMatrix<double>> EigenAdapter::toEigenSparseMatrix(storm::storage::SparseMatrix<double> const& matrix);
     }
 }
