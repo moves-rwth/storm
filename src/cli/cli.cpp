@@ -229,15 +229,13 @@ namespace storm {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas(parsedFormulas.begin(), parsedFormulas.end());
                 
                 if (storm::settings::getModule<storm::settings::modules::IOSettings>().isSymbolicSet()) {
-#ifdef STORM_HAVE_CARL
                     if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isParametricSet()) {
                         buildAndCheckSymbolicModel<storm::RationalFunction>(program.get(), formulas, true);
+                    } else if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet()) {
+                        buildAndCheckSymbolicModel<storm::RationalNumber>(program.get(), formulas, true);
                     } else {
-#endif
                         buildAndCheckSymbolicModel<double>(program.get(), formulas, true);
-#ifdef STORM_HAVE_CARL
                     }
-#endif
                 } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
                     STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use explicit input models with this engine.");
                     buildAndCheckExplicitModel<double>(formulas, true);
