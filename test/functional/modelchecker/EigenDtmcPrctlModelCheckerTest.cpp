@@ -61,9 +61,58 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die) {
 }
 
 TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
-    // FIXME: this should use rational numbers not functions.
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die.pm");
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program).build();
+    
+    storm::generator::NextStateGeneratorOptions options;
+    options.setBuildAllLabels().setBuildAllRewardModels();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model = storm::builder::ExplicitModelBuilder<storm::RationalNumber>(program, options).build();
+    
+    // A parser that we use for conveniently constructing the formulas.
+    storm::parser::FormulaParser formulaParser;
+    
+    ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
+    
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
+    
+    ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
+    
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>> checker(*dtmc, std::make_unique<storm::utility::solver::EigenLinearEquationSolverFactory<storm::RationalNumber>>());
+    
+    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalNumber>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
+    
+    EXPECT_EQ(storm::RationalNumber(1) / storm::RationalNumber(6), quantitativeResult1[0]);
+    
+    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
+    
+    result = checker.check(*formula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalNumber>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
+    
+    EXPECT_EQ(storm::RationalNumber(1) / storm::RationalNumber(6), quantitativeResult2[0]);
+    
+    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
+    
+    result = checker.check(*formula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalNumber>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
+    
+    EXPECT_EQ(storm::RationalNumber(1) / storm::RationalNumber(6), quantitativeResult3[0]);
+    
+    formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
+    
+    result = checker.check(*formula);
+    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalNumber>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<storm::RationalNumber>();
+    
+    EXPECT_EQ(storm::RationalNumber(11) / storm::RationalNumber(3), quantitativeResult4[0]);
+}
+
+TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/parametric_die.pm");
+    storm::generator::NextStateGeneratorOptions options;
+    options.setBuildAllLabels().setBuildAllRewardModels();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program, options).build();
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -75,6 +124,11 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
     
+    std::map<storm::RationalFunctionVariable, storm::RationalNumber> instantiation;
+    std::set<storm::RationalFunctionVariable> variables = storm::models::sparse::getProbabilityParameters(*dtmc);
+    ASSERT_EQ(variables.size(), 1ull);
+    instantiation.emplace(*variables.begin(), storm::RationalNumber(1) / storm::RationalNumber(2));
+    
     storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> checker(*dtmc, std::make_unique<storm::utility::solver::EigenLinearEquationSolverFactory<storm::RationalFunction>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
@@ -82,75 +136,28 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
     
-    EXPECT_EQ(storm::RationalFunction(1) / storm::RationalFunction(6), quantitativeResult1[0]);
+    EXPECT_EQ(storm::RationalNumber(1) / storm::RationalNumber(6), quantitativeResult1[0].evaluate(instantiation));
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
     
-    EXPECT_EQ(storm::RationalFunction(1) / storm::RationalFunction(6), quantitativeResult2[0]);
+    EXPECT_EQ(storm::RationalNumber(1) / storm::RationalNumber(6), quantitativeResult2[0].evaluate(instantiation));
     
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
     
-    EXPECT_EQ(storm::RationalFunction(1) / storm::RationalFunction(6), quantitativeResult3[0]);
+    EXPECT_EQ(storm::RationalNumber(1) / storm::RationalNumber(6), quantitativeResult3[0].evaluate(instantiation));
     
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
     
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
     
-    EXPECT_EQ(storm::RationalFunction(11) / storm::RationalFunction(3), quantitativeResult4[0]);
-}
-
-TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
-    // FIXME: this should use rational numbers not functions.
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/parametric_die.pm");
-    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(program).build();
-    
-    // A parser that we use for conveniently constructing the formulas.
-    storm::parser::FormulaParser formulaParser;
-    
-    ASSERT_EQ(model->getType(), storm::models::ModelType::Dtmc);
-    
-    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-    
-    ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
-    ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
-    
-    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> checker(*dtmc, std::make_unique<storm::utility::solver::EigenLinearEquationSolverFactory<storm::RationalFunction>>());
-    
-    std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
-    
-    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
-    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
-    
-    std::cout << quantitativeResult1 << std::endl;
-//    EXPECT_EQ(storm::RationalFunction(1) / storm::RationalFunction(6), quantitativeResult1[0]);
-//    
-//    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
-//    
-//    result = checker.check(*formula);
-//    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
-//    
-//    EXPECT_EQ(storm::RationalFunction(1) / storm::RationalFunction(6), quantitativeResult2[0]);
-//    
-//    formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
-//    
-//    result = checker.check(*formula);
-//    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
-//    
-//    EXPECT_EQ(storm::RationalFunction(1) / storm::RationalFunction(6), quantitativeResult3[0]);
-//    
-//    formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
-//    
-//    result = checker.check(*formula);
-//    storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<storm::RationalFunction>();
-//    
-//    EXPECT_EQ(storm::RationalFunction(11) / storm::RationalFunction(3), quantitativeResult4[0]);
+    EXPECT_EQ(storm::RationalNumber(11) / storm::RationalNumber(3), quantitativeResult4[0].evaluate(instantiation));
 }
 
 
@@ -377,8 +384,10 @@ TEST(EigenDtmcPrctlModelCheckerTest, LRA) {
 
 TEST(EigenDtmcPrctlModelCheckerTest, Conditional) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/test_conditional.pm");
-    
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
+
+    storm::generator::NextStateGeneratorOptions options;
+    options.setBuildAllLabels().setBuildAllRewardModels();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, options).build();
     ASSERT_TRUE(model->getType() == storm::models::ModelType::Dtmc);
     ASSERT_EQ(4ul, model->getNumberOfStates());
     ASSERT_EQ(5ul, model->getNumberOfTransitions());

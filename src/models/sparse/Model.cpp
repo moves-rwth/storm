@@ -346,9 +346,7 @@ namespace storm {
                 return this->rewardModels;
             }
             
-            
-
-            std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
+            std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
                 return storm::storage::getVariables(model.getTransitionMatrix());
             }
             

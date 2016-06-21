@@ -229,6 +229,9 @@ namespace storm {
             template class GameSolverFactory<double>;
 
             template class LinearEquationSolverFactory<storm::RationalNumber>;
+            template class EigenLinearEquationSolverFactory<storm::RationalNumber>;
+
+            template class LinearEquationSolverFactory<storm::RationalFunction>;
             template class EigenLinearEquationSolverFactory<storm::RationalFunction>;
         }
     }

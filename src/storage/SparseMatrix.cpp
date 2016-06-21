@@ -1417,9 +1417,9 @@ namespace storm {
         
         
 #ifdef STORM_HAVE_CARL
-        std::set<storm::Variable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix)
+        std::set<storm::RationalFunctionVariable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix)
         {
-            std::set<storm::Variable> result;
+            std::set<storm::RationalFunctionVariable> result;
             for(auto const& entry : matrix) {
                 entry.getValue().gatherVariables(result);
             }

@@ -57,7 +57,7 @@ namespace storm {
 #else
     typedef mpq_class RationalNumber;
 #endif
-    typedef carl::Variable Variable;
+    typedef carl::Variable RationalFunctionVariable;
     typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
     typedef carl::Relation CompareRelation;

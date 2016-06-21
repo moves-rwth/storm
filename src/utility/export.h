@@ -24,8 +24,8 @@ void exportParametricMcResult(const ValueType& mcresult, storm::modelchecker::re
 	filestream.open(path);
 	// todo add checks.
 	filestream << "!Parameters: ";
-	std::set<storm::Variable> vars = mcresult.gatherVariables();
-	std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::Variable>(filestream, ", "));
+	std::set<storm::RationalFunctionVariable> vars = mcresult.gatherVariables();
+	std::copy(vars.begin(), vars.end(), std::ostream_iterator<storm::RationalFunctionVariable>(filestream, ", "));
 	filestream << std::endl;
 	filestream << "!Result: " << mcresult << std::endl;
 	filestream << "!Well-formed Constraints: " << std::endl;
