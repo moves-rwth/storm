@@ -33,16 +33,16 @@ namespace storm {
         }
         
         bool MultiObjectiveFormula::hasNumericalResult() const {
-            bool hasExactlyOneQualitativeSubformula = false;
+            bool hasExactlyOneQuantitativeSubformula = false;
             for(auto const& subformula : this->subformulas){
-                if(subformula->hasQualitativeResult()){
-                    if(hasExactlyOneQualitativeSubformula){
+                if(subformula->hasQuantitativeResult()){
+                    if(hasExactlyOneQuantitativeSubformula){
                         return false;
                     }
-                    hasExactlyOneQualitativeSubformula=true;
+                    hasExactlyOneQuantitativeSubformula=true;
                 }
             }
-            return hasExactlyOneQualitativeSubformula;
+            return hasExactlyOneQuantitativeSubformula;
         }
         
         bool MultiObjectiveFormula::hasParetoCurveResult() const {

@@ -9,6 +9,9 @@
 #include "src/logic/Formulas.h"
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveObjectiveInformation.h"
 #include "src/storage/BitVector.h"
+#include "src/utility/macros.h"
+
+#include "src/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -18,9 +21,10 @@ namespace storm {
             struct SparseMultiObjectivePreprocessorData {
                 
                 enum class QueryType { Achievability, Numerical, Pareto };
+                enum class PreprocessorObjectiveSolution { None, False, True, Zero, Unbounded, Undefined };
                 
                 storm::logic::MultiObjectiveFormula const& originalFormula;
-                storm::storage::BitVector objectivesSolvedInPreprocessing;
+                std::vector<PreprocessorObjectiveSolution> solutionsFromPreprocessing;
                 
                 SparseModelType const& originalModel;
                 SparseModelType preprocessedModel;
@@ -33,8 +37,14 @@ namespace storm {
                 
                 bool produceSchedulers;
                 
-                SparseMultiObjectivePreprocessorData(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel, SparseModelType&& preprocessedModel, std::vector<uint_fast64_t>&& newToOldStateIndexMapping) : originalFormula(originalFormula), originalModel(originalModel), preprocessedModel(preprocessedModel), newToOldStateIndexMapping(newToOldStateIndexMapping), produceSchedulers(false) {
-                    //Intentionally left empty
+                SparseMultiObjectivePreprocessorData(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel, SparseModelType&& preprocessedModel, std::vector<uint_fast64_t>&& newToOldStateIndexMapping) : originalFormula(originalFormula), solutionsFromPreprocessing(originalFormula.getNumberOfSubformulas(), PreprocessorObjectiveSolution::None), originalModel(originalModel), preprocessedModel(preprocessedModel), newToOldStateIndexMapping(newToOldStateIndexMapping), produceSchedulers(false) {
+                    
+                    // get a unique name for the labels of states that have to be reached with probability 1 and add the label
+                    this->prob1StatesLabel = "prob1";
+                    while(this->preprocessedModel.hasLabel(this->prob1StatesLabel)) {
+                        this->prob1StatesLabel = "_" + this->prob1StatesLabel;
+                    }
+                    this->preprocessedModel.getStateLabeling().addLabel(this->prob1StatesLabel, storm::storage::BitVector(this->preprocessedModel.getNumberOfStates(), true));
                 }
                 
                 void printToStream(std::ostream& out) {
@@ -45,15 +55,37 @@ namespace storm {
                     out << "Original Formula: " << std::endl;
                     out << "--------------------------------------------------------------" << std::endl;
                     out << "\t" << originalFormula << std::endl;
-                    out << std::endl;
-                    if(!objectivesSolvedInPreprocessing.empty()) {
-                        out << "Objectives solved while preprocessing: " << std::endl;
-                        out << "--------------------------------------------------------------" << std::endl;
-                        for(auto const& subFIndex : objectivesSolvedInPreprocessing) {
-                            out<< "\t" << subFIndex << ": \t" << originalFormula.getSubformula(subFIndex) << std::endl;
+                    bool hasOneObjectiveSolvedInPreprocessing = false;
+                    for(uint_fast64_t subformulaIndex = 0; subformulaIndex < originalFormula.getNumberOfSubformulas(); ++subformulaIndex) {
+                        if(!hasOneObjectiveSolvedInPreprocessing && solutionsFromPreprocessing[subformulaIndex]!= PreprocessorObjectiveSolution::None) {
+                            hasOneObjectiveSolvedInPreprocessing = true;
+                            out << std::endl;
+                            out << "Solutions of objectives obtained from Preprocessing: " << std::endl;
+                            out << "--------------------------------------------------------------" << std::endl;
                         }
-                        out << std::endl;
+                        switch(solutionsFromPreprocessing[subformulaIndex]) {
+                            case PreprocessorObjectiveSolution::None:
+                                break;
+                            case PreprocessorObjectiveSolution::False:
+                                out<< "\t" << subformulaIndex << ": " << originalFormula.getSubformula(subformulaIndex) << " \t= false" << std::endl;
+                                break;
+                            case PreprocessorObjectiveSolution::True:
+                                out<< "\t" << subformulaIndex << ": " << originalFormula.getSubformula(subformulaIndex) << " \t= true" << std::endl;
+                                break;
+                            case PreprocessorObjectiveSolution::Zero:
+                                out<< "\t" << subformulaIndex << ": " << originalFormula.getSubformula(subformulaIndex) << " \t= zero" << std::endl;
+                                break;
+                            case PreprocessorObjectiveSolution::Unbounded:
+                                out<< "\t" << subformulaIndex << ": " << originalFormula.getSubformula(subformulaIndex) << " \t= unbounded" << std::endl;
+                                break;
+                            case PreprocessorObjectiveSolution::Undefined:
+                                out<< "\t" << subformulaIndex << ": " << originalFormula.getSubformula(subformulaIndex) << " \t= undefined" << std::endl;
+                                break;
+                            default:
+                                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "no case for PreprocessorObjectiveSolution.");
+                        }
                     }
+                    out << std::endl;
                     out << "Objectives:" << std::endl;
                     out << "--------------------------------------------------------------" << std::endl;
                     for (auto const& obj : objectives) {

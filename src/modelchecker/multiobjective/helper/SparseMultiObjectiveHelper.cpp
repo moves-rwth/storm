@@ -22,20 +22,36 @@ namespace storm {
                 resultData.overApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createUniversalPolytope();
                 resultData.underApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createEmptyPolytope();
                 
-                switch(preprocessorData.queryType) {
-                    case PreprocessorData::QueryType::Achievability:
-                        achievabilityQuery(preprocessorData, resultData);
-                        break;
-                    case PreprocessorData::QueryType::Numerical:
-                        numericalQuery(preprocessorData, resultData);
-                        break;
-                    case PreprocessorData::QueryType::Pareto:
-                        paretoQuery(preprocessorData, resultData);
-                        break;
-                    default:
-                        STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown Query Type");
+                if(!checkIfPreprocessingWasConclusive(preprocessorData)) {
+                    switch(preprocessorData.queryType) {
+                        case PreprocessorData::QueryType::Achievability:
+                            achievabilityQuery(preprocessorData, resultData);
+                            break;
+                        case PreprocessorData::QueryType::Numerical:
+                            numericalQuery(preprocessorData, resultData);
+                            break;
+                        case PreprocessorData::QueryType::Pareto:
+                            paretoQuery(preprocessorData, resultData);
+                            break;
+                        default:
+                            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown Query Type");
+                    }
                 }
                 return resultData;
+            }
+            
+            template <class SparseModelType, typename RationalNumberType>
+            bool SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::checkIfPreprocessingWasConclusive(PreprocessorData const& preprocessorData) {
+                if(preprocessorData.objectives.empty()) {
+                    return true;
+                }
+                for(auto const& preprocessorResult : preprocessorData.solutionsFromPreprocessing) {
+                    if(preprocessorResult == PreprocessorData::PreprocessorObjectiveSolution::False ||
+                       preprocessorResult == PreprocessorData::PreprocessorObjectiveSolution::Undefined) {
+                        return true;
+                    }
+                }
+                return false;
             }
             
             template <class SparseModelType, typename RationalNumberType>
@@ -68,7 +84,7 @@ namespace storm {
                 uint_fast64_t optimizingObjIndex = *preprocessorData.indexOfOptimizingObjective;
                 Point thresholds;
                 thresholds.reserve(preprocessorData.objectives.size());
-                storm::storage::BitVector strictThresholds(preprocessorData.objectives.size());
+                storm::storage::BitVector strictThresholds(preprocessorData.objectives.size(), false);
                 std::vector<storm::storage::geometry::Halfspace<RationalNumberType>> thresholdConstraints;
                 thresholdConstraints.reserve(preprocessorData.objectives.size()-1);
                 for(uint_fast64_t objIndex = 0; objIndex < preprocessorData.objectives.size(); ++objIndex) {
@@ -82,6 +98,7 @@ namespace storm {
                         thresholds.push_back(storm::utility::zero<RationalNumberType>());
                     }
                 }
+                // Note: If we have a single objective (i.e., no objectives with thresholds), thresholdsAsPolytope gets no constraints
                 auto thresholdsAsPolytope = storm::storage::geometry::Polytope<RationalNumberType>::create(thresholdConstraints);
                 WeightVector directionOfOptimizingObjective(preprocessorData.objectives.size(), storm::utility::zero<RationalNumberType>());
                 directionOfOptimizingObjective[optimizingObjIndex] = storm::utility::one<RationalNumberType>();

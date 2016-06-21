@@ -53,7 +53,7 @@ namespace storm {
                 
                 uint_fast64_t subsystemStateCount = subsystem.getNumberOfSetBits();
                 STORM_LOG_THROW(subsystemStateCount != 0, storm::exceptions::InvalidArgumentException, "Invoked SubsystemBuilder for an empty subsystem.");
-                if(subsystemStateCount == subsystem.size()) {
+                if(subsystemStateCount == subsystem.size() && consideredActions.full()) {
                     result.model = std::make_shared<SparseModelType>(originalModel);
                     result.newToOldStateIndexMapping = storm::utility::vector::buildVectorForRange(0, result.model->getNumberOfStates());
                     result.subsystemActions = storm::storage::BitVector(result.model->getTransitionMatrix().getRowCount(), true);
@@ -61,13 +61,12 @@ namespace storm {
                 }
                 
                 result.newToOldStateIndexMapping.reserve(subsystemStateCount);
-                result.subsystemActions = storm::storage::BitVector(result.model->getTransitionMatrix().getRowCount(), false);
+                result.subsystemActions = storm::storage::BitVector(originalModel.getTransitionMatrix().getRowCount(), false);
                 for(auto subsysState : subsystem) {
                     result.newToOldStateIndexMapping.push_back(subsysState);
                     bool stateHasOneChoiceLeft = false;
                     for(uint_fast64_t row = consideredActions.getNextSetIndex(originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState]); row < originalModel.getTransitionMatrix().getRowGroupIndices()[subsysState+1]; row = consideredActions.getNextSetIndex(row+1)) {
                         bool allRowEntriesStayInSubsys = true;
-                        result.subsystemActions.set(row, true);
                         for(auto const& entry : originalModel.getTransitionMatrix().getRow(row)) {
                             if(!subsystem.get(entry.getColumn())) {
                                 allRowEntriesStayInSubsys = false;

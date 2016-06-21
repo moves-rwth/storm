@@ -755,8 +755,18 @@ namespace storm {
             }
             
             template<typename T>
-            bool hasNegativeEntries(std::vector<T> const& v){
+            bool hasNegativeEntry(std::vector<T> const& v){
                 return std::any_of(v.begin(), v.end(), [](T value){return value < storm::utility::zero<T>();});
+            }
+            
+            template<typename T>
+            bool hasPositiveEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return value > storm::utility::zero<T>();});
+            }
+            
+            template<typename T>
+            bool hasNonZeroEntry(std::vector<T> const& v){
+                return std::any_of(v.begin(), v.end(), [](T value){return !storm::utility::isZero(value);});
             }
             
             /*!

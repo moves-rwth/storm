@@ -27,6 +27,13 @@ namespace storm {
                 
             private:
                 
+                /*
+                 * Checks whether the preprocessing was already conclusive, e.g., the result for one objective is undefined or false
+                 *
+                 * @return true iff preprocessing was conclusive
+                 */
+                static bool checkIfPreprocessingWasConclusive(PreprocessorData const& preprocessorData);
+                
                 static void achievabilityQuery(PreprocessorData const& preprocessorData, ResultData& resultData);
                 static void numericalQuery(PreprocessorData const& preprocessorData, ResultData& resultData);
                 static void paretoQuery(PreprocessorData const& preprocessorData, ResultData& resultData);

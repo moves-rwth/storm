@@ -23,13 +23,6 @@ namespace storm {
             typename SparseMultiObjectivePreprocessor<SparseModelType>::PreprocessorData SparseMultiObjectivePreprocessor<SparseModelType>::preprocess(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel) {
                 
                 PreprocessorData data(originalFormula, originalModel, SparseModelType(originalModel), storm::utility::vector::buildVectorForRange(0, originalModel.getNumberOfStates()));
-                data.objectivesSolvedInPreprocessing = storm::storage::BitVector(originalFormula.getNumberOfSubformulas(), false);
-                // get a unique name for the labels of states that have to be reached with probability 1 and add the label
-                data.prob1StatesLabel = "prob1";
-                while(data.preprocessedModel.hasLabel(data.prob1StatesLabel)) {
-                    data.prob1StatesLabel = "_" + data.prob1StatesLabel;
-                }
-                data.preprocessedModel.getStateLabeling().addLabel(data.prob1StatesLabel, storm::storage::BitVector(data.preprocessedModel.getNumberOfStates(), true));
                 
                 //Invoke preprocessing on the individual objectives
                 for(auto const& subFormula : originalFormula.getSubFormulas()){
@@ -52,9 +45,29 @@ namespace storm {
                 
                 assertRewardFiniteness(data);
                 
-                data.objectives = storm::utility::vector::filterVector(data.objectives, ~data.objectivesSolvedInPreprocessing);
+                // set solution for objectives for which there are no rewards left
+                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
+                    if(data.solutionsFromPreprocessing[objIndex] == PreprocessorData::PreprocessorObjectiveSolution::None &&
+                       !storm::utility::vector::hasNonZeroEntry(data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector())) {
+                        if(data.objectives[objIndex].threshold) {
+                            if(storm::utility::zero<ValueType>() > *data.objectives[objIndex].threshold ||
+                                (!data.objectives[objIndex].thresholdIsStrict && storm::utility::zero<ValueType>() >= *data.objectives[objIndex].threshold) ){
+                                    data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::True;
+                                } else {
+                                    data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::False;
+                                }
+                        } else {
+                            data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::Zero;
+                        }
+                    }
+                }
                 
-                //Set the query type. In case of a numerical query, also set the index of the objective to be optimized.
+                // Only keep the objectives for which we have no solution yet
+                storm::storage::BitVector objWithNoSolution = storm::utility::vector::filter<typename PreprocessorData::PreprocessorObjectiveSolution>(data.solutionsFromPreprocessing, [&] (typename PreprocessorData::PreprocessorObjectiveSolution const& value) -> bool { return value == PreprocessorData::PreprocessorObjectiveSolution::None; });
+                data.objectives = storm::utility::vector::filterVector(data.objectives, objWithNoSolution);
+                
+                // Set the query type. In case of a numerical query, also set the index of the objective to be optimized.
+                // Note: If there are only zero (or one) objectives left, we should not consider a pareto query!
                 storm::storage::BitVector objectivesWithoutThreshold(data.objectives.size());
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
                     objectivesWithoutThreshold.set(objIndex, !data.objectives[objIndex].threshold);
@@ -183,7 +196,7 @@ namespace storm {
                     storm::storage::BitVector noIncomingTransitionFromFirstCopyStates;
                     if(isProb0Formula) {
                         storm::storage::BitVector statesReachableInSecondCopy = storm::utility::graph::getReachableStates(data.preprocessedModel.getTransitionMatrix(), duplicatorResult.gateStates & (~newPsiStates), duplicatorResult.secondCopy, storm::storage::BitVector(data.preprocessedModel.getNumberOfStates(), false));
-                        subsystemStates = statesReachableInSecondCopy | storm::utility::graph::performProb0E(data.preprocessedModel, data.preprocessedModel.getBackwardTransitions(), duplicatorResult.firstCopy, newPsiStates);
+                        subsystemStates = statesReachableInSecondCopy | (duplicatorResult.firstCopy & storm::utility::graph::performProb0E(data.preprocessedModel, data.preprocessedModel.getBackwardTransitions(), duplicatorResult.firstCopy, newPsiStates));
                         noIncomingTransitionFromFirstCopyStates = newPsiStates;
                     } else {
                         storm::storage::BitVector statesReachableInSecondCopy = storm::utility::graph::getReachableStates(data.preprocessedModel.getTransitionMatrix(), newPsiStates, duplicatorResult.secondCopy, storm::storage::BitVector(data.preprocessedModel.getNumberOfStates(), false));
@@ -191,20 +204,26 @@ namespace storm {
                         subsystemStates = statesReachableInSecondCopy | storm::utility::graph::performProb1E(data.preprocessedModel, data.preprocessedModel.getBackwardTransitions(), duplicatorResult.firstCopy, newPsiStates);
                         noIncomingTransitionFromFirstCopyStates = duplicatorResult.gateStates & (~newPsiStates);
                     }
-                    storm::storage::BitVector consideredActions(data.preprocessedModel.getTransitionMatrix().getRowCount(), true);
-                    for(auto state : duplicatorResult.firstCopy) {
-                        for(uint_fast64_t action = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; action < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state +1]; ++action) {
-                            for(auto const& entry : data.preprocessedModel.getTransitionMatrix().getRow(action)) {
-                                if(noIncomingTransitionFromFirstCopyStates.get(entry.getColumn())) {
-                                    consideredActions.set(action, false);
-                                    break;
+                    if((subsystemStates & data.preprocessedModel.getInitialStates()).empty()) {
+                        data.solutionsFromPreprocessing[data.objectives.size()-1] = PreprocessorData::PreprocessorObjectiveSolution::False;
+                    } else {
+                        data.solutionsFromPreprocessing[data.objectives.size()-1] = PreprocessorData::PreprocessorObjectiveSolution::True;
+                        storm::storage::BitVector consideredActions(data.preprocessedModel.getTransitionMatrix().getRowCount(), true);
+                        for(auto state : duplicatorResult.firstCopy) {
+                            for(uint_fast64_t action = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; action < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state +1]; ++action) {
+                                for(auto const& entry : data.preprocessedModel.getTransitionMatrix().getRow(action)) {
+                                    if(noIncomingTransitionFromFirstCopyStates.get(entry.getColumn())) {
+                                        consideredActions.set(action, false);
+                                        break;
+                                    }
                                 }
                             }
                         }
+                        if(!subsystemStates.full() || !consideredActions.full()) {
+                            auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(data.preprocessedModel, subsystemStates, consideredActions);
+                            updatePreprocessedModel(data, *subsystemBuilderResult.model, subsystemBuilderResult.newToOldStateIndexMapping);
+                        }
                     }
-                    auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(data.preprocessedModel, subsystemStates, consideredActions);
-                    updatePreprocessedModel(data, *subsystemBuilderResult.model, subsystemBuilderResult.newToOldStateIndexMapping);
-                    data.objectivesSolvedInPreprocessing.set(data.objectives.size());
                 } else {
                     // build stateAction reward vector that gives (one*transitionProbability) reward whenever a transition leads from the firstCopy to a psiState
                     std::vector<ValueType> objectiveRewards(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
@@ -276,7 +295,9 @@ namespace storm {
                 // We also need to enforce that the second copy will be reached eventually with prob 1.
                 data.preprocessedModel.getStateLabeling().setStates(data.prob1StatesLabel, data.preprocessedModel.getStateLabeling().getStates(data.prob1StatesLabel) & duplicatorResult.secondCopy);
                 storm::storage::BitVector subsystemStates =  duplicatorResult.secondCopy | storm::utility::graph::performProb1E(data.preprocessedModel, data.preprocessedModel.getBackwardTransitions(), duplicatorResult.firstCopy, duplicatorResult.gateStates);
-                if(!subsystemStates.full()) {
+                if((subsystemStates & data.preprocessedModel.getInitialStates()).empty()) {
+                    data.solutionsFromPreprocessing[data.objectives.size()-1] = PreprocessorData::PreprocessorObjectiveSolution::Undefined;
+                } else if(!subsystemStates.full()) {
                     auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(data.preprocessedModel, subsystemStates, storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), true));
                     updatePreprocessedModel(data, *subsystemBuilderResult.model, subsystemBuilderResult.newToOldStateIndexMapping);
                 }
@@ -333,10 +354,12 @@ namespace storm {
             storm::storage::BitVector SparseMultiObjectivePreprocessor<SparseModelType>::assertNegativeRewardFiniteness(PreprocessorData& data) {
 
                 storm::storage::BitVector actionsWithNonNegativeReward(data.preprocessedModel.getTransitionMatrix().getRowCount(), true);
-                for(auto& obj : data.objectives) {
-                    if (!obj.rewardFinitenessChecked && !obj.rewardsArePositive) {
-                        obj.rewardFinitenessChecked = true;
-                        actionsWithNonNegativeReward &= storm::utility::vector::filterZero(data.preprocessedModel.getRewardModel(obj.rewardModelName).getStateActionRewardVector());
+                storm::storage::BitVector objectivesWithNegativeReward(data.objectives.size(), false);
+                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
+                    if (!data.objectives[objIndex].rewardFinitenessChecked && !data.objectives[objIndex].rewardsArePositive) {
+                        data.objectives[objIndex].rewardFinitenessChecked = true;
+                        actionsWithNonNegativeReward &= storm::utility::vector::filterZero(data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector());
+                        objectivesWithNegativeReward.set(objIndex, true);
                     }
                 }
                 
@@ -350,15 +373,21 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> transitionsWithNonNegativeReward = data.preprocessedModel.getTransitionMatrix().restrictRows(actionsWithNonNegativeReward);
                 storm::storage::BitVector statesNeverReachingNegativeRewardForSomeScheduler = storm::utility::graph::performProb0E(transitionsWithNonNegativeReward, transitionsWithNonNegativeReward.getRowGroupIndices(), transitionsWithNonNegativeReward.transpose(true), allStates, statesWithNegativeRewardForAllChoices);
                 storm::storage::BitVector statesReachingNegativeRewardsFinitelyOftenForSomeScheduler = storm::utility::graph::performProb1E(data.preprocessedModel.getTransitionMatrix(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), data.preprocessedModel.getBackwardTransitions(), allStates, statesNeverReachingNegativeRewardForSomeScheduler);
-                
-                auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(data.preprocessedModel, statesReachingNegativeRewardsFinitelyOftenForSomeScheduler, storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), true));
-                data.preprocessedModel = std::move(*subsystemBuilderResult.model);
-                // subsystemBuilderResult.newToOldStateIndexMapping now reffers to the indices of the model we had before building the subsystem
-                for(auto & originalModelStateIndex : subsystemBuilderResult.newToOldStateIndexMapping){
-                    originalModelStateIndex = data.newToOldStateIndexMapping[originalModelStateIndex];
+                if((statesReachingNegativeRewardsFinitelyOftenForSomeScheduler & data.preprocessedModel.getInitialStates()).empty()) {
+                    STORM_LOG_WARN("For every scheduler, the induced reward for one or more of the objectives that minimize rewards is infinity.");
+                    for(auto objIndex : objectivesWithNegativeReward) {
+                        if(data.objectives[objIndex].threshold) {
+                            data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::False;
+                        } else {
+                            data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::Unbounded;
+                        }
+                    }
+                } else if(!statesReachingNegativeRewardsFinitelyOftenForSomeScheduler.full()) {
+                    auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(data.preprocessedModel, statesReachingNegativeRewardsFinitelyOftenForSomeScheduler, storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), true));
+                    updatePreprocessedModel(data, *subsystemBuilderResult.model, subsystemBuilderResult.newToOldStateIndexMapping);
+                    return (~actionsWithNonNegativeReward) % subsystemBuilderResult.subsystemActions;
                 }
-                data.newToOldStateIndexMapping = std::move(subsystemBuilderResult.newToOldStateIndexMapping);
-                return (~actionsWithNonNegativeReward) % subsystemBuilderResult.subsystemActions;
+                return ~actionsWithNonNegativeReward;
             }
             
             template<typename SparseModelType>
@@ -385,8 +414,11 @@ namespace storm {
                                 }
                             }
                             if(ecHasActionWithPositiveReward) {
-                                STORM_LOG_DEBUG("Found end component that contains positive rewards for current objective " << *obj.originalFormula << ".");
-                                data.objectivesSolvedInPreprocessing.set(objIndex);
+                                if(obj.threshold) {
+                                    data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::True;
+                                } else {
+                                    data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::Unbounded;
+                                }
                                 break;
                             }
                         }

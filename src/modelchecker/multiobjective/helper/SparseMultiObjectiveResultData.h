@@ -41,14 +41,14 @@ namespace storm {
                 }
 
                 void setThresholdsAreAchievable(bool value) {
-                    thresholdsAreAchievable = value ? Tribool::TT : Tribool::FF;
+                    thresholdsAreAchievable = value ? Tribool::True : Tribool::False;
                 }
                 bool isThresholdsAreAchievableSet() const {
-                    return thresholdsAreAchievable != Tribool::INDETERMINATE;
+                    return thresholdsAreAchievable != Tribool::Indeterminate;
                 }
                 bool getThresholdsAreAchievable() const {
                     STORM_LOG_THROW(isThresholdsAreAchievableSet(), storm::exceptions::InvalidStateException, "Could not retrieve whether thresholds are acheivable: value not set.");
-                    return thresholdsAreAchievable == Tribool::TT;
+                    return thresholdsAreAchievable == Tribool::True;
                 }
 
                 void setNumericalResult(RationalNumberType value) {
@@ -63,14 +63,14 @@ namespace storm {
                 }
                 
                 void setOptimumIsAchievable(bool value) {
-                    optimumIsAchievable = value ? Tribool::TT : Tribool::FF;
+                    optimumIsAchievable = value ? Tribool::True : Tribool::False;
                 }
                 bool isOptimumIsAchievableSet() const {
-                    return optimumIsAchievable != Tribool::INDETERMINATE;
+                    return optimumIsAchievable != Tribool::Indeterminate;
                 }
                 bool getOptimumIsAchievableAchievable() const {
                     STORM_LOG_THROW(isOptimumIsAchievableSet(), storm::exceptions::InvalidStateException, "Could not retrieve whether the computed optimum is acheivable: value not set.");
-                    return optimumIsAchievable == Tribool::TT;
+                    return optimumIsAchievable == Tribool::True;
                 }
                 
                 void setPrecisionOfResult(RationalNumberType value) {
@@ -100,7 +100,7 @@ namespace storm {
                 
             private:
                 
-                enum class Tribool { FF, TT, INDETERMINATE };
+                enum class Tribool { False, True, Indeterminate };
                 
                 //Stores the results for the individual iterations
                 std::vector<SparseMultiObjectiveRefinementStep<RationalNumberType>> steps;
@@ -111,21 +111,21 @@ namespace storm {
                 
                 // Stores the result of an achievability query (if applicable).
                 // For a numerical query, stores whether there is one feasible solution.
-                Tribool thresholdsAreAchievable = Tribool::INDETERMINATE;
+                Tribool thresholdsAreAchievable = Tribool::Indeterminate;
                 
                 //Stores the result of a numerical query (if applicable).
                 boost::optional<RationalNumberType> numericalResult;
                 //For numerical queries, this is true iff there is an actual scheduler that induces the computed supremum (i.e., supremum == maximum)
-                Tribool optimumIsAchievable = Tribool::INDETERMINATE;
+                Tribool optimumIsAchievable = Tribool::Indeterminate;
                 
                 //Stores the achieved precision for numerical and pareto queries
                 boost::optional<RationalNumberType> precisionOfResult;
                 
                 //Stores whether the precision of the result is sufficient (only applicable to numerical and pareto queries)
-                bool targetPrecisionReached;
+                bool targetPrecisionReached = true;
 
                 //Stores whether the computation was aborted due to performing too many refinement steps
-                bool maxStepsPerformed;
+                bool maxStepsPerformed = false;
             };
         }
     }
