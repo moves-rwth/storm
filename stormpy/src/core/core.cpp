@@ -4,6 +4,7 @@ void define_core(py::module& m) {
     // Init
     m.def("set_up", [](std::string const& args) {
             storm::utility::setUp();
+            storm::settings::initializeAll("StoRM-Py", "stormpy");
             storm::settings::SettingsManager::manager().setFromString(args);
         }, "Initialize Storm", py::arg("arguments"));
 }
