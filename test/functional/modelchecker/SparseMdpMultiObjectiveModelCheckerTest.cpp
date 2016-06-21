@@ -65,6 +65,62 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, probEqual0Objective) {
     
 }
 
+TEST(SparseMdpMultiObjectiveModelCheckerTest, preprocessorResultsTest) {
+    
+    std::string programFile = STORM_CPP_TESTS_BASE_PATH "/functional/modelchecker/multiobjective2.nm";
+    std::string formulasAsString = "multi(Rmin=? [ F s=2 ], P>=1 [ s!=1 U s=2 ]) ";
+    formulasAsString += "; \n multi(Rmax=? [ F s=2 ], P>=1 [ s!=1 U s=2 ]) ";
+    formulasAsString += "; \n multi(R<=0 [ F s=2 ], P>=1 [ s!=1 U s=2 ]) ";
+    formulasAsString += "; \n multi(R>0 [ F s=2 ], P>=1 [ s!=1 U s=2 ]) ";
+    formulasAsString += "; \n multi(Rmin=? [ F s=2 ], P>=1 [ F s=1 ], P>=1 [F s=2]) ";
+    formulasAsString += "; \n multi(Rmax=? [ F s=2 ], P>=1 [ F s=1 ], P>=1 [F s=2]) ";
+    formulasAsString += "; \n multi(R>=300 [ F s=2 ], P>=1 [ F s=1 ], P>=1 [F s=2]) ";
+    formulasAsString += "; \n multi(R<10 [ F s=2 ], P>=1 [ F s=1 ], P>=1 [F s=2]) ";
+    
+    // programm, model,  formula
+    storm::prism::Program program = storm::parseProgram(programFile);
+    program.checkValidity();
+    std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
+    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    uint_fast64_t const initState = *mdp->getInitialStates().begin();
+    
+    storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
+    
+    std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[0], true));
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    EXPECT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[1], true));
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    EXPECT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[2], true));
+    ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
+    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[3], true));
+    ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
+    EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[4], true));
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    EXPECT_NEAR(10.0, result->asExplicitQuantitativeCheckResult<double>()[initState], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[5], true));
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    EXPECT_EQ(storm::utility::infinity<double>(), result->asExplicitQuantitativeCheckResult<double>()[initState]);
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[6], true));
+    ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
+    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[7], true));
+    ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
+    EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
+    
+}
+
 TEST(SparseMdpMultiObjectiveModelCheckerTest, consensus) {
     
     std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/mdp/consensus/consensus2_3_2.nm";
