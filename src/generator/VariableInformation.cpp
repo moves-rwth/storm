@@ -3,6 +3,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include <cmath>
+
 namespace storm {
     namespace generator {
         

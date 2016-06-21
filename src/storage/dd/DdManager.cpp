@@ -6,6 +6,8 @@
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include <cmath>
+
 namespace storm {
     namespace dd {
         template<DdType LibraryType>
