@@ -15,6 +15,8 @@
 
 #include "src/logic/FragmentSpecification.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 #include "src/exceptions/InvalidStateException.h"
 #include "src/exceptions/InvalidPropertyException.h"
 #include "src/exceptions/NotImplementedException.h"

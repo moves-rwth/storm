@@ -153,13 +153,14 @@ namespace storm {
             template uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<double> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<double> const& backwardTransitions, std::vector<double> const& oneStepProbabilities);
 
             template uint_fast64_t estimateComplexity(storm::RationalNumber const& value);
-            
-#ifdef STORM_HAVE_CARL
+            template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber>& oneStepProbabilities, storm::storage::BitVector const& states);
+            template uint_fast64_t computeStatePenalty(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& oneStepProbabilities);
+            template uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<storm::RationalNumber> const& backwardTransitions, std::vector<storm::RationalNumber> const& oneStepProbabilities);
+
             template uint_fast64_t estimateComplexity(storm::RationalFunction const& value);
             template std::shared_ptr<StatePriorityQueue> createStatePriorityQueue(boost::optional<std::vector<uint_fast64_t>> const& distanceBasedStatePriorities, storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction>& oneStepProbabilities, storm::storage::BitVector const& states);
             template uint_fast64_t computeStatePenalty(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& oneStepProbabilities);
             template uint_fast64_t computeStatePenaltyRegularExpression(storm::storage::sparse::state_type const& state, storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::FlexibleSparseMatrix<storm::RationalFunction> const& backwardTransitions, std::vector<storm::RationalFunction> const& oneStepProbabilities);
-#endif
         }
     }
 }

@@ -67,7 +67,7 @@ namespace storm {
                 // Check whether we need to compute exact probabilities for some states.
                 if (qualitative) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
-                    storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, ValueType(0.5));
+                    storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::convertNumber<ValueType>(0.5));
                 } else {
                     if (!maybeStates.empty()) {
                         // In this case we have have to compute the probabilities.
@@ -82,7 +82,7 @@ namespace storm {
                         // Initialize the x vector with 0.5 for each element. This is the initial guess for
                         // the iterative solvers. It should be safe as for all 'maybe' states we know that the
                         // probability is strictly larger than 0.
-                        std::vector<ValueType> x(maybeStates.getNumberOfSetBits(), ValueType(0.5));
+                        std::vector<ValueType> x(maybeStates.getNumberOfSetBits(), storm::utility::convertNumber<ValueType>(0.5));
                         
                         // Prepare the right-hand side of the equation system. For entry i this corresponds to
                         // the accumulated probability of going from state i to some 'yes' state.
@@ -401,6 +401,7 @@ namespace storm {
             }
             
             template class SparseDtmcPrctlHelper<double>;
+            template class SparseDtmcPrctlHelper<storm::RationalNumber>;
             template class SparseDtmcPrctlHelper<storm::RationalFunction>;
         }
     }

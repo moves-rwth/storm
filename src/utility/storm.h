@@ -198,14 +198,6 @@ namespace storm {
         return model;
     }
     
-    
-    template<typename ValueType>
-    void generateCounterexamples(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-        for (auto const& formula : formulas) {
-            generateCounterexample(program, model, formula);
-        }
-    }
-    
     template<typename ValueType>
     void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         if (storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isMinimalCommandSetGenerationSet()) {
@@ -227,13 +219,23 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No suitable counterexample representation selected.");
         }
     }
-            
-#ifdef STORM_HAVE_CARL
+
+    template<>
+    inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
+    }
+
     template<>
     inline void generateCounterexample(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula) {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to generate counterexample for parametric model.");
     }
-#endif
+    
+    template<typename ValueType>
+    void generateCounterexamples(storm::prism::Program const& program, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+        for (auto const& formula : formulas) {
+            generateCounterexample(program, model, formula);
+        }
+    }
 
     template<typename ValueType, storm::dd::DdType DdType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifyModel(std::shared_ptr<storm::models::ModelBase> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
@@ -310,7 +312,32 @@ namespace storm {
         return result;
 
     }
-            
+    
+    template<>
+    inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
+        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        if (model->getType() == storm::models::ModelType::Dtmc) {
+            std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
+            storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>> modelchecker(*dtmc);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
+            } else {
+                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>> modelchecker(*dtmc);
+                storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+                if (modelchecker.canHandle(task)) {
+                    result = modelchecker.check(task);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The exact engine currently does not support this property on DTMCs.");
+                }
+            }
+        } else {
+            STORM_LOG_ASSERT(false, "Illegal model type.");
+        }
+        return result;
+    }
+    
 #ifdef STORM_HAVE_CARL
     inline void exportParametricResultToFile(storm::RationalFunction const& result, storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector const& constraintCollector, std::string const& path) {
         std::ofstream filestream;
@@ -330,15 +357,26 @@ namespace storm {
 
     template<>
     inline std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
+        storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-            storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
-            storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
-            if (modelchecker.canHandle(task)) {
-                result = modelchecker.check(task);
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination) {
+                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
+                storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
+                if (modelchecker.canHandle(task)) {
+                    result = modelchecker.check(task);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support this property on DTMCs.");
+                }
             } else {
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support this property on DTMCs.");
+                storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
+                if (modelchecker.canHandle(task)) {
+                    result = modelchecker.check(task);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support this property on DTMCs.");
+                }
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::sparse::Mdp<storm::RationalFunction>> mdp = model->template as<storm::models::sparse::Mdp<storm::RationalFunction>>();

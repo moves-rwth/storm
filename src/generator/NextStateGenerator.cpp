@@ -217,6 +217,11 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(expressionManager), state(nullptr) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType, typename StateType>
         NextStateGeneratorOptions const& NextStateGenerator<ValueType, StateType>::getOptions() const {
             return options;
         }
@@ -297,6 +302,7 @@ namespace storm {
         }
 
         template class NextStateGenerator<double>;
+        template class NextStateGenerator<storm::RationalNumber>;
         template class NextStateGenerator<storm::RationalFunction>;
         
     }

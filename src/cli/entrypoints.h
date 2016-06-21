@@ -146,7 +146,7 @@ namespace storm {
     }
     
 #define BRANCH_ON_SPARSE_MODELTYPE(result, model, value_type, function, ...) \
-    STORM_LOG_ASSERT(model->isSparseModel(), "Unknown model type."); \
+    STORM_LOG_ASSERT(model->isSparseModel(), "Illegal model type."); \
     if (model->isOfType(storm::models::ModelType::Dtmc)) { \
         result = function<storm::models::sparse::Dtmc<value_type>>(model->template as<storm::models::sparse::Dtmc<value_type>>(), __VA_ARGS__); \
     } else if (model->isOfType(storm::models::ModelType::Ctmc)) { \
@@ -178,19 +178,21 @@ namespace storm {
         template<typename ValueType>
         void buildAndCheckSymbolicModelWithSparseEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
             // Start by building the model.
-            auto model = buildSparseModel<ValueType>(program, formulas);
+            std::shared_ptr<storm::models::ModelBase> model = buildSparseModel<ValueType>(program, formulas);
             
             // Print some information about the model.
             model->printModelInformationToStream(std::cout);
-
+            
             // Preprocess the model.
             BRANCH_ON_SPARSE_MODELTYPE(model, model, ValueType, preprocessModel, formulas);
             
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
+            
             // Finally, treat the formulas.
             if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCounterexampleSet()) {
-                generateCounterexamples<ValueType>(program, formulas);
+                generateCounterexamples<ValueType>(program, sparseModel, formulas);
             } else {
-                verifySparseModel<ValueType>(model, formulas, onlyInitialStatesRelevant);
+                verifySparseModel<ValueType>(sparseModel, formulas, onlyInitialStatesRelevant);
             }
         }
         
@@ -221,7 +223,19 @@ namespace storm {
                 }
             }
         }
-
+        
+        template<>
+        void buildAndCheckSymbolicModel<storm::RationalNumber>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
+            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
+            buildAndCheckSymbolicModelWithSparseEngine<storm::RationalNumber>(program, formulas, onlyInitialStatesRelevant);
+        }
+        
+        template<>
+        void buildAndCheckSymbolicModel<storm::RationalFunction>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
+            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
+            buildAndCheckSymbolicModelWithSparseEngine<storm::RationalFunction>(program, formulas, onlyInitialStatesRelevant);
+        }
+        
         template<typename ValueType>
         void buildAndCheckExplicitModel(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
             storm::settings::modules::IOSettings const& settings = storm::settings::getModule<storm::settings::modules::IOSettings>();

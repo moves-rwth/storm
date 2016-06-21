@@ -40,8 +40,12 @@ namespace storm {
             return true;
         }
 
+        template<>
+        storm::RationalNumber infinity() {
+            // FIXME: this should be treated more properly.
+            return storm::RationalNumber(-1);
+        }
         
-#ifdef STORM_HAVE_CARL
         template<>
         bool isOne(storm::RationalFunction const& a) {
             return a.isOne();
@@ -88,8 +92,6 @@ namespace storm {
             return carl::isZero(a);
         }
         
-#endif
-        
         template<typename ValueType>
         ValueType pow(ValueType const& value, uint_fast64_t exponent) {
             return std::pow(value, exponent);
@@ -102,7 +104,11 @@ namespace storm {
 			return value;
 		}
         
-#ifdef STORM_HAVE_CARL
+        template<>
+        double convertNumber(double const& number){
+            return number;
+        }
+        
         template<>
         RationalFunction& simplify(RationalFunction& value);
         
@@ -142,7 +148,10 @@ namespace storm {
             return carl::rationalize<RationalNumber>(number);
         }
 
-#endif
+        template<>
+        RationalFunction convertNumber(double const& number){
+            return RationalFunction(carl::rationalize<RationalNumber>(number));
+        }
         
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType> simplify(storm::storage::MatrixEntry<IndexType, ValueType> matrixEntry) {
@@ -238,7 +247,8 @@ namespace storm {
         
         template storm::RationalNumber one();
         template storm::RationalNumber zero();
-        
+        template storm::RationalNumber infinity();
+
         template double convertNumber(storm::RationalNumber const& number);
         template storm::RationalNumber convertNumber(double const& number);
 

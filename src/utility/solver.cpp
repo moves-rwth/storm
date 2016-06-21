@@ -57,9 +57,21 @@ namespace storm {
                     default: return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(matrix);
                 }
             }
+
+            std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalNumber>> LinearEquationSolverFactory<storm::RationalNumber>::create(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix) const {
+                storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver();
+                switch (equationSolver) {
+                    case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::EliminationLinearEquationSolver<storm::RationalNumber>>(matrix);
+                    default: return std::make_unique<storm::solver::EigenLinearEquationSolver<storm::RationalNumber>>(matrix);
+                }
+            }
             
             std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> LinearEquationSolverFactory<storm::RationalFunction>::create(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix) const {
-                return std::make_unique<storm::solver::EigenLinearEquationSolver<storm::RationalFunction>>(matrix);
+                storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver();
+                switch (equationSolver) {
+                    case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::EliminationLinearEquationSolver<storm::RationalFunction>>(matrix);
+                    default: return std::make_unique<storm::solver::EigenLinearEquationSolver<storm::RationalFunction>>(matrix);
+                }
             }
             
             template<typename ValueType>
@@ -216,6 +228,7 @@ namespace storm {
             template class MinMaxLinearEquationSolverFactory<double>;
             template class GameSolverFactory<double>;
 
+            template class LinearEquationSolverFactory<storm::RationalNumber>;
             template class EigenLinearEquationSolverFactory<storm::RationalFunction>;
         }
     }

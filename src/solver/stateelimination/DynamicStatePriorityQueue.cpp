@@ -66,10 +66,8 @@ namespace storm {
             }
 
             template class DynamicStatePriorityQueue<double>;
-            
-#ifdef STORM_HAVE_CARL
+            template class DynamicStatePriorityQueue<storm::RationalNumber>;
             template class DynamicStatePriorityQueue<storm::RationalFunction>;
-#endif
         }
     }
 }

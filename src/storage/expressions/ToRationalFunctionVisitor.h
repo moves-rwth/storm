@@ -7,7 +7,6 @@
 #include "src/storage/expressions/ExpressionVisitor.h"
 #include "src/storage/expressions/Variable.h"
 
-#ifdef STORM_HAVE_CARL
 namespace storm {
     namespace expressions {
 
@@ -48,6 +47,5 @@ namespace storm {
         };
     }
 }
-#endif
 
 #endif /* STORM_STORAGE_EXPRESSIONS_TORATIONALFUNCTIONVISITOR_H_ */

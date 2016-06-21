@@ -133,28 +133,28 @@ namespace storm {
                 switch (comparisonType) {
                     case logic::ComparisonType::Less:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
-                            if (valuesAsVector[index] < bound) {
+                            if (valuesAsVector[index] < storm::utility::convertNumber<ValueType, double>(bound)) {
                                 result.set(index);
                             }
                         }
                         break;
                     case logic::ComparisonType::LessEqual:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
-                            if (valuesAsVector[index] <= bound) {
+                            if (valuesAsVector[index] <= storm::utility::convertNumber<ValueType, double>(bound)) {
                                 result.set(index);
                             }
                         }
                         break;
                     case logic::ComparisonType::Greater:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
-                            if (valuesAsVector[index] > bound) {
+                            if (valuesAsVector[index] > storm::utility::convertNumber<ValueType, double>(bound)) {
                                 result.set(index);
                             }
                         }
                         break;
                     case logic::ComparisonType::GreaterEqual:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
-                            if (valuesAsVector[index] >= bound) {
+                            if (valuesAsVector[index] >= storm::utility::convertNumber<ValueType, double>(bound)) {
                                 result.set(index);
                             }
                         }
@@ -167,22 +167,22 @@ namespace storm {
                 switch (comparisonType) {
                     case logic::ComparisonType::Less:
                         for (auto const& element : valuesAsMap) {
-                            result[element.first] = element.second < bound;
+                            result[element.first] = element.second < storm::utility::convertNumber<ValueType, double>(bound);
                         }
                         break;
                     case logic::ComparisonType::LessEqual:
                         for (auto const& element : valuesAsMap) {
-                            result[element.first] = element.second <= bound;
+                            result[element.first] = element.second <= storm::utility::convertNumber<ValueType, double>(bound);
                         }
                         break;
                     case logic::ComparisonType::Greater:
                         for (auto const& element : valuesAsMap) {
-                            result[element.first] = element.second > bound;
+                            result[element.first] = element.second > storm::utility::convertNumber<ValueType, double>(bound);
                         }
                         break;
                     case logic::ComparisonType::GreaterEqual:
                         for (auto const& element : valuesAsMap) {
-                            result[element.first] = element.second >= bound;
+                            result[element.first] = element.second >= storm::utility::convertNumber<ValueType, double>(bound);
                         }
                         break;
                 }
@@ -248,9 +248,7 @@ namespace storm {
         }
         
         template class ExplicitQuantitativeCheckResult<double>;
-        
-#ifdef STORM_HAVE_CARL
+        template class ExplicitQuantitativeCheckResult<storm::RationalNumber>;
         template class ExplicitQuantitativeCheckResult<storm::RationalFunction>;
-#endif
     }
 }

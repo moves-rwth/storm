@@ -23,10 +23,8 @@ namespace storm {
             }
             
             template class LongRunAverageEliminator<double>;
-            
-#ifdef STORM_HAVE_CARL
+            template class LongRunAverageEliminator<storm::RationalNumber>;
             template class LongRunAverageEliminator<storm::RationalFunction>;
-#endif
             
         } // namespace stateelimination
     } // namespace storage

@@ -162,6 +162,12 @@ namespace storm {
 
             NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options);
             
+            /*!
+             * Creates a new next state generator. This version of the constructor default-constructs the variable information.
+             * Hence, the subclass is responsible for suitably initializing it in its constructor.
+             */
+            NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options);
+            
             uint64_t getStateSize() const;
             virtual ModelType getModelType() const = 0;
             virtual bool isDeterministicModel() const = 0;

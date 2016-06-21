@@ -322,12 +322,10 @@ namespace storm {
             
             template class MarkovAutomaton<double>;
 //            template class MarkovAutomaton<float>;
+            template class MarkovAutomaton<storm::RationalNumber>;
             
-#ifdef STORM_HAVE_CARL
             template class MarkovAutomaton<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-
             template class MarkovAutomaton<storm::RationalFunction>;
-#endif
 
         } // namespace sparse
     } // namespace models
