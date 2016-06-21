@@ -363,7 +363,7 @@ namespace storm {
                 // We then build the submatrix that only has the transitions of the maybe states.
                 storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, statesWithProbabilityGreater0, statesWithProbabilityGreater0, true);
                 
-                std::vector<std::size_t> distancesFromInitialStates;
+                std::vector<uint_fast64_t> distancesFromInitialStates;
                 storm::storage::BitVector relevantStates;
                 if (checkTask.isOnlyInitialStatesRelevantSet()) {
                     // Determine the set of initial states of the sub-model.
@@ -959,53 +959,6 @@ namespace storm {
             }
             
             return maximalDepth;
-        }
-        
-        template<typename SparseDtmcModelType>
-        std::vector<uint_fast64_t> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::getDistanceBasedPriorities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<ValueType> const& oneStepProbabilities, bool forward, bool reverse) {
-            std::vector<uint_fast64_t> statePriorities(transitionMatrix.getRowCount());
-            std::vector<storm::storage::sparse::state_type> states(transitionMatrix.getRowCount());
-            for (std::size_t index = 0; index < states.size(); ++index) {
-                states[index] = index;
-            }
-            
-            std::vector<std::size_t> distances = getStateDistances(transitionMatrix, transitionMatrixTransposed, initialStates, oneStepProbabilities,
-                                                                   storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder() == storm::settings::modules::EliminationSettings::EliminationOrder::Forward ||
-                                                                   storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder() == storm::settings::modules::EliminationSettings::EliminationOrder::ForwardReversed);
-            
-            // In case of the forward or backward ordering, we can sort the states according to the distances.
-            if (forward ^ reverse) {
-                std::sort(states.begin(), states.end(), [&distances] (storm::storage::sparse::state_type const& state1, storm::storage::sparse::state_type const& state2) { return distances[state1] < distances[state2]; } );
-            } else {
-                // Otherwise, we sort them according to descending distances.
-                std::sort(states.begin(), states.end(), [&distances] (storm::storage::sparse::state_type const& state1, storm::storage::sparse::state_type const& state2) { return distances[state1] > distances[state2]; } );
-            }
-            
-            // Now convert the ordering of the states to priorities.
-            for (uint_fast64_t index = 0; index < states.size(); ++index) {
-                statePriorities[states[index]] = index;
-            }
-            
-            return statePriorities;
-        }
-        
-        template<typename SparseDtmcModelType>
-        std::vector<std::size_t> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::getStateDistances(storm::storage::SparseMatrix<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType> const& transitionMatrix, storm::storage::SparseMatrix<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType> const& transitionMatrixTransposed, storm::storage::BitVector const& initialStates, std::vector<typename SparseDtmcEliminationModelChecker<SparseDtmcModelType>::ValueType> const& oneStepProbabilities, bool forward) {
-            if (forward) {
-                return storm::utility::graph::getDistances(transitionMatrix, initialStates);
-            } else {
-                // Since the target states were eliminated from the matrix already, we construct a replacement by
-                // treating all states that have some non-zero probability to go to a target state in one step as target
-                // states.
-                storm::storage::BitVector pseudoTargetStates(transitionMatrix.getRowCount());
-                for (std::size_t index = 0; index < oneStepProbabilities.size(); ++index) {
-                    if (oneStepProbabilities[index] != storm::utility::zero<ValueType>()) {
-                        pseudoTargetStates.set(index);
-                    }
-                }
-                
-                return storm::utility::graph::getDistances(transitionMatrixTransposed, pseudoTargetStates);
-            }
         }
         
         template<typename SparseDtmcModelType>

@@ -71,7 +71,7 @@ namespace storm {
              * @return The distances of each state to the initial states of the sarch.
              */
             template<typename T>
-            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem = boost::none);
+            std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem = boost::none);
             
             /*!
              * Performs a backward depth-first search trough the underlying graph structure

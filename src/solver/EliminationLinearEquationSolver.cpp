@@ -2,6 +2,9 @@
 
 #include <numeric>
 
+#include "src/settings/SettingsManager.h"
+#include "src/settings/modules/EliminationSettings.h"
+
 #include "src/solver/stateelimination/StatePriorityQueue.h"
 #include "src/solver/stateelimination/PrioritizedStateEliminator.h"
 
@@ -13,6 +16,7 @@ namespace storm {
     namespace solver {
         
         using namespace stateelimination;
+        using namespace storm::utility::stateelimination;
         
         template<typename ValueType>
         EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : A(A) {
@@ -23,29 +27,30 @@ namespace storm {
         void EliminationLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             STORM_LOG_WARN_COND(multiplyResult == nullptr, "Providing scratch memory will not improve the performance of this solver.");
             
-//            std::cout << "input:" << std::endl;
-//            std::cout << "A:" << std::endl;
-//            std::cout << A << std::endl;
-//            std::cout << "b:" << std::endl;
-//            for (auto const& e : b) {
-//                std::cout << e << std::endl;
-//            }
-            
-            // Create a naive priority queue.
-            // TODO: improve.
-            std::vector<storm::storage::sparse::state_type> allRows(x.size());
-            std::iota(allRows.begin(), allRows.end(), 0);
-            std::shared_ptr<StatePriorityQueue> priorityQueue = storm::utility::stateelimination::createStatePriorityQueue(allRows);
-            
+            // We need to revert the transformation into an equation system matrix, because the elimination procedure
+            // and the distance computation is based on the probability matrix instead.
+            storm::storage::SparseMatrix<ValueType> transitionMatrix(A);
+            transitionMatrix.convertToEquationSystem();
+            storm::storage::SparseMatrix<ValueType> backwardTransitions = A.transpose();
+
             // Initialize the solution to the right-hand side of the equation system.
             x = b;
             
             // Translate the matrix and its transpose into the flexible format.
-            // We need to revert the matrix from the equation system format to the probability matrix format. That is,
-            // from (I-P), we construct P. Note that for the backwards transitions, this does not need to be done, as all
-            // entries are set to one anyway.
-            storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(A, false, true);
-            storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(A.transpose(), true, true);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleMatrix(transitionMatrix, false);
+            storm::storage::FlexibleSparseMatrix<ValueType> flexibleBackwardTransitions(backwardTransitions, true);
+            
+            storm::settings::modules::EliminationSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder();
+            boost::optional<std::vector<uint_fast64_t>> distanceBasedPriorities;
+            if (eliminationOrderNeedsDistances(order)) {
+                // Compute the distance from the first state.
+                // FIXME: This is not exactly the initial states.
+                storm::storage::BitVector initialStates = storm::storage::BitVector(A.getRowCount());
+                initialStates.set(0);
+                distanceBasedPriorities = getDistanceBasedPriorities(transitionMatrix, backwardTransitions, initialStates, b, eliminationOrderNeedsForwardDistances(order), eliminationOrderNeedsReversedDistances(order));
+            }
+            
+            std::shared_ptr<StatePriorityQueue> priorityQueue = createStatePriorityQueue<ValueType>(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, b, storm::storage::BitVector(x.size(), true));
             
 //            std::cout << "intermediate:" << std::endl;
 //            std::cout << "flexibleMatrix:" << std::endl;
