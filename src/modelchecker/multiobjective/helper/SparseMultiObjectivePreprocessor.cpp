@@ -363,14 +363,19 @@ namespace storm {
                     }
                 }
                 
-                storm::storage::BitVector statesWithNegativeRewardForAllChoices(data.preprocessedModel.getNumberOfStates(), true);
+                storm::storage::BitVector statesWithNegativeRewardForAllChoices(data.preprocessedModel.getNumberOfStates(), false);
+                storm::storage::BitVector submatrixRows = actionsWithNonNegativeReward;
                 for(uint_fast64_t state = 0; state < data.preprocessedModel.getNumberOfStates(); ++state) {
                     // state has negative reward for all choices iff there is no bit set in actionsWithNonNegativeReward for all actions of state
-                    statesWithNegativeRewardForAllChoices.set(state, actionsWithNonNegativeReward.getNextSetIndex(data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]) >= data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]);
+                    if(actionsWithNonNegativeReward.getNextSetIndex(data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]) >= data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]) {
+                        statesWithNegativeRewardForAllChoices.set(state, true);
+                        // enable one row for the current state to avoid deleting the row group
+                        submatrixRows.set(data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state], true);
+                    }
                 }
+                storm::storage::SparseMatrix<ValueType> transitionsWithNonNegativeReward = data.preprocessedModel.getTransitionMatrix().restrictRows(submatrixRows);
                 
                 storm::storage::BitVector allStates(data.preprocessedModel.getNumberOfStates(), true);
-                storm::storage::SparseMatrix<ValueType> transitionsWithNonNegativeReward = data.preprocessedModel.getTransitionMatrix().restrictRows(actionsWithNonNegativeReward);
                 storm::storage::BitVector statesNeverReachingNegativeRewardForSomeScheduler = storm::utility::graph::performProb0E(transitionsWithNonNegativeReward, transitionsWithNonNegativeReward.getRowGroupIndices(), transitionsWithNonNegativeReward.transpose(true), allStates, statesWithNegativeRewardForAllChoices);
                 storm::storage::BitVector statesReachingNegativeRewardsFinitelyOftenForSomeScheduler = storm::utility::graph::performProb1E(data.preprocessedModel.getTransitionMatrix(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), data.preprocessedModel.getBackwardTransitions(), allStates, statesNeverReachingNegativeRewardForSomeScheduler);
                 if((statesReachingNegativeRewardsFinitelyOftenForSomeScheduler & data.preprocessedModel.getInitialStates()).empty()) {

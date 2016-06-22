@@ -76,6 +76,10 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, preprocessorResultsTest) {
     formulasAsString += "; \n multi(Rmax=? [ F s=2 ], P>=1 [ F s=1 ], P>=1 [F s=2]) ";
     formulasAsString += "; \n multi(R>=300 [ F s=2 ], P>=1 [ F s=1 ], P>=1 [F s=2]) ";
     formulasAsString += "; \n multi(R<10 [ F s=2 ], P>=1 [ F s=1 ], P>=1 [F s=2]) ";
+    formulasAsString += "; \n multi(Rmin=? [ C ]) ";
+    formulasAsString += "; \n multi(Rmax=? [ C ]) ";
+    formulasAsString += "; \n multi(R>1 [ C ]) ";
+    formulasAsString += "; \n multi(R<1 [ C ]) ";
     
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);
@@ -119,6 +123,21 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, preprocessorResultsTest) {
     ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
     EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
     
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[8], true));
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    EXPECT_EQ(storm::utility::infinity<double>(), result->asExplicitQuantitativeCheckResult<double>()[initState]);
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[9], true));
+    ASSERT_TRUE(result->isExplicitQuantitativeCheckResult());
+    EXPECT_EQ(storm::utility::infinity<double>(), result->asExplicitQuantitativeCheckResult<double>()[initState]);
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[10], true));
+    ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
+    EXPECT_TRUE(result->asExplicitQualitativeCheckResult()[initState]);
+    
+    result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formulas[11], true));
+    ASSERT_TRUE(result->isExplicitQualitativeCheckResult());
+    EXPECT_FALSE(result->asExplicitQualitativeCheckResult()[initState]);
 }
 
 TEST(SparseMdpMultiObjectiveModelCheckerTest, consensus) {
@@ -187,8 +206,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, zeroconfTb) {
     
     std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/mdp/zeroconf-tb/zeroconf-tb2_14.nm";
     std::string formulasAsString = " multi(Pmax=? [ F time_error=1 ] , P>=0.81[ G (error=0) ])"; // numerical
-    formulasAsString += "; \n  multi(Pmax>=0.00000008 [ F time_error=1 ] , P>=0.81[ G (error=0) ])"; // achievability (true)
-    formulasAsString += "; \n  multi(Pmax>=0.000000081 [ F time_error=1 ] , P>=0.81[ G (error=0) ])"; // achievability (false)
+    formulasAsString += "; \n  multi(P>=0.00000008 [ F time_error=1 ] , P>=0.81[ G (error=0) ])"; // achievability (true)
+    formulasAsString += "; \n  multi(P>=0.000000081 [ F time_error=1 ] , P>=0.81[ G (error=0) ])"; // achievability (false)
     
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);
@@ -218,8 +237,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, team3with2objectives) {
     
     std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/mdp/team/team2obj_3.nm";
     std::string formulasAsString = " multi(Pmax=? [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ])"; // numerical
-    formulasAsString += "; \n  multi(Pmax>=0.871 [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ])"; // achievability (true)
-    formulasAsString += "; \n  multi(Pmax>=0.872 [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ])"; // achievability (false)
+    formulasAsString += "; \n  multi(P>=0.871 [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ])"; // achievability (true)
+    formulasAsString += "; \n  multi(P>=0.872 [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ])"; // achievability (false)
     
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);
@@ -249,8 +268,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, team3with3objectives) {
     
     std::string programFile = STORM_CPP_BASE_PATH "/examples/multiobjective/mdp/team/team3obj_3.nm";
     std::string formulasAsString = "multi(Pmax=? [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F task2_completed ])"; // numerical
-    formulasAsString += "; \n  multi(Pmax>=0.744 [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F task2_completed ])"; // achievability (true)
-    formulasAsString += "; \n  multi(Pmax>=0.745 [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F task2_completed ])"; // achievability (false)
+    formulasAsString += "; \n  multi(P>=0.744 [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F task2_completed ])"; // achievability (true)
+    formulasAsString += "; \n  multi(P>=0.745 [ F task1_completed ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F task2_completed ])"; // achievability (false)
     
     // programm, model,  formula
     storm::prism::Program program = storm::parseProgram(programFile);

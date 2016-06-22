@@ -15,5 +15,6 @@ endmodule
 rewards "rew"
 	[A] true : 10;
 	[C] true : 3;
+	[E] true : 1;
 endrewards
 
