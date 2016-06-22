@@ -41,6 +41,16 @@ namespace storm {
         }
 
         template<>
+        bool isOne(storm::RationalNumber const& a) {
+            return carl::isOne(a);
+        }
+        
+        template<>
+        bool isZero(storm::RationalNumber const& a) {
+            return carl::isZero(a);
+        }
+        
+        template<>
         storm::RationalNumber infinity() {
             // FIXME: this should be treated more properly.
             return storm::RationalNumber(-1);
@@ -80,16 +90,6 @@ namespace storm {
         storm::RationalFunction infinity() {
             // FIXME: this should be treated more properly.
             return storm::RationalFunction(-1.0);
-        }
-        
-        template<>
-        bool isOne(storm::RationalNumber const& a) {
-            return carl::isOne(a);
-        }
-        
-        template<>
-        bool isZero(storm::RationalNumber const& a) {
-            return carl::isZero(a);
         }
         
         template<typename ValueType>

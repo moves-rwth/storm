@@ -57,20 +57,23 @@ namespace storm {
             if (method == SolutionMethod::SparseLU) {
                 Eigen::SparseLU<Eigen::SparseMatrix<ValueType>, Eigen::COLAMDOrdering<int>> solver;
                 solver.compute(*eigenA);
-                solver._solve(eigenB, eigenX);
+                if (solver.info() != Eigen::Success) {
+                    std::cout << solver.lastErrorMessage() << std::endl;
+                }
+                solver._solve_impl(eigenB, eigenX);
             } else {
                 if (preconditioner == Preconditioner::Ilu) {
                     Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
                     solver.compute(*eigenA);
-                    solver._solve(eigenB, eigenX);
+                    solver.solveWithGuess(eigenB, eigenX);
                 } else if (preconditioner == Preconditioner::Diagonal) {
                     Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
                     solver.compute(*eigenA);
-                    solver._solve(eigenB, eigenX);
+                    solver.solveWithGuess(eigenB, eigenX);
                 } else {
                     Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
                     solver.compute(*eigenA);
-                    solver._solve(eigenB, eigenX);
+                    solver.solveWithGuess(eigenB, eigenX);
                 }
             }
 
@@ -130,7 +133,7 @@ namespace storm {
             if (method == SolutionMethod::SparseLU) {
                 Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalNumber>, Eigen::COLAMDOrdering<int>> solver;
                 solver.compute(*eigenA);
-                solver._solve(eigenB, eigenX);
+                solver._solve_impl(eigenB, eigenX);
             }
             
             // Translate the solution from Eigen's format into our representation.
@@ -188,7 +191,7 @@ namespace storm {
             if (method == SolutionMethod::SparseLU) {
                 Eigen::SparseLU<Eigen::SparseMatrix<storm::RationalFunction>, Eigen::COLAMDOrdering<int>> solver;
                 solver.compute(*eigenA);
-                solver._solve(eigenB, eigenX);
+                solver._solve_impl(eigenB, eigenX);
             }
             
             // Translate the solution from Eigen's format into our representation.
