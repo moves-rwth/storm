@@ -145,7 +145,6 @@ namespace storm {
         }
         options.setType(type);
         
-        
         storm::storage::NondeterministicModelBisimulationDecomposition<ModelType> bisimulationDecomposition(*model, options);
         bisimulationDecomposition.computeBisimulationDecomposition();
         model = bisimulationDecomposition.getQuotient();
