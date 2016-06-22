@@ -54,6 +54,13 @@ namespace storm {
                  * @return The maximal size of an SCC on which state elimination is to be directly applied.
                  */
                 uint_fast64_t getMaximalSccSize() const;
+                
+                /*!
+                 * Retrieves whether the dedicated model checker is to be used instead of the general on.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isUseDedicatedModelCheckerSet() const;
 				
                 const static std::string moduleName;
                 
@@ -62,6 +69,7 @@ namespace storm {
                 const static std::string eliminationOrderOptionName;
                 const static std::string entryStatesLastOptionName;
                 const static std::string maximalSccSizeOptionName;
+                const static std::string useDedicatedModelCheckerOptionName;
             };
             
         } // namespace modules

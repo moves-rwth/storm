@@ -34,9 +34,10 @@ namespace storm {
         class LpSolver;
         class SmtSolver;
         
-        template<typename ValueType> class NativeLinearEquationSolver;
-        enum class
-                NativeLinearEquationSolverSolutionMethod;
+        template<typename ValueType>
+        class NativeLinearEquationSolver;
+        
+        enum class NativeLinearEquationSolverSolutionMethod;
     }
 
     namespace storage {

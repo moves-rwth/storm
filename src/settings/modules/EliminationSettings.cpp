@@ -10,15 +10,16 @@ namespace storm {
     namespace settings {
         namespace modules {
             
-            const std::string EliminationSettings::moduleName = "sparseelim";
+            const std::string EliminationSettings::moduleName = "elimination";
             const std::string EliminationSettings::eliminationMethodOptionName = "method";
             const std::string EliminationSettings::eliminationOrderOptionName = "order";
             const std::string EliminationSettings::entryStatesLastOptionName = "entrylast";
             const std::string EliminationSettings::maximalSccSizeOptionName = "sccsize";
+            const std::string EliminationSettings::useDedicatedModelCheckerOptionName = "use-dedicated-mc";
             
             EliminationSettings::EliminationSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> orders = {"fw", "fwrev", "bw", "bwrev", "rand", "spen", "dpen", "regex"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, eliminationOrderOptionName, true, "The order that is to be used for the elimination techniques. Available are {fw, fwrev, bw, bwrev, rand, spen, dpen}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the order in which states are chosen for elimination.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(orders)).setDefaultValueString("fwrev").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, eliminationOrderOptionName, true, "The order that is to be used for the elimination techniques. Available are {fw, fwrev, bw, bwrev, rand, spen, dpen, regex}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the order in which states are chosen for elimination.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(orders)).setDefaultValueString("fwrev").build()).build());
                 
                 std::vector<std::string> methods = {"state", "hybrid"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eliminationMethodOptionName, true, "The elimination technique to use. Available are {state, hybrid}.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the elimination technique to use.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(methods)).setDefaultValueString("state").build()).build());
@@ -26,6 +27,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, entryStatesLastOptionName, true, "Sets whether the entry states are eliminated last.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalSccSizeOptionName, true, "Sets the maximal size of the SCCs for which state elimination is applied.")
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxsize", "The maximal size of an SCC on which state elimination is applied.").setDefaultValueUnsignedInteger(20).setIsOptional(true).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, useDedicatedModelCheckerOptionName, true, "Sets whether to use the dedicated model elimination checker (only DTMCs).").build());
             }
             
             EliminationSettings::EliminationMethod EliminationSettings::getEliminationMethod() const {
@@ -68,6 +70,10 @@ namespace storm {
             
             uint_fast64_t EliminationSettings::getMaximalSccSize() const {
                 return this->getOption(maximalSccSizeOptionName).getArgumentByName("maxsize").getValueAsUnsignedInteger();
+            }
+            
+            bool EliminationSettings::isUseDedicatedModelCheckerSet() const {
+                return this->getOption(useDedicatedModelCheckerOptionName).getHasOptionBeenSet();
             }
         } // namespace modules
     } // namespace settings

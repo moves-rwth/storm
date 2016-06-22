@@ -1,12 +1,12 @@
 dtmc
 
 // probability of forwarding
-const double    PF = 0.8;
-const double notPF = .2;  // must be 1-PF
+const double    PF = 4/5;
+const double notPF = 1/5;  // must be 1-PF
 // probability that a crowd member is bad
-const double  badC = .167;
+const double  badC = 167/1000;
  // probability that a crowd member is good
-const double goodC = 0.833;
+const double goodC = 833/1000;
 // Total number of protocol runs to analyze
 const int TotalRuns = 5;
 // size of the crowd

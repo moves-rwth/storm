@@ -21,7 +21,8 @@
 #include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
-
+#include "src/settings/modules/EliminationSettings.h"
+#include "src/settings/modules/MarkovChainSettings.h"
 
 // Formula headers.
 #include "src/logic/Formulas.h"
@@ -263,20 +264,23 @@ namespace storm {
 
     template<typename ValueType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant = false) {
-
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-            storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
-            if (modelchecker.canHandle(task)) {
-                result = modelchecker.check(task);
-            } else {
-                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker2(*dtmc);
-                if (modelchecker2.canHandle(task)) {
-                    result = modelchecker2.check(task);
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
+                storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
+                if (modelchecker.canHandle(task)) {
+                    result = modelchecker.check(task);
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << *formula << " is not supported on DTMCs.");
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << *formula << " is not supported by the dedicated elimination model checker.");
+                }
+            } else {
+                storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
+                if (modelchecker.canHandle(task)) {
+                    result = modelchecker.check(task);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << *formula << " is not supported.");
                 }
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {
@@ -320,16 +324,20 @@ namespace storm {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
-            storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>> modelchecker(*dtmc);
-            if (modelchecker.canHandle(task)) {
-                result = modelchecker.check(task);
-            } else {
+
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
                 storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>> modelchecker(*dtmc);
-                storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
                 if (modelchecker.canHandle(task)) {
                     result = modelchecker.check(task);
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The exact engine currently does not support this property on DTMCs.");
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << *formula << " is not supported by the dedicated elimination model checker.");
+                }
+            } else {
+                storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>> modelchecker(*dtmc);
+                if (modelchecker.canHandle(task)) {
+                    result = modelchecker.check(task);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << *formula << " is not supported.");
                 }
             }
         } else {
@@ -362,20 +370,20 @@ namespace storm {
         std::unique_ptr<storm::modelchecker::CheckResult> result;
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination) {
+            
+            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
                 storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
-                storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
                 if (modelchecker.canHandle(task)) {
                     result = modelchecker.check(task);
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support this property on DTMCs.");
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << *formula << " is not supported by the dedicated elimination model checker.");
                 }
             } else {
                 storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
                 if (modelchecker.canHandle(task)) {
                     result = modelchecker.check(task);
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support this property on DTMCs.");
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << *formula << " is not supported.");
                 }
             }
         } else if (model->getType() == storm::models::ModelType::Mdp) {

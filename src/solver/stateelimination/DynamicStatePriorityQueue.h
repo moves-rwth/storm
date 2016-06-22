@@ -35,11 +35,14 @@ namespace storm {
                 virtual std::size_t size() const override;
                 
             private:
+                typedef std::set<std::pair<storm::storage::sparse::state_type, uint_fast64_t>, PriorityComparator> PriorityQueue;
+                typedef std::unordered_map<storm::storage::sparse::state_type, PriorityQueue::const_iterator> StatePriorityQueueEntryMap;
+                
                 storm::storage::FlexibleSparseMatrix<ValueType> const& transitionMatrix;
                 storm::storage::FlexibleSparseMatrix<ValueType> const& backwardTransitions;
                 std::vector<ValueType> const& oneStepProbabilities;
-                std::set<std::pair<storm::storage::sparse::state_type, uint_fast64_t>, PriorityComparator> priorityQueue;
-                std::unordered_map<storm::storage::sparse::state_type, uint_fast64_t> stateToPriorityMapping;
+                PriorityQueue priorityQueue;
+                StatePriorityQueueEntryMap stateToPriorityQueueEntry;
                 PenaltyFunctionType penaltyFunction;
             };
             

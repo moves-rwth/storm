@@ -27,11 +27,13 @@ namespace storm {
         void EliminationLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             STORM_LOG_WARN_COND(multiplyResult == nullptr, "Providing scratch memory will not improve the performance of this solver.");
             
+            STORM_LOG_DEBUG("Solving equation system using elimination.");
+            
             // We need to revert the transformation into an equation system matrix, because the elimination procedure
             // and the distance computation is based on the probability matrix instead.
             storm::storage::SparseMatrix<ValueType> transitionMatrix(A);
             transitionMatrix.convertToEquationSystem();
-            storm::storage::SparseMatrix<ValueType> backwardTransitions = A.transpose();
+            storm::storage::SparseMatrix<ValueType> backwardTransitions = transitionMatrix.transpose();
 
             // Initialize the solution to the right-hand side of the equation system.
             x = b;
@@ -52,28 +54,14 @@ namespace storm {
             
             std::shared_ptr<StatePriorityQueue> priorityQueue = createStatePriorityQueue<ValueType>(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, b, storm::storage::BitVector(x.size(), true));
             
-//            std::cout << "intermediate:" << std::endl;
-//            std::cout << "flexibleMatrix:" << std::endl;
-//            std::cout << flexibleMatrix << std::endl;
-//            std::cout << "backward:" << std::endl;
-//            std::cout << flexibleBackwardTransitions << std::endl;
-            
             // Create a state eliminator to perform the actual elimination.
             PrioritizedStateEliminator<ValueType> eliminator(flexibleMatrix, flexibleBackwardTransitions, priorityQueue, x);
             
-            std::cout << "eliminating" << std::endl;
+            // Eliminate all states.
             while (priorityQueue->hasNext()) {
                 auto state = priorityQueue->pop();
                 eliminator.eliminateState(state, false);
             }
-            
-//            std::cout << "output:" << std::endl;
-//            std::cout << "x:" << std::endl;
-//            for (auto const& e : x) {
-//                std::cout << e << std::endl;
-//            }
-            
-            std::cout << "done" << std::endl;
         }
         
         template<typename ValueType>
