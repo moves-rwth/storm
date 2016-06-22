@@ -11,7 +11,6 @@ namespace storm {
             
             for (uint64_t row = 0; row < matrix.getRowCount(); ++row) {
                 for (auto const& element : matrix.getRow(row)) {
-                    std::cout << "triplet " << row << ", " << element.getColumn() << " -> " << element.getValue() << std::endl;
                     triplets.emplace_back(row, element.getColumn(), element.getValue());
                 }
             }

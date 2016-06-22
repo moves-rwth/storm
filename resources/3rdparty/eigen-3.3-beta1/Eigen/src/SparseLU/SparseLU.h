@@ -8,8 +8,6 @@
 // Public License v. 2.0. If a copy of the MPL was not distributed
 // with this file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include <iostream>
-
 #ifndef EIGEN_SPARSE_LU_H
 #define EIGEN_SPARSE_LU_H
 
@@ -502,7 +500,6 @@ void SparseLU<MatrixType, OrderingType>::factorize(const MatrixType& matrix)
   
   typedef typename IndexVector::Scalar StorageIndex; 
   
-    std::cout << "intro" << std::endl;
   m_isInitialized = true;
   
   
@@ -698,8 +695,6 @@ void SparseLU<MatrixType, OrderingType>::factorize(const MatrixType& matrix)
   // Create the column major upper sparse matrix  U; 
   new (&m_Ustore) MappedSparseMatrix<Scalar, ColMajor, StorageIndex> ( m, n, m_nnzU, m_glu.xusub.data(), m_glu.usub.data(), m_glu.ucol.data() );
   
-    std::cout << "success" << std::endl;
-
   m_info = Success;
   m_factorizationIsOk = true;
 }

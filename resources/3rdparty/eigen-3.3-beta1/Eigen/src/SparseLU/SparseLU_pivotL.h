@@ -112,7 +112,7 @@ Index SparseLUImpl<Scalar,StorageIndex>::pivotL(const Index jcol, const RealScal
   
   // Determine the largest abs numerical value for partial pivoting 
   Index diagind = iperm_c(jcol); // diagonal index
-  bool columnStructurallyEmpty = nsupr >= nsupc;
+  bool columnStructurallyEmpty = nsupr <= nsupc;
   RealScalar pivmax(-1);
   Index pivptr = nsupc; 
   Index diag = emptyIdxLU; 
