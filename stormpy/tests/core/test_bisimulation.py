@@ -1,9 +1,10 @@
 import stormpy
 import stormpy.logic
+from helpers.helper import get_example_path
 
 class TestBisimulation:
     def test_bisimulation(self):
-        program = stormpy.parse_prism_program("../examples/dtmc/crowds/crowds5_5.pm")
+        program = stormpy.parse_prism_program(get_example_path("dtmc", "crowds", "crowds5_5.pm"))
         assert program.nr_modules() == 1
         assert program.model_type() == stormpy.PrismModelType.DTMC
         prop = "P=? [F \"observe0Greater1\"]"
@@ -21,7 +22,7 @@ class TestBisimulation:
         assert not model_bisim.supports_parameters()
     
     def test_parametric_bisimulation(self):
-        program = stormpy.parse_prism_program("../examples/pdtmc/crowds/crowds_3-5.pm")
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "crowds", "crowds_3-5.pm"))
         assert program.nr_modules() == 1
         assert program.model_type() == stormpy.PrismModelType.DTMC
         assert program.has_undefined_constants()

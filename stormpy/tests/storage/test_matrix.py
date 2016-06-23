@@ -1,8 +1,9 @@
 import stormpy
+from helpers.helper import get_example_path
 
 class TestMatrix:
     def test_sparse_matrix(self):
-        model = stormpy.parse_explicit_model("../examples/dtmc/die/die.tra", "../examples/dtmc/die/die.lab")
+        model = stormpy.parse_explicit_model(get_example_path("dtmc", "die", "die.tra"), get_example_path("dtmc", "die", "die.lab"))
         matrix = model.transition_matrix()
         assert type(matrix) is stormpy.storage.SparseMatrix
         assert matrix.nr_rows() == model.nr_states()
@@ -12,7 +13,7 @@ class TestMatrix:
             assert e.value() == 0.5 or e.value() == 0 or (e.value() == 1 and e.column() > 6)
     
     def test_change_sparse_matrix(self):
-        model = stormpy.parse_explicit_model("../examples/dtmc/die/die.tra", "../examples/dtmc/die/die.lab")
+        model = stormpy.parse_explicit_model(get_example_path("dtmc", "die", "die.tra"), get_example_path("dtmc", "die", "die.lab"))
         matrix = model.transition_matrix()
         for e in matrix:
             assert e.value() == 0.5 or e.value() == 0 or e.value() == 1
@@ -27,7 +28,7 @@ class TestMatrix:
     
     def test_change_sparse_matrix_modelchecking(self):
         import stormpy.logic
-        model = stormpy.parse_explicit_model("../examples/dtmc/die/die.tra", "../examples/dtmc/die/die.lab")
+        model = stormpy.parse_explicit_model(get_example_path("dtmc", "die", "die.tra"), get_example_path("dtmc", "die", "die.lab"))
         matrix = model.transition_matrix()
         # Check matrix
         for e in matrix:
@@ -67,7 +68,7 @@ class TestMatrix:
     def test_change_parametric_sparse_matrix_modelchecking(self):
         import stormpy.logic
         import pycarl
-        program = stormpy.parse_prism_program("../examples/pdtmc/brp/brp_16_2.pm")
+        program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp_16_2.pm"))
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"target\" ]", program)
         model = stormpy.build_parametric_model(program, formulas[0])
         matrix = model.transition_matrix()
