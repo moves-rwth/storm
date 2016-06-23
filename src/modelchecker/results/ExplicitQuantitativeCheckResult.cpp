@@ -5,6 +5,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/exceptions/InvalidOperationException.h"
+#include "src/exceptions/InvalidAccessException.h"
 #include "src/adapters/CarlAdapter.h"
 
 
@@ -60,6 +61,7 @@ namespace storm {
             if (this->isResultForAllStates()) {
                 map_type newMap;
                 for (auto const& element : filterTruthValues) {
+                    STORM_LOG_THROW(element < this->getValueVector().size(), storm::exceptions::InvalidAccessException, "Invalid index in results.");
                     newMap.emplace(element, this->getValueVector()[element]);
                 }
                 this->values = newMap;
