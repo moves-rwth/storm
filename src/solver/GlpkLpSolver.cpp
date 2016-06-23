@@ -17,6 +17,9 @@
 
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/GlpkSettings.h"
+
+#include <cmath>
+
 namespace storm {
     namespace solver {
         GlpkLpSolver::GlpkLpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver(optDir), lp(nullptr), variableToIndexMap(), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
@@ -298,7 +301,7 @@ namespace storm {
             }
 
             // Now check the desired precision was actually achieved.
-            STORM_LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in glpk solution (" << value << ").");
+            STORM_LOG_THROW(std::fabs(static_cast<int>(value) - value) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in glpk solution (" << value << ").");
             
             return static_cast<int_fast64_t>(value);
         }
@@ -320,7 +323,7 @@ namespace storm {
                 value = glp_get_col_prim(this->lp, static_cast<int>(variableIndexPair->second));
             }
 
-            STORM_LOG_THROW(std::abs(static_cast<int>(value) - value) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for binary variable in glpk solution (" << value << ").");
+            STORM_LOG_THROW(std::fabs(static_cast<int>(value) - value) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for binary variable in glpk solution (" << value << ").");
             
             return static_cast<bool>(value);
         }

@@ -402,8 +402,8 @@ namespace storm {
                 std::unique_ptr<storm::modelchecker::CheckResult> subResultPointer = propositionalModelchecker.check(eventuallyFormula.getSubformula());
                 storm::storage::BitVector const& targetStates = subResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
 
-                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeReachabilityTimesElimination(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), targetStates, false);
-                result = std::unique_ptr<storm::modelchecker::CheckResult>(new storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>(std::move(numericResult)));
+//                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeReachabilityTimesElimination(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), targetStates, false);
+//                result = std::unique_ptr<storm::modelchecker::CheckResult>(new storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>(std::move(numericResult)));
 
             } else if (formula->isProbabilityOperatorFormula()) {
                 // Compute reachability probability for pCTMCs
@@ -433,8 +433,8 @@ namespace storm {
                     psiStates = resultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 }
 
-                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeUntilProbabilitiesElimination(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), phiStates, psiStates, false);
-                result = std::unique_ptr<storm::modelchecker::CheckResult>(new storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>(std::move(numericResult)));
+//                std::vector<storm::RationalFunction> numericResult = storm::modelchecker::helper::SparseCtmcCslHelper<storm::RationalFunction>::computeUntilProbabilitiesElimination(ctmc->getTransitionMatrix(), ctmc->getBackwardTransitions(), ctmc->getExitRateVector(), ctmc->getInitialStates(), phiStates, psiStates, false);
+//                result = std::unique_ptr<storm::modelchecker::CheckResult>(new storm::modelchecker::ExplicitQuantitativeCheckResult<storm::RationalFunction>(std::move(numericResult)));
 
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The parametric engine currently does not support this property on CTMCs.");

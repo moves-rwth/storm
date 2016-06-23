@@ -432,15 +432,11 @@ namespace storm {
             storm::storage::BitVector const& phiStates = leftResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             storm::storage::BitVector const& psiStates = rightResultPointer->asExplicitQualitativeCheckResult().getTruthValuesVector();
             
-            std::vector<ValueType> result = computeUntilProbabilities(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), phiStates, psiStates, checkTask.isOnlyInitialStatesRelevantSet());
-            
-            // Construct check result.
-            std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            return checkResult;
+            return computeUntilProbabilities(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), phiStates, psiStates, checkTask.isOnlyInitialStatesRelevantSet());
         }
         
         template<typename SparseDtmcModelType>
-        std::vector<typename SparseDtmcModelType::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool computeForInitialStatesOnly) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeUntilProbabilities(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool computeForInitialStatesOnly) {
             
             // Then, compute the subset of states that has a probability of 0 or 1, respectively.
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(backwardTransitions, phiStates, psiStates);
@@ -491,9 +487,13 @@ namespace storm {
             if (computeForInitialStatesOnly) {
                 // If we computed the results for the initial (and prob 0 and prob1) states only, we need to filter the
                 // result to only communicate these results.
-                result = storm::utility::vector::filterVector(result, ~maybeStates | initialStates);
+                std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
+                for (auto state : ~maybeStates | initialStates) {
+                    (*checkResult)[state] = result[state];
+                }
+                return std::move(checkResult);
             }
-            return result;
+            return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
         }
         
         template<typename SparseDtmcModelType>
@@ -509,19 +509,16 @@ namespace storm {
             RewardModelType const& rewardModel = this->getModel().getRewardModel(checkTask.isRewardModelSet() ? checkTask.getRewardModel() : "");
             
             STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::IllegalArgumentException, "Input model does not have a reward model.");
-            std::vector<ValueType> result = computeReachabilityRewards(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), targetStates,
-                                                                       [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
-                                                                           return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates);
-                                                                       },
-                                                                       checkTask.isOnlyInitialStatesRelevantSet());
+            return computeReachabilityRewards(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getInitialStates(), targetStates,
+                                              [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
+                                                  return rewardModel.getTotalRewardVector(numberOfRows, transitionMatrix, maybeStates);
+                                              },
+                                              checkTask.isOnlyInitialStatesRelevantSet());
             
-            // Construct check result.
-            std::unique_ptr<CheckResult> checkResult(new ExplicitQuantitativeCheckResult<ValueType>(result));
-            return checkResult;
         }
         
         template<typename SparseDtmcModelType>
-        std::vector<typename SparseDtmcModelType::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, std::vector<ValueType>& stateRewardValues, bool computeForInitialStatesOnly) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, std::vector<ValueType>& stateRewardValues, bool computeForInitialStatesOnly) {
             return computeReachabilityRewards(probabilityMatrix, backwardTransitions, initialStates, targetStates,
                                               [&] (uint_fast64_t numberOfRows, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates) {
                                                   std::vector<ValueType> result(numberOfRows);
@@ -532,7 +529,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        std::vector<typename SparseDtmcModelType::ValueType> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, bool computeForInitialStatesOnly) {
+        std::unique_ptr<CheckResult> SparseDtmcEliminationModelChecker<SparseDtmcModelType>::computeReachabilityRewards(storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& targetStates, std::function<std::vector<ValueType>(uint_fast64_t, storm::storage::SparseMatrix<ValueType> const&, storm::storage::BitVector const&)> const& totalStateRewardVectorGetter, bool computeForInitialStatesOnly) {
             
             uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
             
@@ -587,9 +584,13 @@ namespace storm {
             if (computeForInitialStatesOnly) {
                 // If we computed the results for the initial (and inf) states only, we need to filter the result to
                 // only communicate these results.
-                result = storm::utility::vector::filterVector(result, ~maybeStates | initialStates);
+                std::unique_ptr<ExplicitQuantitativeCheckResult<ValueType>> checkResult = std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>();
+                for (auto state : ~maybeStates | initialStates) {
+                    (*checkResult)[state] = result[state];
+                }
+                return std::move(checkResult);
             }
-            return result;
+            return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
         }
         
         template<typename SparseDtmcModelType>
