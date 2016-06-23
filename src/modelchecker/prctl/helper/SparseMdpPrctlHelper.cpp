@@ -47,7 +47,7 @@ namespace storm {
                     // Create the vector with which to multiply.
                     std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
                     
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(submatrix);
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(submatrix));
                     solver->performMatrixVectorMultiplication(dir, subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
@@ -329,7 +329,7 @@ namespace storm {
                         std::vector<ValueType> x(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                         
                         // Solve the corresponding system of equations.
-                        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(submatrix);
+                        std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(submatrix));
                         solver->solveEquationSystem(dir, x, b);
                         
                         // Set values of resulting vector according to result.
@@ -476,7 +476,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> sspMatrix = sspMatrixBuilder.build(currentChoice);
                 
                 std::vector<ValueType> sspResult(numberOfStatesNotInMecs + mecDecomposition.size());
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(sspMatrix);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(sspMatrix));
                 solver->solveEquationSystem(dir, sspResult, b);
                 
                 // Prepare result vector.

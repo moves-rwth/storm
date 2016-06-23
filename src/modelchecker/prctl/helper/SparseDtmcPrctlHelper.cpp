@@ -36,7 +36,7 @@ namespace storm {
                     std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
                     
                     // Perform the matrix vector multiplication as often as required by the formula bound.
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(submatrix);
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
                     solver->performMatrixVectorMultiplication(subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
@@ -89,7 +89,7 @@ namespace storm {
                         std::vector<ValueType> b = transitionMatrix.getConstrainedRowSumVector(maybeStates, statesWithProbability1);
                         
                         // Now solve the created system of linear equations.
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(submatrix);
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
                         solver->solveEquationSystem(x, b);
                         
                         // Set values of resulting vector according to result.
@@ -209,7 +209,7 @@ namespace storm {
                         std::vector<ValueType> b = totalStateRewardVectorGetter(submatrix.getRowCount(), transitionMatrix, maybeStates);
                         
                         // Now solve the resulting equation system.
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(submatrix);
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
                         solver->solveEquationSystem(x, b);
                         
                         // Set values of resulting vector according to result.

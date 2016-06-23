@@ -283,7 +283,7 @@ namespace storm {
                 }
                 std::vector<ValueType> multiplicationResult(result.size());
                 
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(uniformizedMatrix);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(uniformizedMatrix));
                 
                 if (!computeCumulativeReward && std::get<0>(foxGlynnResult) > 1) {
                     // Perform the matrix-vector multiplications (without adding).
@@ -557,7 +557,7 @@ namespace storm {
                     bsccEquationSystem = builder.build();
                     
                     {
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(bsccEquationSystem);
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(bsccEquationSystem));
                         solver->solveEquationSystem(bsccEquationSystemSolution, bsccEquationSystemRightSide);
                     }
                     
@@ -628,7 +628,7 @@ namespace storm {
                     rewardSolution = std::vector<ValueType>(rewardEquationSystemMatrix.getColumnCount(), one);
                     
                     {
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(rewardEquationSystemMatrix);
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(rewardEquationSystemMatrix));
                         solver->solveEquationSystem(rewardSolution, rewardRightSide);
                     }
                 }

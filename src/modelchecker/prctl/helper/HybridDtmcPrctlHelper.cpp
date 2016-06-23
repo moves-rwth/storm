@@ -71,7 +71,7 @@ namespace storm {
                         storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                         std::vector<ValueType> b = subvector.toVector(odd);
                         
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
                         solver->solveEquationSystem(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
@@ -129,7 +129,7 @@ namespace storm {
                     storm::storage::SparseMatrix<ValueType> explicitSubmatrix = submatrix.toMatrix(odd, odd);
                     std::vector<ValueType> b = subvector.toVector(odd);
                     
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
                     solver->performMatrixVectorMultiplication(x, &b, stepBound);
                     
                     // Return a hybrid check result that stores the numerical values explicitly.
@@ -155,7 +155,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitMatrix = transitionMatrix.toMatrix(odd, odd);
                 
                 // Perform the matrix-vector multiplication.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitMatrix));
                 solver->performMatrixVectorMultiplication(x, nullptr, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
@@ -181,7 +181,7 @@ namespace storm {
                 std::vector<ValueType> b = totalRewardVector.toVector(odd);
                 
                 // Perform the matrix-vector multiplication.
-                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitMatrix);
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitMatrix));
                 solver->performMatrixVectorMultiplication(x, &b, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
@@ -236,7 +236,7 @@ namespace storm {
                         std::vector<ValueType> b = subvector.toVector(odd);
                         
                         // Now solve the resulting equation system.
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(explicitSubmatrix);
+                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
                         solver->solveEquationSystem(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
