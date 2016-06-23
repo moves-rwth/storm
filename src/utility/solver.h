@@ -136,25 +136,27 @@ namespace storm {
             class NativeLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
             public:
                 NativeLinearEquationSolverFactory();
-                NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolverSolutionMethod method, ValueType omega);
+                NativeLinearEquationSolverFactory(storm::solver::NativeLinearEquationSolverSolutionMethod method);
                 
                 virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
                 
             private:
-                typename storm::solver::NativeLinearEquationSolverSolutionMethod method;
-                ValueType omega;
+                storm::solver::NativeLinearEquationSolverSolutionMethod method;
             };
             
             template<typename ValueType>
             class GmmxxLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
             public:
                 virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
             };
             
             template<typename ValueType>
             class EigenLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
             public:
                 virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
             };
             
             template<typename ValueType>

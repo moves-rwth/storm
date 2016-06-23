@@ -110,12 +110,22 @@ namespace storm {
             
             template<typename ValueType>
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::GmmxxLinearEquationSolver<ValueType>(matrix));
+                return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(matrix);
+            }
+
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
+                return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(std::move(matrix));
             }
 
             template<typename ValueType>
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::EigenLinearEquationSolver<ValueType>(matrix));
+                return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(matrix);
+            }
+
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
+                return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(std::move(matrix));
             }
             
             template<typename ValueType>
@@ -131,17 +141,21 @@ namespace storm {
                         this->method = storm::solver::NativeLinearEquationSolverSolutionMethod::SOR;
                         break;
                 }
-                omega = storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getOmega();
             }
             
             template<typename ValueType>
-            NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolverSolutionMethod method, ValueType omega) : method(method), omega(omega) {
+            NativeLinearEquationSolverFactory<ValueType>::NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolverSolutionMethod method) : method(method) {
                 // Intentionally left empty.
             }
             
             template<typename ValueType>
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
-                return std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>>(new storm::solver::NativeLinearEquationSolver<ValueType>(matrix, method));
+                return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>(matrix, method);
+            }
+
+            template<typename ValueType>
+            std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> NativeLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
+                return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>(std::move(matrix), method);
             }
             
             template<typename ValueType>
