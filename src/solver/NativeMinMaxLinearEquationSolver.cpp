@@ -205,6 +205,5 @@ namespace storm {
         
         // Explicitly instantiate the solver.
         template class NativeMinMaxLinearEquationSolver<double>;
-		template class NativeMinMaxLinearEquationSolver<float>;
     } // namespace solver
 } // namespace storm

@@ -16,14 +16,8 @@
 
 namespace storm {
     namespace solver {
-        
         template<typename ValueType>
-        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, SolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, Preconditioner preconditioner, bool relative, uint_fast64_t restart) : originalA(&A), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), method(method), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), preconditioner(preconditioner), relative(relative), restart(restart) {
-            // Intentionally left empty.
-        }
-
-        template<typename ValueType>
-        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : originalA(&A), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)) {
+        GmmxxLinearEquationSolverSettings<ValueType>::GmmxxLinearEquationSolverSettings() {
             // Get the settings object to customize linear solving.
             storm::settings::modules::GmmxxEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>();
             
@@ -57,39 +51,111 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void GmmxxLinearEquationSolverSettings<ValueType>::setSolutionMethod(SolutionMethod const& method) {
+            this->method = method;
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolverSettings<ValueType>::setPreconditioner(Preconditioner const& preconditioner) {
+            this->preconditioner = preconditioner;
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolverSettings<ValueType>::setPrecision(ValueType precision) {
+            this->precision = precision;
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolverSettings<ValueType>::setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations) {
+            this->maximalNumberOfIterations = maximalNumberOfIterations;
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolverSettings<ValueType>::setRelativeTerminationCriterion(bool value) {
+            this->relative = value;
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolverSettings<ValueType>::setNumberOfIterationsUntilRestart(uint64_t restart) {
+            this->restart = restart;
+        }
+        
+        template<typename ValueType>
+        typename GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod GmmxxLinearEquationSolverSettings<ValueType>::getSolutionMethod() const {
+            return method;
+        }
+        
+        template<typename ValueType>
+        typename GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner GmmxxLinearEquationSolverSettings<ValueType>::getPreconditioner() const {
+            return preconditioner;
+        }
+        
+        template<typename ValueType>
+        ValueType GmmxxLinearEquationSolverSettings<ValueType>::getPrecision() const {
+            return precision;
+        }
+        
+        template<typename ValueType>
+        uint64_t GmmxxLinearEquationSolverSettings<ValueType>::getMaximalNumberOfIterations() const {
+            return maximalNumberOfIterations;
+        }
+        
+        template<typename ValueType>
+        bool GmmxxLinearEquationSolverSettings<ValueType>::getRelativeTerminationCriterion() const {
+            return relative;
+        }
+        
+        template<typename ValueType>
+        uint64_t GmmxxLinearEquationSolverSettings<ValueType>::getNumberOfIterationsUntilRestart() const {
+            return restart;
+        }
+        
+        template<typename ValueType>
+        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, GmmxxLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(A), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), settings(settings) {
+            // Intentionally left empty.
+        }
+
+        template<typename ValueType>
+        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, GmmxxLinearEquationSolverSettings<ValueType> const& settings) : localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(*localA), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(*localA)), settings(settings) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
         void GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
-            STORM_LOG_INFO("Using method '" << methodToString() << "' with preconditioner '" << preconditionerToString() << "' (max. " << maximalNumberOfIterations << " iterations).");
-            if (method == SolutionMethod::Jacobi && preconditioner != Preconditioner::None) {
+            auto method = this->getSettings().getSolutionMethod();
+            auto preconditioner = this->getSettings().getPreconditioner();
+            STORM_LOG_INFO("Using method '" << method << "' with preconditioner '" << preconditioner << "' (max. " << this->getSettings().getMaximalNumberOfIterations() << " iterations).");
+            if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi && preconditioner != GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None) {
                 STORM_LOG_WARN("Jacobi method currently does not support preconditioners. The requested preconditioner will be ignored.");
             }
             
-            if (method == SolutionMethod::Bicgstab || method == SolutionMethod::Qmr || method == SolutionMethod::Gmres) {
+            if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Bicgstab || method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Qmr || method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Gmres) {
                 // Prepare an iteration object that determines the accuracy and the maximum number of iterations.
-                gmm::iteration iter(precision, 0, maximalNumberOfIterations);
+                gmm::iteration iter(this->getSettings().getPrecision(), 0, this->getSettings().getMaximalNumberOfIterations());
                 
-                if (method == SolutionMethod::Bicgstab) {
-                    if (preconditioner == Preconditioner::Ilu) {
+                if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Bicgstab) {
+                    if (preconditioner == GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
                         gmm::bicgstab(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), iter);
-                    } else if (preconditioner == Preconditioner::Diagonal) {
+                    } else if (preconditioner == GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
                         gmm::bicgstab(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), iter);
-                    } else if (preconditioner == Preconditioner::None) {
+                    } else if (preconditioner == GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None) {
                         gmm::bicgstab(*gmmxxMatrix, x, b, gmm::identity_matrix(), iter);
                     }
-                } else if (method == SolutionMethod::Qmr) {
-                    if (preconditioner == Preconditioner::Ilu) {
+                } else if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Qmr) {
+                    if (preconditioner == GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
                         gmm::qmr(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), iter);
-                    } else if (preconditioner == Preconditioner::Diagonal) {
+                    } else if (preconditioner == GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
                         gmm::qmr(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), iter);
-                    } else if (preconditioner == Preconditioner::None) {
+                    } else if (preconditioner == GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None) {
                         gmm::qmr(*gmmxxMatrix, x, b, gmm::identity_matrix(), iter);
                     }
-                } else if (method == SolutionMethod::Gmres) {
-                    if (preconditioner == Preconditioner::Ilu) {
-                        gmm::gmres(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), restart, iter);
-                    } else if (preconditioner == Preconditioner::Diagonal) {
-                        gmm::gmres(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), restart, iter);
-                    } else if (preconditioner == Preconditioner::None) {
-                        gmm::gmres(*gmmxxMatrix, x, b, gmm::identity_matrix(), restart, iter);
+                } else if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Gmres) {
+                    if (preconditioner == GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
+                        gmm::gmres(*gmmxxMatrix, x, b, gmm::ilu_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), this->getSettings().getNumberOfIterationsUntilRestart(), iter);
+                    } else if (preconditioner == GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
+                        gmm::gmres(*gmmxxMatrix, x, b, gmm::diagonal_precond<gmm::csr_matrix<ValueType>>(*gmmxxMatrix), this->getSettings().getNumberOfIterationsUntilRestart(), iter);
+                    } else if (preconditioner == GmmxxLinearEquationSolverSettings<ValueType>::Preconditioner::None) {
+                        gmm::gmres(*gmmxxMatrix, x, b, gmm::identity_matrix(), this->getSettings().getNumberOfIterationsUntilRestart(), iter);
                     }
                 }
                 
@@ -99,11 +165,11 @@ namespace storm {
                 } else {
                     STORM_LOG_WARN("Iterative solver did not converge.");
                 }
-            } else if (method == SolutionMethod::Jacobi) {
-                uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(*originalA, x, b, multiplyResult);
+            } else if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
+                uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(A, x, b, multiplyResult);
                 
                 // Check if the solver converged and issue a warning otherwise.
-                if (iterations < maximalNumberOfIterations) {
+                if (iterations < this->getSettings().getMaximalNumberOfIterations()) {
                     STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations.");
                 } else {
                     STORM_LOG_WARN("Iterative solver did not converge.");
@@ -173,14 +239,14 @@ namespace storm {
             uint_fast64_t iterationCount = 0;
             bool converged = false;
             
-            while (!converged && iterationCount < maximalNumberOfIterations && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
+            while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 gmm::mult(*gmmLU, *currentX, tmpX);
                 gmm::add(b, gmm::scaled(tmpX, -storm::utility::one<ValueType>()), tmpX);
                 storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, tmpX, *nextX);
                 
                 // Now check if the process already converged within our precision.
-                converged = storm::utility::vector::equalModuloPrecision(*currentX, *nextX, precision, relative);
+                converged = storm::utility::vector::equalModuloPrecision(*currentX, *nextX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion());
 
                 // Swap the two pointers as a preparation for the next iteration.
                 std::swap(nextX, currentX);
@@ -204,27 +270,39 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::string GmmxxLinearEquationSolver<ValueType>::methodToString() const {
-            switch (method) {
-                case SolutionMethod::Bicgstab: return "bicgstab";
-                case SolutionMethod::Qmr: return "qmr";
-                case SolutionMethod::Gmres: return "gmres";
-                case SolutionMethod::Jacobi: return "jacobi";
-                default: return "invalid";
-            }
+        GmmxxLinearEquationSolverSettings<ValueType>& GmmxxLinearEquationSolver<ValueType>::getSettings() {
+            return settings;
+        }
+
+        template<typename ValueType>
+        GmmxxLinearEquationSolverSettings<ValueType> const& GmmxxLinearEquationSolver<ValueType>::getSettings() const {
+            return settings;
         }
         
         template<typename ValueType>
-        std::string GmmxxLinearEquationSolver<ValueType>::preconditionerToString() const {
-            switch (preconditioner) {
-                case Preconditioner::Ilu: return "ilu";
-                case Preconditioner::Diagonal: return "diagonal";
-                case Preconditioner::None: return "none";
-                default: return "invalid";
-            }
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
+            return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(matrix, settings);
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
+            return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(std::move(matrix), settings);
+        }
+        
+        template<typename ValueType>
+        GmmxxLinearEquationSolverSettings<ValueType>& GmmxxLinearEquationSolverFactory<ValueType>::getSettings() {
+            return settings;
+        }
+        
+        template<typename ValueType>
+        GmmxxLinearEquationSolverSettings<ValueType> const& GmmxxLinearEquationSolverFactory<ValueType>::getSettings() const {
+            return settings;
         }
         
         // Explicitly instantiate the solver.
+        template class GmmxxLinearEquationSolverSettings<double>;
         template class GmmxxLinearEquationSolver<double>;
+        template class GmmxxLinearEquationSolverFactory<double>;
+        
     }
 }

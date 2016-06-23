@@ -8,12 +8,34 @@
 namespace storm {
     namespace solver {
         
-        // An enumeration specifying the available solution methods.
-        enum class NativeLinearEquationSolverSolutionMethod {
-            Jacobi, GaussSeidel, SOR
+        template<typename ValueType>
+        class NativeLinearEquationSolverSettings {
+        public:
+            enum class SolutionMethod {
+                Jacobi, GaussSeidel, SOR
+            };
+
+            NativeLinearEquationSolverSettings();
+            
+            void setSolutionMethod(SolutionMethod const& method);
+            void setPrecision(ValueType precision);
+            void setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations);
+            void setRelativeTerminationCriterion(bool value);
+            void setOmega(ValueType omega);
+            
+            SolutionMethod getSolutionMethod() const;
+            ValueType getPrecision() const;
+            uint64_t getMaximalNumberOfIterations() const;
+            uint64_t getRelativeTerminationCriterion() const;
+            ValueType getOmega() const;
+            
+        private:
+            SolutionMethod method;
+            double precision;
+            bool relative;
+            uint_fast64_t maximalNumberOfIterations;
+            ValueType omega;
         };
-        
-        std::ostream& operator<<(std::ostream& out, NativeLinearEquationSolverSolutionMethod const& method);
         
         /*!
          * A class that uses Storm's native matrix operations to implement the LinearEquationSolver interface.
@@ -21,53 +43,40 @@ namespace storm {
         template<typename ValueType>
         class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
+            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSettings<ValueType> const& settings = NativeLinearEquationSolverSettings<ValueType>());
+            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, NativeLinearEquationSolverSettings<ValueType> const& settings = NativeLinearEquationSolverSettings<ValueType>());
             
-            /*!
-             * Constructs a linear equation solver with parameters being set according to the settings object.
-             *
-             * @param A The matrix defining the coefficients of the linear equation system.
-             * @param method The method to use for solving linear equations.
-             */
-            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSolutionMethod method = NativeLinearEquationSolverSolutionMethod::GaussSeidel);
-
-            /*!
-             * Constructs a linear equation solver with the given parameters.
-             *
-             * @param A The matrix defining the coefficients of the linear equation system.
-             * @param method The method to use for linear equation solving.
-             * @param precision The precision to use for convergence detection.
-             * @param maximalNumberOfIterations The maximal number of iterations do perform before iteration is aborted.
-             * @param relative If set, the relative error rather than the absolute error is considered for convergence
-             * detection.
-             */
-            NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSolutionMethod method, double precision, uint_fast64_t maximalNumberOfIterations, bool relative = true);
-                        
             virtual void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
             
             virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
 
+            NativeLinearEquationSolverSettings<ValueType>& getSettings();
+            NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;
+
         private:
-            /*!
-             * Retrieves the string representation of the solution method associated with this solver.
-             *
-             * @return The string representation of the solution method associated with this solver.
-             */
-            std::string methodToString() const;
+            // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
+            // when the solver is destructed.
+            std::unique_ptr<storm::storage::SparseMatrix<ValueType>> localA;
             
-            // A reference to the matrix the gives the coefficients of the linear equation system.
+            // A reference to the original sparse matrix given to this solver. If the solver takes posession of the matrix
+            // the reference refers to localA.
             storm::storage::SparseMatrix<ValueType> const& A;
+                        
+            // The settings used by the solver.
+            NativeLinearEquationSolverSettings<ValueType> settings;
+        };
+        
+        template<typename ValueType>
+        class NativeLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
+        public:
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
+            virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
             
-            // The method to use for solving linear equation systems.
-            NativeLinearEquationSolverSolutionMethod method;
+            NativeLinearEquationSolverSettings<ValueType>& getSettings();
+            NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
-            // The required precision for the iterative methods.
-            double precision;
-            
-            // Sets whether the relative or absolute error is to be considered for convergence detection.
-            bool relative;
-            
-            // The maximal number of iterations to do before iteration is aborted.
-            uint_fast64_t maximalNumberOfIterations;
+        private:
+            NativeLinearEquationSolverSettings<ValueType> settings;
         };
     }
 }

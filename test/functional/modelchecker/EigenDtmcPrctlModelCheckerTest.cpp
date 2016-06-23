@@ -3,7 +3,7 @@
 
 #include "src/parser/FormulaParser.h"
 #include "src/logic/Formulas.h"
-#include "src/utility/solver.h"
+#include "src/solver/EigenLinearEquationSolver.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -29,7 +29,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
     
-    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::EigenLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     
@@ -77,7 +77,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalNumber) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 13ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 20ull);
     
-    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>> checker(*dtmc, std::make_unique<storm::utility::solver::EigenLinearEquationSolverFactory<storm::RationalNumber>>());
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<storm::RationalNumber>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     
@@ -129,7 +129,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Die_RationalFunction) {
     ASSERT_EQ(variables.size(), 1ull);
     instantiation.emplace(*variables.begin(), storm::RationalNumber(1) / storm::RationalNumber(2));
     
-    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> checker(*dtmc, std::make_unique<storm::utility::solver::EigenLinearEquationSolverFactory<storm::RationalFunction>>());
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<storm::RationalFunction>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"one\"]");
     
@@ -174,7 +174,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Crowds) {
     ASSERT_EQ(8607ull, dtmc->getNumberOfStates());
     ASSERT_EQ(15113ull, dtmc->getNumberOfTransitions());
     
-    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::EigenLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolverFactory<double>>(new storm::solver::EigenLinearEquationSolverFactory<double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\"]");
     
@@ -211,7 +211,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, SynchronousLeader) {
     ASSERT_EQ(12400ull, dtmc->getNumberOfStates());
     ASSERT_EQ(16495ull, dtmc->getNumberOfTransitions());
     
-    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::EigenLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("P=? [F \"elected\"]");
     
@@ -254,7 +254,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, LRASingleBscc) {
         
         dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
         
-        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<double>>());
         
         std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
@@ -278,7 +278,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, LRASingleBscc) {
         
         dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
         
-        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<double>>());
         
         std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
@@ -302,7 +302,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, LRASingleBscc) {
         
         dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
         
-        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::EigenLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<double>>());
         
         std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
@@ -365,7 +365,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, LRA) {
         
         dtmc.reset(new storm::models::sparse::Dtmc<double>(transitionMatrix, ap));
         
-        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::EigenLinearEquationSolverFactory<double>()));
+        storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<double>>());
         
         std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("LRA=? [\"a\"]");
         
@@ -394,7 +394,7 @@ TEST(EigenDtmcPrctlModelCheckerTest, Conditional) {
     
     std::shared_ptr<storm::models::sparse::Dtmc<double>> dtmc = model->as<storm::models::sparse::Dtmc<double>>();
     
-    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::EigenLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::make_unique<storm::solver::EigenLinearEquationSolverFactory<double>>());
     
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

@@ -122,14 +122,15 @@ namespace storm {
 					storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(scheduler, true);
 					submatrix.convertToEquationSystem();
 					
-					GmmxxLinearEquationSolver<ValueType> gmmLinearEquationSolver(submatrix, storm::solver::GmmxxLinearEquationSolver<double>::SolutionMethod::Gmres, this->precision, this->maximalNumberOfIterations, storm::solver::GmmxxLinearEquationSolver<double>::Preconditioner::Ilu, this->relative, 50);
+					GmmxxLinearEquationSolver<ValueType> gmmxxLinearEquationSolver(submatrix);
+                    
 					storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, rowGroupIndices, b);
 
 					// Copy X since we will overwrite it
 					std::copy(currentX->begin(), currentX->end(), newX->begin());
 
 					// Solve the resulting linear equation system
-					gmmLinearEquationSolver.solveEquationSystem(*newX, subB, &deterministicMultiplyResult);
+					gmmxxLinearEquationSolver.solveEquationSystem(*newX, subB, &deterministicMultiplyResult);
 
 					// Compute x' = A*x + b. This step is necessary to allow the choosing of the optimal policy for the next iteration.
 					gmm::mult(*gmmxxMatrix, *newX, *multiplyResult);

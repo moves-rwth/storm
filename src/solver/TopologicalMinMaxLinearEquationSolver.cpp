@@ -429,6 +429,5 @@ namespace storm {
 
         // Explicitly instantiate the solver.
 		template class TopologicalMinMaxLinearEquationSolver<double>;
-		template class TopologicalMinMaxLinearEquationSolver<float>;
     } // namespace solver
 } // namespace storm

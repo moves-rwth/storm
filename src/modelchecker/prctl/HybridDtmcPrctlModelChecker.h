@@ -5,7 +5,7 @@
 
 #include "src/models/symbolic/Dtmc.h"
 
-#include "src/utility/solver.h"
+#include "src/solver/LinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {
@@ -14,7 +14,7 @@ namespace storm {
         class HybridDtmcPrctlModelChecker : public SymbolicPropositionalModelChecker<DdType, ValueType> {
         public:
             explicit HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model);
-            explicit HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            explicit HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
@@ -32,7 +32,7 @@ namespace storm {
             
         private:
             // An object that is used for retrieving linear equation solvers.
-            std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
+            std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
         };
         
     } // namespace modelchecker

@@ -6,7 +6,7 @@
 #include "src/logic/Formulas.h"
 #include "src/builder/ExplicitModelBuilder.h"
 
-#include "src/utility/solver.h"
+#include "src/solver/NativeLinearEquationSolver.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -32,7 +32,7 @@ TEST(NativeCtmcCslModelCheckerTest, Cluster) {
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
     
     // Create model checker.
-    storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
 
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=100 !\"minimum\"]");
@@ -103,7 +103,7 @@ TEST(NativeCtmcCslModelCheckerTest, Embedded) {
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
     
     // Create model checker.
-    storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
 
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10000 \"down\"]");
@@ -158,7 +158,7 @@ TEST(NativeCtmcCslModelCheckerTest, Polling) {
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
     
     // Create model checker.
-    storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=?[ F<=10 \"target\"]");
@@ -192,7 +192,7 @@ TEST(NativeCtmcCslModelCheckerTest, Tandem) {
     uint_fast64_t initialState = *ctmc->getInitialStates().begin();
     
     // Create model checker.
-    storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>> modelchecker(*ctmc, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::NativeLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>> modelchecker(*ctmc, std::make_unique<storm::solver::NativeLinearEquationSolverFactory<double>>());
     
     // Start checking properties.
     formula = formulaParser.parseSingleFormulaFromString("P=? [ F<=10 \"network_full\" ]");
