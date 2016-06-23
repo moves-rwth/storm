@@ -5,18 +5,22 @@
 #include "src/adapters/CarlAdapter.h"
 
 #include "src/storage/sparse/StateType.h"
+#include "src/storage/dd/Bdd.h"
+#include "src/storage/dd/Add.h"
+#include "src/storage/dd/DdManager.h"
+
+#include "src/storage/StronglyConnectedComponentDecomposition.h"
+
 #include "src/models/symbolic/DeterministicModel.h"
 #include "src/models/symbolic/NondeterministicModel.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 #include "src/models/sparse/DeterministicModel.h"
 #include "src/models/sparse/NondeterministicModel.h"
 #include "src/models/sparse/StandardRewardModel.h"
+
 #include "src/utility/constants.h"
-#include "src/exceptions/InvalidArgumentException.h"
-#include "src/storage/dd/Bdd.h"
-#include "src/storage/dd/Add.h"
-#include "src/storage/dd/DdManager.h"
 #include "src/utility/macros.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace utility {
@@ -80,6 +84,61 @@ namespace storm {
                 }
                 
                 return reachableStates;
+            }
+            
+            template<typename T>
+            storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<T> const& transitionMatrix) {
+                storm::storage::BitVector result(transitionMatrix.getRowGroupCount());
+                storm::storage::StronglyConnectedComponentDecomposition<T> decomposition(transitionMatrix, false, true);
+                
+                // Take the first state out of each BSCC.
+                for (auto const& scc : decomposition) {
+                    result.set(*scc.begin());
+                }
+                
+                return result;
+            }
+            
+            template<typename T>
+            storm::storage::BitVector getTerminalStateCover(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates) {
+                storm::storage::BitVector terminalStateCandidates(transitionMatrix.getRowGroupCount());
+                storm::storage::BitVector terminalStatesWithoutSuccessors(transitionMatrix.getRowCount());
+                
+                std::queue<storm::storage::sparse::state_type> stateQueue;
+                storm::storage::BitVector statesInQueue(transitionMatrix.getRowGroupCount());
+                
+                for (auto const& initialState : initialStates) {
+                    stateQueue.emplace(initialState);
+                    statesInQueue.set(initialState);
+                }
+                
+                // Perform a BFS.
+                while (!stateQueue.empty()) {
+                    storm::storage::sparse::state_type currentState = stateQueue.front();
+                    stateQueue.pop();
+                    
+                    auto row = transitionMatrix.getRow(currentState);
+                    if (row.empty()) {
+                        terminalStatesWithoutSuccessors.set(currentState);
+                    } else {
+                        bool hasUnvisitedSuccessor = false;
+                        for (auto const& successorEntry : row) {
+                            if (!statesInQueue.get(successorEntry.getColumn())) {
+                                hasUnvisitedSuccessor = true;
+                                stateQueue.emplace(successorEntry.getColumn());
+                                statesInQueue.set(successorEntry.getColumn());
+                            }
+                        }
+                        if (!hasUnvisitedSuccessor) {
+                            terminalStateCandidates.set(currentState);
+                        }
+                    }
+                }
+                
+                // Now that we have an overapproximation of the set of states we want to compute, we check whether we
+                // need to include some of the states that are terminal state candidates or whether the terminal states
+                // without successors are sufficient.
+                
             }
             
             template<typename T>
@@ -993,6 +1052,8 @@ namespace storm {
             
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
+            template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<double> const& transitionMatrix);
+            
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             
@@ -1065,6 +1126,8 @@ namespace storm {
             
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
             
+            template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<float> const& transitionMatrix);
+            
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<float> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
             
@@ -1118,6 +1181,8 @@ namespace storm {
             
             // Instantiations for storm::RationalNumber.
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
+            
+            template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix);
             
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             
@@ -1173,6 +1238,8 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps);
+            
+            template storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix);
             
             template std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<storm::RationalFunction> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem);
             

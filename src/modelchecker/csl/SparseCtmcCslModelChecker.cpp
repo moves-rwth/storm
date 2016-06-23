@@ -24,7 +24,7 @@
 namespace storm {
     namespace modelchecker {
         template <typename SparseCtmcModelType>
-        SparseCtmcCslModelChecker<SparseCtmcModelType>::SparseCtmcCslModelChecker(SparseCtmcModelType const& model) : SparsePropositionalModelChecker<SparseCtmcModelType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
+        SparseCtmcCslModelChecker<SparseCtmcModelType>::SparseCtmcCslModelChecker(SparseCtmcModelType const& model) : SparsePropositionalModelChecker<SparseCtmcModelType>(model), linearEquationSolverFactory(std::make_unique<storm::utility::solver::GeneralLinearEquationSolverFactory<ValueType>>()) {
             // Intentionally left empty.
         }
         

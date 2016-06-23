@@ -31,7 +31,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType DdType, typename ValueType>
-        HybridDtmcPrctlModelChecker<DdType, ValueType>::HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
+        HybridDtmcPrctlModelChecker<DdType, ValueType>::HybridDtmcPrctlModelChecker(storm::models::symbolic::Dtmc<DdType, ValueType> const& model) : SymbolicPropositionalModelChecker<DdType, ValueType>(model), linearEquationSolverFactory(std::make_unique<storm::utility::solver::GeneralLinearEquationSolverFactory<ValueType>>()) {
             // Intentionally left empty.
         }
         

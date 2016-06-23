@@ -8,6 +8,7 @@
 #include "src/solver/stateelimination/StatePriorityQueue.h"
 #include "src/solver/stateelimination/PrioritizedStateEliminator.h"
 
+#include "src/utility/graph.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/utility/stateelimination.h"
@@ -27,12 +28,18 @@ namespace storm {
         void EliminationLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             STORM_LOG_WARN_COND(multiplyResult == nullptr, "Providing scratch memory will not improve the performance of this solver.");
             
+            // FIXME: This solver will not work for all input systems. More concretely, the current implementation will
+            // not work for systems that have a 0 on the diagonal. This is not a restriction of this technique in general
+            // but arbitrary matrices require pivoting, which is not currently implemented.
+            
             STORM_LOG_DEBUG("Solving equation system using elimination.");
             
             // We need to revert the transformation into an equation system matrix, because the elimination procedure
             // and the distance computation is based on the probability matrix instead.
             storm::storage::SparseMatrix<ValueType> transitionMatrix(A);
+            
             transitionMatrix.convertToEquationSystem();
+            
             storm::storage::SparseMatrix<ValueType> backwardTransitions = transitionMatrix.transpose();
 
             // Initialize the solution to the right-hand side of the equation system.
@@ -45,11 +52,11 @@ namespace storm {
             storm::settings::modules::EliminationSettings::EliminationOrder order = storm::settings::getModule<storm::settings::modules::EliminationSettings>().getEliminationOrder();
             boost::optional<std::vector<uint_fast64_t>> distanceBasedPriorities;
             if (eliminationOrderNeedsDistances(order)) {
-                // Compute the distance from the first state.
-                // FIXME: This is not exactly the initial states.
-                storm::storage::BitVector initialStates = storm::storage::BitVector(A.getRowCount());
-                initialStates.set(0);
-                distanceBasedPriorities = getDistanceBasedPriorities(transitionMatrix, backwardTransitions, initialStates, b, eliminationOrderNeedsForwardDistances(order), eliminationOrderNeedsReversedDistances(order));
+                // Since we have no initial states at this point, we determine a representative of every BSCC regarding
+                // the backward transitions, because this means that every row is reachable from this set of rows, which
+                // we require to make sure we cover every row.
+                storm::storage::BitVector initialRows = storm::utility::graph::getBsccCover(backwardTransitions);
+                distanceBasedPriorities = getDistanceBasedPriorities(transitionMatrix, backwardTransitions, initialRows, b, eliminationOrderNeedsForwardDistances(order), eliminationOrderNeedsReversedDistances(order));
             }
             
             std::shared_ptr<StatePriorityQueue> priorityQueue = createStatePriorityQueue<ValueType>(distanceBasedPriorities, flexibleMatrix, flexibleBackwardTransitions, b, storm::storage::BitVector(x.size(), true));

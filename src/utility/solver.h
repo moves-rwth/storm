@@ -77,7 +77,7 @@ namespace storm {
             public:
                 virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
             };
-            
+
             template<typename ValueType>
             class LinearEquationSolverFactory {
             public:
@@ -87,31 +87,49 @@ namespace storm {
                  * @param matrix The matrix that defines the equation system.
                  * @return A pointer to the newly created solver.
                  */
-                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
-            };
-
-            template<>
-            class LinearEquationSolverFactory<storm::RationalNumber> {
-            public:
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const = 0;
+                
                 /*!
-                 * Creates a new linear equation solver instance with the given matrix.
+                 * Creates a new linear equation solver instance with the given matrix. The caller gives up posession of the
+                 * matrix by calling this function.
                  *
                  * @param matrix The matrix that defines the equation system.
                  * @return A pointer to the newly created solver.
                  */
-                virtual std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalNumber>> create(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix) const;
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;
+            };
+            
+            template<typename ValueType>
+            class GeneralLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
+            public:
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
+                
+            private:
+                template<typename MatrixType>
+                std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> selectSolver(MatrixType&& matrix) const;
             };
 
             template<>
-            class LinearEquationSolverFactory<storm::RationalFunction> {
+            class GeneralLinearEquationSolverFactory<storm::RationalNumber> : public LinearEquationSolverFactory<storm::RationalNumber> {
             public:
-                /*!
-                 * Creates a new linear equation solver instance with the given matrix.
-                 *
-                 * @param matrix The matrix that defines the equation system.
-                 * @return A pointer to the newly created solver.
-                 */
-                virtual std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> create(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix) const;
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalNumber>> create(storm::storage::SparseMatrix<storm::RationalNumber> const& matrix) const override;
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalNumber>> create(storm::storage::SparseMatrix<storm::RationalNumber>&& matrix) const override;
+                
+            private:
+                template<typename MatrixType>
+                std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalNumber>> selectSolver(MatrixType&& matrix) const;
+            };
+
+            template<>
+            class GeneralLinearEquationSolverFactory<storm::RationalFunction> : public LinearEquationSolverFactory<storm::RationalFunction> {
+            public:
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> create(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix) const override;
+                virtual std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> create(storm::storage::SparseMatrix<storm::RationalFunction>&& matrix) const override;
+
+            private:
+                template<typename MatrixType>
+                std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> selectSolver(MatrixType&& matrix) const;
             };
             
             template<typename ValueType>

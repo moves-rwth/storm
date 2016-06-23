@@ -29,7 +29,7 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        SparseDtmcPrctlModelChecker<SparseDtmcModelType>::SparseDtmcPrctlModelChecker(SparseDtmcModelType const& model) : SparsePropositionalModelChecker<SparseDtmcModelType>(model), linearEquationSolverFactory(new storm::utility::solver::LinearEquationSolverFactory<ValueType>()) {
+        SparseDtmcPrctlModelChecker<SparseDtmcModelType>::SparseDtmcPrctlModelChecker(SparseDtmcModelType const& model) : SparsePropositionalModelChecker<SparseDtmcModelType>(model), linearEquationSolverFactory(std::make_unique<storm::utility::solver::GeneralLinearEquationSolverFactory<ValueType>>()) {
             // Intentionally left empty.
         }
         

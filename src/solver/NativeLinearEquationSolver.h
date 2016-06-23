@@ -16,7 +16,7 @@ namespace storm {
         std::ostream& operator<<(std::ostream& out, NativeLinearEquationSolverSolutionMethod const& method);
         
         /*!
-         * A class that uses StoRM's native matrix operations to implement the LinearEquationSolver interface.
+         * A class that uses Storm's native matrix operations to implement the LinearEquationSolver interface.
          */
         template<typename ValueType>
         class NativeLinearEquationSolver : public LinearEquationSolver<ValueType> {
