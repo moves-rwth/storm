@@ -12,7 +12,7 @@ namespace storm {
             class EigenEquationSolverSettings : public ModuleSettings {
             public:
                 // An enumeration of all available methods for solving linear equations.
-                enum class LinearEquationMethod { SparseLU, Bicgstab };
+                enum class LinearEquationMethod { SparseLU, BiCGSTAB, DGMRES, GMRES };
                 
                 // An enumeration of all available preconditioning methods.
                 enum class PreconditioningMethod { Ilu, Diagonal, None };
@@ -54,6 +54,20 @@ namespace storm {
                 PreconditioningMethod getPreconditioningMethod() const;
                 
                 /*!
+                 * Retrieves whether the restart iteration count has been set.
+                 *
+                 * @return True iff the restart iteration count has been set.
+                 */
+                bool isRestartIterationCountSet() const;
+                
+                /*!
+                 * Retrieves the number of iterations after which restarted methods are to be restarted.
+                 *
+                 * @return The number of iterations after which to restart.
+                 */
+                uint_fast64_t getRestartIterationCount() const;
+                
+                /*!
                  * Retrieves whether the maximal iteration count has been set.
                  *
                  * @return True iff the maximal iteration count has been set.
@@ -93,6 +107,7 @@ namespace storm {
                 static const std::string maximalIterationsOptionName;
                 static const std::string maximalIterationsOptionShortName;
                 static const std::string precisionOptionName;
+                static const std::string restartOptionName;
             };
             
         } // namespace modules

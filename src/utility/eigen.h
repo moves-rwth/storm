@@ -5,3 +5,4 @@
 
 // Finally include the parts of Eigen we need.
 #include <Eigen/Sparse>
+#include <unsupported/Eigen/IterativeSolvers>

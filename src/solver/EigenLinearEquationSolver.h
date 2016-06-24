@@ -11,7 +11,7 @@ namespace storm {
         class EigenLinearEquationSolverSettings {
         public:
             enum class SolutionMethod {
-                SparseLU, Bicgstab
+                SparseLU, BiCGSTAB, DGMRES, GMRES
             };
             
             enum class Preconditioner {
@@ -24,17 +24,20 @@ namespace storm {
             void setPreconditioner(Preconditioner const& preconditioner);
             void setPrecision(ValueType precision);
             void setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations);
-            
+            void setNumberOfIterationsUntilRestart(uint64_t restart);
+
             SolutionMethod getSolutionMethod() const;
             Preconditioner getPreconditioner() const;
             ValueType getPrecision() const;
             uint64_t getMaximalNumberOfIterations() const;
+            uint64_t getNumberOfIterationsUntilRestart() const;
             
         private:
             SolutionMethod method;
             Preconditioner preconditioner;
             double precision;
             uint64_t maximalNumberOfIterations;
+            uint_fast64_t restart;
         };
         
         template<>

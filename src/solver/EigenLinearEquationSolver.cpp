@@ -19,13 +19,18 @@ namespace storm {
             // Get appropriate settings.
             maximalNumberOfIterations = settings.getMaximalIterationCount();
             precision = settings.getPrecision();
+            restart = settings.getRestartIterationCount();
             
             // Determine the method to be used.
             storm::settings::modules::EigenEquationSolverSettings::LinearEquationMethod methodAsSetting = settings.getLinearEquationSystemMethod();
-            if (methodAsSetting == storm::settings::modules::EigenEquationSolverSettings::LinearEquationMethod::Bicgstab) {
-                method = SolutionMethod::Bicgstab;
+            if (methodAsSetting == storm::settings::modules::EigenEquationSolverSettings::LinearEquationMethod::BiCGSTAB) {
+                method = SolutionMethod::BiCGSTAB;
             } else if (methodAsSetting == storm::settings::modules::EigenEquationSolverSettings::LinearEquationMethod::SparseLU) {
                 method = SolutionMethod::SparseLU;
+            } else if (methodAsSetting == storm::settings::modules::EigenEquationSolverSettings::LinearEquationMethod::DGMRES) {
+                method = SolutionMethod::DGMRES;
+            } else if (methodAsSetting == storm::settings::modules::EigenEquationSolverSettings::LinearEquationMethod::GMRES) {
+                method = SolutionMethod::GMRES;
             }
             
             // Check which preconditioner to use.
@@ -60,6 +65,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void EigenLinearEquationSolverSettings<ValueType>::setNumberOfIterationsUntilRestart(uint64_t restart) {
+            this->restart = restart;
+        }
+        
+        template<typename ValueType>
         typename EigenLinearEquationSolverSettings<ValueType>::SolutionMethod EigenLinearEquationSolverSettings<ValueType>::getSolutionMethod() const {
             return this->method;
         }
@@ -77,6 +87,11 @@ namespace storm {
         template<typename ValueType>
         uint64_t EigenLinearEquationSolverSettings<ValueType>::getMaximalNumberOfIterations() const {
             return this->maximalNumberOfIterations;
+        }
+
+        template<typename ValueType>
+        uint64_t EigenLinearEquationSolverSettings<ValueType>::getNumberOfIterationsUntilRestart() const {
+            return restart;
         }
         
         EigenLinearEquationSolverSettings<storm::RationalNumber>::EigenLinearEquationSolverSettings() {
@@ -104,23 +119,61 @@ namespace storm {
             auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             auto eigenB = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b.data(), b.size());
 
-            if (this->getSettings().getSolutionMethod() == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::SparseLU) {
+            typename EigenLinearEquationSolverSettings<ValueType>::SolutionMethod solutionMethod = this->getSettings().getSolutionMethod();
+            if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::SparseLU) {
                 Eigen::SparseLU<Eigen::SparseMatrix<ValueType>, Eigen::COLAMDOrdering<int>> solver;
                 solver.compute(*this->eigenA);
                 solver._solve_impl(eigenB, eigenX);
             } else {
-                if (this->getSettings().getPreconditioner() == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
-                    Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
-                    solver.compute(*this->eigenA);
-                    solver.solveWithGuess(eigenB, eigenX);
-                } else if (this->getSettings().getPreconditioner() == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
-                    Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
-                    solver.compute(*this->eigenA);
-                    solver.solveWithGuess(eigenB, eigenX);
-                } else {
-                    Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
-                    solver.compute(*this->eigenA);
-                    solver.solveWithGuess(eigenB, eigenX);
+                typename EigenLinearEquationSolverSettings<ValueType>::Preconditioner preconditioner = this->getSettings().getPreconditioner();
+                if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::BiCGSTAB) {
+                    if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
+                        Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
+                        solver.compute(*this->eigenA);
+                        solver.solveWithGuess(eigenB, eigenX);
+                    } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
+                        Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
+                        solver.compute(*this->eigenA);
+                        solver.solveWithGuess(eigenB, eigenX);
+                    } else {
+                        Eigen::BiCGSTAB<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
+                        solver.compute(*this->eigenA);
+                        solver.solveWithGuess(eigenB, eigenX);
+                    }
+                } else if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::DGMRES) {
+                    if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
+                        Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
+                        solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
+                        solver.compute(*this->eigenA);
+                        solver.solveWithGuess(eigenB, eigenX);
+                    } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
+                        Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
+                        solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
+                        solver.compute(*this->eigenA);
+                        solver.solveWithGuess(eigenB, eigenX);
+                    } else {
+                        Eigen::DGMRES<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
+                        solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
+                        solver.compute(*this->eigenA);
+                        solver.solveWithGuess(eigenB, eigenX);
+                    }
+                } else if (solutionMethod == EigenLinearEquationSolverSettings<ValueType>::SolutionMethod::GMRES) {
+                    if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Ilu) {
+                        Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::IncompleteLUT<ValueType>> solver;
+                        solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
+                        solver.compute(*this->eigenA);
+                        solver.solveWithGuess(eigenB, eigenX);
+                    } else if (preconditioner == EigenLinearEquationSolverSettings<ValueType>::Preconditioner::Diagonal) {
+                        Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::DiagonalPreconditioner<ValueType>> solver;
+                        solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
+                        solver.compute(*this->eigenA);
+                        solver.solveWithGuess(eigenB, eigenX);
+                    } else {
+                        Eigen::GMRES<Eigen::SparseMatrix<ValueType>, Eigen::IdentityPreconditioner> solver;
+                        solver.set_restart(this->getSettings().getNumberOfIterationsUntilRestart());
+                        solver.compute(*this->eigenA);
+                        solver.solveWithGuess(eigenB, eigenX);
+                    }
                 }
             }
         }
