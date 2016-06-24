@@ -60,10 +60,7 @@ namespace storm {
 
             if (this->isResultForAllStates()) {
                 map_type newMap;
-                std::cout << filterTruthValues << std::endl;
                 for (auto const& element : filterTruthValues) {
-                    std::cout << element << std::endl;
-                    std::cout << this->getValueVector().size() << std::endl;
                     STORM_LOG_THROW(element < this->getValueVector().size(), storm::exceptions::InvalidAccessException, "Invalid index in results.");
                     newMap.emplace(element, this->getValueVector()[element]);
                 }
