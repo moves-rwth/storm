@@ -139,7 +139,7 @@ namespace storm {
             
             // Perform n matrix-vector multiplications.
             for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                eigenX *= *this->eigenA * eigenX;
+                eigenX = *this->eigenA * eigenX;
                 if (eigenB != nullptr) {
                     eigenX += *eigenB;
                 }
