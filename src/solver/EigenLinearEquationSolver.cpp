@@ -147,9 +147,10 @@ namespace storm {
             auto currentX = &eigenX;
             auto nextX = &eigenMultiplyResult;
             for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                *nextX = *eigenA * *currentX;
-                if (eigenB != nullptr) {
-                    *nextX += *eigenB;
+                if (eigenB) {
+                    nextX->noalias() = *eigenA * *currentX + *eigenB;
+                } else {
+                    nextX->noalias() = *eigenA * *currentX;
                 }
                 std::swap(nextX, currentX);
             }
@@ -209,11 +210,11 @@ namespace storm {
             auto currentX = &eigenX;
             auto nextX = &eigenMultiplyResult;
             for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                *nextX = *eigenA * *currentX;
-                if (eigenB != nullptr) {
-                    *nextX += *eigenB;
+                if (eigenB) {
+                    nextX->noalias() = *eigenA * *currentX + *eigenB;
+                } else {
+                    nextX->noalias() = *eigenA * *currentX;
                 }
-                std::swap(currentX, nextX);
             }
             
             // If the last result we obtained is not the one in the input vector x, we swap the result there.
@@ -261,11 +262,11 @@ namespace storm {
             auto currentX = &eigenX;
             auto nextX = &eigenMultiplyResult;
             for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                *nextX = *eigenA * *currentX;
-                if (eigenB != nullptr) {
-                    *nextX += *eigenB;
+                if (eigenB) {
+                    nextX->noalias() = *eigenA * *currentX + *eigenB;
+                } else {
+                    nextX->noalias() = *eigenA * *currentX;
                 }
-                std::swap(nextX, currentX);
             }
             
             // If the last result we obtained is not the one in the input vector x, we swap the result there.
