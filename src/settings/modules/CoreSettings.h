@@ -1,5 +1,5 @@
-#ifndef STORM_SETTINGS_MODULES_MARKOVCHAINSETTINGS_H_
-#define STORM_SETTINGS_MODULES_MARKOVCHAINSETTINGS_H_
+#ifndef STORM_SETTINGS_MODULES_CoreSettings_H_
+#define STORM_SETTINGS_MODULES_CoreSettings_H_
 
 #include "storm-config.h"
 #include "src/settings/modules/ModuleSettings.h"
@@ -24,7 +24,7 @@ namespace storm {
             /*!
              * This class represents the markov chain settings.
              */
-            class MarkovChainSettings : public ModuleSettings {
+            class CoreSettings : public ModuleSettings {
             public:
                 // An enumeration of all engines.
                 enum class Engine {
@@ -34,7 +34,7 @@ namespace storm {
                 /*!
                  * Creates a new set of markov chain settings.
                  */
-                MarkovChainSettings();
+                CoreSettings();
 
                 /*!
                  * Retrieves whether the counterexample option was set.
@@ -173,4 +173,4 @@ namespace storm {
     } // namespace settings
 } // namespace storm
 
-#endif /* STORM_SETTINGS_MODULES_MARKOVCHAINSETTINGS_H_ */
+#endif /* STORM_SETTINGS_MODULES_CoreSettings_H_ */

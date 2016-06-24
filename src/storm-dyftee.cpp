@@ -9,7 +9,7 @@
 
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/DFTSettings.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/DebugSettings.h"
 //#include "src/settings/modules/CounterexampleGeneratorSettings.h"
 //#include "src/settings/modules/CuddSettings.h"
@@ -53,7 +53,7 @@ void initializeSettings() {
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
     storm::settings::addModule<storm::settings::modules::DFTSettings>();
-    storm::settings::addModule<storm::settings::modules::MarkovChainSettings>();
+    storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     //storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
     //storm::settings::addModule<storm::settings::modules::CuddSettings>();

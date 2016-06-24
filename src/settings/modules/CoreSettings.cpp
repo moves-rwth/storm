@@ -1,4 +1,4 @@
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 
 #include "src/settings/SettingsManager.h"
 #include "src/settings/SettingMemento.h"
@@ -16,23 +16,23 @@ namespace storm {
     namespace settings {
         namespace modules {
             
-            const std::string MarkovChainSettings::moduleName = "markovchain";
-            const std::string MarkovChainSettings::counterexampleOptionName = "counterexample";
-            const std::string MarkovChainSettings::counterexampleOptionShortName = "cex";
-            const std::string MarkovChainSettings::dontFixDeadlockOptionName = "nofixdl";
-            const std::string MarkovChainSettings::dontFixDeadlockOptionShortName = "ndl";
-            const std::string MarkovChainSettings::eqSolverOptionName = "eqsolver";
-            const std::string MarkovChainSettings::lpSolverOptionName = "lpsolver";
-            const std::string MarkovChainSettings::smtSolverOptionName = "smtsolver";
-            const std::string MarkovChainSettings::statisticsOptionName = "statistics";
-            const std::string MarkovChainSettings::statisticsOptionShortName = "stats";
-            const std::string MarkovChainSettings::engineOptionName = "engine";
-            const std::string MarkovChainSettings::engineOptionShortName = "e";
-            const std::string MarkovChainSettings::ddLibraryOptionName = "ddlib";
-            const std::string MarkovChainSettings::cudaOptionName = "cuda";
-			const std::string MarkovChainSettings::minMaxEquationSolvingTechniqueOptionName = "minMaxEquationSolvingTechnique";
+            const std::string CoreSettings::moduleName = "core";
+            const std::string CoreSettings::counterexampleOptionName = "counterexample";
+            const std::string CoreSettings::counterexampleOptionShortName = "cex";
+            const std::string CoreSettings::dontFixDeadlockOptionName = "nofixdl";
+            const std::string CoreSettings::dontFixDeadlockOptionShortName = "ndl";
+            const std::string CoreSettings::eqSolverOptionName = "eqsolver";
+            const std::string CoreSettings::lpSolverOptionName = "lpsolver";
+            const std::string CoreSettings::smtSolverOptionName = "smtsolver";
+            const std::string CoreSettings::statisticsOptionName = "statistics";
+            const std::string CoreSettings::statisticsOptionShortName = "stats";
+            const std::string CoreSettings::engineOptionName = "engine";
+            const std::string CoreSettings::engineOptionShortName = "e";
+            const std::string CoreSettings::ddLibraryOptionName = "ddlib";
+            const std::string CoreSettings::cudaOptionName = "cuda";
+			const std::string CoreSettings::minMaxEquationSolvingTechniqueOptionName = "minMaxEquationSolvingTechnique";
             
-            MarkovChainSettings::MarkovChainSettings() : ModuleSettings(moduleName) {
+            CoreSettings::CoreSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").setDefaultValueString("-").setIsOptional(true).build()).setShortName(counterexampleOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
@@ -63,23 +63,23 @@ namespace storm {
 					.addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique. Available are: valueIteration and policyIteration.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(minMaxSolvingTechniques)).setDefaultValueString("valueIteration").build()).build());
             }
 
-            bool MarkovChainSettings::isCounterexampleSet() const {
+            bool CoreSettings::isCounterexampleSet() const {
                 return this->getOption(counterexampleOptionName).getHasOptionBeenSet();
             }
             
-            std::string MarkovChainSettings::getCounterexampleFilename() const {
+            std::string CoreSettings::getCounterexampleFilename() const {
                 return this->getOption(counterexampleOptionName).getArgumentByName("filename").getValueAsString();
             }
             
-            bool MarkovChainSettings::isDontFixDeadlocksSet() const {
+            bool CoreSettings::isDontFixDeadlocksSet() const {
                 return this->getOption(dontFixDeadlockOptionName).getHasOptionBeenSet();
             }
             
-            std::unique_ptr<storm::settings::SettingMemento> MarkovChainSettings::overrideDontFixDeadlocksSet(bool stateToSet) {
+            std::unique_ptr<storm::settings::SettingMemento> CoreSettings::overrideDontFixDeadlocksSet(bool stateToSet) {
                 return this->overrideOption(dontFixDeadlockOptionName, stateToSet);
             }
             
-            storm::solver::EquationSolverType  MarkovChainSettings::getEquationSolver() const {
+            storm::solver::EquationSolverType  CoreSettings::getEquationSolver() const {
                 std::string equationSolverName = this->getOption(eqSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (equationSolverName == "gmm++") {
                     return storm::solver::EquationSolverType::Gmmxx;
@@ -93,11 +93,11 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
             }
             
-            bool MarkovChainSettings::isEquationSolverSet() const {
+            bool CoreSettings::isEquationSolverSet() const {
                 return this->getOption(eqSolverOptionName).getHasOptionBeenSet();
             }
             
-            storm::solver::LpSolverType MarkovChainSettings::getLpSolver() const {
+            storm::solver::LpSolverType CoreSettings::getLpSolver() const {
                 std::string lpSolverName = this->getOption(lpSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (lpSolverName == "gurobi") {
                     return storm::solver::LpSolverType::Gurobi;
@@ -107,7 +107,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown LP solver '" << lpSolverName << "'.");
             }
             
-            storm::solver::SmtSolverType MarkovChainSettings::getSmtSolver() const {
+            storm::solver::SmtSolverType CoreSettings::getSmtSolver() const {
                 std::string smtSolverName = this->getOption(smtSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (smtSolverName == "z3") {
                     return storm::solver::SmtSolverType::Z3;
@@ -117,7 +117,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown SMT solver '" << smtSolverName << "'.");
             }
             
-            storm::dd::DdType MarkovChainSettings::getDdLibraryType() const {
+            storm::dd::DdType CoreSettings::getDdLibraryType() const {
                 std::string ddLibraryAsString = this->getOption(ddLibraryOptionName).getArgumentByName("name").getValueAsString();
                 if (ddLibraryAsString == "sylvan") {
                     return storm::dd::DdType::Sylvan;
@@ -126,23 +126,23 @@ namespace storm {
                 }
             }
             
-            bool MarkovChainSettings::isShowStatisticsSet() const {
+            bool CoreSettings::isShowStatisticsSet() const {
                 return this->getOption(statisticsOptionName).getHasOptionBeenSet();
             }
             
-            bool MarkovChainSettings::isCudaSet() const {
+            bool CoreSettings::isCudaSet() const {
                 return this->getOption(cudaOptionName).getHasOptionBeenSet();
             }
             
-            MarkovChainSettings::Engine MarkovChainSettings::getEngine() const {
+            CoreSettings::Engine CoreSettings::getEngine() const {
                 return engine;
             }
 
-            void MarkovChainSettings::setEngine(Engine newEngine) {
+            void CoreSettings::setEngine(Engine newEngine) {
                 this->engine = newEngine;
             }
             
-            storm::solver::MinMaxTechnique MarkovChainSettings::getMinMaxEquationSolvingTechnique() const {
+            storm::solver::MinMaxTechnique CoreSettings::getMinMaxEquationSolvingTechnique() const {
 				std::string minMaxEquationSolvingTechnique = this->getOption(minMaxEquationSolvingTechniqueOptionName).getArgumentByName("name").getValueAsString();
 				if (minMaxEquationSolvingTechnique == "valueIteration") {
 					return storm::solver::MinMaxTechnique::ValueIteration;
@@ -152,29 +152,29 @@ namespace storm {
 				STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
 			}
 
-			bool MarkovChainSettings::isMinMaxEquationSolvingTechniqueSet() const {
+			bool CoreSettings::isMinMaxEquationSolvingTechniqueSet() const {
 				return this->getOption(minMaxEquationSolvingTechniqueOptionName).getHasOptionBeenSet();
 			}
             
-            void MarkovChainSettings::finalize() {
+            void CoreSettings::finalize() {
                 // Finalize engine.
                 std::string engineStr = this->getOption(engineOptionName).getArgumentByName("name").getValueAsString();
                 if (engineStr == "sparse") {
-                    engine =  MarkovChainSettings::Engine::Sparse;
+                    engine =  CoreSettings::Engine::Sparse;
                 } else if (engineStr == "hybrid") {
-                    engine = MarkovChainSettings::Engine::Hybrid;
+                    engine = CoreSettings::Engine::Hybrid;
                 } else if (engineStr == "dd") {
-                    engine = MarkovChainSettings::Engine::Dd;
+                    engine = CoreSettings::Engine::Dd;
                 } else if (engineStr == "expl") {
-                    engine = MarkovChainSettings::Engine::Exploration;
+                    engine = CoreSettings::Engine::Exploration;
                 } else if (engineStr == "abs") {
-                    engine = MarkovChainSettings::Engine::AbstractionRefinement;
+                    engine = CoreSettings::Engine::AbstractionRefinement;
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown engine '" << engineStr << "'.");
                 }
             }
 
-            bool MarkovChainSettings::check() const {
+            bool CoreSettings::check() const {
                 return true;
             }
 

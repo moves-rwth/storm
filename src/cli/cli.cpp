@@ -5,7 +5,7 @@
 
 #include "src/settings/modules/DebugSettings.h"
 #include "src/settings/modules/IOSettings.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/exceptions/OptionParserException.h"
 
 #include "src/utility/storm-version.h"
@@ -236,7 +236,7 @@ namespace storm {
                     buildAndCheckSymbolicModel<double>(preprocessedProgram, preprocessedFormulas, true);
                 }
             } else if (storm::settings::getModule<storm::settings::modules::IOSettings>().isExplicitSet()) {
-                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
+                STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Only the sparse engine supports explicit model input.");
                 
                 // If the model is given in an explicit format, we parse the properties without allowing expressions
                 // in formulas.

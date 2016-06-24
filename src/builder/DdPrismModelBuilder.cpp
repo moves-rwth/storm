@@ -24,7 +24,7 @@
 #include "src/storage/dd/cudd/CuddAddIterator.h"
 #include "src/storage/dd/Bdd.h"
 
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 
 namespace storm {
     namespace builder {
@@ -1335,7 +1335,7 @@ namespace storm {
             // If there are deadlocks, either fix them or raise an error.
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
-                if (!storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet()) {
+                if (!storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet()) {
                     STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
 
                     storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();

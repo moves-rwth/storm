@@ -189,7 +189,7 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
             
             // Finally, treat the formulas.
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCounterexampleSet()) {
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isCounterexampleSet()) {
                 generateCounterexamples<ValueType>(program, sparseModel, formulas);
             } else {
                 verifySparseModel<ValueType>(sparseModel, formulas, onlyInitialStatesRelevant);
@@ -198,26 +198,26 @@ namespace storm {
         
         template<typename ValueType>
         void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::AbstractionRefinement) {
-                auto ddlib = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getDdLibraryType();
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
+                auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
                 if (ddlib == storm::dd::DdType::CUDD) {
                     verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::CUDD>(program, formulas, onlyInitialStatesRelevant);
                 } else {
                     verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::Sylvan>(program, formulas, onlyInitialStatesRelevant);
                 }
-            } else if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Exploration) {
+            } else if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Exploration) {
                 verifySymbolicModelWithExplorationEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
             } else {
-                auto engine = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine();
-                if (engine == storm::settings::modules::MarkovChainSettings::Engine::Dd || engine == storm::settings::modules::MarkovChainSettings::Engine::Hybrid) {
-                    auto ddlib = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getDdLibraryType();
+                auto engine = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine();
+                if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+                    auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
                     if (ddlib == storm::dd::DdType::CUDD) {
-                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::CUDD>(engine == storm::settings::modules::MarkovChainSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
+                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::CUDD>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
                     } else {
-                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::Sylvan>(engine == storm::settings::modules::MarkovChainSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
+                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::Sylvan>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
                     }
                 } else {
-                    STORM_LOG_THROW(engine == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Illegal engine.");
+                    STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Illegal engine.");
                     
                     buildAndCheckSymbolicModelWithSparseEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
                 }
@@ -226,13 +226,13 @@ namespace storm {
         
         template<>
         void buildAndCheckSymbolicModel<storm::RationalNumber>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
-            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
+            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
             buildAndCheckSymbolicModelWithSparseEngine<storm::RationalNumber>(program, formulas, onlyInitialStatesRelevant);
         }
         
         template<>
         void buildAndCheckSymbolicModel<storm::RationalFunction>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
-            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine() == storm::settings::modules::MarkovChainSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
+            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
             buildAndCheckSymbolicModelWithSparseEngine<storm::RationalFunction>(program, formulas, onlyInitialStatesRelevant);
         }
         

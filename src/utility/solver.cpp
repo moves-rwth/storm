@@ -21,7 +21,7 @@
 #include "src/solver/Z3SmtSolver.h"
 #include "src/solver/MathsatSmtSolver.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 
 #include "src/exceptions/InvalidSettingsException.h"
@@ -56,7 +56,7 @@ namespace storm {
             template<typename ValueType>
             MinMaxLinearEquationSolverFactory<ValueType>& MinMaxLinearEquationSolverFactory<ValueType>::setSolverType(storm::solver::EquationSolverTypeSelection solverTypeSel) {
                 if(solverTypeSel == storm::solver::EquationSolverTypeSelection::FROMSETTINGS) {
-                    this->solverType = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver();
+                    this->solverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
                 } else {
                     this->solverType = storm::solver::convert(solverTypeSel);
                 }
@@ -103,7 +103,7 @@ namespace storm {
             std::unique_ptr<storm::solver::LpSolver> LpSolverFactory::create(std::string const& name, storm::solver::LpSolverTypeSelection solvT) const {
                 storm::solver::LpSolverType t;
                 if(solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
-                    t = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getLpSolver();
+                    t = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
                 } else {
                     t = convert(solvT);
                 }
@@ -131,7 +131,7 @@ namespace storm {
             }
             
             std::unique_ptr<storm::solver::SmtSolver> SmtSolverFactory::create(storm::expressions::ExpressionManager& manager) const {
-                storm::solver::SmtSolverType smtSolverType = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getSmtSolver();
+                storm::solver::SmtSolverType smtSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getSmtSolver();
                 switch (smtSolverType) {
                     case storm::solver::SmtSolverType::Z3: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::Z3SmtSolver(manager));
                     case storm::solver::SmtSolverType::Mathsat: return std::unique_ptr<storm::solver::SmtSolver>(new storm::solver::MathsatSmtSolver(manager));

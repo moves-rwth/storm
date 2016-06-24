@@ -9,7 +9,7 @@
 
 #include "src/storage/expressions/ExpressionManager.h"
 
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/IOSettings.h"
 
 #include "src/generator/PrismNextStateGenerator.h"
@@ -209,7 +209,7 @@ namespace storm {
                 
                 // If there is no behavior, we might have to introduce a self-loop.
                 if (behavior.empty()) {
-                    if (!storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet() || !behavior.wasExpanded()) {
+                    if (!storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet() || !behavior.wasExpanded()) {
                         // If the behavior was actually expanded and yet there are no transitions, then we have a deadlock state.
                         if (behavior.wasExpanded()) {
                             this->stateStorage.deadlockStateIndices.push_back(currentIndex);

@@ -17,12 +17,12 @@
 // Headers that provide auxiliary functionality.
 #include "src/settings/SettingsManager.h"
 
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/IOSettings.h"
 #include "src/settings/modules/BisimulationSettings.h"
 #include "src/settings/modules/ParametricSettings.h"
 #include "src/settings/modules/EliminationSettings.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 
 // Formula headers.
 #include "src/logic/Formulas.h"
@@ -239,18 +239,18 @@ namespace storm {
 
     template<typename ValueType, storm::dd::DdType DdType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifyModel(std::shared_ptr<storm::models::ModelBase> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant) {
-        switch(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEngine()) {
-            case storm::settings::modules::MarkovChainSettings::Engine::Sparse: {
+        switch(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine()) {
+            case storm::settings::modules::CoreSettings::Engine::Sparse: {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
                 STORM_LOG_THROW(sparseModel != nullptr, storm::exceptions::InvalidArgumentException, "Sparse engine requires a sparse input model");
                 return verifySparseModel(sparseModel, formula, onlyInitialStatesRelevant);
             }
-            case storm::settings::modules::MarkovChainSettings::Engine::Hybrid: {
+            case storm::settings::modules::CoreSettings::Engine::Hybrid: {
                 std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
                 STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Hybrid engine requires a dd input model");
                 return verifySymbolicModelWithHybridEngine(ddModel, formula, onlyInitialStatesRelevant);
             }
-            case storm::settings::modules::MarkovChainSettings::Engine::Dd: {
+            case storm::settings::modules::CoreSettings::Engine::Dd: {
                 std::shared_ptr<storm::models::symbolic::Model<DdType>> ddModel = model->template as<storm::models::symbolic::Model<DdType>>();
                 STORM_LOG_THROW(ddModel != nullptr, storm::exceptions::InvalidArgumentException, "Dd engine requires a dd input model");
                 return verifySymbolicModelWithDdEngine(ddModel, formula, onlyInitialStatesRelevant);
@@ -267,7 +267,7 @@ namespace storm {
         storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
                 storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<ValueType>> modelchecker(*dtmc);
                 if (modelchecker.canHandle(task)) {
                     result = modelchecker.check(task);
@@ -285,7 +285,7 @@ namespace storm {
         } else if (model->getType() == storm::models::ModelType::Mdp) {
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
 #ifdef STORM_HAVE_CUDA
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isCudaSet()) {
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isCudaSet()) {
                     storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
                     result = modelchecker.check(task);
                 } else {
@@ -324,7 +324,7 @@ namespace storm {
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalNumber>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalNumber>>();
 
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
                 storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>> modelchecker(*dtmc);
                 if (modelchecker.canHandle(task)) {
                     result = modelchecker.check(task);
@@ -370,7 +370,7 @@ namespace storm {
         if (model->getType() == storm::models::ModelType::Dtmc) {
             std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
             
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Elimination && storm::settings::getModule<storm::settings::modules::EliminationSettings>().isUseDedicatedModelCheckerSet()) {
                 storm::modelchecker::SparseDtmcEliminationModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>> modelchecker(*dtmc);
                 if (modelchecker.canHandle(task)) {
                     result = modelchecker.check(task);

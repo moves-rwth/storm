@@ -8,7 +8,7 @@
 #include "src/solver/EliminationLinearEquationSolver.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 
 namespace storm {
     namespace solver {
@@ -31,7 +31,7 @@ namespace storm {
         template<typename ValueType>
         template<typename MatrixType>
         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::selectSolver(MatrixType&& matrix) const {
-            storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver();
+            storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
             switch (equationSolver) {
                 case storm::solver::EquationSolverType::Gmmxx: return std::make_unique<storm::solver::GmmxxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
                 case storm::solver::EquationSolverType::Native: return std::make_unique<storm::solver::NativeLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
@@ -51,7 +51,7 @@ namespace storm {
         
         template<typename MatrixType>
         std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalNumber>> GeneralLinearEquationSolverFactory<storm::RationalNumber>::selectSolver(MatrixType&& matrix) const {
-            storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver();
+            storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
             switch (equationSolver) {
                 case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::EliminationLinearEquationSolver<storm::RationalNumber>>(matrix);
                 default: return std::make_unique<storm::solver::EigenLinearEquationSolver<storm::RationalNumber>>(matrix);
@@ -68,7 +68,7 @@ namespace storm {
         
         template<typename MatrixType>
         std::unique_ptr<storm::solver::LinearEquationSolver<storm::RationalFunction>> GeneralLinearEquationSolverFactory<storm::RationalFunction>::selectSolver(MatrixType&& matrix) const {
-            storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver();
+            storm::solver::EquationSolverType equationSolver = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
             switch (equationSolver) {
                 case storm::solver::EquationSolverType::Elimination: return std::make_unique<storm::solver::EliminationLinearEquationSolver<storm::RationalFunction>>(matrix);
                 default: return std::make_unique<storm::solver::EigenLinearEquationSolver<storm::RationalFunction>>(matrix);
