@@ -34,7 +34,7 @@ TEST(EliminationLinearEquationSolver, Solve) {
     ASSERT_LT(std::abs(x[2] - (-1)), 1e-15);
 }
 
-TEST(EliminationLinearEquationSolver, MatrixVectorMultplication) {
+TEST(EliminationLinearEquationSolver, MatrixVectorMultiplication) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.5));

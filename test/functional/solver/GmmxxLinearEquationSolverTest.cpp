@@ -227,7 +227,7 @@ TEST(GmmxxLinearEquationSolver, gmresdiag) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
-TEST(GmmxxLinearEquationSolver, MatrixVectorMultplication) {
+TEST(GmmxxLinearEquationSolver, MatrixVectorMultiplication) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.5));

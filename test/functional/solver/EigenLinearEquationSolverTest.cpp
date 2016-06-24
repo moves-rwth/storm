@@ -207,7 +207,7 @@ TEST(DISABLED_EigenLinearEquationSolver, BiCGSTAB_Diagonal) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
-TEST(EigenLinearEquationSolver, MatrixVectorMultplication) {
+TEST(EigenLinearEquationSolver, MatrixVectorMultiplication) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.5));

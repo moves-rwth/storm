@@ -130,6 +130,12 @@ namespace storm {
             // Typedef the map-type so we don't have to spell it out.
             typedef decltype(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
             
+            bool multiplyResultProvided = multiplyResult != nullptr;
+            if (!multiplyResult) {
+                multiplyResult = new std::vector<ValueType>(eigenA->cols());
+            }
+            auto eigenMultiplyResult = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(multiplyResult->data(), multiplyResult->size());
+            
             // Map the input vectors x and b to Eigen's format.
             std::unique_ptr<MapType> eigenB;
             if (b != nullptr) {
@@ -138,11 +144,23 @@ namespace storm {
             auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             
             // Perform n matrix-vector multiplications.
+            auto currentX = &eigenX;
+            auto nextX = &eigenMultiplyResult;
             for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                eigenX = *this->eigenA * eigenX;
+                *nextX = *eigenA * *currentX;
                 if (eigenB != nullptr) {
-                    eigenX += *eigenB;
+                    *nextX += *eigenB;
                 }
+                std::swap(nextX, currentX);
+            }
+            
+            // If the last result we obtained is not the one in the input vector x, we swap the result there.
+            if (currentX != &eigenX) {
+                std::swap(*nextX, *currentX);
+            }
+            
+            if (!multiplyResultProvided) {
+                delete multiplyResult;
             }
         }
         
@@ -174,19 +192,37 @@ namespace storm {
             // Typedef the map-type so we don't have to spell it out.
             typedef decltype(Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
 
+            bool multiplyResultProvided = multiplyResult != nullptr;
+            if (!multiplyResult) {
+                multiplyResult = new std::vector<storm::RationalNumber>(eigenA->cols());
+            }
+            auto eigenMultiplyResult = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(multiplyResult->data(), multiplyResult->size());
+            
             // Map the input vectors x and b to Eigen's format.
             std::unique_ptr<MapType> eigenB;
             if (b != nullptr) {
                 eigenB = std::make_unique<MapType>(Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(b->data(), b->size()));
             }
-            Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1> eigenX = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenX = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             
             // Perform n matrix-vector multiplications.
+            auto currentX = &eigenX;
+            auto nextX = &eigenMultiplyResult;
             for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                eigenX = *eigenA * eigenX;
+                *nextX = *eigenA * *currentX;
                 if (eigenB != nullptr) {
-                    eigenX += *eigenB;
+                    *nextX += *eigenB;
                 }
+                std::swap(currentX, nextX);
+            }
+            
+            // If the last result we obtained is not the one in the input vector x, we swap the result there.
+            if (currentX != &eigenX) {
+                std::swap(*nextX, *currentX);
+            }
+            
+            if (!multiplyResultProvided) {
+                delete multiplyResult;
             }
         }
         
@@ -208,19 +244,37 @@ namespace storm {
             // Typedef the map-type so we don't have to spell it out.
             typedef decltype(Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
 
+            bool multiplyResultProvided = multiplyResult != nullptr;
+            if (!multiplyResult) {
+                multiplyResult = new std::vector<storm::RationalFunction>(eigenA->cols());
+            }
+            auto eigenMultiplyResult = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(multiplyResult->data(), multiplyResult->size());
+            
             // Map the input vectors x and b to Eigen's format.
             std::unique_ptr<MapType> eigenB;
             if (b != nullptr) {
                 eigenB = std::make_unique<MapType>(Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(b->data(), b->size()));
             }
-            Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1> eigenX = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenX = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(x.data(), x.size());
             
             // Perform n matrix-vector multiplications.
+            auto currentX = &eigenX;
+            auto nextX = &eigenMultiplyResult;
             for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                eigenX = *eigenA * eigenX;
+                *nextX = *eigenA * *currentX;
                 if (eigenB != nullptr) {
-                    eigenX += *eigenB;
+                    *nextX += *eigenB;
                 }
+                std::swap(nextX, currentX);
+            }
+            
+            // If the last result we obtained is not the one in the input vector x, we swap the result there.
+            if (currentX != &eigenX) {
+                std::swap(*nextX, *currentX);
+            }
+            
+            if (!multiplyResultProvided) {
+                delete multiplyResult;
             }
         }
         
