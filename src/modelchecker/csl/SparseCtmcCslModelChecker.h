@@ -7,6 +7,8 @@
 
 #include "src/solver/LinearEquationSolver.h"
 
+#include "src/utility/NumberTraits.h"
+
 namespace storm {
     namespace modelchecker {
         
@@ -31,6 +33,12 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeReachabilityTimes(storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula> const& checkTask) override;
 
         private:
+            template<typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
+            bool canHandleImplementation(CheckTask<storm::logic::Formula> const& checkTask) const;
+
+            template<typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
+            bool canHandleImplementation(CheckTask<storm::logic::Formula> const& checkTask) const;
+
             // An object that is used for solving linear equations and performing matrix-vector multiplication.
             std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
         };

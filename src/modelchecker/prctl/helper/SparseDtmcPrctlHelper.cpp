@@ -225,7 +225,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageProbabilities(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
-                return SparseCtmcCslHelper<ValueType>::computeLongRunAverageProbabilities(transitionMatrix, psiStates, nullptr, qualitative, linearEquationSolverFactory);
+                return SparseCtmcCslHelper::computeLongRunAverageProbabilities<ValueType>(transitionMatrix, psiStates, nullptr, qualitative, linearEquationSolverFactory);
             }
             
             template<typename ValueType, typename RewardModelType>
