@@ -116,7 +116,7 @@ TEST(EigenLinearEquationSolver, SparseLU_RationalFunction) {
     ASSERT_TRUE(x[2] == storm::RationalFunction(-1));
 }
 
-TEST(DISABLED_EigenLinearEquationSolver, DGMRES) {
+TEST(EigenLinearEquationSolver, DGMRES) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 2));
@@ -148,7 +148,7 @@ TEST(DISABLED_EigenLinearEquationSolver, DGMRES) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
-TEST(DISABLED_EigenLinearEquationSolver, DGMRES_Ilu) {
+TEST(EigenLinearEquationSolver, DGMRES_Ilu) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 2));
@@ -178,7 +178,7 @@ TEST(DISABLED_EigenLinearEquationSolver, DGMRES_Ilu) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
-TEST(DISABLED_EigenLinearEquationSolver, DGMRES_Diagonal) {
+TEST(EigenLinearEquationSolver, DGMRES_Diagonal) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 2));
@@ -208,7 +208,7 @@ TEST(DISABLED_EigenLinearEquationSolver, DGMRES_Diagonal) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
-TEST(DISABLED_EigenLinearEquationSolver, GMRES) {
+TEST(EigenLinearEquationSolver, GMRES) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 2));
@@ -240,7 +240,7 @@ TEST(DISABLED_EigenLinearEquationSolver, GMRES) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
-TEST(DISABLED_EigenLinearEquationSolver, GMRES_Ilu) {
+TEST(EigenLinearEquationSolver, GMRES_Ilu) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 2));
@@ -270,7 +270,7 @@ TEST(DISABLED_EigenLinearEquationSolver, GMRES_Ilu) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
-TEST(DISABLED_EigenLinearEquationSolver, GMRES_Diagonal) {
+TEST(EigenLinearEquationSolver, GMRES_Diagonal) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 2));
@@ -300,7 +300,7 @@ TEST(DISABLED_EigenLinearEquationSolver, GMRES_Diagonal) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
-TEST(DISABLED_EigenLinearEquationSolver, BiCGSTAB) {
+TEST(EigenLinearEquationSolver, BiCGSTAB) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 2));
@@ -331,7 +331,7 @@ TEST(DISABLED_EigenLinearEquationSolver, BiCGSTAB) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
-TEST(DISABLED_EigenLinearEquationSolver, BiCGSTAB_Ilu) {
+TEST(EigenLinearEquationSolver, BiCGSTAB_Ilu) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 2));
@@ -361,7 +361,7 @@ TEST(DISABLED_EigenLinearEquationSolver, BiCGSTAB_Ilu) {
     ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::EigenEquationSolverSettings>().getPrecision());
 }
 
-TEST(DISABLED_EigenLinearEquationSolver, BiCGSTAB_Diagonal) {
+TEST(EigenLinearEquationSolver, BiCGSTAB_Diagonal) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 0, 2));
