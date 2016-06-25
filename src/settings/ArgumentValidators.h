@@ -10,6 +10,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <stdio.h>
 
 #include "src/settings/Argument.h"
 #include "src/utility/macros.h"
@@ -166,6 +167,25 @@ namespace storm {
                     // Now that we know it's a file, we can check its readability.
                     std::ifstream istream(fileName);
                     STORM_LOG_THROW(istream.good(), storm::exceptions::IllegalArgumentValueException, "Unable to read from file '" << fileName << "'.");
+                    
+                    return true;
+				};
+			}
+
+            /*!
+             * Creates a validation function that checks whether a given string corresponds to a path to a file in which we can write
+             *
+             * @return The resulting validation function.
+             */
+			static std::function<bool (std::string const&)> writableFileValidator() {
+				return [] (std::string const fileName) -> bool {
+                    struct stat info;
+                    STORM_LOG_THROW(stat (fileName.c_str(), &info) != 0, storm::exceptions::IllegalArgumentValueException , "Could not open file '" << fileName << "' for writing because file or directory already exists.");
+                    
+                    std::ofstream filestream(fileName);
+                    STORM_LOG_THROW(filestream.is_open(), storm::exceptions::IllegalArgumentValueException , "Could not open file '" << fileName << "' for writing.");
+                    filestream.close();
+                    std::remove(fileName.c_str());
                     
                     return true;
 				};

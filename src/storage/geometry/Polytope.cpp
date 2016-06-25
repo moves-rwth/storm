@@ -6,7 +6,9 @@
 #include "src/adapters/HyproAdapter.h"
 #include "src/storage/geometry/HyproPolytope.h"
 #include "src/utility/macros.h"
+
 #include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/IllegalFunctionCallException.h"
 
 namespace storm {
     namespace storage {
@@ -32,22 +34,12 @@ namespace storm {
                 return create(boost::none, std::vector<Point>());
             }
             
-#ifdef STORM_HAVE_CARL
-            template <>
-            std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<storm::RationalNumber>::create(boost::optional<std::vector<Halfspace<storm::RationalNumber>>> const& halfspaces,
-                                                                             boost::optional<std::vector<Point>> const& points) {
-#ifdef STORM_HAVE_HYPRO
-                return HyproPolytope<storm::RationalNumber>::create(halfspaces, points);
-#endif
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "No polytope implementation specified.");
-                return nullptr;
-            }
-#endif
-            
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> Polytope<ValueType>::create(boost::optional<std::vector<Halfspace<ValueType>>> const& halfspaces,
                                                                              boost::optional<std::vector<Point>> const& points) {
-                //Note: hypro polytopes (currently) do not work with non-exact arithmetic (e.g., double)
+#ifdef STORM_HAVE_HYPRO
+                return HyproPolytope<ValueType>::create(halfspaces, points);
+#endif
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "No polytope implementation specified.");
                 return nullptr;
             }
@@ -102,6 +94,70 @@ namespace storm {
             template <typename ValueType>
             std::vector<typename Polytope<ValueType>::Point> Polytope<ValueType>::getVertices() const{
                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
+                return std::vector<Point>();
+            }
+            
+#ifdef STORM_HAVE_CARL
+            template <>
+            std::vector<typename Polytope<storm::RationalNumber>::Point> Polytope<storm::RationalNumber>::getVerticesInClockwiseOrder() const{
+                std::vector<Point> vertices = getVertices();
+                if(vertices.size()<=2) {
+                    // In this case, every ordering is clockwise
+                    return vertices;
+                }
+                STORM_LOG_THROW(vertices.front().size()==2, storm::exceptions::IllegalFunctionCallException, "Getting Vertices in clockwise order is only possible for a 2D-polytope.");
+                
+                std::vector<storm::storage::BitVector> neighborsOfVertices(vertices.size(), storm::storage::BitVector(vertices.size(), false));
+                std::vector<Halfspace<storm::RationalNumber>> halfspaces = getHalfspaces();
+                for(auto const& h : halfspaces) {
+                    storm::storage::BitVector verticesOnHalfspace(vertices.size(), false);
+                    for(uint_fast64_t v = 0; v<vertices.size(); ++v) {
+                        if(storm::utility::isZero(h.distance(vertices[v]))) {
+                            verticesOnHalfspace.set(v);
+                        }
+                    }
+                    for(auto const& v : verticesOnHalfspace) {
+                        neighborsOfVertices[v] |= verticesOnHalfspace;
+                        neighborsOfVertices[v].set(v, false);
+                    }
+                }
+                
+                std::vector<Point> result;
+                result.reserve(vertices.size());
+                storm::storage::BitVector unprocessedVertices(vertices.size(), true);
+                
+                uint_fast64_t currentVertex = 0;
+                for(uint_fast64_t v = 1; v<vertices.size(); ++v) {
+                    if(vertices[v].front() < vertices[currentVertex].front()) {
+                        currentVertex = v;
+                    }
+                }
+                STORM_LOG_ASSERT(neighborsOfVertices[currentVertex].getNumberOfSetBits()==2, "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors");
+                uint_fast64_t firstNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(0);
+                uint_fast64_t secondNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(firstNeighbor+1);
+                uint_fast64_t previousVertex = vertices[firstNeighbor].back() <= vertices[secondNeighbor].back() ? firstNeighbor : secondNeighbor;
+                do {
+                    unprocessedVertices.set(currentVertex, false);
+                    result.push_back(std::move(vertices[currentVertex]));
+                    
+                    STORM_LOG_ASSERT(neighborsOfVertices[currentVertex].getNumberOfSetBits()==2, "For 2D Polytopes with at least 3 vertices, each vertex should have exactly 2 neighbors");
+                    firstNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(0);
+                    secondNeighbor = neighborsOfVertices[currentVertex].getNextSetIndex(firstNeighbor+1);
+                    uint_fast64_t nextVertex = firstNeighbor != previousVertex ? firstNeighbor : secondNeighbor;
+                    previousVertex = currentVertex;
+                    currentVertex = nextVertex;
+                } while(!unprocessedVertices.empty());
+                
+                return result;
+            }
+#endif
+            
+
+            template <typename ValueType>
+            std::vector<typename Polytope<ValueType>::Point> Polytope<ValueType>::getVerticesInClockwiseOrder() const{
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Functionality not implemented.");
+                // Note that the implementation for RationalNumber above only works for exact ValueType since
+                // checking whether the distance between halfspace and point is zero is problematic otherwise.
                 return std::vector<Point>();
             }
             
@@ -177,12 +233,28 @@ namespace storm {
             }
             
             template <typename ValueType>
+            template <typename TargetType>
+            std::shared_ptr<Polytope<TargetType>> Polytope<ValueType>::convertNumberRepresentation() const {
+                if(isEmpty()) {
+                    return Polytope<TargetType>::createEmptyPolytope();
+                }
+                auto halfspaces = getHalfspaces();
+                std::vector<Halfspace<TargetType>> halfspacesPrime;
+                halfspacesPrime.reserve(halfspaces.size());
+                for(auto const& h : halfspaces) {
+                    halfspacesPrime.emplace_back(storm::utility::vector::convertNumericVector<TargetType>(h.normalVector()), storm::utility::convertNumber<TargetType>(h.offset()));
+                }
+                
+                return Polytope<TargetType>::create(halfspacesPrime);
+            }
+            
+            template <typename ValueType>
             std::string Polytope<ValueType>::toString(bool numbersAsDouble) const {
                 auto halfspaces = this->getHalfspaces();
                 std::stringstream stream;
                 stream << "Polytope with " << halfspaces.size() << " Halfspaces" << (halfspaces.empty() ? "" : ":") << std::endl;
                 for (auto const& h : halfspaces) {
-                    stream << "|   " << h.toString(numbersAsDouble) << std::endl;
+                    stream << "   " << h.toString(numbersAsDouble) << std::endl;
                 }
                 return stream.str();
             }
@@ -192,11 +264,13 @@ namespace storm {
                 return false;
             }
             
+            template class Polytope<double>;
+            
 #ifdef STORM_HAVE_CARL
             template class Polytope<storm::RationalNumber>;
+            template std::shared_ptr<Polytope<double>> Polytope<storm::RationalNumber>::convertNumberRepresentation() const;
+            template std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<double>::convertNumberRepresentation() const;
 #endif
-            template class Polytope<double>;
-            // Note that HyproPolytopes only support exact arithmetic
         }
     }
 }

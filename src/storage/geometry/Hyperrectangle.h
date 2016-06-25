@@ -7,7 +7,7 @@
 #include "src/utility/macros.h"
 #include "src/storage/geometry/Polytope.h"
 #include "src/storage/geometry/Halfspace.h"
-#include "src/exceptions/InvalidArgumentException"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {
@@ -34,7 +34,7 @@ namespace storm {
                     return mLowerBounds;
                 }
                 
-                std::vector<ValueType>& lowerBounds(){
+                std::vector<ValueType>& lowerBounds() {
                     return mLowerBounds;
                 }
                 
@@ -42,21 +42,32 @@ namespace storm {
                     return mUpperBounds;
                 }
                 
-                std::vector<ValueType>& upperBounds(){
+                std::vector<ValueType>& upperBounds() {
                     return mUpperBounds;
                 }
                 
+                /*
+                 * Enlarges this hyperrectangle such that it contains the given point
+                 */
+                void enlarge(std::vector<ValueType> const& point) {
+                    STORM_LOG_THROW(point.size() == lowerBounds().size() && point.size() == upperBounds().size(), storm::exceptions::InvalidArgumentException, "Tried to enlarge a hyperrectangle but the dimension of the given point does not match.");
+                    for(uint_fast64_t i = 0; i<lowerBounds().size(); ++i) {
+                        lowerBounds()[i] = std::min(lowerBounds()[i], point[i]);
+                        upperBounds()[i] = std::max(upperBounds()[i], point[i]);
+                    }
+                }
+                
                 std::shared_ptr<Polytope<ValueType>> asPolytope() const {
-                    STORM_LOG_THROW(lowerBounds.size() == upperBounds.size(), storm::exceptions::InvalidArgumentException, "Tried to construct a polytope form a hyperrectangle but the numbers of given lower and upper bounds do not match.");
+                    STORM_LOG_THROW(lowerBounds().size() == upperBounds().size(), storm::exceptions::InvalidArgumentException, "Tried to construct a polytope form a hyperrectangle but the numbers of given lower and upper bounds do not match.");
                     std::vector<Halfspace<ValueType>> halfspaces;
-                    halfspaces.reserve(2*lowerBounds.size());
-                    for(uint_fast64_t i = 0; i<lowerBounds.size(); ++i) {
-                        std::vector<ValueType> direction(lowerBounds.size(), storm::utility::zero<ValueType>());
+                    halfspaces.reserve(2*lowerBounds().size());
+                    for(uint_fast64_t i = 0; i<lowerBounds().size(); ++i) {
+                        std::vector<ValueType> direction(lowerBounds().size(), storm::utility::zero<ValueType>());
                         direction[i] = -storm::utility::one<ValueType>();
                         ValueType offset = -lowerBounds()[i];
                         halfspaces.emplace_back(std::move(direction), std::move(offset));
                         
-                        direction = std::vector<ValueType>(lowerBounds.size(), storm::utility::zero<ValueType>());
+                        direction = std::vector<ValueType>(lowerBounds().size(), storm::utility::zero<ValueType>());
                         direction[i] = storm::utility::one<ValueType>();
                         offset = upperBounds()[i];
                         halfspaces.emplace_back(std::move(direction), std::move(offset));

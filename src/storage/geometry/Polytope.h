@@ -53,6 +53,12 @@ namespace storm {
                 virtual std::vector<Point> getVertices() const;
                 
                 /*!
+                 * Returns the vertices of this 2D-polytope in clockwise order.
+                 * An Exception is thrown if the dimension of this polytope is not two.
+                 */
+                virtual std::vector<Point> getVerticesInClockwiseOrder() const;
+                
+                /*!
                  * Returns the halfspaces of this polytope.
                  */
                 virtual std::vector<Halfspace<ValueType>> getHalfspaces() const;
@@ -116,8 +122,14 @@ namespace storm {
                  */
                 virtual std::pair<Point, bool> optimize(Point const& direction) const;
                 
+                /*!
+                 * converts the intern number representation of the polytope to the given target type
+                 */
+                template <typename TargetType>
+                std::shared_ptr<Polytope<TargetType>> convertNumberRepresentation() const;
+                
                 /*
-                 * Returns a string representation of this polytope.
+                 * Returns a string repre/Users/tim/storm/src/storage/geometry/Polytope.h:129:17: 'virtual' cannot be specified on member function templatessentation of this polytope.
                  * If the given flag is true, the occurring numbers are converted to double before printing to increase readability
                  */
                 virtual std::string toString(bool numbersAsDouble = false) const;

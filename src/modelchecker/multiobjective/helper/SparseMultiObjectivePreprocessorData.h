@@ -47,7 +47,8 @@ namespace storm {
                     this->preprocessedModel.getStateLabeling().addLabel(this->prob1StatesLabel, storm::storage::BitVector(this->preprocessedModel.getNumberOfStates(), true));
                 }
                 
-                void printToStream(std::ostream& out) {
+                void printToStream(std::ostream& out) const {
+                    out << std::endl;
                     out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
                     out << "                                                       Multi-objective Preprocessor Data                                               " << std::endl;
                     out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
@@ -102,6 +103,12 @@ namespace storm {
                     out << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
                 }
            
+                
+                friend std::ostream& operator<<(std::ostream& out, SparseMultiObjectivePreprocessorData<SparseModelType> const& data) {
+                    data.printToStream(out);
+                    return out;
+                }
+                
             };
         }
     }

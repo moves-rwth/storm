@@ -18,17 +18,35 @@ namespace storm {
                  */
                 MultiObjectiveSettings();
 				
-				/**
-				 * Retrieves whether the model checking result should be exported to a file.
-                 * @return  True iff the result should be exported to a file.
+				/*!
+				 * Retrieves whether the data for plotting should be exported.
+                 * @return  True iff the data for plotting should be exported.
                  */
-				bool exportResultToFile() const;
+				bool isExportPlotSet() const;
 				
-				/**
-				 * The path to a file location which should contain the model checking result.
-                 * @return A path to a file location.
+				/*!
+				 * The path to a file in which vertices of the underapproximation of achievable values should be stored.
+                 * @return A path to a file.
                  */
-				std::string exportResultPath() const;
+				std::string getExportPlotUnderApproximationFileName() const;
+				
+				/*!
+				 * The path to a file in which vertices of the overapproximation of achievable values should be stored.
+                 * @return A path to a file.
+                 */
+				std::string getExportPlotOverApproximationFileName() const;
+				
+				/*!
+				 * The path to a file in which the computed pareto optimal points should be stored.
+                 * @return A path to a file.
+                 */
+				std::string getExportPlotParetoPointsFileName() const;
+				
+				/*!
+				 * The path to a file in which the computed pareto optimal points should be stored.
+                 * @return A path to a file.
+                 */
+				std::string getExportPlotBoundariesFileName() const;
 				
 				/**
 				 * Retrieves the desired precision for numerical- and pareto queries.
@@ -52,10 +70,18 @@ namespace storm {
                 uint_fast64_t getMaxSteps() const;
                 
                 
+                /*!
+                 * Checks whether the settings are consistent. If they are inconsistent, an exception is thrown.
+                 *
+                 * @return True if the settings are consistent.
+                 */
+                virtual bool check() const override;
+                
+                
                 const static std::string moduleName;
                 
             private:
-				const static std::string exportResultFileOptionName;
+				const static std::string exportPlotOptionName;
 				const static std::string precisionOptionName;
 				const static std::string maxStepsOptionName;
             };

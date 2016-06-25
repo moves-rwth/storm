@@ -25,6 +25,10 @@ namespace storm {
                 }
             }
             
+            void addToAccumulatedSeconds(double value) {
+                accumulatedSeconds += value;
+            }
+            
             void pause() {
                 if(paused) {
                     STORM_LOG_WARN("Tried to pause a stopwatch that was already paused.");

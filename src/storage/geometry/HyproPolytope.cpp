@@ -174,10 +174,10 @@ namespace storm {
                 return true;
             }
             
+            template class HyproPolytope<double>;
 #ifdef STORM_HAVE_CARL
             template class HyproPolytope<storm::RationalNumber>;
 #endif
-            // Note that hypro's polytopes only support exact arithmetic
         }
     }
 }

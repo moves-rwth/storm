@@ -26,6 +26,9 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class HybridQuantitativeCheckResult;
         
+        template <typename ValueType>
+        class ParetoCurveCheckResult;
+        
         // The base class of all check results.
         class CheckResult {
         public:
@@ -50,6 +53,7 @@ namespace storm {
             virtual bool isSymbolicQualitativeCheckResult() const;
             virtual bool isSymbolicQuantitativeCheckResult() const;
             virtual bool isHybridQuantitativeCheckResult() const;
+            virtual bool isParetoCurveCheckResult() const;
             virtual bool isResultForAllStates() const;
             
             QualitativeCheckResult& asQualitativeCheckResult();
@@ -84,6 +88,12 @@ namespace storm {
             
             template <storm::dd::DdType Type, typename ValueType>
             HybridQuantitativeCheckResult<Type, ValueType> const& asHybridQuantitativeCheckResult() const;
+
+            template <typename ValueType>
+            ParetoCurveCheckResult<ValueType>& asParetoCurveCheckResult();
+            
+            template <typename ValueType>
+            ParetoCurveCheckResult<ValueType> const& asParetoCurveCheckResult() const;
             
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
         };
