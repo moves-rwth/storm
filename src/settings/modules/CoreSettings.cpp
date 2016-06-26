@@ -142,20 +142,6 @@ namespace storm {
                 this->engine = newEngine;
             }
             
-            storm::solver::MinMaxTechnique CoreSettings::getMinMaxEquationSolvingTechnique() const {
-				std::string minMaxEquationSolvingTechnique = this->getOption(minMaxEquationSolvingTechniqueOptionName).getArgumentByName("name").getValueAsString();
-				if (minMaxEquationSolvingTechnique == "value-iteration" || minMaxEquationSolvingTechnique == "vi") {
-					return storm::solver::MinMaxTechnique::ValueIteration;
-				} else if (minMaxEquationSolvingTechnique == "policy-iteration" || minMaxEquationSolvingTechnique == "pi") {
-					return storm::solver::MinMaxTechnique::PolicyIteration;
-				}
-				STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");
-			}
-
-			bool CoreSettings::isMinMaxEquationSolvingTechniqueSet() const {
-				return this->getOption(minMaxEquationSolvingTechniqueOptionName).getHasOptionBeenSet();
-			}
-            
             void CoreSettings::finalize() {
                 // Finalize engine.
                 std::string engineStr = this->getOption(engineOptionName).getArgumentByName("name").getValueAsString();

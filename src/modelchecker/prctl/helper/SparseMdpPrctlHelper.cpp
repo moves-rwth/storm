@@ -39,7 +39,6 @@ namespace storm {
                 maybeStates &= ~psiStates;
                 STORM_LOG_INFO("Found " << maybeStates.getNumberOfSetBits() << " 'maybe' states.");
                 
-                
                 if (!maybeStates.empty()) {
                     // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
                     storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);

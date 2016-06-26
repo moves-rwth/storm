@@ -40,13 +40,25 @@ namespace storm {
              * matrix A has to be given upon construction time of the solver object.
              *
              * @param x The initial vector with which to perform matrix-vector multiplication. Its length must be equal
-             * to the number of rows of A.
+             * to the number of columns of A.
              * @param b If non-null, this vector is added after each multiplication. If given, its length must be equal
              * to the number of rows of A.
              * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
              * vector must be equal to the number of rows of A.
              */
             virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
+            
+            /*!
+             * Performs on matrix-vector multiplication x' = A*x + b.
+             *
+             * @param x The input vector with which to multiply the matrix. Its length must be equal
+             * to the number of columns of A.
+             * @param result The target vector into which to write the multiplication result. Its length must be equal
+             * to the number of rows of A.
+             * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
+             * to the number of rows of A.
+             */
+            virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b = nullptr) const = 0;
         };
         
         template<typename ValueType>

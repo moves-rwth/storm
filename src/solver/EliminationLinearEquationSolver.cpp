@@ -32,17 +32,17 @@ namespace storm {
         storm::settings::modules::EliminationSettings::EliminationOrder EliminationLinearEquationSolverSettings<ValueType>::getEliminationOrder() const {
             return order;
         }
-
+        
         template<typename ValueType>
         EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EliminationLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(A), settings(settings) {
             // Intentionally left empty.
         }
-
+        
         template<typename ValueType>
         EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, EliminationLinearEquationSolverSettings<ValueType> const& settings) : localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(*localA), settings(settings) {
             // Intentionally left empty.
         }
-
+        
         template<typename ValueType>
         void EliminationLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             STORM_LOG_WARN_COND(multiplyResult == nullptr, "Providing scratch memory will not improve the performance of this solver.");
@@ -65,7 +65,7 @@ namespace storm {
             
             storm::storage::SparseMatrix<ValueType> const& transitionMatrix = localA ? *localA : locallyConvertedMatrix;
             storm::storage::SparseMatrix<ValueType> backwardTransitions = transitionMatrix.transpose();
-
+            
             // Initialize the solution to the right-hand side of the equation system.
             x = b;
             
@@ -136,7 +136,24 @@ namespace storm {
                 delete copyX;
             }
         }
-
+        
+        template<typename ValueType>
+        void EliminationLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
+            if (&x != &result) {
+                A.multiplyWithVector(x, result);
+                if (b != nullptr) {
+                    storm::utility::vector::addVectors(result, *b, result);
+                }
+            } else {
+                // If the two vectors are aliases, we need to create a temporary.
+                std::vector<ValueType> tmp(result.size());
+                A.multiplyWithVector(x, tmp);
+                if (b != nullptr) {
+                    storm::utility::vector::addVectors(tmp, *b, result);
+                }
+            }
+        }
+        
         template<typename ValueType>
         EliminationLinearEquationSolverSettings<ValueType>& EliminationLinearEquationSolver<ValueType>::getSettings() {
             return settings;
@@ -161,12 +178,12 @@ namespace storm {
         EliminationLinearEquationSolverSettings<ValueType>& EliminationLinearEquationSolverFactory<ValueType>::getSettings() {
             return settings;
         }
-
+        
         template<typename ValueType>
         EliminationLinearEquationSolverSettings<ValueType> const& EliminationLinearEquationSolverFactory<ValueType>::getSettings() const {
             return settings;
         }
-
+        
         template<typename ValueType>
         std::unique_ptr<LinearEquationSolverFactory<ValueType>> EliminationLinearEquationSolverFactory<ValueType>::clone() const {
             return std::make_unique<EliminationLinearEquationSolverFactory<ValueType>>(*this);
@@ -175,11 +192,11 @@ namespace storm {
         template class EliminationLinearEquationSolverSettings<double>;
         template class EliminationLinearEquationSolverSettings<storm::RationalNumber>;
         template class EliminationLinearEquationSolverSettings<storm::RationalFunction>;
-
+        
         template class EliminationLinearEquationSolver<double>;
         template class EliminationLinearEquationSolver<storm::RationalNumber>;
         template class EliminationLinearEquationSolver<storm::RationalFunction>;
-
+        
         template class EliminationLinearEquationSolverFactory<double>;
         template class EliminationLinearEquationSolverFactory<storm::RationalNumber>;
         template class EliminationLinearEquationSolverFactory<storm::RationalFunction>;

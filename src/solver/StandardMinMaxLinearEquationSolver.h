@@ -15,11 +15,20 @@ namespace storm {
             };
             
             void setSolutionMethod(SolutionMethod const& solutionMethod);
-            
+            void setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations);
+            void setRelativeTerminationCriterion(bool value);
+            void setPrecision(double precision);
+
             SolutionMethod const& getSolutionMethod() const;
-            
+            uint64_t getMaximalNumberOfIterations() const;
+            double getPrecision() const;
+            bool getRelativeTerminationCriterion() const;
+
         private:
             SolutionMethod solutionMethod;
+            uint64_t maximalNumberOfIterations;
+            double precision;
+            bool relative;
         };
         
         template<typename ValueType>
@@ -28,13 +37,16 @@ namespace storm {
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings const& settings = StandardMinMaxLinearEquationSolverSettings());
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings const& settings = StandardMinMaxLinearEquationSolverSettings());
             
-            virtual void solveEquationSystem(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
-            virtual void performMatrixVectorMultiplication(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
+            virtual void solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
+            virtual void performMatrixVectorMultiplication(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
 
             StandardMinMaxLinearEquationSolverSettings const& getSettings() const;
             StandardMinMaxLinearEquationSolverSettings& getSettings();
             
         private:
+            void solveEquationSystemPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const;
+            void solveEquationSystemValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const;
+
             /// The settings of this solver.
             StandardMinMaxLinearEquationSolverSettings settings;
             

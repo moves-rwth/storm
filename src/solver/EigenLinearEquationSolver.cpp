@@ -197,6 +197,34 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void EigenLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
+            // Typedef the map-type so we don't have to spell it out.
+            typedef decltype(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
+
+            auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
+            auto eigenResult = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(result.data(), result.size());
+
+            std::unique_ptr<MapType> eigenB;
+            if (b != nullptr) {
+                eigenB = std::make_unique<MapType>(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size()));
+            }
+            
+            if (&x != &result) {
+                if (b != nullptr) {
+                    eigenResult.noalias() = *eigenA * eigenX + *eigenB;
+                } else {
+                    eigenResult.noalias() = *eigenA * eigenX;
+                }
+            } else {
+                if (b != nullptr) {
+                    eigenResult = *eigenA * eigenX + *eigenB;
+                } else {
+                    eigenResult = *eigenA * eigenX;
+                }
+            }
+        }
+        
+        template<typename ValueType>
         void EigenLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             // Typedef the map-type so we don't have to spell it out.
             typedef decltype(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
@@ -223,7 +251,6 @@ namespace storm {
                 } else {
                     nextX->noalias() = *eigenA * *currentX;
                 }
-                std::swap(nextX, currentX);
             }
             
             // If the last result we obtained is not the one in the input vector x, we swap the result there.
@@ -286,6 +313,7 @@ namespace storm {
                 } else {
                     nextX->noalias() = *eigenA * *currentX;
                 }
+                std::swap(nextX, currentX);
             }
             
             // If the last result we obtained is not the one in the input vector x, we swap the result there.
@@ -338,6 +366,7 @@ namespace storm {
                 } else {
                     nextX->noalias() = *eigenA * *currentX;
                 }
+                std::swap(nextX, currentX);
             }
             
             // If the last result we obtained is not the one in the input vector x, we swap the result there.

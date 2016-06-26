@@ -215,6 +215,14 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void GmmxxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
+            gmm::mult(*gmmxxMatrix, x, result);
+            if (b != nullptr) {
+                gmm::add(*b, result);
+            }
+        }
+        
+        template<typename ValueType>
         uint_fast64_t GmmxxLinearEquationSolver<ValueType>::solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             // Get a Jacobi decomposition of the matrix A.
             std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();

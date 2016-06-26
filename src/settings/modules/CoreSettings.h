@@ -10,7 +10,7 @@ namespace storm {
     namespace solver {
         enum class EquationSolverType;
         enum class LpSolverType;
-        enum class MinMaxTechnique;
+        enum class MinMaxMethod;
         enum class SmtSolverType;
     }
     
@@ -22,7 +22,7 @@ namespace storm {
         namespace modules {
 
             /*!
-             * This class represents the markov chain settings.
+             * This class represents the core settings.
              */
             class CoreSettings : public ModuleSettings {
             public:
@@ -32,7 +32,7 @@ namespace storm {
                 };
 
                 /*!
-                 * Creates a new set of markov chain settings.
+                 * Creates a new set of core settings.
                  */
                 CoreSettings();
 
@@ -127,21 +127,6 @@ namespace storm {
                  * Sets the engine for further usage.
                  */
                 void setEngine(Engine);
-
-                /*!
-                 * Retrieves whether a min/max equation solving technique has been set.
-                 *
-                 * @return True iff an equation solving technique has been set.
-                 */
-                bool isMinMaxEquationSolvingTechniqueSet() const;
-
-                /*!
-                 * Retrieves the selected min/max equation solving technique.
-                 *
-                 * @return The selected min/max equation solving technique.
-                 */
-                storm::solver::MinMaxTechnique getMinMaxEquationSolvingTechnique() const;
-
 
                 bool check() const override;
                 void finalize() override;

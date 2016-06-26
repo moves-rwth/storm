@@ -7,7 +7,7 @@
 #include "src/solver/TopologicalMinMaxLinearEquationSolver.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/CoreSettings.h"
+#include "src/settings/modules/MinMaxEquationSolverSettings.h"
 
 #include "src/utility/macros.h"
 #include "src/exceptions/NotImplementedException.h"
@@ -118,10 +118,10 @@ namespace storm {
         template<typename MatrixType>
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> GeneralMinMaxLinearEquationSolverFactory<ValueType>::selectSolver(MatrixType&& matrix) const {
             std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> result;
-            auto technique = storm::settings::getModule<storm::settings::modules::CoreSettings>().getMinMaxEquationSolvingTechnique();
-            if (technique == MinMaxTechnique::ValueIteration || technique == MinMaxTechnique::PolicyIteration) {
+            auto method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getMinMaxEquationSolvingMethod();
+            if (method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration) {
                 result = std::make_unique<StandardMinMaxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<ValueType>>());
-            } else if (technique == MinMaxTechnique::Topological) {
+            } else if (method == MinMaxMethod::Topological) {
                 result = std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(std::forward<MatrixType>(matrix));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");

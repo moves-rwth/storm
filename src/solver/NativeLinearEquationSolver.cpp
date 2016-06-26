@@ -220,6 +220,23 @@ namespace storm {
         }
         
         template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
+            if (&x != &result) {
+                A.multiplyWithVector(x, result);
+                if (b != nullptr) {
+                    storm::utility::vector::addVectors(result, *b, result);
+                }
+            } else {
+                // If the two vectors are aliases, we need to create a temporary.
+                std::vector<ValueType> tmp(result.size());
+                A.multiplyWithVector(x, tmp);
+                if (b != nullptr) {
+                    storm::utility::vector::addVectors(tmp, *b, result);
+                }
+            }
+        }
+        
+        template<typename ValueType>
         NativeLinearEquationSolverSettings<ValueType>& NativeLinearEquationSolver<ValueType>::getSettings() {
             return settings;
         }
