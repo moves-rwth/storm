@@ -85,6 +85,8 @@ namespace storm {
             EigenLinearEquationSolverSettings<ValueType>& getSettings();
             EigenLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
+            virtual std::unique_ptr<LinearEquationSolverFactory<ValueType>> clone() const override;
+
         private:
             EigenLinearEquationSolverSettings<ValueType> settings;
         };

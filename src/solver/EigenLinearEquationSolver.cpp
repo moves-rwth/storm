@@ -370,6 +370,11 @@ namespace storm {
             return settings;
         }
         
+        template<typename ValueType>
+        std::unique_ptr<LinearEquationSolverFactory<ValueType>> EigenLinearEquationSolverFactory<ValueType>::clone() const {
+            return std::make_unique<EigenLinearEquationSolverFactory<ValueType>>(*this);
+        }
+        
         template class EigenLinearEquationSolverSettings<double>;
         template class EigenLinearEquationSolverSettings<storm::RationalNumber>;
         template class EigenLinearEquationSolverSettings<storm::RationalFunction>;

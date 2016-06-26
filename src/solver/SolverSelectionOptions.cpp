@@ -8,8 +8,10 @@ namespace storm {
                     return "policy";
                 case MinMaxTechnique::ValueIteration:
                     return "value";
+                case MinMaxTechnique::Topological:
+                    return "topological";
+
             }
-            
         }
         
         std::string toString(LpSolverType t) {
@@ -29,8 +31,8 @@ namespace storm {
                     return "Gmmxx";
                 case EquationSolverType::Eigen:
                     return "Eigen";
-                case EquationSolverType::Topological:
-                    return "Topological";
+                case EquationSolverType::Elimination:
+                    return "Elimination";
             }
         }
         

@@ -23,8 +23,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : 
-        NativeMinMaxLinearEquationSolver<ValueType>(A, storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision(), storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getMaximalIterationCount(), MinMaxTechniqueSelection::ValueIteration, storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative)
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : A(A), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative)
         {
 			// Get the settings object to customize solving.
 			this->enableCuda = storm::settings::getModule<storm::settings::modules::CoreSettings>().isCudaSet();
@@ -32,12 +31,7 @@ namespace storm {
 			STORM_LOG_INFO_COND(this->enableCuda, "Option CUDA was not set, but the topological value iteration solver will use it anyways.");
 #endif
         }
-        
-        template<typename ValueType>
-		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, MinMaxTechniqueSelection::ValueIteration ,relative) {
-            // Intentionally left empty.
-        }
-        
+                
         template<typename ValueType>
 		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
 			
@@ -426,8 +420,55 @@ namespace storm {
 #endif
 			return result;
 		}
+        
+        template<typename ValueType>
+        void TopologicalMinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+            
+            // If scratch memory was not provided, we need to create it.
+            bool multiplyResultMemoryProvided = true;
+            if (multiplyResult == nullptr) {
+                multiplyResult = new std::vector<ValueType>(this->A.getRowCount());
+                multiplyResultMemoryProvided = false;
+            }
+            
+            // Now perform matrix-vector multiplication as long as we meet the bound of the formula.
+            for (uint_fast64_t i = 0; i < n; ++i) {
+                this->A.multiplyWithVector(x, *multiplyResult);
+                
+                // Add b if it is non-null.
+                if (b != nullptr) {
+                    storm::utility::vector::addVectors(*multiplyResult, *b, *multiplyResult);
+                }
+                
+                // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
+                // element of the min/max operator stack.
+                storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices());
+                
+            }
+            
+            if (!multiplyResultMemoryProvided) {
+                delete multiplyResult;
+            }
+        }
 
+        template<typename ValueType>
+        TopologicalMinMaxLinearEquationSolverFactory<ValueType>::TopologicalMinMaxLinearEquationSolverFactory(bool trackScheduler) : MinMaxLinearEquationSolverFactory<ValueType>(trackScheduler) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
+            return std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(matrix);
+        }
+
+        template<typename ValueType>
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
+            return std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(std::move(matrix));
+        }
+        
         // Explicitly instantiate the solver.
 		template class TopologicalMinMaxLinearEquationSolver<double>;
+        
+        template class TopologicalMinMaxLinearEquationSolverFactory<double>;
     } // namespace solver
 } // namespace storm

@@ -249,6 +249,11 @@ namespace storm {
             return settings;
         }
         
+        template<typename ValueType>
+        std::unique_ptr<LinearEquationSolverFactory<ValueType>> NativeLinearEquationSolverFactory<ValueType>::clone() const {
+            return std::make_unique<NativeLinearEquationSolverFactory<ValueType>>(*this);
+        }
+        
         // Explicitly instantiate the linear equation solver.
         template class NativeLinearEquationSolverSettings<double>;
         template class NativeLinearEquationSolver<double>;

@@ -60,6 +60,8 @@ namespace storm {
             EliminationLinearEquationSolverSettings<ValueType>& getSettings();
             EliminationLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
+            virtual std::unique_ptr<LinearEquationSolverFactory<ValueType>> clone() const override;
+
         private:
             EliminationLinearEquationSolverSettings<ValueType> settings;
         };

@@ -72,25 +72,6 @@ namespace storm {
             public:
                 virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
             };
-            
-            template<typename ValueType>
-            class MinMaxLinearEquationSolverFactory {
-            public:
-                MinMaxLinearEquationSolverFactory(storm::solver::EquationSolverTypeSelection solverType = storm::solver::EquationSolverTypeSelection::FROMSETTINGS);
-                /*!
-                 * Creates a new min/max linear equation solver instance with the given matrix.
-                 */
-                virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackScheduler = false) const;
-                MinMaxLinearEquationSolverFactory<ValueType>& setSolverType(storm::solver::EquationSolverTypeSelection solverType);
-                MinMaxLinearEquationSolverFactory<ValueType>& setPreferredTechnique(storm::solver::MinMaxTechniqueSelection);
-                
-            protected:
-                /// The type of solver which should be created.
-                storm::solver::EquationSolverType solverType;
-                /// The preferred technique to be used by the solver.
-                /// Notice that we save the selection enum here, which allows different solvers to use different techniques.
-                storm::solver::MinMaxTechniqueSelection prefTech;
-            };
 
             template<typename ValueType>
             class GameSolverFactory {

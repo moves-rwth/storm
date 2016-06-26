@@ -933,7 +933,7 @@ namespace storm {
                 double maximalReachabilityProbability = 0;
                 if (checkThresholdFeasible) {
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelcheckerHelper;
-                    std::vector<T> result = std::move(modelcheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::utility::solver::MinMaxLinearEquationSolverFactory<T>()).values);
+                    std::vector<T> result = std::move(modelcheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
                     for (auto state : labeledMdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }

@@ -30,7 +30,7 @@ namespace storm {
             const std::string CoreSettings::engineOptionShortName = "e";
             const std::string CoreSettings::ddLibraryOptionName = "ddlib";
             const std::string CoreSettings::cudaOptionName = "cuda";
-			const std::string CoreSettings::minMaxEquationSolvingTechniqueOptionName = "minMaxEquationSolvingTechnique";
+			const std::string CoreSettings::minMaxEquationSolvingTechniqueOptionName = "ndmethod";
             
             CoreSettings::CoreSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
@@ -58,9 +58,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, statisticsOptionName, false, "Sets whether to display statistics if available.").setShortName(statisticsOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, cudaOptionName, false, "Sets whether to use CUDA to speed up computation time.").build());
 
-				std::vector<std::string> minMaxSolvingTechniques = {"policyIteration", "valueIteration"};
+				std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration"};
 				this->addOption(storm::settings::OptionBuilder(moduleName, minMaxEquationSolvingTechniqueOptionName, false, "Sets which min/max linear equation solving technique is preferred.")
-					.addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique. Available are: valueIteration and policyIteration.").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(minMaxSolvingTechniques)).setDefaultValueString("valueIteration").build()).build());
+					.addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a min/max linear equation solving technique. Available are: value-iteration (vi) and policy-iteration (pi).").addValidationFunctionString(storm::settings::ArgumentValidators::stringInListValidator(minMaxSolvingTechniques)).setDefaultValueString("vi").build()).build());
             }
 
             bool CoreSettings::isCounterexampleSet() const {
@@ -144,9 +144,9 @@ namespace storm {
             
             storm::solver::MinMaxTechnique CoreSettings::getMinMaxEquationSolvingTechnique() const {
 				std::string minMaxEquationSolvingTechnique = this->getOption(minMaxEquationSolvingTechniqueOptionName).getArgumentByName("name").getValueAsString();
-				if (minMaxEquationSolvingTechnique == "valueIteration") {
+				if (minMaxEquationSolvingTechnique == "value-iteration" || minMaxEquationSolvingTechnique == "vi") {
 					return storm::solver::MinMaxTechnique::ValueIteration;
-				} else if (minMaxEquationSolvingTechnique == "policyIteration") {
+				} else if (minMaxEquationSolvingTechnique == "policy-iteration" || minMaxEquationSolvingTechnique == "pi") {
 					return storm::solver::MinMaxTechnique::PolicyIteration;
 				}
 				STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown min/max equation solving technique '" << minMaxEquationSolvingTechnique << "'.");

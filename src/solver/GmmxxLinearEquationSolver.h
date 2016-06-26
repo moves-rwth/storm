@@ -135,6 +135,8 @@ namespace storm {
             GmmxxLinearEquationSolverSettings<ValueType>& getSettings();
             GmmxxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
+            virtual std::unique_ptr<LinearEquationSolverFactory<ValueType>> clone() const override;
+
         private:
             GmmxxLinearEquationSolverSettings<ValueType> settings;
         };

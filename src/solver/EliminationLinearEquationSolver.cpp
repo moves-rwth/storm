@@ -167,6 +167,11 @@ namespace storm {
             return settings;
         }
 
+        template<typename ValueType>
+        std::unique_ptr<LinearEquationSolverFactory<ValueType>> EliminationLinearEquationSolverFactory<ValueType>::clone() const {
+            return std::make_unique<EliminationLinearEquationSolverFactory<ValueType>>(*this);
+        }
+        
         template class EliminationLinearEquationSolverSettings<double>;
         template class EliminationLinearEquationSolverSettings<storm::RationalNumber>;
         template class EliminationLinearEquationSolverSettings<storm::RationalFunction>;

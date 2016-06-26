@@ -290,6 +290,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::unique_ptr<LinearEquationSolverFactory<ValueType>> GmmxxLinearEquationSolverFactory<ValueType>::clone() const {
+            return std::make_unique<GmmxxLinearEquationSolverFactory<ValueType>>(*this);
+        }
+        
+        template<typename ValueType>
         GmmxxLinearEquationSolverSettings<ValueType>& GmmxxLinearEquationSolverFactory<ValueType>::getSettings() {
             return settings;
         }
