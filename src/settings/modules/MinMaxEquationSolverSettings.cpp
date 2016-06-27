@@ -16,6 +16,7 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::maximalIterationsOptionName = "maxiter";
             const std::string MinMaxEquationSolverSettings::maximalIterationsOptionShortName = "i";
             const std::string MinMaxEquationSolverSettings::precisionOptionName = "precision";
+            const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
 
             MinMaxEquationSolverSettings::MinMaxEquationSolverSettings() : ModuleSettings(moduleName) {
                 std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration"};

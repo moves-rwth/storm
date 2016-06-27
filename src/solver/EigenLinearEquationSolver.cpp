@@ -251,6 +251,7 @@ namespace storm {
                 } else {
                     nextX->noalias() = *eigenA * *currentX;
                 }
+                std::swap(nextX, currentX);
             }
             
             // If the last result we obtained is not the one in the input vector x, we swap the result there.

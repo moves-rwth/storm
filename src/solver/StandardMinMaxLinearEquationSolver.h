@@ -47,6 +47,15 @@ namespace storm {
             void solveEquationSystemPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const;
             void solveEquationSystemValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const;
 
+            bool valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const;
+            
+            enum class Status {
+                Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
+            };
+
+            Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations) const;
+            void reportStatus(Status status, uint64_t iterations) const;
+            
             /// The settings of this solver.
             StandardMinMaxLinearEquationSolverSettings settings;
             
