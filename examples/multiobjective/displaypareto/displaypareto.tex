@@ -1,0 +1,20 @@
+\documentclass{article}
+\usepackage{pgfplots}
+\usepackage{filecontents}
+
+%\newcommand{\resultPath}{../mdp/consensus/results_3_3_2/}
+%\newcommand{\resultPath}{../mdp/scheduler/results05/}
+\newcommand{\resultPath}{../mdp/zeroconf-tb/results4_10/}
+
+\begin{document}
+	\centering
+\begin{tikzpicture}[scale=1.75]
+\begin{axis}[enlargelimits=false, axis background/.style={fill=red!50}]
+\addplot[fill=white] table [col sep=comma] {\resultPath overapproximation.csv} -- cycle;
+\addplot[fill=green] table [col sep=comma] {\resultPath underapproximation.csv} -- cycle;
+\addplot[mark=o, mark options={blue, scale=1.5, thick}, only marks] table [col sep=comma] {\resultPath paretopoints.csv};
+\addplot[mark=false] table [col sep=comma] {\resultPath boundaries.csv};
+\end{axis}
+\end{tikzpicture}
+
+\end{document}

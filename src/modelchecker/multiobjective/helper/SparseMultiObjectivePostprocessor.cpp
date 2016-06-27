@@ -307,9 +307,13 @@ namespace storm {
                 }
                 statistics << "\t Combined:         " << std::setw(8) << combinedTime << std::endl;
                 statistics << std::endl;
-                statistics << "Performed Refinement Steps: " << resultData.refinementSteps().size() << std::endl;
-                statistics << "Precision (Approximation): " << settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision() << std::endl;
-                statistics << "Precision (Value Iteration): " << settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() << std::endl;
+                statistics << "Performed Refinement Steps: " << resultData.refinementSteps().size() << (resultData.getMaxStepsPerformed() ? " (computation aborted) " : "" ) << std::endl;
+                statistics << "Precision (Approximation): " << "Goal precision: " << settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision();
+                if(resultData.isPrecisionOfResultSet()) {
+                    statistics << " Achieved precision: " << storm::utility::convertNumber<double>(resultData.getPrecisionOfResult()) << ( resultData.getTargetPrecisionReached() ? "" : " (goal not achieved)");
+                }
+                statistics << std::endl;
+                statistics << "Convergence precision for iterative solvers: " << settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() << std::endl;
                 statistics << std::endl;
                 statistics << "---------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
                 
