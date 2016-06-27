@@ -28,15 +28,15 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void MinMaxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
-            solveEquationSystem(convert(this->direction), x, b, multiplyResult, newX);
+            solveEquations(convert(this->direction), x, b, multiplyResult, newX);
         }
 
         template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication( std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void MinMaxLinearEquationSolver<ValueType>::multiply( std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
-            return performMatrixVectorMultiplication(convert(this->direction), x, b, n, multiplyResult);
+            return multiply(convert(this->direction), x, b, n, multiplyResult);
         }
 
         template<typename ValueType>

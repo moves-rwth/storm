@@ -456,7 +456,7 @@ namespace storm {
                     
                     {
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(bsccEquationSystem));
-                        solver->solveEquationSystem(bsccEquationSystemSolution, bsccEquationSystemRightSide);
+                        solver->solveEquations(bsccEquationSystemSolution, bsccEquationSystemRightSide);
                     }
                     
                     // If exit rates were given, we need to 'fix' the results to also account for the timing behaviour.
@@ -527,7 +527,7 @@ namespace storm {
                     
                     {
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(rewardEquationSystemMatrix));
-                        solver->solveEquationSystem(rewardSolution, rewardRightSide);
+                        solver->solveEquations(rewardSolution, rewardRightSide);
                     }
                 }
                 
@@ -633,13 +633,13 @@ namespace storm {
                 
                 if (!useMixedPoissonProbabilities && std::get<0>(foxGlynnResult) > 1) {
                     // Perform the matrix-vector multiplications (without adding).
-                    solver->performMatrixVectorMultiplication(values, addVector, std::get<0>(foxGlynnResult) - 1, &multiplicationResult);
+                    solver->repeatedMultiply(values, addVector, std::get<0>(foxGlynnResult) - 1, &multiplicationResult);
                 } else if (useMixedPoissonProbabilities) {
                     std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&uniformizationRate] (ValueType const& a, ValueType const& b) { return a + b / uniformizationRate; };
                     
                     // For the iterations below the left truncation point, we need to add and scale the result with the uniformization rate.
                     for (uint_fast64_t index = 1; index < startingIteration; ++index) {
-                        solver->performMatrixVectorMultiplication(values, nullptr, 1, &multiplicationResult);
+                        solver->repeatedMultiply(values, nullptr, 1, &multiplicationResult);
                         storm::utility::vector::applyPointwise(result, values, result, addAndScale);
                     }
                 }
@@ -649,7 +649,7 @@ namespace storm {
                 ValueType weight = 0;
                 std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&weight] (ValueType const& a, ValueType const& b) { return a + weight * b; };
                 for (uint_fast64_t index = startingIteration; index <= std::get<1>(foxGlynnResult); ++index) {
-                    solver->performMatrixVectorMultiplication(values, addVector, 1, &multiplicationResult);
+                    solver->repeatedMultiply(values, addVector, 1, &multiplicationResult);
                     
                     weight = std::get<3>(foxGlynnResult)[index - std::get<0>(foxGlynnResult)];
                     storm::utility::vector::applyPointwise(result, values, result, addAndScale);

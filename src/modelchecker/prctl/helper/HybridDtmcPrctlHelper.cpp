@@ -72,7 +72,7 @@ namespace storm {
                         std::vector<ValueType> b = subvector.toVector(odd);
                         
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
-                        solver->solveEquationSystem(x, b);
+                        solver->solveEquations(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, statesWithProbability01.second.template toAdd<ValueType>(), maybeStates, odd, x));
@@ -130,7 +130,7 @@ namespace storm {
                     std::vector<ValueType> b = subvector.toVector(odd);
                     
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
-                    solver->performMatrixVectorMultiplication(x, &b, stepBound);
+                    solver->repeatedMultiply(x, &b, stepBound);
                     
                     // Return a hybrid check result that stores the numerical values explicitly.
                     return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, psiStates.template toAdd<ValueType>(), maybeStates, odd, x));
@@ -156,7 +156,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitMatrix));
-                solver->performMatrixVectorMultiplication(x, nullptr, stepBound);
+                solver->repeatedMultiply(x, nullptr, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
@@ -182,7 +182,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitMatrix));
-                solver->performMatrixVectorMultiplication(x, &b, stepBound);
+                solver->repeatedMultiply(x, &b, stepBound);
                 
                 // Return a hybrid check result that stores the numerical values explicitly.
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, x));
@@ -237,7 +237,7 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(explicitSubmatrix));
-                        solver->solveEquationSystem(x, b);
+                        solver->solveEquations(x, b);
                         
                         // Return a hybrid check result that stores the numerical values explicitly.
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getReachableStates() && !maybeStates, infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), model.getManager().template getAddZero<ValueType>()), maybeStates, odd, x));

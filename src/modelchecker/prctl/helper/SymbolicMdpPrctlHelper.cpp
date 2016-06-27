@@ -66,7 +66,7 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquationSystem(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
                         
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), statesWithProbability01.second.template toAdd<ValueType>() + result));
                     } else {
@@ -118,7 +118,7 @@ namespace storm {
                     submatrix *= maybeStatesAdd.swapVariables(model.getRowColumnMetaVariablePairs());
                     
                     std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                    storm::dd::Add<DdType, ValueType> result = solver->performMatrixVectorMultiplication(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &subvector, stepBound);
+                    storm::dd::Add<DdType, ValueType> result = solver->multiply(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &subvector, stepBound);
                     
                     return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), psiStates.template toAdd<ValueType>() + result));
                 } else {
@@ -133,7 +133,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(model.getTransitionMatrix(), model.getReachableStates(), model.getIllegalMask(), model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                storm::dd::Add<DdType, ValueType> result = solver->performMatrixVectorMultiplication(dir == OptimizationDirection::Minimize, rewardModel.getStateRewardVector(), nullptr, stepBound);
+                storm::dd::Add<DdType, ValueType> result = solver->multiply(dir == OptimizationDirection::Minimize, rewardModel.getStateRewardVector(), nullptr, stepBound);
 
                 return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), result));
             }
@@ -148,7 +148,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(model.getTransitionMatrix(), model.getReachableStates(), model.getIllegalMask(), model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                storm::dd::Add<DdType, ValueType> result = solver->performMatrixVectorMultiplication(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &totalRewardVector, stepBound);
+                storm::dd::Add<DdType, ValueType> result = solver->multiply(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), &totalRewardVector, stepBound);
                 
                 return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), result));
             }
@@ -202,7 +202,7 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::SymbolicMinMaxLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getIllegalMask() && maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getNondeterminismVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquationSystem(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(dir == OptimizationDirection::Minimize, model.getManager().template getAddZero<ValueType>(), subvector);
 
                         return std::unique_ptr<CheckResult>(new storm::modelchecker::SymbolicQuantitativeCheckResult<DdType>(model.getReachableStates(), infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result)));
                     } else {

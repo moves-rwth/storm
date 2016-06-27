@@ -28,7 +28,7 @@ TEST(EliminationLinearEquationSolver, Solve) {
     ASSERT_NO_THROW(storm::solver::EliminationLinearEquationSolver<double> solver(A));
     
     storm::solver::EliminationLinearEquationSolver<double> solver(A);
-    ASSERT_NO_THROW(solver.solveEquationSystem(x, b));
+    ASSERT_NO_THROW(solver.solveEquations(x, b));
     ASSERT_LT(std::abs(x[0] - 1), 1e-15);
     ASSERT_LT(std::abs(x[1] - 3), 1e-15);
     ASSERT_LT(std::abs(x[2] - (-1)), 1e-15);
@@ -53,6 +53,6 @@ TEST(EliminationLinearEquationSolver, MatrixVectorMultiplication) {
     x[4] = 1;
     
     storm::solver::EliminationLinearEquationSolver<double> solver(A);
-    ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(x, nullptr, 4));
+    ASSERT_NO_THROW(solver.repeatedMultiply(x, nullptr, 4));
     ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }

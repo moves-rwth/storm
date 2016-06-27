@@ -44,7 +44,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void EliminationLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
+        void EliminationLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             STORM_LOG_WARN_COND(multiplyResult == nullptr, "Providing scratch memory will not improve the performance of this solver.");
             
             // FIXME: This solver will not work for all input systems. More concretely, the current implementation will
@@ -101,7 +101,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void EliminationLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
+        void EliminationLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
             if (&x != &result) {
                 A.multiplyWithVector(x, result);
                 if (b != nullptr) {

@@ -32,7 +32,7 @@ namespace storm {
              * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
              * vector must be equal to the number of rows of A.
              */
-            virtual void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
+            virtual void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
             
             /*!
              * Performs on matrix-vector multiplication x' = A*x + b.
@@ -44,7 +44,7 @@ namespace storm {
              * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
              * to the number of rows of A.
              */
-            virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b = nullptr) const = 0;
+            virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b = nullptr) const = 0;
             
             /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After
@@ -58,7 +58,7 @@ namespace storm {
              * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
              * vector must be equal to the number of rows of A.
              */
-            void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const;
+            void repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const;
         };
         
         template<typename ValueType>

@@ -14,7 +14,7 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        void LinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void LinearEquationSolver<ValueType>::repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
@@ -30,7 +30,7 @@ namespace storm {
             
             // Now perform matrix-vector multiplication as long as we meet the bound.
             for (uint_fast64_t i = 0; i < n; ++i) {
-                this->performMatrixVectorMultiplication(*currentX, *nextX, b);
+                this->multiply(*currentX, *nextX, b);
                 std::swap(nextX, currentX);
             }
             

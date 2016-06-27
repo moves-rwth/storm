@@ -84,15 +84,15 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void StandardMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             switch (this->getSettings().getSolutionMethod()) {
-                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration: solveEquationSystemValueIteration(dir, x, b, multiplyResult, newX); break;
-                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration: solveEquationSystemPolicyIteration(dir, x, b, multiplyResult, newX); break;
+                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration: solveEquationsValueIteration(dir, x, b, multiplyResult, newX); break;
+                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration: solveEquationsPolicyIteration(dir, x, b, multiplyResult, newX); break;
             }
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::solveEquationSystemPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             
             // Create scratch memory if none was provided.
             bool multiplyResultMemoryProvided = multiplyResult != nullptr;
@@ -121,8 +121,8 @@ namespace storm {
                 // FIXME: we need to remove the 0- and 1- states to make the solution unique.
                 // HOWEVER: if we start with a valid scheduler, then we will never get an illegal one, because staying
                 // within illegal MECs will never strictly improve the value. Is this true?
-                auto solver = linearEquationSolverFactory->create(submatrix);
-                solver->solveEquationSystem(x, subB, &deterministicMultiplyResult);
+                auto solver = linearEquationSolverFactory->create(std::move(submatrix));
+                solver->solveEquations(x, subB, &deterministicMultiplyResult);
                 
                 // Go through the multiplication result and see whether we can improve any of the choices.
                 bool schedulerImproved = false;
@@ -186,7 +186,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::solveEquationSystemValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(A);
             
             // Create scratch memory if none was provided.
@@ -209,7 +209,7 @@ namespace storm {
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
                 // Compute x' = A*x + b.
-                solver->performMatrixVectorMultiplication(*currentX, *multiplyResult, &b);
+                solver->multiply(*currentX, *multiplyResult, &b);
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices.
                 storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, this->A.getRowGroupIndices());
@@ -243,7 +243,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void StandardMinMaxLinearEquationSolver<ValueType>::multiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(A);
             
             // If scratch memory was not provided, we create it.
@@ -253,7 +253,7 @@ namespace storm {
             }
             
             for (uint64_t i = 0; i < n; ++i) {
-                solver->performMatrixVectorMultiplication(x, *multiplyResult, b);
+                solver->multiply(x, *multiplyResult, b);
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
@@ -381,6 +381,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        template class StandardMinMaxLinearEquationSolverSettings<double>;
         template class StandardMinMaxLinearEquationSolver<double>;
         template class StandardMinMaxLinearEquationSolverFactory<double>;
         template class GmmxxMinMaxLinearEquationSolverFactory<double>;
@@ -388,6 +389,7 @@ namespace storm {
         template class NativeMinMaxLinearEquationSolverFactory<double>;
         template class EliminationMinMaxLinearEquationSolverFactory<double>;
         
+        template class StandardMinMaxLinearEquationSolverSettings<storm::RationalNumber>;
         template class StandardMinMaxLinearEquationSolver<storm::RationalNumber>;
         template class StandardMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
         template class EigenMinMaxLinearEquationSolverFactory<storm::RationalNumber>;

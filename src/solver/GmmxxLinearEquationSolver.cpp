@@ -121,7 +121,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
+        void GmmxxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
             auto method = this->getSettings().getSolutionMethod();
             auto preconditioner = this->getSettings().getPreconditioner();
             STORM_LOG_INFO("Using method '" << method << "' with preconditioner '" << preconditioner << "' (max. " << this->getSettings().getMaximalNumberOfIterations() << " iterations).");
@@ -178,7 +178,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
+        void GmmxxLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
             if (b) {
                 gmm::mult_add(*gmmxxMatrix, x, *b, result);
             } else {

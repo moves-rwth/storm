@@ -49,7 +49,7 @@ namespace storm {
                     std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
                     
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(submatrix));
-                    solver->performMatrixVectorMultiplication(dir, subresult, &b, stepBound);
+                    solver->multiply(dir, subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
                     storm::utility::vector::setVectorValues(result, maybeStates, subresult);
@@ -67,7 +67,7 @@ namespace storm {
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
-                solver->performMatrixVectorMultiplication(dir, result);
+                solver->multiply(dir, result);
                 
                 return result;
             }
@@ -164,7 +164,7 @@ namespace storm {
                 // Solve the corresponding system of equations.
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = storm::solver::configureMinMaxLinearEquationSolver(goal, minMaxLinearEquationSolverFactory, submatrix);
                 solver->setTrackScheduler(produceScheduler);
-                solver->solveEquationSystem(x, b);
+                solver->solveEquations(x, b);
                 
                 if (produceScheduler) {
                     scheduler = solver->getScheduler();
@@ -211,7 +211,7 @@ namespace storm {
                 std::vector<ValueType> result(rewardModel.getStateRewardVector());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
-                solver->performMatrixVectorMultiplication(dir, result, nullptr, stepCount);
+                solver->multiply(dir, result, nullptr, stepCount);
                 
                 return result;
             }
@@ -235,7 +235,7 @@ namespace storm {
                 }
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
-                solver->performMatrixVectorMultiplication(dir, result, &totalRewardVector, stepBound);
+                solver->multiply(dir, result, &totalRewardVector, stepBound);
                 
                 return result;
             }
@@ -335,7 +335,7 @@ namespace storm {
                         
                         // Solve the corresponding system of equations.
                         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(submatrix));
-                        solver->solveEquationSystem(dir, x, b);
+                        solver->solveEquations(dir, x, b);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
@@ -482,7 +482,7 @@ namespace storm {
                 
                 std::vector<ValueType> sspResult(numberOfStatesNotInMecs + mecDecomposition.size());
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(sspMatrix));
-                solver->solveEquationSystem(dir, sspResult, b);
+                solver->solveEquations(dir, sspResult, b);
                 
                 // Prepare result vector.
                 std::vector<ValueType> result(numberOfStates, zero);

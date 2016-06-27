@@ -21,10 +21,10 @@ TEST(NativeMinMaxLinearEquationSolver, SolveWithStandardOptions) {
     auto factory = storm::solver::NativeMinMaxLinearEquationSolverFactory<double>();
     auto solver = factory.create(A);
 
-    ASSERT_NO_THROW(solver->solveEquationSystem(storm::OptimizationDirection::Minimize, x, b));
+    ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Minimize, x, b));
     ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
-    ASSERT_NO_THROW(solver->solveEquationSystem(storm::OptimizationDirection::Maximize, x, b));
+    ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Maximize, x, b));
     ASSERT_LT(std::abs(x[0] - 0.989991), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
@@ -49,23 +49,23 @@ TEST(NativeMinMaxLinearEquationSolver, MatrixVectorMultiplication) {
     auto factory = storm::solver::NativeMinMaxLinearEquationSolverFactory<double>();
     auto solver = factory.create(A);
     
-    ASSERT_NO_THROW(solver->performMatrixVectorMultiplication(storm::OptimizationDirection::Minimize, x, nullptr, 1));
+    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Minimize, x, nullptr, 1));
     ASSERT_LT(std::abs(x[0] - 0.099), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
-    ASSERT_NO_THROW(solver->performMatrixVectorMultiplication(storm::OptimizationDirection::Minimize, x, nullptr, 2));
+    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Minimize, x, nullptr, 2));
     ASSERT_LT(std::abs(x[0] - 0.1881), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
-    ASSERT_NO_THROW(solver->performMatrixVectorMultiplication(storm::OptimizationDirection::Minimize, x, nullptr, 20));
+    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Minimize, x, nullptr, 20));
     ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
-    ASSERT_NO_THROW(solver->performMatrixVectorMultiplication(storm::OptimizationDirection::Maximize, x, nullptr, 1));
+    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Maximize, x, nullptr, 1));
     ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
-    ASSERT_NO_THROW(solver->performMatrixVectorMultiplication(storm::OptimizationDirection::Maximize, x, nullptr, 20));
+    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Maximize, x, nullptr, 20));
     ASSERT_LT(std::abs(x[0] - 0.9238082658), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
@@ -81,12 +81,12 @@ TEST(NativeMinMaxLinearEquationSolver, SolveWithPolicyIteration) {
 	std::vector<double> b = { 0.099, 0.5 };
 
     auto factory = storm::solver::NativeMinMaxLinearEquationSolverFactory<double>();
-    factory.getSettings().setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings::SolutionMethod::PolicyIteration);
+    factory.getSettings().setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings<double>::SolutionMethod::PolicyIteration);
     auto solver = factory.create(A);
     
-	ASSERT_NO_THROW(solver->solveEquationSystem(storm::OptimizationDirection::Minimize, x, b));
+	ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Minimize, x, b));
 	ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 
-	ASSERT_NO_THROW(solver->solveEquationSystem(storm::OptimizationDirection::Maximize, x, b));
+	ASSERT_NO_THROW(solver->solveEquations(storm::OptimizationDirection::Maximize, x, b));
 	ASSERT_LT(std::abs(x[0] - 0.99), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }

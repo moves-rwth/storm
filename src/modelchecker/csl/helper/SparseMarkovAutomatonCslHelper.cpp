@@ -102,7 +102,7 @@ namespace storm {
                     storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
                     
                     // Now perform the inner value iteration for probabilistic states.
-                    solver->solveEquationSystem(dir, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
+                    solver->solveEquations(dir, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
                     
                     // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
                     aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
@@ -115,7 +115,7 @@ namespace storm {
                 // After the loop, perform one more step of the value iteration for PS states.
                 aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
                 storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
-                solver->solveEquationSystem(dir, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
+                solver->solveEquations(dir, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
             }
 
             template<typename ValueType>
@@ -333,7 +333,7 @@ namespace storm {
                 
                 std::vector<ValueType> x(numberOfStatesNotInMecs + mecDecomposition.size());
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(sspMatrix);
-                solver->solveEquationSystem(dir, x, b);
+                solver->solveEquations(dir, x, b);
                 
                 // Prepare result vector.
                 std::vector<ValueType> result(numberOfStates);
@@ -431,7 +431,7 @@ namespace storm {
                     
                     // Solve the corresponding system of equations.
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(submatrix);
-                    solver->solveEquationSystem(dir, x, b);
+                    solver->solveEquations(dir, x, b);
                     
                     // Set values of resulting vector according to previous result and return the result.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);

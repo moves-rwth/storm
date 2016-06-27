@@ -46,14 +46,14 @@ namespace storm {
              * vector must be equal to the length of the vector x (and thus to the number of columns of A).
              * @return The solution vector x of the system of linear equations as the content of the parameter x.
              */
-            virtual void solveEquationSystem(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
+            virtual void solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
             
             /*!
-             * Behaves the same as the other variant of <code>solveEquationSystem</code>, with the distinction that
+             * Behaves the same as the other variant of <code>solveEquations</code>, with the distinction that
              * instead of providing the optimization direction as an argument, the internally set optimization direction
              * is used. Note: this method can only be called after setting the optimization direction.
              */
-            void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const;
+            void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const;
             
             /*!
              * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
@@ -72,14 +72,14 @@ namespace storm {
              * vector must be equal to the number of rows of A.
              * @return The result of the repeated matrix-vector multiplication as the content of the vector x.
              */
-            virtual void performMatrixVectorMultiplication(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
+            virtual void multiply(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
             
             /*!
-             * Behaves the same as the other variant of <code>performMatrixVectorMultiplication</code>, with the
+             * Behaves the same as the other variant of <code>multiply</code>, with the
              * distinction that instead of providing the optimization direction as an argument, the internally set
              * optimization direction is used. Note: this method can only be called after setting the optimization direction.
              */
-            virtual void performMatrixVectorMultiplication( std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const;
+            virtual void multiply( std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const;
             
             /*!
              * Sets an optimization direction to use for calls to methods that do not explicitly provide one.

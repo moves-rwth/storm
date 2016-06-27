@@ -37,7 +37,7 @@ namespace storm {
                     
                     // Perform the matrix vector multiplication as often as required by the formula bound.
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
-                    solver->performMatrixVectorMultiplication(subresult, &b, stepBound);
+                    solver->repeatedMultiply(subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
                     storm::utility::vector::setVectorValues(result, maybeStates, subresult);
@@ -90,7 +90,7 @@ namespace storm {
                         
                         // Now solve the created system of linear equations.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
-                        solver->solveEquationSystem(x, b);
+                        solver->solveEquations(x, b);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);
@@ -121,7 +121,7 @@ namespace storm {
                 
                 // Perform one single matrix-vector multiplication.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix);
-                solver->performMatrixVectorMultiplication(result);
+                solver->repeatedMultiply(result);
                 return result;
             }
             
@@ -135,7 +135,7 @@ namespace storm {
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix);
-                solver->performMatrixVectorMultiplication(result, &totalRewardVector, stepBound);
+                solver->repeatedMultiply(result, &totalRewardVector, stepBound);
                 
                 return result;
             }
@@ -150,7 +150,7 @@ namespace storm {
                 
                 // Perform the matrix vector multiplication as often as required by the formula bound.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix);
-                solver->performMatrixVectorMultiplication(result, nullptr, stepCount);
+                solver->repeatedMultiply(result, nullptr, stepCount);
                 
                 return result;
             }
@@ -210,7 +210,7 @@ namespace storm {
                         
                         // Now solve the resulting equation system.
                         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(submatrix));
-                        solver->solveEquationSystem(x, b);
+                        solver->solveEquations(x, b);
                         
                         // Set values of resulting vector according to result.
                         storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, x);

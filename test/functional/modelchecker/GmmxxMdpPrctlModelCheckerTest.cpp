@@ -210,7 +210,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
     EXPECT_EQ(7ul, mdp->getNumberOfChoices());
 
     auto solverFactory = std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>();
-    solverFactory->getSettings().setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings::SolutionMethod::PolicyIteration);
+    solverFactory->getSettings().setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings<double>::SolutionMethod::PolicyIteration);
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::move(solverFactory));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"target\"]");
