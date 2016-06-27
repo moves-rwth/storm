@@ -67,6 +67,7 @@
 #include "src/modelchecker/csl/HybridCtmcCslModelChecker.h"
 #include "src/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "src/modelchecker/multiobjective/SparseMdpMultiObjectiveModelChecker.h"
+#include "src/modelchecker/multiobjective/SparseMaMultiObjectiveModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -328,7 +329,14 @@ namespace storm {
                 ma->close();
             }
             storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
-            result = modelchecker.check(task);
+            if(modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
+            } else {
+                storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker2(*ma);
+                if(modelchecker2.canHandle(task)){
+                    result = modelchecker2.check(task);
+                }
+            }
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported.");
         }

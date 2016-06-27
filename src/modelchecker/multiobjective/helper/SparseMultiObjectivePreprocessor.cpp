@@ -1,6 +1,7 @@
  #include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePreprocessor.h"
 
 #include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -441,8 +442,8 @@ namespace storm {
                 data.newToOldStateIndexMapping = std::move(newToOldStateIndexMapping);
             }
             
-            
             template class SparseMultiObjectivePreprocessor<storm::models::sparse::Mdp<double>>;
+            template class SparseMultiObjectivePreprocessor<storm::models::sparse::MarkovAutomaton<double>>;
 
             
         }

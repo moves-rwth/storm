@@ -4,6 +4,7 @@
 
 #include "src/adapters/CarlAdapter.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
@@ -218,8 +219,11 @@ namespace storm {
             
             template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>;
             template std::vector<double> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>::getInitialStateResultOfObjectives<double>() const;
+            template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
+            template std::vector<double> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getInitialStateResultOfObjectives<double>() const;
 #ifdef STORM_HAVE_CARL
             template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
+            template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
 #endif
             
         }

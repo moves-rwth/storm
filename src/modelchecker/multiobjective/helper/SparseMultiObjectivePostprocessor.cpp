@@ -4,6 +4,7 @@
 
 #include "src/adapters/CarlAdapter.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -323,6 +324,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template class SparseMultiObjectivePostprocessor<storm::models::sparse::Mdp<double>, storm::RationalNumber>;
+            template class SparseMultiObjectivePostprocessor<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
 #endif
             
         }

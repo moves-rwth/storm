@@ -63,10 +63,11 @@ namespace storm {
             }
             
             bool MultiObjectiveSettings::check() const {
-                return ArgumentValidators::writableFileValidator()(getExportPlotUnderApproximationFileName())
-                    && ArgumentValidators::writableFileValidator()(getExportPlotOverApproximationFileName())
-                    && ArgumentValidators::writableFileValidator()(getExportPlotParetoPointsFileName())
-                && ArgumentValidators::writableFileValidator()(getExportPlotBoundariesFileName());
+                return !isExportPlotSet()
+                    || (ArgumentValidators::writableFileValidator()(getExportPlotUnderApproximationFileName())
+                        && ArgumentValidators::writableFileValidator()(getExportPlotOverApproximationFileName())
+                        && ArgumentValidators::writableFileValidator()(getExportPlotParetoPointsFileName())
+                        && ArgumentValidators::writableFileValidator()(getExportPlotBoundariesFileName()));
             }
 
         } // namespace modules
