@@ -30,7 +30,6 @@ namespace storm {
             EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, EliminationLinearEquationSolverSettings<ValueType> const& settings = EliminationLinearEquationSolverSettings<ValueType>());
             
             virtual void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
-            virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
             virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b = nullptr) const override;
 
             EliminationLinearEquationSolverSettings<ValueType>& getSettings();

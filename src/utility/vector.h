@@ -12,6 +12,7 @@
 #include <functional>
 
 #include "src/storage/BitVector.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/solver/OptimizationDirection.h"
 
@@ -590,13 +591,13 @@ namespace storm {
             bool equalModuloPrecision(T const& val1, T const& val2, T precision, bool relativeError = true) {
                 if (relativeError) {
 					if (val2 == 0) {
-						return (std::abs(val1) <= precision);
+                        return (storm::utility::abs(val1) <= precision);
 					}
-                    if (std::abs((val1 - val2)/val2) > precision) {
+                    if (storm::utility::abs((val1 - val2)/val2) > precision) {
                         return false;
                     }
                 } else {
-                    if (std::abs(val1 - val2) > precision) return false;
+                    if (storm::utility::abs(val1 - val2) > precision) return false;
                 }
                 return true;
             }

@@ -58,7 +58,7 @@ namespace storm {
              * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
              * vector must be equal to the number of rows of A.
              */
-            virtual void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const;
+            void performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const;
         };
         
         template<typename ValueType>

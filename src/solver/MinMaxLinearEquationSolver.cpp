@@ -128,12 +128,24 @@ namespace storm {
             }
             return result;
         }
-        
+
+        template<>
+        template<typename MatrixType>
+        std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>::selectSolver(MatrixType&& matrix) const {
+            std::unique_ptr<MinMaxLinearEquationSolver<storm::RationalNumber>> result;
+            auto method = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>().getMinMaxEquationSolvingMethod();
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration, storm::exceptions::InvalidSettingsException, "For this data type only value iteration and policy iteration are available.");
+            return std::make_unique<StandardMinMaxLinearEquationSolver<storm::RationalNumber>>(std::forward<MatrixType>(matrix), std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
+        }
+
         template class MinMaxLinearEquationSolver<float>;
         template class MinMaxLinearEquationSolver<double>;
+        template class MinMaxLinearEquationSolver<storm::RationalNumber>;
         
         template class MinMaxLinearEquationSolverFactory<double>;
         template class GeneralMinMaxLinearEquationSolverFactory<double>;
+        template class MinMaxLinearEquationSolverFactory<storm::RationalNumber>;
+        template class GeneralMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
         
     }
 }

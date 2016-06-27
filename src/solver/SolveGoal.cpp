@@ -17,7 +17,7 @@ namespace storm {
         std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> configureMinMaxLinearEquationSolver(BoundedGoal<ValueType> const& goal, storm::solver::MinMaxLinearEquationSolverFactory<ValueType> const& factory, storm::storage::SparseMatrix<ValueType> const& matrix) {
             std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> p = factory.create(matrix);
             p->setOptimizationDirection(goal.direction());
-            p->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<double>>(goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), goal.minimize()));
+            p->setTerminationCondition(std::make_unique<TerminateIfFilteredExtremumExceedsThreshold<ValueType>>(goal.relevantValues(), goal.boundIsStrict(), goal.thresholdValue(), goal.minimize()));
             return p;
         }
         
@@ -50,6 +50,9 @@ namespace storm {
         template std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<double>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::solver::MinMaxLinearEquationSolverFactory<double> const& factory, storm::storage::SparseMatrix<double> const&  matrix);
         template std::unique_ptr<storm::solver::LinearEquationSolver<double>> configureLinearEquationSolver(BoundedGoal<double> const& goal, storm::solver::LinearEquationSolverFactory<double> const& factory, storm::storage::SparseMatrix<double> const&  matrix);
         template std::unique_ptr<storm::solver::LinearEquationSolver<double>> configureLinearEquationSolver(SolveGoal const& goal, storm::solver::LinearEquationSolverFactory<double> const& factory, storm::storage::SparseMatrix<double> const&  matrix);
-        
+
+        template std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<storm::RationalNumber>> configureMinMaxLinearEquationSolver(BoundedGoal<storm::RationalNumber> const& goal, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& factory, storm::storage::SparseMatrix<storm::RationalNumber> const& matrix);
+        template std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<storm::RationalNumber>> configureMinMaxLinearEquationSolver(SolveGoal const& goal, storm::solver::MinMaxLinearEquationSolverFactory<storm::RationalNumber> const& factory, storm::storage::SparseMatrix<storm::RationalNumber> const&  matrix);
+
     }
 }

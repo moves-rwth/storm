@@ -147,5 +147,6 @@ namespace storm {
 		}
                 
         template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>>;
+        template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
     }
 }

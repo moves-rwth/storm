@@ -224,45 +224,45 @@ namespace storm {
             }
         }
         
-        template<typename ValueType>
-        void EigenLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
-            // Typedef the map-type so we don't have to spell it out.
-            typedef decltype(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
-            
-            bool multiplyResultProvided = multiplyResult != nullptr;
-            if (!multiplyResult) {
-                multiplyResult = new std::vector<ValueType>(eigenA->cols());
-            }
-            auto eigenMultiplyResult = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(multiplyResult->data(), multiplyResult->size());
-            
-            // Map the input vectors x and b to Eigen's format.
-            std::unique_ptr<MapType> eigenB;
-            if (b != nullptr) {
-                eigenB = std::make_unique<MapType>(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size()));
-            }
-            auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
-            
-            // Perform n matrix-vector multiplications.
-            auto currentX = &eigenX;
-            auto nextX = &eigenMultiplyResult;
-            for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                if (eigenB) {
-                    nextX->noalias() = *eigenA * *currentX + *eigenB;
-                } else {
-                    nextX->noalias() = *eigenA * *currentX;
-                }
-                std::swap(nextX, currentX);
-            }
-            
-            // If the last result we obtained is not the one in the input vector x, we swap the result there.
-            if (currentX != &eigenX) {
-                std::swap(*nextX, *currentX);
-            }
-            
-            if (!multiplyResultProvided) {
-                delete multiplyResult;
-            }
-        }
+//        template<typename ValueType>
+//        void EigenLinearEquationSolver<ValueType>::performMatrixVectorMultiplication(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+//            // Typedef the map-type so we don't have to spell it out.
+//            typedef decltype(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
+//            
+//            bool multiplyResultProvided = multiplyResult != nullptr;
+//            if (!multiplyResult) {
+//                multiplyResult = new std::vector<ValueType>(eigenA->cols());
+//            }
+//            auto eigenMultiplyResult = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(multiplyResult->data(), multiplyResult->size());
+//            
+//            // Map the input vectors x and b to Eigen's format.
+//            std::unique_ptr<MapType> eigenB;
+//            if (b != nullptr) {
+//                eigenB = std::make_unique<MapType>(Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(b->data(), b->size()));
+//            }
+//            auto eigenX = Eigen::Matrix<ValueType, Eigen::Dynamic, 1>::Map(x.data(), x.size());
+//            
+//            // Perform n matrix-vector multiplications.
+//            auto currentX = &eigenX;
+//            auto nextX = &eigenMultiplyResult;
+//            for (uint64_t iteration = 0; iteration < n; ++iteration) {
+//                if (eigenB) {
+//                    nextX->noalias() = *eigenA * *currentX + *eigenB;
+//                } else {
+//                    nextX->noalias() = *eigenA * *currentX;
+//                }
+//                std::swap(nextX, currentX);
+//            }
+//            
+//            // If the last result we obtained is not the one in the input vector x, we swap the result there.
+//            if (currentX != &eigenX) {
+//                std::swap(*nextX, *currentX);
+//            }
+//            
+//            if (!multiplyResultProvided) {
+//                delete multiplyResult;
+//            }
+//        }
         
         template<typename ValueType>
         EigenLinearEquationSolverSettings<ValueType>& EigenLinearEquationSolver<ValueType>::getSettings() {
@@ -287,46 +287,6 @@ namespace storm {
             solver._solve_impl(eigenB, eigenX);
         }
         
-        template<>
-        void EigenLinearEquationSolver<storm::RationalNumber>::performMatrixVectorMultiplication(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const* b, uint_fast64_t n, std::vector<storm::RationalNumber>* multiplyResult) const {
-            // Typedef the map-type so we don't have to spell it out.
-            typedef decltype(Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
-
-            bool multiplyResultProvided = multiplyResult != nullptr;
-            if (!multiplyResult) {
-                multiplyResult = new std::vector<storm::RationalNumber>(eigenA->cols());
-            }
-            auto eigenMultiplyResult = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(multiplyResult->data(), multiplyResult->size());
-            
-            // Map the input vectors x and b to Eigen's format.
-            std::unique_ptr<MapType> eigenB;
-            if (b != nullptr) {
-                eigenB = std::make_unique<MapType>(Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(b->data(), b->size()));
-            }
-            auto eigenX = Eigen::Matrix<storm::RationalNumber, Eigen::Dynamic, 1>::Map(x.data(), x.size());
-            
-            // Perform n matrix-vector multiplications.
-            auto currentX = &eigenX;
-            auto nextX = &eigenMultiplyResult;
-            for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                if (eigenB) {
-                    nextX->noalias() = *eigenA * *currentX + *eigenB;
-                } else {
-                    nextX->noalias() = *eigenA * *currentX;
-                }
-                std::swap(nextX, currentX);
-            }
-            
-            // If the last result we obtained is not the one in the input vector x, we swap the result there.
-            if (currentX != &eigenX) {
-                std::swap(*nextX, *currentX);
-            }
-            
-            if (!multiplyResultProvided) {
-                delete multiplyResult;
-            }
-        }
-        
         // Specialization form storm::RationalFunction
         
         template<>
@@ -339,47 +299,7 @@ namespace storm {
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
         }
-        
-        template<>
-        void EigenLinearEquationSolver<storm::RationalFunction>::performMatrixVectorMultiplication(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const* b, uint_fast64_t n, std::vector<storm::RationalFunction>* multiplyResult) const {
-            // Typedef the map-type so we don't have to spell it out.
-            typedef decltype(Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(b->data(), b->size())) MapType;
-
-            bool multiplyResultProvided = multiplyResult != nullptr;
-            if (!multiplyResult) {
-                multiplyResult = new std::vector<storm::RationalFunction>(eigenA->cols());
-            }
-            auto eigenMultiplyResult = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(multiplyResult->data(), multiplyResult->size());
-            
-            // Map the input vectors x and b to Eigen's format.
-            std::unique_ptr<MapType> eigenB;
-            if (b != nullptr) {
-                eigenB = std::make_unique<MapType>(Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(b->data(), b->size()));
-            }
-            auto eigenX = Eigen::Matrix<storm::RationalFunction, Eigen::Dynamic, 1>::Map(x.data(), x.size());
-            
-            // Perform n matrix-vector multiplications.
-            auto currentX = &eigenX;
-            auto nextX = &eigenMultiplyResult;
-            for (uint64_t iteration = 0; iteration < n; ++iteration) {
-                if (eigenB) {
-                    nextX->noalias() = *eigenA * *currentX + *eigenB;
-                } else {
-                    nextX->noalias() = *eigenA * *currentX;
-                }
-                std::swap(nextX, currentX);
-            }
-            
-            // If the last result we obtained is not the one in the input vector x, we swap the result there.
-            if (currentX != &eigenX) {
-                std::swap(*nextX, *currentX);
-            }
-            
-            if (!multiplyResultProvided) {
-                delete multiplyResult;
-            }
-        }
-        
+                
         template<typename ValueType>
         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
             return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(matrix, settings);

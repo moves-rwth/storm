@@ -109,6 +109,11 @@ namespace storm {
             return number;
         }
         
+        template<typename ValueType>
+        ValueType abs(ValueType const& number) {
+            return std::fabs(number);
+        }
+        
         template<>
         RationalFunction& simplify(RationalFunction& value);
         
@@ -153,6 +158,11 @@ namespace storm {
             return RationalFunction(carl::rationalize<RationalNumber>(number));
         }
         
+        template<>
+        storm::RationalNumber abs(storm::RationalNumber const& number) {
+            return carl::abs(number);
+        }
+
         template<typename IndexType, typename ValueType>
         storm::storage::MatrixEntry<IndexType, ValueType> simplify(storm::storage::MatrixEntry<IndexType, ValueType> matrixEntry) {
             simplify(matrixEntry.getValue());
@@ -188,6 +198,8 @@ namespace storm {
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
 
+        template double abs(double const& number);
+        
         template bool isOne(float const& value);
         template bool isZero(float const& value);
         template bool isConstant(float const& value);
@@ -251,6 +263,8 @@ namespace storm {
 
         template double convertNumber(storm::RationalNumber const& number);
         template storm::RationalNumber convertNumber(double const& number);
+
+        template storm::RationalNumber abs(storm::RationalNumber const& number);
 
 //        template storm::RationalNumber pow(storm::RationalNumber const& value, uint_fast64_t exponent);
         

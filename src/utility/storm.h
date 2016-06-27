@@ -295,6 +295,18 @@ namespace storm {
     }
 
     template<typename ValueType>
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMdp(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
+        if (modelchecker.canHandle(task)) {
+            result = modelchecker.check(task);
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
+        }
+        return result;
+    }
+
+    template<typename ValueType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant = false) {
         storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
 
@@ -302,19 +314,7 @@ namespace storm {
         if (model->getType() == storm::models::ModelType::Dtmc) {
             result = verifySparseDtmc(model->template as<storm::models::sparse::Dtmc<ValueType>>(), task);
         } else if (model->getType() == storm::models::ModelType::Mdp) {
-            std::shared_ptr<storm::models::sparse::Mdp<ValueType>> mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
-#ifdef STORM_HAVE_CUDA
-            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isCudaSet()) {
-                    storm::modelchecker::TopologicalValueIterationMdpPrctlModelChecker<ValueType> modelchecker(*mdp);
-                    result = modelchecker.check(task);
-                } else {
-                    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
-                    result = modelchecker.check(task);
-                }
-#else
-            storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> modelchecker(*mdp);
-            result = modelchecker.check(task);
-#endif
+            result = verifySparseMdp(model->template as<storm::models::sparse::Mdp<ValueType>>(), task);
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             result = verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<ValueType>>(), task);
         } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
@@ -341,6 +341,8 @@ namespace storm {
             result = verifySparseDtmc(model->template as<storm::models::sparse::Dtmc<storm::RationalNumber>>(), task);
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             result = verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<storm::RationalNumber>>(), task);
+        } else if (model->getType() == storm::models::ModelType::Mdp) {
+            result = verifySparseMdp(model->template as<storm::models::sparse::Mdp<storm::RationalNumber>>(), task);
         } else {
             STORM_LOG_ASSERT(false, "Illegal model type.");
         }

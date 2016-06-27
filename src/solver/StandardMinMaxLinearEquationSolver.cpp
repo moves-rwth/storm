@@ -15,12 +15,13 @@
 namespace storm {
     namespace solver {
         
-        StandardMinMaxLinearEquationSolverSettings::StandardMinMaxLinearEquationSolverSettings() {
+        template<typename ValueType>
+        StandardMinMaxLinearEquationSolverSettings<ValueType>::StandardMinMaxLinearEquationSolverSettings() {
             // Get the settings object to customize linear solving.
             storm::settings::modules::MinMaxEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             
             maximalNumberOfIterations = settings.getMaximalIterationCount();
-            precision = settings.getPrecision();
+            precision = storm::utility::convertNumber<ValueType>(settings.getPrecision());
             relative = settings.getConvergenceCriterion() == storm::settings::modules::MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
             
             auto method = settings.getMinMaxEquationSolvingMethod();
@@ -32,53 +33,61 @@ namespace storm {
             }
         }
         
-        void StandardMinMaxLinearEquationSolverSettings::setSolutionMethod(SolutionMethod const& solutionMethod) {
+        template<typename ValueType>
+        void StandardMinMaxLinearEquationSolverSettings<ValueType>::setSolutionMethod(SolutionMethod const& solutionMethod) {
             this->solutionMethod = solutionMethod;
         }
         
-        void StandardMinMaxLinearEquationSolverSettings::setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations) {
+        template<typename ValueType>
+        void StandardMinMaxLinearEquationSolverSettings<ValueType>::setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations) {
             this->maximalNumberOfIterations = maximalNumberOfIterations;
         }
         
-        void StandardMinMaxLinearEquationSolverSettings::setRelativeTerminationCriterion(bool value) {
+        template<typename ValueType>
+        void StandardMinMaxLinearEquationSolverSettings<ValueType>::setRelativeTerminationCriterion(bool value) {
             this->relative = value;
         }
         
-        void StandardMinMaxLinearEquationSolverSettings::setPrecision(double precision) {
+        template<typename ValueType>
+        void StandardMinMaxLinearEquationSolverSettings<ValueType>::setPrecision(ValueType precision) {
             this->precision = precision;
         }
         
-        StandardMinMaxLinearEquationSolverSettings::SolutionMethod const& StandardMinMaxLinearEquationSolverSettings::getSolutionMethod() const {
+        template<typename ValueType>
+        typename StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod const& StandardMinMaxLinearEquationSolverSettings<ValueType>::getSolutionMethod() const {
             return solutionMethod;
         }
         
-        uint64_t StandardMinMaxLinearEquationSolverSettings::getMaximalNumberOfIterations() const {
+        template<typename ValueType>
+        uint64_t StandardMinMaxLinearEquationSolverSettings<ValueType>::getMaximalNumberOfIterations() const {
             return maximalNumberOfIterations;
         }
         
-        double StandardMinMaxLinearEquationSolverSettings::getPrecision() const {
+        template<typename ValueType>
+        ValueType StandardMinMaxLinearEquationSolverSettings<ValueType>::getPrecision() const {
             return precision;
         }
         
-        bool StandardMinMaxLinearEquationSolverSettings::getRelativeTerminationCriterion() const {
+        template<typename ValueType>
+        bool StandardMinMaxLinearEquationSolverSettings<ValueType>::getRelativeTerminationCriterion() const {
             return relative;
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings const& settings) : settings(settings), linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localA(nullptr), A(A) {
+        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings<ValueType> const& settings) : settings(settings), linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localA(nullptr), A(A) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings const& settings) : settings(settings), linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(*localA) {
+        StandardMinMaxLinearEquationSolver<ValueType>::StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings<ValueType> const& settings) : settings(settings), linearEquationSolverFactory(std::move(linearEquationSolverFactory)), localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(*localA) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
         void StandardMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
             switch (this->getSettings().getSolutionMethod()) {
-                case StandardMinMaxLinearEquationSolverSettings::SolutionMethod::ValueIteration: solveEquationSystemValueIteration(dir, x, b, multiplyResult, newX); break;
-                case StandardMinMaxLinearEquationSolverSettings::SolutionMethod::PolicyIteration: solveEquationSystemPolicyIteration(dir, x, b, multiplyResult, newX); break;
+                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration: solveEquationSystemValueIteration(dir, x, b, multiplyResult, newX); break;
+                case StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration: solveEquationSystemPolicyIteration(dir, x, b, multiplyResult, newX); break;
             }
         }
         
@@ -90,7 +99,7 @@ namespace storm {
             if (multiplyResult == nullptr) {
                 multiplyResult = new std::vector<ValueType>(this->A.getRowCount());
             }
-
+            
             // Create the initial scheduler.
             std::vector<storm::storage::sparse::state_type> scheduler(this->A.getRowGroupCount());
             
@@ -107,12 +116,14 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> submatrix = this->A.selectRowsFromRowGroups(scheduler, true);
                 submatrix.convertToEquationSystem();
                 storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A.getRowGroupIndices(), b);
-
+                
                 // Solve the equation system for the 'DTMC'.
                 // FIXME: we need to remove the 0- and 1- states to make the solution unique.
+                // HOWEVER: if we start with a valid scheduler, then we will never get an illegal one, because staying
+                // within illegal MECs will never strictly improve the value. Is this true?
                 auto solver = linearEquationSolverFactory->create(submatrix);
                 solver->solveEquationSystem(x, subB, &deterministicMultiplyResult);
-
+                
                 // Go through the multiplication result and see whether we can improve any of the choices.
                 bool schedulerImproved = false;
                 for (uint_fast64_t group = 0; group < this->A.getRowGroupCount(); ++group) {
@@ -121,7 +132,7 @@ namespace storm {
                         if (choice - this->A.getRowGroupIndices()[group] == scheduler[group]) {
                             continue;
                         }
-                            
+                        
                         // Create the value of the choice.
                         ValueType choiceValue = storm::utility::zero<ValueType>();
                         for (auto const& entry : this->A.getRow(choice)) {
@@ -204,7 +215,7 @@ namespace storm {
                 storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, *newX, this->A.getRowGroupIndices());
                 
                 // Determine whether the method converged.
-                if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion())) {
+                if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
                     status = Status::Converged;
                 }
                 
@@ -278,12 +289,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolverSettings const& StandardMinMaxLinearEquationSolver<ValueType>::getSettings() const {
+        StandardMinMaxLinearEquationSolverSettings<ValueType> const& StandardMinMaxLinearEquationSolver<ValueType>::getSettings() const {
             return settings;
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolverSettings& StandardMinMaxLinearEquationSolver<ValueType>::getSettings() {
+        StandardMinMaxLinearEquationSolverSettings<ValueType>& StandardMinMaxLinearEquationSolver<ValueType>::getSettings() {
             return settings;
         }
         
@@ -300,10 +311,20 @@ namespace storm {
         template<typename ValueType>
         StandardMinMaxLinearEquationSolverFactory<ValueType>::StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, bool trackScheduler) : MinMaxLinearEquationSolverFactory<ValueType>(trackScheduler) {
             switch (solverType) {
-                case  EquationSolverType::Gmmxx: linearEquationSolverFactory = std::make_unique<GmmxxLinearEquationSolverFactory<ValueType>>(); break;
-                case  EquationSolverType::Eigen: linearEquationSolverFactory = std::make_unique<EigenLinearEquationSolverFactory<ValueType>>(); break;
-                case  EquationSolverType::Native: linearEquationSolverFactory = std::make_unique<NativeLinearEquationSolverFactory<ValueType>>(); break;
-                case  EquationSolverType::Elimination: linearEquationSolverFactory = std::make_unique<EliminationLinearEquationSolverFactory<ValueType>>(); break;
+                case EquationSolverType::Gmmxx: linearEquationSolverFactory = std::make_unique<GmmxxLinearEquationSolverFactory<ValueType>>(); break;
+                case EquationSolverType::Eigen: linearEquationSolverFactory = std::make_unique<EigenLinearEquationSolverFactory<ValueType>>(); break;
+                case EquationSolverType::Native: linearEquationSolverFactory = std::make_unique<NativeLinearEquationSolverFactory<ValueType>>(); break;
+                case EquationSolverType::Elimination: linearEquationSolverFactory = std::make_unique<EliminationLinearEquationSolverFactory<ValueType>>(); break;
+            }
+        }
+        
+        template<>
+        StandardMinMaxLinearEquationSolverFactory<storm::RationalNumber>::StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, bool trackScheduler) : MinMaxLinearEquationSolverFactory<storm::RationalNumber>(trackScheduler) {
+            switch (solverType) {
+                case  EquationSolverType::Eigen: linearEquationSolverFactory = std::make_unique<EigenLinearEquationSolverFactory<storm::RationalNumber>>(); break;
+                case  EquationSolverType::Elimination: linearEquationSolverFactory = std::make_unique<EliminationLinearEquationSolverFactory<storm::RationalNumber>>(); break;
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Cannot create the requested solver for this data type.");
             }
         }
         
@@ -331,12 +352,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolverSettings& StandardMinMaxLinearEquationSolverFactory<ValueType>::getSettings() {
+        StandardMinMaxLinearEquationSolverSettings<ValueType>& StandardMinMaxLinearEquationSolverFactory<ValueType>::getSettings() {
             return settings;
         }
         
         template<typename ValueType>
-        StandardMinMaxLinearEquationSolverSettings const& StandardMinMaxLinearEquationSolverFactory<ValueType>::getSettings() const {
+        StandardMinMaxLinearEquationSolverSettings<ValueType> const& StandardMinMaxLinearEquationSolverFactory<ValueType>::getSettings() const {
             return settings;
         }
         
@@ -361,12 +382,16 @@ namespace storm {
         }
         
         template class StandardMinMaxLinearEquationSolver<double>;
-        
         template class StandardMinMaxLinearEquationSolverFactory<double>;
         template class GmmxxMinMaxLinearEquationSolverFactory<double>;
         template class EigenMinMaxLinearEquationSolverFactory<double>;
         template class NativeMinMaxLinearEquationSolverFactory<double>;
         template class EliminationMinMaxLinearEquationSolverFactory<double>;
+        
+        template class StandardMinMaxLinearEquationSolver<storm::RationalNumber>;
+        template class StandardMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
+        template class EigenMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
+        template class EliminationMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
         
     }
 }

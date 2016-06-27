@@ -6,6 +6,7 @@
 namespace storm {
     namespace solver {
         
+        template<typename ValueType>
         class StandardMinMaxLinearEquationSolverSettings {
         public:
             StandardMinMaxLinearEquationSolverSettings();
@@ -17,31 +18,31 @@ namespace storm {
             void setSolutionMethod(SolutionMethod const& solutionMethod);
             void setMaximalNumberOfIterations(uint64_t maximalNumberOfIterations);
             void setRelativeTerminationCriterion(bool value);
-            void setPrecision(double precision);
+            void setPrecision(ValueType precision);
 
             SolutionMethod const& getSolutionMethod() const;
             uint64_t getMaximalNumberOfIterations() const;
-            double getPrecision() const;
+            ValueType getPrecision() const;
             bool getRelativeTerminationCriterion() const;
 
         private:
             SolutionMethod solutionMethod;
             uint64_t maximalNumberOfIterations;
-            double precision;
+            ValueType precision;
             bool relative;
         };
         
         template<typename ValueType>
         class StandardMinMaxLinearEquationSolver : public MinMaxLinearEquationSolver<ValueType> {
         public:
-            StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings const& settings = StandardMinMaxLinearEquationSolverSettings());
-            StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings const& settings = StandardMinMaxLinearEquationSolverSettings());
+            StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings<ValueType> const& settings = StandardMinMaxLinearEquationSolverSettings<ValueType>());
+            StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings<ValueType> const& settings = StandardMinMaxLinearEquationSolverSettings<ValueType>());
             
             virtual void solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
             virtual void performMatrixVectorMultiplication(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
 
-            StandardMinMaxLinearEquationSolverSettings const& getSettings() const;
-            StandardMinMaxLinearEquationSolverSettings& getSettings();
+            StandardMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
+            StandardMinMaxLinearEquationSolverSettings<ValueType>& getSettings();
             
         private:
             void solveEquationSystemPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const;
@@ -57,7 +58,7 @@ namespace storm {
             void reportStatus(Status status, uint64_t iterations) const;
             
             /// The settings of this solver.
-            StandardMinMaxLinearEquationSolverSettings settings;
+            StandardMinMaxLinearEquationSolverSettings<ValueType> settings;
             
             /// The factory used to obtain linear equation solvers.
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
@@ -81,11 +82,11 @@ namespace storm {
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
             virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
             
-            StandardMinMaxLinearEquationSolverSettings& getSettings();
-            StandardMinMaxLinearEquationSolverSettings const& getSettings() const;
+            StandardMinMaxLinearEquationSolverSettings<ValueType>& getSettings();
+            StandardMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
         private:
-            StandardMinMaxLinearEquationSolverSettings settings;
+            StandardMinMaxLinearEquationSolverSettings<ValueType> settings;
             
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
         };

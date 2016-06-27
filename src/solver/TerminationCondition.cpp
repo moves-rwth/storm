@@ -1,6 +1,8 @@
 #include "src/solver/TerminationCondition.h"
 #include "src/utility/vector.h"
 
+#include "src/adapters/CarlAdapter.h"
+
 #include "src/utility/macros.h"
 
 namespace storm {
@@ -24,7 +26,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        TerminateIfFilteredExtremumExceedsThreshold<ValueType>::TerminateIfFilteredExtremumExceedsThreshold(storm::storage::BitVector const& filter, ValueType const& threshold, bool strict, bool useMinimum) : TerminateIfFilteredSumExceedsThreshold<ValueType>(filter, threshold, strict), useMinimum(useMinimum) {
+        TerminateIfFilteredExtremumExceedsThreshold<ValueType>::TerminateIfFilteredExtremumExceedsThreshold(storm::storage::BitVector const& filter, bool strict, ValueType const& threshold, bool useMinimum) : TerminateIfFilteredSumExceedsThreshold<ValueType>(filter, threshold, strict), useMinimum(useMinimum) {
             // Intentionally left empty.
         }
         
@@ -37,5 +39,9 @@ namespace storm {
         
         template class TerminateIfFilteredSumExceedsThreshold<double>;
         template class TerminateIfFilteredExtremumExceedsThreshold<double>;
+
+        template class TerminateIfFilteredSumExceedsThreshold<storm::RationalNumber>;
+        template class TerminateIfFilteredExtremumExceedsThreshold<storm::RationalNumber>;
+
     }
 }
