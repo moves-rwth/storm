@@ -225,14 +225,14 @@ template<typename _Scalar, int _Options, typename _StorageIndex>
     }
 
     /** The class DynamicSparseMatrix is deprectaed */
-    EIGEN_DEPRECATED inline DynamicSparseMatrix()
+    inline DynamicSparseMatrix()
       : m_innerSize(0), m_data(0)
     {
       eigen_assert(innerSize()==0 && outerSize()==0);
     }
 
     /** The class DynamicSparseMatrix is deprectaed */
-    EIGEN_DEPRECATED inline DynamicSparseMatrix(Index rows, Index cols)
+    inline DynamicSparseMatrix(Index rows, Index cols)
       : m_innerSize(0)
     {
       resize(rows, cols);
@@ -240,7 +240,7 @@ template<typename _Scalar, int _Options, typename _StorageIndex>
 
     /** The class DynamicSparseMatrix is deprectaed */
     template<typename OtherDerived>
-    EIGEN_DEPRECATED explicit inline DynamicSparseMatrix(const SparseMatrixBase<OtherDerived>& other)
+    explicit inline DynamicSparseMatrix(const SparseMatrixBase<OtherDerived>& other)
       : m_innerSize(0)
     {
     Base::operator=(other.derived());
@@ -281,7 +281,7 @@ template<typename _Scalar, int _Options, typename _StorageIndex>
 
     /** \deprecated
       * Set the matrix to zero and reserve the memory for \a reserveSize nonzero coefficients. */
-    EIGEN_DEPRECATED void startFill(Index reserveSize = 1000)
+    void startFill(Index reserveSize = 1000)
     {
       setZero();
       reserve(reserveSize);
@@ -296,7 +296,7 @@ template<typename _Scalar, int _Options, typename _StorageIndex>
       *
       * \see fillrand(), coeffRef()
       */
-    EIGEN_DEPRECATED Scalar& fill(Index row, Index col)
+    Scalar& fill(Index row, Index col)
     {
       const Index outer = IsRowMajor ? row : col;
       const Index inner = IsRowMajor ? col : row;
@@ -308,14 +308,14 @@ template<typename _Scalar, int _Options, typename _StorageIndex>
       * Compared to the generic coeffRef(), the unique limitation is that we assume
       * the coefficient does not exist yet.
       */
-    EIGEN_DEPRECATED Scalar& fillrand(Index row, Index col)
+    Scalar& fillrand(Index row, Index col)
     {
       return insert(row,col);
     }
 
     /** \deprecated use finalize()
       * Does nothing. Provided for compatibility with SparseMatrix. */
-    EIGEN_DEPRECATED void endFill() {}
+    void endFill() {}
     
 #   ifdef EIGEN_DYNAMICSPARSEMATRIX_PLUGIN
 #     include EIGEN_DYNAMICSPARSEMATRIX_PLUGIN

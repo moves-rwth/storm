@@ -312,7 +312,6 @@ template<typename Derived> class DenseBase
 
     /** \deprecated it now returns \c *this */
     template<unsigned int Added,unsigned int Removed>
-    EIGEN_DEPRECATED
     const Derived& flagged() const
     { return derived(); }
 

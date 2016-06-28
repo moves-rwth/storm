@@ -46,7 +46,6 @@ struct functor_traits<scalar_sum_op<Scalar> > {
   * \sa DenseBase::count(), DenseBase::any(), ArrayBase::cast(), MatrixBase::cast()
   */
 template<> struct scalar_sum_op<bool> : scalar_sum_op<int> {
-  EIGEN_DEPRECATED
   scalar_sum_op() {}
 };
 
