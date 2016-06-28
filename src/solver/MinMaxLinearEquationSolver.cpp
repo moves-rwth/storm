@@ -28,15 +28,15 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+        void MinMaxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
-            solveEquations(convert(this->direction), x, b, multiplyResult, newX);
+            solveEquations(convert(this->direction), x, b);
         }
 
         template<typename ValueType>
-        void MinMaxLinearEquationSolver<ValueType>::multiply( std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        void MinMaxLinearEquationSolver<ValueType>::repeatedMultiply( std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
             STORM_LOG_THROW(isSet(this->direction), storm::exceptions::IllegalFunctionCallException, "Optimization direction not set.");
-            return multiply(convert(this->direction), x, b, n, multiplyResult);
+            return repeatedMultiply(convert(this->direction), x, b, n);
         }
 
         template<typename ValueType>
@@ -77,6 +77,21 @@ namespace storm {
         std::unique_ptr<storm::storage::TotalScheduler> MinMaxLinearEquationSolver<ValueType>::getScheduler() {
             STORM_LOG_THROW(scheduler, storm::exceptions::IllegalFunctionCallException, "Cannot retrieve scheduler, because none was generated.");
             return std::move(scheduler.get());
+        }
+        
+        template<typename ValueType>
+        bool MinMaxLinearEquationSolver<ValueType>::allocateAuxStorage(MinMaxLinearEquationSolverOperation operation) {
+            return false;
+        }
+        
+        template<typename ValueType>
+        bool MinMaxLinearEquationSolver<ValueType>::deallocateAuxStorage(MinMaxLinearEquationSolverOperation operation) {
+            return false;
+        }
+        
+        template<typename ValueType>
+        bool MinMaxLinearEquationSolver<ValueType>::hasAuxStorage(MinMaxLinearEquationSolverOperation operation) const {
+            return false;
         }
         
         template<typename ValueType>

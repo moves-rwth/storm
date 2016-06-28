@@ -627,19 +627,19 @@ namespace storm {
                         result = std::vector<ValueType>(values.size());
                     }
                 }
-                std::vector<ValueType> multiplicationResult(result.size());
                 
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(std::move(uniformizedMatrix));
+                solver->allocateAuxStorage(storm::solver::LinearEquationSolverOperation::MultiplyRepeatedly);
                 
                 if (!useMixedPoissonProbabilities && std::get<0>(foxGlynnResult) > 1) {
                     // Perform the matrix-vector multiplications (without adding).
-                    solver->repeatedMultiply(values, addVector, std::get<0>(foxGlynnResult) - 1, &multiplicationResult);
+                    solver->repeatedMultiply(values, addVector, std::get<0>(foxGlynnResult) - 1);
                 } else if (useMixedPoissonProbabilities) {
                     std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&uniformizationRate] (ValueType const& a, ValueType const& b) { return a + b / uniformizationRate; };
                     
                     // For the iterations below the left truncation point, we need to add and scale the result with the uniformization rate.
                     for (uint_fast64_t index = 1; index < startingIteration; ++index) {
-                        solver->repeatedMultiply(values, nullptr, 1, &multiplicationResult);
+                        solver->repeatedMultiply(values, nullptr, 1);
                         storm::utility::vector::applyPointwise(result, values, result, addAndScale);
                     }
                 }
@@ -649,7 +649,7 @@ namespace storm {
                 ValueType weight = 0;
                 std::function<ValueType(ValueType const&, ValueType const&)> addAndScale = [&weight] (ValueType const& a, ValueType const& b) { return a + weight * b; };
                 for (uint_fast64_t index = startingIteration; index <= std::get<1>(foxGlynnResult); ++index) {
-                    solver->repeatedMultiply(values, addVector, 1, &multiplicationResult);
+                    solver->repeatedMultiply(values, addVector, 1);
                     
                     weight = std::get<3>(foxGlynnResult)[index - std::get<0>(foxGlynnResult)];
                     storm::utility::vector::applyPointwise(result, values, result, addAndScale);
@@ -657,7 +657,6 @@ namespace storm {
                 
                 return result;
             }
-            
             
             template <typename ValueType>
             storm::storage::SparseMatrix<ValueType> SparseCtmcCslHelper::computeProbabilityMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates) {

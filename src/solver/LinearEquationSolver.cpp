@@ -14,36 +14,80 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        void LinearEquationSolver<ValueType>::repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
+        LinearEquationSolver<ValueType>::LinearEquationSolver() : auxiliaryRepeatedMultiplyStorage(nullptr) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        void LinearEquationSolver<ValueType>::repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
+            bool allocatedAuxStorage = !this->hasAuxStorage(LinearEquationSolverOperation::MultiplyRepeatedly);
+            if (allocatedAuxStorage) {
+                auxiliaryRepeatedMultiplyStorage = std::make_unique<std::vector<ValueType>>(x.size());
+            }
             
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
             std::vector<ValueType>* currentX = &x;
-            
-            bool multiplyResultProvided = true;
-            std::vector<ValueType>* nextX = multiplyResult;
-            if (nextX == nullptr) {
-                nextX = new std::vector<ValueType>(x.size());
-                multiplyResultProvided = false;
-            }
-            std::vector<ValueType> const* copyX = nextX;
+            std::vector<ValueType>* nextX = auxiliaryRepeatedMultiplyStorage.get();
             
             // Now perform matrix-vector multiplication as long as we meet the bound.
             for (uint_fast64_t i = 0; i < n; ++i) {
-                this->multiply(*currentX, *nextX, b);
+                this->multiply(*currentX, b, *nextX);
                 std::swap(nextX, currentX);
             }
             
             // If we performed an odd number of repetitions, we need to swap the contents of currentVector and x,
             // because the output is supposed to be stored in the input vector x.
-            if (currentX == copyX) {
+            if (currentX == auxiliaryRepeatedMultiplyStorage.get()) {
                 std::swap(x, *currentX);
             }
-            
-            // If the vector for the temporary multiplication result was not provided, we need to delete it.
-            if (!multiplyResultProvided) {
-                delete copyX;
+
+            // If we allocated auxiliary storage, we need to dispose of it now.
+            if (allocatedAuxStorage) {
+                auxiliaryRepeatedMultiplyStorage.reset();
             }
+        }
+        
+        template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::allocateAuxStorage(LinearEquationSolverOperation operation) {
+            if (this->hasAuxStorage(operation)) {
+                return false;
+            }
+            
+            auxiliaryRepeatedMultiplyStorage = std::make_unique<std::vector<ValueType>>(this->getMatrixColumnCount());
+            return true;
+        }
+        
+        template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::deallocateAuxStorage(LinearEquationSolverOperation operation) {
+            if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
+                bool result = auxiliaryRepeatedMultiplyStorage != nullptr;
+                if (result) {
+                    auxiliaryRepeatedMultiplyStorage.reset();
+                }
+                return result;
+            }
+            return false;
+        }
+        
+        template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::reallocateAuxStorage(LinearEquationSolverOperation operation) {
+            bool result = false;
+            if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
+                if (auxiliaryRepeatedMultiplyStorage != nullptr) {
+                    result = auxiliaryRepeatedMultiplyStorage->size() != this->getMatrixColumnCount();
+                    auxiliaryRepeatedMultiplyStorage->resize(this->getMatrixColumnCount());
+                }
+            }
+            return result;
+        }
+        
+        template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::hasAuxStorage(LinearEquationSolverOperation operation) const {
+            if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
+                return auxiliaryRepeatedMultiplyStorage != nullptr;
+            }
+            return false;
         }
         
         template<typename ValueType>

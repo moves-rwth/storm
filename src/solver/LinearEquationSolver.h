@@ -11,6 +11,10 @@
 namespace storm {
     namespace solver {
         
+        enum class LinearEquationSolverOperation {
+            SolveEquations, MultiplyRepeatedly
+        };
+        
         /*!
          * An interface that represents an abstract linear equation solver. In addition to solving a system of linear
          * equations, the functionality to repeatedly multiply a matrix with a given vector is provided.
@@ -18,9 +22,14 @@ namespace storm {
         template<class ValueType>
         class LinearEquationSolver : public AbstractEquationSolver<ValueType> {
         public:
+            LinearEquationSolver();
+            
             virtual ~LinearEquationSolver() {
                 // Intentionally left empty.
             }
+            
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) = 0;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) = 0;
             
             /*!
              * Solves the equation system A*x = b. The matrix A is required to be square and have a unique solution.
@@ -29,22 +38,20 @@ namespace storm {
              *
              * @param x The solution vector that has to be computed. Its length must be equal to the number of rows of A.
              * @param b The right-hand side of the equation system. Its length must be equal to the number of rows of A.
-             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the number of rows of A.
              */
-            virtual void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
+            virtual void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
             
             /*!
              * Performs on matrix-vector multiplication x' = A*x + b.
              *
              * @param x The input vector with which to multiply the matrix. Its length must be equal
              * to the number of columns of A.
-             * @param result The target vector into which to write the multiplication result. Its length must be equal
-             * to the number of rows of A.
              * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
              * to the number of rows of A.
+             * @param result The target vector into which to write the multiplication result. Its length must be equal
+             * to the number of rows of A.
              */
-            virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b = nullptr) const = 0;
+            virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const = 0;
             
             /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After
@@ -55,10 +62,57 @@ namespace storm {
              * to the number of columns of A.
              * @param b If non-null, this vector is added after each multiplication. If given, its length must be equal
              * to the number of rows of A.
-             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the number of rows of A.
+             * @param n The number of times to perform the multiplication.
              */
-            void repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const;
+            void repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const;
+            
+            // Methods related to allocating/freeing auxiliary storage.
+            
+            /*!
+             * Allocates auxiliary storage that can be used to perform the provided operation. Repeated calls to the
+             * corresponding function can then be run without allocating/deallocating this storage repeatedly.
+             * Note: Since the allocated storage is fit to the currently selected options of the solver, they must not
+             * be changed any more after allocating the auxiliary storage until the storage is deallocated again.
+             *
+             * @return True iff auxiliary storage was allocated.
+             */
+            virtual bool allocateAuxStorage(LinearEquationSolverOperation operation);
+            
+            /*!
+             * Destroys previously allocated auxiliary storage for the provided operation.
+             *
+             * @return True iff auxiliary storage was deallocated.
+             */
+            virtual bool deallocateAuxStorage(LinearEquationSolverOperation operation);
+            
+            /*!
+             * If the matrix dimensions changed and auxiliary storage was allocated, this function needs to be called to
+             * update the auxiliary storage.
+             *
+             * @return True iff the auxiliary storage was reallocated.
+             */
+            virtual bool reallocateAuxStorage(LinearEquationSolverOperation operation);
+            
+            /*!
+             * Checks whether the solver has allocated auxiliary storage for the provided operation.
+             *
+             * @return True iff auxiliary storage was previously allocated (and not yet deallocated).
+             */
+            virtual bool hasAuxStorage(LinearEquationSolverOperation operation) const;
+            
+        private:
+            /*!
+             * Retrieves the row count of the matrix associated with this solver.
+             */
+            virtual uint64_t getMatrixRowCount() const = 0;
+            
+            /*!
+             * Retrieves the column count of the matrix associated with this solver.
+             */
+            virtual uint64_t getMatrixColumnCount() const = 0;
+            
+            // Auxiliary storage for repeated matrix-vector multiplication.
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRepeatedMultiplyStorage;
         };
         
         template<typename ValueType>

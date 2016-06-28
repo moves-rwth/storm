@@ -38,15 +38,19 @@ namespace storm {
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings<ValueType> const& settings = StandardMinMaxLinearEquationSolverSettings<ValueType>());
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings<ValueType> const& settings = StandardMinMaxLinearEquationSolverSettings<ValueType>());
             
-            virtual void solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
-            virtual void multiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const override;
+            virtual void solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual void multiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const override;
 
             StandardMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             StandardMinMaxLinearEquationSolverSettings<ValueType>& getSettings();
             
+            virtual bool allocateAuxStorage(MinMaxLinearEquationSolverOperation operation) override;
+            virtual bool deallocateAuxStorage(MinMaxLinearEquationSolverOperation operation) override;
+            virtual bool hasAuxStorage(MinMaxLinearEquationSolverOperation operation) const override;
+            
         private:
-            void solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const;
-            void solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const;
+            void solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            void solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
             bool valueImproved(OptimizationDirection dir, ValueType const& value1, ValueType const& value2) const;
             
@@ -70,6 +74,14 @@ namespace storm {
             // A reference to the original sparse matrix given to this solver. If the solver takes posession of the matrix
             // the reference refers to localA.
             storm::storage::SparseMatrix<ValueType> const& A;
+            
+            // Auxiliary storage for equation solving.
+            // Auxiliary storage for repeated matrix-vector multiplication.
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingMultiplyStorage;
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingVectorStorage;
+            
+            // Auxiliary storage for repeated matrix-vector multiplication.
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRepeatedMultiplyStorage;
         };
      
         template<typename ValueType>

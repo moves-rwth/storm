@@ -49,7 +49,7 @@ namespace storm {
                     std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
                     
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(std::move(submatrix));
-                    solver->multiply(dir, subresult, &b, stepBound);
+                    solver->repeatedMultiply(dir, subresult, &b, stepBound);
                     
                     // Set the values of the resulting vector accordingly.
                     storm::utility::vector::setVectorValues(result, maybeStates, subresult);
@@ -67,7 +67,7 @@ namespace storm {
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
-                solver->multiply(dir, result);
+                solver->repeatedMultiply(dir, result);
                 
                 return result;
             }
@@ -211,7 +211,7 @@ namespace storm {
                 std::vector<ValueType> result(rewardModel.getStateRewardVector());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
-                solver->multiply(dir, result, nullptr, stepCount);
+                solver->repeatedMultiply(dir, result, nullptr, stepCount);
                 
                 return result;
             }
@@ -235,7 +235,7 @@ namespace storm {
                 }
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
-                solver->multiply(dir, result, &totalRewardVector, stepBound);
+                solver->repeatedMultiply(dir, result, &totalRewardVector, stepBound);
                 
                 return result;
             }
@@ -601,13 +601,13 @@ namespace storm {
                     if (fixedTargetStates.get(state)) {
                         builder.addNextValue(currentRow, newGoalState, conditionProbabilities[state]);
                         if (!storm::utility::isZero(conditionProbabilities[state])) {
-                            builder.addNextValue(currentRow, newFailState, 1 - conditionProbabilities[state]);
+                            builder.addNextValue(currentRow, newFailState, storm::utility::one<ValueType>() - conditionProbabilities[state]);
                         }
                         ++currentRow;
                     } else if (conditionStates.get(state)) {
                         builder.addNextValue(currentRow, newGoalState, targetProbabilities[state]);
                         if (!storm::utility::isZero(targetProbabilities[state])) {
-                            builder.addNextValue(currentRow, newStopState, 1 - targetProbabilities[state]);
+                            builder.addNextValue(currentRow, newStopState, storm::utility::one<ValueType>() - targetProbabilities[state]);
                         }
                         ++currentRow;
                     } else {

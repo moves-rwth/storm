@@ -46,23 +46,37 @@ namespace storm {
             NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSettings<ValueType> const& settings = NativeLinearEquationSolverSettings<ValueType>());
             NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, NativeLinearEquationSolverSettings<ValueType> const& settings = NativeLinearEquationSolverSettings<ValueType>());
             
-            virtual void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
-            virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b = nullptr) const override;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
+            
+            virtual void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
 
             NativeLinearEquationSolverSettings<ValueType>& getSettings();
             NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
+            virtual bool allocateAuxStorage(LinearEquationSolverOperation operation) override;
+            virtual bool deallocateAuxStorage(LinearEquationSolverOperation operation) override;
+            virtual bool reallocateAuxStorage(LinearEquationSolverOperation operation) override;
+            virtual bool hasAuxStorage(LinearEquationSolverOperation operation) const override;
+
         private:
+            virtual uint64_t getMatrixRowCount() const override;
+            virtual uint64_t getMatrixColumnCount() const override;
+
             // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
             // when the solver is destructed.
             std::unique_ptr<storm::storage::SparseMatrix<ValueType>> localA;
             
-            // A reference to the original sparse matrix given to this solver. If the solver takes posession of the matrix
-            // the reference refers to localA.
-            storm::storage::SparseMatrix<ValueType> const& A;
+            // A pointer to the original sparse matrix given to this solver. If the solver takes posession of the matrix
+            // the pointer refers to localA.
+            storm::storage::SparseMatrix<ValueType> const* A;
                         
             // The settings used by the solver.
             NativeLinearEquationSolverSettings<ValueType> settings;
+            
+            // Auxiliary storage for the equation solving methods.
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingStorage;
         };
         
         template<typename ValueType>

@@ -86,6 +86,7 @@ namespace storm {
                 }
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(aProbabilistic);
+                solver->allocateAuxStorage(storm::solver::MinMaxLinearEquationSolverOperation::SolveEquations);
                 
                 // Perform the actual value iteration
                 // * loop until the step bound has been reached
@@ -94,15 +95,13 @@ namespace storm {
                 //      and 1_G being the characteristic vector for all goal states.
                 // *    perform one timed-step using v_MS := A_MSwG * v_MS + A_MStoPS * v_PS + (A * 1_G)|MS
                 std::vector<ValueType> markovianNonGoalValuesSwap(markovianNonGoalValues);
-                std::vector<ValueType> multiplicationResultScratchMemory(aProbabilistic.getRowCount());
-                std::vector<ValueType> aProbabilisticScratchMemory(probabilisticNonGoalValues.size());
                 for (uint_fast64_t currentStep = 0; currentStep < numberOfSteps; ++currentStep) {
                     // Start by (re-)computing bProbabilistic = bProbabilisticFixed + aProbabilisticToMarkovian * vMarkovian.
                     aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
                     storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
                     
                     // Now perform the inner value iteration for probabilistic states.
-                    solver->solveEquations(dir, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
+                    solver->solveEquations(dir, probabilisticNonGoalValues, bProbabilistic);
                     
                     // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
                     aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
@@ -115,7 +114,7 @@ namespace storm {
                 // After the loop, perform one more step of the value iteration for PS states.
                 aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
                 storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
-                solver->solveEquations(dir, probabilisticNonGoalValues, bProbabilistic, &multiplicationResultScratchMemory, &aProbabilisticScratchMemory);
+                solver->solveEquations(dir, probabilisticNonGoalValues, bProbabilistic);
             }
 
             template<typename ValueType>
