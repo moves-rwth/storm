@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 
 #include <vector>
 
@@ -187,7 +187,7 @@ TEST(MarkovAutomatonSparseTransitionParserTest, Whitespaces) {
 
 TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
     // Set the fixDeadlocks flag temporarily. It is set to its old value once the deadlockOption object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableMarkovChainSettings().overrideDontFixDeadlocksSet(false);
+    std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableCoreSettings().overrideDontFixDeadlocksSet(false);
 
     // Parse a Markov Automaton transition file with the fixDeadlocks Flag set and test if it works.
     typename storm::parser::MarkovAutomatonSparseTransitionParser<>::Result result = storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_deadlock.tra");
@@ -206,7 +206,7 @@ TEST(MarkovAutomatonSparseTransitionParserTest, FixDeadlocks) {
 
 TEST(MarkovAutomatonSparseTransitionParserTest, DontFixDeadlocks) {
     // Try to parse a Markov Automaton transition file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
-    std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableMarkovChainSettings().overrideDontFixDeadlocksSet(true);
+    std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableCoreSettings().overrideDontFixDeadlocksSet(true);
 
     ASSERT_THROW(storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/ma_deadlock.tra"), storm::exceptions::WrongFormatException);
 }

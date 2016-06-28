@@ -5,8 +5,6 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
-#ifdef STORM_HAVE_CARL
-
 namespace storm {
     namespace expressions {
         template<typename RationalFunctionType>
@@ -100,5 +98,3 @@ namespace storm {
         
     }
 }
-
-#endif

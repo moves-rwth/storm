@@ -1,7 +1,7 @@
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/Option.h"
 #include "src/settings/OptionBuilder.h"
 #include "src/settings/ArgumentBuilder.h"
@@ -81,7 +81,7 @@ namespace storm {
                 // This list does not include the precision, because this option is shared with other modules.
                 bool optionSet = isLinearEquationSystemTechniqueSet() || isMaximalIterationCountSet() || isConvergenceCriterionSet();
                 
-                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().getEquationSolver() == storm::solver::EquationSolverType::Native || !optionSet, "Native is not selected as the preferred equation solver, so setting options for native might have no effect.");
+                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver() == storm::solver::EquationSolverType::Native || !optionSet, "Native is not selected as the preferred equation solver, so setting options for native might have no effect.");
                 
                 return true;
             }

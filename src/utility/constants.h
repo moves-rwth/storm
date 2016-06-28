@@ -71,6 +71,9 @@ namespace storm {
             return std::sqrt(value);
 #endif
         }
+
+        template<typename ValueType>
+        ValueType abs(ValueType const& number);
     }
 }
 

@@ -3,7 +3,7 @@
 
 #include "src/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
-#include "src/utility/solver.h"
+#include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/storage/dd/DdType.h"
 #include "src/solver/OptimizationDirection.h"
 
@@ -21,7 +21,7 @@ namespace storm {
         class HybridMdpPrctlModelChecker : public SymbolicPropositionalModelChecker<DdType, ValueType> {
         public:
             explicit HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model);
-            explicit HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            explicit HybridMdpPrctlModelChecker(storm::models::symbolic::Mdp<DdType, ValueType> const& model, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
@@ -38,7 +38,7 @@ namespace storm {
             
         private:
             // An object that is used for retrieving linear equation solvers.
-            std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
         };
         
     } // namespace modelchecker

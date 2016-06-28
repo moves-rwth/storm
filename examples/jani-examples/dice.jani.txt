@@ -1,0 +1,29 @@
+﻿Peak memory usage: 36 MB
+Analysis results for dice.jani
+
++ State space exploration
+  States:      8
+  Transitions: 8
+  Branches:    14
+  Time:        0.0 s
+  Rate:        190 states/s
+
++ ProbThrowSix
+  Probability: 0.166666626930237
+  Time:        0.0 s
+
+  + Value iteration
+    Final error: 7.15255907834985E-07
+    Iterations:  11
+    Time:        0.0 s
+
++ StepsUntilReach
+  Value:                        3.66666650772095
+  Time for min. prob. 0 states: 0.0 s
+  Time for min. prob. 1 states: 0.0 s
+  Time:                         0.0 s
+
+  + Value iteration
+    Final error: 4.08717619857464E-07
+    Iterations:  12
+    Time:        0.0 s

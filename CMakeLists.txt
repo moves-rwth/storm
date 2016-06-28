@@ -214,6 +214,16 @@ include_directories(${GMMXX_INCLUDE_DIR})
 
 #############################################################
 ##
+##	Eigen
+##
+#############################################################
+
+# Add the shipped version of Eigen to the include pathes
+set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.3-beta1")
+include_directories(${EIGEN_INCLUDE_DIR})
+
+#############################################################
+##
 ##	gmp
 ##
 #############################################################
@@ -254,6 +264,16 @@ message(STATUS "StoRM - Using Boost ${Boost_VERSION} (lib ${Boost_LIB_VERSION})"
 # Use the shipped version of ExprTK
 message (STATUS "StoRM - Including ExprTk")
 include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/exprtk")
+
+#############################################################
+##
+##	ModernJSON
+##
+#############################################################
+
+#use the shipped version of modernjson
+message (STATUS "StoRM - Including ModernJSON")
+include_directories("${PROJECT_SOURCE_DIR}/resources/3rdparty/modernjson/src/")
 
 #############################################################
 ##

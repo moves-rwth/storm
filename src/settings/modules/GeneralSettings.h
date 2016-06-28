@@ -106,15 +106,20 @@ namespace storm {
                  */
                 bool isBisimulationSet() const;
 
-#ifdef STORM_HAVE_CARL
                 /*!
                  * Retrieves whether the option enabling parametric model checking is set.
                  *
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
-#endif
-                
+
+                /*!
+                 * Retrieves whether the option enabling exact model checking is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isExactSet() const;
+
                 bool check() const override;
                 void finalize() override;
 
@@ -138,10 +143,8 @@ namespace storm {
                 static const std::string timeoutOptionShortName;
                 static const std::string bisimulationOptionName;
                 static const std::string bisimulationOptionShortName;
-
-#ifdef STORM_HAVE_CARL
                 static const std::string parametricOptionName;
-#endif
+                static const std::string exactOptionName;
             };
 
         } // namespace modules

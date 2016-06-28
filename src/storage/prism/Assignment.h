@@ -61,7 +61,7 @@ namespace storm {
             Assignment substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
             
             /*!
-             * Checks whether the assignment is an identity  (lhs equals rhs)
+             * Checks whether the assignment is an identity (lhs equals rhs)
              * 
              * @return true iff the assignment is of the form a' = a.
              */

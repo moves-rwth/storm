@@ -5,7 +5,7 @@
 
 #include "src/models/sparse/MarkovAutomaton.h"
 
-#include "src/utility/solver.h"
+#include "src/solver/MinMaxLinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {
@@ -16,7 +16,7 @@ namespace storm {
             typedef typename SparseMarkovAutomatonModelType::ValueType ValueType;
             typedef typename SparseMarkovAutomatonModelType::RewardModelType RewardModelType;
             
-            explicit SparseMarkovAutomatonCslModelChecker(SparseMarkovAutomatonModelType const& model, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& minMaxLinearEquationSolver);
+            explicit SparseMarkovAutomatonCslModelChecker(SparseMarkovAutomatonModelType const& model, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>>&& minMaxLinearEquationSolver);
             explicit SparseMarkovAutomatonCslModelChecker(SparseMarkovAutomatonModelType const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
@@ -29,7 +29,7 @@ namespace storm {
             
         private:
             // An object that is used for retrieving solvers for systems of linear equations that are the result of nondeterministic choices.
-            std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType>> minMaxLinearEquationSolverFactory;
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ValueType>> minMaxLinearEquationSolverFactory;
         };
     }
 }

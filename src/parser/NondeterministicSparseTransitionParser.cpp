@@ -4,7 +4,7 @@
 
 #include "src/parser/MappedFile.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/OutOfRangeException.h"
 
@@ -96,7 +96,7 @@ namespace storm {
             // Initialize variables for the parsing run.
             uint_fast64_t source = 0, target = 0, lastSource = 0, choice = 0, lastChoice = 0, curRow = 0;
             double val = 0.0;
-            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
             bool hadDeadlocks = false;
 
             // The first state already starts a new row group of the matrix.

@@ -49,13 +49,6 @@ namespace storm {
                 Dtmc& operator=(Dtmc<ValueType, RewardModelType>&& dtmc) = default;
 #endif
                 
-                /*!
-                 * Retrieves the sub-DTMC that only contains the given set of states.
-                 *
-                 * @param states The states of the sub-DTMC.
-                 * @return The resulting sub-DTMC.
-                 */
-                Dtmc<ValueType> getSubDtmc(storm::storage::BitVector const& states) const;
                 
 #ifdef STORM_HAVE_CARL
                 class ConstraintCollector {

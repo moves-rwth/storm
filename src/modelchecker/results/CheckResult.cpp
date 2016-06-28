@@ -163,12 +163,14 @@ namespace storm {
         template ParetoCurveCheckResult<double>& CheckResult::asParetoCurveCheckResult();
         template ParetoCurveCheckResult<double> const& CheckResult::asParetoCurveCheckResult() const;
 
-#ifdef STORM_HAVE_CARL
+        template ExplicitQuantitativeCheckResult<storm::RationalNumber>& CheckResult::asExplicitQuantitativeCheckResult();
+        template ExplicitQuantitativeCheckResult<storm::RationalNumber> const& CheckResult::asExplicitQuantitativeCheckResult() const;
+
         template ExplicitQuantitativeCheckResult<storm::RationalFunction>& CheckResult::asExplicitQuantitativeCheckResult();
         template ExplicitQuantitativeCheckResult<storm::RationalFunction> const& CheckResult::asExplicitQuantitativeCheckResult() const;
-        
+
         template ParetoCurveCheckResult<storm::RationalNumber>& CheckResult::asParetoCurveCheckResult();
         template ParetoCurveCheckResult<storm::RationalNumber> const& CheckResult::asParetoCurveCheckResult() const;
-#endif
+
     }
 }

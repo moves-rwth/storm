@@ -58,7 +58,7 @@ namespace storm {
                         
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquationSystem(model.getManager().getConstant(0.5) * maybeStatesAdd, subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.5) * maybeStatesAdd, subvector);
                         
                         return statesWithProbability01.second.template toAdd<ValueType>() + result;
                     } else {
@@ -106,7 +106,7 @@ namespace storm {
                     
                     // Perform the matrix-vector multiplication.
                     std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                    storm::dd::Add<DdType, ValueType> result = solver->performMatrixVectorMultiplication(model.getManager().template getAddZero<ValueType>(), &subvector, stepBound);
+                    storm::dd::Add<DdType, ValueType> result = solver->multiply(model.getManager().template getAddZero<ValueType>(), &subvector, stepBound);
                     
                     return psiStates.template toAdd<ValueType>() + result;
                 } else {
@@ -124,7 +124,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix, model.getReachableStates(), model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                return solver->performMatrixVectorMultiplication(model.getManager().template getAddZero<ValueType>(), &totalRewardVector, stepBound);
+                return solver->multiply(model.getManager().template getAddZero<ValueType>(), &totalRewardVector, stepBound);
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -134,7 +134,7 @@ namespace storm {
                 
                 // Perform the matrix-vector multiplication.
                 std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix, model.getReachableStates(), model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                return solver->performMatrixVectorMultiplication(rewardModel.getStateRewardVector(), nullptr, stepBound);
+                return solver->multiply(rewardModel.getStateRewardVector(), nullptr, stepBound);
             }
             
             template<storm::dd::DdType DdType, typename ValueType>
@@ -175,7 +175,7 @@ namespace storm {
                         
                         // Solve the equation system.
                         std::unique_ptr<storm::solver::SymbolicLinearEquationSolver<DdType, ValueType>> solver = linearEquationSolverFactory.create(submatrix, maybeStates, model.getRowVariables(), model.getColumnVariables(), model.getRowColumnMetaVariablePairs());
-                        storm::dd::Add<DdType, ValueType> result = solver->solveEquationSystem(model.getManager().getConstant(0.5) * maybeStatesAdd, subvector);
+                        storm::dd::Add<DdType, ValueType> result = solver->solveEquations(model.getManager().getConstant(0.5) * maybeStatesAdd, subvector);
                         
                         return infinityStates.ite(model.getManager().getConstant(storm::utility::infinity<ValueType>()), result);
                     } else {

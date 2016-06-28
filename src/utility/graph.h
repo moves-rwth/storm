@@ -60,6 +60,15 @@ namespace storm {
              */
             template<typename T>
             storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound = false, uint_fast64_t maximalSteps = 0);
+
+            /*!
+             * Retrieves a set of states that covers als BSCCs of the system in the sense that for every BSCC exactly
+             * one state is included in the cover.
+             *
+             * @param transitionMatrix The transition relation of the graph structure.
+             */
+            template<typename T>
+            storm::storage::BitVector getBsccCover(storm::storage::SparseMatrix<T> const& transitionMatrix);
             
             /*!
              * Performs a breadth-first search through the underlying graph structure to compute the distance from all
@@ -71,7 +80,7 @@ namespace storm {
              * @return The distances of each state to the initial states of the sarch.
              */
             template<typename T>
-            std::vector<std::size_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem = boost::none);
+            std::vector<uint_fast64_t> getDistances(storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::BitVector const& initialStates, boost::optional<storm::storage::BitVector> const& subsystem = boost::none);
             
             /*!
              * Performs a backward depth-first search trough the underlying graph structure

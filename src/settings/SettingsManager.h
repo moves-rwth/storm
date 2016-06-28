@@ -12,7 +12,7 @@
 namespace storm {
     namespace settings {
         namespace modules {
-            class MarkovChainSettings;
+            class CoreSettings;
             class IOSettings;
             class ModuleSettings;
         }
@@ -271,7 +271,7 @@ namespace storm {
          *
          * @return An object that allows accessing and modifying the markov chain settings.
          */
-        storm::settings::modules::MarkovChainSettings& mutableMarkovChainSettings();
+        storm::settings::modules::CoreSettings& mutableCoreSettings();
         
         /*!
          * Retrieves the IO settings in a mutable form. This is only meant to be used for debug purposes or very

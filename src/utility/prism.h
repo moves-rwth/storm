@@ -20,10 +20,11 @@ namespace storm {
     namespace utility {
         namespace prism {
             
-            template<typename ValueType>
-            storm::prism::Program preprocessProgram(storm::prism::Program const& program, boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> const& constantDefinitions = boost::none, boost::optional<std::set<std::string>> const& restrictedLabelSet = boost::none, boost::optional<std::vector<storm::expressions::Expression>> const& expressionLabels = boost::none);
-            
             std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString);
+
+            storm::prism::Program preprocess(storm::prism::Program const& program, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions);
+            
+            storm::prism::Program preprocess(storm::prism::Program const& program, std::string const& constantDefinitionString);
             
         } // namespace prism
     } // namespace utility
