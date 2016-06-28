@@ -444,6 +444,11 @@ namespace storm {
             
             template class SparseMultiObjectivePreprocessor<storm::models::sparse::Mdp<double>>;
             template class SparseMultiObjectivePreprocessor<storm::models::sparse::MarkovAutomaton<double>>;
+            
+#ifdef STORM_HAVE_CARL
+            template class SparseMultiObjectivePreprocessor<storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template class SparseMultiObjectivePreprocessor<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+#endif
 
             
         }

@@ -59,8 +59,10 @@ namespace storm {
             return result;
         }
         
-        
                 
         template class SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>>;
+#ifdef STORM_HAVE_CARL
+        template class SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+#endif
     }
 }

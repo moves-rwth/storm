@@ -11,9 +11,6 @@
 
 #include <limits>
 #include <cstdint>
-#include <cmath>
-
-#include "src/adapters/CarlAdapter.h"
 
 namespace storm {
     
@@ -55,23 +52,11 @@ namespace storm {
         storm::storage::MatrixEntry<IndexType, ValueType>&& simplify(storm::storage::MatrixEntry<IndexType, ValueType>&& matrixEntry);
         
         template<typename TargetType, typename SourceType>
-        TargetType convertNumber(SourceType const& number) {
-#ifdef STORM_HAVE_CARL
-            return carl::convert<SourceType, TargetType>(number);
-#else
-            return static_cast<TargetType>(number);
-#endif
-        }
-        
-        template<typename ValueType>
-        ValueType sqrt(ValueType const& value) {
-#ifdef STORM_HAVE_CARL
-            return carl::sqrt(value);
-#else
-            return std::sqrt(value);
-#endif
-        }
+        TargetType convertNumber(SourceType const& number);
 
+        template<typename ValueType>
+        ValueType sqrt(ValueType const& number);
+        
         template<typename ValueType>
         ValueType abs(ValueType const& number);
     }

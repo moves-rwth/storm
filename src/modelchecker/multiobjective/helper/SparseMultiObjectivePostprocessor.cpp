@@ -325,6 +325,9 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             template class SparseMultiObjectivePostprocessor<storm::models::sparse::Mdp<double>, storm::RationalNumber>;
             template class SparseMultiObjectivePostprocessor<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
+            
+            template class SparseMultiObjectivePostprocessor<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
+            template class SparseMultiObjectivePostprocessor<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
 #endif
             
         }

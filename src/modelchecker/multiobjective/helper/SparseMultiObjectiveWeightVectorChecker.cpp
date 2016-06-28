@@ -11,7 +11,6 @@
 #include "src/transformer/NeutralECRemover.h"
 #include "src/utility/graph.h"
 #include "src/utility/macros.h"
-#include "src/utility/solver.h"
 #include "src/utility/vector.h"
 
 #include "src/exceptions/IllegalFunctionCallException.h"
@@ -32,7 +31,7 @@ namespace storm {
             template <class SparseModelType>
             void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::check(std::vector<ValueType> const& weightVector) {
                 checkHasBeenCalled=true;
-                STORM_LOG_DEBUG("Invoked WeightVectorChecker with weights " << std::endl << "\t" << weightVector);
+                STORM_LOG_DEBUG("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::convertNumericVector<double>(weightVector));
                 storm::storage::BitVector unboundedObjectives(data.objectives.size(), false);
                 std::vector<ValueType> weightedRewardVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
@@ -44,9 +43,9 @@ namespace storm {
                 unboundedWeightedPhase(unboundedObjectives, weightedRewardVector);
                 STORM_LOG_DEBUG("Unbounded weighted phase result: " << weightedResult[data.preprocessedModel.getInitialStates().getNextSetIndex(0)] << " (value in initial state).");
                 unboundedIndividualPhase(weightVector);
-                STORM_LOG_DEBUG("Unbounded individual phase results in initial state: " << getInitialStateResultOfObjectives());
+                STORM_LOG_DEBUG("Unbounded individual phase results in initial state: " << getInitialStateResultOfObjectives<double>());
                 boundedPhase(weightVector, ~unboundedObjectives, weightedRewardVector);
-                STORM_LOG_DEBUG("Bounded individual phase results in initial state: " << getInitialStateResultOfObjectives() << " ...WeightVectorChecker done.");
+                STORM_LOG_DEBUG("Bounded individual phase results in initial state: " << getInitialStateResultOfObjectives<double>() << " ...WeightVectorChecker done.");
             }
             
             template <class SparseModelType>
@@ -83,13 +82,15 @@ namespace storm {
                 
                 std::vector<ValueType> subResult(removerResult.matrix.getRowGroupCount());
                 
-                storm::utility::solver::MinMaxLinearEquationSolverFactory<ValueType> solverFactory;
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(removerResult.matrix, true);
+                storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> solverFactory;
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(removerResult.matrix);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
-                solver->solveEquationSystem(subResult, removerResult.vector);
+                solver->setTrackScheduler(true);
+                solver->solveEquations(subResult, removerResult.vector);
                 
                 this->weightedResult = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates());
                 this->scheduler = storm::storage::TotalScheduler(data.preprocessedModel.getNumberOfStates());
+                std::unique_ptr<storm::storage::TotalScheduler>  solverScheduler = solver->getScheduler();
                 storm::storage::BitVector statesWithUndefinedScheduler(data.preprocessedModel.getNumberOfStates(), false);
                 for(uint_fast64_t state = 0; state < data.preprocessedModel.getNumberOfStates(); ++state) {
                     uint_fast64_t stateInReducedModel = removerResult.oldToNewStateMapping[state];
@@ -97,7 +98,7 @@ namespace storm {
                     if(stateInReducedModel < removerResult.matrix.getRowGroupCount()) {
                         this->weightedResult[state] = subResult[stateInReducedModel];
                         // Check if the chosen row originaly belonged to the current state
-                        uint_fast64_t chosenRowInReducedModel = removerResult.matrix.getRowGroupIndices()[stateInReducedModel] + solver->getScheduler().getChoice(stateInReducedModel);
+                        uint_fast64_t chosenRowInReducedModel = removerResult.matrix.getRowGroupIndices()[stateInReducedModel] + solverScheduler->getChoice(stateInReducedModel);
                         uint_fast64_t chosenRowInOriginalModel = removerResult.newToOldRowMapping[chosenRowInReducedModel];
                         if(chosenRowInOriginalModel >= data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state] &&
                            chosenRowInOriginalModel <  data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]) {
@@ -139,7 +140,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> deterministicMatrix = data.preprocessedModel.getTransitionMatrix().selectRowsFromRowGroups(this->scheduler.getChoices(), true);
                 storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
                 std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount());
-                storm::utility::solver::LinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+                storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
                 //TODO check if all but one entry of weightVector is zero
                 //Also only compute values for objectives with weightVector != zero,
                 //one check can be omitted as the result can be computed back from the weighed result and the results from the remaining objectives
@@ -224,6 +225,13 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
             template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
+            
+            template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+            template std::vector<double> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>::getInitialStateResultOfObjectives<double>() const;
+            template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+            template std::vector<double> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getInitialStateResultOfObjectives<double>() const;
+            template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
+            template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
 #endif
             
         }

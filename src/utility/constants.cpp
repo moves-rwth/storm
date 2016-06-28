@@ -110,6 +110,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        ValueType sqrt(ValueType const& number) {
+            return std::sqrt(number);
+        }
+        
+        template<typename ValueType>
         ValueType abs(ValueType const& number) {
             return std::fabs(number);
         }
@@ -142,7 +147,32 @@ namespace storm {
             value.simplify();
             return std::move(value);
         }
+        
+        template<>
+        double convertNumber(RationalNumber const& number){
+            return carl::toDouble(number);
+        }
+        
+        template<>
+        RationalNumber convertNumber(RationalNumber const& number){
+            return number;
+        }
+        
+        template<>
+        RationalNumber convertNumber(double const& number){
+            return carl::rationalize<RationalNumber>(number);
+        }
 
+        template<>
+        RationalFunction convertNumber(double const& number){
+            return RationalFunction(carl::rationalize<RationalNumber>(number));
+        }
+        
+        template<>
+        storm::RationalNumber sqrt(storm::RationalNumber const& number) {
+            return carl::sqrt(number);
+        }
+        
         template<>
         storm::RationalNumber abs(storm::RationalNumber const& number) {
             return carl::abs(number);
@@ -183,6 +213,7 @@ namespace storm {
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>& matrixEntry);
 		template storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& simplify(storm::storage::MatrixEntry<storm::storage::sparse::state_type, double>&& matrixEntry);
 
+        template double sqrt(double const& number);
         template double abs(double const& number);
         
         template bool isOne(float const& value);
@@ -249,6 +280,7 @@ namespace storm {
         template double convertNumber(storm::RationalNumber const& number);
         template storm::RationalNumber convertNumber(double const& number);
 
+        template storm::RationalNumber sqrt(storm::RationalNumber const& number);
         template storm::RationalNumber abs(storm::RationalNumber const& number);
 
 //        template storm::RationalNumber pow(storm::RationalNumber const& value, uint_fast64_t exponent);

@@ -265,11 +265,13 @@ namespace storm {
             }
             
             template class Polytope<double>;
+            template std::shared_ptr<Polytope<double>> Polytope<double>::convertNumberRepresentation() const;
             
 #ifdef STORM_HAVE_CARL
             template class Polytope<storm::RationalNumber>;
             template std::shared_ptr<Polytope<double>> Polytope<storm::RationalNumber>::convertNumberRepresentation() const;
             template std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<double>::convertNumberRepresentation() const;
+            template std::shared_ptr<Polytope<storm::RationalNumber>> Polytope<storm::RationalNumber>::convertNumberRepresentation() const;
 #endif
         }
     }

@@ -230,7 +230,7 @@ namespace storm {
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::performRefinementStep(WeightVector const& direction, bool saveScheduler, SparseMultiObjectiveWeightVectorChecker<SparseModelType>& weightVectorChecker, ResultData& result) {
                 weightVectorChecker.check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
-                STORM_LOG_DEBUG("weighted objectives checker result is " << weightVectorChecker.getInitialStateResultOfObjectives());
+                STORM_LOG_DEBUG("weighted objectives checker result is " << storm::utility::vector::convertNumericVector<double>(weightVectorChecker.getInitialStateResultOfObjectives()));
                 if(saveScheduler) {
                     result.refinementSteps().emplace_back(direction, weightVectorChecker.template getInitialStateResultOfObjectives<RationalNumberType>(), weightVectorChecker.getScheduler());
                 } else {
@@ -308,6 +308,9 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
             template class SparseMultiObjectiveHelper<storm::models::sparse::Mdp<double>, storm::RationalNumber>;
             template class SparseMultiObjectiveHelper<storm::models::sparse::MarkovAutomaton<double>, storm::RationalNumber>;
+            
+            template class SparseMultiObjectiveHelper<storm::models::sparse::Mdp<storm::RationalNumber>, storm::RationalNumber>;
+            template class SparseMultiObjectiveHelper<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>, storm::RationalNumber>;
 #endif
         }
     }

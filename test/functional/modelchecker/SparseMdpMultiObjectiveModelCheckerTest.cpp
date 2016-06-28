@@ -23,8 +23,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, probEqual1Objective) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
@@ -49,8 +49,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, probEqual0Objective) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
@@ -85,8 +85,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, preprocessorResultsTest) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
@@ -151,8 +151,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, consensus) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
@@ -182,8 +182,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, zeroconf) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
@@ -213,8 +213,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, zeroconfTb) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
@@ -244,8 +244,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, team3with2objectives) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
@@ -275,8 +275,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, team3with3objectives) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
@@ -306,8 +306,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, scheduler) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);
@@ -337,8 +337,8 @@ TEST(SparseMdpMultiObjectiveModelCheckerTest, dpm) {
     storm::prism::Program program = storm::parseProgram(programFile);
     program.checkValidity();
     std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::parseFormulasForProgram(formulasAsString, program);
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options = storm::builder::ExplicitPrismModelBuilder<double>::Options(formulas);
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    storm::generator::NextStateGeneratorOptions options(formulas);
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     uint_fast64_t const initState = *mdp->getInitialStates().begin();
     
     storm::modelchecker::SparseMdpMultiObjectiveModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp);

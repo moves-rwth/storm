@@ -318,6 +318,31 @@ namespace storm {
     }
 
     template<typename ValueType>
+    std::unique_ptr<storm::modelchecker::CheckResult> verifySparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma, storm::modelchecker::CheckTask<storm::logic::Formula> const& task) {
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        if(task.getFormula().isMultiObjectiveFormula()) {
+            // Close the MA, if it is not already closed.
+            if (!ma->isClosed()) {
+                ma->close();
+            }
+            storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
+            }
+        } else {
+            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(task);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The property " << task.getFormula() << " is not supported.");
+            }
+        }
+        return result;
+    }
+
+    template<typename ValueType>
     std::unique_ptr<storm::modelchecker::CheckResult> verifySparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, std::shared_ptr<storm::logic::Formula const> const& formula, bool onlyInitialStatesRelevant = false) {
         storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
 
@@ -329,40 +354,11 @@ namespace storm {
         } else if (model->getType() == storm::models::ModelType::Ctmc) {
             result = verifySparseCtmc(model->template as<storm::models::sparse::Ctmc<ValueType>>(), task);
         } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
-            std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> ma = model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
-            // Close the MA, if it is not already closed.
-            if (!ma->isClosed()) {
-                ma->close();
-            }
-            if(task.getFormula().isMultiObjectiveFormula()) {
-                 storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
-                if(modelchecker.canHandle(task)) {
-                    result = modelchecker.check(task);
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported.");
-                }
-            } else {
-
-
-                  storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker2(*ma);
-                if(modelchecker2.canHandle(task)){
-                    result = modelchecker2.check(task);
-                }
-            }
-            storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker(*ma);
-            if(modelchecker.canHandle(task)) {
-                result = modelchecker.check(task);
-            } else {
-                storm::modelchecker::SparseMaMultiObjectiveModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>> modelchecker2(*ma);
-                if(modelchecker2.canHandle(task)){
-                    result = modelchecker2.check(task);
-                }
-            }
+            result = verifySparseMarkovAutomaton(model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), task);
         } else {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported.");
         }
         return result;
-
     }
     
     template<>
