@@ -106,7 +106,7 @@ namespace storm {
 
             // Create a solver that we will use throughout the procedure. We will modify the matrix in each iteration.
             auto solver = linearEquationSolverFactory->create(std::move(submatrix));
-            solver->allocateAuxStorage(LinearEquationSolverOperation::SolveEquations);
+            solver->allocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
             
             Status status = Status::InProgress;
             uint64_t iterations = 0;
@@ -183,14 +183,13 @@ namespace storm {
         template<typename ValueType>
         void StandardMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(A);
-            bool allocatedAuxStorage = !this->hasAuxStorage(MinMaxLinearEquationSolverOperation::SolveEquations);
-            if (allocatedAuxStorage) {
-                auxiliarySolvingMultiplyStorage = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
-                auxiliarySolvingVectorStorage = std::make_unique<std::vector<ValueType>>(x.size());
+            bool allocatedAuxMemory = !this->hasAuxMemory(MinMaxLinearEquationSolverOperation::SolveEquations);
+            if (allocatedAuxMemory) {
+                this->allocateAuxMemory(MinMaxLinearEquationSolverOperation::SolveEquations);
             }
             
             std::vector<ValueType>* currentX = &x;
-            std::vector<ValueType>* newX = auxiliarySolvingVectorStorage.get();
+            std::vector<ValueType>* newX = auxiliarySolvingVectorMemory.get();
             
             // Proceed with the iterations as long as the method did not converge or reach the maximum number of iterations.
             uint64_t iterations = 0;
@@ -198,10 +197,10 @@ namespace storm {
             Status status = Status::InProgress;
             while (status == Status::InProgress) {
                 // Compute x' = A*x + b.
-                solver->multiply(*currentX, &b, *auxiliarySolvingMultiplyStorage);
+                solver->multiply(*currentX, &b, *auxiliarySolvingMultiplyMemory);
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices.
-                storm::utility::vector::reduceVectorMinOrMax(dir, *auxiliarySolvingMultiplyStorage, *newX, this->A.getRowGroupIndices());
+                storm::utility::vector::reduceVectorMinOrMax(dir, *auxiliarySolvingMultiplyMemory, *newX, this->A.getRowGroupIndices());
                 
                 // Determine whether the method converged.
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion())) {
@@ -218,37 +217,36 @@ namespace storm {
             
             // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
             // is currently stored in currentX, but x is the output vector.
-            if (currentX == auxiliarySolvingVectorStorage.get()) {
+            if (currentX == auxiliarySolvingVectorMemory.get()) {
                 std::swap(x, *currentX);
             }
             
-            // If we allocated auxiliary storage, we need to dispose of it now.
-            if (allocatedAuxStorage) {
-                auxiliarySolvingMultiplyStorage.reset();
-                auxiliarySolvingVectorStorage.reset();
+            // If we allocated auxiliary memory, we need to dispose of it now.
+            if (allocatedAuxMemory) {
+                this->deallocateAuxMemory(MinMaxLinearEquationSolverOperation::SolveEquations);
             }
         }
         
         template<typename ValueType>
-        void StandardMinMaxLinearEquationSolver<ValueType>::multiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
-            bool allocatedAuxStorage = !this->hasAuxStorage(MinMaxLinearEquationSolverOperation::MultiplyRepeatedly);
-            if (allocatedAuxStorage) {
-                auxiliaryRepeatedMultiplyStorage = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
+        void StandardMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
+            bool allocatedAuxMemory = !this->hasAuxMemory(MinMaxLinearEquationSolverOperation::MultiplyRepeatedly);
+            if (allocatedAuxMemory) {
+                this->allocateAuxMemory(MinMaxLinearEquationSolverOperation::MultiplyRepeatedly);
             }
             
             std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory->create(A);
             
             for (uint64_t i = 0; i < n; ++i) {
-                solver->multiply(x, b, *auxiliaryRepeatedMultiplyStorage);
+                solver->multiply(x, b, *auxiliaryRepeatedMultiplyMemory);
                 
                 // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
                 // element of the min/max operator stack.
-                storm::utility::vector::reduceVectorMinOrMax(dir, *auxiliaryRepeatedMultiplyStorage, x, this->A.getRowGroupIndices());
+                storm::utility::vector::reduceVectorMinOrMax(dir, *auxiliaryRepeatedMultiplyMemory, x, this->A.getRowGroupIndices());
             }
             
-            // If we allocated auxiliary storage, we need to dispose of it now.
-            if (allocatedAuxStorage) {
-                auxiliaryRepeatedMultiplyStorage.reset();
+            // If we allocated auxiliary memory, we need to dispose of it now.
+            if (allocatedAuxMemory) {
+                this->deallocateAuxMemory(MinMaxLinearEquationSolverOperation::MultiplyRepeatedly);
             }
         }
         
@@ -286,47 +284,17 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool StandardMinMaxLinearEquationSolver<ValueType>::allocateAuxStorage(MinMaxLinearEquationSolverOperation operation) {
+        bool StandardMinMaxLinearEquationSolver<ValueType>::allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const {
             bool result = false;
             if (operation == MinMaxLinearEquationSolverOperation::SolveEquations) {
                 if (this->getSettings().getSolutionMethod() == StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
-                    if (!auxiliarySolvingMultiplyStorage) {
+                    if (!auxiliarySolvingMultiplyMemory) {
                         result = true;
-                        auxiliarySolvingMultiplyStorage = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
+                        auxiliarySolvingMultiplyMemory = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
                     }
-                    if (!auxiliarySolvingVectorStorage) {
+                    if (!auxiliarySolvingVectorMemory) {
                         result = true;
-                        auxiliarySolvingVectorStorage = std::make_unique<std::vector<ValueType>>(this->A.getRowGroupCount());
-                    }
-                } else if (this->getSettings().getSolutionMethod() == StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
-                    if (!auxiliarySolvingVectorStorage) {
-                        result = true;
-                        auxiliarySolvingVectorStorage = std::make_unique<std::vector<ValueType>>(this->A.getRowGroupCount());
-                    }
-                } else {
-                    STORM_LOG_ASSERT(false, "Cannot allocate aux storage for this method.");
-                }
-            } else {
-                if (!auxiliaryRepeatedMultiplyStorage) {
-                    result = true;
-                    auxiliaryRepeatedMultiplyStorage = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
-                }
-            }
-            return result;
-        }
-        
-        template<typename ValueType>
-        bool StandardMinMaxLinearEquationSolver<ValueType>::deallocateAuxStorage(MinMaxLinearEquationSolverOperation operation) {
-            bool result = false;
-            if (operation == MinMaxLinearEquationSolverOperation::SolveEquations) {
-                if (this->getSettings().getSolutionMethod() == StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
-                    if (auxiliarySolvingMultiplyStorage) {
-                        result = true;
-                        auxiliarySolvingMultiplyStorage.reset();
-                    }
-                    if (auxiliarySolvingVectorStorage) {
-                        result = true;
-                        auxiliarySolvingVectorStorage.reset();
+                        auxiliarySolvingVectorMemory = std::make_unique<std::vector<ValueType>>(this->A.getRowGroupCount());
                     }
                 } else if (this->getSettings().getSolutionMethod() == StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
                     // Nothing to do in this case.
@@ -334,23 +302,51 @@ namespace storm {
                     STORM_LOG_ASSERT(false, "Cannot allocate aux storage for this method.");
                 }
             } else {
-                if (auxiliaryRepeatedMultiplyStorage) {
+                if (!auxiliaryRepeatedMultiplyMemory) {
                     result = true;
-                    auxiliaryRepeatedMultiplyStorage.reset();
+                    auxiliaryRepeatedMultiplyMemory = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
                 }
             }
+            return result;
         }
         
         template<typename ValueType>
-        bool StandardMinMaxLinearEquationSolver<ValueType>::hasAuxStorage(MinMaxLinearEquationSolverOperation operation) const {
+        bool StandardMinMaxLinearEquationSolver<ValueType>::deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const {
+            bool result = false;
             if (operation == MinMaxLinearEquationSolverOperation::SolveEquations) {
                 if (this->getSettings().getSolutionMethod() == StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
-                    return auxiliarySolvingMultiplyStorage && auxiliarySolvingVectorStorage;
+                    if (auxiliarySolvingMultiplyMemory) {
+                        result = true;
+                        auxiliarySolvingMultiplyMemory.reset();
+                    }
+                    if (auxiliarySolvingVectorMemory) {
+                        result = true;
+                        auxiliarySolvingVectorMemory.reset();
+                    }
+                } else if (this->getSettings().getSolutionMethod() == StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::PolicyIteration) {
+                    // Nothing to do in this case.
+                } else {
+                    STORM_LOG_ASSERT(false, "Cannot allocate aux storage for this method.");
+                }
+            } else {
+                if (auxiliaryRepeatedMultiplyMemory) {
+                    result = true;
+                    auxiliaryRepeatedMultiplyMemory.reset();
+                }
+            }
+            return result;
+        }
+        
+        template<typename ValueType>
+        bool StandardMinMaxLinearEquationSolver<ValueType>::hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const {
+            if (operation == MinMaxLinearEquationSolverOperation::SolveEquations) {
+                if (this->getSettings().getSolutionMethod() == StandardMinMaxLinearEquationSolverSettings<ValueType>::SolutionMethod::ValueIteration) {
+                    return auxiliarySolvingMultiplyMemory && auxiliarySolvingVectorMemory;
                 } else {
                     return false;
                 }
             } else {
-                return static_cast<bool>(auxiliaryRepeatedMultiplyStorage);
+                return static_cast<bool>(auxiliaryRepeatedMultiplyMemory);
             }
         }
         

@@ -98,10 +98,10 @@ namespace storm {
             GmmxxLinearEquationSolverSettings<ValueType>& getSettings();
             GmmxxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             
-            virtual bool allocateAuxStorage(LinearEquationSolverOperation operation) override;
-            virtual bool deallocateAuxStorage(LinearEquationSolverOperation operation) override;
-            virtual bool reallocateAuxStorage(LinearEquationSolverOperation operation) override;
-            virtual bool hasAuxStorage(LinearEquationSolverOperation operation) const override;
+            virtual bool allocateAuxMemory(LinearEquationSolverOperation operation) const override;
+            virtual bool deallocateAuxMemory(LinearEquationSolverOperation operation) const override;
+            virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const override;
+            virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const override;
             
         private:
             /*!
@@ -136,7 +136,7 @@ namespace storm {
             GmmxxLinearEquationSolverSettings<ValueType> settings;
             
             // Auxiliary storage for the Jacobi method.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryJacobiStorage;
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryJacobiMemory;
         };
         
         template<typename ValueType>

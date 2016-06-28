@@ -84,12 +84,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings), auxiliarySolvingStorage(nullptr) {
+        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings), auxiliarySolvingMemory(nullptr) {
             this->setMatrix(A);
         }
 
         template<typename ValueType>
-        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings), auxiliarySolvingStorage(nullptr) {
+        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings), auxiliarySolvingMemory(nullptr) {
             this->setMatrix(std::move(A));
         }
         
@@ -107,9 +107,9 @@ namespace storm {
         
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            bool allocatedAuxStorage = !this->hasAuxStorage(LinearEquationSolverOperation::SolveEquations);
+            bool allocatedAuxStorage = !this->hasAuxMemory(LinearEquationSolverOperation::SolveEquations);
             if (allocatedAuxStorage) {
-                auxiliarySolvingStorage = std::make_unique<std::vector<ValueType>>(x.size());
+                this->allocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
             }
             
             if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR || this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::GaussSeidel) {
@@ -124,11 +124,11 @@ namespace storm {
                     A->performSuccessiveOverRelaxationStep(omega, x, b);
                     
                     // Now check if the process already converged within our precision.
-                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*auxiliarySolvingStorage, x, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion()) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
+                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*auxiliarySolvingMemory, x, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion()) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
                     
                     // If we did not yet converge, we need to backup the contents of x.
                     if (!converged) {
-                        *auxiliarySolvingStorage = x;
+                        *auxiliarySolvingMemory = x;
                     }
                     
                     // Increase iteration count so we can abort if convergence is too slow.
@@ -139,7 +139,7 @@ namespace storm {
                 std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A->getJacobiDecomposition();
                 
                 std::vector<ValueType>* currentX = &x;
-                std::vector<ValueType>* nextX = auxiliarySolvingStorage.get();
+                std::vector<ValueType>* nextX = auxiliarySolvingMemory.get();
                 
                 // Set up additional environment variables.
                 uint_fast64_t iterationCount = 0;
@@ -163,14 +163,14 @@ namespace storm {
                                 
                 // If the last iteration did not write to the original x we have to swap the contents, because the
                 // output has to be written to the input parameter x.
-                if (currentX == auxiliarySolvingStorage.get()) {
+                if (currentX == auxiliarySolvingMemory.get()) {
                     std::swap(x, *currentX);
                 }
             }
             
-            // If we allocated auxiliary storage, we need to dispose of it now.
+            // If we allocated auxiliary memory, we need to dispose of it now.
             if (allocatedAuxStorage) {
-                auxiliarySolvingStorage.reset();
+                this->deallocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
             }
         }
         
@@ -202,51 +202,51 @@ namespace storm {
         }
         
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::allocateAuxStorage(LinearEquationSolverOperation operation) {
+        bool NativeLinearEquationSolver<ValueType>::allocateAuxMemory(LinearEquationSolverOperation operation) const {
             bool result = false;
             if (operation == LinearEquationSolverOperation::SolveEquations) {
-                if (!auxiliarySolvingStorage) {
-                    auxiliarySolvingStorage = std::make_unique<std::vector<ValueType>>(this->getMatrixRowCount());
+                if (!auxiliarySolvingMemory) {
+                    auxiliarySolvingMemory = std::make_unique<std::vector<ValueType>>(this->getMatrixRowCount());
                     result = true;
                 }
             }
-            result |= LinearEquationSolver<ValueType>::allocateAuxStorage(operation);
+            result |= LinearEquationSolver<ValueType>::allocateAuxMemory(operation);
             return result;
         }
         
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::deallocateAuxStorage(LinearEquationSolverOperation operation) {
+        bool NativeLinearEquationSolver<ValueType>::deallocateAuxMemory(LinearEquationSolverOperation operation) const {
             bool result = false;
             if (operation == LinearEquationSolverOperation::SolveEquations) {
-                if (auxiliarySolvingStorage) {
+                if (auxiliarySolvingMemory) {
                     result = true;
+                    auxiliarySolvingMemory.reset();
                 }
-                auxiliarySolvingStorage.reset();
             }
-            result |= LinearEquationSolver<ValueType>::deallocateAuxStorage(operation);
+            result |= LinearEquationSolver<ValueType>::deallocateAuxMemory(operation);
             return result;
         }
         
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::reallocateAuxStorage(LinearEquationSolverOperation operation) {
+        bool NativeLinearEquationSolver<ValueType>::reallocateAuxMemory(LinearEquationSolverOperation operation) const {
             bool result = false;
             if (operation == LinearEquationSolverOperation::SolveEquations) {
-                if (auxiliarySolvingStorage) {
-                    result = auxiliarySolvingStorage->size() != this->getMatrixColumnCount();
-                    auxiliarySolvingStorage->resize(this->getMatrixRowCount());
+                if (auxiliarySolvingMemory) {
+                    result = auxiliarySolvingMemory->size() != this->getMatrixColumnCount();
+                    auxiliarySolvingMemory->resize(this->getMatrixRowCount());
                 }
             }
-            result |= LinearEquationSolver<ValueType>::reallocateAuxStorage(operation);
+            result |= LinearEquationSolver<ValueType>::reallocateAuxMemory(operation);
             return result;
         }
         
         template<typename ValueType>
-        bool NativeLinearEquationSolver<ValueType>::hasAuxStorage(LinearEquationSolverOperation operation) const {
+        bool NativeLinearEquationSolver<ValueType>::hasAuxMemory(LinearEquationSolverOperation operation) const {
             bool result = false;
             if (operation == LinearEquationSolverOperation::SolveEquations) {
-                result |= auxiliarySolvingStorage != nullptr;
+                result |= static_cast<bool>(auxiliarySolvingMemory);
             }
-            result |= LinearEquationSolver<ValueType>::hasAuxStorage(operation);
+            result |= LinearEquationSolver<ValueType>::hasAuxMemory(operation);
             return result;
         }
         

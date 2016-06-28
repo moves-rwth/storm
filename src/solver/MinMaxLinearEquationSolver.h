@@ -126,21 +126,21 @@ namespace storm {
              *
              * @return True iff auxiliary storage was allocated.
              */
-            virtual bool allocateAuxStorage(MinMaxLinearEquationSolverOperation operation);
+            virtual bool allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
             
             /*!
              * Destroys previously allocated auxiliary storage for the provided operation.
              *
              * @return True iff auxiliary storage was deallocated.
              */
-            virtual bool deallocateAuxStorage(MinMaxLinearEquationSolverOperation operation);
+            virtual bool deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
                         
             /*!
              * Checks whether the solver has allocated auxiliary storage for the provided operation.
              *
              * @return True iff auxiliary storage was previously allocated (and not yet deallocated).
              */
-            virtual bool hasAuxStorage(MinMaxLinearEquationSolverOperation operation) const;
+            virtual bool hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
             
         protected:
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.

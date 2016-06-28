@@ -69,36 +69,36 @@ namespace storm {
             // Methods related to allocating/freeing auxiliary storage.
             
             /*!
-             * Allocates auxiliary storage that can be used to perform the provided operation. Repeated calls to the
-             * corresponding function can then be run without allocating/deallocating this storage repeatedly.
-             * Note: Since the allocated storage is fit to the currently selected options of the solver, they must not
-             * be changed any more after allocating the auxiliary storage until the storage is deallocated again.
+             * Allocates auxiliary memory that can be used to perform the provided operation. Repeated calls to the
+             * corresponding function can then be run without allocating/deallocating this memory repeatedly.
+             * Note: Since the allocated memory is fit to the currently selected options of the solver, they must not
+             * be changed any more after allocating the auxiliary memory until it is deallocated again.
              *
-             * @return True iff auxiliary storage was allocated.
+             * @return True iff auxiliary memory was allocated.
              */
-            virtual bool allocateAuxStorage(LinearEquationSolverOperation operation);
+            virtual bool allocateAuxMemory(LinearEquationSolverOperation operation) const;
             
             /*!
-             * Destroys previously allocated auxiliary storage for the provided operation.
+             * Destroys previously allocated auxiliary memory for the provided operation.
              *
-             * @return True iff auxiliary storage was deallocated.
+             * @return True iff auxiliary memory was deallocated.
              */
-            virtual bool deallocateAuxStorage(LinearEquationSolverOperation operation);
+            virtual bool deallocateAuxMemory(LinearEquationSolverOperation operation) const;
             
             /*!
-             * If the matrix dimensions changed and auxiliary storage was allocated, this function needs to be called to
-             * update the auxiliary storage.
+             * If the matrix dimensions changed and auxiliary memory was allocated, this function needs to be called to
+             * update the auxiliary memory.
              *
-             * @return True iff the auxiliary storage was reallocated.
+             * @return True iff the auxiliary memory was reallocated.
              */
-            virtual bool reallocateAuxStorage(LinearEquationSolverOperation operation);
+            virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const;
             
             /*!
-             * Checks whether the solver has allocated auxiliary storage for the provided operation.
+             * Checks whether the solver has allocated auxiliary memory for the provided operation.
              *
-             * @return True iff auxiliary storage was previously allocated (and not yet deallocated).
+             * @return True iff auxiliary memory was previously allocated (and not yet deallocated).
              */
-            virtual bool hasAuxStorage(LinearEquationSolverOperation operation) const;
+            virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const;
             
         private:
             /*!
@@ -111,8 +111,8 @@ namespace storm {
              */
             virtual uint64_t getMatrixColumnCount() const = 0;
             
-            // Auxiliary storage for repeated matrix-vector multiplication.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRepeatedMultiplyStorage;
+            // Auxiliary memory for repeated matrix-vector multiplication.
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRepeatedMultiplyMemory;
         };
         
         template<typename ValueType>

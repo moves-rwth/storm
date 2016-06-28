@@ -55,10 +55,10 @@ namespace storm {
             NativeLinearEquationSolverSettings<ValueType>& getSettings();
             NativeLinearEquationSolverSettings<ValueType> const& getSettings() const;
 
-            virtual bool allocateAuxStorage(LinearEquationSolverOperation operation) override;
-            virtual bool deallocateAuxStorage(LinearEquationSolverOperation operation) override;
-            virtual bool reallocateAuxStorage(LinearEquationSolverOperation operation) override;
-            virtual bool hasAuxStorage(LinearEquationSolverOperation operation) const override;
+            virtual bool allocateAuxMemory(LinearEquationSolverOperation operation) const override;
+            virtual bool deallocateAuxMemory(LinearEquationSolverOperation operation) const override;
+            virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const override;
+            virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const override;
 
         private:
             virtual uint64_t getMatrixRowCount() const override;
@@ -75,8 +75,8 @@ namespace storm {
             // The settings used by the solver.
             NativeLinearEquationSolverSettings<ValueType> settings;
             
-            // Auxiliary storage for the equation solving methods.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingStorage;
+            // Auxiliary memory for the equation solving methods.
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingMemory;
         };
         
         template<typename ValueType>

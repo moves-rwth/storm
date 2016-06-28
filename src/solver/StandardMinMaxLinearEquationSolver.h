@@ -39,14 +39,14 @@ namespace storm {
             StandardMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, std::unique_ptr<LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory, StandardMinMaxLinearEquationSolverSettings<ValueType> const& settings = StandardMinMaxLinearEquationSolverSettings<ValueType>());
             
             virtual void solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
-            virtual void multiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const override;
+            virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const override;
 
             StandardMinMaxLinearEquationSolverSettings<ValueType> const& getSettings() const;
             StandardMinMaxLinearEquationSolverSettings<ValueType>& getSettings();
             
-            virtual bool allocateAuxStorage(MinMaxLinearEquationSolverOperation operation) override;
-            virtual bool deallocateAuxStorage(MinMaxLinearEquationSolverOperation operation) override;
-            virtual bool hasAuxStorage(MinMaxLinearEquationSolverOperation operation) const override;
+            virtual bool allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
+            virtual bool deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
+            virtual bool hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const override;
             
         private:
             void solveEquationsPolicyIteration(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
@@ -75,13 +75,12 @@ namespace storm {
             // the reference refers to localA.
             storm::storage::SparseMatrix<ValueType> const& A;
             
-            // Auxiliary storage for equation solving.
-            // Auxiliary storage for repeated matrix-vector multiplication.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingMultiplyStorage;
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingVectorStorage;
+            // Auxiliary memory for equation solving.
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingMultiplyMemory;
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliarySolvingVectorMemory;
             
-            // Auxiliary storage for repeated matrix-vector multiplication.
-            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRepeatedMultiplyStorage;
+            // Auxiliary memory for repeated matrix-vector multiplication.
+            mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRepeatedMultiplyMemory;
         };
      
         template<typename ValueType>

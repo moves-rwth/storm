@@ -32,9 +32,9 @@ namespace storm {
              */
             TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision = 1e-6, uint_fast64_t maximalNumberOfIterations = 20000, bool relative = true);
                         
-            virtual void solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const override;
+            virtual void solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
             
-            virtual void multiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const override;
+            virtual void repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const override;
 
         private:
             storm::storage::SparseMatrix<ValueType> const& A;

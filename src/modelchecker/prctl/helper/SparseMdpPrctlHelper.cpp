@@ -67,7 +67,7 @@ namespace storm {
                 storm::utility::vector::setVectorValues(result, nextStates, storm::utility::one<ValueType>());
                 
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(transitionMatrix);
-                solver->repeatedMultiply(dir, result);
+                solver->repeatedMultiply(dir, result, nullptr, 1);
                 
                 return result;
             }

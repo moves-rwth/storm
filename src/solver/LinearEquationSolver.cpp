@@ -14,21 +14,21 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        LinearEquationSolver<ValueType>::LinearEquationSolver() : auxiliaryRepeatedMultiplyStorage(nullptr) {
+        LinearEquationSolver<ValueType>::LinearEquationSolver() : auxiliaryRepeatedMultiplyMemory(nullptr) {
             // Intentionally left empty.
         }
         
         template<typename ValueType>
         void LinearEquationSolver<ValueType>::repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, uint_fast64_t n) const {
-            bool allocatedAuxStorage = !this->hasAuxStorage(LinearEquationSolverOperation::MultiplyRepeatedly);
-            if (allocatedAuxStorage) {
-                auxiliaryRepeatedMultiplyStorage = std::make_unique<std::vector<ValueType>>(x.size());
+            bool allocatedAuxMemory = !this->hasAuxMemory(LinearEquationSolverOperation::MultiplyRepeatedly);
+            if (allocatedAuxMemory) {
+                this->allocateAuxMemory(LinearEquationSolverOperation::MultiplyRepeatedly);
             }
             
             // Set up some temporary variables so that we can just swap pointers instead of copying the result after
             // each iteration.
             std::vector<ValueType>* currentX = &x;
-            std::vector<ValueType>* nextX = auxiliaryRepeatedMultiplyStorage.get();
+            std::vector<ValueType>* nextX = auxiliaryRepeatedMultiplyMemory.get();
             
             // Now perform matrix-vector multiplication as long as we meet the bound.
             for (uint_fast64_t i = 0; i < n; ++i) {
@@ -38,54 +38,52 @@ namespace storm {
             
             // If we performed an odd number of repetitions, we need to swap the contents of currentVector and x,
             // because the output is supposed to be stored in the input vector x.
-            if (currentX == auxiliaryRepeatedMultiplyStorage.get()) {
+            if (currentX == auxiliaryRepeatedMultiplyMemory.get()) {
                 std::swap(x, *currentX);
             }
 
-            // If we allocated auxiliary storage, we need to dispose of it now.
-            if (allocatedAuxStorage) {
-                auxiliaryRepeatedMultiplyStorage.reset();
+            // If we allocated auxiliary memory, we need to dispose of it now.
+            if (allocatedAuxMemory) {
+                this->deallocateAuxMemory(LinearEquationSolverOperation::MultiplyRepeatedly);
             }
         }
         
         template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::allocateAuxStorage(LinearEquationSolverOperation operation) {
-            if (this->hasAuxStorage(operation)) {
-                return false;
-            }
-            
-            auxiliaryRepeatedMultiplyStorage = std::make_unique<std::vector<ValueType>>(this->getMatrixColumnCount());
-            return true;
-        }
-        
-        template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::deallocateAuxStorage(LinearEquationSolverOperation operation) {
-            if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
-                bool result = auxiliaryRepeatedMultiplyStorage != nullptr;
-                if (result) {
-                    auxiliaryRepeatedMultiplyStorage.reset();
-                }
-                return result;
+        bool LinearEquationSolver<ValueType>::allocateAuxMemory(LinearEquationSolverOperation operation) const {
+            if (!auxiliaryRepeatedMultiplyMemory) {
+                auxiliaryRepeatedMultiplyMemory = std::make_unique<std::vector<ValueType>>(this->getMatrixColumnCount());
+                return true;
             }
             return false;
         }
         
         template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::reallocateAuxStorage(LinearEquationSolverOperation operation) {
+        bool LinearEquationSolver<ValueType>::deallocateAuxMemory(LinearEquationSolverOperation operation) const {
+            if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
+                if (auxiliaryRepeatedMultiplyMemory) {
+                    auxiliaryRepeatedMultiplyMemory.reset();
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        template<typename ValueType>
+        bool LinearEquationSolver<ValueType>::reallocateAuxMemory(LinearEquationSolverOperation operation) const {
             bool result = false;
             if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
-                if (auxiliaryRepeatedMultiplyStorage != nullptr) {
-                    result = auxiliaryRepeatedMultiplyStorage->size() != this->getMatrixColumnCount();
-                    auxiliaryRepeatedMultiplyStorage->resize(this->getMatrixColumnCount());
+                if (auxiliaryRepeatedMultiplyMemory) {
+                    result = auxiliaryRepeatedMultiplyMemory->size() != this->getMatrixColumnCount();
+                    auxiliaryRepeatedMultiplyMemory->resize(this->getMatrixColumnCount());
                 }
             }
             return result;
         }
         
         template<typename ValueType>
-        bool LinearEquationSolver<ValueType>::hasAuxStorage(LinearEquationSolverOperation operation) const {
+        bool LinearEquationSolver<ValueType>::hasAuxMemory(LinearEquationSolverOperation operation) const {
             if (operation == LinearEquationSolverOperation::MultiplyRepeatedly) {
-                return auxiliaryRepeatedMultiplyStorage != nullptr;
+                return static_cast<bool>(auxiliaryRepeatedMultiplyMemory);
             }
             return false;
         }
