@@ -34,19 +34,29 @@ namespace storm {
         }
         
         template<typename ValueType>
-        EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EliminationLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(A), settings(settings) {
-            // Intentionally left empty.
+        EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EliminationLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings) {
+            this->setMatrix(A);
         }
         
         template<typename ValueType>
-        EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, EliminationLinearEquationSolverSettings<ValueType> const& settings) : localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(*localA), settings(settings) {
-            // Intentionally left empty.
+        EliminationLinearEquationSolver<ValueType>::EliminationLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, EliminationLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings) {
+            this->setMatrix(std::move(A));
         }
         
         template<typename ValueType>
-        void EliminationLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
-            STORM_LOG_WARN_COND(multiplyResult == nullptr, "Providing scratch memory will not improve the performance of this solver.");
-            
+        void EliminationLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
+            this->A = &A;
+            localA.reset();
+        }
+        
+        template<typename ValueType>
+        void EliminationLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
+            localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
+            this->A = localA.get();
+        }
+        
+        template<typename ValueType>
+        void EliminationLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             // FIXME: This solver will not work for all input systems. More concretely, the current implementation will
             // not work for systems that have a 0 on the diagonal. This is not a restriction of this technique in general
             // but arbitrary matrices require pivoting, which is not currently implemented.
@@ -59,7 +69,7 @@ namespace storm {
             if (localA) {
                 localA->convertToEquationSystem();
             } else {
-                locallyConvertedMatrix = A;
+                locallyConvertedMatrix = *A;
                 locallyConvertedMatrix.convertToEquationSystem();
             }
             
@@ -101,16 +111,16 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void EliminationLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
+        void EliminationLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
             if (&x != &result) {
-                A.multiplyWithVector(x, result);
+                A->multiplyWithVector(x, result);
                 if (b != nullptr) {
                     storm::utility::vector::addVectors(result, *b, result);
                 }
             } else {
                 // If the two vectors are aliases, we need to create a temporary.
                 std::vector<ValueType> tmp(result.size());
-                A.multiplyWithVector(x, tmp);
+                A->multiplyWithVector(x, tmp);
                 if (b != nullptr) {
                     storm::utility::vector::addVectors(tmp, *b, result);
                 }
@@ -125,6 +135,16 @@ namespace storm {
         template<typename ValueType>
         EliminationLinearEquationSolverSettings<ValueType> const& EliminationLinearEquationSolver<ValueType>::getSettings() const {
             return settings;
+        }
+        
+        template<typename ValueType>
+        uint64_t EliminationLinearEquationSolver<ValueType>::getMatrixRowCount() const {
+            return this->A->getRowCount();
+        }
+        
+        template<typename ValueType>
+        uint64_t EliminationLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
+            return this->A->getColumnCount();
         }
         
         template<typename ValueType>

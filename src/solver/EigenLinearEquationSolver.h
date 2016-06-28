@@ -61,13 +61,19 @@ namespace storm {
             EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings = EigenLinearEquationSolverSettings<ValueType>());
             EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, EigenLinearEquationSolverSettings<ValueType> const& settings = EigenLinearEquationSolverSettings<ValueType>());
             
-            virtual void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr) const override;
-            virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b = nullptr) const override;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
+            
+            virtual void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual void multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const override;
 
             EigenLinearEquationSolverSettings<ValueType>& getSettings();
             EigenLinearEquationSolverSettings<ValueType> const& getSettings() const;
-            
+                        
         private:
+            virtual uint64_t getMatrixRowCount() const override;
+            virtual uint64_t getMatrixColumnCount() const override;
+            
             // The (eigen) matrix associated with this equation solver.
             std::unique_ptr<Eigen::SparseMatrix<ValueType>> eigenA;
 

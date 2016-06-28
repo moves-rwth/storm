@@ -20,6 +20,10 @@ namespace storm {
     
     namespace solver {
         
+        enum class MinMaxLinearEquationSolverOperation {
+            SolveEquations, MultiplyRepeatedly
+        };
+        
         /*!
          * A class representing the interface that all min-max linear equation solvers shall implement.
          */
@@ -40,20 +44,15 @@ namespace storm {
              * @param x The solution vector x. The initial values of x represent a guess of the real values to the
              * solver, but may be ignored.
              * @param b The vector to add after matrix-vector multiplication.
-             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the number of rows of A.
-             * @param newX If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the length of the vector x (and thus to the number of columns of A).
-             * @return The solution vector x of the system of linear equations as the content of the parameter x.
              */
-            virtual void solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
+            virtual void solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
             
             /*!
              * Behaves the same as the other variant of <code>solveEquations</code>, with the distinction that
              * instead of providing the optimization direction as an argument, the internally set optimization direction
              * is used. Note: this method can only be called after setting the optimization direction.
              */
-            void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const;
+            void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             
             /*!
              * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
@@ -68,18 +67,16 @@ namespace storm {
              * i.e. after the method returns, this vector will contain the computed values.
              * @param b If not null, this vector is added after each multiplication.
              * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
-             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the number of rows of A.
              * @return The result of the repeated matrix-vector multiplication as the content of the vector x.
              */
-            virtual void multiply(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
+            virtual void repeatedMultiply(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n = 1) const = 0;
             
             /*!
              * Behaves the same as the other variant of <code>multiply</code>, with the
              * distinction that instead of providing the optimization direction as an argument, the internally set
              * optimization direction is used. Note: this method can only be called after setting the optimization direction.
              */
-            virtual void multiply( std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const;
+            virtual void repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType>* b , uint_fast64_t n) const;
             
             /*!
              * Sets an optimization direction to use for calls to methods that do not explicitly provide one.
@@ -118,6 +115,32 @@ namespace storm {
              * any more (i.e. it is illegal to call this method again until a new scheduler has been generated).
              */
             std::unique_ptr<storm::storage::TotalScheduler> getScheduler();
+            
+            // Methods related to allocating/freeing auxiliary storage.
+            
+            /*!
+             * Allocates auxiliary storage that can be used to perform the provided operation. Repeated calls to the
+             * corresponding function can then be run without allocating/deallocating this storage repeatedly.
+             * Note: Since the allocated storage is fit to the currently selected options of the solver, they must not
+             * be changed any more after allocating the auxiliary storage until the storage is deallocated again.
+             *
+             * @return True iff auxiliary storage was allocated.
+             */
+            virtual bool allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
+            
+            /*!
+             * Destroys previously allocated auxiliary storage for the provided operation.
+             *
+             * @return True iff auxiliary storage was deallocated.
+             */
+            virtual bool deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
+                        
+            /*!
+             * Checks whether the solver has allocated auxiliary storage for the provided operation.
+             *
+             * @return True iff auxiliary storage was previously allocated (and not yet deallocated).
+             */
+            virtual bool hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
             
         protected:
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.

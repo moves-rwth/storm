@@ -111,17 +111,31 @@ namespace storm {
         }
         
         template<typename ValueType>
-        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, GmmxxLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(A), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A)), settings(settings) {
-            // Intentionally left empty.
+        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, GmmxxLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), gmmxxMatrix(nullptr), settings(settings), auxiliaryJacobiMemory(nullptr) {
+            this->setMatrix(A);
         }
 
         template<typename ValueType>
-        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, GmmxxLinearEquationSolverSettings<ValueType> const& settings) : localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(*localA), gmmxxMatrix(storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(*localA)), settings(settings) {
-            // Intentionally left empty.
+        GmmxxLinearEquationSolver<ValueType>::GmmxxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, GmmxxLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), gmmxxMatrix(nullptr), settings(settings), auxiliaryJacobiMemory(nullptr) {
+            this->setMatrix(std::move(A));
         }
         
         template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
+        void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
+            localA.reset();
+            this->A = &A;
+            gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(A);
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
+            localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
+            this->A = localA.get();
+            gmmxxMatrix = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(*localA);
+        }
+        
+        template<typename ValueType>
+        void GmmxxLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             auto method = this->getSettings().getSolutionMethod();
             auto preconditioner = this->getSettings().getPreconditioner();
             STORM_LOG_INFO("Using method '" << method << "' with preconditioner '" << preconditioner << "' (max. " << this->getSettings().getMaximalNumberOfIterations() << " iterations).");
@@ -166,7 +180,7 @@ namespace storm {
                     STORM_LOG_WARN("Iterative solver did not converge.");
                 }
             } else if (method == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
-                uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(A, x, b, multiplyResult);
+                uint_fast64_t iterations = solveLinearEquationSystemWithJacobi(*A, x, b);
                 
                 // Check if the solver converged and issue a warning otherwise.
                 if (iterations < this->getSettings().getMaximalNumberOfIterations()) {
@@ -178,7 +192,7 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void GmmxxLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
+        void GmmxxLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
             if (b) {
                 gmm::mult_add(*gmmxxMatrix, x, *b, result);
             } else {
@@ -187,25 +201,20 @@ namespace storm {
         }
         
         template<typename ValueType>
-        uint_fast64_t GmmxxLinearEquationSolver<ValueType>::solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
+        uint_fast64_t GmmxxLinearEquationSolver<ValueType>::solveLinearEquationSystemWithJacobi(storm::storage::SparseMatrix<ValueType> const& A, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            bool allocatedAuxMemory = !this->hasAuxMemory(LinearEquationSolverOperation::SolveEquations);
+            if (allocatedAuxMemory) {
+                this->allocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
+            }
+            
             // Get a Jacobi decomposition of the matrix A.
             std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
             
             // Convert the LU matrix to gmm++'s format.
             std::unique_ptr<gmm::csr_matrix<ValueType>> gmmLU = storm::adapters::GmmxxAdapter::toGmmxxSparseMatrix<ValueType>(std::move(jacobiDecomposition.first));
         
-            // To avoid copying the contents of the vector in the loop, we create a temporary x to swap with.
-            bool multiplyResultProvided = true;
-            std::vector<ValueType>* nextX = multiplyResult;
-            if (nextX == nullptr) {
-                nextX = new std::vector<ValueType>(x.size());
-                multiplyResultProvided = false;
-            }
-            std::vector<ValueType> const* copyX = nextX;
             std::vector<ValueType>* currentX = &x;
-            
-            // Target vector for precision calculation.
-            std::vector<ValueType> tmpX(x.size());
+            std::vector<ValueType>* nextX = auxiliaryJacobiMemory.get();
             
             // Set up additional environment variables.
             uint_fast64_t iterationCount = 0;
@@ -213,9 +222,8 @@ namespace storm {
             
             while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
-                gmm::mult(*gmmLU, *currentX, tmpX);
-                gmm::add(b, gmm::scaled(tmpX, -storm::utility::one<ValueType>()), tmpX);
-                storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, tmpX, *nextX);
+                gmm::mult_add(*gmmLU, gmm::scaled(*currentX, -storm::utility::one<ValueType>()), b, *nextX);
+                storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, *nextX, *nextX);
                 
                 // Now check if the process already converged within our precision.
                 converged = storm::utility::vector::equalModuloPrecision(*currentX, *nextX, this->getSettings().getPrecision(), this->getSettings().getRelativeTerminationCriterion());
@@ -229,13 +237,13 @@ namespace storm {
             
             // If the last iteration did not write to the original x we have to swap the contents, because the
             // output has to be written to the input parameter x.
-            if (currentX == copyX) {
+            if (currentX == auxiliaryJacobiMemory.get()) {
                 std::swap(x, *currentX);
             }
             
-            // If the vector for the temporary multiplication result was not provided, we need to delete it.
-            if (!multiplyResultProvided) {
-                delete copyX;
+            // If we allocated auxiliary memory, we need to dispose of it now.
+            if (allocatedAuxMemory) {
+                this->deallocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
             }
             
             return iterationCount;
@@ -249,6 +257,67 @@ namespace storm {
         template<typename ValueType>
         GmmxxLinearEquationSolverSettings<ValueType> const& GmmxxLinearEquationSolver<ValueType>::getSettings() const {
             return settings;
+        }
+        
+        template<typename ValueType>
+        bool GmmxxLinearEquationSolver<ValueType>::allocateAuxMemory(LinearEquationSolverOperation operation) const {
+            bool result = false;
+            if (operation == LinearEquationSolverOperation::SolveEquations) {
+                if (this->getSettings().getSolutionMethod() == GmmxxLinearEquationSolverSettings<ValueType>::SolutionMethod::Jacobi) {
+                    if (!auxiliaryJacobiMemory) {
+                        auxiliaryJacobiMemory = std::make_unique<std::vector<ValueType>>(this->getMatrixRowCount());
+                        result = true;
+                    }
+                }
+            }
+            result |= LinearEquationSolver<ValueType>::allocateAuxMemory(operation);
+            return result;
+        }
+        
+        template<typename ValueType>
+        bool GmmxxLinearEquationSolver<ValueType>::deallocateAuxMemory(LinearEquationSolverOperation operation) const {
+            bool result = false;
+            if (operation == LinearEquationSolverOperation::SolveEquations) {
+                if (auxiliaryJacobiMemory) {
+                    result = true;
+                    auxiliaryJacobiMemory.reset();
+                }
+            }
+            result |= LinearEquationSolver<ValueType>::deallocateAuxMemory(operation);
+            return result;
+        }
+        
+        template<typename ValueType>
+        bool GmmxxLinearEquationSolver<ValueType>::reallocateAuxMemory(LinearEquationSolverOperation operation) const {
+            bool result = false;
+            if (operation == LinearEquationSolverOperation::SolveEquations) {
+                if (auxiliaryJacobiMemory) {
+                    result = auxiliaryJacobiMemory->size() != this->getMatrixColumnCount();
+                    auxiliaryJacobiMemory->resize(this->getMatrixRowCount());
+                }
+            }
+            result |= LinearEquationSolver<ValueType>::reallocateAuxMemory(operation);
+            return result;
+        }
+        
+        template<typename ValueType>
+        bool GmmxxLinearEquationSolver<ValueType>::hasAuxMemory(LinearEquationSolverOperation operation) const {
+            bool result = false;
+            if (operation == LinearEquationSolverOperation::SolveEquations) {
+                result |= static_cast<bool>(auxiliaryJacobiMemory);
+            }
+            result |= LinearEquationSolver<ValueType>::hasAuxMemory(operation);
+            return result;
+        }
+        
+        template<typename ValueType>
+        uint64_t GmmxxLinearEquationSolver<ValueType>::getMatrixRowCount() const {
+            return this->A->getRowCount();
+        }
+        
+        template<typename ValueType>
+        uint64_t GmmxxLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
+            return this->A->getColumnCount();
         }
         
         template<typename ValueType>
