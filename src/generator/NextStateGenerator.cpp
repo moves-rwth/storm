@@ -250,16 +250,17 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
-            // Make the labels unique.
-            std::sort(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first < b.first; } );
-            auto it = std::unique(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first == b.first; } );
-            labelsAndExpressions.resize(std::distance(labelsAndExpressions.begin(), it));
             
             for (auto const& expression : this->options.getExpressionLabels()) {
                 std::stringstream stream;
                 stream << expression;
                 labelsAndExpressions.push_back(std::make_pair(stream.str(), expression));
             }
+            
+            // Make the labels unique.
+            std::sort(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first < b.first; } );
+            auto it = std::unique(labelsAndExpressions.begin(), labelsAndExpressions.end(), [] (std::pair<std::string, storm::expressions::Expression> const& a, std::pair<std::string, storm::expressions::Expression> const& b) { return a.first == b.first; } );
+            labelsAndExpressions.resize(std::distance(labelsAndExpressions.begin(), it));
             
             // Prepare result.
             storm::models::sparse::StateLabeling result(states.size());
