@@ -121,7 +121,7 @@ namespace storm {
                 
                 // Perform one single matrix-vector multiplication.
                 std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(transitionMatrix);
-                solver->repeatedMultiply(result);
+                solver->repeatedMultiply(result, nullptr, 1);
                 return result;
             }
             

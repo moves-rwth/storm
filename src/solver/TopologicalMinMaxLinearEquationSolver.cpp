@@ -33,7 +33,7 @@ namespace storm {
         }
                 
         template<typename ValueType>
-		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
@@ -49,7 +49,7 @@ namespace storm {
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
 				std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
 
-				newSolver.solveEquations(dir, new_x, new_b, nullptr, nullptr);
+				newSolver.solveEquations(dir, new_x, new_b);
 
 				for (size_t i = 0, size = new_x.size(); i < size; ++i) {
 					x.at(i) = new_x.at(i);
@@ -422,14 +422,8 @@ namespace storm {
 		}
         
         template<typename ValueType>
-        void TopologicalMinMaxLinearEquationSolver<ValueType>::multiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n, std::vector<ValueType>* multiplyResult) const {
-            
-            // If scratch memory was not provided, we need to create it.
-            bool multiplyResultMemoryProvided = true;
-            if (multiplyResult == nullptr) {
-                multiplyResult = new std::vector<ValueType>(this->A.getRowCount());
-                multiplyResultMemoryProvided = false;
-            }
+        void TopologicalMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
+            std::unique_ptr<std::vector<ValueType>> multiplyResult = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
             
             // Now perform matrix-vector multiplication as long as we meet the bound of the formula.
             for (uint_fast64_t i = 0; i < n; ++i) {
@@ -444,10 +438,6 @@ namespace storm {
                 // element of the min/max operator stack.
                 storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices());
                 
-            }
-            
-            if (!multiplyResultMemoryProvided) {
-                delete multiplyResult;
             }
         }
 

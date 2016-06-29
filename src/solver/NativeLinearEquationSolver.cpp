@@ -84,70 +84,62 @@ namespace storm {
         }
         
         template<typename ValueType>
-        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(A), settings(settings) {
-            // Intentionally left empty.
+        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings), auxiliarySolvingMemory(nullptr) {
+            this->setMatrix(A);
         }
 
         template<typename ValueType>
-        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A))), A(*localA), settings(settings) {
-            // Intentionally left empty.
+        NativeLinearEquationSolver<ValueType>::NativeLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A, NativeLinearEquationSolverSettings<ValueType> const& settings) : localA(nullptr), A(nullptr), settings(settings), auxiliarySolvingMemory(nullptr) {
+            this->setMatrix(std::move(A));
         }
         
         template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult) const {
+        void NativeLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType> const& A) {
+            localA.reset();
+            this->A = &A;
+        }
+        
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::setMatrix(storm::storage::SparseMatrix<ValueType>&& A) {
+            localA = std::make_unique<storm::storage::SparseMatrix<ValueType>>(std::move(A));
+            this->A = localA.get();
+        }
+        
+        template<typename ValueType>
+        void NativeLinearEquationSolver<ValueType>::solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+            bool allocatedAuxStorage = !this->hasAuxMemory(LinearEquationSolverOperation::SolveEquations);
+            if (allocatedAuxStorage) {
+                this->allocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
+            }
+            
             if (this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR || this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::GaussSeidel) {
                 // Define the omega used for SOR.
                 ValueType omega = this->getSettings().getSolutionMethod() == NativeLinearEquationSolverSettings<ValueType>::SolutionMethod::SOR ? this->getSettings().getOmega() : storm::utility::one<ValueType>();
-                
-                // To avoid copying the contents of the vector in the loop, we create a temporary x to swap with.
-                bool tmpXProvided = true;
-                std::vector<ValueType>* tmpX = multiplyResult;
-                if (multiplyResult == nullptr) {
-                    tmpX = new std::vector<ValueType>(x);
-                    tmpXProvided = false;
-                } else {
-                    *tmpX = x;
-                }
                 
                 // Set up additional environment variables.
                 uint_fast64_t iterationCount = 0;
                 bool converged = false;
                 
                 while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations()) {
-                    A.performSuccessiveOverRelaxationStep(omega, x, b);
+                    A->performSuccessiveOverRelaxationStep(omega, x, b);
                     
                     // Now check if the process already converged within our precision.
-                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(x, *tmpX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion()) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
+                    converged = storm::utility::vector::equalModuloPrecision<ValueType>(*auxiliarySolvingMemory, x, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion()) || (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x));
                     
-                    // If we did not yet converge, we need to copy the contents of x to *tmpX.
+                    // If we did not yet converge, we need to backup the contents of x.
                     if (!converged) {
-                        *tmpX = x;
+                        *auxiliarySolvingMemory = x;
                     }
                     
                     // Increase iteration count so we can abort if convergence is too slow.
                     ++iterationCount;
                 }
-                
-                // If the vector for the temporary multiplication result was not provided, we need to delete it.
-                if (!tmpXProvided) {
-                    delete tmpX;
-                }
             } else {
                 // Get a Jacobi decomposition of the matrix A.
-                std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A.getJacobiDecomposition();
+                std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> jacobiDecomposition = A->getJacobiDecomposition();
                 
-                // To avoid copying the contents of the vector in the loop, we create a temporary x to swap with.
-                bool multiplyResultProvided = true;
-                std::vector<ValueType>* nextX = multiplyResult;
-                if (nextX == nullptr) {
-                    nextX = new std::vector<ValueType>(x.size());
-                    multiplyResultProvided = false;
-                }
-                std::vector<ValueType> const* copyX = nextX;
                 std::vector<ValueType>* currentX = &x;
-                
-                // Target vector for multiplication.
-                std::vector<ValueType> tmpX(x.size());
+                std::vector<ValueType>* nextX = auxiliarySolvingMemory.get();
                 
                 // Set up additional environment variables.
                 uint_fast64_t iterationCount = 0;
@@ -155,15 +147,15 @@ namespace storm {
                 
                 while (!converged && iterationCount < this->getSettings().getMaximalNumberOfIterations() && !(this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(*currentX))) {
                     // Compute D^-1 * (b - LU * x) and store result in nextX.
-                    jacobiDecomposition.first.multiplyWithVector(*currentX, tmpX);
-                    storm::utility::vector::subtractVectors(b, tmpX, tmpX);
-                    storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, tmpX, *nextX);
-                    
-                    // Swap the two pointers as a preparation for the next iteration.
-                    std::swap(nextX, currentX);
+                    jacobiDecomposition.first.multiplyWithVector(*currentX, *nextX);
+                    storm::utility::vector::subtractVectors(b, *nextX, *nextX);
+                    storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition.second, *nextX, *nextX);
                     
                     // Now check if the process already converged within our precision.
                     converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, static_cast<ValueType>(this->getSettings().getPrecision()), this->getSettings().getRelativeTerminationCriterion());
+
+                    // Swap the two pointers as a preparation for the next iteration.
+                    std::swap(nextX, currentX);
                     
                     // Increase iteration count so we can abort if convergence is too slow.
                     ++iterationCount;
@@ -171,28 +163,28 @@ namespace storm {
                                 
                 // If the last iteration did not write to the original x we have to swap the contents, because the
                 // output has to be written to the input parameter x.
-                if (currentX == copyX) {
+                if (currentX == auxiliarySolvingMemory.get()) {
                     std::swap(x, *currentX);
                 }
-                
-                // If the vector for the temporary multiplication result was not provided, we need to delete it.
-                if (!multiplyResultProvided) {
-                    delete copyX;
-                }
+            }
+            
+            // If we allocated auxiliary memory, we need to dispose of it now.
+            if (allocatedAuxStorage) {
+                this->deallocateAuxMemory(LinearEquationSolverOperation::SolveEquations);
             }
         }
         
         template<typename ValueType>
-        void NativeLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType>& result, std::vector<ValueType> const* b) const {
+        void NativeLinearEquationSolver<ValueType>::multiply(std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
             if (&x != &result) {
-                A.multiplyWithVector(x, result);
+                A->multiplyWithVector(x, result);
                 if (b != nullptr) {
                     storm::utility::vector::addVectors(result, *b, result);
                 }
             } else {
                 // If the two vectors are aliases, we need to create a temporary.
                 std::vector<ValueType> tmp(result.size());
-                A.multiplyWithVector(x, tmp);
+                A->multiplyWithVector(x, tmp);
                 if (b != nullptr) {
                     storm::utility::vector::addVectors(tmp, *b, result);
                 }
@@ -207,6 +199,65 @@ namespace storm {
         template<typename ValueType>
         NativeLinearEquationSolverSettings<ValueType> const& NativeLinearEquationSolver<ValueType>::getSettings() const {
             return settings;
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::allocateAuxMemory(LinearEquationSolverOperation operation) const {
+            bool result = false;
+            if (operation == LinearEquationSolverOperation::SolveEquations) {
+                if (!auxiliarySolvingMemory) {
+                    auxiliarySolvingMemory = std::make_unique<std::vector<ValueType>>(this->getMatrixRowCount());
+                    result = true;
+                }
+            }
+            result |= LinearEquationSolver<ValueType>::allocateAuxMemory(operation);
+            return result;
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::deallocateAuxMemory(LinearEquationSolverOperation operation) const {
+            bool result = false;
+            if (operation == LinearEquationSolverOperation::SolveEquations) {
+                if (auxiliarySolvingMemory) {
+                    result = true;
+                    auxiliarySolvingMemory.reset();
+                }
+            }
+            result |= LinearEquationSolver<ValueType>::deallocateAuxMemory(operation);
+            return result;
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::reallocateAuxMemory(LinearEquationSolverOperation operation) const {
+            bool result = false;
+            if (operation == LinearEquationSolverOperation::SolveEquations) {
+                if (auxiliarySolvingMemory) {
+                    result = auxiliarySolvingMemory->size() != this->getMatrixColumnCount();
+                    auxiliarySolvingMemory->resize(this->getMatrixRowCount());
+                }
+            }
+            result |= LinearEquationSolver<ValueType>::reallocateAuxMemory(operation);
+            return result;
+        }
+        
+        template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::hasAuxMemory(LinearEquationSolverOperation operation) const {
+            bool result = false;
+            if (operation == LinearEquationSolverOperation::SolveEquations) {
+                result |= static_cast<bool>(auxiliarySolvingMemory);
+            }
+            result |= LinearEquationSolver<ValueType>::hasAuxMemory(operation);
+            return result;
+        }
+        
+        template<typename ValueType>
+        uint64_t NativeLinearEquationSolver<ValueType>::getMatrixRowCount() const {
+            return this->A->getRowCount();
+        }
+        
+        template<typename ValueType>
+        uint64_t NativeLinearEquationSolver<ValueType>::getMatrixColumnCount() const {
+            return this->A->getColumnCount();
         }
         
         template<typename ValueType>

@@ -5,6 +5,7 @@
 #include "src/models/sparse/Dtmc.h"
 #include "src/models/sparse/Ctmc.h"
 #include "src/models/sparse/Mdp.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/storage/expressions/ExpressionManager.h"
@@ -133,6 +134,9 @@ namespace storm {
                 case storm::generator::ModelType::MDP:
                     result = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::Mdp<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
                     break;
+                case storm::generator::ModelType::MA:
+                    result = std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>>(new storm::models::sparse::MarkovAutomaton<ValueType, RewardModelType>(std::move(modelComponents.transitionMatrix), std::move(modelComponents.stateLabeling), *std::move(modelComponents.markovianStates), std::move(modelComponents.rewardModels), std::move(modelComponents.choiceLabeling)));
+                    break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating model: cannot handle this model type.");
                     break;
@@ -165,11 +169,16 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders) {
+        void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>& choiceLabels , boost::optional<storm::storage::BitVector>& markovianChoices) {
             // Create choice labels, if requested,
-            boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabels;
             if (generator->getOptions().isBuildChoiceLabelsSet()) {
                 choiceLabels = std::vector<boost::container::flat_set<uint_fast64_t>>();
+            }
+            
+            // Create markovian states bit vector, if required
+            if (generator->getModelType() == storm::generator::ModelType::MA) {
+                // The BitVector will be resized when the correct size is known
+                markovianChoices = storm::storage::BitVector(64, false);
             }
 
             // Create a callback for the next-state generator to enable it to request the index of states.
@@ -219,6 +228,12 @@ namespace storm {
                             // Insert empty choice labeling for added self-loop transitions.
                             choiceLabels.get().push_back(boost::container::flat_set<uint_fast64_t>());
                         }
+                        
+                        if (generator->getModelType() == storm::generator::ModelType::MA) {
+                            markovianChoices->enlargeLiberally(currentRow, false);
+                            markovianChoices->set(currentRow);
+                        }
+                        
                         if (!generator->isDeterministicModel()) {
                             transitionMatrixBuilder.newRowGroup(currentRow);
                         }
@@ -262,6 +277,12 @@ namespace storm {
                             choiceLabels.get().push_back(choice.getChoiceLabels());
                         }
                         
+                        // If we keep track of the Markovian choices, store whether the current one is Markovian.
+                        if( markovianChoices &&  choice.isMarkovian() ) {
+                            markovianChoices->enlargeLiberally(currentRow, false);
+                            markovianChoices->set(currentRow);
+                        }
+                        
                         // Add the probabilistic behavior to the matrix.
                         for (auto const& stateProbabilityPair : choice) {
                             transitionMatrixBuilder.addNextValue(currentRow, stateProbabilityPair.first, stateProbabilityPair.second);
@@ -279,6 +300,11 @@ namespace storm {
                     }
                     ++currentRowGroup;
                 }
+            }
+            
+            if (markovianChoices) {
+                // We now know the correct size
+                markovianChoices->resize(currentRow, false);
             }
 
             // If the exploration order was not breadth-first, we need to fix the entries in the matrix according to
@@ -304,8 +330,6 @@ namespace storm {
                 // Fix (c).
                 this->stateStorage.stateToId.remap([&remapping] (StateType const& state) { return remapping[state]; } );
             }
-            
-            return choiceLabels;
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
@@ -323,7 +347,8 @@ namespace storm {
                 rewardModelBuilders.emplace_back(generator->getRewardModelInformation(i));
             }
             
-            modelComponents.choiceLabeling = buildMatrices(transitionMatrixBuilder, rewardModelBuilders);
+            boost::optional<storm::storage::BitVector> markovianChoices;
+            buildMatrices(transitionMatrixBuilder, rewardModelBuilders, modelComponents.choiceLabeling, markovianChoices);
             modelComponents.transitionMatrix = transitionMatrixBuilder.build();
             
             // Now finalize all reward models.
@@ -342,7 +367,42 @@ namespace storm {
                 }
             }
             
+            if (generator->getModelType() == storm::generator::ModelType::MA) {
+                STORM_LOG_ASSERT(markovianChoices, "No information regarding markovian choices available.");
+                buildMarkovianStates(modelComponents, *markovianChoices);
+            }
+            
             return modelComponents;
+        }
+        
+        template <typename ValueType, typename RewardModelType, typename StateType>
+        void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMarkovianStates(ModelComponents& modelComponents, storm::storage::BitVector const& markovianChoices) const {
+            modelComponents.markovianStates = storm::storage::BitVector(modelComponents.transitionMatrix.getRowGroupCount(), false);
+            // Check for each state whether it contains a markovian choice.
+            for (uint_fast64_t state = 0; state < modelComponents.transitionMatrix.getRowGroupCount(); ++state ) {
+                uint_fast64_t firstChoice = modelComponents.transitionMatrix.getRowGroupIndices()[state];
+                uint_fast64_t markovianChoice = markovianChoices.getNextSetIndex(firstChoice);
+                if (markovianChoice < modelComponents.transitionMatrix.getRowGroupIndices()[state+1]) {
+                    // Found a markovian choice. Assert that there is not a second one.
+                    STORM_LOG_THROW(markovianChoices.getNextSetIndex(markovianChoice+1) >= modelComponents.transitionMatrix.getRowGroupIndices()[state+1], storm::exceptions::WrongFormatException, "Multiple Markovian choices defined for some state");
+                    modelComponents.markovianStates->set(state);
+                    // Swap the first choice and the found markovian choice (if they are not equal)
+                    if (firstChoice != markovianChoice) {
+                        modelComponents.transitionMatrix.swapRows(firstChoice, markovianChoice);
+                        for (auto& rewardModel : modelComponents.rewardModels) {
+                            if (rewardModel.second.hasStateActionRewards()) {
+                                std::swap(rewardModel.second.getStateActionRewardVector()[firstChoice], rewardModel.second.getStateActionRewardVector()[markovianChoice]);
+                            }
+                            if (rewardModel.second.hasTransitionRewards()) {
+                                rewardModel.second.getTransitionRewardMatrix().swapRows(firstChoice, markovianChoice);
+                            }
+                        }
+                        if (modelComponents.choiceLabeling) {
+                            std::swap(modelComponents.choiceLabeling.get()[firstChoice], modelComponents.choiceLabeling.get()[markovianChoice]);
+                        }
+                    }
+                }
+            }
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>

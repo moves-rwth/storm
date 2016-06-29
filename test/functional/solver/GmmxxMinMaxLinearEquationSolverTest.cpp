@@ -78,23 +78,23 @@ TEST(GmmxxMinMaxLinearEquationSolver, MatrixVectorMultiplication) {
     auto factory = storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>();
     auto solver = factory.create(A);
     
-    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Minimize, x, nullptr, 1));
+    ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Minimize, x, nullptr, 1));
     ASSERT_LT(std::abs(x[0] - 0.099), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
-    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Minimize, x, nullptr, 2));
+    ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Minimize, x, nullptr, 2));
     ASSERT_LT(std::abs(x[0] - 0.1881), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
-    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Minimize, x, nullptr, 20));
+    ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Minimize, x, nullptr, 20));
     ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
-    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Maximize, x, nullptr, 1));
+    ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Maximize, x, nullptr, 1));
     ASSERT_LT(std::abs(x[0] - 0.5), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
     
     x = {0, 1, 0};
-    ASSERT_NO_THROW(solver->multiply(storm::OptimizationDirection::Maximize, x, nullptr, 20));
+    ASSERT_NO_THROW(solver->repeatedMultiply(storm::OptimizationDirection::Maximize, x, nullptr, 20));
     ASSERT_LT(std::abs(x[0] - 0.9238082658), storm::settings::getModule<storm::settings::modules::GmmxxEquationSolverSettings>().getPrecision());
 }
 
