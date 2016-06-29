@@ -366,7 +366,7 @@ namespace storm {
                         continue;
                     }
                     
-                    result.push_back(Choice<ValueType>(command.getActionIndex()));
+                    result.push_back(Choice<ValueType>(command.getActionIndex(), command.isMarkovian()));
                     Choice<ValueType>& choice = result.back();
                     
                     // Remember the command labels only if we were asked to.

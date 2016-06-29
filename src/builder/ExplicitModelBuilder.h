@@ -63,6 +63,9 @@ namespace storm {
                 
                 // A vector that stores a labeling for each choice.
                 boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> choiceLabeling;
+                
+                // A vector that stores which states are markovian.
+                boost::optional<storm::storage::BitVector> markovianStates;
             };
             
             struct Options {
@@ -138,10 +141,10 @@ namespace storm {
              *
              * @param transitionMatrixBuilder The builder of the transition matrix.
              * @param rewardModelBuilders The builders for the selected reward models.
-             * @return A tuple containing a vector with all rows at which the nondeterministic choices of each state begin
-             * and a vector containing the labels associated with each choice.
+             * @param choiceLabels is set to a vector containing the labels associated with each choice (is only set if choice labels are requested).
+             * @param markovianChoices is set to a bit vector storing whether a choice is markovian (is only set if the model type requires this information).
              */
-            boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>> buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders);
+            void buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, boost::optional<std::vector<boost::container::flat_set<uint_fast64_t>>>& choiceLabels , boost::optional<storm::storage::BitVector>& markovianChoices);
             
             /*!
              * Explores the state space of the given program and returns the components of the model as a result.
@@ -149,6 +152,16 @@ namespace storm {
              * @return A structure containing the components of the resulting model.
              */
             ModelComponents buildModelComponents();
+            
+            /*!
+             * Set the markovian states of the given modelComponents,
+             * makes sure that each state has at most one markovian choice,
+             * and makes this choice the first one of the corresponding state
+             *
+             * @param modelComponents The components of the model build so far
+             * @markovianChoices bit vector storing whether a choice is markovian
+             */
+            void buildMarkovianStates(ModelComponents& modelComponents, storm::storage::BitVector const& markovianChoices) const;
             
             /*!
              * Builds the state labeling for the given program.

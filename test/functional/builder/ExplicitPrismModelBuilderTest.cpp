@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/settings/SettingMemento.h"
 #include "src/parser/PrismParser.h"
 #include "src/builder/ExplicitModelBuilder.h"
@@ -97,6 +98,31 @@ TEST(ExplicitPrismModelBuilderTest, Mdp) {
     model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(37ul, model->getNumberOfStates());
     EXPECT_EQ(59ul, model->getNumberOfTransitions());
+}
+
+TEST(ExplicitPrismModelBuilderTest, Ma) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/simple.ma");
+    
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    EXPECT_EQ(5ul, model->getNumberOfStates());
+    EXPECT_EQ(8ul, model->getNumberOfTransitions());
+    ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
+    EXPECT_EQ(4ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/hybrid_states.ma");
+    model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    EXPECT_EQ(5ul, model->getNumberOfStates());
+    EXPECT_EQ(13ul, model->getNumberOfTransitions());
+    ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
+    EXPECT_EQ(5ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
+    
+    program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/stream2.ma");
+    model = storm::builder::ExplicitModelBuilder<double>(program).build();
+    EXPECT_EQ(12ul, model->getNumberOfStates());
+    EXPECT_EQ(14ul, model->getNumberOfTransitions());
+    ASSERT_TRUE(model->isOfType(storm::models::ModelType::MarkovAutomaton));
+    EXPECT_EQ(7ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
+    
 }
 
 TEST(ExplicitPrismModelBuilderTest, FailComposition) {

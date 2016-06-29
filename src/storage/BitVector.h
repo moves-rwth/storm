@@ -235,6 +235,17 @@ namespace storm {
             void resize(uint_fast64_t newLength, bool init = false);
             
             /*!
+             * Enlarges the bit vector such that it holds at least the given number of bits (but possibly more).
+             * This can be used to diminish reallocations when the final size of the bit vector is not known yet.
+             * The bit vector does not become smaller.
+             * New bits are initialized to the given value.
+             *
+             * @param minimumLength The minimum number of bits that the bit vector should hold.
+             * @param init The truth value to which to initialize newly created bits.
+             */
+            void enlargeLiberally(uint_fast64_t minimumLength, bool init = false);
+            
+            /*!
              * Performs a logical "and" with the given bit vector. In case the sizes of the bit vectors do not match,
              * only the matching portion is considered and the overlapping bits are set to 0.
              *
