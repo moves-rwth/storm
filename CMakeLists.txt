@@ -40,6 +40,7 @@ mark_as_advanced(STORM_COMPILE_WITH_CCACHE)
 option(STORM_LOG_DISABLE_DEBUG "Disable log and trace message support" OFF)
 option(STORM_USE_CLN_NUMBERS "Sets whether CLN or GMP numbers should be used" ON)
 option(BUILD_SHARED_LIBS "Build the Storm library dynamically" OFF)
+option(CONFIGURE_STORMPY "Generate setup.cfg for stormpy" ON)
 set(BOOST_ROOT "" CACHE STRING "A hint to the root directory of Boost (optional).")
 set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optional).")
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
@@ -335,8 +336,27 @@ set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/storm/utility/storm-versi
 include_directories("${PROJECT_BINARY_DIR}/include")
 
 include(CTest)
-
+# Configure python binding setup file
+if(CONFIGURE_STORMPY)
+    if(STORM_HAVE_CLN)
+        set(STORMPY_USE_CLN 1)
+    else()
+        set(STORMPY_USE_CLN 0)
+    endif()
+    get_directory_property(STORMPY_INCLUDE_DIRS_PROP INCLUDE_DIRECTORIES)
+    foreach(arg ${STORMPY_INCLUDE_DIRS_PROP})
+        set(STORMPY_INCLUDE_DIRS "${STORMPY_INCLUDE_DIRS}${sep}${arg}")
+        set(sep ":")
+    endforeach()
+    set(STORMPY_LIBRARY_DIRS "${PROJECT_BINARY_DIR}/src")
+    set(STORMPY_RPATH "${PROJECT_BINARY_DIR}/src")
+configure_file (
+	"${PROJECT_SOURCE_DIR}/stormpy/setup.cfg.in"
+	"${PROJECT_SOURCE_DIR}/stormpy/setup.cfg"
+)
+endif()
 
 add_subdirectory(src)
+add_subdirectory(test)
 
 include(StormCPackConfig.cmake)
