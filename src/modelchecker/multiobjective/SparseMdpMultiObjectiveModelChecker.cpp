@@ -31,7 +31,7 @@ namespace storm {
             //In general, each initial state requires an individual scheduler (in contrast to single objective model checking). Let's exclude this.
             if(this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
             if(!checkTask.isOnlyInitialStatesRelevantSet()) return false;
-            return checkTask.getFormula().isInFragment(storm::logic::multiObjective().setStepBoundedUntilFormulasAllowed(true));
+            return checkTask.getFormula().isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true));
         }
         
         template<typename SparseMdpModelType>

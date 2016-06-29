@@ -43,6 +43,7 @@ namespace storm {
                 static void preprocessFormula(storm::logic::OperatorFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective);
                 static void preprocessFormula(storm::logic::ProbabilityOperatorFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective);
                 static void preprocessFormula(storm::logic::RewardOperatorFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective);
+                static void preprocessFormula(storm::logic::TimeOperatorFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective);
                 static void preprocessFormula(storm::logic::UntilFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective, bool isProb0Formula, bool isProb1Formula);
                 static void preprocessFormula(storm::logic::BoundedUntilFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective);
                 static void preprocessFormula(storm::logic::GloballyFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective, bool isProb0Formula, bool isProb1Formula);

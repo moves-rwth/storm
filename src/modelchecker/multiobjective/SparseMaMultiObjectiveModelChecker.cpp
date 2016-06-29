@@ -15,7 +15,7 @@
 
 #include "src/utility/Stopwatch.h"
 
-#include "src/exceptions/NotImplementedException.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -31,12 +31,13 @@ namespace storm {
             //In general, each initial state requires an individual scheduler (in contrast to single objective model checking). Let's exclude this.
             if(this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
             if(!checkTask.isOnlyInitialStatesRelevantSet()) return false;
-            return checkTask.getFormula().isInFragment(storm::logic::multiObjective().setStepBoundedUntilFormulasAllowed(true));
+            return checkTask.getFormula().isInFragment(storm::logic::multiObjective().setTimeAllowed(true).setTimeBoundedUntilFormulasAllowed(true));
         }
         
         template<typename SparseMaModelType>
         std::unique_ptr<CheckResult> SparseMaMultiObjectiveModelChecker<SparseMaModelType>::checkMultiObjectiveFormula(CheckTask<storm::logic::MultiObjectiveFormula> const& checkTask) {
-            STORM_LOG_ASSERT(this->getModel().getInitialStates().getNumberOfSetBits() == 1, "Multi Objective Model checking on model with multiple initial states is not supported.");
+            STORM_LOG_ASSERT(this->getModel().getInitialStates().getNumberOfSetBits() == 1, "Multi-objective Model checking on model with multiple initial states is not supported.");
+            STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidArgumentException, "Unable to check multi-objective formula in non-closed Markov automaton.");
             std::unique_ptr<CheckResult> result;
             
 #ifdef STORM_HAVE_CARL

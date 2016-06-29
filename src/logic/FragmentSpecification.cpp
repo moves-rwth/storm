@@ -93,10 +93,9 @@ namespace storm {
             multiObjective.setReachabilityProbabilityFormulasAllowed(true);
             multiObjective.setRewardOperatorsAllowed(true);
             multiObjective.setReachabilityRewardFormulasAllowed(true);
-            multiObjective.setCumulativeRewardFormulasAllowed(true);
             multiObjective.setTotalRewardFormulasAllowed(true);
             multiObjective.setBoundedUntilFormulasAllowed(true);
-            
+            multiObjective.setStepBoundedUntilFormulasAllowed(true);
 
             return multiObjective;
         }

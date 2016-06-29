@@ -122,6 +122,8 @@ namespace storm {
                     preprocessFormula(formula.asProbabilityOperatorFormula(), data, currentObjective);
                 } else if(formula.isRewardOperatorFormula()){
                     preprocessFormula(formula.asRewardOperatorFormula(), data, currentObjective);
+                } else if(formula.isTimeOperatorFormula()){
+                    preprocessFormula(formula.asTimeOperatorFormula(), data, currentObjective);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the objective " << formula << " because it is not supported");
                 }
@@ -169,6 +171,21 @@ namespace storm {
                     preprocessFormula(formula.getSubformula().asCumulativeRewardFormula(), data, currentObjective, formula.getOptionalRewardModelName());
                 } else if(formula.getSubformula().isTotalRewardFormula()) {
                     preprocessFormula(formula.getSubformula().asTotalRewardFormula(), data, currentObjective, formula.getOptionalRewardModelName());
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " is not supported.");
+                }
+            }
+
+            template<typename SparseModelType>
+            void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::TimeOperatorFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective) {
+                // Time formulas are only supported for Markov automata
+                STORM_LOG_THROW(data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Time operator formulas are only supported for Markov automata.");
+                
+                // reward finiteness does not need to be checked if we want to minimize time
+                currentObjective.rewardFinitenessChecked = !currentObjective.rewardsArePositive;
+                
+                if(formula.getSubformula().isEventuallyFormula()){
+                    preprocessFormula(formula.getSubformula().asEventuallyFormula(), data, currentObjective, false, false);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " is not supported.");
                 }
@@ -242,10 +259,23 @@ namespace storm {
             
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::BoundedUntilFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective) {
-                STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with a discrete time bound but got " << formula << ".");
-                currentObjective.stepBound = formula.getDiscreteTimeBound();
-                STORM_LOG_THROW(*currentObjective.stepBound > 0, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula with time bound 0. This is not supported.");
-                preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data, currentObjective, false, false);
+                
+                if(data.originalModel.isOfType(storm::models::ModelType::Mdp)) {
+                    STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with a discrete time bound but got " << formula << ".");
+                    STORM_LOG_THROW(formula.getDiscreteTimeBound() > 0, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula with time bound 0. This is not supported.");
+                    currentObjective.timeBounds = formula.getDiscreteTimeBound();
+                    preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data, currentObjective, false, false);
+                    
+                } else if(data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    if(formula.hasDiscreteTimeBound()) {
+                        STORM_LOG_THROW(formula.getDiscreteTimeBound() > 0, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula with time bound 0. This is not supported.");
+                        currentObjective.timeBounds = formula.getDiscreteTimeBound();
+                    } else {
+                        STORM_LOG_THROW(formula.getIntervalBounds().first==formula.getIntervalBounds().second, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula where upper and lower time bounds are equal. This is not supported.");
+                        currentObjective.timeBounds = formula.getIntervalBounds();
+                    }
+                    preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data, currentObjective, false, false);
+                }
             }
             
             template<typename SparseModelType>
@@ -267,7 +297,6 @@ namespace storm {
                     preprocessFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), formula.getSubformula().asSharedPointer()), data, currentObjective, isProb0Formula, isProb1Formula);
                     return;
                 }
-                STORM_LOG_THROW(formula.isReachabilityRewardFormula(), storm::exceptions::InvalidPropertyException, "The formula " << formula << " neither considers reachability Probabilities nor reachability rewards");
                 
                 CheckTask<storm::logic::Formula> targetTask(formula.getSubformula());
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(data.preprocessedModel);
@@ -277,7 +306,15 @@ namespace storm {
                 updatePreprocessedModel(data, *duplicatorResult.model, duplicatorResult.newToOldStateIndexMapping);
                 
                 // Add a reward model that gives zero reward to the actions of states of the second copy.
-                std::vector<ValueType> objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
+                std::vector<ValueType> objectiveRewards;
+                if(formula.isReachabilityRewardFormula()) {
+                    objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
+                } else if(formula.isReachabilityTimeFormula() && data.preprocessedModel.isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    objectiveRewards = std::vector<ValueType>(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                    storm::utility::vector::setVectorValues(objectiveRewards, data.getMarkovianStatesOfPreprocessedModel(), storm::utility::one<ValueType>());
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The formula " << formula << " neither considers reachability probabilities nor reachability rewards " << (data.preprocessedModel.isOfType(storm::models::ModelType::MarkovAutomaton) ?  "nor reachability time" : "") << ". This is not supported.");
+                }
                 for(auto secondCopyState : duplicatorResult.secondCopy) {
                     for(uint_fast64_t choice = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[secondCopyState]; choice < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[secondCopyState+1]; ++choice) {
                         objectiveRewards[choice] = storm::utility::zero<ValueType>();
@@ -306,9 +343,10 @@ namespace storm {
             
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::CumulativeRewardFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
+                STORM_LOG_THROW(!data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Cumulative reward formulas are not supported for Markov automata.");
                 STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
-                currentObjective.stepBound = formula.getDiscreteTimeBound();
-                STORM_LOG_THROW(*currentObjective.stepBound > 0, storm::exceptions::InvalidPropertyException, "Got a cumulativeRewardFormula with time bound 0. This is not supported.");
+                STORM_LOG_THROW(formula.getDiscreteTimeBound() > 0, storm::exceptions::InvalidPropertyException, "Got a cumulativeRewardFormula with time bound 0. This is not supported.");
+                currentObjective.timeBounds = formula.getDiscreteTimeBound();
                 
                 std::vector<ValueType> objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
                 if(!currentObjective.rewardsArePositive){

@@ -35,7 +35,7 @@ namespace storm {
                 storm::storage::BitVector unboundedObjectives(data.objectives.size(), false);
                 std::vector<ValueType> weightedRewardVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    if(!data.objectives[objIndex].stepBound) {
+                    if(!data.objectives[objIndex].timeBounds) {
                         unboundedObjectives.set(objIndex, true);
                         storm::utility::vector::addScaledVector(weightedRewardVector, data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector(), weightVector[objIndex]);
                     }
@@ -65,7 +65,7 @@ namespace storm {
             storm::storage::TotalScheduler const& SparseMultiObjectiveWeightVectorChecker<SparseModelType>::getScheduler() const {
                 STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 for(auto const& obj : data.objectives) {
-                    STORM_LOG_THROW(!obj.stepBound, storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for stepbounded objectives.");
+                    STORM_LOG_THROW(!obj.timeBounds, storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for timeBounded objectives.");
                 }
                 return scheduler;
             }
@@ -145,7 +145,7 @@ namespace storm {
                 //Also only compute values for objectives with weightVector != zero,
                 //one check can be omitted as the result can be computed back from the weighed result and the results from the remaining objectives
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    if(data.objectives[objIndex].stepBound){
+                    if(data.objectives[objIndex].timeBounds){
                         objectiveResults[objIndex] = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>());
                     } else {
                         storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector());
@@ -173,21 +173,22 @@ namespace storm {
                 std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(data.preprocessedModel.getNumberOfStates());
                 std::vector<ValueType> choiceValues(weightedRewardVector.size());
                 std::vector<ValueType> temporaryResult(data.preprocessedModel.getNumberOfStates());
-                // Get for each occurring stepBound the indices of the objectives with that bound.
-                std::map<uint_fast64_t, storm::storage::BitVector, std::greater<uint_fast64_t>> stepBounds;
+                // Get for each occurring timeBound the indices of the objectives with that bound.
+                std::map<uint_fast64_t, storm::storage::BitVector, std::greater<uint_fast64_t>> timeBounds;
                 for(auto objIndex : boundedObjectives) {
-                    auto stepBoundIt = stepBounds.insert(std::make_pair(*data.objectives[objIndex].stepBound, storm::storage::BitVector(data.objectives.size(), false))).first;
-                        stepBoundIt->second.set(objIndex);
+                    uint_fast64_t timeBound = boost::get<uint_fast64_t>(data.objectives[objIndex].timeBounds.get());
+                    auto timeBoundIt = timeBounds.insert(std::make_pair(timeBound, storm::storage::BitVector(data.objectives.size(), false))).first;
+                        timeBoundIt->second.set(objIndex);
                 }
                 storm::storage::BitVector objectivesAtCurrentEpoch = ~boundedObjectives;
-                auto stepBoundIt = stepBounds.begin();
-                for(uint_fast64_t currentEpoch = stepBoundIt->first; currentEpoch > 0; --currentEpoch) {
-                    if(stepBoundIt != stepBounds.end() && currentEpoch == stepBoundIt->first) {
-                        objectivesAtCurrentEpoch |= stepBoundIt->second;
-                        for(auto objIndex : stepBoundIt->second) {
+                auto timeBoundIt = timeBounds.begin();
+                for(uint_fast64_t currentEpoch = timeBoundIt->first; currentEpoch > 0; --currentEpoch) {
+                    if(timeBoundIt != timeBounds.end() && currentEpoch == timeBoundIt->first) {
+                        objectivesAtCurrentEpoch |= timeBoundIt->second;
+                        for(auto objIndex : timeBoundIt->second) {
                             storm::utility::vector::addScaledVector(weightedRewardVector, data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector(), weightVector[objIndex]);
                         }
-                        ++stepBoundIt;
+                        ++timeBoundIt;
                     }
                     
                     // Get values and scheduler for weighted sum of objectives

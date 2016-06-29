@@ -4,10 +4,12 @@
 #include <vector>
 #include <memory>
 #include <iomanip>
+#include <type_traits>
 #include <boost/optional.hpp>
 
 #include "src/logic/Formulas.h"
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveObjectiveInformation.h"
+#include "src/models/sparse/MarkovAutomaton.h"
 #include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
 
@@ -45,6 +47,18 @@ namespace storm {
                         this->prob1StatesLabel = "_" + this->prob1StatesLabel;
                     }
                     this->preprocessedModel.getStateLabeling().addLabel(this->prob1StatesLabel, storm::storage::BitVector(this->preprocessedModel.getNumberOfStates(), true));
+                }
+                
+                template<typename MT = SparseModelType>
+                typename std::enable_if<std::is_same<MT, storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType>>::value, storm::storage::BitVector const&>::type
+                getMarkovianStatesOfPreprocessedModel() {
+                    return preprocessedModel.getMarkovianStates();
+                }
+                
+                template<typename MT = SparseModelType>
+                typename std::enable_if<!std::is_same<MT, storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType>>::value, storm::storage::BitVector const&>::type
+                getMarkovianStatesOfPreprocessedModel() {
+                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Tried to retrieve Markovian states but the considered model is not an MA.");
                 }
                 
                 void printToStream(std::ostream& out) const {
