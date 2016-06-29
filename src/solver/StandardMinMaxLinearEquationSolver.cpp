@@ -224,11 +224,11 @@ namespace storm {
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
                 if(iterations==0){ //may happen due to custom termination condition. Then we need to compute x'= A*x+b
-                    solver->multiply(x, *multiplyResult, &b);
+                    solver->multiply(x, &b, *auxiliarySolvingMultiplyMemory);
                 }
                 std::vector<storm::storage::sparse::state_type> choices(this->A.getRowGroupCount());
                 // Reduce the multiplyResult and keep track of the choices made
-                storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices(), &choices);
+                storm::utility::vector::reduceVectorMinOrMax(dir, *auxiliarySolvingMultiplyMemory, x, this->A.getRowGroupIndices(), &choices);
                 this->scheduler = std::make_unique<storm::storage::TotalScheduler>(std::move(choices));
             }
 

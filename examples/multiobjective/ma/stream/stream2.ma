@@ -8,10 +8,11 @@ const double processingRate = 5;
 
 module streamingclient
 	
-	s : [0..2]; // current state:
+	s : [0..3]; // current state:
 	// 0: decide whether to start	
 	// 1: buffering
 	// 2: running
+	// 3: done
 	
 	n : [0..N]; // number of received packages
 	k : [0..N]; // number of processed packages 	
