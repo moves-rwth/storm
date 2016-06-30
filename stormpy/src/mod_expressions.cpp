@@ -4,7 +4,7 @@
 #include <src/storage/expressions/ExpressionManager.h>
 
 PYBIND11_PLUGIN(expressions) {
-	py::module m("stormpy.expressions", "Storm expressions");
+	py::module m("expressions", "Storm expressions");
 
     py::class_<std::shared_ptr<storm::expressions::ExpressionManager>>(m, "ExpressionManager", "Manages variables for expressions")
         ;

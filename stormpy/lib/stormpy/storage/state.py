@@ -1,4 +1,4 @@
-import stormpy.storage
+from . import action
 
 class State:
     """ Represents a state in the model """
@@ -31,4 +31,4 @@ class State:
         row_group_indices = self.model.transition_matrix()._row_group_indices()
         start = row_group_indices[self.id]
         end = row_group_indices[self.id+1]
-        return stormpy.action.Action(start, end, 0, self.model)
+        return action.Action(start, end, 0, self.model)
