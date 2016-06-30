@@ -19,11 +19,12 @@ namespace storm {
                 typedef SparseMultiObjectivePreprocessorData<SparseModelType> PreprocessorData;
                 typedef SparseMultiObjectiveResultData<RationalNumberType> ResultData;
                 typedef SparseMultiObjectiveRefinementStep<RationalNumberType> RefinementStep;
+                typedef std::shared_ptr<SparseMultiObjectiveWeightVectorChecker<SparseModelType>> WeightVectorCheckerType;
                 
                 typedef std::vector<RationalNumberType> Point;
                 typedef std::vector<RationalNumberType> WeightVector;
                 
-                static ResultData check(PreprocessorData const& preprocessorData);
+                static ResultData check(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker);
                 
             private:
                 
@@ -34,9 +35,9 @@ namespace storm {
                  */
                 static bool checkIfPreprocessingWasConclusive(PreprocessorData const& preprocessorData);
                 
-                static void achievabilityQuery(PreprocessorData const& preprocessorData, ResultData& resultData);
-                static void numericalQuery(PreprocessorData const& preprocessorData, ResultData& resultData);
-                static void paretoQuery(PreprocessorData const& preprocessorData, ResultData& resultData);
+                static void achievabilityQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData);
+                static void numericalQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData);
+                static void paretoQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData);
                 
                 /*
                  * Returns a weight vector w that separates the under approximation from the given point p, i.e.,
@@ -51,7 +52,7 @@ namespace storm {
                 /*
                  * Refines the current result w.r.t. the given direction vector
                  */
-                static void performRefinementStep(WeightVector const& direction, bool saveScheduler, SparseMultiObjectiveWeightVectorChecker<SparseModelType>& weightVectorChecker, ResultData& resultData);
+                static void performRefinementStep(WeightVector const& direction, bool saveScheduler, WeightVectorCheckerType weightVectorChecker, ResultData& resultData);
                 
                 /*
                  * Updates the overapproximation after a refinement step has been performed

@@ -43,15 +43,20 @@ namespace storm {
                 storm::storage::TotalScheduler const& getScheduler() const;
                 
                 
-            private:
+            protected:
+                
+                /*!
+                 * Retrieves the rewards for the objective with the given index as state action reward vector.
+                 * Note that this discretizes state rewards of Markovian states by dividing them with the exit rate.
+                 */
+                virtual std::vector<ValueType> getObjectiveRewardAsDiscreteActionRewards(uint_fast64_t objectiveIndex) const = 0 ;
                 
                 /*!
                  * Determines the scheduler that maximizes the weighted reward vector of the unbounded objectives
                  *
-                 * @param unboundedObjectives the objectives without a stepBound
                  * @param weightedRewardVector the weighted rewards (only considering the unbounded objectives)
                  */
-                void unboundedWeightedPhase(storm::storage::BitVector const& unboundedObjectives, std::vector<ValueType> const& weightedRewardVector);
+                void unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector);
                 
                 /*!
                  * Computes the values of the objectives that do not have a stepBound w.r.t. the scheduler computed in the unboundedWeightedPhase
@@ -67,13 +72,14 @@ namespace storm {
                  * - computes the values of these objectives w.r.t. this scheduler
                  *
                  * @param weightVector the weight vector of the current check
-                 * @param boundedObjectives the objectives with a stepBound
                  * @param weightedRewardVector the weighted rewards (initially only considering the unbounded objectives, will be extended to all objectives)
                  */
-                void boundedPhase(std::vector<ValueType> const& weightVector, storm::storage::BitVector const& unboundedObjectives, std::vector<ValueType>& weightedRewardVector);
+                virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) = 0;
                 
                 // stores the considered information of the multi-objective model checking problem
                 PreprocessorData const& data;
+                // stores the indices of the objectives for which there is no time bound
+                storm::storage::BitVector unboundedObjectives;
                 
                 // stores the set of states for which it is allowed to visit them infinitely often
                 // This means that, if one of the states is part of a neutral EC, it is allowed to

@@ -22,30 +22,33 @@ namespace storm {
             
 
             template <class SparseModelType>
-            SparseMultiObjectiveWeightVectorChecker<SparseModelType>::SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : data(data), checkHasBeenCalled(false) , objectiveResults(data.objectives.size()){
+            SparseMultiObjectiveWeightVectorChecker<SparseModelType>::SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : data(data), unboundedObjectives(data.objectives.size()),checkHasBeenCalled(false), objectiveResults(data.objectives.size()){
                 
+                // set the unbounded objectives
+                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
+                    unboundedObjectives.set(objIndex, !data.objectives[objIndex].timeBounds);
+                }
                 // Enlarge the set of prob1 states to the states that are only reachable via prob1 states
                 statesThatAreAllowedToBeVisitedInfinitelyOften = ~storm::utility::graph::getReachableStates(data.preprocessedModel.getTransitionMatrix(), data.preprocessedModel.getInitialStates(), ~data.preprocessedModel.getStates(data.prob1StatesLabel), storm::storage::BitVector(data.preprocessedModel.getNumberOfStates(), false));
             }
+            
             
             template <class SparseModelType>
             void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::check(std::vector<ValueType> const& weightVector) {
                 checkHasBeenCalled=true;
                 STORM_LOG_DEBUG("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::convertNumericVector<double>(weightVector));
-                storm::storage::BitVector unboundedObjectives(data.objectives.size(), false);
                 std::vector<ValueType> weightedRewardVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
-                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    if(!data.objectives[objIndex].timeBounds) {
-                        unboundedObjectives.set(objIndex, true);
-                        storm::utility::vector::addScaledVector(weightedRewardVector, data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector(), weightVector[objIndex]);
-                    }
+                for(auto objIndex : unboundedObjectives) {
+                    storm::utility::vector::addScaledVector(weightedRewardVector, getObjectiveRewardAsDiscreteActionRewards(objIndex), weightVector[objIndex]);
                 }
-                unboundedWeightedPhase(unboundedObjectives, weightedRewardVector);
+                unboundedWeightedPhase(weightedRewardVector);
                 STORM_LOG_DEBUG("Unbounded weighted phase result: " << weightedResult[data.preprocessedModel.getInitialStates().getNextSetIndex(0)] << " (value in initial state).");
                 unboundedIndividualPhase(weightVector);
                 STORM_LOG_DEBUG("Unbounded individual phase results in initial state: " << getInitialStateResultOfObjectives<double>());
-                boundedPhase(weightVector, ~unboundedObjectives, weightedRewardVector);
-                STORM_LOG_DEBUG("Bounded individual phase results in initial state: " << getInitialStateResultOfObjectives<double>() << " ...WeightVectorChecker done.");
+                if(!this->unboundedObjectives.full()) {
+                    boundedPhase(weightVector, weightedRewardVector);
+                    STORM_LOG_DEBUG("Bounded individual phase results in initial state: " << getInitialStateResultOfObjectives<double>() << " ...WeightVectorChecker done.");
+                }
             }
             
             template <class SparseModelType>
@@ -63,16 +66,14 @@ namespace storm {
             
             template <class SparseModelType>
             storm::storage::TotalScheduler const& SparseMultiObjectiveWeightVectorChecker<SparseModelType>::getScheduler() const {
-                STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
-                for(auto const& obj : data.objectives) {
-                    STORM_LOG_THROW(!obj.timeBounds, storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for timeBounded objectives.");
-                }
+                STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
+                STORM_LOG_THROW(this->unboundedObjectives.full(), storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for timeBounded objectives.");
                 return scheduler;
             }
             
             template <class SparseModelType>
-            void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(storm::storage::BitVector const& unboundedObjectives, std::vector<ValueType> const& weightedRewardVector) {
-                if(unboundedObjectives.empty()) {
+            void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector) {
+                if(this->unboundedObjectives.empty()) {
                     this->weightedResult = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>());
                     this->scheduler = storm::storage::TotalScheduler(data.preprocessedModel.getNumberOfStates());
                     return;
@@ -145,79 +146,24 @@ namespace storm {
                 //Also only compute values for objectives with weightVector != zero,
                 //one check can be omitted as the result can be computed back from the weighed result and the results from the remaining objectives
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    if(data.objectives[objIndex].timeBounds){
-                        objectiveResults[objIndex] = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>());
-                    } else {
-                        storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector());
+                    if(unboundedObjectives.get(objIndex)){
+                        storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), getObjectiveRewardAsDiscreteActionRewards(objIndex));
                         storm::storage::BitVector statesWithRewards =  ~storm::utility::vector::filterZero(deterministicStateRewards);
                         // As target states, we pick the states from which no reward is reachable.
                         storm::storage::BitVector targetStates = ~storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
-                    
+                        
                         //TODO: we could give the solver some hint for the result (e.g., weightVector[ObjIndex] * weightedResult or  (weightedResult - sum_i=0^objIndex-1 objectiveResult) * weightVector[objIndex]/ sum_i=objIndex^n weightVector[i] )
                         objectiveResults[objIndex] = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeReachabilityRewards(deterministicMatrix,
-                                                                                                       deterministicBackwardTransitions,
-                                                                                                       deterministicStateRewards,
-                                                                                                       targetStates,
-                                                                                                       false, //no qualitative checking,
-                                                                                                       linearEquationSolverFactory);
+                                                                                                                                               deterministicBackwardTransitions,
+                                                                                                                                               deterministicStateRewards,
+                                                                                                                                               targetStates,
+                                                                                                                                               false, //no qualitative checking,
+                                                                                                                                               linearEquationSolverFactory);
+                    } else {
+                        objectiveResults[objIndex] = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>());
                     }
                 }
             }
-            
-            template <class SparseModelType>
-            void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::boundedPhase(std::vector<ValueType> const& weightVector, storm::storage::BitVector const& boundedObjectives, std::vector<ValueType>& weightedRewardVector) {
-                if(boundedObjectives.empty()) {
-                    return;
-                }
-                // Allocate some memory so this does not need to happen for each time epoch
-                std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(data.preprocessedModel.getNumberOfStates());
-                std::vector<ValueType> choiceValues(weightedRewardVector.size());
-                std::vector<ValueType> temporaryResult(data.preprocessedModel.getNumberOfStates());
-                // Get for each occurring timeBound the indices of the objectives with that bound.
-                std::map<uint_fast64_t, storm::storage::BitVector, std::greater<uint_fast64_t>> timeBounds;
-                for(auto objIndex : boundedObjectives) {
-                    uint_fast64_t timeBound = boost::get<uint_fast64_t>(data.objectives[objIndex].timeBounds.get());
-                    auto timeBoundIt = timeBounds.insert(std::make_pair(timeBound, storm::storage::BitVector(data.objectives.size(), false))).first;
-                        timeBoundIt->second.set(objIndex);
-                }
-                storm::storage::BitVector objectivesAtCurrentEpoch = ~boundedObjectives;
-                auto timeBoundIt = timeBounds.begin();
-                for(uint_fast64_t currentEpoch = timeBoundIt->first; currentEpoch > 0; --currentEpoch) {
-                    if(timeBoundIt != timeBounds.end() && currentEpoch == timeBoundIt->first) {
-                        objectivesAtCurrentEpoch |= timeBoundIt->second;
-                        for(auto objIndex : timeBoundIt->second) {
-                            storm::utility::vector::addScaledVector(weightedRewardVector, data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector(), weightVector[objIndex]);
-                        }
-                        ++timeBoundIt;
-                    }
-                    
-                    // Get values and scheduler for weighted sum of objectives
-                    data.preprocessedModel.getTransitionMatrix().multiplyWithVector(weightedResult, choiceValues);
-                    storm::utility::vector::addVectors(choiceValues, weightedRewardVector, choiceValues);
-                    storm::utility::vector::reduceVectorMax(choiceValues, weightedResult, data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), &optimalChoicesInCurrentEpoch);
-                    
-                    // get values for individual objectives
-                    // TODO we could compute the result for one of the objectives from the weighted result, the given weight vector, and the remaining objective results.
-                    for(auto objIndex : objectivesAtCurrentEpoch) {
-                        std::vector<ValueType>& objectiveResult = objectiveResults[objIndex];
-                        std::vector<ValueType> const& objectiveRewards = data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector();
-                        auto rowGroupIndexIt = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices().begin();
-                        auto optimalChoiceIt = optimalChoicesInCurrentEpoch.begin();
-                        for(ValueType& stateValue : temporaryResult){
-                            uint_fast64_t row = (*rowGroupIndexIt) + (*optimalChoiceIt);
-                            ++rowGroupIndexIt;
-                            ++optimalChoiceIt;
-                            stateValue = objectiveRewards[row];
-                            for(auto const& entry : data.preprocessedModel.getTransitionMatrix().getRow(row)) {
-                                stateValue += entry.getValue() * objectiveResult[entry.getColumn()];
-                            }
-                        }
-                        objectiveResult.swap(temporaryResult);
-                    }
-                }
-            }
-                
-     
             
             template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>;
             template std::vector<double> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>::getInitialStateResultOfObjectives<double>() const;

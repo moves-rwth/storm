@@ -10,6 +10,7 @@
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePreprocessor.h"
+#include "src/modelchecker/multiobjective/helper/SparseMdpMultiObjectiveWeightVectorChecker.h"
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectiveHelper.h"
 #include "src/modelchecker/multiobjective/helper/SparseMultiObjectivePostprocessor.h"
 
@@ -46,7 +47,8 @@ namespace storm {
             STORM_LOG_DEBUG("Preprocessing done. Data: " << preprocessorData);
             
             storm::utility::Stopwatch swHelper;
-            auto resultData = helper::SparseMultiObjectiveHelper<SparseMdpModelType, storm::RationalNumber>::check(preprocessorData);
+            std::shared_ptr<helper::SparseMultiObjectiveWeightVectorChecker<SparseMdpModelType>> weightVectorChecker( new helper::SparseMdpMultiObjectiveWeightVectorChecker<SparseMdpModelType>(preprocessorData));
+            auto resultData = helper::SparseMultiObjectiveHelper<SparseMdpModelType, storm::RationalNumber>::check(preprocessorData, weightVectorChecker);
             swHelper.pause();
             STORM_LOG_DEBUG("Modelchecking done.");
             

@@ -18,7 +18,7 @@ namespace storm {
             
             
             template <class SparseModelType, typename RationalNumberType>
-            typename SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::ResultData SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::check(PreprocessorData const& preprocessorData) {
+            typename SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::ResultData SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::check(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker) {
                 ResultData resultData;
                 resultData.overApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createUniversalPolytope();
                 resultData.underApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createEmptyPolytope();
@@ -26,13 +26,13 @@ namespace storm {
                 if(!checkIfPreprocessingWasConclusive(preprocessorData)) {
                     switch(preprocessorData.queryType) {
                         case PreprocessorData::QueryType::Achievability:
-                            achievabilityQuery(preprocessorData, resultData);
+                            achievabilityQuery(preprocessorData, weightVectorChecker, resultData);
                             break;
                         case PreprocessorData::QueryType::Numerical:
-                            numericalQuery(preprocessorData, resultData);
+                            numericalQuery(preprocessorData, weightVectorChecker, resultData);
                             break;
                         case PreprocessorData::QueryType::Pareto:
-                            paretoQuery(preprocessorData, resultData);
+                            paretoQuery(preprocessorData, weightVectorChecker, resultData);
                             break;
                         default:
                             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unknown Query Type");
@@ -56,7 +56,7 @@ namespace storm {
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::achievabilityQuery(PreprocessorData const& preprocessorData, ResultData& resultData) {
+            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::achievabilityQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
                 Point thresholds;
                 thresholds.reserve(preprocessorData.objectives.size());
                 storm::storage::BitVector strictThresholds(preprocessorData.objectives.size());
@@ -66,7 +66,6 @@ namespace storm {
                 }
                 
                 storm::storage::BitVector individualObjectivesToBeChecked(preprocessorData.objectives.size(), true);
-                SparseMultiObjectiveWeightVectorChecker<SparseModelType> weightVectorChecker(preprocessorData);
                 do {
                     WeightVector separatingVector = findSeparatingVector(thresholds, resultData.underApproximation(), individualObjectivesToBeChecked);
                     performRefinementStep(separatingVector, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
@@ -80,7 +79,7 @@ namespace storm {
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::numericalQuery(PreprocessorData const& preprocessorData, ResultData& resultData) {
+            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::numericalQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
                 STORM_LOG_ASSERT(preprocessorData.indexOfOptimizingObjective, "Detected numerical query but index of optimizing objective is not set.");
                 uint_fast64_t optimizingObjIndex = *preprocessorData.indexOfOptimizingObjective;
                 Point thresholds;
@@ -107,7 +106,6 @@ namespace storm {
                 // Try to find one valid solution
                 storm::storage::BitVector individualObjectivesToBeChecked(preprocessorData.objectives.size(), true);
                 individualObjectivesToBeChecked.set(optimizingObjIndex, false);
-                SparseMultiObjectiveWeightVectorChecker<SparseModelType> weightVectorChecker(preprocessorData);
                 do {
                     WeightVector separatingVector = findSeparatingVector(thresholds, resultData.underApproximation(), individualObjectivesToBeChecked);
                     performRefinementStep(separatingVector, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
@@ -150,8 +148,7 @@ namespace storm {
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::paretoQuery(PreprocessorData const& preprocessorData, ResultData& resultData) {
-                SparseMultiObjectiveWeightVectorChecker<SparseModelType> weightVectorChecker(preprocessorData);
+            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::paretoQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
                 //First consider the objectives individually
                 for(uint_fast64_t objIndex = 0; objIndex<preprocessorData.objectives.size() && !maxStepsPerformed(resultData); ++objIndex) {
                     WeightVector direction(preprocessorData.objectives.size(), storm::utility::zero<RationalNumberType>());
@@ -228,13 +225,13 @@ namespace storm {
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::performRefinementStep(WeightVector const& direction, bool saveScheduler, SparseMultiObjectiveWeightVectorChecker<SparseModelType>& weightVectorChecker, ResultData& result) {
-                weightVectorChecker.check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
-                STORM_LOG_DEBUG("weighted objectives checker result is " << storm::utility::vector::convertNumericVector<double>(weightVectorChecker.getInitialStateResultOfObjectives()));
+            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::performRefinementStep(WeightVector const& direction, bool saveScheduler, WeightVectorCheckerType weightVectorChecker, ResultData& result) {
+                weightVectorChecker->check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
+                STORM_LOG_DEBUG("weighted objectives checker result is " << storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getInitialStateResultOfObjectives()));
                 if(saveScheduler) {
-                    result.refinementSteps().emplace_back(direction, weightVectorChecker.template getInitialStateResultOfObjectives<RationalNumberType>(), weightVectorChecker.getScheduler());
+                    result.refinementSteps().emplace_back(direction, weightVectorChecker->template getInitialStateResultOfObjectives<RationalNumberType>(), weightVectorChecker->getScheduler());
                 } else {
-                    result.refinementSteps().emplace_back(direction, weightVectorChecker.template getInitialStateResultOfObjectives<RationalNumberType>());
+                    result.refinementSteps().emplace_back(direction, weightVectorChecker->template getInitialStateResultOfObjectives<RationalNumberType>());
                 }
                 updateOverApproximation(result.refinementSteps(), result.overApproximation());
                 updateUnderApproximation(result.refinementSteps(), result.underApproximation());
