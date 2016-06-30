@@ -25,12 +25,6 @@ namespace storm {
                 
             private:
                 
-                
-                /*!
-                 * Retrieves the rewards for the objective with the given index as state action reward vector.
-                 */
-                virtual std::vector<ValueType> getObjectiveRewardAsDiscreteActionRewards(uint_fast64_t objectiveIndex) const override;
-                
                 /*!
                  *
                  * @param weightVector the weight vector of the current check

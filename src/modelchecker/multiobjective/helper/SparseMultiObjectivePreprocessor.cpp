@@ -49,7 +49,7 @@ namespace storm {
                 // set solution for objectives for which there are no rewards left
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
                     if(data.solutionsFromPreprocessing[objIndex] == PreprocessorData::PreprocessorObjectiveSolution::None &&
-                       !storm::utility::vector::hasNonZeroEntry(data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector())) {
+                       data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).isAllZero()) {
                         if(data.objectives[objIndex].threshold) {
                             if(storm::utility::zero<ValueType>() > *data.objectives[objIndex].threshold ||
                                 (!data.objectives[objIndex].thresholdIsStrict && storm::utility::zero<ValueType>() >= *data.objectives[objIndex].threshold) ){
@@ -306,30 +306,36 @@ namespace storm {
                 updatePreprocessedModel(data, *duplicatorResult.model, duplicatorResult.newToOldStateIndexMapping);
                 
                 // Add a reward model that gives zero reward to the actions of states of the second copy.
-                std::vector<ValueType> objectiveRewards;
+                RewardModelType objectiveRewards(boost::none);
                 if(formula.isReachabilityRewardFormula()) {
-                    objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
+                    objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "");
+                    objectiveRewards.reduceToStateBasedRewards(data.preprocessedModel.getTransitionMatrix(), false);
+                    if(objectiveRewards.hasStateRewards()) {
+                        storm::utility::vector::setVectorValues(objectiveRewards.getStateRewardVector(), duplicatorResult.secondCopy, storm::utility::zero<ValueType>());
+                    }
+                    if(objectiveRewards.hasStateActionRewards()) {
+                        for(auto secondCopyState : duplicatorResult.secondCopy) {
+                            std::fill_n(objectiveRewards.getStateActionRewardVector().begin() + data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[secondCopyState], data.preprocessedModel.getTransitionMatrix().getRowGroupSize(secondCopyState), storm::utility::zero<ValueType>());
+                        }
+                    }
                 } else if(formula.isReachabilityTimeFormula() && data.preprocessedModel.isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                    objectiveRewards = std::vector<ValueType>(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
-                    storm::utility::vector::setVectorValues(objectiveRewards, data.getMarkovianStatesOfPreprocessedModel(), storm::utility::one<ValueType>());
+                    objectiveRewards = RewardModelType(std::vector<ValueType>(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>()));
+                    storm::utility::vector::setVectorValues(objectiveRewards.getStateRewardVector(), data.getMarkovianStatesOfPreprocessedModel() & duplicatorResult.firstCopy, storm::utility::one<ValueType>());
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The formula " << formula << " neither considers reachability probabilities nor reachability rewards " << (data.preprocessedModel.isOfType(storm::models::ModelType::MarkovAutomaton) ?  "nor reachability time" : "") << ". This is not supported.");
                 }
-                for(auto secondCopyState : duplicatorResult.secondCopy) {
-                    for(uint_fast64_t choice = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[secondCopyState]; choice < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[secondCopyState+1]; ++choice) {
-                        objectiveRewards[choice] = storm::utility::zero<ValueType>();
+                if(!currentObjective.rewardsArePositive){
+                    if(objectiveRewards.hasStateRewards()) {
+                        storm::utility::vector::scaleVectorInPlace(objectiveRewards.getStateRewardVector(), -storm::utility::one<ValueType>());
+                    }
+                    if(objectiveRewards.hasStateActionRewards()) {
+                        storm::utility::vector::scaleVectorInPlace(objectiveRewards.getStateActionRewardVector(), -storm::utility::one<ValueType>());
                     }
                 }
-                storm::storage::BitVector positiveRewards = storm::utility::vector::filterGreaterZero(objectiveRewards);
-                storm::storage::BitVector nonNegativeRewards = positiveRewards | storm::utility::vector::filterZero(objectiveRewards);
-                STORM_LOG_THROW(nonNegativeRewards.full() || positiveRewards.empty(), storm::exceptions::InvalidPropertyException, "The reward model for the formula " << formula << " has positive and negative rewards which is not supported.");
-                if(!currentObjective.rewardsArePositive){
-                    storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
-                }
-                data.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
+                data.preprocessedModel.addRewardModel(currentObjective.rewardModelName, std::move(objectiveRewards));
                 
                 // States of the first copy from which the second copy is not reachable with prob 1 under any scheduler can
-                // be removed as the expected reward is not defined for these states.
+                // be removed as the expected reward/time is not defined for these states.
                 // We also need to enforce that the second copy will be reached eventually with prob 1.
                 data.preprocessedModel.getStateLabeling().setStates(data.prob1StatesLabel, data.preprocessedModel.getStateLabeling().getStates(data.prob1StatesLabel) & duplicatorResult.secondCopy);
                 storm::storage::BitVector subsystemStates =  duplicatorResult.secondCopy | storm::utility::graph::performProb1E(data.preprocessedModel, data.preprocessedModel.getBackwardTransitions(), duplicatorResult.firstCopy, duplicatorResult.gateStates);
@@ -348,23 +354,32 @@ namespace storm {
                 STORM_LOG_THROW(formula.getDiscreteTimeBound() > 0, storm::exceptions::InvalidPropertyException, "Got a cumulativeRewardFormula with time bound 0. This is not supported.");
                 currentObjective.timeBounds = formula.getDiscreteTimeBound();
                 
-                std::vector<ValueType> objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
+                RewardModelType objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "");
+                objectiveRewards.reduceToStateBasedRewards(data.preprocessedModel.getTransitionMatrix(), false);
                 if(!currentObjective.rewardsArePositive){
-                    storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
+                    if(objectiveRewards.hasStateRewards()) {
+                        storm::utility::vector::scaleVectorInPlace(objectiveRewards.getStateRewardVector(), -storm::utility::one<ValueType>());
+                    }
+                    if(objectiveRewards.hasStateActionRewards()) {
+                        storm::utility::vector::scaleVectorInPlace(objectiveRewards.getStateActionRewardVector(), -storm::utility::one<ValueType>());
+                    }
                 }
-                data.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
+                data.preprocessedModel.addRewardModel(currentObjective.rewardModelName, std::move(objectiveRewards));
             }
             
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::TotalRewardFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
-                std::vector<ValueType> objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "").getTotalRewardVector(data.preprocessedModel.getTransitionMatrix());
-                storm::storage::BitVector positiveRewards = storm::utility::vector::filterGreaterZero(objectiveRewards);
-                storm::storage::BitVector nonNegativeRewards = positiveRewards | storm::utility::vector::filterZero(objectiveRewards);
-                STORM_LOG_THROW(nonNegativeRewards.full() || positiveRewards.empty(), storm::exceptions::InvalidPropertyException, "The reward model for the formula " << formula << " has positive and negative rewards which is not supported.");
+                RewardModelType objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "");
+                objectiveRewards.reduceToStateBasedRewards(data.preprocessedModel.getTransitionMatrix(), false);
                 if(!currentObjective.rewardsArePositive){
-                    storm::utility::vector::scaleVectorInPlace(objectiveRewards, -storm::utility::one<ValueType>());
+                    if(objectiveRewards.hasStateRewards()) {
+                        storm::utility::vector::scaleVectorInPlace(objectiveRewards.getStateRewardVector(), -storm::utility::one<ValueType>());
+                    }
+                    if(objectiveRewards.hasStateActionRewards()) {
+                        storm::utility::vector::scaleVectorInPlace(objectiveRewards.getStateActionRewardVector(), -storm::utility::one<ValueType>());
+                    }
                 }
-                data.preprocessedModel.addRewardModel(currentObjective.rewardModelName, RewardModelType(boost::none, objectiveRewards));
+                data.preprocessedModel.addRewardModel(currentObjective.rewardModelName, std::move(objectiveRewards));
             }
             
             
@@ -397,7 +412,7 @@ namespace storm {
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
                     if (!data.objectives[objIndex].rewardFinitenessChecked && !data.objectives[objIndex].rewardsArePositive) {
                         data.objectives[objIndex].rewardFinitenessChecked = true;
-                        actionsWithNonNegativeReward &= storm::utility::vector::filterZero(data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getStateActionRewardVector());
+                        actionsWithNonNegativeReward &= storm::utility::vector::filterZero(data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).getTotalRewardVector(data.preprocessedModel.getTransitionMatrix()));
                         objectivesWithNegativeReward.set(objIndex, true);
                     }
                 }
@@ -447,7 +462,7 @@ namespace storm {
                     if (!obj.rewardFinitenessChecked && obj.rewardsArePositive) {
                         obj.rewardFinitenessChecked = true;
                         // Find maximal end components that contain a state with positive reward
-                        storm::storage::BitVector actionsWithPositiveRewards = storm::utility::vector::filterGreaterZero(data.preprocessedModel.getRewardModel(obj.rewardModelName).getStateActionRewardVector());
+                        storm::storage::BitVector actionsWithPositiveRewards = storm::utility::vector::filterGreaterZero(data.preprocessedModel.getRewardModel(obj.rewardModelName).getTotalRewardVector(data.preprocessedModel.getTransitionMatrix()));
                         for(auto const& mec : mecDecomposition) {
                             bool ecHasActionWithPositiveReward = false;
                             for(auto const& stateActionsPair : mec) {

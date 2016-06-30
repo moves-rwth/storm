@@ -51,13 +51,13 @@ namespace storm {
                 
                 template<typename MT = SparseModelType>
                 typename std::enable_if<std::is_same<MT, storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType>>::value, storm::storage::BitVector const&>::type
-                getMarkovianStatesOfPreprocessedModel() {
+                getMarkovianStatesOfPreprocessedModel() const {
                     return preprocessedModel.getMarkovianStates();
                 }
                 
                 template<typename MT = SparseModelType>
                 typename std::enable_if<!std::is_same<MT, storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType>>::value, storm::storage::BitVector const&>::type
-                getMarkovianStatesOfPreprocessedModel() {
+                getMarkovianStatesOfPreprocessedModel() const {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Tried to retrieve Markovian states but the considered model is not an MA.");
                 }
                 

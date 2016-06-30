@@ -13,15 +13,19 @@ namespace storm {
             
             template <class SparseMaModelType>
             SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::SparseMaMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : SparseMultiObjectiveWeightVectorChecker<SparseMaModelType>(data) {
-                // Intentionally left empty
-            }
-
-            template <class SparseMaModelType>
-            std::vector<typename SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::ValueType> SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::getObjectiveRewardAsDiscreteActionRewards(uint_fast64_t objectiveIndex) const {
-                // Assert that the state and transition rewards have already been removed in prerpocessing
-                STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).hasStateRewards(), "Reward model has state rewards which is not expected.");
-                STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).hasTransitionRewards(), "Reward model has transition rewards which is not expected.");
-                return this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).getStateActionRewardVector();
+                // Set the (discretized) state action rewards.
+                this->discreteActionRewards.resize(data.objectives.size());
+                for(auto objIndex : this->unboundedObjectives) {
+                    STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
+                    this->discreteActionRewards[objIndex] = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).getStateActionRewardVector();
+                    if(this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).hasStateRewards()) {
+                        auto const& stateRewards = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).getStateRewardVector();
+                        for(auto markovianState : this->data.getMarkovianStatesOfPreprocessedModel()) {
+                            this->discreteActionRewards[objIndex][this->data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[markovianState]] += stateRewards[markovianState] / this->data.preprocessedModel.getExitRate(markovianState);
+                        }
+                    }
+                    
+                }
             }
             
             template <class SparseMaModelType>
@@ -46,7 +50,7 @@ namespace storm {
                     if(timeBoundIt != timeBounds.end() && currentEpoch == timeBoundIt->first) {
                         objectivesAtCurrentEpoch |= timeBoundIt->second;
                         for(auto objIndex : timeBoundIt->second) {
-                            storm::utility::vector::addScaledVector(weightedRewardVector, getObjectiveRewardAsDiscreteActionRewards(objIndex), weightVector[objIndex]);
+                            storm::utility::vector::addScaledVector(weightedRewardVector, this->discreteActionRewards[objIndex], weightVector[objIndex]);
                         }
                         ++timeBoundIt;
                     }

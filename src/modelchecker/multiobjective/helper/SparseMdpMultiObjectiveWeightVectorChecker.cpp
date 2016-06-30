@@ -13,15 +13,11 @@ namespace storm {
             
             template <class SparseMdpModelType>
             SparseMdpMultiObjectiveWeightVectorChecker<SparseMdpModelType>::SparseMdpMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : SparseMultiObjectiveWeightVectorChecker<SparseMdpModelType>(data) {
-                // Intentionally left empty
-            }
-
-            template <class SparseMdpModelType>
-            std::vector<typename SparseMdpMultiObjectiveWeightVectorChecker<SparseMdpModelType>::ValueType> SparseMdpMultiObjectiveWeightVectorChecker<SparseMdpModelType>::getObjectiveRewardAsDiscreteActionRewards(uint_fast64_t objectiveIndex) const {
-                // Assert that the state and transition rewards have already been removed in prerpocessing
-                STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).hasStateRewards(), "Reward model has state rewards which is not expected.");
-                STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).hasTransitionRewards(), "Reward model has transition rewards which is not expected.");
-                return this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).getStateActionRewardVector();
+                // set the state action rewards
+                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
+                    STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).hasTransitionRewards(), "Reward model has transition rewards which is not expected.");
+                    this->discreteActionRewards[objIndex] = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).getTotalRewardVector(this->data.preprocessedModel.getTransitionMatrix());
+                }
             }
             
             template <class SparseMdpModelType>
@@ -44,7 +40,7 @@ namespace storm {
                     if(timeBoundIt != timeBounds.end() && currentEpoch == timeBoundIt->first) {
                         objectivesAtCurrentEpoch |= timeBoundIt->second;
                         for(auto objIndex : timeBoundIt->second) {
-                            storm::utility::vector::addScaledVector(weightedRewardVector, getObjectiveRewardAsDiscreteActionRewards(objIndex), weightVector[objIndex]);
+                            storm::utility::vector::addScaledVector(weightedRewardVector, this->discreteActionRewards[objIndex], weightVector[objIndex]);
                         }
                         ++timeBoundIt;
                     }
@@ -58,7 +54,7 @@ namespace storm {
                     // TODO we could compute the result for one of the objectives from the weighted result, the given weight vector, and the remaining objective results.
                     for(auto objIndex : objectivesAtCurrentEpoch) {
                         std::vector<ValueType>& objectiveResult = this->objectiveResults[objIndex];
-                        std::vector<ValueType> objectiveRewards = getObjectiveRewardAsDiscreteActionRewards(objIndex);
+                        std::vector<ValueType> objectiveRewards = this->discreteActionRewards[objIndex];
                         auto rowGroupIndexIt = this->data.preprocessedModel.getTransitionMatrix().getRowGroupIndices().begin();
                         auto optimalChoiceIt = optimalChoicesInCurrentEpoch.begin();
                         for(ValueType& stateValue : temporaryResult){
