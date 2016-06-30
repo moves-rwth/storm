@@ -32,7 +32,7 @@ namespace storm {
             const std::string CoreSettings::cudaOptionName = "cuda";
 			const std::string CoreSettings::minMaxEquationSolvingTechniqueOptionName = "ndmethod";
             
-            CoreSettings::CoreSettings() : ModuleSettings(moduleName) {
+            CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(CoreSettings::Engine::Sparse) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the counterexample is to be written.").setDefaultValueString("-").setIsOptional(true).build()).setShortName(counterexampleOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).build());
