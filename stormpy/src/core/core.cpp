@@ -31,7 +31,7 @@ void define_parse(py::module& m) {
 // Thin wrapper for model building
 template<typename ValueType>
 std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula const> const& formula) {
-    return storm::buildSymbolicModel<ValueType>(program, std::vector<std::shared_ptr<storm::logic::Formula const>>(1,formula)).model;
+    return storm::buildSymbolicModel<ValueType>(program, std::vector<std::shared_ptr<storm::logic::Formula const>>(1,formula));
 }
 
 void define_build(py::module& m) {
@@ -40,4 +40,5 @@ void define_build(py::module& m) {
     m.def("_build_parametric_model", &buildModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formula"));
     m.def("build_model_from_prism_program", &storm::buildSymbolicModel<double>, "Build the model", py::arg("program"), py::arg("formulas"));
     m.def("build_parametric_model_from_prism_program", &storm::buildSymbolicModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formulas"));
+    
 }
