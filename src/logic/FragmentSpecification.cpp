@@ -87,6 +87,7 @@ namespace storm {
             FragmentSpecification multiObjective = propositional();
             
             multiObjective.setMultiObjectiveFormulasAllowed(true);
+            multiObjective.setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(true);
             multiObjective.setProbabilityOperatorsAllowed(true);
             multiObjective.setUntilFormulasAllowed(true);
             multiObjective.setGloballyFormulasAllowed(true);
@@ -144,6 +145,7 @@ namespace storm {
             quantitativeOperatorResults = true;
             
             operatorAtTopLevelRequired = false;
+            operatorsAtTopLevelOfMultiObjectiveFormulasRequired = false;
         }
         
         FragmentSpecification FragmentSpecification::copy() const {
@@ -473,6 +475,15 @@ namespace storm {
         
         FragmentSpecification& FragmentSpecification::setOperatorAtTopLevelRequired(bool newValue) {
             operatorAtTopLevelRequired = newValue;
+            return *this;
+        }
+
+        bool FragmentSpecification::areOperatorsAtTopLevelOfMultiObjectiveFormulasRequired() const {
+            return operatorsAtTopLevelOfMultiObjectiveFormulasRequired;
+        }
+        
+        FragmentSpecification& FragmentSpecification::setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(bool newValue) {
+            operatorsAtTopLevelOfMultiObjectiveFormulasRequired = newValue;
             return *this;
         }
         

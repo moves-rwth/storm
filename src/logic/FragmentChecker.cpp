@@ -171,8 +171,11 @@ namespace storm {
             }
             
             bool result = inherited.getSpecification().areMultiObjectiveFormulasAllowed();
-            for(uint_fast64_t index = 0; index<f.getNumberOfSubformulas(); ++index){
-                result = result && boost::any_cast<bool>(f.getSubformula(index).accept(*this, InheritedInformation(subFormulaFragment)));
+            for(auto const& subF : f.getSubformulas()){
+                if(inherited.getSpecification().areOperatorsAtTopLevelOfMultiObjectiveFormulasRequired()){
+                    result = result && subF->isOperatorFormula();
+                }
+                result = result && boost::any_cast<bool>(subF->accept(*this, InheritedInformation(subFormulaFragment)));
             }
             return result;
         }

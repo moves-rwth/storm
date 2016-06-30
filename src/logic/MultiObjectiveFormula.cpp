@@ -58,7 +58,7 @@ namespace storm {
             return this->subformulas.size();
         }
         
-        std::vector<std::shared_ptr<Formula const>> const& MultiObjectiveFormula::getSubFormulas() const {
+        std::vector<std::shared_ptr<Formula const>> const& MultiObjectiveFormula::getSubformulas() const {
             return this->subformulas;
         }
         

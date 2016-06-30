@@ -26,7 +26,7 @@ namespace storm {
                 PreprocessorData data(originalFormula, originalModel, SparseModelType(originalModel), storm::utility::vector::buildVectorForRange(0, originalModel.getNumberOfStates()));
                 
                 //Invoke preprocessing on the individual objectives
-                for(auto const& subFormula : originalFormula.getSubFormulas()){
+                for(auto const& subFormula : originalFormula.getSubformulas()){
                     STORM_LOG_DEBUG("Preprocessing objective " << *subFormula<< ".");
                     data.objectives.emplace_back();
                     ObjectiveInformation& currentObjective = data.objectives.back();

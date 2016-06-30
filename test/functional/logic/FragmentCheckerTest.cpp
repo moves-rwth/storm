@@ -133,7 +133,7 @@ TEST(FragmentCheckerTest, Csrl) {
 
 TEST(FragmentCheckerTest, MultiObjective) {
     storm::logic::FragmentChecker checker;
-    storm::logic::FragmentSpecification multiobjective = storm::logic::multiObjective().setNestedOperatorsInsideMultiObjectiveFormulasAllowed(true);
+    storm::logic::FragmentSpecification multiobjective = storm::logic::multiObjective();
     
     storm::parser::FormulaParser formulaParser;
     std::shared_ptr<storm::logic::Formula const> formula;
@@ -150,23 +150,31 @@ TEST(FragmentCheckerTest, MultiObjective) {
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("R=? [F \"label\"]"));
     EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
     
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("R=? [C<=3]"));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("R=? [C]"));
     EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
     
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F[0,1] \"label\"]"));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F[0.5,1] \"label\"]"));
     EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
     
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C<=3], P<0.6 [F \"label\"] & \"label\" & R<=4[F \"label\"])"));
-    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
-    
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(P=? [F P<0.5 [F \"label\"]], \"label\" )"));
-    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
-    
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(P=? [F P<0.5 [F \"label\"]], multi(\"label\", \"label\"))"));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], P<0.6 [F \"label\"] & \"label\" & R<=4[F \"label\"])"));
     EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
     
-    multiobjective.setNestedOperatorsInsideMultiObjectiveFormulasAllowed(false);
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(P=? [F P<0.5 [F \"label\"]], \"label\" )"));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], P<0.6 [F \"label\"], \"label\", R<=4[F \"label\"])"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
+    
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], P<0.6 [F \"label\"], R<=4[F \"label\"])"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
+    
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C<=3 ], P<0.6 [F \"label\"], R<=4[F \"label\"])"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
+    
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], multi(P<0.6 [F \"label\"], R<=4[F \"label\"]))"));
+    EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
+    
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], P<0.6 [F \"label\" & \"otherlabel\"], P<=4[\"label\" U<=42 \"otherlabel\"])"));
+    EXPECT_TRUE(checker.conformsToSpecification(*formula, multiobjective));
+    
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(P=? [F P<0.5 [F \"label\"]], R<0.3 [ C ] )"));
     EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
     
 }

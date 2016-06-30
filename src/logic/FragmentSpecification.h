@@ -115,6 +115,9 @@ namespace storm {
             bool isOperatorAtTopLevelRequired() const;
             FragmentSpecification& setOperatorAtTopLevelRequired(bool newValue);
             
+            bool areOperatorsAtTopLevelOfMultiObjectiveFormulasRequired() const;
+            FragmentSpecification& setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(bool newValue);
+            
             FragmentSpecification& setOperatorsAllowed(bool newValue);
             FragmentSpecification& setTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
@@ -163,6 +166,7 @@ namespace storm {
             bool quantitativeOperatorResults;
             bool qualitativeOperatorResults;
             bool operatorAtTopLevelRequired;
+            bool operatorsAtTopLevelOfMultiObjectiveFormulasRequired;
         };
         
         // Propositional.

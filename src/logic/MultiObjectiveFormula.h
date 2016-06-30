@@ -20,7 +20,7 @@ namespace storm {
             
             Formula const& getSubformula(uint_fast64_t index) const;
             uint_fast64_t getNumberOfSubformulas() const;
-            std::vector<std::shared_ptr<Formula const>> const& getSubFormulas() const;
+            std::vector<std::shared_ptr<Formula const>> const& getSubformulas() const;
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;

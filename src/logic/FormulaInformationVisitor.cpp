@@ -63,8 +63,8 @@ namespace storm {
         
         boost::any FormulaInformationVisitor::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
             FormulaInformation result;
-            for(uint_fast64_t index = 0; index < f.getNumberOfSubformulas(); ++index){
-                result.join(boost::any_cast<FormulaInformation>(f.getSubformula(index).accept(*this)));
+            for(auto const& subF : f.getSubformulas()){
+                result.join(boost::any_cast<FormulaInformation>(subF->accept(*this)));
             }
             return result;
         }

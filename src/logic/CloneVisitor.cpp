@@ -78,8 +78,8 @@ namespace storm {
         
         boost::any CloneVisitor::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
             std::vector<std::shared_ptr<Formula const>> subformulas;
-            for(uint_fast64_t index = 0; index < f.getNumberOfSubformulas(); ++index){
-                subformulas.push_back(boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula(index).accept(*this, data)));
+            for(auto const& subF : f.getSubformulas()){
+                subformulas.push_back(boost::any_cast<std::shared_ptr<Formula>>(subF->accept(*this, data)));
             }
             return std::static_pointer_cast<Formula>(std::make_shared<MultiObjectiveFormula>(subformulas));
         }
