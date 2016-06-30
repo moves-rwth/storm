@@ -16,7 +16,7 @@ namespace storm {
                 // Set the (discretized) state action rewards.
                 this->discreteActionRewards.resize(data.objectives.size());
                 for(auto objIndex : this->unboundedObjectives) {
-                    STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
+                    STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
                     this->discreteActionRewards[objIndex] = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).getStateActionRewardVector();
                     if(this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).hasStateRewards()) {
                         auto const& stateRewards = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).getStateRewardVector();

@@ -15,7 +15,7 @@ namespace storm {
             SparseMdpMultiObjectiveWeightVectorChecker<SparseMdpModelType>::SparseMdpMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : SparseMultiObjectiveWeightVectorChecker<SparseMdpModelType>(data) {
                 // set the state action rewards
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objectiveIndex].rewardModelName).hasTransitionRewards(), "Reward model has transition rewards which is not expected.");
+                    STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).hasTransitionRewards(), "Reward model has transition rewards which is not expected.");
                     this->discreteActionRewards[objIndex] = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).getTotalRewardVector(this->data.preprocessedModel.getTransitionMatrix());
                 }
             }
