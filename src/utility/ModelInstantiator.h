@@ -82,7 +82,7 @@ namespace storm {
                     auto markovianStatesCopy = parametricModel.getMarkovianStates();
                     auto choiceLabelingCopy = parametricModel.getOptionalChoiceLabeling();
                     std::vector<ConstantType> exitRates(parametricModel.getExitRates().size(), storm::utility::one<ConstantType>());
-                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(stateLabelingCopy), std::move(markovianStatesCopy), std::move(exitRates), buildDummyRewardModels(parametricModel.getRewardModels()), std::move(choiceLabelingCopy));
+                    this->instantiatedModel = std::make_shared<ConstantSparseModelType>(buildDummyMatrix(parametricModel.getTransitionMatrix()), std::move(stateLabelingCopy), std::move(markovianStatesCopy), std::move(exitRates), true, buildDummyRewardModels(parametricModel.getRewardModels()), std::move(choiceLabelingCopy));
                     
                     initializeVectorMapping(this->instantiatedModel->getExitRates(), this->functions, this->vectorMapping, parametricModel.getExitRates());
                 }

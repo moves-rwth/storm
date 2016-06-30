@@ -113,10 +113,10 @@ namespace storm {
     
     template<typename ValueType, storm::dd::DdType LibraryType = storm::dd::DdType::CUDD>
     std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-        typename storm::builder::DdPrismModelBuilder<LibraryType>::Options options;
-        options = typename storm::builder::DdPrismModelBuilder<LibraryType>::Options(formulas);
+        typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
+        options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
 
-        storm::builder::DdPrismModelBuilder<LibraryType> builder;
+        storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
         return builder.build(program, options);
     }
     

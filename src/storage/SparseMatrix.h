@@ -655,10 +655,18 @@ namespace storm {
              * @return True if the rows have identical entries.
              */
             bool compareRows(index_type i1, index_type i2) const;
+            
             /*!
              * Finds duplicate rows in a rowgroup.
              */
             BitVector duplicateRowsInRowgroups() const;
+            
+            /**
+             * Swaps the two rows.
+             * @param row1 Index of first row
+             * @param row2 Index of second row
+             */
+            void swapRows(index_type const& row1, index_type const& row2);
             
             /*!
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
