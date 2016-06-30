@@ -4,12 +4,15 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src ${stormpy_INCLUDE_DIRS} ${PYTHON_I
 INCLUDE_DIRECTORIES(${pybind11_incdir})
 
 FILE(GLOB core_files "core/*.cpp")
-FILE(GLOB info_files "info/*.cpp")
+#FILE(GLOB info_files "info/*.cpp")
+#FILE(GLOB expressions_files "expressions/*.cpp")
+FILE(GLOB storage_files "storage/*.cpp")
+FILE(GLOB logic_files "logic/*.cpp")
 ADD_LIBRARY(stormpy_core SHARED mod_core.cpp ${core_files})
-ADD_LIBRARY(stormpy_info SHARED mod_info.cpp ${info_files})
-
-SET(STORMPY_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
-SET(STORMPY_OUTPUT_DIR "${PROJECT_BINARY_DIR}/stormpy")
+ADD_LIBRARY(stormpy_info SHARED mod_info.cpp)
+ADD_LIBRARY(stormpy_expressions SHARED mod_expressions.cpp)
+ADD_LIBRARY(stormpy_storage SHARED mod_storage.cpp ${storage_files})
+ADD_LIBRARY(stormpy_logic SHARED mod_logic.cpp ${logic_files})
 
 SET_TARGET_PROPERTIES(stormpy_core PROPERTIES
         OUTPUT_NAME core
@@ -25,18 +28,29 @@ SET_TARGET_PROPERTIES(stormpy_info PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${STORMPY_OUTPUT_DIR}/info
 )
 
-add_custom_target(stormpy_files)
-add_custom_command(TARGET stormpy_files POST_BUILD COMMAND ${CMAKE_COMMAND} -E
-    copy_directory ${CMAKE_SOURCE_DIR}/stormpy ${STORMPY_OUTPUT_DIR}
-    )
+SET_TARGET_PROPERTIES(stormpy_expressions PROPERTIES
+        OUTPUT_NAME expressions
+        PREFIX ""
+        SUFFIX ".so"
+        LIBRARY_OUTPUT_DIRECTORY ${STORMPY_OUTPUT_DIR}/expressions
+)
 
-if(BUILD_STATIC)
-    TARGET_LINK_LIBRARIES(stormpy_core lib_storm_static ${stormpy_LIBRARIES_STATIC} ${PYTHON_LIBRARIES} ${libs_static} )
-    TARGET_LINK_LIBRARIES(stormpy_info lib_storm_static ${stormpy_LIBRARIES_STATIC} ${PYTHON_LIBRARIES} ${libs_static} )
-else()
-    TARGET_LINK_LIBRARIES(stormpy_core lib_storm ${stormpy_LIBRARIES_DYNAMIC} ${PYTHON_LIBRARIES} ${libs_dynamic})
-    TARGET_LINK_LIBRARIES(stormpy_info lib_storm ${stormpy_LIBRARIES_DYNAMIC} ${PYTHON_LIBRARIES} ${libs_dynamic})
-endif()
-#
-add_custom_target(stormpy DEPENDS stormpy_files stormpy_core stormpy_info)
+SET_TARGET_PROPERTIES(stormpy_storage PROPERTIES
+        OUTPUT_NAME storage
+        PREFIX ""
+        SUFFIX ".so"
+        LIBRARY_OUTPUT_DIRECTORY ${STORMPY_OUTPUT_DIR}/storage
+)
 
+SET_TARGET_PROPERTIES(stormpy_logic PROPERTIES
+        OUTPUT_NAME logic
+        PREFIX ""
+        SUFFIX ".so"
+        LIBRARY_OUTPUT_DIRECTORY ${STORMPY_OUTPUT_DIR}/logic
+)
+
+TARGET_LINK_LIBRARIES(stormpy_core storm ${PYTHON_LIBRARIES})
+TARGET_LINK_LIBRARIES(stormpy_info storm ${PYTHON_LIBRARIES})
+TARGET_LINK_LIBRARIES(stormpy_expressions storm ${PYTHON_LIBRARIES})
+TARGET_LINK_LIBRARIES(stormpy_storage storm ${PYTHON_LIBRARIES})
+TARGET_LINK_LIBRARIES(stormpy_logic storm ${PYTHON_LIBRARIES})
