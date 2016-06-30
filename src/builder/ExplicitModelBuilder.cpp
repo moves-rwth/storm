@@ -178,7 +178,7 @@ namespace storm {
             // Create markovian states bit vector, if required
             if (generator->getModelType() == storm::generator::ModelType::MA) {
                 // The BitVector will be resized when the correct size is known
-                markovianChoices = storm::storage::BitVector(64, false);
+                markovianChoices = storm::storage::BitVector();
             }
 
             // Create a callback for the next-state generator to enable it to request the index of states.
@@ -230,7 +230,7 @@ namespace storm {
                         }
                         
                         if (generator->getModelType() == storm::generator::ModelType::MA) {
-                            markovianChoices->enlargeLiberally(currentRow, false);
+                            markovianChoices->enlargeLiberally(currentRow+1, false);
                             markovianChoices->set(currentRow);
                         }
                         
@@ -279,7 +279,7 @@ namespace storm {
                         
                         // If we keep track of the Markovian choices, store whether the current one is Markovian.
                         if( markovianChoices &&  choice.isMarkovian() ) {
-                            markovianChoices->enlargeLiberally(currentRow, false);
+                            markovianChoices->enlargeLiberally(currentRow+1, false);
                             markovianChoices->set(currentRow);
                         }
                         
