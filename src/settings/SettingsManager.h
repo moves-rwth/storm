@@ -260,7 +260,7 @@ namespace storm {
          * @return The module.
          */
         template<typename SettingsType>
-        SettingsType getModule() {
+        SettingsType const& getModule() {
             static_assert(std::is_base_of<storm::settings::modules::ModuleSettings, SettingsType>::value, "Template argument must be derived from ModuleSettings");
             return dynamic_cast<SettingsType const&>(manager().getModule(SettingsType::moduleName));
         }

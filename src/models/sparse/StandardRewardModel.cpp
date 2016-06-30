@@ -145,15 +145,15 @@ namespace storm {
                 if (this->hasTransitionRewards()) {
                     if (this->hasStateActionRewards()) {
                         storm::utility::vector::addVectors<ValueType>(this->getStateActionRewardVector(), transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix()), this->getStateActionRewardVector());
-                        this->optionalStateActionRewardVector = boost::none;
+                        this->optionalTransitionRewardMatrix = boost::none;
                     } else {
                         this->optionalStateActionRewardVector = transitionMatrix.getPointwiseProductRowSumVector(this->getTransitionRewardMatrix());
                     }
                 }
                 
                 if (reduceToStateRewards && this->hasStateActionRewards()) {
+                    STORM_LOG_THROW(transitionMatrix.getRowGroupCount() == this->getStateActionRewardVector().size(), storm::exceptions::InvalidOperationException, "The reduction to state rewards is only possible if the size of the action reward vector equals the number of states.");
                     if (this->hasStateRewards()) {
-                        STORM_LOG_THROW(this->getStateRewardVector().size() == this->getStateActionRewardVector().size(), storm::exceptions::InvalidOperationException, "The reduction to state rewards is only possible of both the state and the state-action rewards have the same dimension.");
                         storm::utility::vector::addVectors<ValueType>(this->getStateActionRewardVector(), this->getStateRewardVector(), this->getStateRewardVector());
                     } else {
                         this->optionalStateRewardVector = std::move(this->optionalStateActionRewardVector);
@@ -240,6 +240,14 @@ namespace storm {
             
             template<typename ValueType>
             bool StandardRewardModel<ValueType>::empty() const {
+                return !(static_cast<bool>(this->optionalStateRewardVector) || static_cast<bool>(this->optionalStateActionRewardVector) || static_cast<bool>(this->optionalTransitionRewardMatrix));
+            }
+            
+            template<typename ValueType>
+            bool StandardRewardModel<ValueType>::isAllZero() const {
+                if(hasStateRewards() && !std::all_of(getStateRewardVector().begin(), getStateRewardVector().end(), storm::utility::isZero<ValueType>)) {
+                    return false;
+                }
                 return !(static_cast<bool>(this->optionalStateRewardVector) || static_cast<bool>(this->optionalStateActionRewardVector) || static_cast<bool>(this->optionalTransitionRewardMatrix));
             }
 
