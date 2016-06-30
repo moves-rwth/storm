@@ -267,7 +267,7 @@ namespace storm {
                         ++row;
                     }
                     for(; row < this->getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
-                        STORM_LOG_THROW(storm::utility::isOne(this->getTransitionMatrix().getRowSum(row)), storm::exceptions::InvalidArgumentException, "Transitions of rateMatrix do not sum up to one for some non-Markovian choice.");
+                        STORM_LOG_THROW(storm::utility::isOne(this->getTransitionMatrix().getRowSum(row)), storm::exceptions::InvalidArgumentException, "Transitions of rateMatrix do not sum up to one for some non-Markovian choice. Sum is " << this->getTransitionMatrix().getRowSum(row) << ". State is " << state << ". Choice is " << row << ".");
                     }
                 }
             }
@@ -354,6 +354,15 @@ namespace storm {
                 return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling), std::move(rewardModels), std::move(optionalChoiceLabeling));
             }
 
+            
+            template<typename ValueType, typename RewardModelType>
+            void MarkovAutomaton<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
+                this->printModelInformationHeaderToStream(out);
+                out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
+                out << "Markovian St.: \t" << this->getMarkovianStates().getNumberOfSetBits() << std::endl;
+                this->printModelInformationFooterToStream(out);
+            }
+            
             
             template class MarkovAutomaton<double>;
 //            template class MarkovAutomaton<float>;
