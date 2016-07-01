@@ -28,17 +28,23 @@ void define_parse(py::module& m) {
     m.def("parse_explicit_model", &storm::parser::AutoParser<>::parseModel, "Parse explicit model", py::arg("transition_file"), py::arg("labeling_file"), py::arg("state_reward_file") = "", py::arg("transition_reward_file") = "", py::arg("choice_labeling_file") = "");
 }
 
-// Thin wrapper for model building
+// Thin wrapper for model building using one formula as argument
 template<typename ValueType>
 std::shared_ptr<storm::models::ModelBase> buildModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula const> const& formula) {
     return storm::buildSymbolicModel<ValueType>(program, std::vector<std::shared_ptr<storm::logic::Formula const>>(1,formula));
 }
 
+template<typename ValueType>
+std::shared_ptr<storm::models::ModelBase> buildSparseModel(storm::prism::Program const& program, std::shared_ptr<storm::logic::Formula const> const& formula,
+    bool onlyInitialStatesRelevant = false) {
+    return storm::buildSparseModel<ValueType>(program, std::vector<std::shared_ptr<storm::logic::Formula const>>(1,formula), onlyInitialStatesRelevant);
+}
+
 void define_build(py::module& m) {
     // Build model
     m.def("_build_model", &buildModel<double>, "Build the model", py::arg("program"), py::arg("formula"));
-    m.def("_build_parametric_model", &buildModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formula"));
+    m.def("_build_parametric_model", &buildSparseModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formula"), py::arg("onlyInitialRelevant") = false);
     m.def("build_model_from_prism_program", &storm::buildSymbolicModel<double>, "Build the model", py::arg("program"), py::arg("formulas"));
-    m.def("build_parametric_model_from_prism_program", &storm::buildSymbolicModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formulas"));
+    m.def("build_parametric_model_from_prism_program", &storm::buildSparseModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formulas"), py::arg("onlyInitialRelevant") = false);
     
 }
