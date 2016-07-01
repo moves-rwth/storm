@@ -10,6 +10,7 @@
 #include "src/parser/AutoParser.h"
 #include "src/parser/FormulaParser.h"
 #include "src/models/sparse/StandardRewardModel.h"
+#include "src/solver/GmmxxLinearEquationSolver.h"
 
 TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	std::shared_ptr<storm::models::sparse::Model<double>> abstractModel = storm::parser::AutoParser<>::parseModel(STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.tra", STORM_CPP_BASE_PATH "/examples/dtmc/crowds/crowds20_5.lab", "", "");
@@ -21,7 +22,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, Crowds) {
 	ASSERT_EQ(2036647ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(7362293ull, dtmc->getNumberOfTransitions());
 
-    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+    storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolverFactory<double>>(new storm::solver::GmmxxLinearEquationSolverFactory<double>()));
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;
@@ -59,7 +60,7 @@ TEST(GmmxxDtmcPrctlModelCheckerTest, SynchronousLeader) {
 	ASSERT_EQ(1312334ull, dtmc->getNumberOfStates());
 	ASSERT_EQ(1574477ull, dtmc->getNumberOfTransitions());
 
-	storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolverFactory<double>>(new storm::utility::solver::GmmxxLinearEquationSolverFactory<double>()));
+	storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>> checker(*dtmc, std::unique_ptr<storm::solver::LinearEquationSolverFactory<double>>(new storm::solver::GmmxxLinearEquationSolverFactory<double>()));
 
     // A parser that we use for conveniently constructing the formulas.
     storm::parser::FormulaParser formulaParser;

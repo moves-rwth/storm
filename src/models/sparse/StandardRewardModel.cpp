@@ -248,7 +248,13 @@ namespace storm {
                 if(hasStateRewards() && !std::all_of(getStateRewardVector().begin(), getStateRewardVector().end(), storm::utility::isZero<ValueType>)) {
                     return false;
                 }
-                return !(static_cast<bool>(this->optionalStateRewardVector) || static_cast<bool>(this->optionalStateActionRewardVector) || static_cast<bool>(this->optionalTransitionRewardMatrix));
+                if(hasStateActionRewards() && !std::all_of(getStateActionRewardVector().begin(), getStateActionRewardVector().end(), storm::utility::isZero<ValueType>)) {
+                    return false;
+                }
+                if(hasTransitionRewards() && !std::all_of(getTransitionRewardMatrix().begin(), getTransitionRewardMatrix().end(), [](storm::storage::MatrixEntry<storm::storage::SparseMatrixIndexType, ValueType> entry){ return storm::utility::isZero(entry.getValue()); })) {
+                    return false;
+                }
+                return true;
             }
 
 
