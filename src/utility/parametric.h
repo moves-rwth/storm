@@ -28,7 +28,7 @@ namespace storm {
             
 #ifdef STORM_HAVE_CARL
             template<>
-            struct VariableType<storm::RationalFunction> { typedef storm::Variable type; };
+            struct VariableType<storm::RationalFunction> { typedef storm::RationalFunctionVariable type; };
             template<>
             struct CoefficientType<storm::RationalFunction> { typedef storm::RationalNumber type; };
 #endif

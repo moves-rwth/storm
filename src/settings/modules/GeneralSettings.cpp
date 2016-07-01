@@ -32,10 +32,8 @@ namespace storm {
             const std::string GeneralSettings::timeoutOptionShortName = "t";
             const std::string GeneralSettings::bisimulationOptionName = "bisimulation";
             const std::string GeneralSettings::bisimulationOptionShortName = "bisim";
-            
-#ifdef STORM_HAVE_CARL
             const std::string GeneralSettings::parametricOptionName = "parametric";
-#endif
+            const std::string GeneralSettings::exactOptionName = "exact";
 
             GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows all available options, arguments and descriptions.").setShortName(helpOptionShortName)
@@ -52,10 +50,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, timeoutOptionName, false, "If given, computation will abort after the timeout has been reached.").setShortName(timeoutOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
-                
-#ifdef STORM_HAVE_CARL
-                this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to use the parametric engine.").build());
-#endif
+                this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exactOptionName, false, "Sets whether to enable exact model checking.").build());
             }
             
             bool GeneralSettings::isHelpSet() const {
@@ -106,12 +102,14 @@ namespace storm {
                 return this->getOption(bisimulationOptionName).getHasOptionBeenSet();
             }
             
-#ifdef STORM_HAVE_CARL
             bool GeneralSettings::isParametricSet() const {
                 return this->getOption(parametricOptionName).getHasOptionBeenSet();
             }
-#endif
 
+            bool GeneralSettings::isExactSet() const {
+                return this->getOption(exactOptionName).getHasOptionBeenSet();
+            }
+            
             void GeneralSettings::finalize() {
             }
 

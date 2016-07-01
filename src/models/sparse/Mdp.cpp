@@ -98,12 +98,10 @@ namespace storm {
 
             template class Mdp<double>;
             template class Mdp<float>;
+            template class Mdp<storm::RationalNumber>;
 
-#ifdef STORM_HAVE_CARL
             template class Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
-
             template class Mdp<storm::RationalFunction>;
-#endif
 
         } // namespace sparse
     } // namespace models

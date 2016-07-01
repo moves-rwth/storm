@@ -8,7 +8,7 @@
 #include "src/utility/solver.h"
 #include "src/parser/AutoParser.h"
 #include "src/models/sparse/StandardRewardModel.h"
-
+#include "src/solver/MinMaxLinearEquationSolver.h"
 #include "src/parser/FormulaParser.h"
 
 TEST(GmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
@@ -24,7 +24,7 @@ TEST(GmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
     ASSERT_EQ(2095783ull, mdp->getNumberOfStates());
     ASSERT_EQ(7714385ull, mdp->getNumberOfTransitions());
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     
@@ -82,7 +82,7 @@ TEST(GmxxMdpPrctlModelCheckerTest, Consensus) {
     ASSERT_EQ(63616ull, mdp->getNumberOfStates());
     ASSERT_EQ(213472ull, mdp->getNumberOfTransitions());
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>()));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"finished\"]");
     

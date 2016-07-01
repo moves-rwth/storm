@@ -253,6 +253,13 @@ namespace storm {
                  * @return True iff the reward model is empty.
                  */
                 bool empty() const;
+                
+                /*!
+                 * Retrieves whether every reward defined by this reward model is zero
+                 *
+                 * @return True iff every reward defined by this reward model is zero.
+                 */
+                bool isAllZero() const;
 
                 /*!
                  * Checks whether the reward model is compatible with key model characteristics.

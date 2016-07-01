@@ -492,6 +492,7 @@ namespace storm {
         }
         
         template class JaniNextStateGenerator<double>;
+        template class JaniNextStateGenerator<storm::RationalNumber>;
         template class JaniNextStateGenerator<storm::RationalFunction>;
         
     }

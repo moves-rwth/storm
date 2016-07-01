@@ -65,7 +65,9 @@ namespace storm {
             
             // Initialize the maximal end component list to be the full state space.
             std::list<StateBlock> endComponentStateSets;
-            endComponentStateSets.emplace_back(subsystem.begin(), subsystem.end());
+            if(!subsystem.empty()) {
+                endComponentStateSets.emplace_back(subsystem.begin(), subsystem.end());
+            }
             storm::storage::BitVector statesToCheck(numberOfStates);
             
             // The iterator used here should really be a const_iterator.
@@ -190,6 +192,9 @@ namespace storm {
         // Explicitly instantiate the MEC decomposition.
         template class MaximalEndComponentDecomposition<double>;
         template MaximalEndComponentDecomposition<double>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<double> const& model);
+
+        template class MaximalEndComponentDecomposition<storm::RationalNumber>;
+        template MaximalEndComponentDecomposition<storm::RationalNumber>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<storm::RationalNumber> const& model);
 
     }
 }

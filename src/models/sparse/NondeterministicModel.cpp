@@ -169,14 +169,13 @@ namespace storm {
             
             template class NondeterministicModel<double>;
             template class NondeterministicModel<float>;
+            template class NondeterministicModel<storm::RationalNumber>;
 
-#ifdef STORM_HAVE_CARL
             template class NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template void NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::modifyStateActionRewards(std::string const& modelName, std::map<uint_fast64_t, double> const& modifications);
             template void NondeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>::modifyStateRewards(std::string const& modelName, std::map<uint_fast64_t, double> const& modifications);
 
             template class NondeterministicModel<storm::RationalFunction>;
-#endif
 
         }
     }

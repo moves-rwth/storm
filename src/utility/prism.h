@@ -22,10 +22,8 @@ namespace storm {
             
             std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString);
 
-            template<typename ValueType>
             storm::prism::Program preprocess(storm::prism::Program const& program, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions);
             
-            template<typename ValueType>
             storm::prism::Program preprocess(storm::prism::Program const& program, std::string const& constantDefinitionString);
             
         } // namespace prism

@@ -30,8 +30,8 @@ namespace carl {
         return h(p);
     }
 
-    template<typename Pol>
-    inline size_t hash_value(carl::RationalFunction<Pol> const& f)  {
+    template<typename Pol, bool AutoSimplify>
+    inline size_t hash_value(carl::RationalFunction<Pol, AutoSimplify> const& f)  {
         std::hash<Pol> h;
         return h(f.nominator()) ^ h(f.denominator());
     }
@@ -57,12 +57,12 @@ namespace storm {
 #else
     typedef mpq_class RationalNumber;
 #endif
-    typedef carl::Variable Variable;
+    typedef carl::Variable RationalFunctionVariable;
     typedef carl::MultivariatePolynomial<RationalNumber> RawPolynomial;
     typedef carl::FactorizedPolynomial<RawPolynomial> Polynomial;
     typedef carl::Relation CompareRelation;
     
-    typedef carl::RationalFunction<Polynomial> RationalFunction;
+    typedef carl::RationalFunction<Polynomial, true> RationalFunction;
     typedef carl::Interval<double> Interval;
     template<typename T> using ArithConstraint = carl::SimpleConstraint<T>;
 }

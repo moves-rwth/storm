@@ -3,7 +3,7 @@
 
 #include "src/parser/FormulaParser.h"
 #include "src/logic/Formulas.h"
-#include "src/utility/solver.h"
+#include "src/solver/StandardMinMaxLinearEquationSolver.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -30,7 +30,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
     ASSERT_EQ(mdp->getNumberOfStates(), 169ull);
     ASSERT_EQ(mdp->getNumberOfTransitions(), 436ull);
 
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
 
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"two\"]");
 
@@ -94,7 +94,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
 
     std::shared_ptr<storm::models::sparse::Mdp<double>> stateRewardMdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
 
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateRewardModelChecker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateRewardModelChecker(*mdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
 
     formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"done\"]");
 
@@ -116,7 +116,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, Dice) {
 
     std::shared_ptr<storm::models::sparse::Mdp<double>> stateAndTransitionRewardMdp = abstractModel->as<storm::models::sparse::Mdp<double>>();
 
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> stateAndTransitionRewardModelChecker(*stateAndTransitionRewardMdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
 
     formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"done\"]");
 
@@ -146,7 +146,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, AsynchronousLeader) {
     ASSERT_EQ(3172ull, mdp->getNumberOfStates());
     ASSERT_EQ(7144ull, mdp->getNumberOfTransitions());
 
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Gmmxx)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
 
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
 
@@ -209,8 +209,8 @@ TEST(GmmxxMdpPrctlModelCheckerTest, SchedulerGeneration) {
 
     EXPECT_EQ(7ul, mdp->getNumberOfChoices());
 
-    auto solverFactory = std::make_unique<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(storm::solver::EquationSolverTypeSelection::Gmmxx);
-    solverFactory->setPreferredTechnique(storm::solver::MinMaxTechniqueSelection::PolicyIteration);
+    auto solverFactory = std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>();
+    solverFactory->getSettings().setSolutionMethod(storm::solver::StandardMinMaxLinearEquationSolverSettings<double>::SolutionMethod::PolicyIteration);
     storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::move(solverFactory));
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"target\"]");
@@ -259,9 +259,7 @@ TEST(GmmxxMdpPrctlModelCheckerTest, TinyRewards) {
 
     EXPECT_EQ(4ul, mdp->getNumberOfChoices());
 
-    auto solverFactory = std::make_unique<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(storm::solver::EquationSolverTypeSelection::Gmmxx);
-    solverFactory->setPreferredTechnique(storm::solver::MinMaxTechniqueSelection::ValueIteration);
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::move(solverFactory));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::make_unique<storm::solver::GmmxxMinMaxLinearEquationSolverFactory<double>>());
     
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"target\"]");
     

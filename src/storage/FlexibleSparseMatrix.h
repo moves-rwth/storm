@@ -44,8 +44,10 @@ namespace storm {
              * Constructs a flexible sparse matrix from a sparse matrix.
              * @param matrix Sparse matrix to construct from.
              * @param setAllValuesToOne If true, all set entries are set to one. Default is false.
+             * @param revertEquationSystem If true, the matrix that will be created is the matrix (1-A), where A is the
+             * provided matrix.
              */
-            FlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne = false);
+            FlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne = false, bool revertEquationSystem = false);
 
             /*!
              * Reserves space for elements in row.

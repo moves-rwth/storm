@@ -19,7 +19,7 @@
 #include "src/models/sparse/StandardRewardModel.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/ExplorationSettings.h"
 
 #include "src/utility/macros.h"
@@ -113,7 +113,7 @@ namespace storm {
             }
             
             // Show statistics if required.
-            if (storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isShowStatisticsSet()) {
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                 stats.printToStream(std::cout, explorationInformation);
             }
             

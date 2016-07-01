@@ -346,20 +346,17 @@ namespace storm {
                 return this->rewardModels;
             }
             
-            
-
-            std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
+            std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
                 return storm::storage::getVariables(model.getTransitionMatrix());
             }
             
             template class Model<double>;
             template class Model<float>;
-            
-#ifdef STORM_HAVE_CARL
-            template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 
+            template class Model<storm::RationalNumber>;
+
+            template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class Model<storm::RationalFunction>;
-#endif
             
         }
     }

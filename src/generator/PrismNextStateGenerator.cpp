@@ -22,8 +22,12 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(program.getManager(), VariableInformation(program), options), program(program), rewardModels() {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(program.getManager(), options), program(program), rewardModels() {
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
+            
+            // Only after checking validity of the program, we initialize the variable information.
+            this->checkValid(program);
+            this->variableInformation = VariableInformation(program);
             
             if (this->options.isBuildAllRewardModelsSet()) {
                 for (auto const& rewardModel : this->program.getRewardModels()) {
@@ -70,6 +74,28 @@ namespace storm {
             }
         }
 
+        template<typename ValueType, typename StateType>
+        void PrismNextStateGenerator<ValueType, StateType>::checkValid(storm::prism::Program const& program) {
+            // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
+            if (!std::is_same<ValueType, storm::RationalFunction>::value && program.hasUndefinedConstants()) {
+                std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = program.getUndefinedConstants();
+                std::stringstream stream;
+                bool printComma = false;
+                for (auto const& constant : undefinedConstants) {
+                    if (printComma) {
+                        stream << ", ";
+                    } else {
+                        printComma = true;
+                    }
+                    stream << constant.get().getName() << " (" << constant.get().getType() << ")";
+                }
+                stream << ".";
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
+            } else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.hasUndefinedConstantsOnlyInUpdateProbabilitiesAndRewards()) {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
+            }
+        }
+        
         template<typename ValueType, typename StateType>
         ModelType PrismNextStateGenerator<ValueType, StateType>::getModelType() const {
             switch (program.getModelType()) {
@@ -340,7 +366,7 @@ namespace storm {
                         continue;
                     }
                     
-                    result.push_back(Choice<ValueType>(command.getActionIndex()));
+                    result.push_back(Choice<ValueType>(command.getActionIndex(), command.isMarkovian()));
                     Choice<ValueType>& choice = result.back();
                     
                     // Remember the command labels only if we were asked to.
@@ -369,7 +395,7 @@ namespace storm {
                         if (rewardModel.get().hasStateActionRewards()) {
                             for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                                 if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                    stateActionRewardValue += ValueType(this->evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass();
+                                    stateActionRewardValue += ValueType(this->evaluator.asRational(stateActionReward.getRewardValueExpression()));
                                 }
                             }
                         }
@@ -535,6 +561,7 @@ namespace storm {
         }
                 
         template class PrismNextStateGenerator<double>;
+        template class PrismNextStateGenerator<storm::RationalNumber>;
         template class PrismNextStateGenerator<storm::RationalFunction>;
     }
 }

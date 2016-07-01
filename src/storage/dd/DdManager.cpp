@@ -3,7 +3,10 @@
 #include "src/storage/expressions/ExpressionManager.h"
 
 #include "src/utility/macros.h"
+#include "src/utility/constants.h"
 #include "src/exceptions/InvalidArgumentException.h"
+
+#include <cmath>
 
 namespace storm {
     namespace dd {
@@ -32,6 +35,12 @@ namespace storm {
         template<typename ValueType>
         Add<LibraryType, ValueType> DdManager<LibraryType>::getAddZero() const {
             return Add<LibraryType, ValueType>(*this, internalDdManager.template getAddZero<ValueType>());
+        }
+        
+        template<DdType LibraryType>
+        template<typename ValueType>
+        Add<LibraryType, ValueType> DdManager<LibraryType>::getInfinity() const {
+            return getConstant(storm::utility::infinity<ValueType>());
         }
         
         template<DdType LibraryType>
@@ -320,6 +329,9 @@ namespace storm {
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getAddOne() const;
         template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getAddOne() const;
 
+        template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getInfinity<double>() const;
+        template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getInfinity<uint_fast64_t>() const;
+
         template Add<DdType::CUDD, double> DdManager<DdType::CUDD>::getConstant(double const& value) const;
         template Add<DdType::CUDD, uint_fast64_t> DdManager<DdType::CUDD>::getConstant(uint_fast64_t const& value) const;
         
@@ -334,6 +346,9 @@ namespace storm {
         
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddOne() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddOne() const;
+        
+        template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getInfinity<double>() const;
+        template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getInfinity<uint_fast64_t>() const;
         
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getConstant(double const& value) const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;

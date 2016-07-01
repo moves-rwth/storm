@@ -3,7 +3,10 @@
 #include "src/storage/SparseMatrix.h"
 #include "src/storage/BitVector.h"
 #include "src/adapters/CarlAdapter.h"
+
+#include "src/utility/macros.h"
 #include "src/utility/constants.h"
+#include "src/exceptions/InvalidArgumentException.h"
 
 namespace storm {
     namespace storage {
@@ -13,7 +16,9 @@ namespace storm {
         }
         
         template<typename ValueType>
-        FlexibleSparseMatrix<ValueType>::FlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne) : data(matrix.getRowCount()), columnCount(matrix.getColumnCount()), nonzeroEntryCount(matrix.getNonzeroEntryCount()), trivialRowGrouping(matrix.hasTrivialRowGrouping()) {
+        FlexibleSparseMatrix<ValueType>::FlexibleSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix, bool setAllValuesToOne, bool revertEquationSystem) : data(matrix.getRowCount()), columnCount(matrix.getColumnCount()), nonzeroEntryCount(matrix.getNonzeroEntryCount()), trivialRowGrouping(matrix.hasTrivialRowGrouping()) {
+            STORM_LOG_THROW(!revertEquationSystem || trivialRowGrouping, storm::exceptions::InvalidArgumentException, "Illegal option for creating flexible matrix.");
+            
             if (!trivialRowGrouping) {
                 rowGroupIndices = matrix.getRowGroupIndices();
             }
@@ -23,12 +28,31 @@ namespace storm {
                 for (auto const& element : row) {
                     // If the probability is zero, we skip this entry.
                     if (storm::utility::isZero(element.getValue())) {
-                        continue;
+                        if (revertEquationSystem && rowIndex == element.getColumn()) {
+                            getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>());
+                        } else {
+                            continue;
+                        }
                     }
                     if (setAllValuesToOne) {
-                        getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>());
+                        if (revertEquationSystem && element.getColumn() == rowIndex && storm::utility::isOne(element.getValue())) {
+                            continue;
+                        } else {
+                            getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>());
+                        }
                     } else {
-                        getRow(rowIndex).emplace_back(element);
+                        if (revertEquationSystem) {
+                            if (element.getColumn() == rowIndex) {
+                                if (storm::utility::isOne(element.getValue())) {
+                                    continue;
+                                }
+                                getRow(rowIndex).emplace_back(element.getColumn(), storm::utility::one<ValueType>() - element.getValue());
+                            } else {
+                                getRow(rowIndex).emplace_back(element.getColumn(), -element.getValue());
+                            }
+                        } else {
+                            getRow(rowIndex).emplace_back(element);
+                        }
                     }
                 }
             }
@@ -245,7 +269,9 @@ namespace storm {
         // Explicitly instantiate the matrix.
         template class FlexibleSparseMatrix<double>;
         template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<double> const& matrix);
-        
+        template class FlexibleSparseMatrix<storm::RationalNumber>;
+        template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<storm::RationalNumber> const& matrix);
+
 #ifdef STORM_HAVE_CARL
         template class FlexibleSparseMatrix<storm::RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<storm::RationalFunction> const& matrix);

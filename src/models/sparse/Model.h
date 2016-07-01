@@ -357,7 +357,7 @@ namespace storm {
                 boost::optional<std::vector<LabelSet>> choiceLabeling;
             };
             
-            std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+            std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
         } // namespace sparse
     } // namespace models
 } // namespace storm

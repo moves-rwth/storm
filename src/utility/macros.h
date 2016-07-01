@@ -131,6 +131,11 @@ do {                                            \
     }                                           \
 } while (false)                                 \
 
+#define STORM_GLOBAL_LOGLEVEL_ERROR()               \
+do {                                                \
+storm_runtime_loglevel = STORM_LOGLEVEL_ERROR;      \
+} while(false)
+
 #define STORM_GLOBAL_LOGLEVEL_INFO()                \
 do {                                                \
 storm_runtime_loglevel = STORM_LOGLEVEL_INFO;       \

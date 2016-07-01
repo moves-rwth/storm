@@ -9,7 +9,7 @@
 
 #include "src/settings/modules/GeneralSettings.h"
 #include "src/settings/modules/DFTSettings.h"
-#include "src/settings/modules/MarkovChainSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/DebugSettings.h"
 //#include "src/settings/modules/CounterexampleGeneratorSettings.h"
 //#include "src/settings/modules/CuddSettings.h"
@@ -21,7 +21,7 @@
 //#include "src/settings/modules/GurobiSettings.h"
 //#include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 //#include "src/settings/modules/ParametricSettings.h"
-#include "src/settings/modules/SparseDtmcEliminationModelCheckerSettings.h"
+#include "src/settings/modules/EliminationSettings.h"
 
 /*!
  * Load DFT from filename, build corresponding Model and check against given property.
@@ -53,7 +53,7 @@ void initializeSettings() {
     // Register all known settings modules.
     storm::settings::addModule<storm::settings::modules::GeneralSettings>();
     storm::settings::addModule<storm::settings::modules::DFTSettings>();
-    storm::settings::addModule<storm::settings::modules::MarkovChainSettings>();
+    storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     //storm::settings::addModule<storm::settings::modules::CounterexampleGeneratorSettings>();
     //storm::settings::addModule<storm::settings::modules::CuddSettings>();
@@ -65,7 +65,7 @@ void initializeSettings() {
     //storm::settings::addModule<storm::settings::modules::GurobiSettings>();
     //storm::settings::addModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>();
     //storm::settings::addModule<storm::settings::modules::ParametricSettings>();
-    storm::settings::addModule<storm::settings::modules::SparseDtmcEliminationModelCheckerSettings>();
+    storm::settings::addModule<storm::settings::modules::EliminationSettings>();
 }
 
 /*!
