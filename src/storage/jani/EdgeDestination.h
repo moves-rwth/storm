@@ -15,7 +15,7 @@ namespace storm {
             /*!
              * Creates a new edge destination.
              */
-            EdgeDestination(uint64_t locationId, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments = {}, std::vector<RewardIncrement> const& rewardIncrements = {});
+            EdgeDestination(uint64_t locationIndex, storm::expressions::Expression const& probability, std::vector<Assignment> const& assignments = {}, std::vector<RewardIncrement> const& rewardIncrements = {});
             
             /*!
              * Additionally performs the given assignment when choosing this destination.
@@ -30,13 +30,23 @@ namespace storm {
             /*!
              * Retrieves the id of the destination location.
              */
-            uint64_t getLocationId() const;
+            uint64_t getLocationIndex() const;
             
             /*!
              * Retrieves the probability of choosing this destination.
              */
             storm::expressions::Expression const& getProbability() const;
             
+            /*!
+             * Sets a new probability for this edge destination.
+             */
+            void setProbability(storm::expressions::Expression const& probability);
+
+            /*!
+             * Retrieves the assignments to make when choosing this destination.
+             */
+            std::vector<Assignment>& getAssignments();
+
             /*!
              * Retrieves the assignments to make when choosing this destination.
              */
@@ -48,8 +58,14 @@ namespace storm {
             std::vector<RewardIncrement> const& getRewardIncrements() const;
             
         private:
-            // The id of the destination location.
-            uint64_t locationId;
+            /*!
+             * Sorts the assignments to make all assignments to boolean variables precede all others and order the
+             * assignments within one variable group by the expression variables.
+             */
+            void sortAssignments();
+            
+            // The index of the destination location.
+            uint64_t locationIndex;
 
             // The probability to go to the destination.
             storm::expressions::Expression probability;

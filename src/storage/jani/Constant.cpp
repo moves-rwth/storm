@@ -3,8 +3,12 @@
 namespace storm {
     namespace jani {
         
-        Constant::Constant(std::string const& name, boost::optional<storm::expressions::Expression> const& expression) : name(name), expression(expression) {
+        Constant::Constant(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& expression) : name(name), variable(variable), expression(expression) {
             // Intentionally left empty.
+        }
+        
+        std::string const& Constant::getName() const {
+            return name;
         }
         
         bool Constant::isDefined() const {
@@ -29,6 +33,14 @@ namespace storm {
         
         bool Constant::isRealConstant() const {
             return getType().isRationalType();
+        }
+        
+        storm::expressions::Variable const& Constant::getExpressionVariable() const {
+            return variable;
+        }
+        
+        storm::expressions::Expression const& Constant::getExpression() const {
+            return expression.get();
         }
         
     }

@@ -7,7 +7,6 @@
 #include "src/models/symbolic/Mdp.h"
 #include "src/models/symbolic/StandardRewardModel.h"
 
-#include "src/storage/dd/DdManager.h"
 #include "src/settings/SettingsManager.h"
 
 #include "src/exceptions/InvalidStateException.h"
@@ -16,9 +15,11 @@
 
 #include "src/utility/prism.h"
 #include "src/utility/math.h"
+#include "src/utility/dd.h"
+
+#include "src/storage/dd/DdManager.h"
 #include "src/storage/prism/Program.h"
 #include "src/storage/prism/Compositions.h"
-
 #include "src/storage/dd/Add.h"
 #include "src/storage/dd/cudd/CuddAddIterator.h"
 #include "src/storage/dd/Bdd.h"
@@ -31,7 +32,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         class DdPrismModelBuilder<Type, ValueType>::GenerationInformation {
         public:
-            GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(), rowExpressionAdapter(nullptr), columnMetaVariables(), variableToColumnMetaVariableMap(), columnExpressionAdapter(nullptr), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), allGlobalVariables(), moduleToIdentityMap() {
+            GenerationInformation(storm::prism::Program const& program) : program(program), manager(std::make_shared<storm::dd::DdManager<Type>>()), rowMetaVariables(), variableToRowMetaVariableMap(std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>()), rowExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type>>(manager, variableToRowMetaVariableMap)), columnMetaVariables(), variableToColumnMetaVariableMap((std::make_shared<std::map<storm::expressions::Variable, storm::expressions::Variable>>())), columnExpressionAdapter(std::make_shared<storm::adapters::AddExpressionAdapter<Type>>(manager, variableToColumnMetaVariableMap)), rowColumnMetaVariablePairs(), nondeterminismMetaVariables(), variableToIdentityMap(), allGlobalVariables(), moduleToIdentityMap() {
                 // Initializes variables and identity DDs.
                 createMetaVariablesAndIdentities();
                 
@@ -47,12 +48,12 @@ namespace storm {
             
             // The meta variables for the row encoding.
             std::set<storm::expressions::Variable> rowMetaVariables;
-            std::map<storm::expressions::Variable, storm::expressions::Variable> variableToRowMetaVariableMap;
+            std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToRowMetaVariableMap;
             std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter;
             
             // The meta variables for the column encoding.
             std::set<storm::expressions::Variable> columnMetaVariables;
-            std::map<storm::expressions::Variable, storm::expressions::Variable> variableToColumnMetaVariableMap;
+            std::shared_ptr<std::map<storm::expressions::Variable, storm::expressions::Variable>> variableToColumnMetaVariableMap;
             std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter;
             
             // All pairs of row/column meta variables.
@@ -116,10 +117,10 @@ namespace storm {
                     STORM_LOG_TRACE("Created meta variables for global integer variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
                     
                     rowMetaVariables.insert(variablePair.first);
-                    variableToRowMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.first);
+                    variableToRowMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.first);
                     
                     columnMetaVariables.insert(variablePair.second);
-                    variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
+                    variableToColumnMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.second);
                     
                     storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>() * manager->getRange(variablePair.first).template toAdd<ValueType>() * manager->getRange(variablePair.second).template toAdd<ValueType>();
                     variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity);
@@ -133,10 +134,10 @@ namespace storm {
                     STORM_LOG_TRACE("Created meta variables for global boolean variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
                     
                     rowMetaVariables.insert(variablePair.first);
-                    variableToRowMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.first);
+                    variableToRowMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.first);
                     
                     columnMetaVariables.insert(variablePair.second);
-                    variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
+                    variableToColumnMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                     
                     storm::dd::Add<Type, ValueType> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)).template toAdd<ValueType>();
                     variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity);
@@ -157,10 +158,10 @@ namespace storm {
                         STORM_LOG_TRACE("Created meta variables for integer variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
                         
                         rowMetaVariables.insert(variablePair.first);
-                        variableToRowMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.first);
+                        variableToRowMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.first);
                         
                         columnMetaVariables.insert(variablePair.second);
-                        variableToColumnMetaVariableMap.emplace(integerVariable.getExpressionVariable(), variablePair.second);
+                        variableToColumnMetaVariableMap->emplace(integerVariable.getExpressionVariable(), variablePair.second);
                         
                         storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
                         variableToIdentityMap.emplace(integerVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
@@ -174,10 +175,10 @@ namespace storm {
                         STORM_LOG_TRACE("Created meta variables for boolean variable: " << variablePair.first.getName() << "[" << variablePair.first.getIndex() << "] and " << variablePair.second.getName() << "[" << variablePair.second.getIndex() << "]");
                         
                         rowMetaVariables.insert(variablePair.first);
-                        variableToRowMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.first);
+                        variableToRowMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.first);
                         
                         columnMetaVariables.insert(variablePair.second);
-                        variableToColumnMetaVariableMap.emplace(booleanVariable.getExpressionVariable(), variablePair.second);
+                        variableToColumnMetaVariableMap->emplace(booleanVariable.getExpressionVariable(), variablePair.second);
                         
                         storm::dd::Bdd<Type> variableIdentity = manager->template getIdentity<ValueType>(variablePair.first).equals(manager->template getIdentity<ValueType>(variablePair.second)) && manager->getRange(variablePair.first) && manager->getRange(variablePair.second);
                         variableToIdentityMap.emplace(booleanVariable.getExpressionVariable(), variableIdentity.template toAdd<ValueType>());
@@ -472,18 +473,18 @@ namespace storm {
         };
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(true), labelsToBuild(), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options() : buildAllRewardModels(true), rewardModelsToBuild(), buildAllLabels(true), labelsToBuild(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), terminalStates(), negatedTerminalStates() {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
             if (formulas.empty()) {
                 this->buildAllRewardModels = true;
                 this->buildAllLabels = true;
@@ -554,22 +555,6 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        void DdPrismModelBuilder<Type, ValueType>::Options::addConstantDefinitionsFromString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
-            std::map<storm::expressions::Variable, storm::expressions::Expression> newConstantDefinitions = storm::utility::prism::parseConstantDefinitionString(program, constantDefinitionString);
-            
-            // If there is at least one constant that is defined, and the constant definition map does not yet exist,
-            // we need to create it.
-            if (!constantDefinitions && !newConstantDefinitions.empty()) {
-                constantDefinitions = std::map<storm::expressions::Variable, storm::expressions::Expression>();
-            }
-            
-            // Now insert all the entries that need to be defined.
-            for (auto const& entry : newConstantDefinitions) {
-                constantDefinitions.get().insert(entry);
-            }
-        }
-        
-        template <storm::dd::DdType Type, typename ValueType>
         struct DdPrismModelBuilder<Type, ValueType>::SystemResult {
             SystemResult(storm::dd::Add<Type, ValueType> const& allTransitionsDd, DdPrismModelBuilder<Type, ValueType>::ModuleDecisionDiagram const& globalModule, storm::dd::Add<Type, ValueType> const& stateActionDd) : allTransitionsDd(allTransitionsDd), globalModule(globalModule), stateActionDd(stateActionDd) {
                 // Intentionally left empty.
@@ -591,11 +576,11 @@ namespace storm {
             std::set<storm::expressions::Variable> assignedVariables;
             for (auto const& assignment : assignments) {
                 // Record the variable as being written.
-                STORM_LOG_TRACE("Assigning to variable " << generationInfo.variableToRowMetaVariableMap.at(assignment.getVariable()).getName());
+                STORM_LOG_TRACE("Assigning to variable " << generationInfo.variableToRowMetaVariableMap->at(assignment.getVariable()).getName());
                 assignedVariables.insert(assignment.getVariable());
                 
                 // Translate the written variable.
-                auto const& primedMetaVariable = generationInfo.variableToColumnMetaVariableMap.at(assignment.getVariable());
+                auto const& primedMetaVariable = generationInfo.variableToColumnMetaVariableMap->at(assignment.getVariable());
                 storm::dd::Add<Type, ValueType> writtenVariable = generationInfo.manager->template getIdentity<ValueType>(primedMetaVariable);
                 
                 // Translate the expression that is being assigned.
@@ -605,6 +590,7 @@ namespace storm {
                 storm::dd::Add<Type, ValueType> result = updateExpression * guard;
                 
                 // Combine the variable and the assigned expression.
+                storm::dd::Add<Type, ValueType> tmp = result;
                 result = result.equals(writtenVariable).template toAdd<ValueType>();
                 result *= guard;
                 
@@ -706,7 +692,7 @@ namespace storm {
                 // At this point, the command is known to be relevant for the action.
                 commandDds.push_back(createCommandDecisionDiagram(generationInfo, module, command));
             }
-            
+
             ActionDecisionDiagram result(*generationInfo.manager);
             if (!commandDds.empty()) {
                 switch (generationInfo.program.getModelType()){
@@ -787,7 +773,7 @@ namespace storm {
                 STORM_LOG_WARN_COND(temporary.isZero() || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC, "Guard of a command overlaps with previous guards.");
                 
                 allGuards += commandDd.guardDd;
-                allCommands += commandDd.guardDd * commandDd.transitionsDd;
+                allCommands += commandDd.transitionsDd;
             }
             
             return ActionDecisionDiagram(allGuards, allCommands, assignedGlobalVariables);
@@ -872,7 +858,7 @@ namespace storm {
                             continue;
                         }
                         
-                        // Split the currentChoices nondeterministic choices.
+                        // Split the nondeterministic choices.
                         for (uint_fast64_t k = 0; k < currentChoices; ++k) {
                             // Calculate the overlapping part of command guard and the remaining DD.
                             storm::dd::Bdd<Type> remainingGuardChoicesIntersection = guardChoicesIntersection && remainingDds[k];
@@ -985,7 +971,7 @@ namespace storm {
                 numberOfUsedNondeterminismVariables = std::max(numberOfUsedNondeterminismVariables, tmp.numberOfUsedNondeterminismVariables);
                 actionIndexToDdMap.emplace(actionIndex, tmp);
             }
-            
+
             return ModuleDecisionDiagram(independentActionDd, actionIndexToDdMap, generationInfo.moduleToIdentityMap.at(module.getName()), numberOfUsedNondeterminismVariables);
         }
         
@@ -1067,10 +1053,30 @@ namespace storm {
                 
                 return result;
             } else if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC || generationInfo.program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                // Simply add all actions.
-                storm::dd::Add<Type, ValueType> result = module.independentAction.transitionsDd;
+                // Simply add all actions, but make sure to include the missing global variable identities.
+                
+                // Compute missing global variable identities in independent action.
+                std::set<storm::expressions::Variable> missingIdentities;
+                std::set_difference(generationInfo.allGlobalVariables.begin(), generationInfo.allGlobalVariables.end(), module.independentAction.assignedGlobalVariables.begin(), module.independentAction.assignedGlobalVariables.end(), std::inserter(missingIdentities, missingIdentities.begin()));
+                storm::dd::Add<Type, ValueType> identityEncoding = generationInfo.manager->template getAddOne<ValueType>();
+                for (auto const& variable : missingIdentities) {
+                    STORM_LOG_TRACE("Multiplying identity of global variable " << variable.getName() << " to independent action.");
+                    identityEncoding *= generationInfo.variableToIdentityMap.at(variable);
+                }
+
+                storm::dd::Add<Type, ValueType> result = identityEncoding * module.independentAction.transitionsDd;
+                
                 for (auto const& synchronizingAction : module.synchronizingActionToDecisionDiagramMap) {
-                    result += synchronizingAction.second.transitionsDd;
+                    // Compute missing global variable identities in synchronizing actions.
+                    missingIdentities = std::set<storm::expressions::Variable>();
+                    std::set_difference(generationInfo.allGlobalVariables.begin(), generationInfo.allGlobalVariables.end(), synchronizingAction.second.assignedGlobalVariables.begin(), synchronizingAction.second.assignedGlobalVariables.end(), std::inserter(missingIdentities, missingIdentities.begin()));
+                    identityEncoding = generationInfo.manager->template getAddOne<ValueType>();
+                    for (auto const& variable : missingIdentities) {
+                        STORM_LOG_TRACE("Multiplying identity of global variable " << variable.getName() << " to synchronizing action '" << synchronizingAction.first << "'.");
+                        identityEncoding *= generationInfo.variableToIdentityMap.at(variable);
+                    }
+                    
+                    result += identityEncoding * synchronizingAction.second.transitionsDd;
                 }
                 return result;
             } else {
@@ -1082,7 +1088,7 @@ namespace storm {
         typename DdPrismModelBuilder<Type, ValueType>::SystemResult DdPrismModelBuilder<Type, ValueType>::createSystemDecisionDiagram(GenerationInformation& generationInfo) {
             ModuleComposer<Type, ValueType> composer(generationInfo);
             ModuleDecisionDiagram system = composer.compose(generationInfo.program.specifiesSystemComposition() ? generationInfo.program.getSystemCompositionConstruct().getSystemComposition() : *generationInfo.program.getDefaultSystemComposition());
-            
+
             storm::dd::Add<Type, ValueType> result = createSystemFromModule(generationInfo, system);
             
             // Create an auxiliary DD that is used later during the construction of reward models.
@@ -1225,12 +1231,8 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::translateProgram(storm::prism::Program const& program, Options const& options) {
-            if (options.constantDefinitions) {
-                preparedProgram = program.defineUndefinedConstants(options.constantDefinitions.get());
-            } else {
-                preparedProgram = program;
-            }
+        std::shared_ptr<storm::models::symbolic::Model<Type, ValueType>> DdPrismModelBuilder<Type, ValueType>::build(storm::prism::Program const& program, Options const& options) {
+            preparedProgram = program;
             
             if (preparedProgram->hasUndefinedConstants()) {
                 std::vector<std::reference_wrapper<storm::prism::Constant const>> undefinedConstants = preparedProgram->getUndefinedConstants();
@@ -1263,39 +1265,51 @@ namespace storm {
             storm::dd::Add<Type, ValueType> stateActionDd = system.stateActionDd;
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
+            storm::dd::Bdd<Type> terminalStatesBdd = generationInfo.manager->getBddZero();
             if (options.terminalStates || options.negatedTerminalStates) {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = preparedProgram->getConstantsSubstitution();
                 
-                storm::dd::Bdd<Type> terminalStatesBdd = generationInfo.manager->getBddZero();
                 if (options.terminalStates) {
                     storm::expressions::Expression terminalExpression;
                     if (options.terminalStates.get().type() == typeid(storm::expressions::Expression)) {
                         terminalExpression = boost::get<storm::expressions::Expression>(options.terminalStates.get());
                     } else {
                         std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
-                        terminalExpression = preparedProgram->getLabelExpression(labelName);
+                        if (program.hasLabel(labelName)) {
+                            terminalExpression = preparedProgram->getLabelExpression(labelName);
+                        } else {
+                            STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
+                        }
+                        }
+                    
+                    if (terminalExpression.isInitialized()) {
+                        // If the expression refers to constants of the model, we need to substitute them.
+                        terminalExpression = terminalExpression.substitute(constantsSubstitution);
+                        
+                        STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
+                        terminalStatesBdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
                     }
-                    
-                    // If the expression refers to constants of the model, we need to substitute them.
-                    terminalExpression = terminalExpression.substitute(constantsSubstitution);
-                    
-                    STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
-                    terminalStatesBdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
                 }
                 if (options.negatedTerminalStates) {
                     storm::expressions::Expression negatedTerminalExpression;
                     if (options.negatedTerminalStates.get().type() == typeid(storm::expressions::Expression)) {
                         negatedTerminalExpression = boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
                     } else {
-                        std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
-                        negatedTerminalExpression = preparedProgram->getLabelExpression(labelName);
+                        std::string const& labelName = boost::get<std::string>(options.negatedTerminalStates.get());
+                        if (program.hasLabel(labelName)) {
+                            negatedTerminalExpression = preparedProgram->getLabelExpression(labelName);
+                        } else {
+                            STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
+                        }
                     }
                     
-                    // If the expression refers to constants of the model, we need to substitute them.
-                    negatedTerminalExpression = negatedTerminalExpression.substitute(constantsSubstitution);
-                    
-                    STORM_LOG_TRACE("Making the states *not* satisfying " << negatedTerminalExpression << " terminal.");
-                    terminalStatesBdd |= !generationInfo.rowExpressionAdapter->translateExpression(negatedTerminalExpression).toBdd();
+                    if (negatedTerminalExpression.isInitialized()) {
+                        // If the expression refers to constants of the model, we need to substitute them.
+                        negatedTerminalExpression = negatedTerminalExpression.substitute(constantsSubstitution);
+                        
+                        STORM_LOG_TRACE("Making the states *not* satisfying " << negatedTerminalExpression << " terminal.");
+                        terminalStatesBdd |= !generationInfo.rowExpressionAdapter->translateExpression(negatedTerminalExpression).toBdd();
+                    }
                 }
                 
                 transitionMatrix *= (!terminalStatesBdd).template toAdd<ValueType>();
@@ -1303,51 +1317,63 @@ namespace storm {
             
             // Cut the transitions and rewards to the reachable fragment of the state space.
             storm::dd::Bdd<Type> initialStates = createInitialStatesDecisionDiagram(generationInfo);
+                        
             storm::dd::Bdd<Type> transitionMatrixBdd = transitionMatrix.notZero();
             if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
             }
             
-            storm::dd::Bdd<Type> reachableStates = computeReachableStates(generationInfo, initialStates, transitionMatrixBdd);
+            storm::dd::Bdd<Type> reachableStates = storm::utility::dd::computeReachableStates<Type>(initialStates, transitionMatrixBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
             storm::dd::Add<Type, ValueType> reachableStatesAdd = reachableStates.template toAdd<ValueType>();
             transitionMatrix *= reachableStatesAdd;
             stateActionDd *= reachableStatesAdd;
             
             // Detect deadlocks and 1) fix them if requested 2) throw an error otherwise.
             storm::dd::Bdd<Type> statesWithTransition = transitionMatrixBdd.existsAbstract(generationInfo.columnMetaVariables);
-            storm::dd::Add<Type, ValueType> deadlockStates = (reachableStates && !statesWithTransition).template toAdd<ValueType>();
+            storm::dd::Bdd<Type> deadlockStates = reachableStates && !statesWithTransition;
             
+            // If there are deadlocks, either fix them or raise an error.
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
                 if (!storm::settings::getModule<storm::settings::modules::MarkovChainSettings>().isDontFixDeadlocksSet()) {
                     STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
-                    
+
+                    storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();
                     uint_fast64_t count = 0;
-                    for (auto it = deadlockStates.begin(), ite = deadlockStates.end(); it != ite && count < 3; ++it, ++count) {
+                    for (auto it = deadlockStatesAdd.begin(), ite = deadlockStatesAdd.end(); it != ite && count < 3; ++it, ++count) {
                         STORM_LOG_INFO((*it).first.toPrettyString(generationInfo.rowMetaVariables) << std::endl);
                     }
                     
-                    if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
+                    if (program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::CTMC) {
+                        storm::dd::Add<Type, ValueType> identity = globalModule.identity;
+                        
+                        // Make sure that global variables do not change along the introduced self-loops.
+                        for (auto const& var : generationInfo.allGlobalVariables) {
+                            identity *= generationInfo.variableToIdentityMap.at(var);
+                        }
+
                         // For DTMCs, we can simply add the identity of the global module for all deadlock states.
-                        transitionMatrix += deadlockStates * globalModule.identity;
+                        transitionMatrix += deadlockStatesAdd * identity;
                     } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
                         // For MDPs, however, we need to select an action associated with the self-loop, if we do not
                         // want to attach a lot of self-loops to the deadlock states.
                         storm::dd::Add<Type, ValueType> action = generationInfo.manager->template getAddOne<ValueType>();
-                        std::for_each(generationInfo.allNondeterminismVariables.begin(), generationInfo.allNondeterminismVariables.end(),
-                                      [&action, &generationInfo] (storm::expressions::Variable const& metaVariable) {
-                                          action *= generationInfo.manager->template getIdentity<ValueType>(metaVariable);
-                                      });
+                        for (auto const& metaVariable : generationInfo.allNondeterminismVariables) {
+                            action *= generationInfo.manager->template getIdentity<ValueType>(metaVariable);
+                        }
                         // Make sure that global variables do not change along the introduced self-loops.
                         for (auto const& var : generationInfo.allGlobalVariables) {
                             action *= generationInfo.variableToIdentityMap.at(var);
                         }
-                        transitionMatrix += deadlockStates * globalModule.identity * action;
+                        transitionMatrix += deadlockStatesAdd * globalModule.identity * action;
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The model contains " << deadlockStates.getNonZeroCount() << " deadlock states. Please unset the option to not fix deadlocks, if you want to fix them automatically.");
                 }
             }
+            
+            // Reduce the deadlock states by the states that we did simply not explore.
+            deadlockStates = deadlockStates && !terminalStatesBdd;
             
             // Now build the reward models.
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> selectedRewardModels;
@@ -1380,11 +1406,11 @@ namespace storm {
             }
             
             if (program.getModelType() == storm::prism::Program::ModelType::DTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Dtmc<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Dtmc<Type>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::CTMC) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Ctmc<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Ctmc<Type>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, labelToExpressionMapping, rewardModels));
             } else if (program.getModelType() == storm::prism::Program::ModelType::MDP) {
-                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Mdp<Type>(generationInfo.manager, reachableStates, initialStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, rewardModels));
+                return std::shared_ptr<storm::models::symbolic::Model<Type>>(new storm::models::symbolic::Mdp<Type>(generationInfo.manager, reachableStates, initialStates, deadlockStates, transitionMatrix, generationInfo.rowMetaVariables, generationInfo.rowExpressionAdapter, generationInfo.columnMetaVariables, generationInfo.columnExpressionAdapter, generationInfo.rowColumnMetaVariablePairs, generationInfo.allNondeterminismVariables, labelToExpressionMapping, rewardModels));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Invalid model type.");
             }
@@ -1399,32 +1425,6 @@ namespace storm {
             }
             
             return initialStates;
-        }
-        
-        template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Bdd<Type> DdPrismModelBuilder<Type, ValueType>::computeReachableStates(GenerationInformation& generationInfo, storm::dd::Bdd<Type> const& initialStates, storm::dd::Bdd<Type> const& transitionBdd) {
-            storm::dd::Bdd<Type> reachableStates = initialStates;
-            
-            // Perform the BFS to discover all reachable states.
-            bool changed = true;
-            uint_fast64_t iteration = 0;
-            do {
-                STORM_LOG_TRACE("Iteration " << iteration << " of reachability analysis.");
-                changed = false;
-                storm::dd::Bdd<Type> tmp = reachableStates.relationalProduct(transitionBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
-                storm::dd::Bdd<Type> newReachableStates = tmp && (!reachableStates);
-                
-                // Check whether new states were indeed discovered.
-                if (!newReachableStates.isZero()) {
-                    changed = true;
-                }
-                
-                reachableStates |= newReachableStates;
-                
-                ++iteration;
-            } while (changed);
-            
-            return reachableStates;
         }
         
         // Explicitly instantiate the symbolic model builder.

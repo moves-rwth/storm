@@ -14,6 +14,10 @@ namespace storm {
             return this->upperBoundExpression;
         }
         
+        storm::expressions::Expression IntegerVariable::getRangeExpression() const {
+            return this->getLowerBoundExpression() <= this->getExpressionVariable() && this->getExpressionVariable() <= this->getUpperBoundExpression();
+        }
+        
         IntegerVariable IntegerVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return IntegerVariable(this->getExpressionVariable(), this->getLowerBoundExpression().substitute(substitution), this->getUpperBoundExpression().substitute(substitution), this->getInitialValueExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
         }

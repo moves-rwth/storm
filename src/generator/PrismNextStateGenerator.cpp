@@ -2,27 +2,84 @@
 
 #include <boost/container/flat_map.hpp>
 
+#include "src/models/sparse/StateLabeling.h"
+
+#include "src/storage/expressions/SimpleValuation.h"
+
+#include "src/solver/SmtSolver.h"
+
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
+#include "src/exceptions/InvalidArgumentException.h"
 #include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling) : program(program), selectedRewardModels(), buildChoiceLabeling(buildChoiceLabeling), variableInformation(variableInformation), evaluator(program.getManager()), state(nullptr), comparator() {
-            STORM_LOG_THROW(!program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
-        }
-                
-        template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::addRewardModel(storm::prism::RewardModel const& rewardModel) {
-            selectedRewardModels.push_back(rewardModel);
-            hasStateActionRewards |= rewardModel.hasStateActionRewards();
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options) : PrismNextStateGenerator<ValueType, StateType>(program.substituteConstants(), options, false) {
+            // Intentionally left empty.
         }
         
         template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::setTerminalExpression(storm::expressions::Expression const& terminalExpression) {
-            this->terminalExpression = terminalExpression;
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag) : NextStateGenerator<ValueType, StateType>(program.getManager(), VariableInformation(program), options), program(program), rewardModels() {
+            STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
+            
+            if (this->options.isBuildAllRewardModelsSet()) {
+                for (auto const& rewardModel : this->program.getRewardModels()) {
+                    rewardModels.push_back(rewardModel);
+                }
+            } else {
+                // Extract the reward models from the program based on the names we were given.
+                for (auto const& rewardModelName : this->options.getRewardModelNames()) {
+                    if (this->program.hasRewardModel(rewardModelName)) {
+                        rewardModels.push_back(this->program.getRewardModel(rewardModelName));
+                    } else {
+                        STORM_LOG_THROW(rewardModelName.empty(), storm::exceptions::InvalidArgumentException, "Cannot build unknown reward model '" << rewardModelName << "'.");
+                        STORM_LOG_THROW(this->program.getNumberOfRewardModels() == 1, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is ambiguous.");
+                        STORM_LOG_THROW(this->program.getNumberOfRewardModels() > 0, storm::exceptions::InvalidArgumentException, "Reference to standard reward model is invalid, because there is no reward model.");
+                    }
+                }
+                
+                // If no reward model was yet added, but there was one that was given in the options, we try to build
+                // standard reward model.
+                if (rewardModels.empty() && !this->options.getRewardModelNames().empty()) {
+                    rewardModels.push_back(this->program.getRewardModel(0));
+                }
+            }
+            
+            // Determine whether any reward model has state action rewards.
+            for (auto const& rewardModel : rewardModels) {
+                hasStateActionRewards |= rewardModel.get().hasStateActionRewards();
+            }
+            
+            // If there are terminal states we need to handle, we now need to translate all labels to expressions.
+            if (this->options.hasTerminalStates()) {
+                for (auto const& expressionOrLabelAndBool : this->options.getTerminalStates()) {
+                    if (expressionOrLabelAndBool.first.isExpression()) {
+                        this->terminalStates.push_back(std::make_pair(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second));
+                    } else {
+                        if (program.hasLabel(expressionOrLabelAndBool.first.getLabel())) {
+                            this->terminalStates.push_back(std::make_pair(this->program.getLabelExpression(expressionOrLabelAndBool.first.getLabel()), expressionOrLabelAndBool.second));
+                        } else {
+                            // If the label is not present in the program and is not a special one, we raise an error.
+                            STORM_LOG_THROW(expressionOrLabelAndBool.first.getLabel() == "init" || expressionOrLabelAndBool.first.getLabel() == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
+                        }
+                    }
+                }
+            }
+        }
+
+        template<typename ValueType, typename StateType>
+        ModelType PrismNextStateGenerator<ValueType, StateType>::getModelType() const {
+            switch (program.getModelType()) {
+                case storm::prism::Program::ModelType::DTMC: return ModelType::DTMC;
+                case storm::prism::Program::ModelType::CTMC: return ModelType::CTMC;
+                case storm::prism::Program::ModelType::MDP: return ModelType::MDP;
+                case storm::prism::Program::ModelType::MA: return ModelType::MA;
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Invalid model type.");
+            }
         }
         
         template<typename ValueType, typename StateType>
@@ -31,38 +88,54 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        bool PrismNextStateGenerator<ValueType, StateType>::isDiscreteTimeModel() const {
+            return program.isDiscreteTimeModel();
+        }
+        
+        template<typename ValueType, typename StateType>
         std::vector<StateType> PrismNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
-            // FIXME: This only works for models with exactly one initial state. We should make this more general.
-            CompressedState initialState(variableInformation.getTotalBitOffset());
+            // Prepare an SMT solver to enumerate all initial states.
+            storm::utility::solver::SmtSolverFactory factory;
+            std::unique_ptr<storm::solver::SmtSolver> solver = factory.create(program.getManager());
             
-            // We need to initialize the values of the variables to their initial value.
-            for (auto const& booleanVariable : variableInformation.booleanVariables) {
-                initialState.set(booleanVariable.bitOffset, booleanVariable.initialValue);
+            std::vector<storm::expressions::Expression> rangeExpressions = program.getAllRangeExpressions();
+            for (auto const& expression : rangeExpressions) {
+                solver->add(expression);
             }
-            for (auto const& integerVariable : variableInformation.integerVariables) {
-                initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(integerVariable.initialValue - integerVariable.lowerBound));
-            }
-
-            // Register initial state and return it.
-            StateType id = stateToIdCallback(initialState);
-            return {id};
-        }
-        
-        template<typename ValueType, typename StateType>
-        void PrismNextStateGenerator<ValueType, StateType>::load(CompressedState const& state) {
-            // Since almost all subsequent operations are based on the evaluator, we load the state into it now.
-            unpackStateIntoEvaluator(state, variableInformation, evaluator);
+            solver->add(program.getInitialConstruct().getInitialStatesExpression());
             
-            // Also, we need to store a pointer to the state itself, because we need to be able to access it when expanding it.
-            this->state = &state;
-        }
-        
-        template<typename ValueType, typename StateType>
-        bool PrismNextStateGenerator<ValueType, StateType>::satisfies(storm::expressions::Expression const& expression) const {
-            if (expression.isTrue()) {
-                return true;
+            // Proceed ss long as the solver can still enumerate initial states.
+            std::vector<StateType> initialStateIndices;
+            while (solver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
+                // Create fresh state.
+                CompressedState initialState(this->variableInformation.getTotalBitOffset());
+                
+                // Read variable assignment from the solution of the solver. Also, create an expression we can use to
+                // prevent the variable assignment from being enumerated again.
+                storm::expressions::Expression blockingExpression;
+                std::shared_ptr<storm::solver::SmtSolver::ModelReference> model = solver->getModel();
+                for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
+                    bool variableValue = model->getBooleanValue(booleanVariable.variable);
+                    storm::expressions::Expression localBlockingExpression = variableValue ? !booleanVariable.variable : booleanVariable.variable;
+                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                    initialState.set(booleanVariable.bitOffset, variableValue);
+                }
+                for (auto const& integerVariable : this->variableInformation.integerVariables) {
+                    int_fast64_t variableValue = model->getIntegerValue(integerVariable.variable);
+                    storm::expressions::Expression localBlockingExpression = integerVariable.variable != model->getManager().integer(variableValue);
+                    blockingExpression = blockingExpression.isInitialized() ? blockingExpression || localBlockingExpression : localBlockingExpression;
+                    initialState.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, static_cast<uint_fast64_t>(variableValue - integerVariable.lowerBound));
+                }
+                
+                // Register initial state and return it.
+                StateType id = stateToIdCallback(initialState);
+                initialStateIndices.push_back(id);
+                
+                // Block the current initial state to search for the next one.
+                solver->add(blockingExpression);
             }
-            return evaluator.asBool(expression);
+            
+            return initialStateIndices;
         }
         
         template<typename ValueType, typename StateType>
@@ -72,12 +145,12 @@ namespace storm {
             
             // First, construct the state rewards, as we may return early if there are no choices later and we already
             // need the state rewards then.
-            for (auto const& rewardModel : selectedRewardModels) {
+            for (auto const& rewardModel : rewardModels) {
                 ValueType stateRewardValue = storm::utility::zero<ValueType>();
                 if (rewardModel.get().hasStateRewards()) {
                     for (auto const& stateReward : rewardModel.get().getStateRewards()) {
-                        if (evaluator.asBool(stateReward.getStatePredicateExpression())) {
-                            stateRewardValue += ValueType(evaluator.asRational(stateReward.getRewardValueExpression()));
+                        if (this->evaluator.asBool(stateReward.getStatePredicateExpression())) {
+                            stateRewardValue += ValueType(this->evaluator.asRational(stateReward.getRewardValueExpression()));
                         }
                     }
                 }
@@ -85,11 +158,16 @@ namespace storm {
             }
             
             // If a terminal expression was set and we must not expand this state, return now.
-            if (terminalExpression && evaluator.asBool(terminalExpression.get())) {
-                return result;
+            if (!this->terminalStates.empty()) {
+                for (auto const& expressionBool : this->terminalStates) {
+                    if (this->evaluator.asBool(expressionBool.first) == expressionBool.second) {
+                        return result;
+                    }
+                }
             }
             
             // Get all choices for the state.
+            result.setExpanded();
             std::vector<Choice<ValueType>> allChoices = getUnlabeledChoices(*this->state, stateToIdCallback);
             std::vector<Choice<ValueType>> allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback);
             for (auto& choice : allLabeledChoices) {
@@ -105,40 +183,40 @@ namespace storm {
             }
             
             // If the model is a deterministic model, we need to fuse the choices into one.
-            if (program.isDeterministicModel() && totalNumberOfChoices > 1) {
+            if (this->isDeterministicModel() && totalNumberOfChoices > 1) {
                 Choice<ValueType> globalChoice;
                 
                 // For CTMCs, we need to keep track of the total exit rate to scale the action rewards later. For DTMCs
                 // this is equal to the number of choices, which is why we initialize it like this here.
-                ValueType totalExitRate = program.isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
+                ValueType totalExitRate = this->isDiscreteTimeModel() ? static_cast<ValueType>(totalNumberOfChoices) : storm::utility::zero<ValueType>();
                 
                 // Iterate over all choices and combine the probabilities/rates into one choice.
                 for (auto const& choice : allChoices) {
                     for (auto const& stateProbabilityPair : choice) {
-                        if (program.isDiscreteTimeModel()) {
+                        if (this->isDiscreteTimeModel()) {
                             globalChoice.addProbability(stateProbabilityPair.first, stateProbabilityPair.second / totalNumberOfChoices);
                         } else {
                             globalChoice.addProbability(stateProbabilityPair.first, stateProbabilityPair.second);
                         }
                     }
                     
-                    if (hasStateActionRewards && !program.isDiscreteTimeModel()) {
+                    if (hasStateActionRewards && !this->isDiscreteTimeModel()) {
                         totalExitRate += choice.getTotalMass();
                     }
                     
-                    if (buildChoiceLabeling) {
+                    if (this->options.isBuildChoiceLabelsSet()) {
                         globalChoice.addChoiceLabels(choice.getChoiceLabels());
                     }
                 }
                 
                 // Now construct the state-action reward for all selected reward models.
-                for (auto const& rewardModel : selectedRewardModels) {
+                for (auto const& rewardModel : rewardModels) {
                     ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
                     if (rewardModel.get().hasStateActionRewards()) {
                         for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
                             for (auto const& choice : allChoices) {
-                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                    stateActionRewardValue += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass() / totalExitRate;
+                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                    stateActionRewardValue += ValueType(this->evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass() / totalExitRate;
                                 }
                             }
                             
@@ -157,7 +235,6 @@ namespace storm {
                 result.addChoice(std::move(choice));
             }
             
-            result.setExpanded();
             return result;
         }
         
@@ -165,25 +242,30 @@ namespace storm {
         CompressedState PrismNextStateGenerator<ValueType, StateType>::applyUpdate(CompressedState const& state, storm::prism::Update const& update) {
             CompressedState newState(state);
             
+            // NOTE: the following process assumes that the assignments of the update are ordered in such a way that the
+            // assignments to boolean variables precede the assignments to all integer variables and that within the
+            // types, the assignments to variables are ordered (in ascending order) by the expression variables.
+            // This is guaranteed for PRISM models, by sorting the assignments as soon as an update is created.
+            
             auto assignmentIt = update.getAssignments().begin();
             auto assignmentIte = update.getAssignments().end();
             
             // Iterate over all boolean assignments and carry them out.
-            auto boolIt = variableInformation.booleanVariables.begin();
+            auto boolIt = this->variableInformation.booleanVariables.begin();
             for (; assignmentIt != assignmentIte && assignmentIt->getExpression().hasBooleanType(); ++assignmentIt) {
                 while (assignmentIt->getVariable() != boolIt->variable) {
                     ++boolIt;
                 }
-                newState.set(boolIt->bitOffset, evaluator.asBool(assignmentIt->getExpression()));
+                newState.set(boolIt->bitOffset, this->evaluator.asBool(assignmentIt->getExpression()));
             }
             
             // Iterate over all integer assignments and carry them out.
-            auto integerIt = variableInformation.integerVariables.begin();
+            auto integerIt = this->variableInformation.integerVariables.begin();
             for (; assignmentIt != assignmentIte && assignmentIt->getExpression().hasIntegerType(); ++assignmentIt) {
                 while (assignmentIt->getVariable() != integerIt->variable) {
                     ++integerIt;
                 }
-                int_fast64_t assignedValue = evaluator.asInt(assignmentIt->getExpression());
+                int_fast64_t assignedValue = this->evaluator.asInt(assignmentIt->getExpression());
                 STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << update << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getVariableName() << "'.");
                 newState.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
                 STORM_LOG_ASSERT(static_cast<int_fast64_t>(newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << newState.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
@@ -221,7 +303,7 @@ namespace storm {
                 // Look up commands by their indices and add them if the guard evaluates to true in the given state.
                 for (uint_fast64_t commandIndex : commandIndices) {
                     storm::prism::Command const& command = module.getCommand(commandIndex);
-                    if (evaluator.asBool(command.getGuardExpression())) {
+                    if (this->evaluator.asBool(command.getGuardExpression())) {
                         commands.push_back(command);
                     }
                 }
@@ -254,7 +336,7 @@ namespace storm {
                     if (command.isLabeled()) continue;
                     
                     // Skip the command, if it is not enabled.
-                    if (!evaluator.asBool(command.getGuardExpression())) {
+                    if (!this->evaluator.asBool(command.getGuardExpression())) {
                         continue;
                     }
                     
@@ -262,7 +344,7 @@ namespace storm {
                     Choice<ValueType>& choice = result.back();
                     
                     // Remember the command labels only if we were asked to.
-                    if (buildChoiceLabeling) {
+                    if (this->options.isBuildChoiceLabelsSet()) {
                         choice.addChoiceLabel(command.getGlobalIndex());
                     }
                     
@@ -276,18 +358,18 @@ namespace storm {
                         StateType stateIndex = stateToIdCallback(applyUpdate(state, update));
                         
                         // Update the choice by adding the probability/target state to it.
-                        ValueType probability = evaluator.asRational(update.getLikelihoodExpression());
+                        ValueType probability = this->evaluator.asRational(update.getLikelihoodExpression());
                         choice.addProbability(stateIndex, probability);
                         probabilitySum += probability;
                     }
                     
                     // Create the state-action reward for the newly created choice.
-                    for (auto const& rewardModel : selectedRewardModels) {
+                    for (auto const& rewardModel : rewardModels) {
                         ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
                         if (rewardModel.get().hasStateActionRewards()) {
                             for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
-                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                    stateActionRewardValue += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass();
+                                if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                    stateActionRewardValue += ValueType(this->evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass();
                                 }
                             }
                         }
@@ -295,7 +377,7 @@ namespace storm {
                     }
                     
                     // Check that the resulting distribution is in fact a distribution.
-                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
+                    STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
                 }
             }
             
@@ -341,9 +423,9 @@ namespace storm {
                                     // and otherwise insert it.
                                     auto targetStateIt = newTargetStates->find(newTargetState);
                                     if (targetStateIt != newTargetStates->end()) {
-                                        targetStateIt->second += stateProbabilityPair.second * evaluator.asRational(update.getLikelihoodExpression());
+                                        targetStateIt->second += stateProbabilityPair.second * this->evaluator.asRational(update.getLikelihoodExpression());
                                     } else {
-                                        newTargetStates->emplace(newTargetState, stateProbabilityPair.second * evaluator.asRational(update.getLikelihoodExpression()));
+                                        newTargetStates->emplace(newTargetState, stateProbabilityPair.second * this->evaluator.asRational(update.getLikelihoodExpression()));
                                     }
                                 }
                             }
@@ -365,7 +447,7 @@ namespace storm {
                         Choice<ValueType>& choice = result.back();
                         
                         // Remember the command labels only if we were asked to.
-                        if (buildChoiceLabeling) {
+                        if (this->options.isBuildChoiceLabelsSet()) {
                             // Add the labels of all commands to this choice.
                             for (uint_fast64_t i = 0; i < iteratorList.size(); ++i) {
                                 choice.addChoiceLabel(iteratorList[i]->get().getGlobalIndex());
@@ -381,15 +463,15 @@ namespace storm {
                         }
                         
                         // Check that the resulting distribution is in fact a distribution.
-                        STORM_LOG_THROW(!program.isDiscreteTimeModel() || !comparator.isConstant(probabilitySum) || comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
+                        STORM_LOG_THROW(!program.isDiscreteTimeModel() || !this->comparator.isConstant(probabilitySum) || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Sum of update probabilities do not some to one for some command (actually sum to " << probabilitySum << ").");
                         
                         // Create the state-action reward for the newly created choice.
-                        for (auto const& rewardModel : selectedRewardModels) {
+                        for (auto const& rewardModel : rewardModels) {
                             ValueType stateActionRewardValue = storm::utility::zero<ValueType>();
                             if (rewardModel.get().hasStateActionRewards()) {
                                 for (auto const& stateActionReward : rewardModel.get().getStateActionRewards()) {
-                                    if (stateActionReward.getActionIndex() == choice.getActionIndex() && evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
-                                        stateActionRewardValue += ValueType(evaluator.asRational(stateActionReward.getRewardValueExpression())) * choice.getTotalMass();
+                                    if (stateActionReward.getActionIndex() == choice.getActionIndex() && this->evaluator.asBool(stateActionReward.getStatePredicateExpression())) {
+                                        stateActionRewardValue += ValueType(this->evaluator.asRational(stateActionReward.getRewardValueExpression()));
                                     }
                                 }
                             }
@@ -402,7 +484,7 @@ namespace storm {
                         
                         // Now, check whether there is one more command combination to consider.
                         bool movedIterator = false;
-                        for (int_fast64_t j = iteratorList.size() - 1; j >= 0; --j) {
+                        for (int_fast64_t j = iteratorList.size() - 1; !movedIterator && j >= 0; --j) {
                             ++iteratorList[j];
                             if (iteratorList[j] != activeCommandList[j].end()) {
                                 movedIterator = true;
@@ -420,6 +502,38 @@ namespace storm {
             return result;
         }
         
+        template<typename ValueType, typename StateType>
+        storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::BitVectorHashMap<StateType> const& states, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
+            // Gather a vector of labels and their expressions.
+            std::vector<std::pair<std::string, storm::expressions::Expression>> labels;
+            if (this->options.isBuildAllLabelsSet()) {
+                for (auto const& label : program.getLabels()) {
+                    labels.push_back(std::make_pair(label.getName(), label.getStatePredicateExpression()));
+                }
+            } else {
+                for (auto const& labelName : this->options.getLabelNames()) {
+                    if (program.hasLabel(labelName)) {
+                        labels.push_back(std::make_pair(labelName, program.getLabelExpression(labelName)));
+                    } else {
+                        STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Cannot build labeling for unknown label '" << labelName << "'.");
+                    }
+                }
+            }
+            
+            return NextStateGenerator<ValueType, StateType>::label(states, initialStateIndices, deadlockStateIndices, labels);
+        }
+        
+        template<typename ValueType, typename StateType>
+        std::size_t PrismNextStateGenerator<ValueType, StateType>::getNumberOfRewardModels() const {
+            return rewardModels.size();
+        }
+        
+        template<typename ValueType, typename StateType>
+        RewardModelInformation PrismNextStateGenerator<ValueType, StateType>::getRewardModelInformation(uint64_t const& index) const {
+            storm::prism::RewardModel const& rewardModel = rewardModels[index].get();
+            return RewardModelInformation(rewardModel.getName(), rewardModel.hasStateRewards(), rewardModel.hasStateActionRewards(), rewardModel.hasTransitionRewards());
+        }
+                
         template class PrismNextStateGenerator<double>;
         template class PrismNextStateGenerator<storm::RationalFunction>;
     }

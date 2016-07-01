@@ -1,6 +1,7 @@
 #ifndef STORM_STORAGE_PRISM_RENAMINGCOMPOSITION_H_
 #define STORM_STORAGE_PRISM_RENAMINGCOMPOSITION_H_
 
+#include <memory>
 #include <string>
 #include <map>
 #include <boost/optional.hpp>

@@ -5,7 +5,7 @@
 namespace storm {
     namespace jani {
         
-        ParallelComposition::ParallelComposition(std::shared_ptr<Composition> const& leftSubcomposition, std::shared_ptr<Composition> const& rightSubcomposition, std::set<std::string> const& alphabet) : leftSubcomposition(leftSubcomposition), rightSubcomposition(rightSubcomposition) {
+        ParallelComposition::ParallelComposition(std::shared_ptr<Composition> const& leftSubcomposition, std::shared_ptr<Composition> const& rightSubcomposition, std::set<std::string> const& alphabet) : leftSubcomposition(leftSubcomposition), rightSubcomposition(rightSubcomposition), alphabet(alphabet) {
             // Intentionally left empty.
         }
         

@@ -3,6 +3,7 @@
 
 #include <set>
 #include <string>
+#include <memory>
 
 #include "src/storage/prism/Composition.h"
 

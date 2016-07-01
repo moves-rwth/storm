@@ -10,6 +10,8 @@
 #include <fstream>
 #include <boost/lexical_cast.hpp>
 
+#include "src/utility/macros.h"
+
 namespace storm {
     namespace parser {
 
@@ -104,10 +106,12 @@ namespace storm {
                     // TODO something.
                 } else if(variableStructure.at("type") == "bool") {
                     STORM_LOG_THROW(initExpr.hasBooleanType(), storm::exceptions::InvalidJaniException, "Initial value for Boolean variable " << name << " (scope: " << scopeDescription << ") should have Boolean type.");
-                    return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), initExpr);
+                    // TODO: reenable and put initExpr in the place where it belongs.
+//                    return std::make_shared<storm::jani::BooleanVariable>(name, expressionManager->declareBooleanVariable(exprManagerName), initExpr);
                 } else if(variableStructure.at("type") == "int") {
                     STORM_LOG_THROW(initExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Initial value for interger variable "  << name << " (scope: " << scopeDescription << ") should have integer type.");
-                    return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), initExpr);
+                    // TODO: reenable and put initExpr in the place where it belongs.
+//                    return std::make_shared<storm::jani::UnboundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), initExpr);
                 } else {
                     // TODO clocks.
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description " << variableStructure.at("type").dump()  << " for Variable '" << name << "' (scope: " << scopeDescription << ")");
@@ -129,7 +133,8 @@ namespace storm {
                     if(basictype == "int") {
                         STORM_LOG_THROW(lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
                         STORM_LOG_THROW(upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << name << "(scope: " << scopeDescription << ") must be integer-typed");
-                        return std::make_shared<storm::jani::BoundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), lowerboundExpr, upperboundExpr, initExpr);
+                        // TODO: reenable and put initExpr in the place where it belongs.
+//                        return std::make_shared<storm::jani::BoundedIntegerVariable>(name, expressionManager->declareIntegerVariable(exprManagerName), lowerboundExpr, upperboundExpr, initExpr);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unsupported base " << basictype << " for bounded variable " << name << "(scope: " << scopeDescription << ") ");
                     }

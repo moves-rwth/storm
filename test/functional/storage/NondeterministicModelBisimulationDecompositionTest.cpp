@@ -4,7 +4,7 @@
 #include "src/parser/PrismParser.h"
 #include "src/parser/FormulaParser.h"
 
-#include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/builder/ExplicitModelBuilder.h"
 
 #include "src/storage/bisimulation/NondeterministicModelBisimulationDecomposition.h"
 #include "src/models/sparse/Mdp.h"
@@ -14,7 +14,7 @@ TEST(NondeterministicModelBisimulationDecomposition, TwoDice) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/two_dice.nm");
 
     // Build the die model without its reward model.
-    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitPrismModelBuilder<double>(program).translate();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program, storm::generator::NextStateGeneratorOptions(false, true)).build();
 
     ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
     std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = model->as<storm::models::sparse::Mdp<double>>();

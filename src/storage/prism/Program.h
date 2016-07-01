@@ -20,6 +20,10 @@
 #include "src/utility/OsDetection.h"
 
 namespace storm {
+    namespace jani {
+        class Model;
+    }
+    
     namespace prism {
         class Program : public LocatedInformation {
         public:
@@ -195,6 +199,20 @@ namespace storm {
              */
             IntegerVariable const& getGlobalIntegerVariable(std::string const& variableName) const;
 
+            /*!
+             * Retrieves all expression variables used by this program.
+             *
+             * @return The set of expression variables used by this program.
+             */
+            std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+            
+            /*!
+             * Retrieves a list of expressions that characterize the legal ranges of all variables.
+             *
+             * @return A list of expressions that characterize the legal ranges of all variables.
+             */
+            std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
             /*!
              * Retrieves the number of global boolean variables of the program.
              *
@@ -550,6 +568,11 @@ namespace storm {
             uint_fast64_t numberOfActions() const;
 
             uint_fast64_t largestActionIndex() const;
+            
+            /*!
+             * Converts the PRISM model into an equivalent JANI model.
+             */
+            storm::jani::Model toJani(bool allVariablesGlobal = false) const;
             
         private:
             /*!

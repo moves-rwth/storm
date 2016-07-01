@@ -15,7 +15,12 @@ namespace storm {
             /*!
              * Creates a constant.
              */
-            Constant(std::string const& name, boost::optional<storm::expressions::Expression> const& expression = boost::none);
+            Constant(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> const& expression = boost::none);
+            
+            /*!
+             * Retrieves the name of the constant.
+             */
+            std::string const& getName() const;
             
             /*!
              * Retrieves whether the constant is defined in the sense that it has a defining expression.
@@ -46,6 +51,16 @@ namespace storm {
              * Retrieves whether the constant is a real constant.
              */
             bool isRealConstant() const;
+            
+            /*!
+             * Retrieves the expression variable associated with this constant.
+             */
+            storm::expressions::Variable const& getExpressionVariable() const;
+            
+            /*!
+             * Retrieves the expression that defines this constant (if any).
+             */
+            storm::expressions::Expression const& getExpression() const;
             
         private:
             // The name of the constant.
