@@ -51,14 +51,16 @@ namespace storm {
 
             parsedStructure << file;
             file.close();
-
         }
 
         storm::jani::Model JaniParser::parseModel() {
+            //jani-version
             STORM_LOG_THROW(parsedStructure.count("jani-version") == 1, storm::exceptions::InvalidJaniException, "Jani-version must be given exactly once.");
             uint64_t version = getUnsignedInt(parsedStructure.at("jani-version"), "jani version");
+            //name
             STORM_LOG_THROW(parsedStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "A model must have a (single) name");
             std::string name = getString(parsedStructure.at("name"), "model name");
+            //model type
             STORM_LOG_THROW(parsedStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "A type must be given exactly once");
             std::string modeltypestring = getString(parsedStructure.at("type"), "type of the model");
             storm::jani::ModelType type = storm::jani::getModelType(modeltypestring);
@@ -91,7 +93,7 @@ namespace storm {
             // TODO store prefix in variable.
             std::string exprManagerName = pref + name;
             STORM_LOG_THROW(variableStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Variable '" + name + "' (scope: " + scopeDescription + ") must have a (single) type-declaration.");
-            // TODO DEPRECATED make initial value optional?  --- still rpesent in files, so keep it for now
+            // TODO DEPRECATED make initial value optional?  --- still present in files, so keep it for now
             STORM_LOG_THROW(variableStructure.count("initial-value") == 1, storm::exceptions::InvalidJaniException, "Initial value for variable '" + name +  "' +  (scope: " + scopeDescription + ") must be given once.");
             // Read initial value before; that makes creation later on a bit easier, and has as an additional benefit that we do not need to check whether the variable occurs also on the assignment.
             storm::expressions::Expression initExpr = parseExpression(variableStructure.at("initial-value"), "Initial value of variable " + name + " (scope: " + scopeDescription + ")");
@@ -167,7 +169,7 @@ namespace storm {
                     return expressionManager->boolean(false);
                 }
             } else if(expressionStructure.is_number_integer()) {
-                return expressionManager->integer(expressionStructure.get<uint64_t>());
+                return expressionManager->integer(expressionStructure.get<int64_t>());
             } else if(expressionStructure.is_number_float()) {
                 // For now, just take the double.
                 // TODO make this a rational number
@@ -423,7 +425,18 @@ namespace storm {
                     assert(probExpr.isInitialized());
                     STORM_LOG_THROW(probExpr.hasRationalType(), storm::exceptions::InvalidJaniException, "Probability expr " << probExpr << " does not have rational type." );
                     // assignments
+                    unsigned assignmentDeclCount = destEntry.count("assignments");
+                    STORM_LOG_THROW(assignmentDeclCount < 2, storm::exceptions::InvalidJaniException, "Destination in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "' has multiple assignment lists");
+                    for(auto const& assignmentEntry : destEntry.at("assignments")) {
+                        // ref
+                        STORM_LOG_THROW(assignmentEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one ref field");
+                        std::string refstring = getString(assignmentEntry.at("ref"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
 
+                        // TODO check types
+                        // value
+                        STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one value field");
+                        storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
+                    }
                 }
             }
 
