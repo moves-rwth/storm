@@ -44,7 +44,7 @@ constructor's parameters as template arguments and wraps the corresponding
 constructor (see the :ref:`custom_constructors` section for details). An
 interactive Python session demonstrating this example is shown below:
 
-.. code-block:: python
+.. code-block:: pycon
 
     % python
     >>> import example
@@ -73,7 +73,7 @@ Binding lambda functions
 
 Note how ``print(p)`` produced a rather useless summary of our data structure in the example above:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> print(p)
     <example.Pet object at 0x10cd98060>
@@ -99,10 +99,12 @@ Lambda function instead:
 Both stateless [#f1]_ and stateful lambda closures are supported by pybind11.
 With the above change, the same Python code now produces the following output:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> print(p)
     <example.Pet named 'Molly'>
+
+.. _properties:
 
 Instance and static fields
 ==========================
@@ -120,7 +122,7 @@ method also exists for ``const`` fields.
 
 This makes it possible to write
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> p = example.Pet('Molly')
     >>> p.name
@@ -160,7 +162,8 @@ the setter and getter functions:
     Similar functions :func:`class_::def_readwrite_static`,
     :func:`class_::def_readonly_static` :func:`class_::def_property_static`,
     and :func:`class_::def_property_readonly_static` are provided for binding
-    static variables and properties.
+    static variables and properties. Please also see the section on
+    :ref:`static_properties` in the advanced part of the documentation.
 
 .. _inheritance:
 
@@ -212,7 +215,7 @@ Alternatively, we can also assign a name to the previously bound ``Pet``
 Functionality-wise, both approaches are completely equivalent. Afterwards,
 instances will expose fields and methods of both types:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> p = example.Dog('Molly')
     >>> p.name
@@ -253,7 +256,7 @@ sequence.
 
 The overload signatures are also visible in the method's docstring:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> help(example.Pet)
 
@@ -319,7 +322,7 @@ constructor. The :func:`enum_::export_values` function exports the enum entries
 into the parent scope, which should be skipped for newer C++11-style strongly
 typed enums.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> p = Pet('Lucy', Pet.Cat)
     >>> p.type

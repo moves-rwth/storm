@@ -39,10 +39,13 @@ public:
     inline detail::accessor attr(const char *key) const;
     inline pybind11::str str() const;
     template <typename T> T cast() const;
-    template <typename ... Args>
+    template <return_value_policy policy = return_value_policy::automatic_reference, typename ... Args>
+    #if __cplusplus > 201103L
     [[deprecated("call(...) was deprecated in favor of operator()(...)")]]
+    #endif
     object call(Args&&... args) const;
-    template <typename ... Args> object operator()(Args&&... args) const;
+    template <return_value_policy policy = return_value_policy::automatic_reference, typename ... Args>
+    object operator()(Args&&... args) const;
     inline object operator()(detail::args_proxy args) const;
     inline object operator()(detail::args_proxy f_args, detail::kwargs_proxy kwargs) const;
     operator bool() const { return m_ptr != nullptr; }
@@ -323,10 +326,10 @@ public:
     PYBIND11_OBJECT_DEFAULT(iterable, object, detail::PyIterable_Check)
 };
 
-inline detail::accessor handle::operator[](handle key) const { return detail::accessor(ptr(), key.ptr(), false); }
-inline detail::accessor handle::operator[](const char *key) const { return detail::accessor(ptr(), key, false); }
-inline detail::accessor handle::attr(handle key) const { return detail::accessor(ptr(), key.ptr(), true); }
-inline detail::accessor handle::attr(const char *key) const { return detail::accessor(ptr(), key, true); }
+inline detail::accessor handle::operator[](handle key) const { return detail::accessor(*this, key, false); }
+inline detail::accessor handle::operator[](const char *key) const { return detail::accessor(*this, key, false); }
+inline detail::accessor handle::attr(handle key) const { return detail::accessor(*this, key, true); }
+inline detail::accessor handle::attr(const char *key) const { return detail::accessor(*this, key, true); }
 inline iterator handle::begin() const { return iterator(PyObject_GetIter(ptr()), false); }
 inline iterator handle::end() const { return iterator(nullptr, false); }
 inline detail::args_proxy handle::operator*() const { return detail::args_proxy(*this); }
@@ -336,7 +339,7 @@ public:
     PYBIND11_OBJECT_DEFAULT(str, object, detail::PyUnicode_Check_Permissive)
 
     str(const std::string &s)
-        : object(PyUnicode_FromStringAndSize(s.c_str(), s.length()), false) {
+        : object(PyUnicode_FromStringAndSize(s.c_str(), (ssize_t) s.length()), false) {
         if (!m_ptr) pybind11_fail("Could not allocate string object!");
     }
 
@@ -352,7 +355,7 @@ public:
         int err = PYBIND11_BYTES_AS_STRING_AND_SIZE(temp.ptr(), &buffer, &length);
         if (err == -1)
             pybind11_fail("Unable to extract string contents! (invalid type)");
-        return std::string(buffer, length);
+        return std::string(buffer, (size_t) length);
     }
 };
 
@@ -370,7 +373,7 @@ public:
     PYBIND11_OBJECT_DEFAULT(bytes, object, PYBIND11_BYTES_CHECK)
 
     bytes(const std::string &s)
-        : object(PYBIND11_BYTES_FROM_STRING_AND_SIZE(s.data(), s.size()), false) {
+        : object(PYBIND11_BYTES_FROM_STRING_AND_SIZE(s.data(), (ssize_t) s.size()), false) {
         if (!m_ptr) pybind11_fail("Could not allocate bytes object!");
     }
 
@@ -380,7 +383,7 @@ public:
         int err = PYBIND11_BYTES_AS_STRING_AND_SIZE(m_ptr, &buffer, &length);
         if (err == -1)
             pybind11_fail("Unable to extract bytes contents!");
-        return std::string(buffer, length);
+        return std::string(buffer, (size_t) length);
     }
 };
 
@@ -463,9 +466,12 @@ public:
         m_ptr = PySlice_New(start.ptr(), stop.ptr(), step.ptr());
         if (!m_ptr) pybind11_fail("Could not allocate slice object!");
     }
-    bool compute(ssize_t length, ssize_t *start, ssize_t *stop, ssize_t *step, ssize_t *slicelength) const {
-        return PySlice_GetIndicesEx((PYBIND11_SLICE_OBJECT *) m_ptr, length,
-                                    start, stop, step, slicelength) == 0;
+    bool compute(size_t length, size_t *start, size_t *stop, size_t *step,
+                 size_t *slicelength) const {
+        return PySlice_GetIndicesEx((PYBIND11_SLICE_OBJECT *) m_ptr,
+                                    (ssize_t) length, (ssize_t *) start,
+                                    (ssize_t *) stop, (ssize_t *) step,
+                                    (ssize_t *) slicelength) == 0;
     }
 };
 
@@ -501,7 +507,7 @@ public:
         if (!m_ptr) pybind11_fail("Could not allocate dict object!");
     }
     size_t size() const { return (size_t) PyDict_Size(m_ptr); }
-    detail::dict_iterator begin() const { return (++detail::dict_iterator(ptr(), 0)); }
+    detail::dict_iterator begin() const { return (++detail::dict_iterator(*this, 0)); }
     detail::dict_iterator end() const { return detail::dict_iterator(); }
     void clear() const { PyDict_Clear(ptr()); }
 };

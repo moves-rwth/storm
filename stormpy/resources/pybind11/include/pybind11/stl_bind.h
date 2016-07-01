@@ -135,6 +135,8 @@ template <typename T, typename Allocator = std::allocator<T>, typename holder_ty
 pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::module &m, std::string const &name, Args&&... args) {
     using Vector = std::vector<T, Allocator>;
     using SizeType = typename Vector::size_type;
+    using DiffType = typename Vector::difference_type;
+    using ItType   = typename Vector::iterator;
     using Class_ = pybind11::class_<Vector, holder_type>;
 
     Class_ cl(m, name.c_str(), std::forward<Args>(args)...);
@@ -161,7 +163,9 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
             throw;
         }
     });
-    cl.def("append", (void (Vector::*) (const T &)) & Vector::push_back,
+
+    cl.def("append",
+           [](Vector &v, const T &value) { v.push_back(value); },
            arg("x"),
            "Add an item to the end of the list");
 
@@ -176,7 +180,7 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
 
     cl.def("insert",
         [](Vector &v, SizeType i, const T &x) {
-            v.insert(v.begin() + i, x);
+            v.insert(v.begin() + (DiffType) i, x);
         },
         arg("i") , arg("x"),
         "Insert an item at a given position."
@@ -198,7 +202,7 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
             if (i >= v.size())
                 throw pybind11::index_error();
             T t = v[i];
-            v.erase(v.begin() + i);
+            v.erase(v.begin() + (DiffType) i);
             return t;
         },
         arg("i"),
@@ -213,7 +217,7 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
     );
 
     cl.def("__getitem__",
-        [](const Vector &v, SizeType i) {
+        [](const Vector &v, SizeType i) -> T {
             if (i >= v.size())
                 throw pybind11::index_error();
             return v[i];
@@ -232,7 +236,7 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
         [](Vector &v, SizeType i) {
             if (i >= v.size())
                 throw pybind11::index_error();
-            v.erase(v.begin() + i);
+            v.erase(v.begin() + typename Vector::difference_type(i));
         },
         "Delete list elements using a slice object"
     );
@@ -241,7 +245,7 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
 
     cl.def("__iter__",
         [](Vector &v) {
-            return pybind11::make_iterator(v.begin(), v.end());
+            return pybind11::make_iterator<ItType, T>(v.begin(), v.end());
         },
         pybind11::keep_alive<0, 1>() /* Essential: keep list alive while iterator exists */
     );
@@ -249,7 +253,7 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
     /// Slicing protocol
     cl.def("__getitem__",
         [](const Vector &v, slice slice) -> Vector * {
-            ssize_t start, stop, step, slicelength;
+            size_t start, stop, step, slicelength;
 
             if (!slice.compute(v.size(), &start, &stop, &step, &slicelength))
                 throw pybind11::error_already_set();
@@ -257,7 +261,7 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
             Vector *seq = new Vector();
             seq->reserve((size_t) slicelength);
 
-            for (int i=0; i<slicelength; ++i) {
+            for (size_t i=0; i<slicelength; ++i) {
                 seq->push_back(v[start]);
                 start += step;
             }
@@ -269,14 +273,14 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
 
     cl.def("__setitem__",
         [](Vector &v, slice slice,  const Vector &value) {
-            ssize_t start, stop, step, slicelength;
+            size_t start, stop, step, slicelength;
             if (!slice.compute(v.size(), &start, &stop, &step, &slicelength))
                 throw pybind11::error_already_set();
 
-            if ((size_t) slicelength != value.size())
+            if (slicelength != value.size())
                 throw std::runtime_error("Left and right hand size of slice assignment have different sizes!");
 
-            for (int i=0; i<slicelength; ++i) {
+            for (size_t i=0; i<slicelength; ++i) {
                 v[start] = value[i];
                 start += step;
             }
@@ -286,16 +290,16 @@ pybind11::class_<std::vector<T, Allocator>, holder_type> bind_vector(pybind11::m
 
     cl.def("__delitem__",
         [](Vector &v, slice slice) {
-            ssize_t start, stop, step, slicelength;
+            size_t start, stop, step, slicelength;
 
             if (!slice.compute(v.size(), &start, &stop, &step, &slicelength))
                 throw pybind11::error_already_set();
 
             if (step == 1 && false) {
-                v.erase(v.begin() + start, v.begin() + start + slicelength);
+                v.erase(v.begin() + (DiffType) start, v.begin() + DiffType(start + slicelength));
             } else {
-                for (ssize_t i = 0; i < slicelength; ++i) {
-                    v.erase(v.begin() + start);
+                for (size_t i = 0; i < slicelength; ++i) {
+                    v.erase(v.begin() + DiffType(start));
                     start += step - 1;
                 }
             }

@@ -18,23 +18,29 @@ template <typename T> struct arg_t;
 
 /// Annotation for keyword arguments
 struct arg {
-    arg(const char *name) : name(name) { }
-    template <typename T> arg_t<T> operator=(const T &value);
-    template <typename T, size_t N> arg_t<const T *> operator=(T const (&value)[N]);
+    constexpr explicit arg(const char *name) : name(name) { }
+
+    template <typename T>
+    constexpr arg_t<T> operator=(const T &value) const { return {name, value}; }
+    template <typename T, size_t N>
+    constexpr arg_t<const T *> operator=(T const (&value)[N]) const {
+        return operator=((const T *) value);
+    }
+
     const char *name;
 };
 
 /// Annotation for keyword arguments with default values
 template <typename T> struct arg_t : public arg {
-    arg_t(const char *name, const T &value, const char *descr = nullptr)
+    constexpr arg_t(const char *name, const T &value, const char *descr = nullptr)
         : arg(name), value(value), descr(descr) { }
     T value;
     const char *descr;
 };
 
-template <typename T> arg_t<T> arg::operator=(const T &value) { return arg_t<T>(name, value); }
-template <typename T, size_t N> arg_t<const T *> arg::operator=(T const (&value)[N]) {
-    return operator=((const T *) value);
+inline namespace literals {
+/// String literal version of arg
+constexpr arg operator"" _a(const char *name, size_t) { return arg(name); }
 }
 
 /// Annotation for methods
@@ -65,6 +71,7 @@ enum op_type : int;
 struct undefined_t;
 template <op_id id, op_type ot, typename L = undefined_t, typename R = undefined_t> struct op_;
 template <typename... Args> struct init;
+template <typename... Args> struct init_alias;
 inline void keep_alive_impl(int Nurse, int Patient, handle args, handle ret);
 
 /// Internal data structure which holds metadata about a keyword argument
@@ -313,6 +320,19 @@ template <typename... Args> struct process_attributes {
         ignore_unused(unused);
     }
 };
+
+/// Compile-time integer sum
+constexpr size_t constexpr_sum() { return 0; }
+template <typename T, typename... Ts>
+constexpr size_t constexpr_sum(T n, Ts... ns) { return n + constexpr_sum(ns...); }
+
+/// Check the number of named arguments at compile time
+template <typename... Extra,
+          size_t named = constexpr_sum(std::is_base_of<arg, Extra>::value...),
+          size_t self  = constexpr_sum(std::is_same<is_method, Extra>::value...)>
+constexpr bool expected_num_args(size_t nargs) {
+    return named == 0 || (self + named) == nargs;
+}
 
 NAMESPACE_END(detail)
 NAMESPACE_END(pybind11)

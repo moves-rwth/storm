@@ -471,13 +471,13 @@ public:
         ssize_t length;
         int err = PYBIND11_BYTES_AS_STRING_AND_SIZE(load_src.ptr(), &buffer, &length);
         if (err == -1) { PyErr_Clear(); return false; }  // TypeError
-        value = std::string(buffer, length);
+        value = std::string(buffer, (size_t) length);
         success = true;
         return true;
     }
 
     static handle cast(const std::string &src, return_value_policy /* policy */, handle /* parent */) {
-        return PyUnicode_FromStringAndSize(src.c_str(), src.length());
+        return PyUnicode_FromStringAndSize(src.c_str(), (ssize_t) src.length());
     }
 
     PYBIND11_TYPE_CASTER(std::string, _(PYBIND11_STRING_NAME));
@@ -520,17 +520,17 @@ public:
         if (temp) {
             int err = PYBIND11_BYTES_AS_STRING_AND_SIZE(temp.ptr(), (char **) &buffer, &length);
             if (err == -1) { buffer = nullptr; }  // TypeError
-            length = length / sizeof(wchar_t) - 1; ++buffer; // Skip BOM
+            length = length / (ssize_t) sizeof(wchar_t) - 1; ++buffer; // Skip BOM
         }
 #endif
         if (!buffer) { PyErr_Clear(); return false; }
-        value = std::wstring(buffer, length);
+        value = std::wstring(buffer, (size_t) length);
         success = true;
         return true;
     }
 
     static handle cast(const std::wstring &src, return_value_policy /* policy */, handle /* parent */) {
-        return PyUnicode_FromWideChar(src.c_str(), src.length());
+        return PyUnicode_FromWideChar(src.c_str(), (ssize_t) src.length());
     }
 
     PYBIND11_TYPE_CASTER(std::wstring, _(PYBIND11_STRING_NAME));
@@ -570,7 +570,7 @@ public:
 
     static handle cast(const wchar_t *src, return_value_policy /* policy */, handle /* parent */) {
         if (src == nullptr) return handle(Py_None).inc_ref();
-        return PyUnicode_FromWideChar(src, wcslen(src));
+        return PyUnicode_FromWideChar(src, (ssize_t) wcslen(src));
     }
 
     static handle cast(wchar_t src, return_value_policy /* policy */, handle /* parent */) {
@@ -660,7 +660,7 @@ public:
         std::get<1>(value).load(kwargs, convert);
         return true;
     }
- 
+
     static handle cast(const type &src, return_value_policy policy, handle parent) {
         return cast(src, policy, parent, typename make_index_sequence<size>::type());
     }
@@ -842,16 +842,18 @@ template <return_value_policy policy = return_value_policy::automatic_reference,
     return result;
 }
 
-template <typename... Args> object handle::operator()(Args&&... args) const {
-    tuple args_tuple = pybind11::make_tuple(std::forward<Args>(args)...);
+template <return_value_policy policy,
+          typename... Args> object handle::operator()(Args&&... args) const {
+    tuple args_tuple = pybind11::make_tuple<policy>(std::forward<Args>(args)...);
     object result(PyObject_CallObject(m_ptr, args_tuple.ptr()), false);
     if (!result)
         throw error_already_set();
     return result;
 }
 
-template <typename... Args> object handle::call(Args &&... args) const {
-    return operator()(std::forward<Args>(args)...);
+template <return_value_policy policy,
+          typename... Args> object handle::call(Args &&... args) const {
+    return operator()<policy>(std::forward<Args>(args)...);
 }
 
 inline object handle::operator()(detail::args_proxy args) const {

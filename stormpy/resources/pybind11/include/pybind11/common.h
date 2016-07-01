@@ -31,7 +31,7 @@
 #endif
 
 #define PYBIND11_VERSION_MAJOR 1
-#define PYBIND11_VERSION_MINOR 8
+#define PYBIND11_VERSION_MINOR 9
 
 /// Include Python header, disable linking to pythonX_d.lib on Windows in debug mode
 #if defined(_MSC_VER)
@@ -116,7 +116,7 @@
 extern "C" {
     struct _Py_atomic_address { void *value; };
     PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
-};
+}
 #endif
 
 #define PYBIND11_TRY_NEXT_OVERLOAD ((PyObject *) 1) // special failure return code
@@ -151,7 +151,9 @@ enum class return_value_policy : uint8_t {
     automatic = 0,
 
     /** As above, but use policy return_value_policy::reference when the return
-        value is a pointer. You probably won't need to use this. */
+        value is a pointer. This is the default conversion policy for function
+        arguments when calling Python functions manually from C++ code (i.e. via
+        handle::operator()). You probably won't need to use this. */
     automatic_reference,
 
     /** Reference an existing object (i.e. do not create a new copy) and take
@@ -197,22 +199,23 @@ struct buffer_info {
     size_t itemsize;             // Size of individual items in bytes
     size_t size;                 // Total number of entries
     std::string format;          // For homogeneous buffers, this should be set to format_descriptor<T>::value
-    int ndim;                    // Number of dimensions
+    size_t ndim;                 // Number of dimensions
     std::vector<size_t> shape;   // Shape of the tensor (1 entry per dimension)
     std::vector<size_t> strides; // Number of entries between adjacent entries (for each per dimension)
 
     buffer_info() : ptr(nullptr), view(nullptr) {}
-    buffer_info(void *ptr, size_t itemsize, const std::string &format, int ndim,
+    buffer_info(void *ptr, size_t itemsize, const std::string &format, size_t ndim,
                 const std::vector<size_t> &shape, const std::vector<size_t> &strides)
         : ptr(ptr), itemsize(itemsize), size(1), format(format),
           ndim(ndim), shape(shape), strides(strides) {
-        for (int i=0; i<ndim; ++i) size *= shape[i];
+        for (size_t i = 0; i < ndim; ++i)
+            size *= shape[i];
     }
 
     buffer_info(Py_buffer *view)
-        : ptr(view->buf), itemsize(view->itemsize), size(1), format(view->format),
-          ndim(view->ndim), shape(view->ndim), strides(view->ndim), view(view) {
-        for (int i = 0; i < view->ndim; ++i) {
+        : ptr(view->buf), itemsize((size_t) view->itemsize), size(1), format(view->format),
+          ndim((size_t) view->ndim), shape((size_t) view->ndim), strides((size_t) view->ndim), view(view) {
+        for (size_t i = 0; i < (size_t) view->ndim; ++i) {
             shape[i] = (size_t) view->shape[i];
             strides[i] = (size_t) view->strides[i];
             size *= shape[i];
@@ -262,7 +265,7 @@ struct internals {
     std::unordered_map<const void *, void*> registered_instances;    // void * -> PyObject*
     std::unordered_set<std::pair<const PyObject *, const char *>, overload_hash> inactive_overload_cache;
 #if defined(WITH_THREAD)
-    int tstate = 0;
+    decltype(PyThread_create_key()) tstate = 0; // Usually an int but a long on Cygwin64 with Python 3.x
     PyInterpreterState *istate = nullptr;
 #endif
 };

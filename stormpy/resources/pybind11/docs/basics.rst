@@ -128,7 +128,7 @@ Assuming that the created file :file:`example.so` (:file:`example.pyd` on Window
 is located in the current directory, the following interactive Python session
 shows how to load and execute the example.
 
-.. code-block:: python
+.. code-block:: pycon
 
     $ python
     Python 2.7.10 (default, Aug 22 2015, 20:33:39)
@@ -157,7 +157,7 @@ metadata into :func:`module::def`. With this modified binding code, we can now
 call the function using keyword arguments, which is a more readable alternative
 particularly for functions taking many parameters:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> import example
     >>> example.add(i=1, j=2)
@@ -165,7 +165,7 @@ particularly for functions taking many parameters:
 
 The keyword names also appear in the function signatures within the documentation.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> help(example)
 
@@ -176,6 +176,21 @@ The keyword names also appear in the function signatures within the documentatio
             Signature : (i: int, j: int) -> int
 
             A function which adds two numbers
+
+A shorter notation for named arguments is also available:
+
+.. code-block:: cpp
+    
+    // regular notation
+    m.def("add1", &add, py::arg("i"), py::arg("j"));
+    // shorthand
+    using namespace pybind11::literals;
+    m.def("add2", &add, "i"_a, "j"_a);
+
+The :var:`_a` suffix forms a C++11 literal which is equivalent to :class:`arg`. 
+Note that the literal operator must first be made visible with the directive 
+``using namespace pybind11::literals``. This does not bring in anything else 
+from the ``pybind11`` namespace except for literals.
 
 .. _default_args:
 
@@ -201,7 +216,7 @@ using an extension of :class:`arg`:
 
 The default values also appear within the documentation.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> help(example)
 
@@ -212,6 +227,15 @@ The default values also appear within the documentation.
             Signature : (i: int = 1, j: int = 2) -> int
 
             A function which adds two numbers
+
+The shorthand notation is also available for default arguments:
+
+.. code-block:: cpp
+    
+    // regular notation
+    m.def("add1", &add, py::arg("i") = 1, py::arg("j") = 2);
+    // shorthand
+    m.def("add2", &add, "i"_a=1, "j"_a=2);
 
 .. _supported_types:
 
@@ -283,4 +307,3 @@ as arguments and return values, refer to the section on binding :ref:`classes`.
 
 .. [#f1] In practice, implementation and binding code will generally be located
          in separate files.
-
