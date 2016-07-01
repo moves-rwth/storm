@@ -10,17 +10,15 @@
 
 
 namespace storm {
-        namespace expressions {
-            class Variable;
-        }
+    namespace expressions {
+        class Variable;
+    }
 }
-
-
 
 namespace storm {
     namespace prism {
         class InitialConstruct : public LocatedInformation {
-            public:
+        public:
             /*!
              * Creates an initial construct with the given expression.
              *

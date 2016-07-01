@@ -6,37 +6,24 @@
 #include <iostream>
 #include <set>
 
+#include <boost/any.hpp>
+
+#include "src/storage/expressions/Variable.h"
+#include "src/storage/expressions/Expression.h"
+
+#include "src/logic/FormulasForwardDeclarations.h"
+
 namespace storm {
     namespace logic {
-        // Forward-declare all formula classes.
-        class PathFormula;
-        class StateFormula;
-        class BinaryStateFormula;
-        class UnaryStateFormula;
-        class BinaryBooleanStateFormula;
-        class UnaryBooleanStateFormula;
-        class BooleanLiteralFormula;
-        class AtomicExpressionFormula;
-        class AtomicLabelFormula;
-        class UntilFormula;
-        class BoundedUntilFormula;
-        class EventuallyFormula;
-        class GloballyFormula;
-        class BinaryPathFormula;
-        class UnaryPathFormula;
-        class ConditionalPathFormula;
-        class NextFormula;
-        class LongRunAverageOperatorFormula;
-        class ExpectedTimeOperatorFormula;
-        class RewardPathFormula;
-        class CumulativeRewardFormula;
-        class InstantaneousRewardFormula;
-        class ReachabilityRewardFormula;
-        class ProbabilityOperatorFormula;
-        class RewardOperatorFormula;
 
-        // Also foward-declare base model checker class.
-        class ModelChecker;
+        // Forward-declare visitor for accept() method.
+        class FormulaVisitor;
+
+        // Forward-declare fragment specification for isInFragment() method.
+        class FragmentSpecification;
+        
+        // Forward-declare formula information class for info() method.
+        class FormulaInformation;
         
         class Formula : public std::enable_shared_from_this<Formula const> {
         public:
@@ -46,49 +33,65 @@ namespace storm {
             };
             
             friend std::ostream& operator<<(std::ostream& out, Formula const& formula);
-            
-            // Methods for querying the exact formula type.
+
+            // Basic formula types.
             virtual bool isPathFormula() const;
             virtual bool isStateFormula() const;
-            virtual bool isBinaryStateFormula() const;
-            virtual bool isUnaryStateFormula() const;
+            virtual bool isConditionalProbabilityFormula() const;
+            virtual bool isConditionalRewardFormula() const;
+            
+            virtual bool isProbabilityPathFormula() const;
+            virtual bool isRewardPathFormula() const;
+            virtual bool isTimePathFormula() const;
+
             virtual bool isBinaryBooleanStateFormula() const;
             virtual bool isUnaryBooleanStateFormula() const;
+
+            // Operator formulas.
+            virtual bool isOperatorFormula() const;
+            virtual bool isLongRunAverageOperatorFormula() const;
+            virtual bool isTimeOperatorFormula() const;
+            virtual bool isProbabilityOperatorFormula() const;
+            virtual bool isRewardOperatorFormula() const;
+
+            // Atomic state formulas.
             virtual bool isBooleanLiteralFormula() const;
             virtual bool isTrueFormula() const;
             virtual bool isFalseFormula() const;
             virtual bool isAtomicExpressionFormula() const;
             virtual bool isAtomicLabelFormula() const;
+
+            // Probability path formulas.
+            virtual bool isNextFormula() const;
             virtual bool isUntilFormula() const;
             virtual bool isBoundedUntilFormula() const;
-            virtual bool isEventuallyFormula() const;
             virtual bool isGloballyFormula() const;
-            virtual bool isBinaryPathFormula() const;
-            virtual bool isUnaryPathFormula() const;
-            virtual bool isConditionalPathFormula() const;
-            virtual bool isNextFormula() const;
-            virtual bool isLongRunAverageOperatorFormula() const;
-            virtual bool isExpectedTimeOperatorFormula() const;
-            virtual bool isRewardPathFormula() const;
+            virtual bool isEventuallyFormula() const;
+            virtual bool isReachabilityProbabilityFormula() const;
+
+            // Reward formulas.
             virtual bool isCumulativeRewardFormula() const;
             virtual bool isInstantaneousRewardFormula() const;
             virtual bool isReachabilityRewardFormula() const;
-            virtual bool isProbabilityOperatorFormula() const;
-            virtual bool isRewardOperatorFormula() const;
+            virtual bool isLongRunAverageRewardFormula() const;
+            
+            // Expected time formulas.
+            virtual bool isReachabilityTimeFormula() const;
+            
+            // Type checks for abstract intermediate classes.
+            virtual bool isBinaryPathFormula() const;
+            virtual bool isBinaryStateFormula() const;
+            virtual bool isUnaryPathFormula() const;
+            virtual bool isUnaryStateFormula() const;
 
-            virtual bool isPctlPathFormula() const;
-            virtual bool isPctlStateFormula() const;
-            virtual bool isCslPathFormula() const;
-            virtual bool isCslStateFormula() const;
-            virtual bool isPltlFormula() const;
-            virtual bool isLtlFormula() const;
-            virtual bool isPropositionalFormula() const;
-            virtual bool containsBoundedUntilFormula() const;
-            virtual bool containsNextFormula() const;
-            virtual bool containsProbabilityOperator() const;
-            virtual bool containsNestedProbabilityOperators() const;
-            virtual bool containsRewardOperator() const;
-            virtual bool containsNestedRewardOperators() const;
+            // Accessors for the return type of a formula.
+            virtual bool hasQualitativeResult() const;
+            virtual bool hasQuantitativeResult() const;
+            
+            bool isInFragment(FragmentSpecification const& fragment) const;
+            FormulaInformation info() const;
+            
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data = boost::any()) const = 0;
             
             static std::shared_ptr<Formula const> getTrueFormula();
             
@@ -128,6 +131,15 @@ namespace storm {
             EventuallyFormula& asEventuallyFormula();
             EventuallyFormula const& asEventuallyFormula() const;
             
+            EventuallyFormula& asReachabilityProbabilityFormula();
+            EventuallyFormula const& asReachabilityProbabilityFormula() const;
+            
+            EventuallyFormula& asReachabilityRewardFormula();
+            EventuallyFormula const& asReachabilityRewardFormula() const;
+
+            EventuallyFormula& asReachabilityTimeFormula();
+            EventuallyFormula const& asReachabilityTimeFormula() const;
+            
             GloballyFormula& asGloballyFormula();
             GloballyFormula const& asGloballyFormula() const;
             
@@ -137,8 +149,8 @@ namespace storm {
             UnaryPathFormula& asUnaryPathFormula();
             UnaryPathFormula const& asUnaryPathFormula() const;
             
-            ConditionalPathFormula& asConditionalPathFormula();
-            ConditionalPathFormula const& asConditionalPathFormula() const;
+            ConditionalFormula& asConditionalFormula();
+            ConditionalFormula const& asConditionalFormula() const;
             
             NextFormula& asNextFormula();
             NextFormula const& asNextFormula() const;
@@ -146,11 +158,8 @@ namespace storm {
             LongRunAverageOperatorFormula& asLongRunAverageOperatorFormula();
             LongRunAverageOperatorFormula const& asLongRunAverageOperatorFormula() const;
 
-            ExpectedTimeOperatorFormula& asExpectedTimeOperatorFormula();
-            ExpectedTimeOperatorFormula const& asExpectedTimeOperatorFormula() const;
-            
-            RewardPathFormula& asRewardPathFormula();
-            RewardPathFormula const& asRewardPathFormula() const;
+            TimeOperatorFormula& asTimeOperatorFormula();
+            TimeOperatorFormula const& asTimeOperatorFormula() const;
             
             CumulativeRewardFormula& asCumulativeRewardFormula();
             CumulativeRewardFormula const& asCumulativeRewardFormula() const;
@@ -158,14 +167,17 @@ namespace storm {
             InstantaneousRewardFormula& asInstantaneousRewardFormula();
             InstantaneousRewardFormula const& asInstantaneousRewardFormula() const;
             
-            ReachabilityRewardFormula& asReachabilityRewardFormula();
-            ReachabilityRewardFormula const& asReachabilityRewardFormula() const;
+            LongRunAverageRewardFormula& asLongRunAverageRewardFormula();
+            LongRunAverageRewardFormula const& asLongRunAverageRewardFormula() const;
             
             ProbabilityOperatorFormula& asProbabilityOperatorFormula();
             ProbabilityOperatorFormula const& asProbabilityOperatorFormula() const;
             
             RewardOperatorFormula& asRewardOperatorFormula();
             RewardOperatorFormula const& asRewardOperatorFormula() const;
+            
+            OperatorFormula& asOperatorFormula();
+            OperatorFormula const& asOperatorFormula() const;
             
             std::vector<std::shared_ptr<AtomicExpressionFormula const>> getAtomicExpressionFormulas() const;
             std::vector<std::shared_ptr<AtomicLabelFormula const>> getAtomicLabelFormulas() const;
@@ -174,11 +186,25 @@ namespace storm {
             std::shared_ptr<Formula const> asSharedPointer();
             std::shared_ptr<Formula const> asSharedPointer() const;
             
+            std::shared_ptr<Formula> substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+            std::shared_ptr<Formula> substitute(std::map<std::string, storm::expressions::Expression> const& labelSubstitution) const;
+
+            /*!
+             * Takes the formula and converts it to an equivalent expression. The formula may contain atomic labels, but
+             * then the given mapping must provide a corresponding expression. Other than that, only atomic expression
+             * formulas and boolean connectives may appear in the formula.
+             *
+             * @param manager The manager responsible for the expressions in the formula and the resulting expression.
+             * @param A mapping from labels to the expressions that define them.
+             * @return An equivalent expression.
+             */
+            storm::expressions::Expression toExpression(storm::expressions::ExpressionManager const& manager, std::map<std::string, storm::expressions::Expression> const& labelToExpressionMapping = {}) const;
+            
             std::string toString() const;
             virtual std::ostream& writeToStream(std::ostream& out) const = 0;
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const;
-            virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicExpressionFormulas) const;
+            virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const;
             
         private:

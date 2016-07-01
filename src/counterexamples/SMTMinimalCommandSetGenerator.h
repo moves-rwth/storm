@@ -10,9 +10,8 @@
 #include "src/storage/expressions/Expression.h"
 #include "src/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "src/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "src/solver/GmmxxMinMaxLinearEquationSolver.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 
 #include "src/utility/counterexamples.h"
 #include "src/utility/prism.h"
@@ -99,8 +98,8 @@ namespace storm {
                 relevancyInformation.relevantStates = storm::utility::graph::performProbGreater0E(labeledMdp.getTransitionMatrix(), labeledMdp.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
                 relevancyInformation.relevantStates &= ~psiStates;
 
-                LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantStates.getNumberOfSetBits() << " relevant states.");
-                LOG4CPLUS_DEBUG(logger, relevancyInformation.relevantStates);
+                STORM_LOG_DEBUG("Found " << relevancyInformation.relevantStates.getNumberOfSetBits() << " relevant states.");
+                STORM_LOG_DEBUG(relevancyInformation.relevantStates);
 
                 // Retrieve some references for convenient access.
                 storm::storage::SparseMatrix<T> const& transitionMatrix = labeledMdp.getTransitionMatrix();
@@ -141,7 +140,7 @@ namespace storm {
                 
                 std::cout << "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels." << std::endl;
 
-                LOG4CPLUS_DEBUG(logger, "Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.");
+                STORM_LOG_DEBUG("Found " << relevancyInformation.relevantLabels.size() << " relevant and " << relevancyInformation.knownLabels.size() << " known labels.");
                 return relevancyInformation;
             }
             
@@ -350,9 +349,9 @@ namespace storm {
                     }
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Successfully gathered data for explicit cuts.");
+                STORM_LOG_DEBUG("Successfully gathered data for explicit cuts.");
                 
-                LOG4CPLUS_DEBUG(logger, "Asserting initial combination is taken.");
+                STORM_LOG_DEBUG("Asserting initial combination is taken.");
                 {
                     std::vector<storm::expressions::Expression> formulae;
                     
@@ -378,7 +377,7 @@ namespace storm {
                     }
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Asserting target combination is taken.");
+                STORM_LOG_DEBUG("Asserting target combination is taken.");
                 {
                     std::vector<storm::expressions::Expression> formulae;
 
@@ -414,7 +413,7 @@ namespace storm {
                     }
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Asserting taken labels are followed by another label if they are not a target label.");
+                STORM_LOG_DEBUG("Asserting taken labels are followed by another label if they are not a target label.");
                 // Now assert that for each non-target label, we take a following label.
                 for (auto const& labelSetFollowingSetsPair : followingLabels) {
                     std::vector<storm::expressions::Expression> formulae;
@@ -502,7 +501,7 @@ namespace storm {
                     }
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Asserting synchronization cuts.");
+                STORM_LOG_DEBUG("Asserting synchronization cuts.");
                 // Finally, assert that if we take one of the synchronizing labels, we also take one of the combinations
                 // the label appears in.
                 for (auto const& labelSynchronizingSetsPair : synchronizingLabels) {
@@ -667,7 +666,7 @@ namespace storm {
 
                     // If the solver reports unsat, then we know that the current selection is not enabled in the initial state.
                     if (checkResult == storm::solver::SmtSolver::CheckResult::Unsat) {
-                        LOG4CPLUS_DEBUG(logger, "Selection not enabled in initial state.");
+                        STORM_LOG_DEBUG("Selection not enabled in initial state.");
                         storm::expressions::Expression guardConjunction;
                         if (currentCommandVector.size() == 1) {
                             guardConjunction = currentCommandVector.begin()->get().getGuardExpression();
@@ -685,10 +684,10 @@ namespace storm {
                             }
                         } else {
                             throw storm::exceptions::InvalidStateException() << "Choice label set is empty.";
-                            LOG4CPLUS_DEBUG(logger, "Choice label set is empty.");
+                            STORM_LOG_DEBUG("Choice label set is empty.");
                         }
                         
-                        LOG4CPLUS_DEBUG(logger, "About to assert disjunction of negated guards.");
+                        STORM_LOG_DEBUG("About to assert disjunction of negated guards.");
                         storm::expressions::Expression guardExpression = localManager.boolean(false);
                         bool firstAssignment = true;
                         for (auto const& command : currentCommandVector) {
@@ -699,7 +698,7 @@ namespace storm {
                             }
                         }
                         localSolver->add(guardExpression);
-                        LOG4CPLUS_DEBUG(logger, "Asserted disjunction of negated guards.");
+                        STORM_LOG_DEBUG("Asserted disjunction of negated guards.");
                         
                         // Now check the possible preceding label sets for the essential ones.
                         for (auto const& precedingLabelSet : labelSetAndPrecedingLabelSetsPair.second) {
@@ -742,10 +741,10 @@ namespace storm {
                                     }
                                 }
                                 
-                                LOG4CPLUS_DEBUG(logger, "About to assert a weakest precondition.");
+                                STORM_LOG_DEBUG("About to assert a weakest precondition.");
                                 storm::expressions::Expression wp = guardConjunction.substitute(currentUpdateCombinationMap);
                                 formulae.push_back(wp);
-                                LOG4CPLUS_DEBUG(logger, "Asserted weakest precondition.");
+                                STORM_LOG_DEBUG("Asserted weakest precondition.");
                                 
                                 // Now try to move iterators to the next position if possible. If we could properly move it, we can directly
                                 // move on to the next combination of updates. If we have to reset it to the start, we
@@ -768,7 +767,7 @@ namespace storm {
                             // Now assert the disjunction of all weakest preconditions of all considered update combinations.
                             assertDisjunction(*localSolver, formulae, localManager);
                             
-                            LOG4CPLUS_DEBUG(logger, "Asserted disjunction of all weakest preconditions.");
+                            STORM_LOG_DEBUG("Asserted disjunction of all weakest preconditions.");
                             
                             if (localSolver->check() == storm::solver::SmtSolver::CheckResult::Sat) {
                                 backwardImplications[labelSetAndPrecedingLabelSetsPair.first].insert(precedingLabelSet);
@@ -793,7 +792,7 @@ namespace storm {
                     }
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Asserting taken labels are preceded by another label if they are not an initial label.");
+                STORM_LOG_DEBUG("Asserting taken labels are preceded by another label if they are not an initial label.");
                 // Now assert that for each non-target label, we take a following label.
                 for (auto const& labelSetImplicationsPair : backwardImplications) {
                     std::vector<storm::expressions::Expression> formulae;
@@ -1042,7 +1041,7 @@ namespace storm {
             static std::vector<storm::expressions::Expression> createAdder(VariableInformation const& variableInformation, std::vector<storm::expressions::Expression> const& in1, std::vector<storm::expressions::Expression> const& in2) {
                 // Sanity check for sizes of input.
                 if (in1.size() != in2.size() || in1.size() == 0) {
-                    LOG4CPLUS_ERROR(logger, "Illegal input to adder (" << in1.size() << ", " << in2.size() << ").");
+                    STORM_LOG_ERROR("Illegal input to adder (" << in1.size() << ", " << in2.size() << ").");
                     throw storm::exceptions::InvalidArgumentException() << "Illegal input to adder.";
                 }
                 
@@ -1097,7 +1096,7 @@ namespace storm {
              * @return A bit vector representing the number of literals that are set to true.
              */
             static std::vector<storm::expressions::Expression> createCounterCircuit(VariableInformation const& variableInformation, std::vector<storm::expressions::Variable> const& literals) {
-                LOG4CPLUS_DEBUG(logger, "Creating counter circuit for " << literals.size() << " literals.");
+                STORM_LOG_DEBUG("Creating counter circuit for " << literals.size() << " literals.");
 
                 // Create the auxiliary vector.
                 std::vector<std::vector<storm::expressions::Expression>> aux;
@@ -1136,7 +1135,7 @@ namespace storm {
              * @return The relaxation variable associated with the constraint.
              */
             static storm::expressions::Variable assertLessOrEqualKRelaxed(storm::solver::SmtSolver& solver, VariableInformation const& variableInformation, uint64_t k) {
-                LOG4CPLUS_DEBUG(logger, "Asserting solution has size less or equal " << k << ".");
+                STORM_LOG_DEBUG("Asserting solution has size less or equal " << k << ".");
                 
                 std::vector<storm::expressions::Variable> const& input = variableInformation.adderVariables;
                 
@@ -1209,16 +1208,16 @@ namespace storm {
                 }
                                 
                 // Check whether the assumptions are satisfiable.
-                LOG4CPLUS_DEBUG(logger, "Invoking satisfiability checking.");
+                STORM_LOG_DEBUG("Invoking satisfiability checking.");
                 z3::check_result result = solver.check(assumptions);
-                LOG4CPLUS_DEBUG(logger, "Done invoking satisfiability checking.");
+                STORM_LOG_DEBUG("Done invoking satisfiability checking.");
                 
                 if (result == z3::sat) {
                     return true;
                 } else {
-                    LOG4CPLUS_DEBUG(logger, "Computing unsat core.");
+                    STORM_LOG_DEBUG("Computing unsat core.");
                     z3::expr_vector unsatCore = solver.unsat_core();
-                    LOG4CPLUS_DEBUG(logger, "Computed unsat core.");
+                    STORM_LOG_DEBUG("Computed unsat core.");
                     
                     std::vector<z3::expr> blockingVariables;
                     blockingVariables.reserve(unsatCore.size());
@@ -1334,7 +1333,7 @@ namespace storm {
                 // As long as the constraints are unsatisfiable, we need to relax the last at-most-k constraint and
                 // try with an increased bound.
                 while (solver.checkWithAssumptions({assumption}) == storm::solver::SmtSolver::CheckResult::Unsat) {
-                    LOG4CPLUS_DEBUG(logger, "Constraint system is unsatisfiable with at most " << currentBound << " taken commands; increasing bound.");
+                    STORM_LOG_DEBUG("Constraint system is unsatisfiable with at most " << currentBound << " taken commands; increasing bound.");
                     solver.add(variableInformation.auxiliaryVariables.back());
                     variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(solver, variableInformation, ++currentBound));
                     assumption = !variableInformation.auxiliaryVariables.back();
@@ -1359,7 +1358,7 @@ namespace storm {
             static void analyzeZeroProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Mdp<T> const& subMdp, storm::models::sparse::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
                 storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
                 
-                LOG4CPLUS_DEBUG(logger, "Analyzing solution with zero probability.");
+                STORM_LOG_DEBUG("Analyzing solution with zero probability.");
                 
                 // Initialize the stack for the DFS.
                 bool targetStateIsReachable = false;
@@ -1403,10 +1402,10 @@ namespace storm {
                     }
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Successfully performed reachability analysis.");
+                STORM_LOG_DEBUG("Successfully performed reachability analysis.");
                 
                 if (targetStateIsReachable) {
-                    LOG4CPLUS_ERROR(logger, "Target must be unreachable for this analysis.");
+                    STORM_LOG_ERROR("Target must be unreachable for this analysis.");
                     throw storm::exceptions::InvalidStateException() << "Target must be unreachable for this analysis.";
                 }
                 
@@ -1417,7 +1416,7 @@ namespace storm {
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
                 
                 std::vector<boost::container::flat_set<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalMdp, statesThatCanReachTargetStates, locallyRelevantLabels);
-                LOG4CPLUS_DEBUG(logger, "Found " << reachableLabels.size() << " reachable labels and " << reachableStates.getNumberOfSetBits() << " reachable states.");
+                STORM_LOG_DEBUG("Found " << reachableLabels.size() << " reachable labels and " << reachableStates.getNumberOfSetBits() << " reachable states.");
                 
                 // Search for states on the border of the reachable state space, i.e. states that are still reachable
                 // and possess a (disabled) option to leave the reachable part of the state space.
@@ -1466,7 +1465,7 @@ namespace storm {
                     formulae.push_back(cube);
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Asserting reachability implications.");
+                STORM_LOG_DEBUG("Asserting reachability implications.");
                 assertDisjunction(solver, formulae, *variableInformation.manager);
             }
             
@@ -1484,7 +1483,7 @@ namespace storm {
              */
             static void analyzeInsufficientProbabilitySolution(storm::solver::SmtSolver& solver, storm::models::sparse::Mdp<T> const& subMdp, storm::models::sparse::Mdp<T> const& originalMdp, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, boost::container::flat_set<uint_fast64_t> const& commandSet, VariableInformation& variableInformation, RelevancyInformation const& relevancyInformation) {
 
-                LOG4CPLUS_DEBUG(logger, "Analyzing solution with insufficient probability.");
+                STORM_LOG_DEBUG("Analyzing solution with insufficient probability.");
 
                 storm::storage::BitVector reachableStates(subMdp.getNumberOfStates());
                 
@@ -1529,7 +1528,7 @@ namespace storm {
                         }
                     }
                 }
-                LOG4CPLUS_DEBUG(logger, "Successfully determined reachable state space.");
+                STORM_LOG_DEBUG("Successfully determined reachable state space.");
                 
                 storm::storage::BitVector unreachableRelevantStates = ~reachableStates & relevancyInformation.relevantStates;
                 storm::storage::BitVector statesThatCanReachTargetStates = storm::utility::graph::performProbGreater0E(subMdp.getTransitionMatrix(), subMdp.getNondeterministicChoiceIndices(), subMdp.getBackwardTransitions(), phiStates, psiStates);
@@ -1574,7 +1573,7 @@ namespace storm {
                     formulae.push_back(cube);
                 }
                 
-                LOG4CPLUS_DEBUG(logger, "Asserting reachability implications.");
+                STORM_LOG_DEBUG("Asserting reachability implications.");
                 assertDisjunction(solver, formulae, *variableInformation.manager);
             }
 #endif
@@ -1627,8 +1626,8 @@ namespace storm {
                 double maximalReachabilityProbability = 0;
                 if (checkThresholdFeasible) {
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
-                    LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::utility::solver::MinMaxLinearEquationSolverFactory<T>()).result);
+                    STORM_LOG_DEBUG("Invoking model checker.");
+                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
                     for (auto state : labeledMdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
@@ -1645,7 +1644,7 @@ namespace storm {
                 
                 // (4) Create the variables for the relevant commands.
                 VariableInformation variableInformation = createVariables(manager, labeledMdp, psiStates, relevancyInformation, includeReachabilityEncoding);
-                LOG4CPLUS_DEBUG(logger, "Created variables.");
+                STORM_LOG_DEBUG("Created variables.");
 
                 // (5) Now assert an adder whose result variables can later be used to constrain the nummber of label
                 // variables that were set to true. Initially, we are looking for a solution that has no label enabled
@@ -1654,14 +1653,14 @@ namespace storm {
                 variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(*solver, variableInformation, 0));
                 
                 // (6) Add constraints that cut off a lot of suboptimal solutions.
-                LOG4CPLUS_DEBUG(logger, "Asserting cuts.");
+                STORM_LOG_DEBUG("Asserting cuts.");
                 assertExplicitCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, *solver);
-                LOG4CPLUS_DEBUG(logger, "Asserted explicit cuts.");
+                STORM_LOG_DEBUG("Asserted explicit cuts.");
                 assertSymbolicCuts(preparedProgram, labeledMdp, variableInformation, relevancyInformation, *solver);
-                LOG4CPLUS_DEBUG(logger, "Asserted symbolic cuts.");
+                STORM_LOG_DEBUG("Asserted symbolic cuts.");
                 if (includeReachabilityEncoding) {
                     assertReachabilityCuts(labeledMdp, psiStates, variableInformation, relevancyInformation, *solver);
-                    LOG4CPLUS_DEBUG(logger, "Asserted reachability cuts.");
+                    STORM_LOG_DEBUG("Asserted reachability cuts.");
                 }
                 
                 // As we are done with the setup at this point, stop the clock for the setup time.
@@ -1680,20 +1679,20 @@ namespace storm {
                 maximalReachabilityProbability = 0;
                 uint_fast64_t zeroProbabilityCount = 0;
                 do {
-                    LOG4CPLUS_DEBUG(logger, "Computing minimal command set.");
+                    STORM_LOG_DEBUG("Computing minimal command set.");
                     solverClock = std::chrono::high_resolution_clock::now();
                     commandSet = findSmallestCommandSet(*solver, variableInformation, currentBound);
                     totalSolverTime += std::chrono::high_resolution_clock::now() - solverClock;
-                    LOG4CPLUS_DEBUG(logger, "Computed minimal command set of size " << (commandSet.size() + relevancyInformation.knownLabels.size()) << ".");
+                    STORM_LOG_DEBUG("Computed minimal command set of size " << (commandSet.size() + relevancyInformation.knownLabels.size()) << ".");
                     
                     // Restrict the given MDP to the current set of labels and compute the reachability probability.
                     modelCheckingClock = std::chrono::high_resolution_clock::now();
                     commandSet.insert(relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end());
                     storm::models::sparse::Mdp<T> subMdp = labeledMdp.restrictChoiceLabels(commandSet);
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelCheckerHelper;
-                    LOG4CPLUS_DEBUG(logger, "Invoking model checker.");
-                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::utility::solver::MinMaxLinearEquationSolverFactory<T>()).result);
-                    LOG4CPLUS_DEBUG(logger, "Computed model checking results.");
+                    STORM_LOG_DEBUG("Invoking model checker.");
+                    std::vector<T> result = std::move(modelCheckerHelper.computeUntilProbabilities(false, subMdp.getTransitionMatrix(), subMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
+                    STORM_LOG_DEBUG("Computed model checking results.");
                     totalModelCheckingTime += std::chrono::high_resolution_clock::now() - modelCheckingClock;
 
                     // Now determine the maximal reachability probability by checking all initial states.
@@ -1729,7 +1728,7 @@ namespace storm {
 
                 // Compute and emit the time measurements if the corresponding flag was set.
                 totalTime = std::chrono::high_resolution_clock::now() - totalClock;
-                if (storm::settings::generalSettings().isShowStatisticsSet()) {
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                     std::cout << std::endl;
                     std::cout << "Time breakdown:" << std::endl;
                     std::cout << "    * time for setup: " << std::chrono::duration_cast<std::chrono::milliseconds>(totalSetupTime).count() << "ms" << std::endl;
@@ -1751,7 +1750,7 @@ namespace storm {
 #endif
             }
             
-            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula> const& formula) {
+            static void computeCounterexample(storm::prism::Program program, std::string const& constantDefinitionString, storm::models::sparse::Mdp<T> const& labeledMdp, std::shared_ptr<storm::logic::Formula const> const& formula) {
 #ifdef STORM_HAVE_Z3
                 std::cout << std::endl << "Generating minimal label counterexample for formula " << *formula << std::endl;
                 
@@ -1763,7 +1762,7 @@ namespace storm {
                 STORM_LOG_THROW(probabilityOperator.getSubformula().isUntilFormula() || probabilityOperator.getSubformula().isEventuallyFormula(), storm::exceptions::InvalidPropertyException, "Path formula is required to be of the form 'phi U psi' for counterexample generation.");
                 
                 bool strictBound = comparisonType == storm::logic::ComparisonType::Less;
-                double bound = probabilityOperator.getBound();
+                double threshold = probabilityOperator.getThreshold();
                 
                 storm::storage::BitVector phiStates;
                 storm::storage::BitVector psiStates;
@@ -1793,7 +1792,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                auto labelSet = getMinimalCommandSet(probabilityOperator.getSubformula(), program, constantDefinitionString, labeledMdp, phiStates, psiStates, bound, strictBound, true, storm::settings::counterexampleGeneratorSettings().isEncodeReachabilitySet());
+                auto labelSet = getMinimalCommandSet(probabilityOperator.getSubformula(), program, constantDefinitionString, labeledMdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isEncodeReachabilitySet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << labelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
                 

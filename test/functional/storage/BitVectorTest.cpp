@@ -321,24 +321,6 @@ TEST(BitVectorTest, OperatorModulo) {
             ASSERT_FALSE(moduloResult.get(i));
         }
     }
-    
-    storm::storage::BitVector vector3(31);
-    
-    for (uint_fast64_t i = 0; i < 15; ++i) {
-		vector3.set(i, i % 2 == 0);
-    }
-    
-
-#ifndef NDEBUG
-#ifdef WINDOWS
-	EXPECT_EXIT(vector1 % vector3, ::testing::ExitedWithCode(0), ".*");
-#else
-	EXPECT_DEATH_IF_SUPPORTED(vector1 % vector3, "");
-#endif
-#else
-	std::cerr << "WARNING: Not testing OperatorModulo size check, as assertions are disabled in release mode." << std::endl;
-	SUCCEED();
-#endif
 }
 
 TEST(BitVectorTest, OperatorNot) {
@@ -510,4 +492,17 @@ TEST(BitVectorTest, Iterator) {
     for (auto bit : vector) {
         ASSERT_TRUE(bit % 2 == 0);
     }
+}
+
+TEST(BitVectorTest, CompareAndSwap) {
+    storm::storage::BitVector vector(140);
+    vector.setFromInt(0, 64, 2377830234574424100);
+    vector.setFromInt(64, 64, 1152921504607379586);
+    vector.setFromInt(128, 12, 2080);
+    
+    bool result = vector.compareAndSwap(0, 68, 68);
+    ASSERT_FALSE(result);
+    
+    result = vector.compareAndSwap(68, 0, 68);
+    ASSERT_TRUE(result);
 }

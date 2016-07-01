@@ -9,15 +9,11 @@
 
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/settings/modules/NativeEquationSolverSettings.h"
 #include "src/settings/modules/TopologicalValueIterationEquationSolverSettings.h"
 
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
+#include "src/utility/macros.h"
 #include "storm-config.h"
 #ifdef STORM_HAVE_CUDA
 #	include "cudaForStorm.h"
@@ -27,26 +23,17 @@ namespace storm {
     namespace solver {
         
         template<typename ValueType>
-        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A) : 
-        NativeMinMaxLinearEquationSolver<ValueType>(A, storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision(), \
-                storm::settings::topologicalValueIterationEquationSolverSettings().getMaximalIterationCount(), MinMaxTechniqueSelection::ValueIteration, \
-                storm::settings::topologicalValueIterationEquationSolverSettings().getConvergenceCriterion() == storm::settings::modules::TopologicalValueIterationEquationSolverSettings::ConvergenceCriterion::Relative)
+        TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : A(A), precision(precision), maximalNumberOfIterations(maximalNumberOfIterations), relative(relative)
         {
 			// Get the settings object to customize solving.
-			auto generalSettings = storm::settings::generalSettings();
-			this->enableCuda = generalSettings.isCudaSet();
+			this->enableCuda = storm::settings::getModule<storm::settings::modules::CoreSettings>().isCudaSet();
 #ifdef STORM_HAVE_CUDA
 			STORM_LOG_INFO_COND(this->enableCuda, "Option CUDA was not set, but the topological value iteration solver will use it anyways.");
 #endif
         }
-        
+                
         template<typename ValueType>
-		TopologicalMinMaxLinearEquationSolver<ValueType>::TopologicalMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, double precision, uint_fast64_t maximalNumberOfIterations, bool relative) : NativeMinMaxLinearEquationSolver<ValueType>(A, precision, maximalNumberOfIterations, MinMaxTechniqueSelection::ValueIteration ,relative) {
-            // Intentionally left empty.
-        }
-        
-        template<typename ValueType>
-		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquationSystem(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult, std::vector<ValueType>* newX) const {
+		void TopologicalMinMaxLinearEquationSolver<ValueType>::solveEquations(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 			
 #ifdef GPU_USE_FLOAT
 #define __FORCE_FLOAT_CALCULATION true
@@ -62,7 +49,7 @@ namespace storm {
 				std::vector<float> new_x = storm::utility::vector::toValueType<float>(x);
 				std::vector<float> const new_b = storm::utility::vector::toValueType<float>(b);
 
-				newSolver.solveEquationSystem(dir, new_x, new_b, nullptr, nullptr);
+				newSolver.solveEquations(dir, new_x, new_b);
 
 				for (size_t i = 0, size = new_x.size(); i < size; ++i) {
 					x.at(i) = new_x.at(i);
@@ -73,10 +60,10 @@ namespace storm {
 			// For testing only
 			if (sizeof(ValueType) == sizeof(double)) {
 				//std::cout << "<<< Using CUDA-DOUBLE Kernels >>>" << std::endl;
-				LOG4CPLUS_INFO(logger, "<<< Using CUDA-DOUBLE Kernels >>>");
+				STORM_LOG_INFO("<<< Using CUDA-DOUBLE Kernels >>>");
 			} else {
 				//std::cout << "<<< Using CUDA-FLOAT Kernels >>>" << std::endl;
-				LOG4CPLUS_INFO(logger, "<<< Using CUDA-FLOAT Kernels >>>");
+				STORM_LOG_INFO("<<< Using CUDA-FLOAT Kernels >>>");
 			}
 
 			// Now, we need to determine the SCCs of the MDP and perform a topological sort.
@@ -107,12 +94,12 @@ namespace storm {
 				} else {
 					result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, A.rowIndications, A.columnsAndValues, x, b, nondeterministicChoiceIndices, globalIterations);
 				}
-				LOG4CPLUS_INFO(logger, "Executed " << globalIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
+				STORM_LOG_INFO("Executed " << globalIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
 
 				bool converged = false;
 				if (!result) {
 					converged = false;
-					LOG4CPLUS_ERROR(logger, "An error occurred in the CUDA Plugin. Can not continue.");
+					STORM_LOG_ERROR("An error occurred in the CUDA Plugin. Can not continue.");
 					throw storm::exceptions::InvalidStateException() << "An error occurred in the CUDA Plugin. Can not continue.";
 				} else {
 					converged = true;
@@ -120,12 +107,12 @@ namespace storm {
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
-					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << globalIterations << " iterations.");
+					STORM_LOG_INFO("Iterative solver converged after " << globalIterations << " iterations.");
 				} else {
-					LOG4CPLUS_WARN(logger, "Iterative solver did not converged after " << globalIterations << " iterations.");
+					STORM_LOG_WARN("Iterative solver did not converged after " << globalIterations << " iterations.");
 				}
 #else
-				LOG4CPLUS_ERROR(logger, "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
+				STORM_LOG_ERROR("The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
 				throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
 #endif
 			} else {
@@ -139,7 +126,7 @@ namespace storm {
 
 				// Calculate the optimal distribution of sccs
 				std::vector<std::pair<bool, storm::storage::StateBlock>> optimalSccs = this->getOptimalGroupingFromTopologicalSccDecomposition(sccDecomposition, topologicalSort, this->A);
-				LOG4CPLUS_INFO(logger, "Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
+				STORM_LOG_INFO("Optimized SCC Decomposition, originally " << topologicalSort.size() << " SCCs, optimized to " << optimalSccs.size() << " SCCs.");
 
 				std::vector<ValueType>* currentX = nullptr;
 				std::vector<ValueType>* swap = nullptr;
@@ -198,9 +185,9 @@ namespace storm {
 #ifdef STORM_HAVE_CUDA
                         STORM_LOG_THROW(resetCudaDevice(), storm::exceptions::InvalidStateException, "Could not reset CUDA Device, can not use CUDA-based equation solver.");
 
-						//LOG4CPLUS_INFO(logger, "Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory())) * 100 << "%).");
-						//LOG4CPLUS_INFO(logger, "We will allocate " << (sizeof(uint_fast64_t)* sccSubmatrix.rowIndications.size() + sizeof(uint_fast64_t)* sccSubmatrix.columnsAndValues.size() * 2 + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubB.size() + sizeof(double)* sccSubB.size() + sizeof(uint_fast64_t)* sccSubNondeterministicChoiceIndices.size()) << " Bytes.");
-						//LOG4CPLUS_INFO(logger, "The CUDA Runtime Version is " << getRuntimeCudaVersion());
+						//STORM_LOG_INFO("Device has " << getTotalCudaMemory() << " Bytes of Memory with " << getFreeCudaMemory() << "Bytes free (" << (static_cast<double>(getFreeCudaMemory()) / static_cast<double>(getTotalCudaMemory())) * 100 << "%).");
+						//STORM_LOG_INFO("We will allocate " << (sizeof(uint_fast64_t)* sccSubmatrix.rowIndications.size() + sizeof(uint_fast64_t)* sccSubmatrix.columnsAndValues.size() * 2 + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubX.size() + sizeof(double)* sccSubB.size() + sizeof(double)* sccSubB.size() + sizeof(uint_fast64_t)* sccSubNondeterministicChoiceIndices.size()) << " Bytes.");
+						//STORM_LOG_INFO("The CUDA Runtime Version is " << getRuntimeCudaVersion());
 
 						bool result = false;
 						localIterations = 0;
@@ -209,11 +196,11 @@ namespace storm {
 						} else {
 							result = __basicValueIteration_mvReduce_maximize<uint_fast64_t, ValueType>(this->maximalNumberOfIterations, this->precision, this->relative, sccSubmatrix.rowIndications, sccSubmatrix.columnsAndValues, *currentX, sccSubB, sccSubNondeterministicChoiceIndices, localIterations);
 						}
-						LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
+						STORM_LOG_INFO("Executed " << localIterations << " of max. " << maximalNumberOfIterations << " Iterations on GPU.");
 
 						if (!result) {
 							converged = false;
-							LOG4CPLUS_ERROR(logger, "An error occurred in the CUDA Plugin. Can not continue.");
+							STORM_LOG_ERROR("An error occurred in the CUDA Plugin. Can not continue.");
 							throw storm::exceptions::InvalidStateException() << "An error occurred in the CUDA Plugin. Can not continue.";
 						} else {
 							converged = true;
@@ -226,12 +213,12 @@ namespace storm {
 						}
 						globalIterations += localIterations;
 #else
-						LOG4CPLUS_ERROR(logger, "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
+						STORM_LOG_ERROR("The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!");
 						throw storm::exceptions::InvalidStateException() << "The useGpu Flag of a SCC was set, but this version of StoRM does not support CUDA acceleration. Internal Error!";
 #endif
 					} else {
 						//std::cout << "WARNING: Using CPU based TopoSolver! (double)" << std::endl;
-						LOG4CPLUS_INFO(logger, "Performance Warning: Using CPU based TopoSolver! (double)");
+						STORM_LOG_INFO("Performance Warning: Using CPU based TopoSolver! (double)");
 						localIterations = 0;
 						converged = false;
 						while (!converged && localIterations < this->maximalNumberOfIterations) {
@@ -263,7 +250,7 @@ namespace storm {
 							++localIterations;
 							++globalIterations;
 						}
-						LOG4CPLUS_INFO(logger, "Executed " << localIterations << " of max. " << this->maximalNumberOfIterations << " Iterations.");
+						STORM_LOG_INFO("Executed " << localIterations << " of max. " << this->maximalNumberOfIterations << " Iterations.");
 					}
 
 
@@ -289,9 +276,9 @@ namespace storm {
 
 				// Check if the solver converged and issue a warning otherwise.
 				if (converged) {
-					LOG4CPLUS_INFO(logger, "Iterative solver converged after " << currentMaxLocalIterations << " iterations.");
+					STORM_LOG_INFO("Iterative solver converged after " << currentMaxLocalIterations << " iterations.");
 				} else {
-					LOG4CPLUS_WARN(logger, "Iterative solver did not converged after " << currentMaxLocalIterations << " iterations.");
+					STORM_LOG_WARN("Iterative solver did not converged after " << currentMaxLocalIterations << " iterations.");
 				}
 			}
         }
@@ -433,9 +420,45 @@ namespace storm {
 #endif
 			return result;
 		}
+        
+        template<typename ValueType>
+        void TopologicalMinMaxLinearEquationSolver<ValueType>::repeatedMultiply(OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n) const {
+            std::unique_ptr<std::vector<ValueType>> multiplyResult = std::make_unique<std::vector<ValueType>>(this->A.getRowCount());
+            
+            // Now perform matrix-vector multiplication as long as we meet the bound of the formula.
+            for (uint_fast64_t i = 0; i < n; ++i) {
+                this->A.multiplyWithVector(x, *multiplyResult);
+                
+                // Add b if it is non-null.
+                if (b != nullptr) {
+                    storm::utility::vector::addVectors(*multiplyResult, *b, *multiplyResult);
+                }
+                
+                // Reduce the vector x' by applying min/max for all non-deterministic choices as given by the topmost
+                // element of the min/max operator stack.
+                storm::utility::vector::reduceVectorMinOrMax(dir, *multiplyResult, x, this->A.getRowGroupIndices());
+                
+            }
+        }
 
+        template<typename ValueType>
+        TopologicalMinMaxLinearEquationSolverFactory<ValueType>::TopologicalMinMaxLinearEquationSolverFactory(bool trackScheduler) : MinMaxLinearEquationSolverFactory<ValueType>(trackScheduler) {
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
+            return std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(matrix);
+        }
+
+        template<typename ValueType>
+        std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> TopologicalMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType>&& matrix) const {
+            return std::make_unique<TopologicalMinMaxLinearEquationSolver<ValueType>>(std::move(matrix));
+        }
+        
         // Explicitly instantiate the solver.
 		template class TopologicalMinMaxLinearEquationSolver<double>;
-		template class TopologicalMinMaxLinearEquationSolver<float>;
+        
+        template class TopologicalMinMaxLinearEquationSolverFactory<double>;
     } // namespace solver
 } // namespace storm

@@ -4,6 +4,7 @@
 #include <memory>
 #include <map>
 #include <unordered_map>
+#include <vector>
 
 #include "src/storage/expressions/BaseExpression.h"
 #include "src/utility/OsDetection.h"
@@ -39,6 +40,10 @@ namespace storm {
             friend Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
             friend Expression implies(Expression const& first, Expression const& second);
             friend Expression iff(Expression const& first, Expression const& second);
+            friend Expression xclusiveor(Expression const& first, Expression const& second);
+            friend Expression abs(Expression const& first);
+            friend Expression truncate(Expression const& first);
+            friend Expression sign(Expression const& first);
             friend Expression floor(Expression const& first);
             friend Expression ceil(Expression const& first);
             friend Expression minimum(Expression const& first, Expression const& second);
@@ -291,6 +296,18 @@ namespace storm {
              */
             boost::any accept(ExpressionVisitor& visitor) const;
             
+            /*!
+             * Converts the expression into a string.
+             *
+             * @return The string representation of the expression.
+             */
+            std::string toString() const;
+
+            /**
+             * Checks whether the object encapsulates a base-expression.
+             */
+            bool isInitialized() const;
+
             friend std::ostream& operator<<(std::ostream& stream, Expression const& expression);
 
         private:
@@ -324,10 +341,18 @@ namespace storm {
         Expression ite(Expression const& condition, Expression const& thenExpression, Expression const& elseExpression);
         Expression implies(Expression const& first, Expression const& second);
         Expression iff(Expression const& first, Expression const& second);
+        Expression xclusiveor(Expression const& first, Expression const& second);
+        Expression abs(Expression const& first);
+        Expression truncate(Expression const& first);
+        Expression sign(Expression const& first);
         Expression floor(Expression const& first);
         Expression ceil(Expression const& first);
         Expression minimum(Expression const& first, Expression const& second);
         Expression maximum(Expression const& first, Expression const& second);
+        Expression disjunction(std::vector<storm::expressions::Expression> const& expressions);
+        Expression conjunction(std::vector<storm::expressions::Expression> const& expressions);
+        Expression sum(std::vector<storm::expressions::Expression> const& expressions);
+        Expression apply(std::vector<storm::expressions::Expression> const& expressions, std::function<Expression (Expression const&, Expression const&)> const& function);
 
     }
 }

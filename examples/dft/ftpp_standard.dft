@@ -1,0 +1,53 @@
+toplevel "System";
+"System" or "triadA" "triadB" "triadC" "triadD" "fA" "fB" "fC" "fD";
+
+"triadA" 2of3 "aA" "bA" "cA";
+"aA" csp "TAA" "TAS";
+"bA" csp "TAB" "TAS";
+"cA" csp "TAC" "TAS";
+
+"triadB" 2of3 "aB" "bB" "cB";
+"aB" csp "TBA" "TBS";
+"bB" csp "TBB" "TBS";
+"cB" csp "TBC" "TBS";
+
+"triadC" 2of3 "aC" "bC" "cC";
+"aC" csp "TCA" "TCS";
+"bC" csp "TCB" "TCS";
+"cC" csp "TCC" "TCS";
+
+"triadD" 2of3 "aD" "bD" "cD";
+"aD" csp "TDA" "TDS";
+"bD" csp "TDB" "TDS";
+"cD" csp "TDC" "TDS";
+
+"fA" fdep "NEA" "TAA" "TBA" "TCA" "TDA";
+"fB" fdep "NEB" "TAB" "TBB" "TCB" "TDB";
+"fC" fdep "NEC" "TAC" "TBC" "TCC" "TDC";
+"fD" fdep "NED" "TAS" "TBS" "TCS" "TDS";
+
+
+"NEA" lambda=0.017 dorm=1;
+"NEB" lambda=0.017 dorm=1;
+"NEC" lambda=0.017 dorm=1;
+"NED" lambda=0.017 dorm=1;
+
+"TAA" lambda=0.11 dorm=0;
+"TAB" lambda=0.11 dorm=0;
+"TAC" lambda=0.11 dorm=0;
+"TAS" lambda=0.11 dorm=0;
+
+"TBA" lambda=0.11 dorm=0;
+"TBB" lambda=0.11 dorm=0;
+"TBC" lambda=0.11 dorm=0;
+"TBS" lambda=0.11 dorm=0;
+
+"TCA" lambda=0.11 dorm=0;
+"TCB" lambda=0.11 dorm=0;
+"TCC" lambda=0.11 dorm=0;
+"TCS" lambda=0.11 dorm=0;
+
+"TDA" lambda=0.11 dorm=0;
+"TDB" lambda=0.11 dorm=0;
+"TDC" lambda=0.11 dorm=0;
+"TDS" lambda=0.11 dorm=0;

@@ -10,6 +10,12 @@
 #include "src/utility/Hash.h"
 #include "src/utility/macros.h"
 
+#include <bitset>
+
+#ifdef STORM_DEV
+#define ASSERT_BITVECTOR
+#endif
+
 namespace storm {
     namespace storage {
 
@@ -60,11 +66,11 @@ namespace storm {
             return currentIndex == other.currentIndex;
         }
 
-        BitVector::BitVector() : bitCount(0), bucketVector() {
+        BitVector::BitVector() : bitCount(0), buckets(nullptr) {
             // Intentionally left empty.
         }
 
-        BitVector::BitVector(uint_fast64_t length, bool init) : bitCount(length) {
+        BitVector::BitVector(uint_fast64_t length, bool init) : bitCount(length), buckets(nullptr) {
             // Compute the correct number of buckets needed to store the given number of bits.
             uint_fast64_t bucketCount = length >> 6;
             if ((length & mod64mask) != 0) {
@@ -73,11 +79,19 @@ namespace storm {
 
             // Initialize the storage with the required values.
             if (init) {
-                bucketVector = std::vector<uint64_t>(bucketCount, -1ll);
+                buckets = new uint64_t[bucketCount];
+                std::fill_n(buckets, bucketCount, -1ull);
                 truncateLastBucket();
             } else {
-                bucketVector = std::vector<uint64_t>(bucketCount, 0);
+                buckets = new uint64_t[bucketCount]();
             }
+        }
+        
+        BitVector::~BitVector() {
+            if (buckets != nullptr) {
+                delete buckets;
+            }
+            
         }
 
         template<typename InputIterator>
@@ -89,23 +103,22 @@ namespace storm {
             // Intentionally left empty.
         }
 
-        BitVector::BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount) : bitCount(bitCount), bucketVector(bucketCount) {
+        BitVector::BitVector(uint_fast64_t bucketCount, uint_fast64_t bitCount) : bitCount(bitCount), buckets(nullptr) {
             STORM_LOG_ASSERT((bucketCount << 6) == bitCount, "Bit count does not match number of buckets.");
+            buckets = new uint64_t[bucketCount]();
         }
 
-        BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount), bucketVector(other.bucketVector) {
-            // Intentionally left empty.
+        BitVector::BitVector(BitVector const& other) : bitCount(other.bitCount), buckets(nullptr) {
+            buckets = new uint64_t[other.bucketCount()];
+            std::copy_n(other.buckets, other.bucketCount(), buckets);
         }
-
-        //BitVector::BitVector(BitVector&& other) : bitCount(other.bitCount), bucketVector(std::move(other.bucketVector)) {
-        // Intentionally left empty.
-        //}
 
         BitVector& BitVector::operator=(BitVector const& other) {
             // Only perform the assignment if the source and target are not identical.
             if (this != &other) {
                 bitCount = other.bitCount;
-                bucketVector = std::vector<uint64_t>(other.bucketVector);
+                buckets = new uint64_t[other.bucketCount()];
+                std::copy_n(other.buckets, other.bucketCount(), buckets);
             }
             return *this;
         }
@@ -117,9 +130,9 @@ namespace storm {
                 return false;
             }
 
-            std::vector<uint64_t>::const_iterator first1 = this->bucketVector.begin();
-            std::vector<uint64_t>::const_iterator last1 = this->bucketVector.end();
-            std::vector<uint64_t>::const_iterator first2 = other.bucketVector.begin();
+            uint64_t* first1 = this->buckets;
+            uint64_t* last1 = this->buckets + this->bucketCount();
+            uint64_t* first2 = other.buckets;
 
             for (; first1 != last1; ++first1, ++first2) {
                 if (*first1 < *first2) {
@@ -130,12 +143,18 @@ namespace storm {
             }
             return false;
         }
+        
+        BitVector::BitVector(BitVector&& other) : bitCount(other.bitCount), buckets(other.buckets) {
+            other.bitCount = 0;
+            other.buckets = nullptr;
+        }
 
         BitVector& BitVector::operator=(BitVector&& other) {
             // Only perform the assignment if the source and target are not identical.
             if (this != &other) {
                 bitCount = other.bitCount;
-                bucketVector = std::move(other.bucketVector);
+                this->buckets = other.buckets;
+                other.buckets = nullptr;
             }
 
             return *this;
@@ -146,14 +165,7 @@ namespace storm {
             if (this->bitCount != other.bitCount) return false;
 
             // If the lengths match, we compare the buckets one by one.
-            for (std::vector<uint64_t>::const_iterator it1 = bucketVector.begin(), it2 = other.bucketVector.begin(); it1 != bucketVector.end(); ++it1, ++it2) {
-                if (*it1 != *it2) {
-                    return false;
-                }
-            }
-
-            // All buckets were equal, so the bit vectors are equal.
-            return true;
+            return std::equal(this->buckets, this->buckets + this->bucketCount(), other.buckets);
         }
 
         bool BitVector::operator!=(BitVector const& other) const {
@@ -166,9 +178,9 @@ namespace storm {
 
             uint64_t mask = 1ull << (63 - (index & mod64mask));
             if (value) {
-                bucketVector[bucket] |= mask;
+                buckets[bucket] |= mask;
             } else {
-                bucketVector[bucket] &= ~mask;
+                buckets[bucket] &= ~mask;
             }
         }
 
@@ -182,7 +194,7 @@ namespace storm {
         bool BitVector::operator[](uint_fast64_t index) const {
             uint64_t bucket = index >> 6;
             uint64_t mask = 1ull << (63 - (index & mod64mask));
-            return (this->bucketVector[bucket] & mask) == mask;
+            return (this->buckets[bucket] & mask) == mask;
         }
 
         bool BitVector::get(uint_fast64_t index) const {
@@ -197,89 +209,91 @@ namespace storm {
                     ++newBucketCount;
                 }
 
-                if (newBucketCount > bucketVector.size()) {
+                if (newBucketCount > this->bucketCount()) {
+                    uint64_t* newBuckets = new uint64_t[newBucketCount];
+                    std::copy_n(buckets, this->bucketCount(), newBuckets);
                     if (init) {
-                        bucketVector.back() |= ((1ull << (64 - (bitCount & mod64mask))) - 1ull);
-                        bucketVector.resize(newBucketCount, -1ull);
+                        newBuckets[this->bucketCount() - 1] |= ((1ull << (64 - (bitCount & mod64mask))) - 1ull);
+                        std::fill_n(newBuckets + this->bucketCount(), newBucketCount - this->bucketCount(), -1ull);
                     } else {
-                        bucketVector.resize(newBucketCount, 0);
+                        std::fill_n(newBuckets + this->bucketCount(), newBucketCount - this->bucketCount(), 0);
                     }
+                    if (buckets != nullptr) {
+                        delete buckets;
+                    }
+                    buckets = newBuckets;
                     bitCount = newLength;
                 } else {
                     // If the underlying storage does not need to grow, we have to insert the missing bits.
                     if (init) {
-                        bucketVector.back() |= ((1ull << (64 - (bitCount & mod64mask))) - 1ull);
+                        buckets[this->bucketCount() - 1] |= ((1ull << (64 - (bitCount & mod64mask))) - 1ull);
                     }
                     bitCount = newLength;
                 }
                 truncateLastBucket();
             } else {
-                bitCount = newLength;
                 uint_fast64_t newBucketCount = newLength >> 6;
                 if ((newLength & mod64mask) != 0) {
                     ++newBucketCount;
                 }
 
-                bucketVector.resize(newBucketCount);
+                // If the number of buckets needs to be reduced, we resize it now. Otherwise, we can just truncate the
+                // last bucket.
+                if (newBucketCount < this->bucketCount()) {
+                    uint64_t* newBuckets = new uint64_t[newBucketCount];
+                    std::copy_n(buckets, newBucketCount, newBuckets);
+                    if (buckets != nullptr) {
+                        delete buckets;
+                    }
+                    buckets = newBuckets;
+                    bitCount = newLength;
+                }
+                bitCount = newLength;
                 truncateLastBucket();
+            }
+        }
+        
+        void BitVector::enlargeLiberally(uint_fast64_t minimumLength, bool init) {
+            if(minimumLength > this->size()) {
+                uint_fast64_t newLength = this->bucketCount();
+                newLength = std::max(newLength, static_cast<decltype(newLength)>(1u)) << 6;
+                while(newLength < minimumLength) {
+                    newLength = newLength << 1;
+                }
+                resize(newLength, init);
             }
         }
 
         BitVector BitVector::operator&(BitVector const& other) const {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
-
             BitVector result(bitCount);
-            std::vector<uint64_t>::iterator it = result.bucketVector.begin();
-            for (std::vector<uint64_t>::const_iterator it1 = bucketVector.begin(), it2 = other.bucketVector.begin(); it != result.bucketVector.end(); ++it1, ++it2, ++it) {
-                *it = *it1 & *it2;
-            }
-
+            std::transform(this->buckets, this->buckets + this->bucketCount(), other.buckets, result.buckets, [] (uint64_t const& a, uint64_t const& b) { return a & b; });
             return result;
         }
 
         BitVector& BitVector::operator&=(BitVector const& other) {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
-
-            std::vector<uint64_t>::iterator it = bucketVector.begin();
-            for (std::vector<uint64_t>::const_iterator otherIt = other.bucketVector.begin(); it != bucketVector.end() && otherIt != other.bucketVector.end(); ++it, ++otherIt) {
-                *it &= *otherIt;
-            }
-
+            std::transform(this->buckets, this->buckets + this->bucketCount(), other.buckets, this->buckets, [] (uint64_t const& a, uint64_t const& b) { return a & b; });
             return *this;
         }
 
         BitVector BitVector::operator|(BitVector const& other) const {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
-
             BitVector result(bitCount);
-            std::vector<uint64_t>::iterator it = result.bucketVector.begin();
-            for (std::vector<uint64_t>::const_iterator it1 = bucketVector.begin(), it2 = other.bucketVector.begin(); it != result.bucketVector.end(); ++it1, ++it2, ++it) {
-                *it = *it1 | *it2;
-            }
-
+            std::transform(this->buckets, this->buckets + this->bucketCount(), other.buckets, result.buckets, [] (uint64_t const& a, uint64_t const& b) { return a | b; });
             return result;
         }
 
         BitVector& BitVector::operator|=(BitVector const& other) {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
-
-            std::vector<uint64_t>::iterator it = bucketVector.begin();
-            for (std::vector<uint64_t>::const_iterator otherIt = other.bucketVector.begin(); it != bucketVector.end() && otherIt != other.bucketVector.end(); ++it, ++otherIt) {
-                *it |= *otherIt;
-            }
-
+            std::transform(this->buckets, this->buckets + this->bucketCount(), other.buckets, this->buckets, [] (uint64_t const& a, uint64_t const& b) { return a | b; });
             return *this;
         }
 
         BitVector BitVector::operator^(BitVector const& other) const {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
-
             BitVector result(bitCount);
-            std::vector<uint64_t>::iterator it = result.bucketVector.begin();
-            for (std::vector<uint64_t>::const_iterator it1 = bucketVector.begin(), it2 = other.bucketVector.begin(); it != result.bucketVector.end(); ++it1, ++it2, ++it) {
-                *it = *it1 ^ *it2;
-            }
-
+            std::transform(this->buckets, this->buckets + this->bucketCount(), other.buckets, result.buckets, [] (uint64_t const& a, uint64_t const& b) { return a ^ b; });
             result.truncateLastBucket();
             return result;
         }
@@ -314,19 +328,13 @@ namespace storm {
 
         BitVector BitVector::operator~() const {
             BitVector result(this->bitCount);
-            std::vector<uint64_t>::iterator it = result.bucketVector.begin();
-            for (std::vector<uint64_t>::const_iterator it1 = bucketVector.begin(); it != result.bucketVector.end(); ++it1, ++it) {
-                *it = ~(*it1);
-            }
-
+            std::transform(this->buckets, this->buckets + this->bucketCount(), result.buckets, [] (uint64_t const& a) { return ~a; });
             result.truncateLastBucket();
             return result;
         }
 
         void BitVector::complement() {
-            for (auto& element : bucketVector) {
-                element = ~element;
-            }
+            std::transform(this->buckets, this->buckets + this->bucketCount(), this->buckets, [] (uint64_t const& a) { return ~a; });
             truncateLastBucket();
         }
 
@@ -334,11 +342,7 @@ namespace storm {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
 
             BitVector result(bitCount);
-            std::vector<uint64_t>::iterator it = result.bucketVector.begin();
-            for (std::vector<uint64_t>::const_iterator it1 = bucketVector.begin(), it2 = other.bucketVector.begin(); it != result.bucketVector.end(); ++it1, ++it2, ++it) {
-                *it = ~(*it1) | *it2;
-            }
-
+            std::transform(this->buckets, this->buckets + this->bucketCount(), other.buckets, result.buckets, [] (uint64_t const& a, uint64_t const& b) { return (~a | b); });
             result.truncateLastBucket();
             return result;
         }
@@ -346,7 +350,11 @@ namespace storm {
         bool BitVector::isSubsetOf(BitVector const& other) const {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
 
-            for (std::vector<uint64_t>::const_iterator it1 = bucketVector.begin(), it2 = other.bucketVector.begin(); it1 != bucketVector.end(); ++it1, ++it2) {
+            uint64_t const* it1 = buckets;
+            uint64_t const* ite1 = buckets + bucketCount();
+            uint64_t const* it2 = other.buckets;
+            
+            for (; it1 != ite1; ++it1, ++it2) {
                 if ((*it1 & *it2) != *it1) {
                     return false;
                 }
@@ -357,7 +365,11 @@ namespace storm {
         bool BitVector::isDisjointFrom(BitVector const& other) const {
             STORM_LOG_ASSERT(bitCount == other.bitCount, "Length of the bit vectors does not match.");
 
-            for (std::vector<uint64_t>::const_iterator it1 = bucketVector.begin(), it2 = other.bucketVector.begin(); it1 != bucketVector.end(); ++it1, ++it2) {
+            uint64_t const* it1 = buckets;
+            uint64_t const* ite1 = buckets + bucketCount();
+            uint64_t const* it2 = other.buckets;
+            
+            for (; it1 != ite1; ++it1, ++it2) {
                 if ((*it1 & *it2) != 0) {
                     return false;
                 }
@@ -372,9 +384,9 @@ namespace storm {
             // Compute the first bucket that needs to be checked and the number of buckets.
             uint64_t index = bitIndex >> 6;
 
-            std::vector<uint64_t>::const_iterator first1 = bucketVector.begin() + index;
-            std::vector<uint64_t>::const_iterator first2 = other.bucketVector.begin();
-            std::vector<uint64_t>::const_iterator last2 = other.bucketVector.end();
+            uint64_t const* first1 = buckets + index;
+            uint64_t const* first2 = other.buckets;
+            uint64_t const* last2 = other.buckets + other.bucketCount();
 
             for (; first2 != last2; ++first1, ++first2) {
                 if (*first1 != *first2) {
@@ -391,10 +403,10 @@ namespace storm {
             // Compute the first bucket that needs to be checked and the number of buckets.
             uint64_t index = bitIndex >> 6;
 
-            std::vector<uint64_t>::iterator first1 = bucketVector.begin() + index;
-            std::vector<uint64_t>::const_iterator first2 = other.bucketVector.begin();
-            std::vector<uint64_t>::const_iterator last2 = other.bucketVector.end();
-
+            uint64_t* first1 = buckets + index;
+            uint64_t const* first2 = other.buckets;
+            uint64_t const* last2 = other.buckets + other.bucketCount();
+            
             for (; first2 != last2; ++first1, ++first2) {
                 *first1 = *first2;
             }
@@ -406,12 +418,13 @@ namespace storm {
             STORM_LOG_ASSERT(index + numberOfBuckets <= this->bucketCount(), "Argument is out-of-range.");
 
             storm::storage::BitVector result(numberOfBuckets, numberOfBits);
-            std::copy(this->bucketVector.begin() + index, this->bucketVector.begin() + index + numberOfBuckets, result.bucketVector.begin());
-
+            std::copy(this->buckets + index, this->buckets + index + numberOfBuckets, result.buckets);
+            result.truncateLastBucket();
             return result;
         }
 
         uint_fast64_t BitVector::getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const {
+            STORM_LOG_ASSERT(numberOfBits <= 64, "Number of bits must be <= 64.");
             uint64_t bucket = bitIndex >> 6;
             uint64_t bitIndexInBucket = bitIndex & mod64mask;
 
@@ -425,10 +438,10 @@ namespace storm {
             if (bitIndexInBucket + numberOfBits < 64) {
                 // If the value stops before the end of the bucket, we need to erase some lower bits.
                 mask &= ~((1ull << (64 - (bitIndexInBucket + numberOfBits))) - 1ull);
-                return (bucketVector[bucket] & mask) >> (64 - (bitIndexInBucket + numberOfBits));
+                return (buckets[bucket] & mask) >> (64 - (bitIndexInBucket + numberOfBits));
             } else if (bitIndexInBucket + numberOfBits > 64) {
                 // In this case, the integer "crosses" the bucket line.
-                uint64_t result = (bucketVector[bucket] & mask);
+                uint64_t result = (buckets[bucket] & mask);
                 ++bucket;
 
                 // Compute the remaining number of bits.
@@ -440,18 +453,42 @@ namespace storm {
                 // Strip away everything from the second bucket that is beyond the final index and add it to the
                 // intermediate result.
                 mask = ~((1ull << (64 - numberOfBits)) - 1ull);
-                uint64_t lowerBits = bucketVector[bucket] & mask;
+                uint64_t lowerBits = buckets[bucket] & mask;
                 result |= (lowerBits >> (64 - numberOfBits));
 
                 return result;
             } else {
                 // In this case, it suffices to take the current mask.
-                return bucketVector[bucket] & mask;
+                return buckets[bucket] & mask;
             }
         }
-
+        
+        uint_fast64_t BitVector::getTwoBitsAligned(uint_fast64_t bitIndex) const {
+            // Check whether it is aligned.
+            STORM_LOG_ASSERT(bitIndex % 64 != 63, "Bits not aligned.");
+            uint64_t bucket = bitIndex >> 6;
+            uint64_t bitIndexInBucket = bitIndex & mod64mask;
+            
+            uint64_t mask;
+            if (bitIndexInBucket == 0) {
+                mask = -1ull;
+            } else {
+                mask = (1ull << (64 - bitIndexInBucket)) - 1ull;
+            }
+            
+            if (bitIndexInBucket  < 62) { // bitIndexInBucket + 2 < 64
+                // If the value stops before the end of the bucket, we need to erase some lower bits.
+                mask &= ~((1ull << (62 - (bitIndexInBucket))) - 1ull);
+                return (buckets[bucket] & mask) >> (62 - bitIndexInBucket);
+            } else {
+                // In this case, it suffices to take the current mask.
+                return buckets[bucket] & mask;
+            }
+        }
+        
         void BitVector::setFromInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits, uint64_t value) {
-            STORM_LOG_ASSERT((value >> numberOfBits) == 0, "Integer value too large to fit in the given number of bits.");
+            STORM_LOG_ASSERT(numberOfBits <= 64, "Number of bits must be <= 64.");
+            STORM_LOG_ASSERT(numberOfBits == 64 || (value >> numberOfBits) == 0, "Integer value too large to fit in the given number of bits.");
 
             uint64_t bucket = bitIndex >> 6;
             uint64_t bitIndexInBucket = bitIndex & mod64mask;
@@ -466,10 +503,10 @@ namespace storm {
             if (bitIndexInBucket + numberOfBits < 64) {
                 // If the value stops before the end of the bucket, we need to erase some lower bits.
                 mask &= ~((1ull << (64 - (bitIndexInBucket + numberOfBits))) - 1ull);
-                bucketVector[bucket] = (bucketVector[bucket] & ~mask) | (value << (64 - (bitIndexInBucket + numberOfBits)));
+                buckets[bucket] = (buckets[bucket] & ~mask) | (value << (64 - (bitIndexInBucket + numberOfBits)));
             } else if (bitIndexInBucket + numberOfBits > 64) {
                 // Write the part of the value that falls into the first bucket.
-                bucketVector[bucket] = (bucketVector[bucket] & ~mask) | (value >> (numberOfBits + (bitIndexInBucket - 64)));
+                buckets[bucket] = (buckets[bucket] & ~mask) | (value >> (numberOfBits + (bitIndexInBucket - 64)));
                 ++bucket;
 
                 // Compute the remaining number of bits.
@@ -480,45 +517,41 @@ namespace storm {
 
                 // Put the remaining bits in their place.
                 mask = ((1ull << (64 - numberOfBits)) - 1ull);
-                bucketVector[bucket] = (bucketVector[bucket] & mask) | value;
+                buckets[bucket] = (buckets[bucket] & mask) | value;
             } else {
-                bucketVector[bucket] = (bucketVector[bucket] & ~mask) | value;
+                buckets[bucket] = (buckets[bucket] & ~mask) | value;
             }
         }
 
         bool BitVector::empty() const {
-            for (auto& element : bucketVector) {
-                if (element != 0) {
-                    return false;
-                }
-            }
-            return true;
+            uint64_t* last = buckets + bucketCount();
+            uint64_t* it = std::find_if(buckets, last, [] (uint64_t const& a) { return a != 0; });
+            return it == last;
         }
 
         bool BitVector::full() const {
             // Check that all buckets except the last one have all bits set.
-            for (uint_fast64_t index = 0; index < bucketVector.size() - 1; ++index) {
-                if (bucketVector[index] != -1ull) {
+            uint64_t* last = buckets + bucketCount() - 1;
+            for (uint64_t const* it = buckets; it < last; ++it) {
+                if (*it != -1ull) {
                     return false;
                 }
             }
-
+            
             // Now check whether the relevant bits are set in the last bucket.
             uint64_t mask = ~((1ull << (64 - (bitCount & mod64mask))) - 1ull);
-            if ((bucketVector.back() & mask) != mask) {
+            if ((*last & mask) != mask) {
                 return false;
             }
             return true;
         }
 
         void BitVector::clear() {
-            for (auto& element : bucketVector) {
-                element = 0;
-            }
+            std::fill_n(buckets, this->bucketCount(), 0);
         }
 
         uint_fast64_t BitVector::getNumberOfSetBits() const {
-            return getNumberOfSetBitsBeforeIndex(bucketVector.size() << 6);
+            return getNumberOfSetBitsBeforeIndex(bitCount);
         }
 
         uint_fast64_t BitVector::getNumberOfSetBitsBeforeIndex(uint_fast64_t index) const {
@@ -529,14 +562,14 @@ namespace storm {
             for (uint_fast64_t i = 0; i < bucket; ++i) {
                 // Check if we are using g++ or clang++ and, if so, use the built-in function
 #if (defined (__GNUG__) || defined(__clang__))
-                result += __builtin_popcountll(bucketVector[i]);
+                result += __builtin_popcountll(buckets[i]);
 #elif defined WINDOWS
 #include <nmmintrin.h>
                 // If the target machine does not support SSE4, this will fail.
                 result += _mm_popcnt_u64(bucketVector[i]);
 #else
                 uint_fast32_t cnt;
-                uint_fast64_t bitset = bucketVector[i];
+                uint_fast64_t bitset = buckets[i];
                 for (cnt = 0; bitset; cnt++) {
                     bitset &= bitset - 1;
                 }
@@ -548,7 +581,7 @@ namespace storm {
             uint64_t tmp = index & mod64mask;
             if (tmp != 0) {
                 tmp = ~((1ll << (64 - (tmp & mod64mask))) - 1ll);
-                tmp &= bucketVector[bucket];
+                tmp &= buckets[bucket];
                 // Check if we are using g++ or clang++ and, if so, use the built-in function
 #if (defined (__GNUG__) || defined(__clang__))
                 result += __builtin_popcountll(tmp);
@@ -564,25 +597,40 @@ namespace storm {
 
             return result;
         }
+        
+        std::vector<uint_fast64_t> BitVector::getNumberOfSetBitsBeforeIndices() const {
+            std::vector<uint_fast64_t> bitsSetBeforeIndices;
+            bitsSetBeforeIndices.reserve(this->size());
+            uint_fast64_t lastIndex = 0;
+            uint_fast64_t currentNumberOfSetBits = 0;
+            for (auto index : *this) {
+                while (lastIndex <= index) {
+                    bitsSetBeforeIndices.push_back(currentNumberOfSetBits);
+                    ++lastIndex;
+                }
+                ++currentNumberOfSetBits;
+            }
+            return bitsSetBeforeIndices;
+        }
 
         size_t BitVector::size() const {
             return static_cast<size_t> (bitCount);
         }
 
         std::size_t BitVector::getSizeInBytes() const {
-            return sizeof (*this) + sizeof (uint64_t) * bucketVector.size();
+            return sizeof (*this) + sizeof (uint64_t) * bucketCount();
         }
 
         BitVector::const_iterator BitVector::begin() const {
-            return const_iterator(bucketVector.data(), 0, bitCount);
+            return const_iterator(buckets, 0, bitCount);
         }
 
         BitVector::const_iterator BitVector::end() const {
-            return const_iterator(bucketVector.data(), bitCount, bitCount, false);
+            return const_iterator(buckets, bitCount, bitCount, false);
         }
 
         uint_fast64_t BitVector::getNextSetIndex(uint_fast64_t startingIndex) const {
-            return getNextSetIndex(bucketVector.data(), startingIndex, bitCount);
+            return getNextSetIndex(buckets, startingIndex, bitCount);
         }
 
         uint_fast64_t BitVector::getNextSetIndex(uint64_t const* dataPtr, uint_fast64_t startingIndex, uint_fast64_t endIndex) {
@@ -623,34 +671,303 @@ namespace storm {
             }
             return endIndex;
         }
+        
+        storm::storage::BitVector BitVector::getAsBitVector(uint_fast64_t start, uint_fast64_t length) const {
+            STORM_LOG_ASSERT(start + length <= bitCount, "Invalid range.");
+#ifdef ASSERT_BITVECTOR
+            BitVector original(*this);
+#endif
+            storm::storage::BitVector result(length, false);
+            
+            uint_fast64_t offset = start % 64;
+            uint64_t* getBucket = buckets + (start / 64);
+            uint64_t* insertBucket = result.buckets;
+            uint_fast64_t getValue;
+            uint_fast64_t writeValue = 0;
+            uint_fast64_t noBits = 0;
+            if (offset == 0) {
+                // Copy complete buckets
+                for ( ; noBits + 64 <= length; ++getBucket, ++insertBucket, noBits += 64) {
+                    *insertBucket = *getBucket;
+                }
+            } else {
+                //Get first bits up until next bucket
+                getValue = *getBucket;
+                writeValue = (getValue << offset);
+                noBits += (64-offset);
+                ++getBucket;
+                
+                //Get complete buckets
+                for ( ; noBits + 64 <= length; ++getBucket, ++insertBucket, noBits += 64) {
+                    getValue = *getBucket;
+                    // Get bits till write bucket is full
+                    writeValue |= (getValue >> (64-offset));
+                    *insertBucket = writeValue;
+                    // Get bits up until next bucket
+                    writeValue = (getValue << offset);
+                }
+            }
+            
+            // Write last bits
+            uint_fast64_t remainingBits = length - noBits;
+            STORM_LOG_ASSERT(getBucket != buckets + bucketCount(), "Bucket index incorrect.");
+            // Get remaining bits
+            getValue = (*getBucket >> (64-remainingBits)) << (64-remainingBits);
+            STORM_LOG_ASSERT(remainingBits < 64, "Too many remaining bits.");
+            // Write bucket
+            STORM_LOG_ASSERT(insertBucket != result.buckets + result.bucketCount(), "Bucket index incorrect.");
+            if (offset == 0) {
+                *insertBucket = getValue;
+            } else {
+                writeValue |= getValue >> (64-offset);
+                *insertBucket = writeValue;
+                if (remainingBits > offset) {
+                    // Write last bits in new value
+                    writeValue = (getValue << offset);
+                    ++insertBucket;
+                    STORM_LOG_ASSERT(insertBucket != result.buckets + result.bucketCount(), "Bucket index incorrect.");
+                    *insertBucket = writeValue;
+                }
+            }
+
+#ifdef ASSERT_BITVECTOR
+            // Check correctness of getter
+            for (uint_fast64_t i = 0; i < length; ++i) {
+                if (result.get(i) != get(start + i)) {
+                    STORM_LOG_ERROR("Getting of bits not correct for index " << i);
+                    STORM_LOG_ERROR("Getting from " << start << " with length " << length);
+                    std::stringstream stream;
+                    printBits(stream);
+                    stream << std::endl;
+                    result.printBits(stream);
+                    STORM_LOG_ERROR(stream.str());
+                    STORM_LOG_ASSERT(false, "Getting of bits not correct.");
+                }
+            }
+            for (uint_fast64_t i = 0; i < bitCount; ++i) {
+                if (i < start || i >= start+length) {
+                    if (original.get(i) != get(i)) {
+                        STORM_LOG_ERROR("Getting did change bitvector at index " << i);
+                        STORM_LOG_ERROR("Getting from " << start << " with length " << length);
+                        std::stringstream stream;
+                        printBits(stream);
+                        stream << std::endl;
+                        original.printBits(stream);
+                        STORM_LOG_ERROR(stream.str());
+                        STORM_LOG_ASSERT(false, "Getting of bits not correct.");
+                    }
+                }
+            }
+
+#endif
+            return result;
+        }
+        
+        void BitVector::setFromBitVector(uint_fast64_t start, BitVector const& other) {
+#ifdef ASSERT_BITVECTOR
+            BitVector original(*this);
+#endif
+            STORM_LOG_ASSERT(start + other.bitCount <= bitCount, "Range invalid.");
+            
+            uint_fast64_t offset = start % 64;
+            uint64_t* insertBucket = buckets + (start / 64);
+            uint64_t* getBucket = other.buckets;
+            uint_fast64_t getValue;
+            uint_fast64_t writeValue = 0;
+            uint_fast64_t noBits = 0;
+            if (offset == 0) {
+                // Copy complete buckets
+                for ( ; noBits + 64 <= other.bitCount; ++insertBucket, ++getBucket, noBits += 64) {
+                    *insertBucket = *getBucket;
+                }
+            } else {
+                //Get first bits up until next bucket
+                getValue = *getBucket;
+                writeValue = (*insertBucket >> (64-offset)) << (64-offset);
+                writeValue |= (getValue >> offset);
+                *insertBucket = writeValue;
+                noBits += (64-offset);
+                ++insertBucket;
+                
+                //Get complete buckets
+                for ( ; noBits + 64 <= other.bitCount; ++insertBucket, noBits += 64) {
+                    // Get all remaining bits from other bucket
+                    writeValue = getValue << (64-offset);
+                    // Get bits from next bucket
+                    ++getBucket;
+                    getValue = *getBucket;
+                    writeValue |= getValue >> offset;
+                    *insertBucket = writeValue;
+                }
+            }
+            
+            // Write last bits
+            uint_fast64_t remainingBits = other.bitCount - noBits;
+            STORM_LOG_ASSERT(remainingBits < 64, "Too many remaining bits.");
+            STORM_LOG_ASSERT(insertBucket != buckets + bucketCount(), "Bucket index incorrect.");
+            STORM_LOG_ASSERT(getBucket != other.buckets + other.bucketCount(), "Bucket index incorrect.");
+            // Get remaining bits of bucket
+            getValue = *getBucket;
+            if (offset > 0) {
+                getValue = getValue << (64-offset);
+            }
+            // Get unchanged part of bucket
+            writeValue = (*insertBucket << remainingBits) >> remainingBits;
+            if (remainingBits > offset && offset > 0) {
+                // Remaining bits do not come from one bucket -> consider next bucket
+                ++getBucket;
+                STORM_LOG_ASSERT(getBucket != other.buckets + other.bucketCount(), "Bucket index incorrect.");
+                getValue |= *getBucket >> offset;
+            }
+            // Write completely
+            writeValue |= getValue;
+            *insertBucket = writeValue;
+     
+#ifdef ASSERT_BITVECTOR
+            // Check correctness of setter
+            for (uint_fast64_t i = 0; i < other.bitCount; ++i) {
+                if (other.get(i) != get(start + i)) {
+                    STORM_LOG_ERROR("Setting of bits not correct for index " << i);
+                    STORM_LOG_ERROR("Setting from " << start << " with length " << other.bitCount);
+                    std::stringstream stream;
+                    printBits(stream);
+                    stream << std::endl;
+                    other.printBits(stream);
+                    STORM_LOG_ERROR(stream.str());
+                    STORM_LOG_ASSERT(false, "Setting of bits not correct.");
+                }
+            }
+            for (uint_fast64_t i = 0; i < bitCount; ++i) {
+                if (i < start || i >= start+other.bitCount) {
+                    if (original.get(i) != get(i)) {
+                        STORM_LOG_ERROR("Setting did change bitvector at index " << i);
+                        STORM_LOG_ERROR("Setting from " << start << " with length " << other.bitCount);
+                        std::stringstream stream;
+                        printBits(stream);
+                        stream << std::endl;
+                        original.printBits(stream);
+                        STORM_LOG_ERROR(stream.str());
+                        STORM_LOG_ASSERT(false, "Setting of bits not correct.");
+                    }
+                }
+            }
+#endif
+        }
+        
+        bool BitVector::compareAndSwap(uint_fast64_t start1, uint_fast64_t start2, uint_fast64_t length) {
+            if (length < 64) {
+                // Just use one number
+                uint_fast64_t elem1 = getAsInt(start1, length);
+                uint_fast64_t elem2 = getAsInt(start2, length);
+                if (elem1 < elem2) {
+                    // Swap elements
+                    setFromInt(start1, length, elem2);
+                    setFromInt(start2, length, elem1);
+                    return true;
+                }
+                return false;
+            } else {
+                // Use bit vectors
+                BitVector elem1 = getAsBitVector(start1, length);
+                BitVector elem2 = getAsBitVector(start2, length);
+                
+                if (!(elem1 < elem2)) {
+                    // Elements already sorted
+#ifdef ASSERT_BITVECTOR
+                    // Check that sorted
+                    for (uint_fast64_t i = 0; i < length; ++i) {
+                        if (get(start1 + i) > get(start2 + i)) {
+                            break;
+                        }
+                        STORM_LOG_ASSERT(get(start1 + i) >= get(start2 + i), "Bit vector not sorted for indices " << start1+i << " and " << start2+i);
+                    }
+#endif
+                    return false;
+                }
+                
+#ifdef ASSERT_BITVECTOR
+                BitVector check(*this);
+#endif
+                
+                // Swap elements
+                setFromBitVector(start1, elem2);
+                setFromBitVector(start2, elem1);
+                
+#ifdef ASSERT_BITVECTOR
+                // Check correctness of swapping
+                bool tmp;
+                for (uint_fast64_t i = 0; i < length; ++i) {
+                    tmp = check.get(i + start1);
+                    check.set(i + start1, check.get(i + start2));
+                    check.set(i + start2, tmp);
+                }
+                STORM_LOG_ASSERT(*this == check, "Swapping not correct");
+                
+                // Check that sorted
+                for (uint_fast64_t i = 0; i < length; ++i) {
+                    if (get(start1 + i) > get(start2 + i)) {
+                        break;
+                    }
+                    STORM_LOG_ASSERT(get(start1 + i) >= get(start2 + i), "Bit vector not sorted for indices " << start1+i << " and " << start2+i);
+                }
+#endif
+
+                return true;
+            }
+        }
+
 
         void BitVector::truncateLastBucket() {
             if ((bitCount & mod64mask) != 0) {
-                bucketVector.back() &= ~((1ll << (64 - (bitCount & mod64mask))) - 1ll);
+                buckets[bucketCount() - 1] &= ~((1ll << (64 - (bitCount & mod64mask))) - 1ll);
             }
         }
 
         size_t BitVector::bucketCount() const {
-            return bucketVector.size();
+            size_t result = (bitCount >> 6);
+            if ((bitCount & mod64mask) != 0) {
+                ++result;
+            }
+            return result;
         }
 
-        std::ostream& operator<<(std::ostream& out, BitVector const& bitVector) {
-            out << "bit vector(" << bitVector.getNumberOfSetBits() << "/" << bitVector.bitCount << ") [";
-            for (auto index : bitVector) {
+        std::ostream& operator<<(std::ostream& out, BitVector const& bitvector) {
+            out << "bit vector(" << bitvector.getNumberOfSetBits() << "/" << bitvector.bitCount << ") [";
+            for (auto index : bitvector) {
                 out << index << " ";
             }
             out << "]";
 
             return out;
         }
+        
+        void BitVector::printBits(std::ostream& out) const {
+            out << "bit vector(" << getNumberOfSetBits() << "/" << bitCount << ") ";
+            uint_fast64_t index = 0;
+            for ( ; index * 64 + 64 <= bitCount; ++index) {
+                std::bitset<64> tmp(buckets[index]);
+                out << tmp << "|";
+            }
+            
+            // Print last bits
+            if (index * 64 < bitCount) {
+                STORM_LOG_ASSERT(index == bucketCount() - 1, "Not last bucket.");
+                std::bitset<64> tmp(buckets[index]);
+                for (size_t i = 0; i + index * 64 < bitCount; ++i) {
+                    // Bits are counted from rightmost in bitset
+                    out << tmp[63-i];
+                }
+            }
+            out << std::endl;
+        }
 
-        std::size_t NonZeroBitVectorHash::operator()(storm::storage::BitVector const& bv) const {
-            STORM_LOG_ASSERT(bv.size() > 0, "Cannot hash bit vector of zero size.");
+        std::size_t NonZeroBitVectorHash::operator()(storm::storage::BitVector const& bitvector) const {
+            STORM_LOG_ASSERT(bitvector.size() > 0, "Cannot hash bit vector of zero size.");
             std::size_t result = 0;
 
-            for (uint_fast64_t index = 0; index < bv.bucketVector.size(); ++index) {
+            for (uint_fast64_t index = 0; index < bitvector.bucketCount(); ++index) {
                 result ^= result << 3;
-                result ^= result >> bv.getAsInt(index << 6, 5);
+                result ^= result >> bitvector.getAsInt(index << 6, 5);
             }
 
             // Erase the last bit and add one to definitely make this hash value non-zero.
@@ -674,7 +991,7 @@ namespace storm {
 
 namespace std {
 
-    std::size_t hash<storm::storage::BitVector>::operator()(storm::storage::BitVector const& bv) const {
-        return boost::hash_range(bv.bucketVector.begin(), bv.bucketVector.end());
+    std::size_t hash<storm::storage::BitVector>::operator()(storm::storage::BitVector const& bitvector) const {
+        return boost::hash_range(bitvector.buckets, bitvector.buckets + bitvector.bucketCount());
     }
 }

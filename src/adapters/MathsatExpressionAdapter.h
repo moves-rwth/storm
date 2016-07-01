@@ -22,9 +22,9 @@
 namespace std {
     // Define hashing operator for MathSAT's declarations.
     template <>
-    struct std::hash<msat_decl> {
-        std::size_t operator()(msat_decl const& declaration) const {
-            return std::hash<void*>()(declaration.repr);
+    struct hash<msat_decl> {
+        size_t operator()(msat_decl const& declaration) const {
+            return hash<void*>()(declaration.repr);
         }
     };
 }

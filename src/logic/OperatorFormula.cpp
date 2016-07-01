@@ -2,28 +2,64 @@
 
 namespace storm {
     namespace logic {
-        OperatorFormula::OperatorFormula(boost::optional<OptimizationDirection> optimalityType, boost::optional<ComparisonType> comparisonType, boost::optional<double> bound, std::shared_ptr<Formula const> const& subformula) : UnaryStateFormula(subformula), comparisonType(comparisonType), bound(bound), optimalityType(optimalityType) {
+        OperatorInformation::OperatorInformation(boost::optional<storm::solver::OptimizationDirection> const& optimizationDirection, boost::optional<Bound<double>> const& bound) : optimalityType(optimizationDirection), bound(bound) {
+            // Intentionally left empty.
+        }
+        
+        OperatorFormula::OperatorFormula(std::shared_ptr<Formula const> const& subformula, OperatorInformation const& operatorInformation) : UnaryStateFormula(subformula), operatorInformation(operatorInformation) {
             // Intentionally left empty.
         }
         
         bool OperatorFormula::hasBound() const {
-            return static_cast<bool>(bound);
+            return static_cast<bool>(operatorInformation.bound);
         }
         
-        ComparisonType const& OperatorFormula::getComparisonType() const {
-            return comparisonType.get();
+        ComparisonType OperatorFormula::getComparisonType() const {
+            return operatorInformation.bound.get().comparisonType;
         }
         
-        double OperatorFormula::getBound() const {
-            return bound.get();
+        void OperatorFormula::setComparisonType(ComparisonType newComparisonType) {
+            operatorInformation.bound.get().comparisonType = newComparisonType;
+        }
+        
+        double OperatorFormula::getThreshold() const {
+            return operatorInformation.bound.get().threshold;
+        }
+        
+        void OperatorFormula::setThreshold(double newThreshold) {
+            operatorInformation.bound.get().threshold = newThreshold;
+        }
+        
+        Bound<double> const& OperatorFormula::getBound() const {
+            return operatorInformation.bound.get();
+        }
+        
+        void OperatorFormula::setBound(Bound<double> const& newBound) {
+            operatorInformation.bound = newBound;
         }
         
         bool OperatorFormula::hasOptimalityType() const {
-            return static_cast<bool>(optimalityType);
+            return static_cast<bool>(operatorInformation.optimalityType);
         }
         
         OptimizationDirection const& OperatorFormula::getOptimalityType() const {
-            return optimalityType.get();
+            return operatorInformation.optimalityType.get();
+        }
+        
+        bool OperatorFormula::isOperatorFormula() const {
+            return true;
+        }
+        
+        OperatorInformation const& OperatorFormula::getOperatorInformation() const {
+            return operatorInformation;
+        }
+        
+        bool OperatorFormula::hasQualitativeResult() const {
+            return this->hasBound();
+        }
+        
+        bool OperatorFormula::hasQuantitativeResult() const {
+            return !this->hasBound();
         }
         
         std::ostream& OperatorFormula::writeToStream(std::ostream& out) const {
@@ -31,7 +67,7 @@ namespace storm {
                 out << (getOptimalityType() == OptimizationDirection::Minimize ? "min" : "max");
             }
             if (hasBound()) {
-                out << getComparisonType() << getBound();
+                out << getBound();
             } else {
                 out << "=?";
             }

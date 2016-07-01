@@ -1,0 +1,129 @@
+toplevel "System";
+"System" or "triadA" "triadB" "triadC" "triadD" "fA" "fB" "fC" "fD";
+
+"triadA" 2of3 "aA" "bA" "cA";
+"aA" csp "TAA" "TAS";
+"bA" csp "TAB" "TAS";
+"cA" csp "TAC" "TAS";
+
+"triadB" 2of3 "aB" "bB" "cB";
+"aB" csp "TBA" "TBS";
+"bB" csp "TBB" "TBS";
+"cB" csp "TBC" "TBS";
+
+"triadC" 2of3 "aC" "bC" "cC";
+"aC" csp "TCA" "TCS";
+"bC" csp "TCB" "TCS";
+"cC" csp "TCC" "TCS";
+
+"triadD" 2of3 "aD" "bD" "cD";
+"aD" csp "TDA" "TDS";
+"bD" csp "TDB" "TDS";
+"cD" csp "TDC" "TDS";
+
+"fA" fdep "NEA" "TAA" "TBA" "TCA" "TDA";
+"fB" fdep "NEB" "TAB" "TBB" "TCB" "TDB";
+"fC" fdep "NEC" "TAC" "TBC" "TCC" "TDC";
+"fD" fdep "NED" "TAS" "TBS" "TCS" "TDS";
+
+
+"NEA" lambda=0.017 dorm=1;
+"NEB" lambda=0.017 dorm=1;
+"NEC" lambda=0.017 dorm=1;
+"NED" lambda=0.017 dorm=1;
+
+"TAA" or "cpuAA" "memAA";
+"memAA" csp "memAA1" "memAA2";
+"cpuAA" lambda=0.11 dorm=0;
+"memAA1" lambda=0.11 dorm=0;
+"memAA2" lambda=0.11 dorm=0;
+
+"TAB" or "cpuAB" "memAB";
+"memAB" csp "memAB1" "memAB2";
+"cpuAB" lambda=0.11 dorm=0;
+"memAB1" lambda=0.11 dorm=0;
+"memAB2" lambda=0.11 dorm=0;
+
+"TAC" or "cpuAC" "memAC";
+"memAC" csp "memAC1" "memAC2";
+"cpuAC" lambda=0.11 dorm=0;
+"memAC1" lambda=0.11 dorm=0;
+"memAC2" lambda=0.11 dorm=0;
+
+"TAS" or "cpuAS" "memAS";
+"memAS" csp "memAS1" "memAS2";
+"cpuAS" lambda=0.11 dorm=0;
+"memAS1" lambda=0.11 dorm=0;
+"memAS2" lambda=0.11 dorm=0;
+
+"TBA" or "cpuBA" "memBA";
+"memBA" csp "memBA1" "memBA2";
+"cpuBA" lambda=0.11 dorm=0;
+"memBA1" lambda=0.11 dorm=0;
+"memBA2" lambda=0.11 dorm=0;
+
+"TBB" or "cpuBB" "memBB";
+"memBB" csp "memBB1" "memBB2";
+"cpuBB" lambda=0.11 dorm=0;
+"memBB1" lambda=0.11 dorm=0;
+"memBB2" lambda=0.11 dorm=0;
+
+"TBC" or "cpuBC" "memBC";
+"memBC" csp "memBC1" "memBC2";
+"cpuBC" lambda=0.11 dorm=0;
+"memBC1" lambda=0.11 dorm=0;
+"memBC2" lambda=0.11 dorm=0;
+
+"TBS" or "cpuBS" "memBS";
+"memBS" csp "memBS1" "memBS2";
+"cpuBS" lambda=0.11 dorm=0;
+"memBS1" lambda=0.11 dorm=0;
+"memBS2" lambda=0.11 dorm=0;
+
+"TCA" or "cpuCA" "memCA";
+"memCA" csp "memCA1" "memCA2";
+"cpuCA" lambda=0.11 dorm=0;
+"memCA1" lambda=0.11 dorm=0;
+"memCA2" lambda=0.11 dorm=0;
+
+"TCB" or "cpuCB" "memCB";
+"memCB" csp "memCB1" "memCB2";
+"cpuCB" lambda=0.11 dorm=0;
+"memCB1" lambda=0.11 dorm=0;
+"memCB2" lambda=0.11 dorm=0;
+
+"TCC" or "cpuCC" "memCC";
+"memCC" csp "memCC1" "memCC2";
+"cpuCC" lambda=0.11 dorm=0;
+"memCC1" lambda=0.11 dorm=0;
+"memCC2" lambda=0.11 dorm=0;
+
+"TCS" or "cpuCS" "memCS";
+"memCS" csp "memCS1" "memCS2";
+"cpuCS" lambda=0.11 dorm=0;
+"memCS1" lambda=0.11 dorm=0;
+"memCS2" lambda=0.11 dorm=0;
+
+"TDA" or "cpuDA" "memDA";
+"memDA" csp "memDA1" "memDA2";
+"cpuDA" lambda=0.11 dorm=0;
+"memDA1" lambda=0.11 dorm=0;
+"memDA2" lambda=0.11 dorm=0;
+
+"TDB" or "cpuDB" "memDB";
+"memDB" csp "memDB1" "memDB2";
+"cpuDB" lambda=0.11 dorm=0;
+"memDB1" lambda=0.11 dorm=0;
+"memDB2" lambda=0.11 dorm=0;
+
+"TDC" or "cpuDC" "memDC";
+"memDC" csp "memDC1" "memDC2";
+"cpuDC" lambda=0.11 dorm=0;
+"memDC1" lambda=0.11 dorm=0;
+"memDC2" lambda=0.11 dorm=0;
+
+"TDS" or "cpuDS" "memDS";
+"memDS" csp "memDS1" "memDS2";
+"cpuDS" lambda=0.11 dorm=0;
+"memDS1" lambda=0.11 dorm=0;
+"memDS2" lambda=0.11 dorm=0;

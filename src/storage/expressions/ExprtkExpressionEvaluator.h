@@ -1,6 +1,7 @@
 #ifndef STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_
 #define STORM_STORAGE_EXPRESSIONS_EXPRTKEXPRESSIONEVALUATOR_H_
 
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -26,14 +27,14 @@ namespace storm {
         protected:
             typedef double ValueType;
             typedef exprtk::expression<ValueType> CompiledExpressionType;
-            typedef std::unordered_map<BaseExpression const*, CompiledExpressionType> CacheType;
+            typedef std::unordered_map<std::shared_ptr<BaseExpression const>, CompiledExpressionType> CacheType;
             
             /*!
              * Adds a compiled version of the given expression to the internal storage.
              *
              * @param expression The expression that is to be compiled.
              */
-            CompiledExpressionType& getCompiledExpression(BaseExpression const* expression) const;
+            CompiledExpressionType& getCompiledExpression(storm::expressions::Expression const& expression) const;
             
             // The parser used.
             mutable exprtk::parser<ValueType> parser;

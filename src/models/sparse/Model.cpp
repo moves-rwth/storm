@@ -311,6 +311,32 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::supportsParameters() const {
+                return std::is_same<ValueType, storm::RationalFunction>::value;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::hasParameters() const {
+                if (!this->supportsParameters()) {
+                    return false;
+                }
+                // Check for parameters
+                for (auto const& entry : this->getTransitionMatrix()) {
+                    if (!storm::utility::isConstant(entry.getValue())) {
+                        return true;
+                    }
+                }
+                // Only constant values present
+                return false;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::isExact() const {
+                // TODO: change when dedicated data-structure for exact values is present
+                return this->supportsParameters();
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             std::unordered_map<std::string, RewardModelType>& Model<ValueType, RewardModelType>::getRewardModels() {
                 return this->rewardModels;
             }
@@ -319,16 +345,18 @@ namespace storm {
             std::unordered_map<std::string, RewardModelType> const& Model<ValueType, RewardModelType>::getRewardModels() const {
                 return this->rewardModels;
             }
-
+            
+            std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model) {
+                return storm::storage::getVariables(model.getTransitionMatrix());
+            }
             
             template class Model<double>;
             template class Model<float>;
-            
-#ifdef STORM_HAVE_CARL
-            template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
 
+            template class Model<storm::RationalNumber>;
+
+            template class Model<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class Model<storm::RationalFunction>;
-#endif
             
         }
     }

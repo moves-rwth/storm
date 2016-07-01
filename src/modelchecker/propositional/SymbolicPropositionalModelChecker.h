@@ -8,23 +8,23 @@
 namespace storm {
     namespace models {
         namespace symbolic {
-            template<storm::dd::DdType Type> class Model;
+            template<storm::dd::DdType Type, typename ValueType>
+            class Model;
         }
     }
     
     namespace modelchecker {
         
-        
-        template<storm::dd::DdType Type>
+        template<storm::dd::DdType Type, typename ValueType>
         class SymbolicPropositionalModelChecker : public AbstractModelChecker {
         public:
-            explicit SymbolicPropositionalModelChecker(storm::models::symbolic::Model<Type> const& model);
+            explicit SymbolicPropositionalModelChecker(storm::models::symbolic::Model<Type, ValueType> const& model);
             
             // The implemented methods of the AbstractModelChecker interface.
-            virtual bool canHandle(storm::logic::Formula const& formula) const override;
-            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(storm::logic::BooleanLiteralFormula const& stateFormula) override;
-            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(storm::logic::AtomicLabelFormula const& stateFormula) override;
-            virtual std::unique_ptr<CheckResult> checkAtomicExpressionFormula(storm::logic::AtomicExpressionFormula const& stateFormula) override;
+            virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
+            virtual std::unique_ptr<CheckResult> checkBooleanLiteralFormula(CheckTask<storm::logic::BooleanLiteralFormula> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> checkAtomicLabelFormula(CheckTask<storm::logic::AtomicLabelFormula> const& checkTask) override;
+            virtual std::unique_ptr<CheckResult> checkAtomicExpressionFormula(CheckTask<storm::logic::AtomicExpressionFormula> const& checkTask) override;
 
         protected:
             /*!
@@ -32,7 +32,7 @@ namespace storm {
              *
              * @return The model associated with this model checker instance.
              */
-            virtual storm::models::symbolic::Model<Type> const& getModel() const;
+            virtual storm::models::symbolic::Model<Type, ValueType> const& getModel() const;
             
             /*!
              * Retrieves the model associated with this model checker instance as the given template parameter type.
@@ -44,8 +44,9 @@ namespace storm {
             
         private:
             // The model that is to be analyzed by the model checker.
-            storm::models::symbolic::Model<Type> const& model;
+            storm::models::symbolic::Model<Type, ValueType> const& model;
         };
+        
     }
 }
 

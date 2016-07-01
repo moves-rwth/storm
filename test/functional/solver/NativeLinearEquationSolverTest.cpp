@@ -28,13 +28,13 @@ TEST(NativeLinearEquationSolver, SolveWithStandardOptions) {
     ASSERT_NO_THROW(storm::solver::NativeLinearEquationSolver<double> solver(A));
     
     storm::solver::NativeLinearEquationSolver<double> solver(A);
-    ASSERT_NO_THROW(solver.solveEquationSystem(x, b));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::nativeEquationSolverSettings().getPrecision());
-    ASSERT_LT(std::abs(x[1] - 3), storm::settings::nativeEquationSolverSettings().getPrecision());
-    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::nativeEquationSolverSettings().getPrecision());
+    ASSERT_NO_THROW(solver.solveEquations(x, b));
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    ASSERT_LT(std::abs(x[1] - 3), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
+    ASSERT_LT(std::abs(x[2] - (-1)), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }
 
-TEST(NativeLinearEquationSolver, MatrixVectorMultplication) {
+TEST(NativeLinearEquationSolver, MatrixVectorMultiplication) {
     ASSERT_NO_THROW(storm::storage::SparseMatrixBuilder<double> builder);
     storm::storage::SparseMatrixBuilder<double> builder;
     ASSERT_NO_THROW(builder.addNextValue(0, 1, 0.5));
@@ -53,6 +53,6 @@ TEST(NativeLinearEquationSolver, MatrixVectorMultplication) {
     x[4] = 1;
     
     storm::solver::NativeLinearEquationSolver<double> solver(A);
-    ASSERT_NO_THROW(solver.performMatrixVectorMultiplication(x, nullptr, 4));
-    ASSERT_LT(std::abs(x[0] - 1), storm::settings::nativeEquationSolverSettings().getPrecision());
+    ASSERT_NO_THROW(solver.repeatedMultiply(x, nullptr, 4));
+    ASSERT_LT(std::abs(x[0] - 1), storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>().getPrecision());
 }

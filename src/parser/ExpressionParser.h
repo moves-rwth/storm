@@ -4,10 +4,9 @@
 #include <sstream>
 
 #include "src/parser/SpiritParserDefinitions.h"
+#include "src/parser/SpiritErrorHandler.h"
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/expressions/ExpressionManager.h"
-#include "src/utility/macros.h"
-#include "src/exceptions/WrongFormatException.h"
 
 namespace storm {
     namespace parser {
@@ -21,11 +20,13 @@ namespace storm {
              *
              * @param manager The manager responsible for the expressions.
              * @param invalidIdentifiers_ A symbol table of identifiers that are to be rejected.
+             * @param enableErrorHandling Enables error handling within the parser. Note that this should should be set
+             * to true when using the parser as the top level parser.
              * @param allowBacktracking A flag that indicates whether or not the parser is supposed to backtrack beyond
              * points it would typically allow. This can, for example, be used to prevent errors if the outer grammar
              * also parses boolean conjuncts that are erroneously consumed by the expression parser.
              */
-            ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_, bool allowBacktracking = false);
+            ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_ = qi::symbols<char, uint_fast64_t>(), bool enableErrorHandling = true, bool allowBacktracking = false);
             
             ExpressionParser(ExpressionParser const& other) = default;
             ExpressionParser& operator=(ExpressionParser const& other) = default;
@@ -38,6 +39,15 @@ namespace storm {
              * @param identifiers_ A pointer to a mapping from identifiers to expressions.
              */
             void setIdentifierMapping(qi::symbols<char, storm::expressions::Expression> const* identifiers_);
+
+            /*!
+             * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to
+             * expressions will be substituted wherever the key value appears in the parsed expression. After setting
+             * this, the parser will generate expressions.
+             *
+             * @param identifierMapping A mapping from identifiers to expressions.
+             */
+            void setIdentifierMapping(std::unordered_map<std::string, storm::expressions::Expression> const& identifierMapping);
             
             /*!
              * Unsets a previously set identifier mapping. This will make the parser not generate expressions any more
@@ -51,7 +61,9 @@ namespace storm {
              * @param flag If set to true, double literals are accepted.
              */
             void setAcceptDoubleLiterals(bool flag);
-            
+
+            storm::expressions::Expression parseFromString(std::string const& expressionString) const;
+
         private:
             struct orOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
                 orOperatorStruct() {
@@ -120,15 +132,15 @@ namespace storm {
             // A parser used for recognizing the operators at the "multiplication" precedence level.
             multiplicationOperatorStruct multiplicationOperator_;
 
-            struct powerOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
-                powerOperatorStruct() {
+            struct infixPowerOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                infixPowerOperatorStruct() {
                     add
                     ("^", storm::expressions::OperatorType::Power);
                 }
             };
             
             // A parser used for recognizing the operators at the "power" precedence level.
-            powerOperatorStruct powerOperator_;
+            infixPowerOperatorStruct infixPowerOperator_;
             
             struct unaryOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
                 unaryOperatorStruct() {
@@ -162,7 +174,17 @@ namespace storm {
             
             // A parser used for recognizing the operators at the "min/max" precedence level.
             minMaxOperatorStruct minMaxOperator_;
+            
+            struct prefixPowerOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
+                prefixPowerOperatorStruct() {
+                    add
+                    ("pow", storm::expressions::OperatorType::Power);
+                }
+            };
 
+            // A parser used for recognizing the operators at the "power" precedence level.
+            prefixPowerOperatorStruct prefixPowerOperator_;
+            
             struct trueFalseOperatorStruct : qi::symbols<char, storm::expressions::Expression> {
                 trueFalseOperatorStruct(storm::expressions::ExpressionManager const& manager) {
                     add
@@ -184,12 +206,15 @@ namespace storm {
             // A flag that indicates whether double literals are accepted.
             bool acceptDoubleLiterals;
             
+            // A flag that indicates whether the mapping must be deleted on unsetting.
+            bool deleteIdentifierMapping;
+            
             // The currently used mapping of identifiers to expressions. This is used if the parser is set to create
             // expressions.
             qi::symbols<char, storm::expressions::Expression> const* identifiers_;
             
             // The symbol table of invalid identifiers.
-            qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_;
+            qi::symbols<char, uint_fast64_t> invalidIdentifiers_;
             
             // Rules for parsing a composed expression.
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> expression;
@@ -200,51 +225,39 @@ namespace storm {
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> equalityExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> plusExpression;
             qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> multiplicationExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> powerExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> prefixPowerExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> infixPowerExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> unaryExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> atomicExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> literalExpression;
             qi::rule<Iterator, storm::expressions::Expression(), Skipper> identifierExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> minMaxExpression;
-            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<bool>, Skipper> floorCeilExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> minMaxExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), qi::locals<storm::expressions::OperatorType>, Skipper> floorCeilExpression;
             qi::rule<Iterator, std::string(), Skipper> identifier;
             
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
             
             // Helper functions to create expressions.
-            storm::expressions::Expression createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3) const;
-            storm::expressions::Expression createOrExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
-            storm::expressions::Expression createAndExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
-            storm::expressions::Expression createRelationalExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
-            storm::expressions::Expression createEqualsExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
-            storm::expressions::Expression createPlusExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
-            storm::expressions::Expression createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
-            storm::expressions::Expression createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
-            storm::expressions::Expression createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1) const;
+            storm::expressions::Expression createIteExpression(storm::expressions::Expression e1, storm::expressions::Expression e2, storm::expressions::Expression e3, bool& pass) const;
+            storm::expressions::Expression createOrExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
+            storm::expressions::Expression createAndExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
+            storm::expressions::Expression createRelationalExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
+            storm::expressions::Expression createEqualsExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
+            storm::expressions::Expression createPlusExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
+            storm::expressions::Expression createMultExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
+            storm::expressions::Expression createPowerExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
+            storm::expressions::Expression createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1, bool& pass) const;
             storm::expressions::Expression createDoubleLiteralExpression(double value, bool& pass) const;
-            storm::expressions::Expression createIntegerLiteralExpression(int value) const;
-            storm::expressions::Expression createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2) const;
-            storm::expressions::Expression createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1) const;
+            storm::expressions::Expression createIntegerLiteralExpression(int value, bool& pass) const;
+            storm::expressions::Expression createMinimumMaximumExpression(storm::expressions::Expression const& e1, storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e2, bool& pass) const;
+            storm::expressions::Expression createFloorCeilExpression(storm::expressions::OperatorType const& operatorType, storm::expressions::Expression const& e1, bool& pass) const;
             storm::expressions::Expression getIdentifierExpression(std::string const& identifier, bool allowBacktracking, bool& pass) const;
             
             bool isValidIdentifier(std::string const& identifier);
             
-            // Functor used for displaying error information.
-            struct ErrorHandler {
-                typedef qi::error_handler_result result_type;
-                
-                template<typename T1, typename T2, typename T3, typename T4>
-                qi::error_handler_result operator()(T1 b, T2 e, T3 where, T4 const& what) const {
-                    std::stringstream whatAsString;
-                    whatAsString << what;
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << get_line(where) << ": " << " expecting " << whatAsString.str() << ".");
-                    return qi::fail;
-                }
-            };
-            
             // An error handler function.
-            phoenix::function<ErrorHandler> handler;
+            phoenix::function<SpiritErrorHandler> handler;
         };
     } // namespace parser
 } // namespace storm

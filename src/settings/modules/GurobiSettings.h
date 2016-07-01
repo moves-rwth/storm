@@ -13,11 +13,9 @@ namespace storm {
             class GurobiSettings : public ModuleSettings {
             public:
                 /*!
-                 * Creates a new set of Gurobi settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of Gurobi settings.
                  */
-                GurobiSettings(storm::settings::SettingsManager& settingsManager);
+                GurobiSettings();
                 
                 /*!
                  * Retrieves whether the integer tolerance has been set.

@@ -323,7 +323,7 @@ namespace storm {
 
 		std::vector<storm::expressions::Expression> Z3SmtSolver::getUnsatAssumptions() {
 #ifdef STORM_HAVE_Z3
-            STORM_LOG_THROW(lastResult == SmtSolver::CheckResult::Unsat, storm::exceptions::InvalidStateException, "Unable to generate unsatisfiable core of assumptions, because the last check did not determine the formulas to be unsatisfiable.")
+            STORM_LOG_THROW(lastResult == SmtSolver::CheckResult::Unsat, storm::exceptions::InvalidStateException, "Unable to generate unsatisfiable core of assumptions, because the last check did not determine the formulas to be unsatisfiable.");
             STORM_LOG_THROW(lastCheckAssumptions, storm::exceptions::InvalidStateException, "Unable to generate unsatisfiable core of assumptions, because the last check did not involve assumptions.");
 
 			z3::expr_vector z3UnsatAssumptions = this->solver->unsat_core();
@@ -338,5 +338,28 @@ namespace storm {
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
 #endif
 		}
+        
+        bool Z3SmtSolver::setTimeout(uint_fast64_t milliseconds) {
+#ifdef STORM_HAVE_Z3
+            z3::params paramObject(*context);
+            paramObject.set(":timeout", static_cast<unsigned>(milliseconds));
+            solver->set(paramObject);
+            return true;
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
+#endif
+        }
+        
+        bool Z3SmtSolver::unsetTimeout() {
+#ifdef STORM_HAVE_Z3
+            z3::params paramObject(*context);
+            paramObject.set(":timeout", 0u);
+            solver->set(paramObject);
+            return true;
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "StoRM is compiled without Z3 support.");
+#endif
+        }
+
 	}
 }

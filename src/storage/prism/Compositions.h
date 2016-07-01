@@ -1,0 +1,6 @@
+#include "src/storage/prism/ModuleComposition.h"
+#include "src/storage/prism/RestrictedParallelComposition.h"
+#include "src/storage/prism/RenamingComposition.h"
+#include "src/storage/prism/SynchronizingParallelComposition.h"
+#include "src/storage/prism/InterleavingParallelComposition.h"
+#include "src/storage/prism/HidingComposition.h"

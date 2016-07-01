@@ -15,15 +15,23 @@
 namespace storm {
     namespace dd {
         
-        template<storm::dd::DdType Type> class Dd;
-        template<storm::dd::DdType Type> class Add;
-        template<storm::dd::DdType Type> class Bdd;
-        template<storm::dd::DdType Type> class DdManager;
+        template<storm::dd::DdType Type>
+        class Dd;
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        class Add;
+        
+        template<storm::dd::DdType Type>
+        class Bdd;
+        
+        template<storm::dd::DdType Type>
+        class DdManager;
         
     }
     
     namespace adapters {
-        template<storm::dd::DdType Type> class AddExpressionAdapter;
+        template<storm::dd::DdType Type, typename ValueType>
+        class AddExpressionAdapter;
     }
     
     namespace models {
@@ -35,17 +43,20 @@ namespace storm {
             /*!
              * Base class for all symbolic models.
              */
-            template<storm::dd::DdType Type>
+            template<storm::dd::DdType Type, typename CValueType = double>
             class Model : public storm::models::ModelBase {
             public:
-                typedef StandardRewardModel<Type, double> RewardModelType;
+                typedef CValueType ValueType;
                 
-                Model(Model<Type> const& other) = default;
-                Model& operator=(Model<Type> const& other) = default;
+                static const storm::dd::DdType DdType = Type;
+                typedef StandardRewardModel<Type, ValueType> RewardModelType;
+                
+                Model(Model<Type, ValueType> const& other) = default;
+                Model& operator=(Model<Type, ValueType> const& other) = default;
                 
 #ifndef WINDOWS
-                Model(Model<Type>&& other) = default;
-                Model& operator=(Model<Type>&& other) = default;
+                Model(Model<Type, ValueType>&& other) = default;
+                Model& operator=(Model<Type, ValueType>&& other) = default;
 #endif
                 
                 /*!
@@ -55,6 +66,7 @@ namespace storm {
                  * @param manager The manager responsible for the decision diagrams.
                  * @param reachableStates A DD representing the reachable states.
                  * @param initialStates A DD representing the initial states of the model.
+                 * @param deadlockStates A DD representing the deadlock states of the model.
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param rowVariables The set of row meta variables used in the DDs.
                  * @param rowExpressionAdapter An object that can be used to translate expressions in terms of the row
@@ -70,11 +82,12 @@ namespace storm {
                       std::shared_ptr<storm::dd::DdManager<Type>> manager,
                       storm::dd::Bdd<Type> reachableStates,
                       storm::dd::Bdd<Type> initialStates,
-                      storm::dd::Add<Type> transitionMatrix,
+                      storm::dd::Bdd<Type> deadlockStates,
+                      storm::dd::Add<Type, ValueType> transitionMatrix,
                       std::set<storm::expressions::Variable> const& rowVariables,
-                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter,
+                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
                       std::set<storm::expressions::Variable> const& columnVariables,
-                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
+                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter,
                       std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                       std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
                       std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
@@ -140,14 +153,14 @@ namespace storm {
                  *
                  * @return A matrix representing the transitions of the model.
                  */
-                storm::dd::Add<Type> const& getTransitionMatrix() const;
+                storm::dd::Add<Type, ValueType> const& getTransitionMatrix() const;
                 
                 /*!
                  * Retrieves the matrix representing the transitions of the model.
                  *
                  * @return A matrix representing the transitions of the model.
                  */
-                storm::dd::Add<Type>& getTransitionMatrix();
+                storm::dd::Add<Type, ValueType>& getTransitionMatrix();
                 
                 /*!
                  * Retrieves the meta variables used to encode the rows of the transition matrix and the vector indices.
@@ -175,7 +188,7 @@ namespace storm {
                  *
                  * @return An ADD that represents the diagonal of the transition matrix.
                  */
-                storm::dd::Add<Type> getRowColumnIdentity() const;
+                storm::dd::Add<Type, ValueType> getRowColumnIdentity() const;
                 
                 /*!
                  * Retrieves whether the model has a reward model with the given name.
@@ -232,7 +245,7 @@ namespace storm {
                  *
                  * @param transitionMatrix The new transition matrix of the model.
                  */
-                void setTransitionMatrix(storm::dd::Add<Type> const& transitionMatrix);
+                void setTransitionMatrix(storm::dd::Add<Type, ValueType> const& transitionMatrix);
                 
                 /*!
                  * Retrieves the mapping of labels to their defining expressions.
@@ -280,20 +293,23 @@ namespace storm {
                 // A vector representing the initial states of the model.
                 storm::dd::Bdd<Type> initialStates;
                 
+                // A vector representing the deadlock states of the model.
+                storm::dd::Bdd<Type> deadlockStates;
+                
                 // A matrix representing transition relation.
-                storm::dd::Add<Type> transitionMatrix;
+                storm::dd::Add<Type, ValueType> transitionMatrix;
                 
                 // The meta variables used to encode the rows of the transition matrix.
                 std::set<storm::expressions::Variable> rowVariables;
                 
                 // An adapter that can translate expressions to DDs over the row meta variables.
-                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter;
+                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter;
                 
                 // The meta variables used to encode the columns of the transition matrix.
                 std::set<storm::expressions::Variable> columnVariables;
                 
                 // An adapter that can translate expressions to DDs over the column meta variables.
-                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter;
+                std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter;
                 
                 // A vector holding all pairs of row and column meta variable pairs. This is used to swap the variables
                 // in the DDs from row to column variables and vice versa.

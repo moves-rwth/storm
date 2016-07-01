@@ -2,7 +2,6 @@
 #define STORM_LOGIC_ATOMICEXPRESSIONFORMULA_H_
 
 #include "src/logic/StateFormula.h"
-#include "src/storage/expressions/Expression.h"
 
 namespace storm {
     namespace logic {
@@ -16,9 +15,7 @@ namespace storm {
             
             virtual bool isAtomicExpressionFormula() const override;
             
-            virtual bool isPctlStateFormula() const override;
-            virtual bool isLtlFormula() const override;
-            virtual bool isPropositionalFormula() const override;
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             storm::expressions::Expression const& getExpression() const;
             

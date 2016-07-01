@@ -67,6 +67,10 @@ namespace storm {
 
 			virtual std::vector<storm::expressions::Expression> getUnsatAssumptions() override;
 
+            virtual bool setTimeout(uint_fast64_t milliseconds) override;
+            
+            virtual bool unsetTimeout() override;
+            
 		private:
 #ifdef STORM_HAVE_Z3
             /*!

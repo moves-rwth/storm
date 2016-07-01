@@ -1,0 +1,26 @@
+toplevel "System";
+
+"System" pand "A" "B";
+
+"A" and "AA" "AB" "AC" "AD";
+
+"B" pand "C" "D";
+
+"C" and "CA" "CB" "CC" "CD";
+
+"D" and "DA" "DB" "DC" "DD";
+
+"AA" lambda=1 dorm=0;
+"AB" lambda=1 dorm=0;
+"AC" lambda=1 dorm=0;
+"AD" lambda=1 dorm=0;
+
+"CA" lambda=1 dorm=0;
+"CB" lambda=1 dorm=0;
+"CC" lambda=1 dorm=0;
+"CD" lambda=1 dorm=0;
+
+"DA" lambda=1 dorm=0;
+"DB" lambda=1 dorm=0;
+"DC" lambda=1 dorm=0;
+"DD" lambda=1 dorm=0;

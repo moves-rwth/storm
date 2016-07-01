@@ -16,13 +16,11 @@ namespace storm {
             virtual bool isBooleanLiteralFormula() const override;
             virtual bool isTrueFormula() const override;
             virtual bool isFalseFormula() const override;
-
-            virtual bool isPctlStateFormula() const override;
-            virtual bool isLtlFormula() const override;
-            virtual bool isPropositionalFormula() const override;
+            
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
             virtual std::ostream& writeToStream(std::ostream& out) const override;
-            
+                        
         private:
             bool value;
         };

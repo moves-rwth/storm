@@ -14,7 +14,7 @@ namespace storm {
          * queries and insertions are supported. Also, the keys must be bit vectors with a length that is a multiple of
          * 64.
          */
-        template<class ValueType, class Hash1 = std::hash<storm::storage::BitVector>, class Hash2 = storm::storage::NonZeroBitVectorHash>
+        template<typename ValueType, typename Hash1 = std::hash<storm::storage::BitVector>, class Hash2 = storm::storage::NonZeroBitVectorHash>
         class BitVectorHashMap {
         public:
             class BitVectorHashMapIterator {
@@ -55,7 +55,7 @@ namespace storm {
              * @param loadFactor The load factor that determines at which point the size of the underlying storage is
              * increased.
              */
-            BitVectorHashMap(uint64_t bucketSize, uint64_t initialSize, double loadFactor = 0.75);
+            BitVectorHashMap(uint64_t bucketSize = 64, uint64_t initialSize = 1000, double loadFactor = 0.75);
             
             /*!
              * Searches for the given key in the map. If it is found, the mapped-to value is returned. Otherwise, the
@@ -66,6 +66,15 @@ namespace storm {
              * @return The found value if the key is already contained in the map and the provided new value otherwise.
              */
             ValueType findOrAdd(storm::storage::BitVector const& key, ValueType const& value);
+            
+            /*!
+             * Sets the given key value pain in the map. If the key is found in the map, the corresponding value is
+             * overwritten with the given value. Otherwise, the key is inserted with the given value.
+             *
+             * @param key The key to search or insert.
+             * @param value The value to set.
+             */
+            void setOrAdd(storm::storage::BitVector const& key, ValueType const& value);
 
             /*!
              * Searches for the given key in the map. If it is found, the mapped-to value is returned. Otherwise, the
@@ -78,6 +87,16 @@ namespace storm {
              * was inserted.
              */
             std::pair<ValueType, std::size_t> findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType const& value);
+            
+            /*!
+             * Sets the given key value pain in the map. If the key is found in the map, the corresponding value is
+             * overwritten with the given value. Otherwise, the key is inserted with the given value.
+             *
+             * @param key The key to search or insert.
+             * @param value The value to set.
+             * @return The index of the bucket into which the key was inserted.
+             */
+            std::size_t setOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType const& value);
             
             /*!
              * Retrieves the key stored in the given bucket (if any) and the value it is mapped to.
@@ -95,6 +114,14 @@ namespace storm {
              */
             ValueType getValue(storm::storage::BitVector const& key) const;
             
+            /*!
+             * Checks if the given key is already contained in the map.
+             *
+             * @param key The key to search
+             * @return True if the key is already contained in the map
+             */
+            bool contains(storm::storage::BitVector const& key) const;
+
             /*!
              * Retrieves an iterator to the elements of the map.
              *
@@ -122,6 +149,13 @@ namespace storm {
              * @return The capacity of the underlying container.
              */
             std::size_t capacity() const;
+            
+            /*!
+             * Performs a remapping of all values stored by applying the given remapping.
+             *
+             * @param remapping The remapping to apply.
+             */
+            void remap(std::function<ValueType(ValueType const&)> const& remapping);
             
         private:
             /*!

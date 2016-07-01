@@ -104,6 +104,11 @@ namespace storm {
              */
             BitVector();
             
+            /*
+             * Deconstructs a bit vector by deleting the underlying storage.
+             */
+            ~BitVector();
+            
             /*!
              * Constructs a bit vector which can hold the given number of bits and initializes all bits with the
              * provided truth value.
@@ -141,7 +146,7 @@ namespace storm {
              *
              * @param other The bit vector from which to move-construct.
              */
-            BitVector(BitVector&& other) = default;
+            BitVector(BitVector&& other);
             
             /*!
              * Compares the given bit vector with the current one.
@@ -228,6 +233,17 @@ namespace storm {
              * @param init The truth value to which to initialize newly created bits.
              */
             void resize(uint_fast64_t newLength, bool init = false);
+            
+            /*!
+             * Enlarges the bit vector such that it holds at least the given number of bits (but possibly more).
+             * This can be used to diminish reallocations when the final size of the bit vector is not known yet.
+             * The bit vector does not become smaller.
+             * New bits are initialized to the given value.
+             *
+             * @param minimumLength The minimum number of bits that the bit vector should hold.
+             * @param init The truth value to which to initialize newly created bits.
+             */
+            void enlargeLiberally(uint_fast64_t minimumLength, bool init = false);
             
             /*!
              * Performs a logical "and" with the given bit vector. In case the sizes of the bit vectors do not match,
@@ -370,6 +386,13 @@ namespace storm {
             uint_fast64_t getAsInt(uint_fast64_t bitIndex, uint_fast64_t numberOfBits) const;
             
             /*!
+             * 
+             * @param bitIndex The index of the first of the two bits to get
+             * @return A value between 0 and 3, encoded as a byte.
+             */
+            uint_fast64_t getTwoBitsAligned(uint_fast64_t bitIndex) const;
+            
+            /*!
              * Sets the selected number of lowermost bits of the provided value at the given bit index.
              *
              * @param bitIndex The index of the first bit to set.
@@ -413,6 +436,13 @@ namespace storm {
             uint_fast64_t getNumberOfSetBitsBeforeIndex(uint_fast64_t index) const;
             
             /*!
+             * Retrieves a vector that holds at position i the number of bits set before index i.
+             *
+             * @return The resulting vector of 'offsets'.
+             */
+            std::vector<uint_fast64_t> getNumberOfSetBitsBeforeIndices() const;
+                        
+            /*!
              * Retrieves the number of bits this bit vector can store.
              *
              * @return The number of bits this bit vector can hold.
@@ -447,6 +477,17 @@ namespace storm {
              */
             uint_fast64_t getNextSetIndex(uint_fast64_t startingIndex) const;
             
+            /*
+             * Compare two intervals [start1, start1+length] and [start2, start2+length] and swap them if the second
+             * one is larger than the first one. After the method the intervals are sorted in decreasing order.
+             *
+             * @param start1 Starting index of first interval.
+             * @param start2 Starting index of second interval.
+             * @param length Length of both intervals.
+             * @return True, if the intervals were swapped, false if nothing changed.
+             */
+            bool compareAndSwap(uint_fast64_t start1, uint_fast64_t start2, uint_fast64_t length);
+            
             friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
             friend struct std::hash<storm::storage::BitVector>;
             friend struct NonZeroBitVectorHash;
@@ -476,6 +517,31 @@ namespace storm {
              */
             void truncateLastBucket();
             
+            /*! Retrieves the content of the current bit vector at the given index for the given number of bits as a new
+             * bit vector.
+             *
+             * @param start The index of the first bit to get.
+             * @param length The number of bits to get.
+             * @return A new bit vector holding the selected bits.
+             */
+            BitVector getAsBitVector(uint_fast64_t start, uint_fast64_t length) const;
+            
+            /*!
+             * Sets the exact bit pattern of the given bit vector starting at the given bit index. Note: the given bit
+             * vector must be shorter than the current one minus the given index.
+             *
+             * @param start The index of the first bit that is supposed to be set.
+             * @param other The bit vector whose pattern to set.
+             */
+            void setFromBitVector(uint_fast64_t start, BitVector const& other);
+            
+            /*!
+             * Print bit vector and display all bits.
+             *
+             * @param out Stream to print to.
+             */
+            void printBits(std::ostream& out) const;
+            
             /*!
              * Retrieves the number of buckets of the underlying storage.
              *
@@ -487,7 +553,7 @@ namespace storm {
             uint_fast64_t bitCount;
             
             // The underlying storage of 64-bit buckets for all bits of this bit vector.
-            std::vector<uint64_t> bucketVector;
+            uint64_t* buckets;
             
             // A bit mask that can be used to reduce a modulo 64 operation to a logical "and".
             static const uint_fast64_t mod64mask = (1 << 6) - 1;

@@ -1,27 +1,12 @@
 #ifndef STORM_UTILITY_INITIALIZE_H
 #define	STORM_UTILITY_INITIALIZE_H
 
-
-
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-#include "log4cplus/consoleappender.h"
-#include "log4cplus/fileappender.h"
-extern log4cplus::Logger logger;
-extern log4cplus::Logger printer;
-
-#include "src/settings/SettingsManager.h"
-
-
 namespace storm {
     namespace utility {
         /*!
          * Initializes the logging framework and sets up logging to console.
          */
         void initializeLogger();
-        void initializeLogger(log4cplus::LogLevel const&);
-
         /*!
          * Performs some necessary initializations.
          */
@@ -40,5 +25,5 @@ namespace storm {
     }
 }
 
-#endif	/* INITIALIZE_H */
+#endif	/* STORM_UTILITY_INITIALIZE_H */
 
