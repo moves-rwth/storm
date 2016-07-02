@@ -16,6 +16,8 @@ namespace storm {
             template <class SparseModelType, typename RationalNumberType>
             class SparseMultiObjectiveHelper {
             public:
+                typedef typename SparseModelType::ValueType SparseModelValueType;
+                
                 typedef SparseMultiObjectivePreprocessorData<SparseModelType> PreprocessorData;
                 typedef SparseMultiObjectiveResultData<RationalNumberType> ResultData;
                 typedef SparseMultiObjectiveRefinementStep<RationalNumberType> RefinementStep;
@@ -52,7 +54,7 @@ namespace storm {
                 /*
                  * Refines the current result w.r.t. the given direction vector
                  */
-                static void performRefinementStep(WeightVector const& direction, bool saveScheduler, WeightVectorCheckerType weightVectorChecker, ResultData& resultData);
+                static void performRefinementStep(WeightVector&& direction, bool saveScheduler, WeightVectorCheckerType weightVectorChecker, ResultData& resultData);
                 
                 /*
                  * Updates the overapproximation after a refinement step has been performed

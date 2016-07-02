@@ -14,9 +14,10 @@ namespace storm {
             template <class SparseMdpModelType>
             SparseMdpMultiObjectiveWeightVectorChecker<SparseMdpModelType>::SparseMdpMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : SparseMultiObjectiveWeightVectorChecker<SparseMdpModelType>(data) {
                 // set the state action rewards
-                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).hasTransitionRewards(), "Reward model has transition rewards which is not expected.");
-                    this->discreteActionRewards[objIndex] = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).getTotalRewardVector(this->data.preprocessedModel.getTransitionMatrix());
+                for(uint_fast64_t objIndex = 0; objIndex < this->data.objectives.size(); ++objIndex) {
+                    typename SparseMdpModelType::RewardModelType const& rewModel = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName);
+                    STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Reward model has transition rewards which is not expected.");
+                    this->discreteActionRewards[objIndex] = rewModel.getTotalRewardVector(this->data.preprocessedModel.getTransitionMatrix());
                 }
             }
             
@@ -33,6 +34,9 @@ namespace storm {
                     uint_fast64_t timeBound = boost::get<uint_fast64_t>(this->data.objectives[objIndex].timeBounds.get());
                     auto timeBoundIt = timeBounds.insert(std::make_pair(timeBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
                     timeBoundIt->second.set(objIndex);
+                    // There is no error for the values of these objectives.
+                    this->offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
+                    this->offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
                 }
                 storm::storage::BitVector objectivesAtCurrentEpoch = this->unboundedObjectives;
                 auto timeBoundIt = timeBounds.begin();

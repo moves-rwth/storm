@@ -14,19 +14,19 @@ namespace storm {
             class SparseMultiObjectiveRefinementStep {
                 
             public:
-                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType> const& weightVector, std::vector<RationalNumberType> const& point, storm::storage::TotalScheduler const& scheduler) : weightVector(weightVector), point(point), scheduler(scheduler) {
+                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType> const& weightVector, std::vector<RationalNumberType> const& lowerBoundPoint, std::vector<RationalNumberType> const& upperBoundPoint, storm::storage::TotalScheduler const& scheduler) : weightVector(weightVector), lowerBoundPoint(lowerBoundPoint), upperBoundPoint(upperBoundPoint), scheduler(scheduler) {
                     //Intentionally left empty
                 }
                 
-                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType>&& weightVector, std::vector<RationalNumberType>&& point, storm::storage::TotalScheduler&& scheduler) : weightVector(weightVector), point(point), scheduler(scheduler) {
+                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType>&& weightVector, std::vector<RationalNumberType>&& lowerBoundPoint, std::vector<RationalNumberType>&& upperBoundPoint, storm::storage::TotalScheduler&& scheduler) : weightVector(weightVector), lowerBoundPoint(lowerBoundPoint), upperBoundPoint(upperBoundPoint), scheduler(scheduler) {
                     //Intentionally left empty
                 }
                 
-                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType> const& weightVector, std::vector<RationalNumberType> const& point) : weightVector(weightVector), point(point) {
+                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType> const& weightVector, std::vector<RationalNumberType> const& lowerBoundPoint, std::vector<RationalNumberType> const& upperBoundPoint) : weightVector(weightVector), lowerBoundPoint(lowerBoundPoint), upperBoundPoint(upperBoundPoint) {
                     //Intentionally left empty
                 }
                 
-                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType>&& weightVector, std::vector<RationalNumberType>&& point) : weightVector(weightVector), point(point) {
+                SparseMultiObjectiveRefinementStep(std::vector<RationalNumberType>&& weightVector, std::vector<RationalNumberType>&& lowerBoundPoint, std::vector<RationalNumberType>&& upperBoundPoint) : weightVector(weightVector), lowerBoundPoint(lowerBoundPoint), upperBoundPoint(upperBoundPoint) {
                     //Intentionally left empty
                 }
                 
@@ -34,8 +34,12 @@ namespace storm {
                     return weightVector;
                 }
                 
-                std::vector<RationalNumberType> const& getPoint() const {
-                    return point;
+                std::vector<RationalNumberType> const& getLowerBoundPoint() const {
+                    return lowerBoundPoint;
+                }
+                
+                std::vector<RationalNumberType> const& getUpperBoundPoint() const {
+                    return upperBoundPoint;
                 }
                 
                 bool hasScheduler() const {
@@ -48,7 +52,8 @@ namespace storm {
                 
             private:
                 std::vector<RationalNumberType> const weightVector;
-                std::vector<RationalNumberType> const point;
+                std::vector<RationalNumberType> const lowerBoundPoint;
+                std::vector<RationalNumberType> const upperBoundPoint;
                 boost::optional<storm::storage::TotalScheduler> const scheduler;
             };
         }

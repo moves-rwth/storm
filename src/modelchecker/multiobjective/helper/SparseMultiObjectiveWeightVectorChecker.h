@@ -22,7 +22,7 @@ namespace storm {
                 typedef typename SparseModelType::ValueType ValueType;
                 typedef typename SparseModelType::RewardModelType RewardModelType;
                 typedef SparseMultiObjectivePreprocessorData<SparseModelType> PreprocessorData;
-            
+                
                 SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data);
                 
                 /*!
@@ -33,13 +33,28 @@ namespace storm {
                 void check(std::vector<ValueType> const& weightVector);
                 
                 /*!
-                 * Getter methods for the results of the most recent call of check(..)
-                 * Note that check(..) has to be called before retrieving results. Otherwise, an exception is thrown.
+                 * Sets the maximum gap that is allowed between the lower and upper bound of the result of some objective.
                  */
-                // The results of the individual objectives at the initial state of the given model
-                template<typename TargetValueType = ValueType>
-                std::vector<TargetValueType> getInitialStateResultOfObjectives() const;
-                // A scheduler that induces the optimal values
+                void setMaximumLowerUpperBoundGap(ValueType const& value);
+                
+                /*!
+                 * Retrieves the maximum gap that is allowed between the lower and upper bound of the result of some objective.
+                 */
+                ValueType const& getMaximumLowerUpperBoundGap() const;
+                
+                /*!
+                 * Retrieves the results of the individual objectives at the initial state of the given model.
+                 * Note that check(..) has to be called before retrieving results. Otherwise, an exception is thrown.
+                 * Also note that there is no guarantee that the lower/upper bounds are sound
+                 * as long as the underlying solution methods are unsound (e.g., standard value iteration).
+                 */
+                std::vector<ValueType> getLowerBoundsOfInitialStateResults() const;
+                std::vector<ValueType> getUpperBoundsOfInitialStateResults() const;
+                
+                /*!
+                 * Retrieves a scheduler that induces the current values
+                 * Note that check(..) has to be called before retrieving the scheduler. Otherwise, an exception is thrown.
+                 */
                 storm::storage::TotalScheduler const& getScheduler() const;
                 
                 
@@ -85,10 +100,19 @@ namespace storm {
                 // becomes true after the first call of check(..)
                 bool checkHasBeenCalled;
                 
+                // stores the maximum gap that is allowed between the lower and upper bound of the result of some objective.
+                ValueType maximumLowerUpperBoundGap;
+                
                 // The result for the weighted reward vector (for all states of the model)
                 std::vector<ValueType> weightedResult;
-                // The results for the individual objectives (for all states of the model)
+                // The lower bounds of the results for the individual objectives (w.r.t. all states of the model)
                 std::vector<std::vector<ValueType>> objectiveResults;
+                // Stores for each objective the distance between the computed result (w.r.t. the initial state) and a lower/upper bound for the actual result.
+                // The distances are stored as a (possibly negative) offset that has to be added to to the objectiveResults.
+                // Note that there is no guarantee that the lower/upper bounds are sound as long as the underlying solution method is not sound (e.g. standard value iteration).
+                std::vector<ValueType> offsetsToLowerBound;
+                std::vector<ValueType> offsetsToUpperBound;
+                
                 // The scheduler that maximizes the weighted rewards
                 storm::storage::TotalScheduler scheduler;
                 

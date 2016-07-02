@@ -170,7 +170,7 @@ namespace storm {
                 std::vector<std::vector<ValueType>> paretoOptimalPoints;
                 paretoOptimalPoints.reserve(resultData.refinementSteps().size());
                 for(auto const& step : resultData.refinementSteps()) {
-                    paretoOptimalPoints.push_back(storm::utility::vector::convertNumericVector<ValueType>(transformToOriginalValues(step.getPoint(), preprocessorData)));
+                    paretoOptimalPoints.push_back(storm::utility::vector::convertNumericVector<ValueType>(transformToOriginalValues(step.getLowerBoundPoint(), preprocessorData)));
                 }
                 return std::unique_ptr<CheckResult>(new ParetoCurveCheckResult<ValueType>(
                           initState,
@@ -220,7 +220,7 @@ namespace storm {
                 std::vector<std::vector<RationalNumberType>> paretoPoints;
                 paretoPoints.reserve(resultData.refinementSteps().size());
                 for(auto const& step : resultData.refinementSteps()) {
-                    paretoPoints.push_back(transformToOriginalValues(step.getPoint(), preprocessorData));
+                    paretoPoints.push_back(transformToOriginalValues(step.getLowerBoundPoint(), preprocessorData));
                     boundaries.enlarge(paretoPoints.back());
                 }
                 auto underApproxVertices = transformedUnderApprox->getVertices();

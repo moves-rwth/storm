@@ -16,12 +16,12 @@ namespace storm {
                 // Set the (discretized) state action rewards.
                 this->discreteActionRewards.resize(data.objectives.size());
                 for(auto objIndex : this->unboundedObjectives) {
-                    STORM_LOG_ASSERT(!this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
-                    this->discreteActionRewards[objIndex] = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).getStateActionRewardVector();
-                    if(this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).hasStateRewards()) {
-                        auto const& stateRewards = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName).getStateRewardVector();
+                    typename SparseMaModelType::RewardModelType const& rewModel = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName);
+                    STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
+                    this->discreteActionRewards[objIndex] = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<ValueType>(this->data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
+                    if(rewModel.hasStateRewards()) {
                         for(auto markovianState : this->data.getMarkovianStatesOfPreprocessedModel()) {
-                            this->discreteActionRewards[objIndex][this->data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[markovianState]] += stateRewards[markovianState] / this->data.preprocessedModel.getExitRate(markovianState);
+                            this->discreteActionRewards[objIndex][this->data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / this->data.preprocessedModel.getExitRate(markovianState);
                         }
                     }
                     
@@ -31,7 +31,7 @@ namespace storm {
             template <class SparseMaModelType>
             void SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
                 STORM_LOG_ERROR("BOUNDED OBJECTIVES FOR MARKOV AUTOMATA NOT YET IMPLEMENTED");
-                /*
+      /*
                 // Allocate some memory so this does not need to happen for each time epoch
                 std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(this->data.preprocessedModel.getNumberOfStates());
                 std::vector<ValueType> choiceValues(weightedRewardVector.size());
@@ -43,6 +43,9 @@ namespace storm {
                     uint_fast64_t timeBound = boost::get<uint_fast64_t>(this->data.objectives[objIndex].timeBounds.get());
                     auto timeBoundIt = timeBounds.insert(std::make_pair(timeBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
                     timeBoundIt->second.set(objIndex);
+                    // There is no error for the values of these objectives.
+                    this->offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
+                    this->offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
                 }
                 storm::storage::BitVector objectivesAtCurrentEpoch = this->unboundedObjectives;
                 auto timeBoundIt = timeBounds.begin();
@@ -64,7 +67,7 @@ namespace storm {
                     // TODO we could compute the result for one of the objectives from the weighted result, the given weight vector, and the remaining objective results.
                     for(auto objIndex : objectivesAtCurrentEpoch) {
                         std::vector<ValueType>& objectiveResult = this->objectiveResults[objIndex];
-                        std::vector<ValueType> objectiveRewards = getObjectiveRewardAsDiscreteActionRewards(objIndex);
+                        std::vector<ValueType> objectiveRewards = this->discreteActionRewards[objIndex];
                         auto rowGroupIndexIt = this->data.preprocessedModel.getTransitionMatrix().getRowGroupIndices().begin();
                         auto optimalChoiceIt = optimalChoicesInCurrentEpoch.begin();
                         for(ValueType& stateValue : temporaryResult){
@@ -79,9 +82,9 @@ namespace storm {
                         objectiveResult.swap(temporaryResult);
                     }
                 }
-                 */
+*/
             }
-            
+
             template class SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
 #ifdef STORM_HAVE_CARL
             template class SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;

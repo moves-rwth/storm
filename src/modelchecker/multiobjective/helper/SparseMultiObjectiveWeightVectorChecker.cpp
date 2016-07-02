@@ -22,7 +22,7 @@ namespace storm {
             
 
             template <class SparseModelType>
-            SparseMultiObjectiveWeightVectorChecker<SparseModelType>::SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : data(data), unboundedObjectives(data.objectives.size()), discreteActionRewards(data.objectives.size()), checkHasBeenCalled(false), objectiveResults(data.objectives.size()){
+            SparseMultiObjectiveWeightVectorChecker<SparseModelType>::SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : data(data), unboundedObjectives(data.objectives.size()), discreteActionRewards(data.objectives.size()), checkHasBeenCalled(false), objectiveResults(data.objectives.size()), offsetsToLowerBound(data.objectives.size()), offsetsToUpperBound(data.objectives.size()) {
                 
                 // set the unbounded objectives
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
@@ -44,22 +44,42 @@ namespace storm {
                 unboundedWeightedPhase(weightedRewardVector);
                 STORM_LOG_DEBUG("Unbounded weighted phase result: " << weightedResult[data.preprocessedModel.getInitialStates().getNextSetIndex(0)] << " (value in initial state).");
                 unboundedIndividualPhase(weightVector);
-                STORM_LOG_DEBUG("Unbounded individual phase results in initial state: " << getInitialStateResultOfObjectives<double>());
                 if(!this->unboundedObjectives.full()) {
                     boundedPhase(weightVector, weightedRewardVector);
-                    STORM_LOG_DEBUG("Bounded individual phase results in initial state: " << getInitialStateResultOfObjectives<double>() << " ...WeightVectorChecker done.");
                 }
+                STORM_LOG_DEBUG("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::convertNumericVector<double>(getLowerBoundsOfInitialStateResults()));
             }
             
             template <class SparseModelType>
-            template<typename TargetValueType>
-            std::vector<TargetValueType> SparseMultiObjectiveWeightVectorChecker<SparseModelType>::getInitialStateResultOfObjectives() const {
+            void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::setMaximumLowerUpperBoundGap(ValueType const& value) {
+                this->maximumLowerUpperBoundGap = value;
+            }
+            
+            template <class SparseModelType>
+            typename SparseMultiObjectiveWeightVectorChecker<SparseModelType>::ValueType const& SparseMultiObjectiveWeightVectorChecker<SparseModelType>::getMaximumLowerUpperBoundGap() const {
+                return this->maximumLowerUpperBoundGap;
+            }
+            
+            template <class SparseModelType>
+            std::vector<typename SparseMultiObjectiveWeightVectorChecker<SparseModelType>::ValueType> SparseMultiObjectiveWeightVectorChecker<SparseModelType>::getLowerBoundsOfInitialStateResults() const {
                 STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
-                STORM_LOG_ASSERT(data.preprocessedModel.getInitialStates().getNumberOfSetBits()==1, "The considered model has multiple initial states");
-                std::vector<TargetValueType> res;
-                res.reserve(objectiveResults.size());
-                for(auto const& objResult : objectiveResults) {
-                    res.push_back(storm::utility::convertNumber<TargetValueType>(objResult[*data.preprocessedModel.getInitialStates().begin()]));
+                uint_fast64_t initstate = *this->data.preprocessedModel.getInitialStates().begin();
+                std::vector<ValueType> res;
+                res.reserve(this->data.objectives.size());
+                for(uint_fast64_t objIndex = 0; objIndex < this->data.objectives.size(); ++objIndex) {
+                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToLowerBound[objIndex]);
+                }
+                return res;
+            }
+            
+            template <class SparseModelType>
+            std::vector<typename SparseMultiObjectiveWeightVectorChecker<SparseModelType>::ValueType> SparseMultiObjectiveWeightVectorChecker<SparseModelType>::getUpperBoundsOfInitialStateResults() const {
+                STORM_LOG_THROW(checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
+                uint_fast64_t initstate = *this->data.preprocessedModel.getInitialStates().begin();
+                std::vector<ValueType> res;
+                res.reserve(this->data.objectives.size());
+                for(uint_fast64_t objIndex = 0; objIndex < this->data.objectives.size(); ++objIndex) {
+                    res.push_back(this->objectiveResults[objIndex][initstate] + this->offsetsToUpperBound[objIndex]);
                 }
                 return res;
             }
@@ -147,6 +167,8 @@ namespace storm {
                 //one check can be omitted as the result can be computed back from the weighed result and the results from the remaining objectives
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
                     if(unboundedObjectives.get(objIndex)){
+                        offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
+                        offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
                         storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), discreteActionRewards[objIndex]);
                         storm::storage::BitVector statesWithRewards =  ~storm::utility::vector::filterZero(deterministicStateRewards);
                         // As target states, we pick the states from which no reward is reachable.
@@ -166,19 +188,10 @@ namespace storm {
             }
             
             template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>;
-            template std::vector<double> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>::getInitialStateResultOfObjectives<double>() const;
             template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
-            template std::vector<double> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getInitialStateResultOfObjectives<double>() const;
 #ifdef STORM_HAVE_CARL
-            template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
-            template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
-            
             template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
-            template std::vector<double> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>::getInitialStateResultOfObjectives<double>() const;
             template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
-            template std::vector<double> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getInitialStateResultOfObjectives<double>() const;
-            template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
-            template std::vector<storm::RationalNumber> SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getInitialStateResultOfObjectives<storm::RationalNumber>() const;
 #endif
             
         }

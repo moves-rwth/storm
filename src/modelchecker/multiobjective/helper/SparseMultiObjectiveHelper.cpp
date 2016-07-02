@@ -9,6 +9,7 @@
 #include "src/utility/vector.h"
 #include "src/settings//SettingsManager.h"
 #include "src/settings/modules/MultiObjectiveSettings.h"
+#include "src/settings/modules/GeneralSettings.h"
 
 #include "src/exceptions/UnexpectedException.h"
 
@@ -22,7 +23,6 @@ namespace storm {
                 ResultData resultData;
                 resultData.overApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createUniversalPolytope();
                 resultData.underApproximation() = storm::storage::geometry::Polytope<RationalNumberType>::createEmptyPolytope();
-                
                 if(!checkIfPreprocessingWasConclusive(preprocessorData)) {
                     switch(preprocessorData.queryType) {
                         case PreprocessorData::QueryType::Achievability:
@@ -57,6 +57,9 @@ namespace storm {
             
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::achievabilityQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
+                //Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type.
+                weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(0.1)); // TODO try other values?
+                // Get a point that represents the thresholds
                 Point thresholds;
                 thresholds.reserve(preprocessorData.objectives.size());
                 storm::storage::BitVector strictThresholds(preprocessorData.objectives.size());
@@ -64,11 +67,11 @@ namespace storm {
                     thresholds.push_back(storm::utility::convertNumber<RationalNumberType>(*preprocessorData.objectives[objIndex].threshold));
                     strictThresholds.set(objIndex, preprocessorData.objectives[objIndex].thresholdIsStrict);
                 }
-                
+                // repeatedly refine the over/ under approximation until the threshold point is either in the under approx. or not in the over approx.
                 storm::storage::BitVector individualObjectivesToBeChecked(preprocessorData.objectives.size(), true);
                 do {
                     WeightVector separatingVector = findSeparatingVector(thresholds, resultData.underApproximation(), individualObjectivesToBeChecked);
-                    performRefinementStep(separatingVector, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
+                    performRefinementStep(std::move(separatingVector), preprocessorData.produceSchedulers, weightVectorChecker, resultData);
                     if(!checkIfThresholdsAreSatisfied(resultData.overApproximation(), thresholds, strictThresholds)){
                         resultData.setThresholdsAreAchievable(false);
                     }
@@ -81,6 +84,9 @@ namespace storm {
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::numericalQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
                 STORM_LOG_ASSERT(preprocessorData.indexOfOptimizingObjective, "Detected numerical query but index of optimizing objective is not set.");
+                // Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type.
+                weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(0.1)); // TODO try other values?
+                // initialize some data
                 uint_fast64_t optimizingObjIndex = *preprocessorData.indexOfOptimizingObjective;
                 Point thresholds;
                 thresholds.reserve(preprocessorData.objectives.size());
@@ -108,9 +114,9 @@ namespace storm {
                 individualObjectivesToBeChecked.set(optimizingObjIndex, false);
                 do {
                     WeightVector separatingVector = findSeparatingVector(thresholds, resultData.underApproximation(), individualObjectivesToBeChecked);
-                    performRefinementStep(separatingVector, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
+                    performRefinementStep(std::move(separatingVector), preprocessorData.produceSchedulers, weightVectorChecker, resultData);
                     //Pick the threshold for the optimizing objective low enough so valid solutions are not excluded
-                    thresholds[optimizingObjIndex] = std::min(thresholds[optimizingObjIndex], resultData.refinementSteps().back().getPoint()[optimizingObjIndex]);
+                    thresholds[optimizingObjIndex] = std::min(thresholds[optimizingObjIndex], resultData.refinementSteps().back().getLowerBoundPoint()[optimizingObjIndex]);
                     if(!checkIfThresholdsAreSatisfied(resultData.overApproximation(), thresholds, strictThresholds)){
                         resultData.setThresholdsAreAchievable(false);
                     }
@@ -125,6 +131,11 @@ namespace storm {
                     // Note that we do not have to care whether a threshold is strict anymore, because the resulting optimum should be
                     // the supremum over all strategies. Hence, one could combine a scheduler inducing the optimum value (but possibly violating strict
                     // thresholds) and (with very low probability) a scheduler that satisfies all (possibly strict) thresholds.
+                    // The euclidean distance between the lower and upper bounds of the results of the weightVectorChecker should be less than the precision given in the settings
+                    SparseModelValueType gap = storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
+                    gap -=  storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                    gap /= storm::utility::sqrt(static_cast<SparseModelValueType>(preprocessorData.objectives.size()));
+                    weightVectorChecker->setMaximumLowerUpperBoundGap(gap); // TODO try other values?
                     while(true) {
                         std::pair<Point, bool> optimizationRes = resultData.underApproximation()->intersection(thresholdsAsPolytope)->optimize(directionOfOptimizingObjective);
                         STORM_LOG_THROW(optimizationRes.second, storm::exceptions::UnexpectedException, "The underapproximation is either unbounded or empty.");
@@ -142,18 +153,25 @@ namespace storm {
                             break;
                         }
                         WeightVector separatingVector = findSeparatingVector(thresholds, resultData.underApproximation(), individualObjectivesToBeChecked);
-                        performRefinementStep(separatingVector, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
+                        performRefinementStep(std::move(separatingVector), preprocessorData.produceSchedulers, weightVectorChecker, resultData);
                     }
                 }
             }
             
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::paretoQuery(PreprocessorData const& preprocessorData, WeightVectorCheckerType weightVectorChecker, ResultData& resultData) {
+                // Set the maximum gap between lower and upper bound of the weightVectorChecker result we initially allow for this query type.
+                // The euclidean distance between the lower and upper bounds of the results of the weightVectorChecker should be less than the precision given in the settings
+                SparseModelValueType gap = storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::MultiObjectiveSettings>().getPrecision());
+                gap -=  storm::utility::convertNumber<SparseModelValueType>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                gap /= storm::utility::sqrt(static_cast<SparseModelValueType>(preprocessorData.objectives.size()));
+                weightVectorChecker->setMaximumLowerUpperBoundGap(gap); // TODO try other values?
+                
                 //First consider the objectives individually
                 for(uint_fast64_t objIndex = 0; objIndex<preprocessorData.objectives.size() && !maxStepsPerformed(resultData); ++objIndex) {
                     WeightVector direction(preprocessorData.objectives.size(), storm::utility::zero<RationalNumberType>());
                     direction[objIndex] = storm::utility::one<RationalNumberType>();
-                    performRefinementStep(direction, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
+                    performRefinementStep(std::move(direction), preprocessorData.produceSchedulers, weightVectorChecker, resultData);
                 }
                 
                 while(true) {
@@ -177,7 +195,7 @@ namespace storm {
                         break;
                     }
                     WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
-                    performRefinementStep(direction, preprocessorData.produceSchedulers, weightVectorChecker, resultData);
+                    performRefinementStep(std::move(direction), preprocessorData.produceSchedulers, weightVectorChecker, resultData);
                 }
             }
             
@@ -225,13 +243,41 @@ namespace storm {
             }
             
             template <class SparseModelType, typename RationalNumberType>
-            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::performRefinementStep(WeightVector const& direction, bool saveScheduler, WeightVectorCheckerType weightVectorChecker, ResultData& result) {
-                weightVectorChecker->check(storm::utility::vector::convertNumericVector<typename SparseModelType::ValueType>(direction));
-                STORM_LOG_DEBUG("weighted objectives checker result is " << storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getInitialStateResultOfObjectives()));
+            void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::performRefinementStep(WeightVector&& direction, bool saveScheduler, WeightVectorCheckerType weightVectorChecker, ResultData& result) {
+                // Normalize the direction vector so that the entries sum up to one
+                storm::utility::vector::scaleVectorInPlace(direction, storm::utility::one<RationalNumberType>() / std::accumulate(direction.begin(), direction.end(), storm::utility::zero<RationalNumberType>()));
+                // Check if we already did a refinement step with that direction vector. If this is the case, we increase the precision.
+                // We start with the most recent steps to consider the most recent result for this direction vector
+                boost::optional<SparseModelValueType> oldMaximumLowerUpperBoundGap;
+                for(auto stepIt = result.refinementSteps().rbegin(); stepIt != result.refinementSteps().rend(); ++stepIt) {
+                    if(stepIt->getWeightVector() == direction) {
+                        STORM_LOG_WARN("Performing multiple refinement steps with the same direction vector.");
+                        oldMaximumLowerUpperBoundGap = weightVectorChecker->getMaximumLowerUpperBoundGap();
+                        std::vector<RationalNumberType> lowerUpperDistances = stepIt->getUpperBoundPoint();
+                        storm::utility::vector::subtractVectors(lowerUpperDistances, stepIt->getLowerBoundPoint(), lowerUpperDistances);
+                        // shorten the distance between lower and upper bound for the new result by multiplying the current distance with 0.5
+                        // TODO: try other values/strategies?
+                        RationalNumberType distance = storm::utility::sqrt(storm::utility::vector::dotProduct(lowerUpperDistances, lowerUpperDistances));
+                        weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(distance) + storm::utility::convertNumber<SparseModelValueType>(0.5));
+                        break;
+                    }
+                }
+                weightVectorChecker->check(storm::utility::vector::convertNumericVector<SparseModelValueType>(direction));
+                if(oldMaximumLowerUpperBoundGap) {
+                    // Reset the precision back to the previous values
+                    weightVectorChecker->setMaximumLowerUpperBoundGap(*oldMaximumLowerUpperBoundGap);
+                }
+                STORM_LOG_DEBUG("weighted objectives checker result (lower bounds) is " << storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getLowerBoundsOfInitialStateResults()));
+                
                 if(saveScheduler) {
-                    result.refinementSteps().emplace_back(direction, weightVectorChecker->template getInitialStateResultOfObjectives<RationalNumberType>(), weightVectorChecker->getScheduler());
+                    result.refinementSteps().emplace_back(direction,
+                                                          storm::utility::vector::convertNumericVector<RationalNumberType>(weightVectorChecker->getLowerBoundsOfInitialStateResults()),
+                                                          storm::utility::vector::convertNumericVector<RationalNumberType>(weightVectorChecker->getUpperBoundsOfInitialStateResults()),
+                                                          weightVectorChecker->getScheduler());
                 } else {
-                    result.refinementSteps().emplace_back(direction, weightVectorChecker->template getInitialStateResultOfObjectives<RationalNumberType>());
+                    result.refinementSteps().emplace_back(direction,
+                                                          storm::utility::vector::convertNumericVector<RationalNumberType>(weightVectorChecker->getLowerBoundsOfInitialStateResults()),
+                                                          storm::utility::vector::convertNumericVector<RationalNumberType>(weightVectorChecker->getUpperBoundsOfInitialStateResults()));
                 }
                 updateOverApproximation(result.refinementSteps(), result.overApproximation());
                 updateUnderApproximation(result.refinementSteps(), result.underApproximation());
@@ -239,18 +285,18 @@ namespace storm {
             
             template <class SparseModelType, typename RationalNumberType>
             void SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::updateOverApproximation(std::vector<RefinementStep> const& refinementSteps, std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>>& overApproximation) {
-                storm::storage::geometry::Halfspace<RationalNumberType> h(refinementSteps.back().getWeightVector(), storm::utility::vector::dotProduct(refinementSteps.back().getWeightVector(), refinementSteps.back().getPoint()));
+                storm::storage::geometry::Halfspace<RationalNumberType> h(refinementSteps.back().getWeightVector(), storm::utility::vector::dotProduct(refinementSteps.back().getWeightVector(), refinementSteps.back().getUpperBoundPoint()));
                 
                 // Due to numerical issues, it might be the case that the updated overapproximation does not contain the underapproximation,
                 // e.g., when the new point is strictly contained in the underapproximation. Check if this is the case.
                 RationalNumberType maximumOffset = h.offset();
                 for(auto const& step : refinementSteps){
-                    maximumOffset = std::max(maximumOffset, storm::utility::vector::dotProduct(h.normalVector(), step.getPoint()));
+                    maximumOffset = std::max(maximumOffset, storm::utility::vector::dotProduct(h.normalVector(), step.getLowerBoundPoint()));
                 }
                 if(maximumOffset > h.offset()){
                     // We correct the issue by shifting the halfspace such that it contains the underapproximation
                     h.offset() = maximumOffset;
-                    STORM_LOG_WARN("Numerical issues: The overapproximation would not contain the underapproximation. Hence, a halfspace is shifted by " << storm::utility::convertNumber<double>(h.euclideanDistance(refinementSteps.back().getPoint())) << ".");
+                    STORM_LOG_WARN("Numerical issues: The overapproximation would not contain the underapproximation. Hence, a halfspace is shifted by " << storm::utility::convertNumber<double>(h.euclideanDistance(refinementSteps.back().getUpperBoundPoint())) << ".");
                 }
                 overApproximation = overApproximation->intersection(h);
                 STORM_LOG_DEBUG("Updated OverApproximation to " << overApproximation->toString(true));
@@ -261,7 +307,7 @@ namespace storm {
                 std::vector<Point> paretoPoints;
                 paretoPoints.reserve(refinementSteps.size());
                 for(auto const& step : refinementSteps) {
-                    paretoPoints.push_back(step.getPoint());
+                    paretoPoints.push_back(step.getLowerBoundPoint());
                 }
                 underApproximation = storm::storage::geometry::Polytope<RationalNumberType>::createDownwardClosure(paretoPoints);
                 STORM_LOG_DEBUG("Updated UnderApproximation to " << underApproximation->toString(true));
