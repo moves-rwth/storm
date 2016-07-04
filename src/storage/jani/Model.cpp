@@ -101,6 +101,16 @@ namespace storm {
             return constants;
         }
 
+        void Model::addVariable(Variable const& variable) {
+            if(variable.isBooleanVariable()) {
+                return addBooleanVariable(variable.asBooleanVariable());
+            } else if(variable.isBoundedIntegerVariable()) {
+                return addBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+            } else if(variable.isUnboundedIntegerVariable()) {
+                return addUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+            }
+        }
+
         void Model::addBooleanVariable(BooleanVariable const& variable) {
             globalVariables.addBooleanVariable(variable);
         }

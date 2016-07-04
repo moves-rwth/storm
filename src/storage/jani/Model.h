@@ -106,7 +106,12 @@ namespace storm {
              * Retrieves the constant with the given name (if any).
              */
             Constant const& getConstant(std::string const& name) const;
-            
+
+            /*!
+             * Adds the given variable to this model
+             */
+            void addVariable(Variable const& variable);
+
             /*!
              * Adds the given boolean variable to this model.
              */

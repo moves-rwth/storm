@@ -101,7 +101,12 @@ namespace storm {
             std::string const& getName() const;
             
             /*!
-             * Adds the given boolean variable to this automaton.
+             * Adds the given variable to this automaton
+             */
+            void addVariable(Variable const& variable);
+
+            /*!
+             * Adds the given Boolean variable to this automaton.
              */
             void addBooleanVariable(BooleanVariable const& variable);
             

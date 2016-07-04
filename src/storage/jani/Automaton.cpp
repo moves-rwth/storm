@@ -57,6 +57,16 @@ namespace storm {
         std::string const& Automaton::getName() const {
             return name;
         }
+
+        void Automaton::addVariable(Variable const &variable) {
+            if(variable.isBooleanVariable()) {
+                return addBooleanVariable(variable.asBooleanVariable());
+            } else if(variable.isBoundedIntegerVariable()) {
+                return addBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+            } else if(variable.isUnboundedIntegerVariable()) {
+                return addUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+            }
+        }
         
         void Automaton::addBooleanVariable(BooleanVariable const& variable) {
             variables.addBooleanVariable(variable);

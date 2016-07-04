@@ -33,7 +33,7 @@ namespace storm {
         protected:
             void readFile(std::string const& path);
             storm::jani::Model parseModel();
-            storm::jani::Automaton parseAutomaton(json const& automatonStructure);
+            storm::jani::Automaton parseAutomaton(json const& automatonStructure, storm::jani::Model const& parentModel);
             std::shared_ptr<storm::jani::Variable>  parseVariable(json const& variableStructure, std::string const& scopeDescription, bool prefWithScope = false);
             storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
         private:
@@ -47,6 +47,7 @@ namespace storm {
             std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
 
             std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);
+            storm::expressions::Variable getVariableOrConstantExpression(std::string const& ident, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
 
 
 

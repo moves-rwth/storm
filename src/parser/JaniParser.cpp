@@ -67,32 +67,31 @@ namespace storm {
             std::string modeltypestring = getString(parsedStructure.at("type"), "type of the model");
             storm::jani::ModelType type = storm::jani::getModelType(modeltypestring);
             STORM_LOG_THROW(type != storm::jani::ModelType::UNDEFINED, storm::exceptions::InvalidJaniException, "model type " + modeltypestring + " not recognized");
-            storm::jani::Model model(name, type, version);
+            storm::jani::Model model(name, type, version, expressionManager);
             STORM_LOG_THROW(parsedStructure.count("actions") < 2, storm::exceptions::InvalidJaniException, "Action-declarations can be given at most once.");
             parseActions(parsedStructure.at("actions"), model);
             size_t constantsCount = parsedStructure.count("constants");
             STORM_LOG_THROW(constantsCount < 2, storm::exceptions::InvalidJaniException, "Constant-declarations can be given at most once.");
             if(constantsCount == 1) {
                 for (auto const &constStructure : parsedStructure.at("constants")) {
-                    parseConstant(constStructure, "global");
+                    model.addConstant(*parseConstant(constStructure, "global"));
                 }
             }
             size_t variablesCount = parsedStructure.count("variables");
             STORM_LOG_THROW(variablesCount < 2, storm::exceptions::InvalidJaniException, "Variable-declarations can be given at most once for global variables.");
             if(variablesCount == 1) {
                 for(auto const& varStructure : parsedStructure.at("variables")) {
-                    parseVariable(varStructure, "global");
+                    model.addVariable(*parseVariable(varStructure, "global"));
                 }
             }
             STORM_LOG_THROW(parsedStructure.count("automata") == 1, storm::exceptions::InvalidJaniException, "Exactly one list of automata must be given");
             STORM_LOG_THROW(parsedStructure.at("automata").is_array(), storm::exceptions::InvalidJaniException, "Automata must be an array");
             // Automatons can only be parsed after constants and variables.
             for(auto const& automataEntry : parsedStructure.at("automata")) {
-                storm::jani::Automaton automaton = parseAutomaton(automataEntry);
-
+                model.addAutomaton(parseAutomaton(automataEntry, model));
             }
             STORM_LOG_THROW(parsedStructure.count("system") == 1, storm::exceptions::InvalidJaniException, "Exactly one system description must be given");
-            std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
+            //std::shared_ptr<storm::jani::Composition> composition = parseComposition(parsedStructure.at("system"));
 
             return model;
         }
@@ -245,6 +244,15 @@ namespace storm {
         }
 
 
+        storm::expressions::Variable JaniParser::getVariableOrConstantExpression(std::string const &ident,std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars) {
+            if(localVars.count(ident) == 1) {
+                return localVars.at(ident)->getExpressionVariable();
+            } else {
+                STORM_LOG_THROW(expressionManager->hasVariable(ident), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in  " << scopeDescription);
+                return expressionManager->getVariable(ident);
+            }
+        }
+
         storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars) {
             if(expressionStructure.is_boolean()) {
                 if(expressionStructure.get<bool>()) {
@@ -260,12 +268,7 @@ namespace storm {
                 return expressionManager->rational(expressionStructure.get<double>());
             } else if(expressionStructure.is_string()) {
                 std::string ident = expressionStructure.get<std::string>();
-                if(localVars.count(ident) == 1) {
-                    return storm::expressions::Expression(localVars.at(ident)->getExpressionVariable());
-                } else {
-                    STORM_LOG_THROW(expressionManager->hasVariable(ident), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in  " << scopeDescription);
-                    return expressionManager->getVariableExpression(ident);
-                }
+                return storm::expressions::Expression(getVariableOrConstantExpression(ident, scopeDescription, localVars));
             } else if(expressionStructure.is_object()) {
                 if(expressionStructure.count("op") == 1) {
                     std::string opstring = getString(expressionStructure.at("op"), scopeDescription);
@@ -452,7 +455,7 @@ namespace storm {
             }
         }
 
-        storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure) {
+        storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure, storm::jani::Model const& parentModel) {
             STORM_LOG_THROW(automatonStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Each automaton must have a name");
             std::string name = getString(automatonStructure.at("name"), " the name field for automaton");
             storm::jani::Automaton automaton(name);
@@ -465,14 +468,18 @@ namespace storm {
                 uint64_t id = automaton.addLocation(storm::jani::Location(locName));
                 locIds.emplace(locName, id);
             }
+            STORM_LOG_THROW(automatonStructure.count("initial-locations") == 1, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' does not have initial locations.");
+            for(json const& initLocStruct : automatonStructure.at("initial-locations")) {
+                automaton.addInitialLocation(getString(initLocStruct, "Initial locations for automaton '" + name + "'."));
+            }
             uint64_t varDeclCount = automatonStructure.count("variables");
             STORM_LOG_THROW(varDeclCount < 2, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' has more than one list of variables");
             std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> localVars;
             if(varDeclCount > 0) {
                 for(auto const& varStructure : automatonStructure.at("variables")) {
                     std::shared_ptr<storm::jani::Variable> var = parseVariable(varStructure, name, true);
-                    std::cout << "Automaton " << name << "     variable " << var->getName() << std::endl;
                     assert(localVars.count(var->getName()) == 0);
+                    automaton.addVariable(*var);
                     localVars.emplace(var->getName(), var);
                 }
             }
@@ -511,6 +518,7 @@ namespace storm {
                 }
                 assert(guardExpr.isInitialized());
                 STORM_LOG_THROW(edgeEntry.count("destinations") == 1, storm::exceptions::InvalidJaniException, "A single list of destinations must be given in edge from '" << sourceLoc << "' in automaton '" << name << "'");
+                std::vector<storm::jani::EdgeDestination> edgeDestinations;
                 for(auto const& destEntry : edgeEntry.at("destinations")) {
                     // target location
                     STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a source");
@@ -529,6 +537,7 @@ namespace storm {
                     assert(probExpr.isInitialized());
                     STORM_LOG_THROW(probExpr.hasNumericalType(), storm::exceptions::InvalidJaniException, "Probability expression " << probExpr << " does not have a numerical type." );
                     // assignments
+                    std::vector<storm::jani::Assignment> assignments;
                     unsigned assignmentDeclCount = destEntry.count("assignments");
                     STORM_LOG_THROW(assignmentDeclCount < 2, storm::exceptions::InvalidJaniException, "Destination in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "' has multiple assignment lists");
                     for(auto const& assignmentEntry : destEntry.at("assignments")) {
@@ -540,8 +549,11 @@ namespace storm {
                         // value
                         STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' to '" << targetLoc << "' in automaton '" << name << "'  must have one value field");
                         storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), "assignment in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
+                        assignments.emplace_back(getVariableOrConstantExpression(refstring, "Assignment variable in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'", localVars), assignmentExpr);
                     }
+                    edgeDestinations.emplace_back(locIds.at(targetLoc), probExpr, assignments);
                 }
+                automaton.addEdge(storm::jani::Edge(locIds.at(sourceLoc), parentModel.getActionIndex(action), rateExpr.isInitialized() ? boost::optional<storm::expressions::Expression>(rateExpr) : boost::none, guardExpr, edgeDestinations));
             }
 
 
