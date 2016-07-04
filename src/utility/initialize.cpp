@@ -19,7 +19,7 @@ namespace storm {
 
             l3pp::FormatterPtr fptr = l3pp::makeTemplateFormatter(
                     l3pp::FieldStr<l3pp::Field::LogLevel, 5, l3pp::Justification::LEFT>(),
-                    ' (', l3pp::FieldStr<l3pp::Field::FileName>, ':', l3pp::FieldStr<l3pp::Field::Line>, '): ',
+                    " (", l3pp::FieldStr<l3pp::Field::FileName>(), ':', l3pp::FieldStr<l3pp::Field::Line>(), "): ",
                     l3pp::FieldStr<l3pp::Field::Message>(), '\n'
                 );
             sink->setFormatter(fptr);
