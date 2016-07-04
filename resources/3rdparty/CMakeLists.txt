@@ -81,3 +81,13 @@ set(GTEST_INCLUDE_DIR ${source_dir}/include PARENT_SCOPE)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
 set(GTEST_LIBRARIES ${binary_dir}/libgtest.a ${binary_dir}/libgtest_main.a PARENT_SCOPE)
+
+ExternalProject_Add(
+    l3pp
+    GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
+    GIT_TAG master
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/l3pp
+    LOG_INSTALL ON
+)
+ExternalProject_Get_Property(l3pp source_dir)
+set(l3pp_INCLUDE "${source_dir}/" PARENT_SCOPE)
