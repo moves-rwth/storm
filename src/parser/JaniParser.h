@@ -1,6 +1,7 @@
 #ifndef STORM_JANIPARSER_H
 #define STORM_JANIPARSER_H
 
+#include <src/storage/jani/Constant.h>
 #include "src/exceptions/FileIoException.h"
 #include "src/storage/expressions/ExpressionManager.h"
 
@@ -36,10 +37,14 @@ namespace storm {
             std::shared_ptr<storm::jani::Variable>  parseVariable(json const& variableStructure, std::string const& scopeDescription, bool prefWithScope = false);
             storm::expressions::Expression parseExpression(json const& expressionStructure, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
         private:
+            std::shared_ptr<storm::jani::Constant> parseConstant(json const& constantStructure, std::string const& scopeDescription = "global");
+
             /**
              * Helper for parsing the actions of a model.
              */
             void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
+            std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
+            std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  std::string const& scopeDescription, std::unordered_map<std::string, std::shared_ptr<storm::jani::Variable>> const& localVars = {});
 
             std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);
 

@@ -5,16 +5,16 @@
 
 
 TEST(JaniParser, DieTest) {
-    std::string testFileInput = STORM_CPP_TESTS_BASE_PATH"/../examples/jani-examples/dice.jani";
+    std::string testFileInput = STORM_CPP_TESTS_BASE_PATH"/../examples/exported-jani-models/dice.jani";
     storm::jani::Model model = storm::parser::JaniParser::parse(testFileInput);
 }
 
 TEST(JaniParser, BrpTest) {
-    std::string testFileInput = STORM_CPP_TESTS_BASE_PATH"/../examples/jani-examples/brp.jani";
+    std::string testFileInput = STORM_CPP_TESTS_BASE_PATH"/../examples/exported-jani-models/brp.jani";
     storm::jani::Model model = storm::parser::JaniParser::parse(testFileInput);
 }
 
 TEST(JaniParser, ConsensusTest) {
-    std::string testFileInput = STORM_CPP_TESTS_BASE_PATH"/../examples/jani-examples/consensus-6.jani";
+    std::string testFileInput = STORM_CPP_TESTS_BASE_PATH"/../examples/exported-jani-models/coin2.jani";
     storm::jani::Model model = storm::parser::JaniParser::parse(testFileInput);
 }
