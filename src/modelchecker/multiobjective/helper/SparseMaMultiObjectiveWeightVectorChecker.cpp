@@ -1,11 +1,14 @@
 #include "src/modelchecker/multiobjective/helper/SparseMaMultiObjectiveWeightVectorChecker.h"
 
+#include <cmath>
+
 #include "src/adapters/CarlAdapter.h"
 #include "src/models/sparse/MarkovAutomaton.h"
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 
+#include "src/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -26,11 +29,17 @@ namespace storm {
                     }
                     
                 }
+
             }
             
             template <class SparseMaModelType>
             void SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
-                STORM_LOG_ERROR("BOUNDED OBJECTIVES FOR MARKOV AUTOMATA NOT YET IMPLEMENTED");
+ 
+                
+                // Set the digitization constant
+                ValueType digitizationConstant = getDigitizationConstant();
+                std::cout << "Got delta: " << digitizationConstant << std::endl;
+                
       /*
                 // Allocate some memory so this does not need to happen for each time epoch
                 std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(this->data.preprocessedModel.getNumberOfStates());
@@ -84,9 +93,91 @@ namespace storm {
                 }
 */
             }
+            
+            template <class SparseMaModelType>
+            template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
+            VT SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::getDigitizationConstant() const {
+                STORM_LOG_DEBUG("Retrieving digitization constant");
+                // We need to find a delta such that for each pair of lower and upper bounds it holds that
+                // 1 - e^(-maxRate lowerbound) * (1 + maxRate delta) ^ (lowerbound / delta) + 1-e^(-maxRate upperbound) * (1 + maxRate delta) ^ (upperbound / delta) <= maximumLowerUpperBoundGap
+                // and lowerbound/delta , upperbound/delta are natural numbers.
+                
+                // Initialize some data for fast and easy access
+                VT const maxRate = this->data.preprocessedModel.getMaximalExitRate();
+                std::vector<std::pair<VT, VT>> lowerUpperBounds;
+                std::vector<std::pair<VT, VT>> eToPowerOfMinusMaxRateTimesBound;
+                for(auto const& obj : this->data.objectives) {
+                    if(obj.timeBounds) {
+                        if(obj.timeBounds->which() == 0) {
+                            lowerUpperBounds.emplace_back(storm::utility::zero<VT>(), boost::get<uint_fast64_t>(*obj.timeBounds));
+                            eToPowerOfMinusMaxRateTimesBound.emplace_back(storm::utility::one<VT>(), std::exp(-maxRate * lowerUpperBounds.back().second));
+                        } else {
+                            auto const& pair = boost::get<std::pair<double, double>>(*obj.timeBounds);
+                            lowerUpperBounds.emplace_back(storm::utility::convertNumber<VT>(pair.first), storm::utility::convertNumber<VT>(pair.second));
+                            eToPowerOfMinusMaxRateTimesBound.emplace_back(std::exp(-maxRate * lowerUpperBounds.back().first), std::exp(-maxRate * lowerUpperBounds.back().second));
+                        }
+                    }
+                }
+                VT smallestNonZeroBound = storm::utility::zero<VT>();
+                for (auto const& bounds : lowerUpperBounds) {
+                    if(!storm::utility::isZero(bounds.first)) {
+                        smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? bounds.first : std::min(smallestNonZeroBound, bounds.first);
+                    } else if (!storm::utility::isZero(bounds.second)) {
+                        smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? bounds.second : std::min(smallestNonZeroBound, bounds.second);
+                    }
+                }
+                if(storm::utility::isZero(smallestNonZeroBound)) {
+                    // All time bounds are zero which means that any delta>0 is valid.
+                    // This includes the case where there are no time bounds
+                    return storm::utility::one<VT>();
+                }
+                
+                // We brute-force a delta, since a direct computation is apparently not easy.
+                // Also note that the number of times this loop runs is a lower bound for the number of minMaxSolver invocations.
+                // Hence, this brute-force approach will most likely not be a bottleneck.
+                uint_fast64_t smallestStepBound = 1;
+                VT delta = smallestNonZeroBound / smallestStepBound;
+                while(true) {
+                    bool deltaValid = true;
+                    for(auto const& bounds : lowerUpperBounds) {
+                        if(bounds.first/delta  != std::floor(bounds.first/delta) ||
+                           bounds.second/delta != std::floor(bounds.second/delta)) {
+                            deltaValid = false;
+                            break;
+                        }
+                    }
+                    if(deltaValid) {
+                        for(uint_fast64_t i = 0; i<lowerUpperBounds.size(); ++i) {
+                            VT precisionOfObj = storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[i].first * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, lowerUpperBounds[i].first / delta) );
+                            precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[i].second * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, lowerUpperBounds[i].second / delta) );
+                            if(precisionOfObj > this->maximumLowerUpperBoundGap) {
+                                deltaValid = false;
+                                break;
+                            }
+                        }
+                    }
+                    if(deltaValid) {
+                        break;
+                    }
+                    ++smallestStepBound;
+                    STORM_LOG_ASSERT(delta>smallestNonZeroBound / smallestStepBound, "Digitization constant is expected to become smaller in every iteration");
+                    delta = smallestNonZeroBound / smallestStepBound;
+                }
+                STORM_LOG_DEBUG("Found digitization constant: " << delta << ". At least " << smallestStepBound << " digitization steps will be necessarry");
+                return delta;
+            }
+            
+            
+            template <class SparseMaModelType>
+            template <typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
+            VT SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::getDigitizationConstant() const {
+                  STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
+            }
 
             template class SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;
+            template double SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getDigitizationConstant<double>() const;
 #ifdef STORM_HAVE_CARL
+            template storm::RationalNumber SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<storm::RationalNumber>() const;
             template class SparseMaMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
 #endif
             

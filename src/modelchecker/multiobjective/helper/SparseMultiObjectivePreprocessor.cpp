@@ -271,7 +271,7 @@ namespace storm {
                         STORM_LOG_THROW(formula.getDiscreteTimeBound() > 0, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula with time bound 0. This is not supported.");
                         currentObjective.timeBounds = formula.getDiscreteTimeBound();
                     } else {
-                        STORM_LOG_THROW(formula.getIntervalBounds().first==formula.getIntervalBounds().second, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula where upper and lower time bounds are equal. This is not supported.");
+                        STORM_LOG_THROW(formula.getIntervalBounds().first<formula.getIntervalBounds().second, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula where the lower time bound is not strictly smaller than the upper time bound. This is not supported.");
                         currentObjective.timeBounds = formula.getIntervalBounds();
                     }
                     preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data, currentObjective, false, false);
