@@ -1,59 +1,55 @@
-#ifndef STORM_TRANSFORMER_NEUTRALECREMOVER_H
-#define STORM_TRANSFORMER_NEUTRALECREMOVER_H
+#ifndef STORM_TRANSFORMER_ENDCOMPONENTELIMINATOR_H
+#define STORM_TRANSFORMER_ENDCOMPONENTELIMINATOR_H
 
 
 #include "src/utility/constants.h"
 #include "src/utility/macros.h"
 #include "src/utility/graph.h"
-#include "src/utility/vector.h"
 #include "src/storage/MaximalEndComponentDecomposition.h"
 
 namespace storm {
     namespace transformer {
         
         template <typename ValueType>
-        class NeutralECRemover {
+        class EndComponentEliminator {
         public:
 
-            struct NeutralECRemoverReturnType {
+            struct EndComponentEliminatorReturnType {
                 // The resulting matrix
                 storm::storage::SparseMatrix<ValueType> matrix;
-                // The resulting vector
-                std::vector<ValueType> vector;
-                // Index mapping that gives for each row of the resulting matrix and vector the corresponding row in the original matrix and vector.
+                // Index mapping that gives for each row of the resulting matrix the corresponding row in the original matrix.
                 // For the empty rows added to EC states, some row of the original matrix that stays inside the EC is given.
                 std::vector<uint_fast64_t> newToOldRowMapping;
-                // Gives for each state (=rowGroup) of the original matrix and vector the corresponding state in the resulting matrix and vector.
-                // if the given state does not exist in the result, the returned value will be std::numeric_limits<uint_fast64_t>::max(), i.e., an invalid index.
+                // Gives for each state (=rowGroup) of the original matrix the corresponding state in the resulting matrix.
+                // States of a removed end component are mapped to the state that substitutes the EC.
+                // If the given state does not exist in the result (e.g. it belonged to a bottom EC), the returned value will be std::numeric_limits<uint_fast64_t>::max(), i.e., an invalid index.
                 std::vector<uint_fast64_t> oldToNewStateMapping;
             };
             
             /*
-             * Identifies neutral end components and replaces them by a single state.
+             * Identifies end components and substitutes them by a single state.
              *
-             * A choice is neutral, iff the given vector is zero at the corresponding row.
-             * An EC is neutral iff it only consideres neutral choices.
-             * For each such EC that is not contained by another neutral EC, we add a new state and redirect all incoming and outgoing
+             * Only ECs for which the given bit vector is true for all choices are considered.
+             * For each such EC (that is not contained by another EC), we add a new state and redirect all incoming and outgoing
              * transitions of the EC to (and from) this state.
-             * If allowEmptyRow is true for at least one state in a neutral EC, an empty row is added to the new state (representing the choice to stay at the neutral EC forever).
-             * States from which all reachable choices are neutral will be removed.
-             *
+             * If allowEmptyRow is true for at least one state of an EC, an empty row is added to the new state (representing the choice to stay at the EC forever).
+             * States for which all reachable choices are selected by the given bit vector will be removed!
              */
-            static NeutralECRemoverReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalVector, storm::storage::BitVector const& allowEmptyRow) {
-                STORM_LOG_DEBUG("Invoked NeutralECRemover on matrix with " << originalMatrix.getRowGroupCount() << " row groups.");
+            static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& consideredRows, storm::storage::BitVector const& allowEmptyRow) {
+                STORM_LOG_DEBUG("Invoked EndComponentEliminator on matrix with " << originalMatrix.getRowGroupCount() << " row groups.");
                 
-                storm::storage::BitVector keptStates = computeStatesFromWhichNonNeutralChoiceIsReachable(originalMatrix, originalVector);
-                storm::storage::MaximalEndComponentDecomposition<ValueType> neutralECs = computeNeutralECs(originalMatrix, originalVector, keptStates);
+                storm::storage::BitVector keptStates = computeStatesFromWhichNonConsideredRowIsReachable(originalMatrix, consideredRows);
+                storm::storage::MaximalEndComponentDecomposition<ValueType> ecs = computeECs(originalMatrix, consideredRows, keptStates);
                 
-                //further shrink the set of kept states by removing all states that are part of a neutral EC
-                for (auto const& ec : neutralECs) {
+                //further shrink the set of kept states by removing all states that are part of an EC
+                for (auto const& ec : ecs) {
                      for (auto const& stateActionsPair : ec) {
                          keptStates.set(stateActionsPair.first, false);
                      }
                 }
-                STORM_LOG_DEBUG("Found " << neutralECs.size() << " neutral End Components. Keeping " << keptStates.getNumberOfSetBits() << " of " << keptStates.size() << " original states.");
+                STORM_LOG_DEBUG("Found " << ecs.size() << " end components to eliminate. Keeping " << keptStates.getNumberOfSetBits() << " of " << keptStates.size() << " original states.");
                 
-                NeutralECRemoverReturnType result;
+                EndComponentEliminatorReturnType result;
                 std::vector<uint_fast64_t> newRowGroupIndices;
                 result.oldToNewStateMapping = std::vector<uint_fast64_t>(originalMatrix.getRowGroupCount(), std::numeric_limits<uint_fast64_t>::max());
                 storm::storage::BitVector emptyRows(originalMatrix.getRowCount(), false); // will be resized as soon as the rowCount of the resulting matrix is known
@@ -65,7 +61,7 @@ namespace storm {
                         result.newToOldRowMapping.push_back(oldRow);
                     }
                 }
-                for (auto const& ec : neutralECs) {
+                for (auto const& ec : ecs) {
                     newRowGroupIndices.push_back(result.newToOldRowMapping.size());
                     bool ecGetsEmptyRow = false;
                     for (auto const& stateActionsPair : ec) {
@@ -87,40 +83,34 @@ namespace storm {
                 emptyRows.resize(result.newToOldRowMapping.size());
                 
                 result.matrix = buildTransformedMatrix(originalMatrix, newRowGroupIndices, result.newToOldRowMapping, result.oldToNewStateMapping, emptyRows);
-                result.vector = buildTransformedVector(originalVector, result.newToOldRowMapping);
-                
-                STORM_LOG_DEBUG("NeutralECRemover is done. Resulting  matrix has " << result.matrix.getRowGroupCount() << " row groups.");
+                STORM_LOG_DEBUG("EndComponentEliminator is done. Resulting  matrix has " << result.matrix.getRowGroupCount() << " row groups.");
                 return result;
             }
             
         private:
             
-            static storm::storage::BitVector computeStatesFromWhichNonNeutralChoiceIsReachable(storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalVector) {
-                storm::storage::BitVector statesWithNonNeutralChoice(originalMatrix.getRowGroupCount(), false);
+            static storm::storage::BitVector computeStatesFromWhichNonConsideredRowIsReachable(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& consideredRows) {
+                storm::storage::BitVector nonConsideredRows = ~consideredRows;
+                storm::storage::BitVector groupsWithNonConsideredRow(originalMatrix.getRowGroupCount(), false);
                 for(uint_fast64_t rowGroup = 0; rowGroup < originalMatrix.getRowGroupCount(); ++rowGroup){
-                    for(uint_fast64_t row = originalMatrix.getRowGroupIndices()[rowGroup]; row < originalMatrix.getRowGroupIndices()[rowGroup+1]; ++row) {
-                        if(!storm::utility::isZero(originalVector[row])) {
-                            statesWithNonNeutralChoice.set(rowGroup);
-                            break;
-                        }
+                    if(nonConsideredRows.getNextSetIndex(originalMatrix.getRowGroupIndices()[rowGroup]) < originalMatrix.getRowGroupIndices()[rowGroup+1]) {
+                        groupsWithNonConsideredRow.set(rowGroup);
                     }
                 }
-                storm::storage::BitVector trueVector(originalMatrix.getRowGroupCount(), true);
-                return storm::utility::graph::performProbGreater0E(originalMatrix, originalMatrix.getRowGroupIndices(), originalMatrix.transpose(true), trueVector, statesWithNonNeutralChoice);
+                return storm::utility::graph::performProbGreater0E(originalMatrix, originalMatrix.getRowGroupIndices(), originalMatrix.transpose(true), storm::storage::BitVector(originalMatrix.getRowGroupCount(), true), groupsWithNonConsideredRow);
             }
             
-            static storm::storage::MaximalEndComponentDecomposition<ValueType> computeNeutralECs(storm::storage::SparseMatrix<ValueType> const& originalMatrix, std::vector<ValueType> const& originalVector, storm::storage::BitVector const& keptStates) {
-                // Get an auxiliary matrix to identify the neutral end components.
-                // This is done by redirecting choices that can never be part of a neutral EC to a sink state.
-                // Such choices are either non-neutral choices or choices that lead to a state that is not in keptStates.
-                storm::storage::BitVector neutralChoices = storm::utility::vector::filter<ValueType>(originalVector, [&] (ValueType const& value) -> bool {return storm::utility::isZero(value); } );
+            static storm::storage::MaximalEndComponentDecomposition<ValueType> computeECs(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& consideredRows, storm::storage::BitVector const& keptStates) {
+                // Get an auxiliary matrix to identify the correct end components w.r.t. the considered choices and the kept states.
+                // This is done by redirecting choices that can never be part of an EC to a sink state.
+                // Such choices are either non-considered choices or choices that lead to a state that is not in keptStates.
                 uint_fast64_t sinkState = originalMatrix.getRowGroupCount();
                 storm::storage::SparseMatrixBuilder<ValueType> builder(originalMatrix.getRowCount() + 1, originalMatrix.getColumnCount() + 1, originalMatrix.getEntryCount() + 1, false, true,  originalMatrix.getRowGroupCount()+1);
                 uint_fast64_t row = 0;
                 for(uint_fast64_t rowGroup = 0; rowGroup < originalMatrix.getRowGroupCount(); ++rowGroup) {
                     builder.newRowGroup(row);
                     for (; row < originalMatrix.getRowGroupIndices()[rowGroup+1]; ++row ){
-                        bool keepRow = neutralChoices.get(row);
+                        bool keepRow = consideredRows.get(row);
                         if(keepRow) { //Also check whether all successors are kept
                             for(auto const& entry : originalMatrix.getRow(row)){
                                 keepRow &= keptStates.get(entry.getColumn());
@@ -182,17 +172,7 @@ namespace storm {
                 }
                 return builder.build(newToOldRowMapping.size(), numRowGroups, numRowGroups);
             }
-            
-            static std::vector<ValueType> buildTransformedVector(std::vector<ValueType> const& originalVector, std::vector<uint_fast64_t> const& newToOldRowMapping) {
-                std::vector<ValueType> v;
-                v.reserve(newToOldRowMapping.size());
-                for(auto const& oldRow : newToOldRowMapping) {
-                    v.push_back(originalVector[oldRow]);
-                }
-                return v;
-            }
-            
         };
     }
 }
-#endif // STORM_TRANSFORMER_NEUTRALECREMOVER_H
+#endif // STORM_TRANSFORMER_ENDCOMPONENTREMOVER_H

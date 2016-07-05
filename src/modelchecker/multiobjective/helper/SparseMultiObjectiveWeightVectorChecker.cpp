@@ -8,7 +8,7 @@
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "src/solver/MinMaxLinearEquationSolver.h"
-#include "src/transformer/NeutralECRemover.h"
+#include "src/transformer/EndComponentEliminator.h"
 #include "src/utility/graph.h"
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
@@ -99,28 +99,31 @@ namespace storm {
                     return;
                 }
                 // Remove end components in which no reward is earned
-                auto removerResult = storm::transformer::NeutralECRemover<ValueType>::transform(data.preprocessedModel.getTransitionMatrix(), weightedRewardVector, storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowGroupCount(), true));
                 
-                std::vector<ValueType> subResult(removerResult.matrix.getRowGroupCount());
+                auto ecEliminatorResult = storm::transformer::EndComponentEliminator<ValueType>::transform(data.preprocessedModel.getTransitionMatrix(), storm::utility::vector::filterZero(weightedRewardVector), storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowGroupCount(), true));
+                
+                std::vector<ValueType> subRewardVector(ecEliminatorResult.newToOldRowMapping.size());
+                storm::utility::vector::selectVectorValues(subRewardVector, ecEliminatorResult.newToOldRowMapping, weightedRewardVector);
+                std::vector<ValueType> subResult(ecEliminatorResult.matrix.getRowGroupCount());
                 
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> solverFactory;
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(removerResult.matrix);
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = solverFactory.create(ecEliminatorResult.matrix);
                 solver->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 solver->setTrackScheduler(true);
-                solver->solveEquations(subResult, removerResult.vector);
+                solver->solveEquations(subResult, subRewardVector);
                 
                 this->weightedResult = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates());
                 this->scheduler = storm::storage::TotalScheduler(data.preprocessedModel.getNumberOfStates());
                 std::unique_ptr<storm::storage::TotalScheduler>  solverScheduler = solver->getScheduler();
                 storm::storage::BitVector statesWithUndefinedScheduler(data.preprocessedModel.getNumberOfStates(), false);
                 for(uint_fast64_t state = 0; state < data.preprocessedModel.getNumberOfStates(); ++state) {
-                    uint_fast64_t stateInReducedModel = removerResult.oldToNewStateMapping[state];
+                    uint_fast64_t stateInReducedModel = ecEliminatorResult.oldToNewStateMapping[state];
                     // Check if the state exists in the reduced model
-                    if(stateInReducedModel < removerResult.matrix.getRowGroupCount()) {
+                    if(stateInReducedModel < ecEliminatorResult.matrix.getRowGroupCount()) {
                         this->weightedResult[state] = subResult[stateInReducedModel];
                         // Check if the chosen row originaly belonged to the current state
-                        uint_fast64_t chosenRowInReducedModel = removerResult.matrix.getRowGroupIndices()[stateInReducedModel] + solverScheduler->getChoice(stateInReducedModel);
-                        uint_fast64_t chosenRowInOriginalModel = removerResult.newToOldRowMapping[chosenRowInReducedModel];
+                        uint_fast64_t chosenRowInReducedModel = ecEliminatorResult.matrix.getRowGroupIndices()[stateInReducedModel] + solverScheduler->getChoice(stateInReducedModel);
+                        uint_fast64_t chosenRowInOriginalModel = ecEliminatorResult.newToOldRowMapping[chosenRowInReducedModel];
                         if(chosenRowInOriginalModel >= data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state] &&
                            chosenRowInOriginalModel <  data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]) {
                             this->scheduler.setChoice(state, chosenRowInOriginalModel - data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]);
@@ -138,12 +141,12 @@ namespace storm {
                         // Try to find a choice that stays inside the EC (i.e., for which all successors are represented by the same state in the reduced model)
                         // And at least one successor has a defined scheduler.
                         // This way, a scheduler is chosen that leads (with probability one) to the state of the EC for which the scheduler is defined
-                        uint_fast64_t stateInReducedModel = removerResult.oldToNewStateMapping[state];
+                        uint_fast64_t stateInReducedModel = ecEliminatorResult.oldToNewStateMapping[state];
                         for(uint_fast64_t row = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; row < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
                             bool rowStaysInEC = true;
                             bool rowLeadsToDefinedScheduler = false;
                             for(auto const& entry : data.preprocessedModel.getTransitionMatrix().getRow(row)) {
-                                rowStaysInEC &= ( stateInReducedModel == removerResult.oldToNewStateMapping[entry.getColumn()]);
+                                rowStaysInEC &= ( stateInReducedModel == ecEliminatorResult.oldToNewStateMapping[entry.getColumn()]);
                                 rowLeadsToDefinedScheduler |= !statesWithUndefinedScheduler.get(entry.getColumn());
                             }
                             if(rowStaysInEC && rowLeadsToDefinedScheduler) {

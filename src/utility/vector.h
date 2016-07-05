@@ -94,7 +94,21 @@ namespace storm {
                     vector[oldPosition++] = values[position];
                 }
             }
-            
+                        
+            /*!
+             * Selects the elements from a vector at the specified positions and writes them consecutively into another vector.
+             * @param vector The vector into which the selected elements are to be written.
+             * @param positions The positions at which to select the elements from the values vector.
+             * @param values The vector from which to select the elements.
+             */
+            template<class T>
+            void selectVectorValues(std::vector<T>& vector, std::vector<uint_fast64_t> const& positions, std::vector<T> const& values) {
+                uint_fast64_t oldPosition = 0;
+                for (auto position : positions) {
+                    vector[oldPosition++] = values[position];
+                }
+            }
+
             /*!
              * Selects groups of elements from a vector at the specified positions and writes them consecutively into another vector.
              *
@@ -413,8 +427,7 @@ namespace storm {
              */
             template<class T>
             storm::storage::BitVector filterZero(std::vector<T> const& values) {
-                std::function<bool (T const&)> fnc = [] (T const& value) -> bool { return storm::utility::isZero(value); };
-                return filter(values,  fnc);
+                return filter<T>(values, storm::utility::isZero<T>);
             }
             
             /**

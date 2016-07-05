@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "src/transformer/NeutralECRemover.h"
+#include "src/transformer/EndComponentEliminator.h"
 
 
 TEST(NeutralECRemover, SimpleModelTest) {
@@ -34,13 +34,18 @@ TEST(NeutralECRemover, SimpleModelTest) {
     storm::storage::SparseMatrix<double> matrix;
     ASSERT_NO_THROW(matrix = builder.build());
     
-    std::vector<double> vector = {0.0, 0.0,   0.0, -12.0, 0.0,   0.0,   42.0, 1.0, 2.7,   0.0, 0.0, -1.0};
+    storm::storage::BitVector consideredRows(12, true);
+    consideredRows.set(3, false);
+    consideredRows.set(6, false);
+    consideredRows.set(7, false);
+    consideredRows.set(8, false);
+    consideredRows.set(11, false);
     
     storm::storage::BitVector allowEmptyRows(5, true);
     allowEmptyRows.set(1, false);
     allowEmptyRows.set(4, false);
     
-    auto res = storm::transformer::NeutralECRemover<double>::transform(matrix, vector, allowEmptyRows);
+    auto res = storm::transformer::EndComponentEliminator<double>::transform(matrix, consideredRows, allowEmptyRows);
     
     // Expected data
     storm::storage::SparseMatrixBuilder<double> expectedBuilder(8, 3, 8, true, true, 3);
@@ -58,8 +63,6 @@ TEST(NeutralECRemover, SimpleModelTest) {
     storm::storage::SparseMatrix<double> expectedMatrix;
     ASSERT_NO_THROW(expectedMatrix = expectedBuilder.build());
     
-    std::vector<double> expectedVector = {42.0, 1.0, 2.7, 0.0, 0.0, -1.0, 0.0, -12.0};
-    
     std::vector<uint_fast64_t> expectedNewToOldRowMapping = {6,7,8,1,0,11,2,3};
     
     std::vector<uint_fast64_t> expectedOldToNewStateMapping = {1,2,std::numeric_limits<uint_fast64_t>::max(), 0, 2};
@@ -68,7 +71,6 @@ TEST(NeutralECRemover, SimpleModelTest) {
     // In particular, the ordering within the row groups depends on the MEC decomposition implementation.
     // However, this is not checked here...
     EXPECT_EQ(expectedMatrix, res.matrix);
-    EXPECT_EQ(expectedVector, res.vector);
     EXPECT_EQ(expectedNewToOldRowMapping, res.newToOldRowMapping);
     EXPECT_EQ(expectedOldToNewStateMapping, res.oldToNewStateMapping);
     //std::cout << "Original matrix:" << std::endl << matrix << std::endl << std::endl << "Computation Result: " << std::endl << res.matrix << std::endl<< std::endl << "expected Matrix" << std::endl<< expectedMatrix << std::endl;
