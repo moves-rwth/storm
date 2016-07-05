@@ -1,6 +1,8 @@
 #ifndef STORM_UTILITY_INITIALIZE_H
 #define	STORM_UTILITY_INITIALIZE_H
 
+#include "src/utility/logging.h"
+
 namespace storm {
     namespace utility {
         /*!
@@ -16,6 +18,11 @@ namespace storm {
          * Performs some necessary clean-up.
          */
         void cleanUp();
+
+        /*!
+         * Set the global log level
+         */
+        void setLogLevel(l3pp::LogLevel level);
 
         /*!
          * Sets up the logging to file.
