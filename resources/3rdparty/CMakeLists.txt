@@ -87,6 +87,9 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
     GIT_TAG master
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/l3pp
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
     LOG_INSTALL ON
 )
 ExternalProject_Get_Property(l3pp source_dir)
