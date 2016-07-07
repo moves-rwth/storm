@@ -1,4 +1,21 @@
+# Create build directory for storm
 mkdir build
+
+# Go to build directory
 cd build
+
+# Configure the project
 cmake ..
-make storm-main
+# If you want an interactive configuration, try "ccmake ..". Then you can press "c" to initially configure the project, change your values and then press "g" to generate the Makefile
+
+# After generating the Makefile you can build the resources we need for the project
+make resources
+
+# Now we build the main project for DFTs
+make storm-dft-main
+
+# Last you can run an example
+./src/storm-dft -dft ../examples/dft/and.dft -mttf
+
+# To get a list of all available arguments run
+./src/storm-dft --help
