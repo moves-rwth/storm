@@ -32,7 +32,7 @@ namespace storm {
                  * - computes the values of these objectives w.r.t. this scheduler
                  *
                  * @param weightVector the weight vector of the current check
-                 * @param weightedRewardVector the weighted rewards (initially only considering the unbounded objectives, will be extended to all objectives)
+                 * @param weightedRewardVector the weighted rewards considering the unbounded objectives. Will be invalidated after calling this.
                  */
                 virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) override;
   

@@ -113,49 +113,11 @@ namespace storm {
                 solver->solveEquations(subResult, subRewardVector);
                 
                 this->weightedResult = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates());
-                this->scheduler = storm::storage::TotalScheduler(data.preprocessedModel.getNumberOfStates());
-                std::unique_ptr<storm::storage::TotalScheduler>  solverScheduler = solver->getScheduler();
-                storm::storage::BitVector statesWithUndefinedScheduler(data.preprocessedModel.getNumberOfStates(), false);
-                for(uint_fast64_t state = 0; state < data.preprocessedModel.getNumberOfStates(); ++state) {
-                    uint_fast64_t stateInReducedModel = ecEliminatorResult.oldToNewStateMapping[state];
-                    // Check if the state exists in the reduced model
-                    if(stateInReducedModel < ecEliminatorResult.matrix.getRowGroupCount()) {
-                        this->weightedResult[state] = subResult[stateInReducedModel];
-                        // Check if the chosen row originaly belonged to the current state
-                        uint_fast64_t chosenRowInReducedModel = ecEliminatorResult.matrix.getRowGroupIndices()[stateInReducedModel] + solverScheduler->getChoice(stateInReducedModel);
-                        uint_fast64_t chosenRowInOriginalModel = ecEliminatorResult.newToOldRowMapping[chosenRowInReducedModel];
-                        if(chosenRowInOriginalModel >= data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state] &&
-                           chosenRowInOriginalModel <  data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]) {
-                            this->scheduler.setChoice(state, chosenRowInOriginalModel - data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]);
-                        } else {
-                            statesWithUndefinedScheduler.set(state);
-                        }
-                    } else {
-                        // if the state does not exist in the reduced model, it means that the result is always zero, independent of the scheduler.
-                        // Hence, we don't have to set the scheduler explicitly
-                        this->weightedResult[state] = storm::utility::zero<ValueType>();
-                    }
-                }
-                while(!statesWithUndefinedScheduler.empty()) {
-                    for(auto state : statesWithUndefinedScheduler) {
-                        // Try to find a choice that stays inside the EC (i.e., for which all successors are represented by the same state in the reduced model)
-                        // And at least one successor has a defined scheduler.
-                        // This way, a scheduler is chosen that leads (with probability one) to the state of the EC for which the scheduler is defined
-                        uint_fast64_t stateInReducedModel = ecEliminatorResult.oldToNewStateMapping[state];
-                        for(uint_fast64_t row = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; row < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state+1]; ++row) {
-                            bool rowStaysInEC = true;
-                            bool rowLeadsToDefinedScheduler = false;
-                            for(auto const& entry : data.preprocessedModel.getTransitionMatrix().getRow(row)) {
-                                rowStaysInEC &= ( stateInReducedModel == ecEliminatorResult.oldToNewStateMapping[entry.getColumn()]);
-                                rowLeadsToDefinedScheduler |= !statesWithUndefinedScheduler.get(entry.getColumn());
-                            }
-                            if(rowStaysInEC && rowLeadsToDefinedScheduler) {
-                                this->scheduler.setChoice(state, row - data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]);
-                                statesWithUndefinedScheduler.set(state, false);
-                            }
-                        }
-                    }
-                }
+                std::vector<uint_fast64_t> optimalChoices(data.preprocessedModel.getNumberOfStates());
+                
+                transformReducedSolutionToOriginalModel(ecEliminatorResult.matrix, subResult, solver->getScheduler()->getChoices(), ecEliminatorResult.newToOldRowMapping, ecEliminatorResult.oldToNewStateMapping, this->data.preprocessedModel.getTransitionMatrix(), this->weightedResult, optimalChoices);
+                
+                this->scheduler = storm::storage::TotalScheduler(std::move(optimalChoices));
             }
             
             template <class SparseModelType>
@@ -189,6 +151,61 @@ namespace storm {
                     }
                 }
             }
+            
+            template <class SparseModelType>
+            void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::transformReducedSolutionToOriginalModel(storm::storage::SparseMatrix<ValueType> const& reducedMatrix,
+                                                         std::vector<ValueType> const& reducedSolution,
+                                                         std::vector<uint_fast64_t> const& reducedOptimalChoices,
+                                                         std::vector<uint_fast64_t> const& reducedToOriginalChoiceMapping,
+                                                         std::vector<uint_fast64_t> const& originalToReducedStateMapping,
+                                                         storm::storage::SparseMatrix<ValueType> const& originalMatrix,
+                                                         std::vector<ValueType>& originalSolution,
+                                                         std::vector<uint_fast64_t>& originalOptimalChoices) const {
+              
+                storm::storage::BitVector statesWithUndefinedScheduler(originalMatrix.getRowGroupCount(), false);
+                for(uint_fast64_t state = 0; state < originalMatrix.getRowGroupCount(); ++state) {
+                    uint_fast64_t stateInReducedModel = originalToReducedStateMapping[state];
+                    // Check if the state exists in the reduced model
+                    if(stateInReducedModel < reducedMatrix.getRowGroupCount()) {
+                        originalSolution[state] = reducedSolution[stateInReducedModel];
+                        // Check if the chosen row originaly belonged to the current state
+                        uint_fast64_t chosenRowInReducedModel = reducedMatrix.getRowGroupIndices()[stateInReducedModel] + reducedOptimalChoices[stateInReducedModel];
+                        uint_fast64_t chosenRowInOriginalModel = reducedToOriginalChoiceMapping[chosenRowInReducedModel];
+                        if(chosenRowInOriginalModel >= originalMatrix.getRowGroupIndices()[state] &&
+                           chosenRowInOriginalModel <  originalMatrix.getRowGroupIndices()[state+1]) {
+                            originalOptimalChoices[state] = chosenRowInOriginalModel - originalMatrix.getRowGroupIndices()[state];
+                        } else {
+                            statesWithUndefinedScheduler.set(state);
+                        }
+                    } else {
+                        // if the state does not exist in the reduced model, it means that the result is always zero, independent of the scheduler.
+                        // Hence, we don't have to set the scheduler explicitly
+                        originalSolution[state] = storm::utility::zero<ValueType>();
+                    }
+                }
+                while(!statesWithUndefinedScheduler.empty()) {
+                    for(auto state : statesWithUndefinedScheduler) {
+                        // Try to find a choice that stays inside the EC (i.e., for which all successors are represented by the same state in the reduced model)
+                        // And at least one successor has a defined scheduler.
+                        // This way, a scheduler is chosen that leads (with probability one) to the state of the EC for which the scheduler is defined
+                        uint_fast64_t stateInReducedModel = originalToReducedStateMapping[state];
+                        for(uint_fast64_t row = originalMatrix.getRowGroupIndices()[state]; row < originalMatrix.getRowGroupIndices()[state+1]; ++row) {
+                            bool rowStaysInEC = true;
+                            bool rowLeadsToDefinedScheduler = false;
+                            for(auto const& entry : originalMatrix.getRow(row)) {
+                                rowStaysInEC &= ( stateInReducedModel == originalToReducedStateMapping[entry.getColumn()]);
+                                rowLeadsToDefinedScheduler |= !statesWithUndefinedScheduler.get(entry.getColumn());
+                            }
+                            if(rowStaysInEC && rowLeadsToDefinedScheduler) {
+                                originalOptimalChoices[state] = row - originalMatrix.getRowGroupIndices()[state];
+                                statesWithUndefinedScheduler.set(state, false);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            
             
             template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::Mdp<double>>;
             template class SparseMultiObjectiveWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>;

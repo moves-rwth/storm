@@ -81,9 +81,22 @@ namespace storm {
                  * - computes the values of these objectives w.r.t. this scheduler
                  *
                  * @param weightVector the weight vector of the current check
-                 * @param weightedRewardVector the weighted rewards (initially only considering the unbounded objectives, will be extended to all objectives)
+                 * @param weightedRewardVector the weighted rewards considering the unbounded objectives. Will be invalidated after calling this.
                  */
                 virtual void boundedPhase(std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) = 0;
+                
+                /*!
+                 * Transforms the results of a min-max-solver that considers a reduced model (without end components) to a result for the original (unreduced) model
+                 */
+                void transformReducedSolutionToOriginalModel(storm::storage::SparseMatrix<ValueType> const& reducedMatrix,
+                                                             std::vector<ValueType> const& reducedSolution,
+                                                             std::vector<uint_fast64_t> const& reducedOptimalChoices,
+                                                             std::vector<uint_fast64_t> const& reducedToOriginalChoiceMapping,
+                                                             std::vector<uint_fast64_t> const& originalToReducedStateMapping,
+                                                             storm::storage::SparseMatrix<ValueType> const& originalMatrix,
+                                                             std::vector<ValueType>& originalSolution,
+                                                             std::vector<uint_fast64_t>& originalOptimalChoices) const;
+                
                 
                 // stores the considered information of the multi-objective model checking problem
                 PreprocessorData const& data;

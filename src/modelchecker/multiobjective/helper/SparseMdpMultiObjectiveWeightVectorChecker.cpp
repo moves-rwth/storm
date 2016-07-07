@@ -38,11 +38,11 @@ namespace storm {
                     this->offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
                     this->offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
                 }
-                storm::storage::BitVector objectivesAtCurrentEpoch = this->unboundedObjectives;
+                storm::storage::BitVector consideredObjectives = this->unboundedObjectives;
                 auto timeBoundIt = timeBounds.begin();
                 for(uint_fast64_t currentEpoch = timeBoundIt->first; currentEpoch > 0; --currentEpoch) {
                     if(timeBoundIt != timeBounds.end() && currentEpoch == timeBoundIt->first) {
-                        objectivesAtCurrentEpoch |= timeBoundIt->second;
+                        consideredObjectives |= timeBoundIt->second;
                         for(auto objIndex : timeBoundIt->second) {
                             storm::utility::vector::addScaledVector(weightedRewardVector, this->discreteActionRewards[objIndex], weightVector[objIndex]);
                         }
@@ -56,7 +56,7 @@ namespace storm {
                     
                     // get values for individual objectives
                     // TODO we could compute the result for one of the objectives from the weighted result, the given weight vector, and the remaining objective results.
-                    for(auto objIndex : objectivesAtCurrentEpoch) {
+                    for(auto objIndex : consideredObjectives) {
                         std::vector<ValueType>& objectiveResult = this->objectiveResults[objIndex];
                         std::vector<ValueType> objectiveRewards = this->discreteActionRewards[objIndex];
                         auto rowGroupIndexIt = this->data.preprocessedModel.getTransitionMatrix().getRowGroupIndices().begin();

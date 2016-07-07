@@ -109,6 +109,16 @@ namespace storm {
             return number;
         }
         
+        template<>
+        uint_fast64_t convertNumber(double const& number){
+            return std::llround(number);
+        }
+        
+        template<>
+        double convertNumber(uint_fast64_t const& number){
+            return number;
+        }
+        
         template<typename ValueType>
         ValueType sqrt(ValueType const& number) {
             return std::sqrt(number);
@@ -161,6 +171,16 @@ namespace storm {
         template<>
         RationalNumber convertNumber(double const& number){
             return carl::rationalize<RationalNumber>(number);
+        }
+        
+        template<>
+        uint_fast64_t convertNumber(RationalNumber const& number){
+            return carl::toInt<carl::uint>(carl::round(number));
+        }
+        
+        template<>
+        RationalNumber convertNumber(uint_fast64_t const& number){
+            return RationalNumber(number);
         }
 
         template<>
