@@ -7,8 +7,7 @@ class TestModel:
         program = stormpy.parse_prism_program(get_example_path("dtmc", "die", "die.pm"))
         prop = "P=? [F \"one\"]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)
-        pair = stormpy.build_model_from_prism_program(program, formulas)
-        model = pair.model()
+        model = stormpy.build_model_from_prism_program(program, formulas)
         assert model.nr_states() == 13
         assert model.nr_transitions() == 20
         assert model.model_type() == stormpy.ModelType.DTMC
@@ -22,8 +21,7 @@ class TestModel:
         assert program.has_undefined_constants()
         prop = "P=? [F \"target\"]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)
-        pair = stormpy.build_parametric_model_from_prism_program(program, formulas)
-        model = pair.model()
+        model = stormpy.build_parametric_model_from_prism_program(program, formulas)
         assert model.nr_states() == 613
         assert model.nr_transitions() == 803
         assert model.model_type() == stormpy.ModelType.DTMC
@@ -68,7 +66,7 @@ class TestModel:
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"one\" ]", program)
         model = stormpy.build_model(program, formulas[0])
         labels = model.labels()
-        assert len(labels) == 2
+        assert len(labels) == 3
         assert "init" in labels
         assert "one" in labels
         assert "init" in model.labels_state(0)
@@ -87,7 +85,7 @@ class TestModel:
         formulas = stormpy.parse_formulas_for_prism_program("P=? [ F \"target\" ]", program)
         model = stormpy.build_parametric_model(program, formulas[0])
         labels = model.labels()
-        assert len(labels) == 2
+        assert len(labels) == 3
         assert "init" in labels
         assert "target" in labels
         assert "init" in model.labels_state(0)

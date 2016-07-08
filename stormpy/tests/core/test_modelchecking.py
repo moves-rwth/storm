@@ -28,8 +28,7 @@ class TestModelChecking:
         program = stormpy.parse_prism_program(get_example_path("pdtmc", "brp", "brp_16_2.pm"))
         prop = "P=? [F \"target\"]"
         formulas = stormpy.parse_formulas_for_prism_program(prop, program)
-        pair = stormpy.build_parametric_model_from_prism_program(program, formulas)
-        model = pair.model()
+        model = stormpy.build_parametric_model_from_prism_program(program, formulas)
         assert model.nr_states() == 613
         assert model.nr_transitions() == 803
         assert model.model_type() == stormpy.ModelType.DTMC

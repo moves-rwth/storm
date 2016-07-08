@@ -42,9 +42,9 @@ std::shared_ptr<storm::models::ModelBase> buildSparseModel(storm::prism::Program
 
 void define_build(py::module& m) {
     // Build model
-    m.def("_build_model", &buildModel<double>, "Build the model", py::arg("program"), py::arg("formula"));
+    m.def("_build_model", &buildSparseModel<double>, "Build the model", py::arg("program"), py::arg("formula"), py::arg("onlyInitialRelevant") = false);
     m.def("_build_parametric_model", &buildSparseModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formula"), py::arg("onlyInitialRelevant") = false);
-    m.def("build_model_from_prism_program", &storm::buildSymbolicModel<double>, "Build the model", py::arg("program"), py::arg("formulas"));
+    m.def("build_model_from_prism_program", &storm::buildSparseModel<double>, "Build the model", py::arg("program"), py::arg("formulas"), py::arg("onlyInitialRelevant") = false);
     m.def("build_parametric_model_from_prism_program", &storm::buildSparseModel<storm::RationalFunction>, "Build the parametric model", py::arg("program"), py::arg("formulas"), py::arg("onlyInitialRelevant") = false);
     
 }
