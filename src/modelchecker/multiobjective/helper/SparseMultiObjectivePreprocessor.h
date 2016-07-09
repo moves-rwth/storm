@@ -32,6 +32,13 @@ namespace storm {
             private:
                 
                 /*!
+                 * Updates the preprocessed model stored in the given data to the given model.
+                 * The given newToOldStateIndexMapping should give for each state in the newPreprocessedModel
+                 * the index of the state in the current data.preprocessedModel.
+                 */
+                static void updatePreprocessedModel(PreprocessorData& data, SparseModelType& newPreprocessedModel, std::vector<uint_fast64_t>& newToOldStateIndexMapping);
+                
+                /*!
                  * Apply the neccessary preprocessing for the given formula.
                  * @param formula the current (sub)formula
                  * @param data the information collected so far
@@ -64,25 +71,27 @@ namespace storm {
                  * For reward properties that minimize, all states from which only infinite reward is possible are removed.
                  * Note that this excludes solutions of numerical queries where the minimum is infinity...
                  */
-                static void assertRewardFiniteness(PreprocessorData& data);
+                static void ensureRewardFiniteness(PreprocessorData& data);
                 
                 /*!
                  * Checks reward finiteness for the negative rewards and returns the set of actions in the
                  * preprocessedModel that give negative rewards for some objective
                  */
-                static storm::storage::BitVector assertNegativeRewardFiniteness(PreprocessorData& data);
+                static storm::storage::BitVector ensureNegativeRewardFiniteness(PreprocessorData& data);
                 
                 /*!
                  * Checks reward finiteness for the positive rewards
                  */
-                static void assertPositiveRewardFiniteness(PreprocessorData& data, storm::storage::BitVector const& actionsWithNegativeReward);
+                static void ensurePositiveRewardFiniteness(PreprocessorData& data, storm::storage::BitVector const& actionsWithNegativeReward);
                 
                 /*!
-                 * Updates the preprocessed model stored in the given data to the given model.
-                 * The given newToOldStateIndexMapping should give for each state in the newPreprocessedModel
-                 * the index of the state in the current data.preprocessedModel.
+                 * Handles the objectives for which a solution has been found in preprocessing, that is:
+                 * * Set the solution for objectives for which no reward is left to zero
+                 * * Translate numerical solutions for objectives with a threshold to either True or False
+                 * * Translate numerical solutions for objectives without a threshold to a value for the original model
+                 * * Only keep the objectives for which there is no solution yet
                  */
-                static void updatePreprocessedModel(PreprocessorData& data, SparseModelType& newPreprocessedModel, std::vector<uint_fast64_t>& newToOldStateIndexMapping);
+                static void handleObjectivesWithSolutionFromPreprocessing(PreprocessorData& data);
                 
             };
             

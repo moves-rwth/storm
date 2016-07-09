@@ -47,8 +47,8 @@ namespace storm {
                     return true;
                 }
                 for(auto const& preprocessorResult : preprocessorData.solutionsFromPreprocessing) {
-                    if(preprocessorResult == PreprocessorData::PreprocessorObjectiveSolution::False ||
-                       preprocessorResult == PreprocessorData::PreprocessorObjectiveSolution::Undefined) {
+                    if(preprocessorResult.first == PreprocessorData::PreprocessorObjectiveSolution::False ||
+                       preprocessorResult.first == PreprocessorData::PreprocessorObjectiveSolution::Undefined) {
                         return true;
                     }
                 }

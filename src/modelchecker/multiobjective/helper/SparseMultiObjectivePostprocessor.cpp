@@ -54,7 +54,7 @@ namespace storm {
                 
                 //Incorporate the results from prerpocessing
                 for(uint_fast64_t subformulaIndex = 0; subformulaIndex < preprocessorData.originalFormula.getNumberOfSubformulas(); ++subformulaIndex) {
-                    switch(preprocessorData.solutionsFromPreprocessing[subformulaIndex]) {
+                    switch(preprocessorData.solutionsFromPreprocessing[subformulaIndex].first) {
                         case PreprocessorData::PreprocessorObjectiveSolution::None:
                             // Nothing to be done
                             break;
@@ -92,7 +92,7 @@ namespace storm {
                 //Incorporate the results from prerpocessing
                 boost::optional<ValueType> preprocessorNumericalResult;
                 for(uint_fast64_t subformulaIndex = 0; subformulaIndex < preprocessorData.originalFormula.getNumberOfSubformulas(); ++subformulaIndex) {
-                    switch(preprocessorData.solutionsFromPreprocessing[subformulaIndex]) {
+                    switch(preprocessorData.solutionsFromPreprocessing[subformulaIndex].first) {
                         case PreprocessorData::PreprocessorObjectiveSolution::None:
                             // Nothing to be done
                             break;
@@ -101,9 +101,9 @@ namespace storm {
                         case PreprocessorData::PreprocessorObjectiveSolution::True:
                             // Nothing to be done
                             break;
-                        case PreprocessorData::PreprocessorObjectiveSolution::Zero:
+                        case PreprocessorData::PreprocessorObjectiveSolution::Numerical:
                             STORM_LOG_ASSERT(!preprocessorNumericalResult, "There are multiple numerical results obtained in preprocessing");
-                            preprocessorNumericalResult = storm::utility::zero<ValueType>();
+                            preprocessorNumericalResult = preprocessorData.solutionsFromPreprocessing[subformulaIndex].second;
                             break;
                         case PreprocessorData::PreprocessorObjectiveSolution::Unbounded:
                             STORM_LOG_ASSERT(!preprocessorNumericalResult, "There are multiple numerical results obtained in preprocessing");
@@ -144,7 +144,7 @@ namespace storm {
                 
                 //Issue a warning for objectives that have been solved in preprocessing
                 for(uint_fast64_t subformulaIndex = 0; subformulaIndex < preprocessorData.originalFormula.getNumberOfSubformulas(); ++subformulaIndex) {
-                    switch(preprocessorData.solutionsFromPreprocessing[subformulaIndex]) {
+                    switch(preprocessorData.solutionsFromPreprocessing[subformulaIndex].first) {
                         case PreprocessorData::PreprocessorObjectiveSolution::None:
                             // Nothing to be done
                             break;
@@ -153,7 +153,7 @@ namespace storm {
                         case PreprocessorData::PreprocessorObjectiveSolution::True:
                             // Nothing to be done
                             break;
-                        case PreprocessorData::PreprocessorObjectiveSolution::Zero:
+                        case PreprocessorData::PreprocessorObjectiveSolution::Numerical:
                             STORM_LOG_WARN("The result of the objective " << preprocessorData.originalFormula.getSubformula(subformulaIndex) << " was obtained in preprocessing and will not be incorporated in the check result. Objective Result is zero.");
                             break;
                         case PreprocessorData::PreprocessorObjectiveSolution::Unbounded:

@@ -27,26 +27,68 @@ namespace storm {
                 std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(this->data.preprocessedModel.getNumberOfStates());
                 std::vector<ValueType> choiceValues(weightedRewardVector.size());
                 std::vector<ValueType> temporaryResult(this->data.preprocessedModel.getNumberOfStates());
+                std::vector<ValueType> zeroReward(weightedRewardVector.size(), storm::utility::zero<ValueType>());
                 // Get for each occurring timeBound the indices of the objectives with that bound.
-                std::map<uint_fast64_t, storm::storage::BitVector, std::greater<uint_fast64_t>> timeBounds;
-                storm::storage::BitVector boundedObjectives = ~this->unboundedObjectives;
-                for(uint_fast64_t objIndex : boundedObjectives) {
-                    uint_fast64_t timeBound = boost::get<uint_fast64_t>(this->data.objectives[objIndex].timeBounds.get());
-                    auto timeBoundIt = timeBounds.insert(std::make_pair(timeBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
-                    timeBoundIt->second.set(objIndex);
-                    // There is no error for the values of these objectives.
-                    this->offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
-                    this->offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
+                std::map<uint_fast64_t, storm::storage::BitVector, std::greater<uint_fast64_t>> lowerTimeBounds;
+                std::map<uint_fast64_t, storm::storage::BitVector, std::greater<uint_fast64_t>> upperTimeBounds;
+                for(uint_fast64_t objIndex = 0; objIndex < this->data.objectives.size(); ++objIndex) {
+                    auto const& obj = this->data.objectives[objIndex];
+                    if(obj.timeBounds) {
+                        boost::optional<uint_fast64_t> objLowerBound, objUpperBound;
+                        if(obj.timeBounds->which() == 0) {
+                            objUpperBound = boost::get<uint_fast64_t>(obj.timeBounds.get());
+                        } else {
+                            auto const& pair = boost::get<std::pair<double, double>>(obj.timeBounds.get());
+                            if(!storm::utility::isZero(pair.first)) {
+                                objLowerBound = storm::utility::convertNumber<uint_fast64_t>(pair.first);
+                                STORM_LOG_WARN_COND(storm::utility::isZero(pair.first - (*objLowerBound)), "Rounded non-integral bound " << pair.first << " to " << *objLowerBound << ".");
+                            }
+                            objUpperBound = storm::utility::convertNumber<uint_fast64_t>(pair.second);
+                            STORM_LOG_WARN_COND(storm::utility::isZero(pair.second - (*objUpperBound)), "Rounded non-integral bound " << pair.second << " to " << *objUpperBound << ".");
+                        }
+                        if(objLowerBound) {
+                            auto timeBoundIt = lowerTimeBounds.insert(std::make_pair(*objLowerBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
+                            timeBoundIt->second.set(objIndex);
+                        }
+                        if(objUpperBound) {
+                            auto timeBoundIt = upperTimeBounds.insert(std::make_pair(*objUpperBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
+                            timeBoundIt->second.set(objIndex);
+                        }
+                        // There is no error for the values of these objectives.
+                        this->offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
+                        this->offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
+                    }
                 }
+                
+                // Stores the objectives for which we need to compute values in the current time epoch.
                 storm::storage::BitVector consideredObjectives = this->unboundedObjectives;
-                auto timeBoundIt = timeBounds.begin();
-                for(uint_fast64_t currentEpoch = timeBoundIt->first; currentEpoch > 0; --currentEpoch) {
-                    if(timeBoundIt != timeBounds.end() && currentEpoch == timeBoundIt->first) {
-                        consideredObjectives |= timeBoundIt->second;
-                        for(auto objIndex : timeBoundIt->second) {
+                
+                // Stores objectives for which the current epoch passed their lower bound
+                storm::storage::BitVector lowerBoundViolatedObjectives(consideredObjectives.size(), false);
+                
+                auto lowerTimeBoundIt = lowerTimeBounds.begin();
+                auto upperTimeBoundIt = upperTimeBounds.begin();
+                uint_fast64_t currentEpoch = std::max(lowerTimeBounds.empty() ? 0 : lowerTimeBoundIt->first - 1, upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first); // consider lowerBound - 1 since we are interested in the first epoch that passes the bound
+                
+                while(currentEpoch > 0) {
+                    //For lower time bounds we need to react when the currentEpoch passed the bound
+                    // Hence, we substract 1 from the lower time bounds.
+                    if(lowerTimeBoundIt != lowerTimeBounds.end() && currentEpoch == lowerTimeBoundIt->first - 1) {
+                        lowerBoundViolatedObjectives |= lowerTimeBoundIt->second;
+                        for(auto objIndex : lowerTimeBoundIt->second) {
+                            // No more reward is earned for this objective.
+                            storm::utility::vector::addScaledVector(weightedRewardVector, this->discreteActionRewards[objIndex], -weightVector[objIndex]);
+                        }
+                        ++lowerTimeBoundIt;
+                    }
+                    
+                    if(upperTimeBoundIt != upperTimeBounds.end() && currentEpoch == upperTimeBoundIt->first) {
+                        consideredObjectives |= upperTimeBoundIt->second;
+                        for(auto objIndex : upperTimeBoundIt->second) {
+                            // This objective now plays a role in the weighted sum
                             storm::utility::vector::addScaledVector(weightedRewardVector, this->discreteActionRewards[objIndex], weightVector[objIndex]);
                         }
-                        ++timeBoundIt;
+                        ++upperTimeBoundIt;
                     }
                     
                     // Get values and scheduler for weighted sum of objectives
@@ -58,7 +100,7 @@ namespace storm {
                     // TODO we could compute the result for one of the objectives from the weighted result, the given weight vector, and the remaining objective results.
                     for(auto objIndex : consideredObjectives) {
                         std::vector<ValueType>& objectiveResult = this->objectiveResults[objIndex];
-                        std::vector<ValueType> objectiveRewards = this->discreteActionRewards[objIndex];
+                        std::vector<ValueType> const& objectiveRewards = lowerBoundViolatedObjectives.get(objIndex) ? zeroReward : this->discreteActionRewards[objIndex];
                         auto rowGroupIndexIt = this->data.preprocessedModel.getTransitionMatrix().getRowGroupIndices().begin();
                         auto optimalChoiceIt = optimalChoicesInCurrentEpoch.begin();
                         for(ValueType& stateValue : temporaryResult){
@@ -72,6 +114,7 @@ namespace storm {
                         }
                         objectiveResult.swap(temporaryResult);
                     }
+                    --currentEpoch;
                 }
             }
             

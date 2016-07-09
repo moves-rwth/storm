@@ -44,28 +44,8 @@ namespace storm {
                     data.preprocessedModel.removeRewardModel(rewModel);
                 }
                 
-                assertRewardFiniteness(data);
-                
-                // set solution for objectives for which there are no rewards left
-                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    if(data.solutionsFromPreprocessing[objIndex] == PreprocessorData::PreprocessorObjectiveSolution::None &&
-                       data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).isAllZero()) {
-                        if(data.objectives[objIndex].threshold) {
-                            if(storm::utility::zero<ValueType>() > *data.objectives[objIndex].threshold ||
-                                (!data.objectives[objIndex].thresholdIsStrict && storm::utility::zero<ValueType>() >= *data.objectives[objIndex].threshold) ){
-                                    data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::True;
-                                } else {
-                                    data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::False;
-                                }
-                        } else {
-                            data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::Zero;
-                        }
-                    }
-                }
-                
-                // Only keep the objectives for which we have no solution yet
-                storm::storage::BitVector objWithNoSolution = storm::utility::vector::filter<typename PreprocessorData::PreprocessorObjectiveSolution>(data.solutionsFromPreprocessing, [&] (typename PreprocessorData::PreprocessorObjectiveSolution const& value) -> bool { return value == PreprocessorData::PreprocessorObjectiveSolution::None; });
-                data.objectives = storm::utility::vector::filterVector(data.objectives, objWithNoSolution);
+                ensureRewardFiniteness(data);
+                handleObjectivesWithSolutionFromPreprocessing(data);
                 
                 // Set the query type. In case of a numerical query, also set the index of the objective to be optimized.
                 // Note: If there are only zero (or one) objectives left, we should not consider a pareto query!
@@ -85,6 +65,16 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "The number of objecties without threshold is not valid. It should be either 0 (achievabilityQuery), 1 (numericalQuery), or " << data.objectives.size() << " (paretoQuery). Got " << numOfObjectivesWithoutThreshold << " instead.");
                 }
                 return data;
+            }
+            
+            template<typename SparseModelType>
+            void SparseMultiObjectivePreprocessor<SparseModelType>::updatePreprocessedModel(PreprocessorData& data, SparseModelType& newPreprocessedModel, std::vector<uint_fast64_t>& newToOldStateIndexMapping) {
+                data.preprocessedModel = std::move(newPreprocessedModel);
+                // the given newToOldStateIndexMapping reffers to the indices of the former preprocessedModel as 'old indices'
+                for(auto & preprocessedModelStateIndex : newToOldStateIndexMapping){
+                    preprocessedModelStateIndex = data.newToOldStateIndexMapping[preprocessedModelStateIndex];
+                }
+                data.newToOldStateIndexMapping = std::move(newToOldStateIndexMapping);
             }
             
             template<typename SparseModelType>
@@ -200,6 +190,13 @@ namespace storm {
                 storm::storage::BitVector phiStates = mc.check(phiTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 storm::storage::BitVector psiStates = mc.check(psiTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 
+                if(!(psiStates & data.preprocessedModel.getInitialStates()).empty()) {
+                    // The probability is always one
+                    data.solutionsFromPreprocessing[data.objectives.size()-1].first = PreprocessorData::PreprocessorObjectiveSolution::Numerical;
+                    data.solutionsFromPreprocessing[data.objectives.size()-1].second = currentObjective.rewardsArePositive ? storm::utility::one<ValueType>() : -storm::utility::one<ValueType>();
+                    return;
+                }
+                
                 auto duplicatorResult = storm::transformer::StateDuplicator<SparseModelType>::transform(data.preprocessedModel, ~phiStates | psiStates);
                 updatePreprocessedModel(data, *duplicatorResult.model, duplicatorResult.newToOldStateIndexMapping);
                 
@@ -223,9 +220,10 @@ namespace storm {
                         noIncomingTransitionFromFirstCopyStates = duplicatorResult.gateStates & (~newPsiStates);
                     }
                     if((subsystemStates & data.preprocessedModel.getInitialStates()).empty()) {
-                        data.solutionsFromPreprocessing[data.objectives.size()-1] = PreprocessorData::PreprocessorObjectiveSolution::False;
+                        data.solutionsFromPreprocessing[data.objectives.size()-1].first = PreprocessorData::PreprocessorObjectiveSolution::False;
                     } else {
-                        data.solutionsFromPreprocessing[data.objectives.size()-1] = PreprocessorData::PreprocessorObjectiveSolution::True;
+                        data.solutionsFromPreprocessing[data.objectives.size()-1].first = PreprocessorData::PreprocessorObjectiveSolution::True;
+                        // Get a subsystem that deletes actions for which the property would be violated
                         storm::storage::BitVector consideredActions(data.preprocessedModel.getTransitionMatrix().getRowCount(), true);
                         for(auto state : duplicatorResult.firstCopy) {
                             for(uint_fast64_t action = data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state]; action < data.preprocessedModel.getTransitionMatrix().getRowGroupIndices()[state +1]; ++action) {
@@ -275,6 +273,8 @@ namespace storm {
                         currentObjective.timeBounds = formula.getIntervalBounds();
                     }
                     preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data, currentObjective, false, false);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula which can not be checked for the current model type.");
                 }
             }
             
@@ -287,7 +287,10 @@ namespace storm {
                 // To transform from the value of the preprocessed model back to the value of the original model, we have to add 1 to the result.
                 // The transformation factor has already been set correctly.
                 currentObjective.toOriginalValueTransformationOffset = storm::utility::one<ValueType>();
+                
                 auto negatedSubformula = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, formula.getSubformula().asSharedPointer());
+                
+                // We need to swap the two flags isProb0Formula and isProb1Formula
                 preprocessFormula(storm::logic::UntilFormula(storm::logic::Formula::getTrueFormula(), negatedSubformula), data, currentObjective, isProb1Formula, isProb0Formula);
             }
             
@@ -302,6 +305,14 @@ namespace storm {
                 storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(data.preprocessedModel);
                 STORM_LOG_THROW(mc.canHandle(targetTask), storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " should be propositional.");
                 storm::storage::BitVector targetStates = mc.check(targetTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                
+                if(!(targetStates & data.preprocessedModel.getInitialStates()).empty()) {
+                    // The value is always zero
+                    data.solutionsFromPreprocessing[data.objectives.size()-1].first = PreprocessorData::PreprocessorObjectiveSolution::Numerical;
+                    data.solutionsFromPreprocessing[data.objectives.size()-1].second = storm::utility::zero<ValueType>();
+                    return;
+                }
+                
                 auto duplicatorResult = storm::transformer::StateDuplicator<SparseModelType>::transform(data.preprocessedModel, targetStates);
                 updatePreprocessedModel(data, *duplicatorResult.model, duplicatorResult.newToOldStateIndexMapping);
                 
@@ -340,7 +351,7 @@ namespace storm {
                 data.preprocessedModel.getStateLabeling().setStates(data.prob1StatesLabel, data.preprocessedModel.getStateLabeling().getStates(data.prob1StatesLabel) & duplicatorResult.secondCopy);
                 storm::storage::BitVector subsystemStates =  duplicatorResult.secondCopy | storm::utility::graph::performProb1E(data.preprocessedModel, data.preprocessedModel.getBackwardTransitions(), duplicatorResult.firstCopy, duplicatorResult.gateStates);
                 if((subsystemStates & data.preprocessedModel.getInitialStates()).empty()) {
-                    data.solutionsFromPreprocessing[data.objectives.size()-1] = PreprocessorData::PreprocessorObjectiveSolution::Undefined;
+                    data.solutionsFromPreprocessing[data.objectives.size()-1].first = PreprocessorData::PreprocessorObjectiveSolution::Undefined;
                 } else if(!subsystemStates.full()) {
                     auto subsystemBuilderResult = storm::transformer::SubsystemBuilder<SparseModelType>::transform(data.preprocessedModel, subsystemStates, storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), true));
                     updatePreprocessedModel(data, *subsystemBuilderResult.model, subsystemBuilderResult.newToOldStateIndexMapping);
@@ -384,7 +395,7 @@ namespace storm {
             
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::assertRewardFiniteness(PreprocessorData& data) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::ensureRewardFiniteness(PreprocessorData& data) {
                 bool negativeRewardsOccur = false;
                 bool positiveRewardsOccur = false;
                 for(auto& obj : data.objectives) {
@@ -395,17 +406,17 @@ namespace storm {
                 }
                 storm::storage::BitVector actionsWithNegativeReward;
                 if(negativeRewardsOccur) {
-                    actionsWithNegativeReward = assertNegativeRewardFiniteness(data);
+                    actionsWithNegativeReward = ensureNegativeRewardFiniteness(data);
                 } else {
                     actionsWithNegativeReward = storm::storage::BitVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), false);
                 }
                 if(positiveRewardsOccur) {
-                    assertPositiveRewardFiniteness(data, actionsWithNegativeReward);
+                    ensurePositiveRewardFiniteness(data, actionsWithNegativeReward);
                 }
             }
             
             template<typename SparseModelType>
-            storm::storage::BitVector SparseMultiObjectivePreprocessor<SparseModelType>::assertNegativeRewardFiniteness(PreprocessorData& data) {
+            storm::storage::BitVector SparseMultiObjectivePreprocessor<SparseModelType>::ensureNegativeRewardFiniteness(PreprocessorData& data) {
 
                 storm::storage::BitVector actionsWithNonNegativeReward(data.preprocessedModel.getTransitionMatrix().getRowCount(), true);
                 storm::storage::BitVector objectivesWithNegativeReward(data.objectives.size(), false);
@@ -436,9 +447,9 @@ namespace storm {
                     STORM_LOG_WARN("For every scheduler, the induced reward for one or more of the objectives that minimize rewards is infinity.");
                     for(auto objIndex : objectivesWithNegativeReward) {
                         if(data.objectives[objIndex].threshold) {
-                            data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::False;
+                            data.solutionsFromPreprocessing[objIndex].first = PreprocessorData::PreprocessorObjectiveSolution::False;
                         } else {
-                            data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::Unbounded;
+                            data.solutionsFromPreprocessing[objIndex].first = PreprocessorData::PreprocessorObjectiveSolution::Unbounded;
                         }
                     }
                 } else if(!statesReachingNegativeRewardsFinitelyOftenForSomeScheduler.full()) {
@@ -450,10 +461,10 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::assertPositiveRewardFiniteness(PreprocessorData& data, storm::storage::BitVector const& actionsWithNegativeReward) {
+            void SparseMultiObjectivePreprocessor<SparseModelType>::ensurePositiveRewardFiniteness(PreprocessorData& data, storm::storage::BitVector const& actionsWithNegativeReward) {
                 storm::utility::Stopwatch sw;
                 auto mecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(data.preprocessedModel.getTransitionMatrix(), data.preprocessedModel.getBackwardTransitions());
-                STORM_LOG_DEBUG("Maximal end component decomposition for asserting positive reward finiteness took " << sw << " seconds.");
+                STORM_LOG_DEBUG("Maximal end component decomposition for ensuring positive reward finiteness took " << sw << " seconds.");
                 if(mecDecomposition.empty()) {
                     return;
                 }
@@ -474,9 +485,9 @@ namespace storm {
                             }
                             if(ecHasActionWithPositiveReward) {
                                 if(obj.threshold) {
-                                    data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::True;
+                                    data.solutionsFromPreprocessing[objIndex].first = PreprocessorData::PreprocessorObjectiveSolution::True;
                                 } else {
-                                    data.solutionsFromPreprocessing[objIndex] = PreprocessorData::PreprocessorObjectiveSolution::Unbounded;
+                                    data.solutionsFromPreprocessing[objIndex].first = PreprocessorData::PreprocessorObjectiveSolution::Unbounded;
                                 }
                                 break;
                             }
@@ -486,14 +497,38 @@ namespace storm {
             }
             
             template<typename SparseModelType>
-            void SparseMultiObjectivePreprocessor<SparseModelType>::updatePreprocessedModel(PreprocessorData& data, SparseModelType& newPreprocessedModel, std::vector<uint_fast64_t>& newToOldStateIndexMapping) {
-                data.preprocessedModel = std::move(newPreprocessedModel);
-                // the given newToOldStateIndexMapping reffers to the indices of the former preprocessedModel as 'old indices'
-                for(auto & preprocessedModelStateIndex : newToOldStateIndexMapping){
-                    preprocessedModelStateIndex = data.newToOldStateIndexMapping[preprocessedModelStateIndex];
+            void SparseMultiObjectivePreprocessor<SparseModelType>::handleObjectivesWithSolutionFromPreprocessing(PreprocessorData& data) {
+                // Set solution for objectives for which there are no rewards left
+                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
+                    if(data.solutionsFromPreprocessing[objIndex].first == PreprocessorData::PreprocessorObjectiveSolution::None &&
+                       data.preprocessedModel.getRewardModel(data.objectives[objIndex].rewardModelName).isAllZero()) {
+                        data.solutionsFromPreprocessing[objIndex].first = PreprocessorData::PreprocessorObjectiveSolution::Numerical;
+                        data.solutionsFromPreprocessing[objIndex].second = storm::utility::zero<ValueType>();
+                    }
                 }
-                data.newToOldStateIndexMapping = std::move(newToOldStateIndexMapping);
+                
+                // Translate numerical solutions from preprocessing to Truth values (if the objective specifies a threshold) or to values for the original model (otherwise).
+                for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
+                    if(data.solutionsFromPreprocessing[objIndex].first == PreprocessorData::PreprocessorObjectiveSolution::Numerical) {
+                        ValueType& value = data.solutionsFromPreprocessing[objIndex].second;
+                        ObjectiveInformation const& obj = data.objectives[objIndex];
+                        if(obj.threshold) {
+                            if((obj.thresholdIsStrict && value > (*obj.threshold)) || (!obj.thresholdIsStrict && value >= (*obj.threshold))) {
+                                data.solutionsFromPreprocessing[objIndex].first = PreprocessorData::PreprocessorObjectiveSolution::True;
+                            } else {
+                                data.solutionsFromPreprocessing[objIndex].first = PreprocessorData::PreprocessorObjectiveSolution::False;
+                            }
+                        } else {
+                            value = value * obj.toOriginalValueTransformationFactor + obj.toOriginalValueTransformationOffset;
+                        }
+                    }
+                }
+                
+                // Only keep the objectives for which we have no solution yet
+                storm::storage::BitVector objWithNoSolution = storm::utility::vector::filter<std::pair<typename PreprocessorData::PreprocessorObjectiveSolution, ValueType>>(data.solutionsFromPreprocessing, [&] (std::pair<typename PreprocessorData::PreprocessorObjectiveSolution, ValueType> const& value) -> bool { return value.first == PreprocessorData::PreprocessorObjectiveSolution::None; });
+                data.objectives = storm::utility::vector::filterVector(data.objectives, objWithNoSolution);
             }
+            
             
             template class SparseMultiObjectivePreprocessor<storm::models::sparse::Mdp<double>>;
             template class SparseMultiObjectivePreprocessor<storm::models::sparse::MarkovAutomaton<double>>;

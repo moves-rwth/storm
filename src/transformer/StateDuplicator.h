@@ -44,7 +44,8 @@ namespace storm {
              * 
              * Note that only reachable states are kept.
              * Gate states will always belong to the second copy.
-             * Rewards and labels are duplicated accordingly, but the states in the second copy will not get the label for initial states.
+             * Rewards and labels are duplicated accordingly.
+             * However, the non-gate-states in the second copy will not get the label for initial states.
              *
              * @param originalModel The model to be duplicated
              * @param gateStates The states for which the incoming transitions are redirected
@@ -57,18 +58,18 @@ namespace storm {
                 initializeTransformation(originalModel, gateStates, result);
                 
                 // Transform the ingedients of the model
-                storm::storage::SparseMatrix<typename SparseModelType::ValueType> matrix = transformMatrix(originalModel.getTransitionMatrix(), result);
+                storm::storage::SparseMatrix<typename SparseModelType::ValueType> matrix = transformMatrix(originalModel.getTransitionMatrix(), result, gateStates);
                 storm::models::sparse::StateLabeling labeling(matrix.getRowGroupCount());
                 for(auto const& label : originalModel.getStateLabeling().getLabels()){
                     storm::storage::BitVector newBitVectorForLabel = transformStateBitVector(originalModel.getStateLabeling().getStates(label), result);
                     if(label=="init"){
-                        newBitVectorForLabel &=result.firstCopy;
+                        newBitVectorForLabel &= (result.firstCopy | result.gateStates);
                     }
                     labeling.addLabel(label, std::move(newBitVectorForLabel));
                 }
                 std::unordered_map<std::string, typename SparseModelType::RewardModelType> rewardModels;
                 for(auto const& rewardModel : originalModel.getRewardModels()){
-                    rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, originalModel.getTransitionMatrix().getRowGroupIndices(), result)));
+                    rewardModels.insert(std::make_pair(rewardModel.first, transformRewardModel(rewardModel.second, originalModel.getTransitionMatrix().getRowGroupIndices(), result, gateStates)));
                 }
                 boost::optional<std::vector<storm::models::sparse::LabelSet>> choiceLabeling;
                 if(originalModel.hasChoiceLabeling()){
@@ -99,8 +100,6 @@ namespace storm {
                 result.firstCopy.resize(numStates, false); // the new states do NOT belong to the first copy
                 result.secondCopy = (statesForSecondCopy & (~statesForFirstCopy)) % result.reachableStates; // only consider reachable states
                 result.secondCopy.resize(numStates, true); // the new states DO belong to the second copy
-                result.gateStates = gateStates;
-                result.gateStates.resize(numStates, false); // there are no duplicated gateStates
                 STORM_LOG_ASSERT((result.firstCopy^result.secondCopy).full(), "firstCopy and secondCopy do not partition the state space.");
             
                 // Get the state mappings.
@@ -127,11 +126,13 @@ namespace storm {
                     ++newState;
                 }
                 STORM_LOG_ASSERT(newState == numStates, "Unexpected state Indices");
+                
+                result.gateStates = transformStateBitVector(gateStates, result);
             }
             
             template<typename ValueType = typename SparseModelType::ValueType, typename RewardModelType = typename SparseModelType::RewardModelType>
             static typename std::enable_if<std::is_same<RewardModelType, storm::models::sparse::StandardRewardModel<ValueType>>::value, RewardModelType>::type
-            transformRewardModel(RewardModelType const& originalRewardModel, std::vector<uint_fast64_t> const& originalRowGroupIndices, StateDuplicatorReturnType const& result) {
+            transformRewardModel(RewardModelType const& originalRewardModel, std::vector<uint_fast64_t> const& originalRowGroupIndices, StateDuplicatorReturnType const& result, storm::storage::BitVector const& gateStates) {
                 boost::optional<std::vector<ValueType>> stateRewardVector;
                 boost::optional<std::vector<ValueType>> stateActionRewardVector;
                 boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewardMatrix;
@@ -142,13 +143,13 @@ namespace storm {
                     stateActionRewardVector = transformActionValueVector(originalRewardModel.getStateActionRewardVector(), originalRowGroupIndices, result);
                 }
                 if(originalRewardModel.hasTransitionRewards()){
-                    transitionRewardMatrix = transformMatrix(originalRewardModel.getTransitionRewardMatrix(), result);
+                    transitionRewardMatrix = transformMatrix(originalRewardModel.getTransitionRewardMatrix(), result, gateStates);
                 }
                 return RewardModelType(std::move(stateRewardVector), std::move(stateActionRewardVector), std::move(transitionRewardMatrix));
             }
             
             template<typename ValueType = typename SparseModelType::ValueType>
-            static storm::storage::SparseMatrix<ValueType> transformMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix, StateDuplicatorReturnType const& result) {
+            static storm::storage::SparseMatrix<ValueType> transformMatrix(storm::storage::SparseMatrix<ValueType> const& originalMatrix, StateDuplicatorReturnType const& result, storm::storage::BitVector const& gateStates) {
                 // Build the builder
                 uint_fast64_t numStates = result.newToOldStateIndexMapping.size();
                 uint_fast64_t numRows = 0;
@@ -168,7 +169,7 @@ namespace storm {
                     uint_fast64_t oldState = result.newToOldStateIndexMapping[newState];
                     for (uint_fast64_t oldRow = originalMatrix.getRowGroupIndices()[oldState]; oldRow < originalMatrix.getRowGroupIndices()[oldState+1]; ++oldRow){
                         for(auto const& entry : originalMatrix.getRow(oldRow)){
-                            if(result.firstCopy.get(newState) && !result.gateStates.get(entry.getColumn())){
+                            if(result.firstCopy.get(newState) && !gateStates.get(entry.getColumn())){
                                 builder.addNextValue(newRow, result.firstCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());
                             } else if (!result.duplicatedStates.get(entry.getColumn())){
                                 builder.addNextValue(newRow, result.secondCopyOldToNewStateIndexMapping[entry.getColumn()], entry.getValue());

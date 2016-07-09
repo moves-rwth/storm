@@ -42,10 +42,13 @@ namespace storm {
                     storm::utility::vector::addScaledVector(weightedRewardVector, discreteActionRewards[objIndex], weightVector[objIndex]);
                 }
                 unboundedWeightedPhase(weightedRewardVector);
-                STORM_LOG_DEBUG("Unbounded weighted phase result: " << weightedResult[data.preprocessedModel.getInitialStates().getNextSetIndex(0)] << " (value in initial state).");
                 unboundedIndividualPhase(weightVector);
-                if(!this->unboundedObjectives.full()) {
-                    boundedPhase(weightVector, weightedRewardVector);
+                // Only invoke boundedPhase if necessarry, i.e., if there is at least one objective with a time bound
+                for(auto const& obj : this->data.objectives) {
+                    if(obj.timeBounds) {
+                        boundedPhase(weightVector, weightedRewardVector);
+                        break;
+                    }
                 }
                 STORM_LOG_DEBUG("Weight vector check done. Lower bounds for results in initial state: " << storm::utility::vector::convertNumericVector<double>(getLowerBoundsOfInitialStateResults()));
             }
@@ -87,7 +90,9 @@ namespace storm {
             template <class SparseModelType>
             storm::storage::TotalScheduler const& SparseMultiObjectiveWeightVectorChecker<SparseModelType>::getScheduler() const {
                 STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
-                STORM_LOG_THROW(this->unboundedObjectives.full(), storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for timeBounded objectives.");
+                for(auto const& obj : this->data.objectives) {
+                    STORM_LOG_THROW(!obj.timeBounds, storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for timeBounded objectives.");
+                }
                 return scheduler;
             }
             

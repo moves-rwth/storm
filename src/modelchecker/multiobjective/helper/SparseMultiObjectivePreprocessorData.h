@@ -12,6 +12,7 @@
 #include "src/models/sparse/MarkovAutomaton.h"
 #include "src/storage/BitVector.h"
 #include "src/utility/macros.h"
+#include "src/utility/constants.h"
 
 #include "src/exceptions/UnexpectedException.h"
 
@@ -23,10 +24,13 @@ namespace storm {
             struct SparseMultiObjectivePreprocessorData {
                 
                 enum class QueryType { Achievability, Numerical, Pareto };
-                enum class PreprocessorObjectiveSolution { None, False, True, Zero, Unbounded, Undefined };
+                enum class PreprocessorObjectiveSolution { None, False, True, Numerical, Unbounded, Undefined };
                 
                 storm::logic::MultiObjectiveFormula const& originalFormula;
-                std::vector<PreprocessorObjectiveSolution> solutionsFromPreprocessing;
+                
+                // Stores the result for this objective obtained from preprocessing.
+                // In case of a numerical result, the value is store in the second entry of the pair. Otherwise, the second entry can be ignored.
+                std::vector<std::pair<PreprocessorObjectiveSolution, typename SparseModelType::ValueType>> solutionsFromPreprocessing;
                 
                 SparseModelType const& originalModel;
                 SparseModelType preprocessedModel;
@@ -39,7 +43,7 @@ namespace storm {
                 
                 bool produceSchedulers;
                 
-                SparseMultiObjectivePreprocessorData(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel, SparseModelType&& preprocessedModel, std::vector<uint_fast64_t>&& newToOldStateIndexMapping) : originalFormula(originalFormula), solutionsFromPreprocessing(originalFormula.getNumberOfSubformulas(), PreprocessorObjectiveSolution::None), originalModel(originalModel), preprocessedModel(preprocessedModel), newToOldStateIndexMapping(newToOldStateIndexMapping), produceSchedulers(false) {
+                SparseMultiObjectivePreprocessorData(storm::logic::MultiObjectiveFormula const& originalFormula, SparseModelType const& originalModel, SparseModelType&& preprocessedModel, std::vector<uint_fast64_t>&& newToOldStateIndexMapping) : originalFormula(originalFormula), solutionsFromPreprocessing(originalFormula.getNumberOfSubformulas(), std::make_pair(PreprocessorObjectiveSolution::None, storm::utility::zero<typename SparseModelType::ValueType>())), originalModel(originalModel), preprocessedModel(preprocessedModel), newToOldStateIndexMapping(newToOldStateIndexMapping), produceSchedulers(false) {
                     
                     // get a unique name for the labels of states that have to be reached with probability 1 and add the label
                     this->prob1StatesLabel = "prob1";
@@ -72,13 +76,13 @@ namespace storm {
                     out << "\t" << originalFormula << std::endl;
                     bool hasOneObjectiveSolvedInPreprocessing = false;
                     for(uint_fast64_t subformulaIndex = 0; subformulaIndex < originalFormula.getNumberOfSubformulas(); ++subformulaIndex) {
-                        if(!hasOneObjectiveSolvedInPreprocessing && solutionsFromPreprocessing[subformulaIndex]!= PreprocessorObjectiveSolution::None) {
+                        if(!hasOneObjectiveSolvedInPreprocessing && solutionsFromPreprocessing[subformulaIndex].first != PreprocessorObjectiveSolution::None) {
                             hasOneObjectiveSolvedInPreprocessing = true;
                             out << std::endl;
                             out << "Solutions of objectives obtained from Preprocessing: " << std::endl;
                             out << "--------------------------------------------------------------" << std::endl;
                         }
-                        switch(solutionsFromPreprocessing[subformulaIndex]) {
+                        switch(solutionsFromPreprocessing[subformulaIndex].first) {
                             case PreprocessorObjectiveSolution::None:
                                 break;
                             case PreprocessorObjectiveSolution::False:
@@ -87,8 +91,8 @@ namespace storm {
                             case PreprocessorObjectiveSolution::True:
                                 out<< "\t" << subformulaIndex << ": " << originalFormula.getSubformula(subformulaIndex) << " \t= true" << std::endl;
                                 break;
-                            case PreprocessorObjectiveSolution::Zero:
-                                out<< "\t" << subformulaIndex << ": " << originalFormula.getSubformula(subformulaIndex) << " \t= zero" << std::endl;
+                            case PreprocessorObjectiveSolution::Numerical:
+                                out<< "\t" << subformulaIndex << ": " << originalFormula.getSubformula(subformulaIndex) << " \t= " << solutionsFromPreprocessing[subformulaIndex].second << std::endl;
                                 break;
                             case PreprocessorObjectiveSolution::Unbounded:
                                 out<< "\t" << subformulaIndex << ": " << originalFormula.getSubformula(subformulaIndex) << " \t= unbounded" << std::endl;
