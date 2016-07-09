@@ -258,7 +258,7 @@ namespace storm {
                         // shorten the distance between lower and upper bound for the new result by multiplying the current distance with 0.5
                         // TODO: try other values/strategies?
                         RationalNumberType distance = storm::utility::sqrt(storm::utility::vector::dotProduct(lowerUpperDistances, lowerUpperDistances));
-                        weightVectorChecker->setMaximumLowerUpperBoundGap(storm::utility::convertNumber<SparseModelValueType>(distance) + storm::utility::convertNumber<SparseModelValueType>(0.5));
+                        weightVectorChecker->setMaximumLowerUpperBoundGap(std::min(*oldMaximumLowerUpperBoundGap, storm::utility::convertNumber<SparseModelValueType>(distance) * storm::utility::convertNumber<SparseModelValueType>(0.5)));
                         break;
                     }
                 }
