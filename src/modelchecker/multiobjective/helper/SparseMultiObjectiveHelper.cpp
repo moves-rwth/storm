@@ -201,7 +201,7 @@ namespace storm {
             
             template <class SparseModelType, typename RationalNumberType>
             typename SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::WeightVector SparseMultiObjectiveHelper<SparseModelType, RationalNumberType>::findSeparatingVector(Point const& pointToBeSeparated, std::shared_ptr<storm::storage::geometry::Polytope<RationalNumberType>> const& underApproximation, storm::storage::BitVector& individualObjectivesToBeChecked) {
-                STORM_LOG_DEBUG("Searching a weight vector to seperate the point given by " << storm::utility::vector::convertNumericVector<double>(pointToBeSeparated) << ".");
+                STORM_LOG_DEBUG("Searching a weight vector to seperate the point given by " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(pointToBeSeparated)) << ".");
                 
                 if(underApproximation->isEmpty()) {
                     // In this case, every weight vector is  separating
@@ -238,7 +238,7 @@ namespace storm {
                 }
                 
                 STORM_LOG_THROW(farestHalfspaceIndex<halfspaces.size(), storm::exceptions::UnexpectedException, "There is no seperating vector.");
-                STORM_LOG_DEBUG("Found separating  weight vector: " << storm::utility::vector::convertNumericVector<double>(halfspaces[farestHalfspaceIndex].normalVector()) << ".");
+                STORM_LOG_DEBUG("Found separating  weight vector: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(halfspaces[farestHalfspaceIndex].normalVector())) << ".");
                 return halfspaces[farestHalfspaceIndex].normalVector();
             }
             
@@ -267,7 +267,7 @@ namespace storm {
                     // Reset the precision back to the previous values
                     weightVectorChecker->setMaximumLowerUpperBoundGap(*oldMaximumLowerUpperBoundGap);
                 }
-                STORM_LOG_DEBUG("weighted objectives checker result (lower bounds) is " << storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getLowerBoundsOfInitialStateResults()));
+                STORM_LOG_DEBUG("weighted objectives checker result (lower bounds) is " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(weightVectorChecker->getLowerBoundsOfInitialStateResults())));
                 
                 if(saveScheduler) {
                     result.refinementSteps().emplace_back(direction,
