@@ -100,8 +100,8 @@ namespace storm {
                 
                 // stores the considered information of the multi-objective model checking problem
                 PreprocessorData const& data;
-                // stores the indices of the objectives for which there is no time bound
-                storm::storage::BitVector unboundedObjectives;
+                // stores the indices of the objectives for which there is no upper time bound
+                storm::storage::BitVector objectivesWithNoUpperTimeBound;
                 // stores the (discretized) state action rewards for each objective.
                 std::vector<std::vector<ValueType>>discreteActionRewards;
                 

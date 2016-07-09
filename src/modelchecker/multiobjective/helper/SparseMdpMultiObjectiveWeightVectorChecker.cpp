@@ -33,27 +33,16 @@ namespace storm {
                 std::map<uint_fast64_t, storm::storage::BitVector, std::greater<uint_fast64_t>> upperTimeBounds;
                 for(uint_fast64_t objIndex = 0; objIndex < this->data.objectives.size(); ++objIndex) {
                     auto const& obj = this->data.objectives[objIndex];
-                    if(obj.timeBounds) {
-                        boost::optional<uint_fast64_t> objLowerBound, objUpperBound;
-                        if(obj.timeBounds->which() == 0) {
-                            objUpperBound = boost::get<uint_fast64_t>(obj.timeBounds.get());
-                        } else {
-                            auto const& pair = boost::get<std::pair<double, double>>(obj.timeBounds.get());
-                            if(!storm::utility::isZero(pair.first)) {
-                                objLowerBound = storm::utility::convertNumber<uint_fast64_t>(pair.first);
-                                STORM_LOG_WARN_COND(storm::utility::isZero(pair.first - (*objLowerBound)), "Rounded non-integral bound " << pair.first << " to " << *objLowerBound << ".");
-                            }
-                            objUpperBound = storm::utility::convertNumber<uint_fast64_t>(pair.second);
-                            STORM_LOG_WARN_COND(storm::utility::isZero(pair.second - (*objUpperBound)), "Rounded non-integral bound " << pair.second << " to " << *objUpperBound << ".");
-                        }
-                        if(objLowerBound) {
-                            auto timeBoundIt = lowerTimeBounds.insert(std::make_pair(*objLowerBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
-                            timeBoundIt->second.set(objIndex);
-                        }
-                        if(objUpperBound) {
-                            auto timeBoundIt = upperTimeBounds.insert(std::make_pair(*objUpperBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
-                            timeBoundIt->second.set(objIndex);
-                        }
+                    if(obj.lowerTimeBound) {
+                        auto timeBoundIt = lowerTimeBounds.insert(std::make_pair(storm::utility::convertNumber<uint_fast64_t>(*obj.lowerTimeBound), storm::storage::BitVector(this->data.objectives.size(), false))).first;
+                        STORM_LOG_WARN_COND(storm::utility::convertNumber<ValueType>(timeBoundIt->first) == (*obj.lowerTimeBound), "Rounded non-integral bound " << *obj.lowerTimeBound << " to " << timeBoundIt->first  << ".");
+                        timeBoundIt->second.set(objIndex);
+                    }
+                    if(obj.upperTimeBound) {
+                        auto timeBoundIt = upperTimeBounds.insert(std::make_pair(storm::utility::convertNumber<uint_fast64_t>(*obj.upperTimeBound), storm::storage::BitVector(this->data.objectives.size(), false))).first;
+                        STORM_LOG_WARN_COND(storm::utility::convertNumber<ValueType>(timeBoundIt->first) == (*obj.upperTimeBound), "Rounded non-integral bound " << *obj.upperTimeBound << " to " << timeBoundIt->first  << ".");
+                        timeBoundIt->second.set(objIndex);
+                        
                         // There is no error for the values of these objectives.
                         this->offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
                         this->offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
@@ -61,7 +50,7 @@ namespace storm {
                 }
                 
                 // Stores the objectives for which we need to compute values in the current time epoch.
-                storm::storage::BitVector consideredObjectives = this->unboundedObjectives;
+                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound;
                 
                 // Stores objectives for which the current epoch passed their lower bound
                 storm::storage::BitVector lowerBoundViolatedObjectives(consideredObjectives.size(), false);

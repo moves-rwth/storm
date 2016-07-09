@@ -32,8 +32,8 @@ namespace storm {
                 bool thresholdIsStrict = false;
                 
                 // The time bound(s) for the formula (if given by the originalFormula)
-                // If only a discrete bound is given, it is interpreted as an upper bound
-                boost::optional<boost::variant<uint_fast64_t, std::pair<double, double>>> timeBounds;
+                boost::optional<ValueType> lowerTimeBound;
+                boost::optional<ValueType> upperTimeBound;
                 
                 // Stores whether reward finiteness has been checked for this objective.
                 bool rewardFinitenessChecked;
@@ -51,13 +51,15 @@ namespace storm {
                     out << " \t";
                     out << "intern reward model: " << std::setw(10) << rewardModelName;
                     out << (rewardsArePositive ? " (positive)" : " (negative)") << ", \t";
-                    out << "time bound:";
-                    if(timeBounds) {
-                        if(timeBounds->which() == 0 ) {
-                            out << "<=" << std::setw(5) << (boost::get<uint_fast64_t>(timeBounds.get()));
+                    out << "time bounds:";
+                    if(lowerTimeBound) {
+                        if(upperTimeBound) {
+                            out << "[" << *lowerTimeBound << ", " <<  *upperTimeBound << "]";
                         } else {
-                            out << "[" << boost::get<std::pair<double, double>>(timeBounds.get()).first << ", " <<  boost::get<std::pair<double, double>>(timeBounds.get()).second << "]";
+                            out << ">=" << std::setw(5) << *lowerTimeBound;
                         }
+                    } else if (upperTimeBound) {
+                        out << "<=" << std::setw(5) << *upperTimeBound;
                     } else {
                         out << " none";
                     }

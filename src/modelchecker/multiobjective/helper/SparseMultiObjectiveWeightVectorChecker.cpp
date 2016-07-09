@@ -22,11 +22,11 @@ namespace storm {
             
 
             template <class SparseModelType>
-            SparseMultiObjectiveWeightVectorChecker<SparseModelType>::SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : data(data), unboundedObjectives(data.objectives.size()), discreteActionRewards(data.objectives.size()), checkHasBeenCalled(false), objectiveResults(data.objectives.size()), offsetsToLowerBound(data.objectives.size()), offsetsToUpperBound(data.objectives.size()) {
+            SparseMultiObjectiveWeightVectorChecker<SparseModelType>::SparseMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : data(data), objectivesWithNoUpperTimeBound(data.objectives.size()), discreteActionRewards(data.objectives.size()), checkHasBeenCalled(false), objectiveResults(data.objectives.size()), offsetsToLowerBound(data.objectives.size()), offsetsToUpperBound(data.objectives.size()) {
                 
                 // set the unbounded objectives
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    unboundedObjectives.set(objIndex, !data.objectives[objIndex].timeBounds);
+                    objectivesWithNoUpperTimeBound.set(objIndex, !data.objectives[objIndex].upperTimeBound);
                 }
                 // Enlarge the set of prob1 states to the states that are only reachable via prob1 states
                 statesThatAreAllowedToBeVisitedInfinitelyOften = ~storm::utility::graph::getReachableStates(data.preprocessedModel.getTransitionMatrix(), data.preprocessedModel.getInitialStates(), ~data.preprocessedModel.getStates(data.prob1StatesLabel), storm::storage::BitVector(data.preprocessedModel.getNumberOfStates(), false));
@@ -38,14 +38,14 @@ namespace storm {
                 checkHasBeenCalled=true;
                 STORM_LOG_DEBUG("Invoked WeightVectorChecker with weights " << std::endl << "\t" << storm::utility::vector::convertNumericVector<double>(weightVector));
                 std::vector<ValueType> weightedRewardVector(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
-                for(auto objIndex : unboundedObjectives) {
+                for(auto objIndex : objectivesWithNoUpperTimeBound) {
                     storm::utility::vector::addScaledVector(weightedRewardVector, discreteActionRewards[objIndex], weightVector[objIndex]);
                 }
                 unboundedWeightedPhase(weightedRewardVector);
                 unboundedIndividualPhase(weightVector);
                 // Only invoke boundedPhase if necessarry, i.e., if there is at least one objective with a time bound
                 for(auto const& obj : this->data.objectives) {
-                    if(obj.timeBounds) {
+                    if(obj.lowerTimeBound || obj.upperTimeBound) {
                         boundedPhase(weightVector, weightedRewardVector);
                         break;
                     }
@@ -91,14 +91,14 @@ namespace storm {
             storm::storage::TotalScheduler const& SparseMultiObjectiveWeightVectorChecker<SparseModelType>::getScheduler() const {
                 STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 for(auto const& obj : this->data.objectives) {
-                    STORM_LOG_THROW(!obj.timeBounds, storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for timeBounded objectives.");
+                    STORM_LOG_THROW(!obj.lowerTimeBound && !obj.upperTimeBound, storm::exceptions::NotImplementedException, "Scheduler retrival is not implemented for timeBounded objectives.");
                 }
                 return scheduler;
             }
             
             template <class SparseModelType>
             void SparseMultiObjectiveWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(std::vector<ValueType> const& weightedRewardVector) {
-                if(this->unboundedObjectives.empty()) {
+                if(this->objectivesWithNoUpperTimeBound.empty()) {
                     this->weightedResult = std::vector<ValueType>(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>());
                     this->scheduler = storm::storage::TotalScheduler(data.preprocessedModel.getNumberOfStates());
                     return;
@@ -136,7 +136,7 @@ namespace storm {
                 //Also only compute values for objectives with weightVector != zero,
                 //one check can be omitted as the result can be computed back from the weighed result and the results from the remaining objectives
                 for(uint_fast64_t objIndex = 0; objIndex < data.objectives.size(); ++objIndex) {
-                    if(unboundedObjectives.get(objIndex)){
+                    if(objectivesWithNoUpperTimeBound.get(objIndex)){
                         offsetsToLowerBound[objIndex] = storm::utility::zero<ValueType>();
                         offsetsToUpperBound[objIndex] = storm::utility::zero<ValueType>();
                         storm::utility::vector::selectVectorValues(deterministicStateRewards, this->scheduler.getChoices(), data.preprocessedModel.getTransitionMatrix().getRowGroupIndices(), discreteActionRewards[objIndex]);

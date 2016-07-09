@@ -19,7 +19,7 @@ namespace storm {
             SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::SparseMaMultiObjectiveWeightVectorChecker(PreprocessorData const& data) : SparseMultiObjectiveWeightVectorChecker<SparseMaModelType>(data) {
                 // Set the (discretized) state action rewards.
                 this->discreteActionRewards.resize(data.objectives.size());
-                for(auto objIndex : this->unboundedObjectives) {
+                for(auto objIndex : this->objectivesWithNoUpperTimeBound) {
                     typename SparseMaModelType::RewardModelType const& rewModel = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName);
                     STORM_LOG_ASSERT(!rewModel.hasTransitionRewards(), "Preprocessed Reward model has transition rewards which is not expected.");
                     this->discreteActionRewards[objIndex] = rewModel.hasStateActionRewards() ? rewModel.getStateActionRewardVector() : std::vector<ValueType>(this->data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>());
@@ -62,7 +62,7 @@ namespace storm {
                 linEq.b.resize(PS.getNumberOfStates());
                 
                 // Stores the objectives for which we need to compute values in the current time epoch.
-                storm::storage::BitVector consideredObjectives = this->unboundedObjectives;
+                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound;
                 
                 auto lowerTimeBoundIt = lowerTimeBounds.begin();
                 auto upperTimeBoundIt = upperTimeBounds.begin();
@@ -119,7 +119,7 @@ namespace storm {
                 for(uint_fast64_t objIndex = 0; objIndex < this->data.objectives.size(); ++objIndex) {
                     std::vector<ValueType>& objVector = result.objectiveRewardVectors[objIndex];
                     objVector = std::vector<ValueType>(result.weightedRewardVector.size(), storm::utility::zero<ValueType>());
-                    if(this->unboundedObjectives.get(objIndex)) {
+                    if(this->objectivesWithNoUpperTimeBound.get(objIndex)) {
                         storm::utility::vector::selectVectorValues(objVector, result.choices, this->discreteActionRewards[objIndex]);
                     } else {
                         typename SparseMaModelType::RewardModelType const& rewModel = this->data.preprocessedModel.getRewardModel(this->data.objectives[objIndex].rewardModelName);
@@ -154,22 +154,18 @@ namespace storm {
                 
                 // Initialize some data for fast and easy access
                 VT const maxRate = this->data.preprocessedModel.getMaximalExitRate();
-                std::vector<std::pair<VT, VT>> lowerUpperBounds;
+                std::vector<std::pair<VT, VT>> boundPairs;
                 std::vector<std::pair<VT, VT>> eToPowerOfMinusMaxRateTimesBound;
                 for(auto const& obj : this->data.objectives) {
-                    if(obj.timeBounds) {
-                        if(obj.timeBounds->which() == 0) {
-                            lowerUpperBounds.emplace_back(storm::utility::zero<VT>(), storm::utility::convertNumber<VT>(boost::get<uint_fast64_t>(*obj.timeBounds)));
-                            eToPowerOfMinusMaxRateTimesBound.emplace_back(storm::utility::one<VT>(), std::exp(-maxRate * lowerUpperBounds.back().second));
-                        } else {
-                            auto const& pair = boost::get<std::pair<double, double>>(*obj.timeBounds);
-                            lowerUpperBounds.emplace_back(storm::utility::convertNumber<VT>(pair.first), storm::utility::convertNumber<VT>(pair.second));
-                            eToPowerOfMinusMaxRateTimesBound.emplace_back(std::exp(-maxRate * lowerUpperBounds.back().first), std::exp(-maxRate * lowerUpperBounds.back().second));
-                        }
+                    if(obj.lowerTimeBound || obj.upperTimeBound) {
+                        boundPairs.emplace_back(obj.lowerTimeBound ? (*obj.lowerTimeBound) : storm::utility::zero<VT>(),
+                                                obj.upperTimeBound ? (*obj.upperTimeBound) : storm::utility::zero<VT>());
+                        eToPowerOfMinusMaxRateTimesBound.emplace_back(std::exp(-maxRate * boundPairs.back().first),
+                                                                      std::exp(-maxRate * boundPairs.back().second));
                     }
                 }
                 VT smallestNonZeroBound = storm::utility::zero<VT>();
-                for (auto const& bounds : lowerUpperBounds) {
+                for (auto const& bounds : boundPairs) {
                     if(!storm::utility::isZero(bounds.first)) {
                         smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? bounds.first : std::min(smallestNonZeroBound, bounds.first);
                     } else if (!storm::utility::isZero(bounds.second)) {
@@ -189,7 +185,7 @@ namespace storm {
                 VT delta = smallestNonZeroBound / smallestStepBound;
                 while(true) {
                     bool deltaValid = true;
-                    for(auto const& bounds : lowerUpperBounds) {
+                    for(auto const& bounds : boundPairs) {
                         if(bounds.first/delta  != std::floor(bounds.first/delta) ||
                            bounds.second/delta != std::floor(bounds.second/delta)) {
                             deltaValid = false;
@@ -197,9 +193,9 @@ namespace storm {
                         }
                     }
                     if(deltaValid) {
-                        for(uint_fast64_t i = 0; i<lowerUpperBounds.size(); ++i) {
-                            VT precisionOfObj = storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[i].first * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, lowerUpperBounds[i].first / delta) );
-                            precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[i].second * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, lowerUpperBounds[i].second / delta) );
+                        for(uint_fast64_t i = 0; i<boundPairs.size(); ++i) {
+                            VT precisionOfObj = storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[i].first * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, boundPairs[i].first / delta) );
+                            precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[i].second * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, boundPairs[i].second / delta) );
                             if(precisionOfObj > this->maximumLowerUpperBoundGap) {
                                 deltaValid = false;
                                 break;
@@ -259,43 +255,29 @@ namespace storm {
                 VT const maxRate = this->data.preprocessedModel.getMaximalExitRate();
                 for(uint_fast64_t objIndex = 0; objIndex < this->data.objectives.size(); ++objIndex) {
                     auto const& obj = this->data.objectives[objIndex];
-                    if(obj.timeBounds) {
-                        boost::optional<VT> objLowerBound, objUpperBound;
-                        if(obj.timeBounds->which() == 0) {
-                            objUpperBound = storm::utility::convertNumber<VT>(boost::get<uint_fast64_t>(obj.timeBounds.get()));
-                        } else {
-                            auto const& pair = boost::get<std::pair<double, double>>(obj.timeBounds.get());
-                            if(!storm::utility::isZero(pair.first)) {
-                                objLowerBound = storm::utility::convertNumber<VT>(pair.first);
-                            }
-                            objUpperBound = storm::utility::convertNumber<VT>(pair.second);
-                        }
-                        if(objLowerBound) {
-                            uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>((*objLowerBound)/digitizationConstant);
-                            auto timeBoundIt = lowerTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
-                            timeBoundIt->second.set(objIndex);
-                            VT digitizationError = storm::utility::one<VT>();
-                            digitizationError -= std::exp(-maxRate * (*objLowerBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
-                            this->offsetsToLowerBound[objIndex] = -digitizationError;
-                            
-                        } else {
-                            this->offsetsToLowerBound[objIndex] = storm::utility::zero<VT>();
-                        }
-                        
-                        if(objUpperBound) {
-                            uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>((*objUpperBound)/digitizationConstant);
-                            auto timeBoundIt = upperTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
-                            timeBoundIt->second.set(objIndex);
-                            VT digitizationError = storm::utility::one<VT>();
-                            digitizationError -= std::exp(-maxRate * (*objUpperBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
-                            this->offsetsToUpperBound[objIndex] = digitizationError;
-                        } else {
-                            this->offsetsToUpperBound[objIndex] = storm::utility::zero<VT>();
-                        }
-                        STORM_LOG_ASSERT(this->offsetsToUpperBound[objIndex] - this->offsetsToLowerBound[objIndex] <= this->maximumLowerUpperBoundGap, "Precision not sufficient.");
+                    if(obj.lowerTimeBound) {
+                        uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>((*obj.lowerTimeBound)/digitizationConstant);
+                        auto timeBoundIt = lowerTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
+                        timeBoundIt->second.set(objIndex);
+                        VT digitizationError = storm::utility::one<VT>();
+                        digitizationError -= std::exp(-maxRate * (*obj.lowerTimeBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
+                        this->offsetsToLowerBound[objIndex] = -digitizationError;
+                    } else {
+                        this->offsetsToLowerBound[objIndex] = storm::utility::zero<VT>();
                     }
+                    if(obj.upperTimeBound) {
+                        uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>((*obj.upperTimeBound)/digitizationConstant);
+                        auto timeBoundIt = upperTimeBounds.insert(std::make_pair(digitizedBound, storm::storage::BitVector(this->data.objectives.size(), false))).first;
+                        timeBoundIt->second.set(objIndex);
+                        VT digitizationError = storm::utility::one<VT>();
+                        digitizationError -= std::exp(-maxRate * (*obj.upperTimeBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
+                        this->offsetsToUpperBound[objIndex] = digitizationError;
+                    } else {
+                        this->offsetsToUpperBound[objIndex] = storm::utility::zero<VT>();
+                    }
+                    STORM_LOG_ASSERT(this->offsetsToUpperBound[objIndex] - this->offsetsToLowerBound[objIndex] <= this->maximumLowerUpperBoundGap, "Precision not sufficient.");
                 }
-            }
+            } 
             
             template <class SparseMaModelType>
             template <typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>

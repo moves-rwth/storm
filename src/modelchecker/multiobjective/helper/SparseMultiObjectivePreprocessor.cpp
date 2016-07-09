@@ -190,7 +190,7 @@ namespace storm {
                 storm::storage::BitVector phiStates = mc.check(phiTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 storm::storage::BitVector psiStates = mc.check(psiTask)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                 
-                if(!(psiStates & data.preprocessedModel.getInitialStates()).empty()) {
+                if(!(psiStates & data.preprocessedModel.getInitialStates()).empty() && !currentObjective.lowerTimeBound) {
                     // The probability is always one
                     data.solutionsFromPreprocessing[data.objectives.size()-1].first = PreprocessorData::PreprocessorObjectiveSolution::Numerical;
                     data.solutionsFromPreprocessing[data.objectives.size()-1].second = currentObjective.rewardsArePositive ? storm::utility::one<ValueType>() : -storm::utility::one<ValueType>();
@@ -258,24 +258,21 @@ namespace storm {
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::BoundedUntilFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective) {
                 
-                if(data.originalModel.isOfType(storm::models::ModelType::Mdp)) {
-                    STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with a discrete time bound but got " << formula << ".");
-                    STORM_LOG_THROW(formula.getDiscreteTimeBound() > 0, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula with time bound 0. This is not supported.");
-                    currentObjective.timeBounds = formula.getDiscreteTimeBound();
-                    preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data, currentObjective, false, false);
-                    
-                } else if(data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                    if(formula.hasDiscreteTimeBound()) {
-                        STORM_LOG_THROW(formula.getDiscreteTimeBound() > 0, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula with time bound 0. This is not supported.");
-                        currentObjective.timeBounds = formula.getDiscreteTimeBound();
-                    } else {
-                        STORM_LOG_THROW(formula.getIntervalBounds().first<formula.getIntervalBounds().second, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula where the lower time bound is not strictly smaller than the upper time bound. This is not supported.");
-                        currentObjective.timeBounds = formula.getIntervalBounds();
-                    }
-                    preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data, currentObjective, false, false);
+                if(formula.hasDiscreteTimeBound()) {
+                    currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getDiscreteTimeBound());
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula which can not be checked for the current model type.");
+                    if(data.originalModel.isOfType(storm::models::ModelType::Mdp)) {
+                        STORM_LOG_THROW(formula.getIntervalBounds().first == std::round(formula.getIntervalBounds().first), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with discrete lower time bound but got " << formula << ".");
+                        STORM_LOG_THROW(formula.getIntervalBounds().second == std::round(formula.getIntervalBounds().second), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with discrete upper time bound but got " << formula << ".");
+                    } else {
+                        STORM_LOG_THROW(data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula which can not be checked for the current model type.");
+                    }
+                    if(!storm::utility::isZero(formula.getIntervalBounds().first)) {
+                        currentObjective.lowerTimeBound = storm::utility::convertNumber<ValueType>(formula.getIntervalBounds().first);
+                    }
+                    currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getIntervalBounds().second);
                 }
+                preprocessFormula(storm::logic::UntilFormula(formula.getLeftSubformula().asSharedPointer(), formula.getRightSubformula().asSharedPointer()), data, currentObjective, false, false);
             }
             
             template<typename SparseModelType>
@@ -360,10 +357,14 @@ namespace storm {
             
             template<typename SparseModelType>
             void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessFormula(storm::logic::CumulativeRewardFormula const& formula, PreprocessorData& data, ObjectiveInformation& currentObjective, boost::optional<std::string> const& optionalRewardModelName) {
-                STORM_LOG_THROW(!data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Cumulative reward formulas are not supported for Markov automata.");
+                STORM_LOG_THROW(data.originalModel.isOfType(storm::models::ModelType::Mdp), storm::exceptions::InvalidPropertyException, "Cumulative reward formulas are not supported for the given model type.");
                 STORM_LOG_THROW(formula.hasDiscreteTimeBound(), storm::exceptions::InvalidPropertyException, "Expected a cumulativeRewardFormula with a discrete time bound but got " << formula << ".");
-                STORM_LOG_THROW(formula.getDiscreteTimeBound() > 0, storm::exceptions::InvalidPropertyException, "Got a cumulativeRewardFormula with time bound 0. This is not supported.");
-                currentObjective.timeBounds = formula.getDiscreteTimeBound();
+                if(formula.getDiscreteTimeBound()==0) {
+                    data.solutionsFromPreprocessing[data.objectives.size()-1].first = PreprocessorData::PreprocessorObjectiveSolution::Numerical;
+                    data.solutionsFromPreprocessing[data.objectives.size()-1].second = storm::utility::zero<ValueType>();
+                    return;
+                }
+                currentObjective.upperTimeBound = storm::utility::convertNumber<ValueType>(formula.getDiscreteTimeBound());
                 
                 RewardModelType objectiveRewards = data.preprocessedModel.getRewardModel(optionalRewardModelName ? optionalRewardModelName.get() : "");
                 objectiveRewards.reduceToStateBasedRewards(data.preprocessedModel.getTransitionMatrix(), false);
