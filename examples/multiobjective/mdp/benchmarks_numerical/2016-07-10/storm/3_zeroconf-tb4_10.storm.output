@@ -1,0 +1,231 @@
+Storm
+---------------
+
+Version: 0.9.1 (+1985 commits) build from revision g7b2bf30.
+
+Linked with GNU Linear Programming Kit v4.57.
+Linked with Microsoft Z3 Optimizer v4.4 Build 1 Rev 0.
+Linked with SMT-RAT 2.1.0.
+Linked with CARL.
+Command line arguments: -s zeroconf-tb/zeroconf-tb4_10.nm -prop zeroconf-tb/zeroconf-tb4_10_numerical.pctl --precision 0.000001 --multiobjective:precision 0.0001 --debug 
+Current working directory: /Users/tim/storm/examples/multiobjective/mdp
+
+DEBUG (PrismParser.cpp:51): First pass of parsing PRISM input finished.
+DEBUG (FormulaParser.cpp:243): Parsed formula successfully.
+DEBUG (ExplicitModelBuilder.cpp:123): Exploration order is: breadth-first
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	19670
+Transitions: 	63353
+Choices: 	59358
+Reward Models:  none
+Labels: 	4
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+   * (time_error = 1) -> 5420 state(s)
+   * (error = 0) -> 18112 state(s)
+choice labels: 	no
+Size in memory: 1545 kbytes
+-------------------------------------------------------------- 
+
+Model checking property: multi(Pmax=? [F (time_error = 1)], P>=0.993141 [G (error = 0)]) ...DEBUG (SparseMultiObjectivePreprocessor.cpp:30): Preprocessing objective Pmax=? [F (time_error = 1)].
+DEBUG (StateDuplicator.h:54): Invoked state duplicator on model with 19670 states.
+DEBUG (StateDuplicator.h:80): State duplicator is done. Resulting model has 19670 states, where 14250 are in the first copy.
+DEBUG (SparseMultiObjectivePreprocessor.cpp:30): Preprocessing objective P>=0.993141 [G (error = 0)].
+DEBUG (StateDuplicator.h:54): Invoked state duplicator on model with 19670 states.
+DEBUG (StateDuplicator.h:80): State duplicator is done. Resulting model has 19670 states, where 18112 are in the first copy.
+DEBUG (SparseMdpMultiObjectiveModelChecker.cpp:47): Preprocessing done. Data: 
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                       Multi-objective Preprocessor Data                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Original Formula: 
+--------------------------------------------------------------
+	multi(Pmax=? [F (time_error = 1)], P>=0.993141 [G (error = 0)])
+
+Objectives:
+--------------------------------------------------------------
+   Pmax=? [F (time_error = 1)] 	(toOrigVal:  1*x +  0, 	intern threshold:   none, 	intern reward model: objective1 (positive), 	time bounds: none)
+   P>=0.993141 [G (error = 0)] 	(toOrigVal:  1*x +  1, 	intern threshold:>=-0.006859, 	intern reward model: objective2 (negative), 	time bounds: none)
+--------------------------------------------------------------
+
+Original Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	19670
+Transitions: 	63353
+Choices: 	59358
+Reward Models:  none
+Labels: 	4
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+   * (time_error = 1) -> 5420 state(s)
+   * (error = 0) -> 18112 state(s)
+choice labels: 	no
+Size in memory: 1545 kbytes
+-------------------------------------------------------------- 
+
+Preprocessed Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	19670
+Transitions: 	63353
+Choices: 	59358
+Reward Models:  objective2, objective1
+Labels: 	5
+   * prob1 -> 19670 state(s)
+   * init -> 1 state(s)
+   * deadlock -> 0 state(s)
+   * (time_error = 1) -> 5420 state(s)
+   * (error = 0) -> 18112 state(s)
+choice labels: 	no
+Size in memory: 2393 kbytes
+-------------------------------------------------------------- 
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+DEBUG (SparseMultiObjectiveHelper.cpp:204): Searching a weight vector to seperate the point given by vector (2) [ 0, -0.006859 ].
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:39): Invoked WeightVectorChecker with weights 
+	vector (2) [ 0, 1 ]
+DEBUG (EndComponentEliminator.h:39): Invoked EndComponentEliminator on matrix with 19670 row groups.
+DEBUG (EndComponentEliminator.h:50): Found 40 end components to eliminate. Keeping 0 of 19670 original states.
+DEBUG (EndComponentEliminator.h:86): EndComponentEliminator is done. Resulting  matrix has 40 row groups.
+DEBUG (GmmxxAdapter.h:26): Converting matrix with 39 non-zeros to gmm++ format.
+DEBUG (GmmxxAdapter.h:50): Done converting matrix to gmm++ format.
+ INFO (StandardMinMaxLinearEquationSolver.cpp:279): Iterative solver converged after 1 iterations.
+ INFO (SparseDtmcPrctlHelper.cpp:182): Found 0 'infinity' states.
+ INFO (SparseDtmcPrctlHelper.cpp:183): Found 19670 'target' states.
+ INFO (SparseDtmcPrctlHelper.cpp:184): Found 0 'maybe' states.
+ INFO (SparseDtmcPrctlHelper.cpp:182): Found 0 'infinity' states.
+ INFO (SparseDtmcPrctlHelper.cpp:183): Found 19670 'target' states.
+ INFO (SparseDtmcPrctlHelper.cpp:184): Found 0 'maybe' states.
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:53): Weight vector check done. Lower bounds for results in initial state: vector (2) [ 0, 0 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:270): weighted objectives checker result (lower bounds) is vector (2) [ 0, 0 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:302): Updated OverApproximation to Polytope with 1 Halfspaces:
+   (         0,          1) * x <= 0
+
+DEBUG (SparseMultiObjectiveHelper.cpp:313): Updated UnderApproximation to Polytope with 2 Halfspaces:
+   (         1,          0) * x <= 0
+   (         0,          1) * x <= 0
+
+DEBUG (SparseMultiObjectiveHelper.cpp:128): Found a solution that satisfies the objective thresholds.
+DEBUG (SparseMultiObjectiveHelper.cpp:144): Best solution found so far is 0.
+DEBUG (SparseMultiObjectiveHelper.cpp:204): Searching a weight vector to seperate the point given by vector (2) [ 0, -0.006859 ].
+DEBUG (SparseMultiObjectiveHelper.cpp:241): Found separating  weight vector: vector (2) [ 1, 0 ].
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:39): Invoked WeightVectorChecker with weights 
+	vector (2) [ 1, 0 ]
+DEBUG (EndComponentEliminator.h:39): Invoked EndComponentEliminator on matrix with 19670 row groups.
+DEBUG (EndComponentEliminator.h:50): Found 10911 end components to eliminate. Keeping 683 of 19670 original states.
+DEBUG (EndComponentEliminator.h:86): EndComponentEliminator is done. Resulting  matrix has 11594 row groups.
+DEBUG (GmmxxAdapter.h:26): Converting matrix with 19406 non-zeros to gmm++ format.
+DEBUG (GmmxxAdapter.h:50): Done converting matrix to gmm++ format.
+ INFO (StandardMinMaxLinearEquationSolver.cpp:279): Iterative solver converged after 21 iterations.
+ INFO (SparseDtmcPrctlHelper.cpp:182): Found 0 'infinity' states.
+ INFO (SparseDtmcPrctlHelper.cpp:183): Found 8076 'target' states.
+ INFO (SparseDtmcPrctlHelper.cpp:184): Found 11594 'maybe' states.
+DEBUG (GmmxxAdapter.h:26): Converting matrix with 24629 non-zeros to gmm++ format.
+DEBUG (GmmxxAdapter.h:50): Done converting matrix to gmm++ format.
+ INFO (GmmxxLinearEquationSolver.cpp:141): Using method 'GMRES' with preconditioner 'ilu' (max. 20000 iterations).
+ INFO (GmmxxLinearEquationSolver.cpp:178): Iterative solver converged after 1 iterations.
+ INFO (SparseDtmcPrctlHelper.cpp:182): Found 0 'infinity' states.
+ INFO (SparseDtmcPrctlHelper.cpp:183): Found 19655 'target' states.
+ INFO (SparseDtmcPrctlHelper.cpp:184): Found 15 'maybe' states.
+DEBUG (GmmxxAdapter.h:26): Converting matrix with 29 non-zeros to gmm++ format.
+DEBUG (GmmxxAdapter.h:50): Done converting matrix to gmm++ format.
+ INFO (GmmxxLinearEquationSolver.cpp:141): Using method 'GMRES' with preconditioner 'ilu' (max. 20000 iterations).
+ INFO (GmmxxLinearEquationSolver.cpp:178): Iterative solver converged after 1 iterations.
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:53): Weight vector check done. Lower bounds for results in initial state: vector (2) [ 0.333538, -0.000102526 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:270): weighted objectives checker result (lower bounds) is vector (2) [ 0.333538, -0.000102526 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:302): Updated OverApproximation to Polytope with 2 Halfspaces:
+   (         0,          1) * x <= 0
+   (         1,          0) * x <= 0.333538
+
+DEBUG (SparseMultiObjectiveHelper.cpp:313): Updated UnderApproximation to Polytope with 3 Halfspaces:
+   (         0,          1) * x <= 0
+   (         1,          0) * x <= 0.333538
+   (         1,     3253.2) * x <= 0
+
+DEBUG (SparseMultiObjectiveHelper.cpp:144): Best solution found so far is 0.333538.
+DEBUG (SparseMultiObjectiveHelper.cpp:149): Solution can be improved by at most 0
+DEBUG (SparseMdpMultiObjectiveModelChecker.cpp:53): Modelchecking done.
+ INFO (SparseMultiObjectivePostprocessor.cpp:43): 
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                       Multi-objective Preprocessor Data                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Original Formula: 
+--------------------------------------------------------------
+	multi(Pmax=? [F (time_error = 1)], P>=0.993141 [G (error = 0)])
+
+Objectives:
+--------------------------------------------------------------
+   Pmax=? [F (time_error = 1)] 	(toOrigVal:  1*x +  0, 	intern threshold:   none, 	intern reward model: objective1 (positive), 	time bounds: none)
+   P>=0.993141 [G (error = 0)] 	(toOrigVal:  1*x +  1, 	intern threshold:>=-0.006859, 	intern reward model: objective2 (negative), 	time bounds: none)
+--------------------------------------------------------------
+
+Original Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	19670
+Transitions: 	63353
+Choices: 	59358
+Reward Models:  none
+Labels: 	4
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+   * (time_error = 1) -> 5420 state(s)
+   * (error = 0) -> 18112 state(s)
+choice labels: 	no
+Size in memory: 1545 kbytes
+-------------------------------------------------------------- 
+
+Preprocessed Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	19670
+Transitions: 	63353
+Choices: 	59358
+Reward Models:  objective2, objective1
+Labels: 	5
+   * prob1 -> 19670 state(s)
+   * init -> 1 state(s)
+   * deadlock -> 0 state(s)
+   * (time_error = 1) -> 5420 state(s)
+   * (error = 0) -> 18112 state(s)
+choice labels: 	no
+Size in memory: 2393 kbytes
+-------------------------------------------------------------- 
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                 Multi-objective Model Checking Result                                            
+---------------------------------------------------------------------------------------------------------------------------------------
+
+[0.333538]
+
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                 Multi-objective Model Checking Statistics                                            
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Recorded Runtimes (in seconds):
+	 Preprocessing:       0.023
+	 Value Iterations:    0.354
+	 Postprocessing:          0
+	 Combined:            0.377
+
+Performed Refinement Steps: 2
+Precision (Approximation): Goal precision: 0.0001 Achieved precision: 0
+Convergence precision for iterative solvers: 1e-06
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+DEBUG (SparseMdpMultiObjectiveModelChecker.cpp:57): Postprocessing done.
+ done.
+Result (initial states): [0.3335383858]
+===== Statistics ==============================
+peak memory usage: 210MB
+CPU time: 0.802 seconds
+===============================================
+OVERALL_TIME; 0.898

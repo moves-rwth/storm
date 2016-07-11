@@ -1,0 +1,244 @@
+Storm
+---------------
+
+Version: 0.9.1 (+1985 commits) build from revision g7b2bf30.
+
+Linked with GNU Linear Programming Kit v4.57.
+Linked with Microsoft Z3 Optimizer v4.4 Build 1 Rev 0.
+Linked with SMT-RAT 2.1.0.
+Linked with CARL.
+Command line arguments: -s dpm/dpm300.nm -prop dpm/dpm300_numerical.pctl --precision 0.000001 --multiobjective:precision 0.0001 --debug 
+Current working directory: /Users/tim/storm/examples/multiobjective/mdp
+
+DEBUG (PrismParser.cpp:51): First pass of parsing PRISM input finished.
+DEBUG (FormulaParser.cpp:243): Parsed formula successfully.
+DEBUG (ExplicitModelBuilder.cpp:123): Exploration order is: breadth-first
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	636
+Transitions: 	2550
+Choices: 	1860
+Reward Models:  queue, power
+Labels: 	2
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 109 kbytes
+-------------------------------------------------------------- 
+
+Model checking property: multi(R[exp]{"power"}min=? [C<=300], R[exp]{"queue"}<=270 [C<=300]) ...DEBUG (SparseMultiObjectivePreprocessor.cpp:30): Preprocessing objective R[exp]{"power"}min=? [C<=300].
+DEBUG (SparseMultiObjectivePreprocessor.cpp:30): Preprocessing objective R[exp]{"queue"}<=270 [C<=300].
+DEBUG (SparseMdpMultiObjectiveModelChecker.cpp:47): Preprocessing done. Data: 
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                       Multi-objective Preprocessor Data                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Original Formula: 
+--------------------------------------------------------------
+	multi(R[exp]{"power"}min=? [C<=300], R[exp]{"queue"}<=270 [C<=300])
+
+Objectives:
+--------------------------------------------------------------
+ R[exp]{"power"}min=? [C<=300] 	(toOrigVal: -1*x +  0, 	intern threshold:   none, 	intern reward model: objective1 (negative), 	time bounds:<=  300)
+ R[exp]{"queue"}<=270 [C<=300] 	(toOrigVal: -1*x +  0, 	intern threshold:>= -270, 	intern reward model: objective2 (negative), 	time bounds:<=  300)
+--------------------------------------------------------------
+
+Original Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	636
+Transitions: 	2550
+Choices: 	1860
+Reward Models:  queue, power
+Labels: 	2
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 109 kbytes
+-------------------------------------------------------------- 
+
+Preprocessed Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	636
+Transitions: 	2550
+Choices: 	1860
+Reward Models:  objective2, objective1
+Labels: 	3
+   * deadlock -> 0 state(s)
+   * prob1 -> 636 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 83 kbytes
+-------------------------------------------------------------- 
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+DEBUG (SparseMultiObjectiveHelper.cpp:204): Searching a weight vector to seperate the point given by vector (2) [ 0, -270 ].
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:39): Invoked WeightVectorChecker with weights 
+	vector (2) [ 0, 1 ]
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:53): Weight vector check done. Lower bounds for results in initial state: vector (2) [ -372.6, -239.656 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:270): weighted objectives checker result (lower bounds) is vector (2) [ -372.6, -239.656 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:302): Updated OverApproximation to Polytope with 1 Halfspaces:
+   (         0,          1) * x <= -239.656
+
+DEBUG (SparseMultiObjectiveHelper.cpp:313): Updated UnderApproximation to Polytope with 2 Halfspaces:
+   (         1,          0) * x <= -372.6
+   (         0,          1) * x <= -239.656
+
+DEBUG (SparseMultiObjectiveHelper.cpp:128): Found a solution that satisfies the objective thresholds.
+DEBUG (SparseMultiObjectiveHelper.cpp:144): Best solution found so far is -372.6.
+DEBUG (SparseMultiObjectiveHelper.cpp:204): Searching a weight vector to seperate the point given by vector (2) [ -372.6, -270 ].
+DEBUG (SparseMultiObjectiveHelper.cpp:241): Found separating  weight vector: vector (2) [ 1, 0 ].
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:39): Invoked WeightVectorChecker with weights 
+	vector (2) [ 1, 0 ]
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:53): Weight vector check done. Lower bounds for results in initial state: vector (2) [ -15, -272.941 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:270): weighted objectives checker result (lower bounds) is vector (2) [ -15, -272.941 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:302): Updated OverApproximation to Polytope with 2 Halfspaces:
+   (         0,          1) * x <= -239.656
+   (         1,          0) * x <= -15
+
+DEBUG (SparseMultiObjectiveHelper.cpp:313): Updated UnderApproximation to Polytope with 3 Halfspaces:
+   (         1,          0) * x <= -15
+   (         0,          1) * x <= -239.656
+   (         1,    10.7434) * x <= -2947.31
+
+DEBUG (SparseMultiObjectiveHelper.cpp:144): Best solution found so far is -46.5983.
+DEBUG (SparseMultiObjectiveHelper.cpp:149): Solution can be improved by at most 31.5983
+DEBUG (SparseMultiObjectiveHelper.cpp:204): Searching a weight vector to seperate the point given by vector (2) [ -46.5983, -270 ].
+DEBUG (SparseMultiObjectiveHelper.cpp:241): Found separating  weight vector: vector (2) [ 1, 10.7434 ].
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:39): Invoked WeightVectorChecker with weights 
+	vector (2) [ 0.0851543, 0.914846 ]
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:53): Weight vector check done. Lower bounds for results in initial state: vector (2) [ -372.379, -239.656 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:270): weighted objectives checker result (lower bounds) is vector (2) [ -372.379, -239.656 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:302): Updated OverApproximation to Polytope with 3 Halfspaces:
+   (         0,          1) * x <= -239.656
+   (         1,          0) * x <= -15
+   ( 0.0851543,   0.914846) * x <= -250.958
+
+DEBUG (SparseMultiObjectiveHelper.cpp:313): Updated UnderApproximation to Polytope with 3 Halfspaces:
+   (         0,          1) * x <= -239.656
+   (         1,          0) * x <= -15
+   (         1,    10.7367) * x <= -2945.5
+
+DEBUG (SparseMultiObjectiveHelper.cpp:144): Best solution found so far is -46.5788.
+DEBUG (SparseMultiObjectiveHelper.cpp:149): Solution can be improved by at most 0.201734
+DEBUG (SparseMultiObjectiveHelper.cpp:204): Searching a weight vector to seperate the point given by vector (2) [ -46.5788, -270 ].
+DEBUG (SparseMultiObjectiveHelper.cpp:241): Found separating  weight vector: vector (2) [ 1, 10.7367 ].
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:39): Invoked WeightVectorChecker with weights 
+	vector (2) [ 0.0852025, 0.914797 ]
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:53): Weight vector check done. Lower bounds for results in initial state: vector (2) [ -51.208, -269.559 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:270): weighted objectives checker result (lower bounds) is vector (2) [ -51.208, -269.559 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:302): Updated OverApproximation to Polytope with 4 Halfspaces:
+   (         0,          1) * x <= -239.656
+   (         1,          0) * x <= -15
+   ( 0.0851543,   0.914846) * x <= -250.958
+   ( 0.0852025,   0.914797) * x <= -250.955
+
+DEBUG (SparseMultiObjectiveHelper.cpp:313): Updated UnderApproximation to Polytope with 4 Halfspaces:
+   (         0,          1) * x <= -239.656
+   (         1,          0) * x <= -15
+   (         1,    10.7048) * x <= -2936.78
+   (         1,    10.7404) * x <= -2946.37
+
+DEBUG (SparseMultiObjectiveHelper.cpp:144): Best solution found so far is -46.4848.
+DEBUG (SparseMultiObjectiveHelper.cpp:149): Solution can be improved by at most 0.0141013
+DEBUG (SparseMultiObjectiveHelper.cpp:204): Searching a weight vector to seperate the point given by vector (2) [ -46.4848, -270 ].
+DEBUG (SparseMultiObjectiveHelper.cpp:241): Found separating  weight vector: vector (2) [ 1, 10.7048 ].
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:39): Invoked WeightVectorChecker with weights 
+	vector (2) [ 0.0854352, 0.914565 ]
+DEBUG (SparseMultiObjectiveWeightVectorChecker.cpp:53): Weight vector check done. Lower bounds for results in initial state: vector (2) [ -15, -272.941 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:270): weighted objectives checker result (lower bounds) is vector (2) [ -15, -272.941 ]
+DEBUG (SparseMultiObjectiveHelper.cpp:302): Updated OverApproximation to Polytope with 5 Halfspaces:
+   (         0,          1) * x <= -239.656
+   (         1,          0) * x <= -15
+   ( 0.0851543,   0.914846) * x <= -250.958
+   ( 0.0852025,   0.914797) * x <= -250.955
+   ( 0.0854352,   0.914565) * x <= -250.904
+
+DEBUG (SparseMultiObjectiveHelper.cpp:313): Updated UnderApproximation to Polytope with 4 Halfspaces:
+   (         0,          1) * x <= -239.656
+   (         1,          0) * x <= -15
+   (         1,    10.7048) * x <= -2936.78
+   (         1,    10.7404) * x <= -2946.37
+
+DEBUG (SparseMultiObjectiveHelper.cpp:144): Best solution found so far is -46.4848.
+DEBUG (SparseMultiObjectiveHelper.cpp:149): Solution can be improved by at most 0
+DEBUG (SparseMdpMultiObjectiveModelChecker.cpp:53): Modelchecking done.
+ INFO (SparseMultiObjectivePostprocessor.cpp:43): 
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                       Multi-objective Preprocessor Data                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Original Formula: 
+--------------------------------------------------------------
+	multi(R[exp]{"power"}min=? [C<=300], R[exp]{"queue"}<=270 [C<=300])
+
+Objectives:
+--------------------------------------------------------------
+ R[exp]{"power"}min=? [C<=300] 	(toOrigVal: -1*x +  0, 	intern threshold:   none, 	intern reward model: objective1 (negative), 	time bounds:<=  300)
+ R[exp]{"queue"}<=270 [C<=300] 	(toOrigVal: -1*x +  0, 	intern threshold:>= -270, 	intern reward model: objective2 (negative), 	time bounds:<=  300)
+--------------------------------------------------------------
+
+Original Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	636
+Transitions: 	2550
+Choices: 	1860
+Reward Models:  queue, power
+Labels: 	2
+   * deadlock -> 0 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 109 kbytes
+-------------------------------------------------------------- 
+
+Preprocessed Model Information:
+-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	636
+Transitions: 	2550
+Choices: 	1860
+Reward Models:  objective2, objective1
+Labels: 	3
+   * deadlock -> 0 state(s)
+   * prob1 -> 636 state(s)
+   * init -> 1 state(s)
+choice labels: 	no
+Size in memory: 83 kbytes
+-------------------------------------------------------------- 
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                 Multi-objective Model Checking Result                                            
+---------------------------------------------------------------------------------------------------------------------------------------
+
+[46.4848]
+
+---------------------------------------------------------------------------------------------------------------------------------------
+                                                 Multi-objective Model Checking Statistics                                            
+---------------------------------------------------------------------------------------------------------------------------------------
+
+Recorded Runtimes (in seconds):
+	 Preprocessing:           0
+	 Value Iterations:    0.103
+	 Postprocessing:          0
+	 Combined:            0.103
+
+Performed Refinement Steps: 5
+Precision (Approximation): Goal precision: 0.0001 Achieved precision: 0
+Convergence precision for iterative solvers: 1e-06
+
+---------------------------------------------------------------------------------------------------------------------------------------
+
+DEBUG (SparseMdpMultiObjectiveModelChecker.cpp:57): Postprocessing done.
+ done.
+Result (initial states): [46.48477804]
+===== Statistics ==============================
+peak memory usage: 195MB
+CPU time: 0.177 seconds
+===============================================
+OVERALL_TIME; 0.236
