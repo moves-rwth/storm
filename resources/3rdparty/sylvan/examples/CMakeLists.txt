@@ -12,6 +12,12 @@ target_link_libraries(lddmc sylvan)
 add_executable(simple simple.cpp)
 target_link_libraries(simple sylvan stdc++)
 
+if(USE_CARL)
+   message(STATUS "Sylvan - Example for Storm enabled.")
+   add_executable(storm-rf storm.cpp)
+   target_link_libraries(storm-rf sylvan stdc++ ${carl_LIBRARIES})
+endif(USE_CARL)
+
 include(CheckIncludeFiles)
 check_include_files("gperftools/profiler.h" HAVE_PROFILER)
 
