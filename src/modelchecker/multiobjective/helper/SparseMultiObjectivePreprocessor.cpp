@@ -266,6 +266,7 @@ namespace storm {
                         STORM_LOG_THROW(formula.getIntervalBounds().second == std::round(formula.getIntervalBounds().second), storm::exceptions::InvalidPropertyException, "Expected a boundedUntilFormula with discrete upper time bound but got " << formula << ".");
                     } else {
                         STORM_LOG_THROW(data.originalModel.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Got a boundedUntilFormula which can not be checked for the current model type.");
+                        STORM_LOG_THROW(formula.getIntervalBounds().second > formula.getIntervalBounds().first, storm::exceptions::InvalidPropertyException, "Neither empty nor point intervalls are allowed but got " << formula << ".");
                     }
                     if(!storm::utility::isZero(formula.getIntervalBounds().first)) {
                         currentObjective.lowerTimeBound = storm::utility::convertNumber<ValueType>(formula.getIntervalBounds().first);

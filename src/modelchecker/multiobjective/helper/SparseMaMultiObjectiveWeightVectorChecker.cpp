@@ -66,7 +66,7 @@ namespace storm {
                 
                 auto lowerTimeBoundIt = lowerTimeBounds.begin();
                 auto upperTimeBoundIt = upperTimeBounds.begin();
-                uint_fast64_t currentEpoch = std::max(lowerTimeBounds.empty() ? 0 : lowerTimeBoundIt->first - 1, upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first); // consider lowerBound - 1 since we are interested in the first epoch that passes the bound
+                uint_fast64_t currentEpoch = std::max(lowerTimeBounds.empty() ? 0 : lowerTimeBoundIt->first, upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first);
                 while(true) {
                     // Update the objectives that are considered at the current time epoch as well as the (weighted) reward vectors.
                     updateDataToCurrentEpoch(MS, PS, *minMax, consideredObjectives, currentEpoch, weightVector, lowerTimeBoundIt, lowerTimeBounds, upperTimeBoundIt, upperTimeBounds);
@@ -148,33 +148,32 @@ namespace storm {
             template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
             VT SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::getDigitizationConstant() const {
                 STORM_LOG_DEBUG("Retrieving digitization constant");
-                // We need to find a delta such that for each pair of lower and upper bounds it holds that
-                // 1 - e^(-maxRate lowerbound) * (1 + maxRate delta) ^ (lowerbound / delta) + 1-e^(-maxRate upperbound) * (1 + maxRate delta) ^ (upperbound / delta) <= maximumLowerUpperBoundGap
-                // and lowerbound/delta , upperbound/delta are natural numbers.
+                // We need to find a delta such that for each objective it holds that lowerbound/delta , upperbound/delta are natural numbers and
+                // If there is a lower and an upper bound:
+                //     1 - e^(-maxRate lowerbound) * (1 + maxRate delta) ^ (lowerbound / delta) + 1-e^(-maxRate upperbound) * (1 + maxRate delta) ^ (upperbound / delta) + (1-e^(-maxRate delta) <= maximumLowerUpperBoundGap
+                // If there is only an upper bound:
+                //     1-e^(-maxRate upperbound) * (1 + maxRate delta) ^ (upperbound / delta) <= maximumLowerUpperBoundGap
                 
                 // Initialize some data for fast and easy access
                 VT const maxRate = this->data.preprocessedModel.getMaximalExitRate();
-                std::vector<std::pair<VT, VT>> boundPairs;
                 std::vector<std::pair<VT, VT>> eToPowerOfMinusMaxRateTimesBound;
-                for(auto const& obj : this->data.objectives) {
-                    if(obj.lowerTimeBound || obj.upperTimeBound) {
-                        boundPairs.emplace_back(obj.lowerTimeBound ? (*obj.lowerTimeBound) : storm::utility::zero<VT>(),
-                                                obj.upperTimeBound ? (*obj.upperTimeBound) : storm::utility::zero<VT>());
-                        eToPowerOfMinusMaxRateTimesBound.emplace_back(std::exp(-maxRate * boundPairs.back().first),
-                                                                      std::exp(-maxRate * boundPairs.back().second));
-                    }
-                }
                 VT smallestNonZeroBound = storm::utility::zero<VT>();
-                for (auto const& bounds : boundPairs) {
-                    if(!storm::utility::isZero(bounds.first)) {
-                        smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? bounds.first : std::min(smallestNonZeroBound, bounds.first);
-                    } else if (!storm::utility::isZero(bounds.second)) {
-                        smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? bounds.second : std::min(smallestNonZeroBound, bounds.second);
+                for(auto const& obj : this->data.objectives) {
+                    eToPowerOfMinusMaxRateTimesBound.emplace_back();
+                    if(obj.lowerTimeBound){
+                        STORM_LOG_ASSERT(!storm::utility::isZero(*obj.lowerTimeBound), "Got zero-valued lower bound."); // should have been handled in preprocessing
+                        STORM_LOG_ASSERT(!obj.upperTimeBound || *obj.lowerTimeBound < *obj.upperTimeBound, "Got point intervall or empty intervall on time bounded property which is not supported"); // should also have been handled in preprocessing
+                        eToPowerOfMinusMaxRateTimesBound.back().first = std::exp(-maxRate * (*obj.lowerTimeBound));
+                        smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? *obj.lowerTimeBound : std::min(smallestNonZeroBound, *obj.lowerTimeBound);
+                    }
+                    if(obj.upperTimeBound){
+                        STORM_LOG_ASSERT(!storm::utility::isZero(*obj.upperTimeBound), "Got zero-valued upper bound."); // should have been handled in preprocessing
+                        eToPowerOfMinusMaxRateTimesBound.back().second = std::exp(-maxRate * (*obj.upperTimeBound));
+                        smallestNonZeroBound = storm::utility::isZero(smallestNonZeroBound) ? *obj.upperTimeBound : std::min(smallestNonZeroBound, *obj.upperTimeBound);
                     }
                 }
                 if(storm::utility::isZero(smallestNonZeroBound)) {
-                    // All time bounds are zero which means that any delta>0 is valid.
-                    // This includes the case where there are no time bounds
+                    // There are no time bounds. In this case, one is a valid digitization constant.
                     return storm::utility::one<VT>();
                 }
                 
@@ -185,17 +184,24 @@ namespace storm {
                 VT delta = smallestNonZeroBound / smallestStepBound;
                 while(true) {
                     bool deltaValid = true;
-                    for(auto const& bounds : boundPairs) {
-                        if(bounds.first/delta  != std::floor(bounds.first/delta) ||
-                           bounds.second/delta != std::floor(bounds.second/delta)) {
+                    for(auto const& obj : this->data.objectives) {
+                        if((obj.lowerTimeBound && *obj.lowerTimeBound/delta != std::floor(*obj.lowerTimeBound/delta)) ||
+                           (obj.upperTimeBound && *obj.upperTimeBound/delta != std::floor(*obj.upperTimeBound/delta))) {
                             deltaValid = false;
                             break;
                         }
                     }
                     if(deltaValid) {
-                        for(uint_fast64_t i = 0; i<boundPairs.size(); ++i) {
-                            VT precisionOfObj = storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[i].first * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, boundPairs[i].first / delta) );
-                            precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[i].second * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, boundPairs[i].second / delta) );
+                        for(uint_fast64_t objIndex = 0; objIndex < this->data.objectives.size(); ++objIndex) {
+                            auto const& obj = this->data.objectives[objIndex];
+                            VT precisionOfObj = storm::utility::zero<VT>();
+                            if(obj.lowerTimeBound) {
+                                precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[objIndex].first * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, *obj.lowerTimeBound / delta) )
+                                + storm::utility::one<VT>() - std::exp(-maxRate * delta);
+                            }
+                            if(obj.upperTimeBound) {
+                                precisionOfObj += storm::utility::one<VT>() - (eToPowerOfMinusMaxRateTimesBound[objIndex].second * storm::utility::pow(storm::utility::one<VT>() + maxRate * delta, *obj.upperTimeBound / delta) );
+                            }
                             if(precisionOfObj > this->maximumLowerUpperBoundGap) {
                                 deltaValid = false;
                                 break;
@@ -262,8 +268,10 @@ namespace storm {
                         VT digitizationError = storm::utility::one<VT>();
                         digitizationError -= std::exp(-maxRate * (*obj.lowerTimeBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
                         this->offsetsToLowerBound[objIndex] = -digitizationError;
+                        this->offsetsToUpperBound[objIndex] = storm::utility::one<VT>() - std::exp(-maxRate * digitizationConstant);;
                     } else {
                         this->offsetsToLowerBound[objIndex] = storm::utility::zero<VT>();
+                        this->offsetsToUpperBound[objIndex] = storm::utility::zero<VT>();
                     }
                     if(obj.upperTimeBound) {
                         uint_fast64_t digitizedBound = storm::utility::convertNumber<uint_fast64_t>((*obj.upperTimeBound)/digitizationConstant);
@@ -271,9 +279,7 @@ namespace storm {
                         timeBoundIt->second.set(objIndex);
                         VT digitizationError = storm::utility::one<VT>();
                         digitizationError -= std::exp(-maxRate * (*obj.upperTimeBound)) * storm::utility::pow(storm::utility::one<VT>() + maxRate * digitizationConstant, digitizedBound);
-                        this->offsetsToUpperBound[objIndex] = digitizationError;
-                    } else {
-                        this->offsetsToUpperBound[objIndex] = storm::utility::zero<VT>();
+                        this->offsetsToUpperBound[objIndex] += digitizationError;
                     }
                     STORM_LOG_ASSERT(this->offsetsToUpperBound[objIndex] - this->offsetsToLowerBound[objIndex] <= this->maximumLowerUpperBoundGap, "Precision not sufficient.");
                 }
@@ -320,9 +326,8 @@ namespace storm {
             template <class SparseMaModelType>
             void SparseMaMultiObjectiveWeightVectorChecker<SparseMaModelType>::updateDataToCurrentEpoch(SubModel& MS, SubModel& PS, MinMaxSolverData& minMax, storm::storage::BitVector& consideredObjectives, uint_fast64_t const& currentEpoch, std::vector<ValueType> const& weightVector, TimeBoundMap::iterator& lowerTimeBoundIt, TimeBoundMap const& lowerTimeBounds, TimeBoundMap::iterator& upperTimeBoundIt, TimeBoundMap const& upperTimeBounds) {
                 
-                //For lower time bounds we need to react when the currentEpoch passed the bound
-                // Hence, we substract 1 from the lower time bounds.
-                if(lowerTimeBoundIt != lowerTimeBounds.end() && currentEpoch == lowerTimeBoundIt->first - 1) {
+                //Note that lower time bounds are always strict. Hence, we need to react when the current epoch equals the stored bound.
+                if(lowerTimeBoundIt != lowerTimeBounds.end() && currentEpoch == lowerTimeBoundIt->first) {
                     for(auto objIndex : lowerTimeBoundIt->second) {
                         // No more reward is earned for this objective.
                         storm::utility::vector::addScaledVector(MS.weightedRewardVector, MS.objectiveRewardVectors[objIndex], -weightVector[objIndex]);
