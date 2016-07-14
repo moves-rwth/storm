@@ -80,6 +80,10 @@ sylvan_storm_rational_function_init()
 	CACHE_STORM_RATIONAL_FUNCTION_AND_EXISTS = cache_next_opid();
 }
 
+uint32_t sylvan_storm_rational_function_get_type() {
+	return sylvan_storm_rational_function_type;
+}
+
 /**
  * Create storm::RationalFunction leaf
  */

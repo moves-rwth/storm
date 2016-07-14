@@ -10,7 +10,7 @@
 
 #define SYLVAN_HAVE_CARL 1
 
-#ifdef SYLVAN_HAVE_CARL
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +20,11 @@ extern "C" {
  * Initialize storm::RationalFunction custom leaves
  */
 void sylvan_storm_rational_function_init();
+
+/** 
+ * Returns the identifier necessary to use these custom leaves.
+ */
+uint32_t sylvan_storm_rational_function_get_type();
 
 /**
  * Create storm::RationalFunction leaf
