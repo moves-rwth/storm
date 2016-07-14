@@ -9,6 +9,7 @@
 #pragma clang diagnostic ignored "-Wc99-extensions"
 
 #include "sylvan_obj.hpp"
+#include "sylvan_storm_rational_function.h"
 
 #pragma clang diagnostic pop
 

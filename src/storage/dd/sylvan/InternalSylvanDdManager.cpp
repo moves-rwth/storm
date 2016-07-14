@@ -71,6 +71,13 @@ namespace storm {
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const {
             return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::int64Terminal(storm::utility::one<uint_fast64_t>()));
         }
+
+#ifdef STORM_HAVE_CARL
+		template<>
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const {
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), storm::utility::one<storm::RationalFunction>()));
+		}
+#endif
         
         InternalBdd<DdType::Sylvan> InternalDdManager<DdType::Sylvan>::getBddZero() const {
             return InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddZero());
@@ -85,6 +92,13 @@ namespace storm {
         InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const {
             return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::int64Terminal(storm::utility::zero<uint_fast64_t>()));
         }
+
+#ifdef STORM_HAVE_CARL
+		template<>
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const {
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), storm::utility::zero<storm::RationalFunction>()));
+		}
+#endif
         
         template<>
         InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const {
@@ -96,6 +110,13 @@ namespace storm {
             return InternalAdd<DdType::Sylvan, uint_fast64_t>(this, sylvan::Mtbdd::int64Terminal(value));
         }
         
+#ifdef STORM_HAVE_CARL
+		template<>
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const {
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), storm::utility::zero<storm::RationalFunction>()));
+		}
+#endif
+
         std::pair<InternalBdd<DdType::Sylvan>, InternalBdd<DdType::Sylvan>> InternalDdManager<DdType::Sylvan>::createNewDdVariablePair() {
             InternalBdd<DdType::Sylvan> first = InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddVar(nextFreeVariableIndex));
             InternalBdd<DdType::Sylvan> second = InternalBdd<DdType::Sylvan>(this, sylvan::Bdd::bddVar(nextFreeVariableIndex + 1));
