@@ -72,7 +72,7 @@ namespace storm {
                     std::cout << i++ << "/" << modifications.size() << std::endl;
                     rewardModel.setStateActionReward(mod.first, mod.second);
                 }
-            };
+            }
 
             template<typename ValueType, typename RewardModelType>
             template<typename T>
@@ -81,7 +81,7 @@ namespace storm {
                 for(auto const& mod : modifications) {
                     rewardModel.setStateReward(mod.first, mod.second);
                 }
-            };
+            }
             
             template<typename ValueType, typename RewardModelType>
             void NondeterministicModel<ValueType, RewardModelType>::reduceToStateBasedRewards() {
