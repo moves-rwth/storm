@@ -117,6 +117,13 @@ namespace storm {
                  * @return The timebound.
                  */
                 double getPropTimebound() const;
+
+                /*!
+                 * Retrieves whether the DFT should be transformed into a GSPN.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isTransformToGspn() const;
                 
 #ifdef STORM_HAVE_Z3
                 /*!
@@ -153,6 +160,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
                 static const std::string solveWithSmtOptionName;
 #endif
+                static const std::string transformToGspnOptionName;
                 
             };
 

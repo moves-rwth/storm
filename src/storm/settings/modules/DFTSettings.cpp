@@ -33,6 +33,8 @@ namespace storm {
             const std::string DFTSettings::solveWithSmtOptionName = "smt";
 #endif
             
+            const std::string DFTSettings::transformToGspnOptionName = "gspn";
+
             DFTSettings::DFTSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, dftFileOptionName, false, "Parses the model given in the Galileo format.").setShortName(dftFileOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the DFT model.").addValidationFunctionString(storm::settings::ArgumentValidators::existingReadableFileValidator()).build()).build());
@@ -49,6 +51,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
                 this->addOption(storm::settings::OptionBuilder(moduleName, solveWithSmtOptionName, true, "Solve the DFT with SMT.").build());
 #endif
+                this->addOption(storm::settings::OptionBuilder(moduleName, transformToGspnOptionName, false, "Transform DFT to GSPN.").build());
             }
             
             bool DFTSettings::isDftFileSet() const {
@@ -123,6 +126,10 @@ namespace storm {
             }
 #endif
             
+            bool DFTSettings::isTransformToGspn() const {
+                return this->getOption(transformToGspnOptionName).getHasOptionBeenSet();
+            }
+
             void DFTSettings::finalize() {
             }
 

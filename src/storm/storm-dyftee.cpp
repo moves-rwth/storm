@@ -9,6 +9,8 @@
 #include "storm/exceptions/BaseException.h"
 #include "storm/utility/macros.h"
 #include "storm/builder/DftSmtBuilder.h"
+#include "storm/transformations/dft/DftToGspnTransformator.h"
+
 
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/DFTSettings.h"
@@ -34,6 +36,9 @@
  *
  * @param filename Path to DFT file in Galileo format.
  * @param property PCTC formula capturing the property to check.
+ * @param symred Flag whether symmetry reduction should be used.
+ * @param allowModularisation Flag whether modularisation should be applied if possible.
+ * @param enableDC Flag whether Don't Care propagation should be used.
  */
 template <typename ValueType>
 void analyzeDFT(std::string filename, std::string property, bool symred, bool allowModularisation, bool enableDC, double approximationError) {
@@ -66,6 +71,21 @@ void analyzeWithSMT(std::string filename) {
     asfChecker.toFile("test.smt2");
     //bool sat = dftSmtBuilder.check();
     //std::cout << "SMT result: " << sat << std::endl;
+}
+
+/*!
+ * Load DFT from filename and transform into a GSPN.
+ *
+ * @param filename Path to DFT file in Galileo format.
+ *
+ */
+template <typename ValueType>
+void transformDFT(std::string filename) {
+    std::cout << "Transforming DFT from file " << filename << std::endl;
+    storm::parser::DFTGalileoParser<ValueType> parser;
+    storm::storage::DFT<ValueType> dft = parser.parseDFT(filename);
+    storm::transformations::dft::DftToGspnTransformator<ValueType> gspnTransformator(dft);
+    gspnTransformator.transform();
 }
 
 /*!
@@ -115,6 +135,13 @@ int main(const int argc, const char** argv) {
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
         if (!dftSettings.isDftFileSet()) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model.");
+        }
+
+        if (dftSettings.isTransformToGspn()) {
+            // For now we only transform the DFT to a GSPN and then exit
+            transformDFT<double>(dftSettings.getDftFilename());
+            storm::utility::cleanUp();
+            return 0;
         }
         
         bool parametric = false;
