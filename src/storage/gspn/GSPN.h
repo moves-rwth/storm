@@ -101,7 +101,7 @@ namespace storm {
              *         If the first element is true, then the second element is the wanted transition.
              *         If the first element is false, then the second element is the nullptr.
              */
-            std::pair<bool, std::shared_ptr<storm::gspn::ImmediateTransition<GSPN::WeightType>> const> getImmediateTransition(std::string id) const;
+            std::pair<bool, std::shared_ptr<storm::gspn::ImmediateTransition<GSPN::WeightType>> const> getImmediateTransition(std::string const& id) const;
 
             /*!
              * Returns the transition with the corresponding id.
