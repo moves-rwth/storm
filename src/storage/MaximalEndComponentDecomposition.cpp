@@ -65,7 +65,9 @@ namespace storm {
             
             // Initialize the maximal end component list to be the full state space.
             std::list<StateBlock> endComponentStateSets;
-            endComponentStateSets.emplace_back(subsystem.begin(), subsystem.end());
+            if(!subsystem.empty()) {
+                endComponentStateSets.emplace_back(subsystem.begin(), subsystem.end());
+            }
             storm::storage::BitVector statesToCheck(numberOfStates);
             
             // The iterator used here should really be a const_iterator.
@@ -74,7 +76,7 @@ namespace storm {
             // from iterator to const_iterator only for "set, multiset, map [and] multimap".
             for (std::list<StateBlock>::const_iterator mecIterator = endComponentStateSets.begin(); mecIterator != endComponentStateSets.end();) {
                 StateBlock const& mec = *mecIterator;
-
+                
                 // Keep track of whether the MEC changed during this iteration.
                 bool mecChanged = false;
                 
@@ -98,6 +100,10 @@ namespace storm {
                             for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                                 bool choiceContainedInMEC = true;
                                 for (auto const& entry : transitionMatrix.getRow(choice)) {
+                                    if (entry.getValue() == storm::utility::zero<ValueType>()) {
+                                        continue;
+                                    }
+                                        
                                     if (!scc.containsState(entry.getColumn())) {
                                         choiceContainedInMEC = false;
                                         break;
@@ -175,6 +181,7 @@ namespace storm {
                         }
                     }
                     
+                    STORM_LOG_ASSERT(!containedChoices.empty(), "The contained choices of any state in an MEC must be non-empty.");
                     newMec.addState(state, std::move(containedChoices));
                 }
                 
@@ -185,6 +192,9 @@ namespace storm {
         // Explicitly instantiate the MEC decomposition.
         template class MaximalEndComponentDecomposition<double>;
         template MaximalEndComponentDecomposition<double>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<double> const& model);
+
+        template class MaximalEndComponentDecomposition<storm::RationalNumber>;
+        template MaximalEndComponentDecomposition<storm::RationalNumber>::MaximalEndComponentDecomposition(storm::models::sparse::NondeterministicModel<storm::RationalNumber> const& model);
 
     }
 }

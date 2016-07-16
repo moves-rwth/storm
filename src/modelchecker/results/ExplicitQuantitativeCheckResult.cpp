@@ -5,6 +5,7 @@
 #include "src/utility/macros.h"
 #include "src/utility/vector.h"
 #include "src/exceptions/InvalidOperationException.h"
+#include "src/exceptions/InvalidAccessException.h"
 #include "src/adapters/CarlAdapter.h"
 
 
@@ -60,6 +61,7 @@ namespace storm {
             if (this->isResultForAllStates()) {
                 map_type newMap;
                 for (auto const& element : filterTruthValues) {
+                    STORM_LOG_THROW(element < this->getValueVector().size(), storm::exceptions::InvalidAccessException, "Invalid index in results.");
                     newMap.emplace(element, this->getValueVector()[element]);
                 }
                 this->values = newMap;
@@ -77,6 +79,22 @@ namespace storm {
                 
                 this->values = newMap;
             }
+        }
+        
+        template<typename ValueType>
+        bool ExplicitQuantitativeCheckResult<ValueType>::hasScheduler() const {
+            return static_cast<bool>(scheduler);
+        }
+        
+        template<typename ValueType>
+        void ExplicitQuantitativeCheckResult<ValueType>::setScheduler(std::unique_ptr<storm::storage::Scheduler>&& scheduler) {
+            this->scheduler = std::move(scheduler);
+        }
+        
+        template<typename ValueType>
+        storm::storage::Scheduler const& ExplicitQuantitativeCheckResult<ValueType>::getScheduler() const {
+            STORM_LOG_THROW(this->hasScheduler(), storm::exceptions::InvalidOperationException, "Unable to retrieve non-existing scheduler.");
+            return *scheduler.get();
         }
         
         template<typename ValueType>
@@ -117,28 +135,28 @@ namespace storm {
                 switch (comparisonType) {
                     case logic::ComparisonType::Less:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
-                            if (valuesAsVector[index] < bound) {
+                            if (valuesAsVector[index] < storm::utility::convertNumber<ValueType, double>(bound)) {
                                 result.set(index);
                             }
                         }
                         break;
                     case logic::ComparisonType::LessEqual:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
-                            if (valuesAsVector[index] <= bound) {
+                            if (valuesAsVector[index] <= storm::utility::convertNumber<ValueType, double>(bound)) {
                                 result.set(index);
                             }
                         }
                         break;
                     case logic::ComparisonType::Greater:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
-                            if (valuesAsVector[index] > bound) {
+                            if (valuesAsVector[index] > storm::utility::convertNumber<ValueType, double>(bound)) {
                                 result.set(index);
                             }
                         }
                         break;
                     case logic::ComparisonType::GreaterEqual:
                         for (uint_fast64_t index = 0; index < valuesAsVector.size(); ++index) {
-                            if (valuesAsVector[index] >= bound) {
+                            if (valuesAsVector[index] >= storm::utility::convertNumber<ValueType, double>(bound)) {
                                 result.set(index);
                             }
                         }
@@ -151,22 +169,22 @@ namespace storm {
                 switch (comparisonType) {
                     case logic::ComparisonType::Less:
                         for (auto const& element : valuesAsMap) {
-                            result[element.first] = element.second < bound;
+                            result[element.first] = element.second < storm::utility::convertNumber<ValueType, double>(bound);
                         }
                         break;
                     case logic::ComparisonType::LessEqual:
                         for (auto const& element : valuesAsMap) {
-                            result[element.first] = element.second <= bound;
+                            result[element.first] = element.second <= storm::utility::convertNumber<ValueType, double>(bound);
                         }
                         break;
                     case logic::ComparisonType::Greater:
                         for (auto const& element : valuesAsMap) {
-                            result[element.first] = element.second > bound;
+                            result[element.first] = element.second > storm::utility::convertNumber<ValueType, double>(bound);
                         }
                         break;
                     case logic::ComparisonType::GreaterEqual:
                         for (auto const& element : valuesAsMap) {
-                            result[element.first] = element.second >= bound;
+                            result[element.first] = element.second >= storm::utility::convertNumber<ValueType, double>(bound);
                         }
                         break;
                 }
@@ -218,10 +236,21 @@ namespace storm {
             return true;
         }
         
-        template class ExplicitQuantitativeCheckResult<double>;
+        template<typename ValueType>
+        void ExplicitQuantitativeCheckResult<ValueType>::oneMinus() {
+            if (this->isResultForAllStates()) {
+                for (auto& element : boost::get<vector_type>(values)) {
+                    element = storm::utility::one<ValueType>() - element;
+                }
+            } else {
+                for (auto& element : boost::get<map_type>(values)) {
+                    element.second = storm::utility::one<ValueType>() - element.second;
+                }
+            }
+        }
         
-#ifdef STORM_HAVE_CARL
+        template class ExplicitQuantitativeCheckResult<double>;
+        template class ExplicitQuantitativeCheckResult<storm::RationalNumber>;
         template class ExplicitQuantitativeCheckResult<storm::RationalFunction>;
-#endif
     }
 }

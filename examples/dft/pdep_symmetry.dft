@@ -1,0 +1,11 @@
+toplevel "A";
+"A" and "B" "B'";
+"B" and "C" "D" "PDEP";
+"B'" and "C'" "D'" "PDEP'";
+"PDEP" pdep=0.6 "C" "D";
+"PDEP'" pdep=0.6 "C'" "D'";
+"C" lambda=0.5 dorm=0;
+"D" lambda=0.5 dorm=0;
+"C'" lambda=0.5 dorm=0;
+"D'" lambda=0.5 dorm=0;
+

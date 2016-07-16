@@ -3,11 +3,7 @@
 #include <cstring>
 
 #include "src/exceptions/WrongFormatException.h"
-
-#include "log4cplus/logger.h"
-#include "log4cplus/loggingmacros.h"
-extern log4cplus::Logger logger;
-
+#include "src/utility/macros.h"
 namespace storm {
 
 namespace utility {
@@ -25,8 +21,8 @@ namespace cstring {
 uint_fast64_t checked_strtol(char const* str, char const** end) {
 	uint_fast64_t res = strtol(str, const_cast<char**>(end), 10);
 	if (str == *end) {
-		LOG4CPLUS_ERROR(logger, "Error while parsing integer. Next input token is not a number.");
-		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
+		STORM_LOG_ERROR("Error while parsing integer. Next input token is not a number.");
+		STORM_LOG_ERROR("\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
 		throw storm::exceptions::WrongFormatException("Error while parsing integer. Next input token is not a number.");
 	}
 	return res;
@@ -43,8 +39,8 @@ uint_fast64_t checked_strtol(char const* str, char const** end) {
 double checked_strtod(char const* str, char const** end) {
 	double res = strtod(str, const_cast<char**>(end));
 	if (str == *end) {
-		LOG4CPLUS_ERROR(logger, "Error while parsing floating point. Next input token is not a number.");
-		LOG4CPLUS_ERROR(logger, "\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
+		STORM_LOG_ERROR("Error while parsing floating point. Next input token is not a number.");
+		STORM_LOG_ERROR("\tUpcoming input is: \"" << std::string(str, 0, 16) << "\"");
 		throw storm::exceptions::WrongFormatException("Error while parsing floating point. Next input token is not a number.");
 	}
 	return res;

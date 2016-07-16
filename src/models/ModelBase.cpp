@@ -13,5 +13,21 @@ namespace storm {
         bool ModelBase::isSymbolicModel() const {
             return false;
         }
+        
+        bool ModelBase::isOfType(storm::models::ModelType const& modelType) const {
+            return this->getType() == modelType;
+        }
+        
+        bool ModelBase::supportsParameters() const {
+            return false;
+        }
+
+        bool ModelBase::hasParameters() const {
+            return false;
+        }
+
+        bool ModelBase::isExact() const {
+            return false;
+        }
     }
 }

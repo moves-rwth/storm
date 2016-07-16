@@ -13,7 +13,7 @@
 #include "src/settings/SettingMemento.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/exceptions/WrongFormatException.h"
 
@@ -202,17 +202,15 @@ TEST(NondeterministicSparseTransitionParserTest, Whitespaces) {
 
 TEST(NondeterministicSparseTransitionParserTest, MixedTransitionOrder) {
 	// Since the MatrixBuilder needs sequential input of new elements reordering of transitions or states should throw an exception.
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_mixedTransitionOrder.tra"), storm::exceptions::InvalidArgumentException);
 	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
 
 	storm::storage::SparseMatrix<double> modelInformation = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_general.tra");
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_mixedTransitionOrder.trans.rew", modelInformation), storm::exceptions::InvalidArgumentException);
 	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_CPP_TESTS_BASE_PATH "/functional/parser/rew_files/mdp_mixedStateOrder.trans.rew", modelInformation), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(NondeterministicSparseTransitionParserTest, FixDeadlocks) {
 	// Set the fixDeadlocks flag temporarily. It is set to its old value once the deadlockOption object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableGeneralSettings().overrideDontFixDeadlocksSet(false);
+    std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableCoreSettings().overrideDontFixDeadlocksSet(false);
 
 	// Parse a transitions file with the fixDeadlocks Flag set and test if it works.
 	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_deadlock.tra"));
@@ -253,7 +251,7 @@ TEST(NondeterministicSparseTransitionParserTest, FixDeadlocks) {
 
 TEST(NondeterministicSparseTransitionParserTest, DontFixDeadlocks) {
 	// Try to parse a transitions file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
-    std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableGeneralSettings().overrideDontFixDeadlocksSet(true);
+    std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableCoreSettings().overrideDontFixDeadlocksSet(true);
 
 	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_CPP_TESTS_BASE_PATH "/functional/parser/tra_files/mdp_deadlock.tra"), storm::exceptions::WrongFormatException);
 }

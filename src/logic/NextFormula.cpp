@@ -1,5 +1,7 @@
 #include "src/logic/NextFormula.h"
 
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         NextFormula::NextFormula(std::shared_ptr<Formula const> const& subformula) : UnaryPathFormula(subformula) {
@@ -10,10 +12,14 @@ namespace storm {
             return true;
         }
         
-        bool NextFormula::containsNextFormula() const {
+        bool NextFormula::isProbabilityPathFormula() const {
             return true;
         }
         
+        boost::any NextFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
+        }
+                
         std::ostream& NextFormula::writeToStream(std::ostream& out) const {
             out << "X ";
             this->getSubformula().writeToStream(out);

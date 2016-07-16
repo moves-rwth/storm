@@ -237,11 +237,14 @@ namespace storm {
         template StronglyConnectedComponentDecomposition<float>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<float> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs);
         template StronglyConnectedComponentDecomposition<float>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<float> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
 
-#ifdef STORM_HAVE_CARL
+        template class StronglyConnectedComponentDecomposition<storm::RationalNumber>;
+        template StronglyConnectedComponentDecomposition<storm::RationalNumber>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<storm::RationalNumber> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
+        template StronglyConnectedComponentDecomposition<storm::RationalNumber>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<storm::RationalNumber> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs);
+        template StronglyConnectedComponentDecomposition<storm::RationalNumber>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<storm::RationalNumber> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
+        
         template class StronglyConnectedComponentDecomposition<storm::RationalFunction>;
         template StronglyConnectedComponentDecomposition<storm::RationalFunction>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<storm::RationalFunction> const& model, bool dropNaiveSccs, bool onlyBottomSccs);
         template StronglyConnectedComponentDecomposition<storm::RationalFunction>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<storm::RationalFunction> const& model, StateBlock const& block, bool dropNaiveSccs, bool onlyBottomSccs);
         template StronglyConnectedComponentDecomposition<storm::RationalFunction>::StronglyConnectedComponentDecomposition(storm::models::sparse::Model<storm::RationalFunction> const& model, storm::storage::BitVector const& subsystem, bool dropNaiveSccs, bool onlyBottomSccs);
-#endif
     } // namespace storage
 } // namespace storm

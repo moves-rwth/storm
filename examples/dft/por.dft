@@ -1,0 +1,5 @@
+toplevel "A";
+"A" por "B" "C" "D";
+"B" lambda=0.4 dorm=0.0;
+"C" lambda=0.2 dorm=0.0;
+"D" lambda=0.2 dorm=0.0;

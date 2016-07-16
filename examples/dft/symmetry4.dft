@@ -1,0 +1,12 @@
+toplevel "A";
+"A" and "B" "B'" "C" "C'";
+"B" and "D" "E";
+"B'" and "D'" "E'";
+"C" or "F";
+"C'" or "F'";
+"D" lambda=0.5 dorm=0;
+"E" lambda=0.5 dorm=0;
+"D'" lambda=0.5 dorm=0;
+"E'" lambda=0.5 dorm=0;
+"F" lambda=0.5 dorm=0;
+"F'" lambda=0.5 dorm=0;

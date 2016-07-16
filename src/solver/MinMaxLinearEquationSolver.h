@@ -4,10 +4,14 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
-#include "SolverSelectionOptions.h"
+
+#include <boost/optional.hpp>
+
+#include "src/solver/AbstractEquationSolver.h"
+#include "src/solver/SolverSelectionOptions.h"
 #include "src/storage/sparse/StateType.h"
-#include "AllowEarlyTerminationCondition.h"
-#include "OptimizationDirection.h"
+#include "src/storage/TotalScheduler.h"
+#include "src/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace storage {
@@ -15,73 +19,22 @@ namespace storm {
     }
     
     namespace solver {
-                
         
-        /**
-         * Abstract base class which provides value-type independent helpers.
-         */
-        class AbstractMinMaxLinearEquationSolver {
-        
-        public:
-            void setPolicyTracking(bool setToTrue=true);
-            
-            std::vector<storm::storage::sparse::state_type> getPolicy() const;
-            
-            void setOptimizationDirection(OptimizationDirection d) {
-                direction = convert(d);
-            }
-            
-            void resetOptimizationDirection() {
-                direction = OptimizationDirectionSetting::Unset;
-            }
-            
-            
-        protected:
-            AbstractMinMaxLinearEquationSolver(double precision, bool relativeError, uint_fast64_t maximalIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech);
-            
-            /// The direction in which to optimize, can be unset.
-            OptimizationDirectionSetting direction;
-
-            
-            /// The required precision for the iterative methods.
-            double precision;
-            
-            /// Sets whether the relative or absolute error is to be considered for convergence detection.
-            bool relative;
-            
-            /// The maximal number of iterations to do before iteration is aborted.
-            uint_fast64_t maximalNumberOfIterations;
-
-            /// Whether value iteration or policy iteration is to be used.
-            bool useValueIteration;
-            
-            /// Whether we track the policy we generate.
-            bool trackPolicy;
-            
-            /// 
-            mutable std::vector<storm::storage::sparse::state_type> policy;
+        enum class MinMaxLinearEquationSolverOperation {
+            SolveEquations, MultiplyRepeatedly
         };
         
         /*!
-         * A interface that represents an abstract nondeterministic linear equation solver. In addition to solving
-         * linear equation systems involving min/max operators, repeated matrix-vector multiplication functionality is
-         * provided.
+         * A class representing the interface that all min-max linear equation solvers shall implement.
          */
         template<class ValueType>
-        class MinMaxLinearEquationSolver : public AbstractMinMaxLinearEquationSolver {
+        class MinMaxLinearEquationSolver : public AbstractEquationSolver<ValueType> {
         protected:
-            MinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& matrix, double precision, bool relativeError, uint_fast64_t maxNrIterations, bool trackPolicy, MinMaxTechniqueSelection prefTech) :
-                AbstractMinMaxLinearEquationSolver(precision, relativeError, maxNrIterations, trackPolicy, prefTech),
-                A(matrix), earlyTermination(new NoEarlyTerminationCondition<ValueType>()) {
-                // Intentionally left empty.
-            }
+            MinMaxLinearEquationSolver(OptimizationDirectionSetting direction = OptimizationDirectionSetting::Unset);
         
         public:
-            
-            virtual ~MinMaxLinearEquationSolver() {
-                // Intentionally left empty.
-            }
-            
+            virtual ~MinMaxLinearEquationSolver();
+
             /*!
              * Solves the equation system x = min/max(A*x + b) given by the parameters. Note that the matrix A has
              * to be given upon construction time of the solver object.
@@ -91,22 +44,16 @@ namespace storm {
              * @param x The solution vector x. The initial values of x represent a guess of the real values to the
              * solver, but may be ignored.
              * @param b The vector to add after matrix-vector multiplication.
-             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the number of rows of A.
-             * @param newX If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the length of the vector x (and thus to the number of columns of A).
-             * @return The solution vector x of the system of linear equations as the content of the parameter x.
              */
-            virtual void solveEquationSystem(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const = 0;
+            virtual void solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
             
             /*!
-             * As solveEquationSystem with an optimization-direction, but this uses the internally set direction.
-             * Can only be called after the direction has been set.
+             * Behaves the same as the other variant of <code>solveEquations</code>, with the distinction that
+             * instead of providing the optimization direction as an argument, the internally set optimization direction
+             * is used. Note: this method can only be called after setting the optimization direction.
              */
-            virtual void solveEquationSystem(std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<ValueType>* multiplyResult = nullptr, std::vector<ValueType>* newX = nullptr) const {
-                assert(isSet(this->direction));
-                solveEquationSystem(convert(this->direction), x, b, multiplyResult, newX);
-            }
+            void solveEquations(std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
+            
             /*!
              * Performs (repeated) matrix-vector multiplication with the given parameters, i.e. computes
              * x[i+1] = min/max(A*x[i] + b) until x[n], where x[0] = x. After each multiplication and addition, the
@@ -120,29 +67,118 @@ namespace storm {
              * i.e. after the method returns, this vector will contain the computed values.
              * @param b If not null, this vector is added after each multiplication.
              * @param n Specifies the number of iterations the matrix-vector multiplication is performed.
-             * @param multiplyResult If non-null, this memory is used as a scratch memory. If given, the length of this
-             * vector must be equal to the number of rows of A.
              * @return The result of the repeated matrix-vector multiplication as the content of the vector x.
              */
-            virtual void performMatrixVectorMultiplication(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const = 0;
+            virtual void repeatedMultiply(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType>* b, uint_fast64_t n = 1) const = 0;
             
             /*!
-             * As performMatrixVectorMultiplication with an optimization-direction, but this uses the internally set direction.
-             * Can only be called if the internal direction has been set.
+             * Behaves the same as the other variant of <code>multiply</code>, with the
+             * distinction that instead of providing the optimization direction as an argument, the internally set
+             * optimization direction is used. Note: this method can only be called after setting the optimization direction.
              */
-            virtual void performMatrixVectorMultiplication( std::vector<ValueType>& x, std::vector<ValueType>* b = nullptr, uint_fast64_t n = 1, std::vector<ValueType>* multiplyResult = nullptr) const {
-                return performMatrixVectorMultiplication(convert(this->direction), x, b, n, multiplyResult);
-            }
+            virtual void repeatedMultiply(std::vector<ValueType>& x, std::vector<ValueType>* b , uint_fast64_t n) const;
             
-            void setEarlyTerminationCriterion(std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> v) {
-                earlyTermination = std::move(v);
-            }
+            /*!
+             * Sets an optimization direction to use for calls to methods that do not explicitly provide one.
+             */
+            void setOptimizationDirection(OptimizationDirection direction);
             
+            /*!
+             * Unsets the optimization direction to use for calls to methods that do not explicitly provide one.
+             */
+            void unsetOptimizationDirection();
+            
+            /*!
+             * Sets whether schedulers are generated when solving equation systems. If the argument is false, the currently
+             * stored scheduler (if any) is deleted.
+             */
+            void setTrackScheduler(bool trackScheduler);
+            
+            /*!
+             * Retrieves whether this solver is set to generate schedulers.
+             */
+            bool isTrackSchedulerSet() const;
+            
+            /*!
+             * Retrieves whether the solver generated a scheduler.
+             */
+            bool hasScheduler() const;
+            
+            /*!
+             * Retrieves the generated scheduler. Note: it is only legal to call this function if a scheduler was generated.
+             */
+            storm::storage::TotalScheduler const& getScheduler() const;
+            
+            /*!
+             * Retrieves the generated scheduler and takes ownership of it. Note: it is only legal to call this function
+             * if a scheduler was generated and after a call to this method, the solver will not contain the scheduler
+             * any more (i.e. it is illegal to call this method again until a new scheduler has been generated).
+             */
+            std::unique_ptr<storm::storage::TotalScheduler> getScheduler();
+            
+            // Methods related to allocating/freeing auxiliary storage.
+            
+            /*!
+             * Allocates auxiliary storage that can be used to perform the provided operation. Repeated calls to the
+             * corresponding function can then be run without allocating/deallocating this storage repeatedly.
+             * Note: Since the allocated storage is fit to the currently selected options of the solver, they must not
+             * be changed any more after allocating the auxiliary storage until the storage is deallocated again.
+             *
+             * @return True iff auxiliary storage was allocated.
+             */
+            virtual bool allocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
+            
+            /*!
+             * Destroys previously allocated auxiliary storage for the provided operation.
+             *
+             * @return True iff auxiliary storage was deallocated.
+             */
+            virtual bool deallocateAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
+                        
+            /*!
+             * Checks whether the solver has allocated auxiliary storage for the provided operation.
+             *
+             * @return True iff auxiliary storage was previously allocated (and not yet deallocated).
+             */
+            virtual bool hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
             
         protected:
-            storm::storage::SparseMatrix<ValueType> const& A;
-            std::unique_ptr<AllowEarlyTerminationCondition<ValueType>> earlyTermination;
+            /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
+            OptimizationDirectionSetting direction;
             
+            /// Whether we generate a scheduler during solving.
+            bool trackScheduler;
+            
+            /// The scheduler (if it could be successfully generated).
+            mutable boost::optional<std::unique_ptr<storm::storage::TotalScheduler>> scheduler;
+        };
+        
+        template<typename ValueType>
+        class MinMaxLinearEquationSolverFactory {
+        public:
+            MinMaxLinearEquationSolverFactory(bool trackScheduler = false);
+            
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const = 0;
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const;
+            
+            void setTrackScheduler(bool value);
+            bool isTrackSchedulerSet() const;
+            
+        private:
+            bool trackScheduler;
+        };
+        
+        template<typename ValueType>
+        class GeneralMinMaxLinearEquationSolverFactory : public MinMaxLinearEquationSolverFactory<ValueType> {
+        public:
+            GeneralMinMaxLinearEquationSolverFactory(bool trackScheduler = false);
+            
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
+            virtual std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType>&& matrix) const override;
+            
+        private:
+            template<typename MatrixType>
+            std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> selectSolver(MatrixType&& matrix) const;
         };
         
     } // namespace solver

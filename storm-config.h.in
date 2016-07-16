@@ -33,10 +33,13 @@
 #cmakedefine STORM_HAVE_MSAT
 
 // Whether Intel Threading Building Blocks are available and to be used (define/undef)
-#@STORM_CPP_INTELTBB_DEF@ STORM_HAVE_INTELTBB
+#cmakedefine STORM_HAVE_INTELTBB
 
 // Whether support for parametric systems should be enabled
 #cmakedefine PARAMETRIC_SYSTEMS
+
+// Whether CLN is available and to be used (define/undef)
+#cmakedefine STORM_HAVE_CLN
 
 // Whether carl is available and to be used.
 #cmakedefine STORM_HAVE_CARL
@@ -44,5 +47,8 @@
 // Whether smtrat is available and to be used. 
 #cmakedefine STORM_HAVE_SMTRAT
 
+#cmakedefine STORM_LOGGING_FRAMEWORK
+
+#cmakedefine STORM_LOG_DISABLE_DEBUG
 
 #endif // STORM_GENERATED_STORMCONFIG_H_

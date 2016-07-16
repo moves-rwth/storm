@@ -5,8 +5,6 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
-#ifdef STORM_HAVE_CARL
-
 namespace storm {
     namespace expressions {
         template<typename RationalFunctionType>
@@ -65,7 +63,7 @@ namespace storm {
             if (variablePair != variableToVariableMap.end()) {
                 return convertVariableToPolynomial(variablePair->second);
             } else {
-                carl::Variable carlVariable = carl::VariablePool::getInstance().getFreshVariable(expression.getVariableName());
+                carl::Variable carlVariable = carl::freshRealVariable(expression.getVariableName());
                 variableToVariableMap.emplace(expression.getVariable(), carlVariable);
                 return convertVariableToPolynomial(carlVariable);
             }
@@ -100,5 +98,3 @@ namespace storm {
         
     }
 }
-
-#endif

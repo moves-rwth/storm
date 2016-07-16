@@ -11,17 +11,17 @@ namespace storm {
             /*!
              * Base class for all nondeterministic symbolic models.
              */
-            template<storm::dd::DdType Type>
-            class NondeterministicModel : public Model<Type> {
+            template<storm::dd::DdType Type, typename ValueType = double>
+            class NondeterministicModel : public Model<Type, ValueType> {
             public:
-                typedef typename Model<Type>::RewardModelType RewardModelType;
+                typedef typename Model<Type, ValueType>::RewardModelType RewardModelType;
 
-                NondeterministicModel(NondeterministicModel<Type> const& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel<Type> const& other) = default;
+                NondeterministicModel(NondeterministicModel<Type, ValueType> const& other) = default;
+                NondeterministicModel& operator=(NondeterministicModel<Type, ValueType> const& other) = default;
                 
 #ifndef WINDOWS
-                NondeterministicModel(NondeterministicModel<Type>&& other) = default;
-                NondeterministicModel& operator=(NondeterministicModel<Type>&& other) = default;
+                NondeterministicModel(NondeterministicModel<Type, ValueType>&& other) = default;
+                NondeterministicModel& operator=(NondeterministicModel<Type, ValueType>&& other) = default;
 #endif
                 
                 /*!
@@ -31,6 +31,7 @@ namespace storm {
                  * @param manager The manager responsible for the decision diagrams.
                  * @param reachableStates A DD representing the reachable states.
                  * @param initialStates A DD representing the initial states of the model.
+                 * @param deadlockStates A DD representing the deadlock states of the model.
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param rowVariables The set of row meta variables used in the DDs.
                  * @param rowExpressionAdapter An object that can be used to translate expressions in terms of the row
@@ -47,11 +48,12 @@ namespace storm {
                                       std::shared_ptr<storm::dd::DdManager<Type>> manager,
                                       storm::dd::Bdd<Type> reachableStates,
                                       storm::dd::Bdd<Type> initialStates,
-                                      storm::dd::Add<Type> transitionMatrix,
+                                      storm::dd::Bdd<Type> deadlockStates,
+                                      storm::dd::Add<Type, ValueType> transitionMatrix,
                                       std::set<storm::expressions::Variable> const& rowVariables,
-                                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter,
+                                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
                                       std::set<storm::expressions::Variable> const& columnVariables,
-                                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
+                                      std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter,
                                       std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                       std::set<storm::expressions::Variable> const& nondeterminismVariables,
                                       std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),

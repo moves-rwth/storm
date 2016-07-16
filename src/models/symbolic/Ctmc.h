@@ -11,17 +11,17 @@ namespace storm {
             /*!
              * This class represents a continuous-time Markov chain.
              */
-            template<storm::dd::DdType Type>
-            class Ctmc : public DeterministicModel<Type> {
+            template<storm::dd::DdType Type, typename ValueType = double>
+            class Ctmc : public DeterministicModel<Type, ValueType> {
             public:
-                typedef typename DeterministicModel<Type>::RewardModelType RewardModelType;
+                typedef typename DeterministicModel<Type, ValueType>::RewardModelType RewardModelType;
                 
-                Ctmc(Ctmc<Type> const& other) = default;
-                Ctmc& operator=(Ctmc<Type> const& other) = default;
+                Ctmc(Ctmc<Type, ValueType> const& other) = default;
+                Ctmc& operator=(Ctmc<Type, ValueType> const& other) = default;
                 
 #ifndef WINDOWS
-                Ctmc(Ctmc<Type>&& other) = default;
-                Ctmc& operator=(Ctmc<Type>&& other) = default;
+                Ctmc(Ctmc<Type, ValueType>&& other) = default;
+                Ctmc& operator=(Ctmc<Type, ValueType>&& other) = default;
 #endif
                 
                 /*!
@@ -30,6 +30,7 @@ namespace storm {
                  * @param manager The manager responsible for the decision diagrams.
                  * @param reachableStates A DD representing the reachable states.
                  * @param initialStates A DD representing the initial states of the model.
+                 * @param deadlockStates A DD representing the deadlock states of the model. 
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param rowVariables The set of row meta variables used in the DDs.
                  * @param rowExpressionAdapter An object that can be used to translate expressions in terms of the row
@@ -44,11 +45,12 @@ namespace storm {
                 Ctmc(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                      storm::dd::Bdd<Type> reachableStates,
                      storm::dd::Bdd<Type> initialStates,
-                     storm::dd::Add<Type> transitionMatrix,
+                     storm::dd::Bdd<Type> deadlockStates,
+                     storm::dd::Add<Type, ValueType> transitionMatrix,
                      std::set<storm::expressions::Variable> const& rowVariables,
-                     std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> rowExpressionAdapter,
+                     std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> rowExpressionAdapter,
                      std::set<storm::expressions::Variable> const& columnVariables,
-                     std::shared_ptr<storm::adapters::AddExpressionAdapter<Type>> columnExpressionAdapter,
+                     std::shared_ptr<storm::adapters::AddExpressionAdapter<Type, ValueType>> columnExpressionAdapter,
                      std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                      std::map<std::string, storm::expressions::Expression> labelToExpressionMap = std::map<std::string, storm::expressions::Expression>(),
                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
@@ -58,10 +60,10 @@ namespace storm {
                  *
                  * @return The exit rate vector.
                  */
-                storm::dd::Add<Type> const& getExitRateVector() const;
+                storm::dd::Add<Type, ValueType> const& getExitRateVector() const;
                 
             private:
-                storm::dd::Add<Type> exitRates;
+                storm::dd::Add<Type, ValueType> exitRates;
             };
             
         } // namespace symbolic

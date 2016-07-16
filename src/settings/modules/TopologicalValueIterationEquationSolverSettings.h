@@ -17,11 +17,9 @@ namespace storm {
 				enum class ConvergenceCriterion { Absolute, Relative };
 
                 /*!
-                 * Creates a new set of topological value iteration settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of topological value iteration settings.
                  */
-				TopologicalValueIterationEquationSolverSettings(storm::settings::SettingsManager& settingsManager);
+				TopologicalValueIterationEquationSolverSettings();
 
                 
                 /*!

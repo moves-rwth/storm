@@ -16,7 +16,7 @@ namespace storm {
             const std::string ParametricSettings::exportResultDestinationPathOptionName = "resultfile";
             const std::string ParametricSettings::derivativesOptionName = "derivatives";
             
-            ParametricSettings::ParametricSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
+            ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, encodeSmt2StrategyOptionName, true, "Set the smt2 encoding strategy.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("strategy", "the used strategy").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSmt2DestinationPathOptionName, true, "A path to a file where the result should be saved.")

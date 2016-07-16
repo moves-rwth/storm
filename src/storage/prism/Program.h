@@ -1,21 +1,29 @@
 #ifndef STORM_STORAGE_PRISM_PROGRAM_H_
 #define STORM_STORAGE_PRISM_PROGRAM_H_
 
+#include <memory>
 #include <map>
 #include <vector>
 #include <set>
 #include <boost/container/flat_set.hpp>
+#include <boost/optional.hpp>
 
 #include "src/storage/prism/Constant.h"
 #include "src/storage/prism/Formula.h"
 #include "src/storage/prism/Label.h"
 #include "src/storage/prism/Module.h"
 #include "src/storage/prism/RewardModel.h"
+#include "src/storage/prism/SystemCompositionConstruct.h"
 #include "src/storage/prism/InitialConstruct.h"
+#include "src/storage/prism/Composition.h"
 #include "src/utility/solver.h"
 #include "src/utility/OsDetection.h"
 
 namespace storm {
+    namespace jani {
+        class Model;
+    }
+    
     namespace prism {
         class Program : public LocatedInformation {
         public:
@@ -38,18 +46,17 @@ namespace storm {
              * @param formulas The formulas defined in the program.
              * @param modules The modules of the program.
              * @param actionToIndexMap A mapping of action names to their indices.
-             * @param fixInitialConstruct A flag that indicates whether the given initial construct is to be ignored and
-             * replaced by a new one created from the initial values of the variables.
-             * @param initialConstruct The initial construct of the program. If the initial construct specifies "false"
-             * as the initial condition, the default values of the variables are used to construct a legal initial
-             * condition.
              * @param rewardModels The reward models of the program.
              * @param labels The labels defined for this program.
+             * @param initialConstruct The initial construct of the program. If none, then an initial construct is built
+             * using the initial values of the variables.
+             * @param compositionConstruct If not none, specifies how the modules are composed for the full system.
+             * If none, the regular parallel composition is assumed.
              * @param filename The filename in which the program is defined.
              * @param lineNumber The line number in which the program is defined.
              * @param finalModel If set to true, the program is checked for input-validity, as well as some post-processing.
              */
-            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, bool fixInitialConstruct, storm::prism::InitialConstruct const& initialConstruct, std::vector<Label> const& labels, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -66,6 +73,18 @@ namespace storm {
              * @return The type of the model.
              */
             ModelType getModelType() const;
+            
+            /*!
+             * Retrieves whether the model is a discrete-time model, i.e. a DTMC or an MDP.
+             *
+             * @return True iff the model is a discrete-time model.
+             */
+            bool isDiscreteTimeModel() const;
+            
+            /*!
+             * Retrieves whether the model is one without nondeterministic choices, i.e. a DTMC or a CTMC.
+             */
+            bool isDeterministicModel() const;
 
             /*!
              * Retrieves whether there are undefined constants of any type in the program.
@@ -88,8 +107,15 @@ namespace storm {
              *
              * @return The undefined constants in the program.
              */
-            std::vector<std::reference_wrapper<storm::prism::Constant const>> getUndefinedConstants() const;
-            
+            std::vector<std::reference_wrapper<Constant const>> getUndefinedConstants() const;
+
+            /*!
+             * Retrieves the undefined constants in the program as a comma-separated string.
+             *
+             * @return A string with the undefined constants in the program, separated by a comma
+             */
+            std::string getUndefinedConstantsAsString() const;
+
             /*!
              * Retrieves whether the given constant exists in the program.
              *
@@ -105,6 +131,13 @@ namespace storm {
              * @return The constant with the given name if it exists.
              */
             Constant const& getConstant(std::string const& constantName) const;
+            
+            /*!
+             * Retrieves a mapping of all defined constants to their defining expressions.
+             *
+             * @return A mapping from constants to their 'values'.
+             */
+            std::map<storm::expressions::Variable, storm::expressions::Expression> getConstantsSubstitution() const;
             
             /*!
              * Retrieves all constants defined in the program.
@@ -167,6 +200,20 @@ namespace storm {
             IntegerVariable const& getGlobalIntegerVariable(std::string const& variableName) const;
 
             /*!
+             * Retrieves all expression variables used by this program.
+             *
+             * @return The set of expression variables used by this program.
+             */
+            std::set<storm::expressions::Variable> getAllExpressionVariables() const;
+            
+            /*!
+             * Retrieves a list of expressions that characterize the legal ranges of all variables.
+             *
+             * @return A list of expressions that characterize the legal ranges of all variables.
+             */
+            std::vector<storm::expressions::Expression> getAllRangeExpressions() const;
+            
+            /*!
              * Retrieves the number of global boolean variables of the program.
              *
              * @return The number of global boolean variables of the program.
@@ -210,6 +257,13 @@ namespace storm {
             Module const& getModule(uint_fast64_t index) const;
 
             /*!
+             * Retrieves whether the program has a module with the given name.
+             *
+             * @return True iff a module with the given name exists.
+             */
+            bool hasModule(std::string const& moduleName) const;
+            
+            /*!
              * Retrieves the module with the given name.
              *
              * @param moduleName The name of the module to retrieve.
@@ -236,7 +290,36 @@ namespace storm {
              *
              * @return The initial construct of the program.
              */
-            storm::prism::InitialConstruct const& getInitialConstruct() const;
+            InitialConstruct const& getInitialConstruct() const;
+            
+            /*!
+             * Retrieves whether the program specifies a system composition in terms of process algebra operations over
+             * the modules.
+             *
+             * @return True iff the program specifies a system composition.
+             */
+            bool specifiesSystemComposition() const;
+            
+            /*!
+             * If the program specifies a system composition construct, this method retrieves it.
+             *
+             * @return The system composition construct as specified by the program.
+             */
+            SystemCompositionConstruct const& getSystemCompositionConstruct() const;
+            
+            /*!
+             * Retrieves the system composition construct (if any) and none otherwise.
+             *
+             * @return The system composition construct specified by the program or none.
+             */
+            boost::optional<SystemCompositionConstruct> getOptionalSystemCompositionConstruct() const;
+            
+            /*!
+             * Retrieves the default system composition for this program.
+             *
+             * @return The default system composition.
+             */
+            std::shared_ptr<Composition> getDefaultSystemComposition() const;
             
             /*!
              * Retrieves the set of actions present in the program.
@@ -259,6 +342,28 @@ namespace storm {
              * @return The name of the action.
              */
             std::string const& getActionName(uint_fast64_t actionIndex) const;
+            
+            /*!
+             * Retrieves the index of the action with the given name.
+             *
+             * @param actionName The name of the action.
+             * @return The index of the action.
+             */
+            uint_fast64_t getActionIndex(std::string const& actionName) const;
+            
+            /*!
+             * Retrieves whether the program has an action with the given name.
+             *
+             * @return True iff the program has an action with the given name.
+             */
+            bool hasAction(std::string const& actionName) const;
+
+            /*!
+             * Retrieves whether the program has an action with the given index.
+             *
+             * @return True iff the program has an action with the given index.
+             */
+            bool hasAction(uint_fast64_t const& actionIndex) const;
             
             /*!
              * Retrieves the indices of all modules within this program that contain commands that are labelled with the
@@ -352,6 +457,13 @@ namespace storm {
              * @param labelName The name of the label to retrieve.
              */
             storm::expressions::Expression const& getLabelExpression(std::string const& label) const;
+            
+            /*!
+             * Retrieves a mapping from all labels in the program to their defining expressions.
+             *
+             * @return A mapping from label names to their expressions.
+             */
+            std::map<std::string, storm::expressions::Expression> getLabelToExpressionMapping() const;
             
             /*!
              * Retrieves the number of labels in the program.
@@ -448,6 +560,19 @@ namespace storm {
              *
              */
             std::unordered_map<uint_fast64_t, std::string> buildCommandIndexToActionNameMap() const;
+
+            std::unordered_map<uint_fast64_t, uint_fast64_t> buildCommandIndexToActionIndex() const;
+
+            std::unordered_map<uint_fast64_t, std::string> buildActionIndexToActionNameMap() const;
+
+            uint_fast64_t numberOfActions() const;
+
+            uint_fast64_t largestActionIndex() const;
+            
+            /*!
+             * Converts the PRISM model into an equivalent JANI model.
+             */
+            storm::jani::Model toJani(bool allVariablesGlobal = false) const;
             
         private:
             /*!
@@ -508,7 +633,10 @@ namespace storm {
             std::map<std::string, uint_fast64_t> rewardModelToIndexMap;
             
             // The initial construct of the program.
-            storm::prism::InitialConstruct initialConstruct;
+            InitialConstruct initialConstruct;
+            
+            // If set, this specifies the way the modules are composed to obtain the full system.
+            boost::optional<SystemCompositionConstruct> systemCompositionConstruct;
             
             // The labels that are defined for this model.
             std::vector<Label> labels;

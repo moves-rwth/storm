@@ -2,14 +2,16 @@
 
 namespace storm {
     namespace solver {
-        std::string toString(MinMaxTechnique m) {
+        std::string toString(MinMaxMethod m) {
             switch(m) {
-                case MinMaxTechnique::PolicyIteration:
+                case MinMaxMethod::PolicyIteration:
                     return "policy";
-                case MinMaxTechnique::ValueIteration:
+                case MinMaxMethod::ValueIteration:
                     return "value";
+                case MinMaxMethod::Topological:
+                    return "topological";
+
             }
-            
         }
         
         std::string toString(LpSolverType t) {
@@ -27,8 +29,10 @@ namespace storm {
                     return "Native";
                 case EquationSolverType::Gmmxx:
                     return "Gmmxx";
-                case EquationSolverType::Topological:
-                    return "Topological";
+                case EquationSolverType::Eigen:
+                    return "Eigen";
+                case EquationSolverType::Elimination:
+                    return "Elimination";
             }
         }
         

@@ -64,6 +64,13 @@ namespace storm {
             std::size_t size() const;
             
             /*!
+             * Checks if the decomposition is empty.
+             *
+             * @return True, if the decomposition is empty.
+             */
+            bool empty() const;
+            
+            /*!
              * Retrieves an iterator that points to the first block of this decomposition.
              *
              * @return An iterator that points to the first block of this decomposition.

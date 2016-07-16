@@ -14,9 +14,10 @@ namespace storm {
             }
             
             virtual bool isNextFormula() const override;
-            
-            virtual bool containsNextFormula() const override;
-            
+            virtual bool isProbabilityPathFormula() const override;
+
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
+                        
             virtual std::ostream& writeToStream(std::ostream& out) const override;
         };
     }

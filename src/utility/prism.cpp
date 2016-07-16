@@ -1,13 +1,28 @@
 #include "src/utility/prism.h"
+
+#include "src/adapters/CarlAdapter.h"
+
 #include "src/storage/expressions/ExpressionManager.h"
 #include "src/storage/prism/Program.h"
 
+#include "src/utility/macros.h"
+
 #include "src/exceptions/InvalidArgumentException.h"
-#include "macros.h"
 
 namespace storm {
     namespace utility {
         namespace prism {
+            
+            storm::prism::Program preprocess(storm::prism::Program const& program, std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) {
+                storm::prism::Program result = program.defineUndefinedConstants(constantDefinitions);
+                result = result.substituteConstants();
+                return result;
+            }
+            
+            storm::prism::Program preprocess(storm::prism::Program const& program, std::string const& constantDefinitionString) {
+                return preprocess(program, parseConstantDefinitionString(program, constantDefinitionString));
+            }
+            
             std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitionString(storm::prism::Program const& program, std::string const& constantDefinitionString) {
                 std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;
                 std::set<storm::expressions::Variable> definedConstants;
@@ -64,6 +79,7 @@ namespace storm {
                 
                 return constantDefinitions;
             }
+            
         }
     }
 }

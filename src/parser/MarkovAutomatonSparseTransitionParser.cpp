@@ -1,11 +1,12 @@
 #include "MarkovAutomatonSparseTransitionParser.h"
 
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/exceptions/WrongFormatException.h"
 #include "src/exceptions/FileIoException.h"
 #include "src/parser/MappedFile.h"
 #include "src/utility/cstring.h"
+#include "src/utility/constants.h"
 #include "src/utility/macros.h"
 
 namespace storm {
@@ -17,7 +18,7 @@ namespace storm {
         typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult MarkovAutomatonSparseTransitionParser<ValueType>::firstPass(char const* buf) {
             MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
-            bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
 
             // Skip the format hint if it is there.
             buf = trimWhitespaces(buf);
@@ -48,11 +49,11 @@ namespace storm {
                         result.numberOfNonzeroEntries += source - lastsource - 1;
                         result.numberOfChoices += source - lastsource - 1;
                     } else {
-                        LOG4CPLUS_ERROR(logger, "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
+                        STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
                         throw storm::exceptions::WrongFormatException() << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
                     }
                 } else if (source < lastsource) {
-                    LOG4CPLUS_ERROR(logger, "Illegal state choice order. A choice of state " << source << " appears at an illegal position.");
+                    STORM_LOG_ERROR("Illegal state choice order. A choice of state " << source << " appears at an illegal position.");
                     throw storm::exceptions::WrongFormatException() << "Illegal state choice order. A choice of state " << source << " appears at an illegal position.";
                 }
 
@@ -80,11 +81,11 @@ namespace storm {
 
                 if (isMarkovianChoice) {
                     if (stateHasMarkovianChoice) {
-                        LOG4CPLUS_ERROR(logger, "The state " << source << " has multiple Markovian choices.");
+                        STORM_LOG_ERROR("The state " << source << " has multiple Markovian choices.");
                         throw storm::exceptions::WrongFormatException() << "The state " << source << " has multiple Markovian choices.";
                     }
                     if (stateHasProbabilisticChoice) {
-                        LOG4CPLUS_ERROR(logger, "The state " << source << " has a probabilistic choice preceding a Markovian choice. The Markovian choice must be the first choice listed.");
+                        STORM_LOG_ERROR("The state " << source << " has a probabilistic choice preceding a Markovian choice. The Markovian choice must be the first choice listed.");
                         throw storm::exceptions::WrongFormatException() << "The state " << source << " has a probabilistic choice preceding a Markovian choice. The Markovian choice must be the first choice listed.";
                     }
                     stateHasMarkovianChoice = true;
@@ -106,7 +107,7 @@ namespace storm {
                     // If the end of the file was reached, we need to abort and check whether we are in a legal state.
                     if (buf[0] == '\0') {
                         if (!hasSuccessorState) {
-                            LOG4CPLUS_ERROR(logger, "Premature end-of-file. Expected at least one successor state for state " << source << ".");
+                            STORM_LOG_ERROR("Premature end-of-file. Expected at least one successor state for state " << source << ".");
                             throw storm::exceptions::WrongFormatException() << "Premature end-of-file. Expected at least one successor state for state " << source << ".";
                         } else {
                             // If there was at least one successor for the current choice, this is legal and we need to move on.
@@ -122,18 +123,18 @@ namespace storm {
                             result.highestStateIndex = target;
                         }
                         if (hasSuccessorState && target <= lastSuccessorState) {
-                            LOG4CPLUS_ERROR(logger, "Illegal transition order for source state " << source << ".");
+                            STORM_LOG_ERROR("Illegal transition order for source state " << source << ".");
                             throw storm::exceptions::WrongFormatException() << "Illegal transition order for source state " << source << ".";
                         }
 
                         // And the corresponding probability/rate.
                         double val = checked_strtod(buf, &buf);
                         if (val < 0.0) {
-                            LOG4CPLUS_ERROR(logger, "Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".");
+                            STORM_LOG_ERROR("Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".");
                             throw storm::exceptions::WrongFormatException() << "Illegal negative probability/rate value for transition from " << source << " to " << target << ": " << val << ".";
                         }
                         if (!isMarkovianChoice && val > 1.0) {
-                            LOG4CPLUS_ERROR(logger, "Illegal probability value for transition from " << source << " to " << target << ": " << val << ".");
+                            STORM_LOG_ERROR("Illegal probability value for transition from " << source << " to " << target << ": " << val << ".");
                             throw storm::exceptions::WrongFormatException() << "Illegal probability value for transition from " << source << " to " << target << ": " << val << ".";
                         }
 
@@ -152,6 +153,16 @@ namespace storm {
                     }
                 } while (!encounteredEOF && !encounteredNewDistribution);
             }
+            
+            // If there are some states with indices that are behind the last source for which no transition was specified,
+            // we need to reserve some space for introducing self-loops later.
+            if (!dontFixDeadlocks) {
+                result.numberOfNonzeroEntries += result.highestStateIndex - lastsource;
+                result.numberOfChoices += result.highestStateIndex - lastsource;
+            } else {
+                STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
+                throw storm::exceptions::WrongFormatException() << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
+            }
 
             return result;
         }
@@ -160,7 +171,7 @@ namespace storm {
         typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomatonSparseTransitionParser<ValueType>::secondPass(char const* buf, FirstPassResult const& firstPassResult) {
             Result result(firstPassResult);
 
-            bool dontFixDeadlocks = storm::settings::generalSettings().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
 
             // Skip the format hint if it is there.
             buf = trimWhitespaces(buf);
@@ -191,7 +202,7 @@ namespace storm {
                             ++currentChoice;
                         }
                     } else {
-                        LOG4CPLUS_ERROR(logger, "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
+                        STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
                         throw storm::exceptions::WrongFormatException() << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
                     }
                 }
@@ -259,6 +270,21 @@ namespace storm {
 
                 ++currentChoice;
             }
+            
+            // If there are some states with indices that are behind the last source for which no transition was specified,
+            // we need to insert the self-loops now. Note that we assume all these states to be Markovian.
+            if (!dontFixDeadlocks) {
+                for (uint_fast64_t index = lastsource + 1; index <= firstPassResult.highestStateIndex; ++index) {
+                    result.markovianStates.set(index, true);
+                    result.exitRates[index] = storm::utility::one<ValueType>();
+                    result.transitionMatrixBuilder.newRowGroup(currentChoice);
+                    result.transitionMatrixBuilder.addNextValue(currentChoice, index, storm::utility::one<ValueType>());
+                    ++currentChoice;
+                }
+            } else {
+                STORM_LOG_ERROR("Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.");
+                throw storm::exceptions::WrongFormatException() << "Found deadlock states (e.g. " << lastsource + 1 << ") during parsing. Please fix them or set the appropriate flag.";
+            }
 
             return result;
         }
@@ -269,7 +295,7 @@ namespace storm {
             setlocale(LC_NUMERIC, "C");
 
             if (!MappedFile::fileExistsAndIsReadable(filename.c_str())) {
-                LOG4CPLUS_ERROR(logger, "Error while parsing " << filename << ": File does not exist or is not readable.");
+                STORM_LOG_ERROR("Error while parsing " << filename << ": File does not exist or is not readable.");
                 throw storm::exceptions::FileIoException() << "Error while parsing " << filename << ": File does not exist or is not readable.";
             }
 

@@ -1,5 +1,8 @@
 #include "src/logic/AtomicLabelFormula.h"
 
+#include "src/logic/AtomicExpressionFormula.h"
+#include "src/logic/FormulaVisitor.h"
+
 namespace storm {
     namespace logic {
         AtomicLabelFormula::AtomicLabelFormula(std::string const& label) : label(label) {
@@ -10,16 +13,8 @@ namespace storm {
             return true;
         }
         
-        bool AtomicLabelFormula::isPctlStateFormula() const {
-            return true;
-        }
-    
-        bool AtomicLabelFormula::isLtlFormula() const {
-            return true;
-        }
-        
-        bool AtomicLabelFormula::isPropositionalFormula() const {
-            return true;
+        boost::any AtomicLabelFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
+            return visitor.visit(*this, data);
         }
         
         std::string const& AtomicLabelFormula::getLabel() const {

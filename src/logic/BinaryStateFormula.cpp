@@ -10,42 +10,6 @@ namespace storm {
             return true;
         }
         
-        bool BinaryStateFormula::isPctlStateFormula() const {
-            return this->getLeftSubformula().isPctlStateFormula() && this->getRightSubformula().isPctlStateFormula();
-        }
-
-        bool BinaryStateFormula::isCslStateFormula() const {
-            return this->getLeftSubformula().isCslStateFormula() && this->getRightSubformula().isCslStateFormula();
-        }
-        
-        bool BinaryStateFormula::isLtlFormula() const {
-            return this->getLeftSubformula().isLtlFormula() && this->getRightSubformula().isLtlFormula();
-        }
-        
-        bool BinaryStateFormula::containsBoundedUntilFormula() const {
-            return this->getLeftSubformula().containsBoundedUntilFormula() || this->getRightSubformula().containsBoundedUntilFormula();
-        }
-        
-        bool BinaryStateFormula::containsNextFormula() const {
-            return this->getLeftSubformula().containsNextFormula() || this->getRightSubformula().containsNextFormula();
-        }
-        
-        bool BinaryStateFormula::containsProbabilityOperator() const {
-            return this->getLeftSubformula().containsProbabilityOperator() || this->getRightSubformula().containsProbabilityOperator();
-        }
-        
-        bool BinaryStateFormula::containsNestedProbabilityOperators() const {
-            return this->getLeftSubformula().containsNestedProbabilityOperators() || this->getRightSubformula().containsNestedProbabilityOperators();
-        }
-        
-        bool BinaryStateFormula::containsRewardOperator() const {
-            return this->getLeftSubformula().containsRewardOperator() || this->getRightSubformula().containsRewardOperator();
-        }
-        
-        bool BinaryStateFormula::containsNestedRewardOperators() const {
-            return this->containsNestedRewardOperators() || this->getRightSubformula().containsNestedRewardOperators();
-        }
-        
         Formula const& BinaryStateFormula::getLeftSubformula() const {
             return *leftSubformula;
         }

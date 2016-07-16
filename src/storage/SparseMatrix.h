@@ -7,9 +7,11 @@
 #include <vector>
 #include <iterator>
 
-#include "src/utility/OsDetection.h"
-
 #include <boost/functional/hash.hpp>
+#include <boost/optional.hpp>
+
+#include "src/utility/OsDetection.h"
+#include "src/adapters/CarlAdapter.h"
 
 // Forward declaration for adapter classes.
 namespace storm {
@@ -106,6 +108,9 @@ namespace storm {
              * @param factor The factor with which to multiply the entry.
              */
             MatrixEntry operator*(value_type factor) const;
+            
+            bool operator==(MatrixEntry const& other) const;
+            bool operator!=(MatrixEntry const& other) const;
             
             template<typename IndexTypePrime, typename ValueTypePrime>
             friend std::ostream& operator<<(std::ostream& out, MatrixEntry<IndexTypePrime, ValueTypePrime> const& entry);
@@ -217,6 +222,17 @@ namespace storm {
              */
             index_type getLastColumn() const;
             
+            /*!
+             * Replaces all columns with id > offset according to replacements.
+             * Every state  with id offset+i is replaced by the id in replacements[i].
+             * Afterwards the columns are sorted.
+             *
+             * @param replacements Mapping indicating the replacements from offset+i -> value of i.
+             * @param offset Offset to add to each id in vector index.
+             * @return True if replacement took place, False if nothing changed.
+             */
+            bool replaceColumns(std::vector<index_type> const& replacements, index_type offset);
+                        
         private:
             // A flag indicating whether a row count was set upon construction.
             bool initialRowCountSet;
@@ -248,7 +264,8 @@ namespace storm {
             // The number of row groups in the matrix.
             index_type initialRowGroupCount;
             
-            std::vector<index_type> rowGroupIndices;
+            // The vector that stores the row-group indices (if they are non-trivial).
+            boost::optional<std::vector<index_type>> rowGroupIndices;
             
             // The storage for the columns and values of all entries in the matrix.
             std::vector<MatrixEntry<index_type, value_type>> columnsAndValues;
@@ -277,6 +294,11 @@ namespace storm {
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
             index_type currentRowGroup;
+            
+            /*!
+             * Fixes the matrix by sorting the columns to gain increasing order again.
+             */
+            void fixColumns();
         };
         
         /*!
@@ -436,9 +458,8 @@ namespace storm {
              * @param rowIndications The row indications vector of the matrix to be constructed.
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
              * @param rowGroupIndices The vector representing the row groups in the matrix.
-             * @param hasNontrivialRowGrouping If set to true, this indicates that the row grouping is non-trivial.
              */
-            SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndValues, std::vector<index_type> const& rowGroupIndices, bool hasNontrivialRowGrouping);
+            SparseMatrix(index_type columnCount, std::vector<index_type> const& rowIndications, std::vector<MatrixEntry<index_type, value_type>> const& columnsAndValues, boost::optional<std::vector<index_type>> const& rowGroupIndices);
             
             /*!
              * Constructs a sparse matrix by moving the given contents.
@@ -447,9 +468,8 @@ namespace storm {
              * @param rowIndications The row indications vector of the matrix to be constructed.
              * @param columnsAndValues The vector containing the columns and values of the entries in the matrix.
              * @param rowGroupIndices The vector representing the row groups in the matrix.
-             * @param hasNontrivialRowGrouping If set to true, this indicates that the row grouping is non-trivial.
              */
-            SparseMatrix(index_type columnCount, std::vector<index_type>&& rowIndications, std::vector<MatrixEntry<index_type, value_type>>&& columnsAndValues, std::vector<index_type>&& rowGroupIndices, bool hasNontrivialRowGrouping);
+            SparseMatrix(index_type columnCount, std::vector<index_type>&& rowIndications, std::vector<MatrixEntry<index_type, value_type>>&& columnsAndValues, boost::optional<std::vector<index_type>>&& rowGroupIndices);
 
             /*!
              * Assigns the contents of the given matrix to the current one by deep-copying its contents.
@@ -514,6 +534,11 @@ namespace storm {
             * Recompute the nonzero entry count
             */
             void updateNonzeroEntryCount() const;
+            
+            /*!
+             * Recomputes the number of columns and the number of non-zero entries.
+             */
+            void updateDimensions() const;
 
             /*!
             * Change the nonzero entry count by the provided value.
@@ -622,6 +647,26 @@ namespace storm {
              * 
              */
             SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep) const;
+            
+            /**
+             * Compares two rows.
+             * @param i1 Index of first row
+             * @param i2 Index of second row
+             * @return True if the rows have identical entries.
+             */
+            bool compareRows(index_type i1, index_type i2) const;
+            
+            /*!
+             * Finds duplicate rows in a rowgroup.
+             */
+            BitVector duplicateRowsInRowgroups() const;
+            
+            /**
+             * Swaps the two rows.
+             * @param row1 Index of first row
+             * @param row2 Index of second row
+             */
+            void swapRows(index_type const& row1, index_type const& row2);
             
             /*!
              * Selects exactly one row from each row group of this matrix and returns the resulting matrix.
@@ -761,7 +806,15 @@ namespace storm {
             
             template<typename TPrime>
             friend std::ostream& operator<<(std::ostream& out, SparseMatrix<TPrime> const& matrix);
-            
+
+            /*!
+             * Prints the matrix in a dense format, as also used by e.g. Matlab.
+             * Notice that the format does not support multiple rows in a rowgroup.
+             *
+             * @out The stream to output to.
+             */
+            void printAsMatlabMatrix(std::ostream& out) const;
+
             /*!
              * Returns the size of the matrix in memory measured in bytes.
              *
@@ -780,7 +833,7 @@ namespace storm {
              * Returns an object representing the consecutive rows given by the parameters.
              *
              * @param startRow The starting row.
-             * @param endRow The ending row (which is included in the result).
+             * @param endRow The ending row (which is *not* included in the result).
              * @return An object representing the consecutive rows given by the parameters.
              */
             const_rows getRows(index_type startRow, index_type endRow) const;
@@ -789,7 +842,7 @@ namespace storm {
              * Returns an object representing the consecutive rows given by the parameters.
              *
              * @param startRow The starting row.
-             * @param endRow The ending row (which is included in the result).
+             * @param endRow The ending row (which is *not* included in the result).
              * @return An object representing the consecutive rows given by the parameters.
              */
             rows getRows(index_type startRow, index_type endRow);
@@ -889,27 +942,28 @@ namespace storm {
             iterator end();
             
             /*!
-             * Retrieves whether the matrix has a (possibly) non-trivial row grouping.
+             * Retrieves whether the matrix has a trivial row grouping.
              *
-             * @return True iff the matrix has a (possibly) non-trivial row grouping.
+             * @return True iff the matrix has a trivial row grouping.
              */
-            bool hasNontrivialRowGrouping() const;
+            bool hasTrivialRowGrouping() const;
 
 			/*!
 			* Returns a copy of the matrix with the chosen internal data type
 			*/
 			template<typename NewValueType>
 			SparseMatrix<NewValueType> toValueType() const {
-				std::vector<MatrixEntry<SparseMatrix::index_type, NewValueType>> new_columnsAndValues;
-				std::vector<SparseMatrix::index_type> new_rowIndications(rowIndications);
-				std::vector<SparseMatrix::index_type> new_rowGroupIndices(rowGroupIndices);
+				std::vector<MatrixEntry<SparseMatrix::index_type, NewValueType>> newColumnsAndValues;
+				std::vector<SparseMatrix::index_type> newRowIndications(rowIndications);
+                boost::optional<std::vector<SparseMatrix::index_type>> newRowGroupIndices(rowGroupIndices);
 
-				new_columnsAndValues.resize(columnsAndValues.size());
-				for (size_t i = 0, size = columnsAndValues.size(); i < size; ++i) {
-					new_columnsAndValues.at(i) = MatrixEntry<SparseMatrix::index_type, NewValueType>(columnsAndValues.at(i).getColumn(), static_cast<NewValueType>(columnsAndValues.at(i).getValue()));
-				}
+				newColumnsAndValues.resize(columnsAndValues.size());
+                std::transform(columnsAndValues.begin(), columnsAndValues.end(), newColumnsAndValues.begin(),
+                               [] (MatrixEntry<SparseMatrix::index_type, ValueType> const& a) {
+                                   return MatrixEntry<SparseMatrix::index_type, NewValueType>(a.getColumn(), static_cast<NewValueType>(a.getValue()));
+                               });
 
-				return SparseMatrix<NewValueType>(columnCount, std::move(new_rowIndications), std::move(new_columnsAndValues), std::move(new_rowGroupIndices), nontrivialRowGrouping);
+				return SparseMatrix<NewValueType>(columnCount, std::move(newRowIndications), std::move(newColumnsAndValues), std::move(newRowGroupIndices));
 			}
             
         private:
@@ -931,7 +985,7 @@ namespace storm {
             index_type rowCount;
             
             // The number of columns of the matrix.
-            index_type columnCount;
+            mutable index_type columnCount;
             
             // The number of entries in the matrix.
             index_type entryCount;
@@ -948,15 +1002,19 @@ namespace storm {
             // entry is not included anymore.
             std::vector<index_type> rowIndications;
             
-            // A flag that indicates whether the matrix has a non-trivial row-grouping, i.e. (possibly) more than one
-            // row per row group.
-            bool nontrivialRowGrouping;
+            // A flag indicating whether the matrix has a trivial row grouping. Note that this may be true and yet
+            // there may be row group indices, because they were requested from the outside.
+            bool trivialRowGrouping;
             
-            // A vector indicating the row groups of the matrix.
-            std::vector<index_type> rowGroupIndices;
+            // A vector indicating the row groups of the matrix. This needs to be mutible in case we create it on-the-fly.
+            mutable boost::optional<std::vector<index_type>> rowGroupIndices;
             
         };
-
+        
+#ifdef STORM_HAVE_CARL
+        std::set<storm::RationalFunctionVariable> getVariables(SparseMatrix<storm::RationalFunction> const& matrix);
+#endif
+        
     } // namespace storage
 } // namespace storm
 
