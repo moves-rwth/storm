@@ -1,5 +1,7 @@
 #include "src/parser/GspnParser.h"
 
+#include <iostream>
+
 #include <xercesc/dom/DOM.hpp>
 #include <xercesc/sax/HandlerBase.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
