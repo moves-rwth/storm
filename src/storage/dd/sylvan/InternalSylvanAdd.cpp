@@ -636,7 +636,7 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
 		template<>
-		storm::RationalFunction InternalAdd<DdType::Sylvan, ValueType>::getValue(MTBDD const& node) {
+		storm::RationalFunction InternalAdd<DdType::Sylvan, storm::RationalFunction>::getValue(MTBDD const& node) {
 			STORM_LOG_ASSERT(mtbdd_isleaf(node), "Expected leaf, but got variable " << mtbdd_getvar(node) << ".");
 
 			bool negated = mtbdd_hascomp(node);
