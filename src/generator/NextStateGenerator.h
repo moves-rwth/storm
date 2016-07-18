@@ -11,15 +11,15 @@
 
 namespace storm {
     namespace generator {
-        template<typename ValueType, typename StateType = uint32_t>
+        template<typename ValueType, typename CompressedStateType, typename StateType = uint32_t>
         class NextStateGenerator {
         public:
-            typedef std::function<StateType (CompressedState const&)> StateToIdCallback;
+            typedef std::function<StateType (CompressedStateType const&)> StateToIdCallback;
 
             virtual bool isDeterministicModel() const = 0;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
             
-            virtual void load(CompressedState const& state) = 0;
+            virtual void load(CompressedStateType const& state) = 0;
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
             virtual bool satisfies(storm::expressions::Expression const& expression) const = 0;
         };

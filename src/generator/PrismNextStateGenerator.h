@@ -13,9 +13,9 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType = uint32_t>
-        class PrismNextStateGenerator : public NextStateGenerator<ValueType, StateType> {
+        class PrismNextStateGenerator : public NextStateGenerator<ValueType, CompressedState, StateType> {
         public:
-            typedef typename NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
+            typedef typename NextStateGenerator<ValueType, CompressedState, StateType>::StateToIdCallback StateToIdCallback;
             
             PrismNextStateGenerator(storm::prism::Program const& program, VariableInformation const& variableInformation, bool buildChoiceLabeling);
                         

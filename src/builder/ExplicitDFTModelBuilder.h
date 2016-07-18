@@ -60,7 +60,7 @@ namespace storm {
             size_t initialStateIndex = 0;
 
         public:
-              struct LabelOptions {
+            struct LabelOptions {
                 bool buildFailLabel = true;
                 bool buildFailSafeLabel = false;
                 std::set<std::string> beLabels = {};
