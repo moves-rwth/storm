@@ -10,6 +10,12 @@
 #include "src/utility/constants.h"
 #include "src/exceptions/NotImplementedException.h"
 
+#include "storm-config.h"
+// TODO: Remove this later on.
+#ifndef STORM_HAVE_CARL
+#define STORM_HAVE_CARL 1
+#endif
+
 namespace storm {
     namespace dd {
         template<typename ValueType>
@@ -614,7 +620,19 @@ namespace storm {
             } else if (std::is_same<ValueType, uint_fast64_t>::value) {
                 STORM_LOG_ASSERT(mtbdd_gettype(node) == 0, "Expected an unsigned value.");
                 return negated ? -mtbdd_getint64(node) : mtbdd_getint64(node);
-            } else {
+			} 
+#ifdef STORM_HAVE_CARL
+			else if (std::is_same<ValueType, storm::RationalFunction>::value) {
+				STORM_LOG_ASSERT(mtbdd_gettype(node) == sylvan_storm_rational_function_get_type(), "Expected a storm::RationalFunction value.");
+				uint64_t value = mtbdd_getvalue(leaf);
+				storm_rational_function_ptr_struct* helperStructPtr = (storm_rational_function_ptr_struct*) value;
+
+				storm::RationalFunction* rationalFunction = (storm::RationalFunction*)(helperStructPtr->storm_rational_function);
+
+				return negated ? -(*rationalFunction) : (*rationalFunction);
+			} 
+#endif			
+			else {
                 STORM_LOG_ASSERT(false, "Illegal or unknown type in MTBDD.");
             }
         }
@@ -626,5 +644,8 @@ namespace storm {
         
         template class InternalAdd<DdType::Sylvan, double>;
         template class InternalAdd<DdType::Sylvan, uint_fast64_t>;
+#ifdef STORM_HAVE_CARL
+		template class InternalAdd<DdType::Sylvan, storm::RationalFunction>;
+#endif
     }
 }

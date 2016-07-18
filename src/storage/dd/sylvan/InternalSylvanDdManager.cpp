@@ -9,6 +9,14 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/NotSupportedException.h"
 
+#include "src/utility/sylvan.h"
+
+#include "storm-config.h"
+// TODO: Remove this later on.
+#ifndef STORM_HAVE_CARL
+#define STORM_HAVE_CARL 1
+#endif
+
 namespace storm {
     namespace dd {
         uint_fast64_t InternalDdManager<DdType::Sylvan>::numberOfInstances = 0;
@@ -75,7 +83,10 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
 		template<>
 		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const {
-			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), storm::utility::one<storm::RationalFunction>()));
+			storm::RationalFunction rationalFunction = storm::utility::one<storm::RationalFunction>();
+			storm_rational_function_ptr_struct helperStruct;
+			helperStruct.storm_rational_function = static_cast<void*>(&rationalFunction);
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), helperStruct));
 		}
 #endif
         
@@ -96,7 +107,10 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
 		template<>
 		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const {
-			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), storm::utility::zero<storm::RationalFunction>()));
+			storm::RationalFunction rationalFunction = storm::utility::zero<storm::RationalFunction>();
+			storm_rational_function_ptr_struct helperStruct;
+			helperStruct.storm_rational_function = static_cast<void*>(&rationalFunction);
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), helperStruct));
 		}
 #endif
         
@@ -113,7 +127,10 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
 		template<>
 		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const {
-			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), storm::utility::zero<storm::RationalFunction>()));
+			storm::RationalFunction rationalFunction = value;
+			storm_rational_function_ptr_struct helperStruct;
+			helperStruct.storm_rational_function = static_cast<void*>(&rationalFunction);
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), helperStruct));
 		}
 #endif
 
@@ -138,11 +155,20 @@ namespace storm {
                 
         template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddOne() const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+#ifdef STORM_HAVE_CARL
+		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddOne() const;
+#endif
         
         template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getAddZero() const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+#ifdef STORM_HAVE_CARL
+		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getAddZero() const;
+#endif
         
         template InternalAdd<DdType::Sylvan, double> InternalDdManager<DdType::Sylvan>::getConstant(double const& value) const;
         template InternalAdd<DdType::Sylvan, uint_fast64_t> InternalDdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
+#ifdef STORM_HAVE_CARL
+		template InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
+#endif
     }
 }
