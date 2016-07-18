@@ -146,7 +146,7 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
 		template<>
-		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalNumber const& value) const;
+		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const;
 #endif
     }
 }
