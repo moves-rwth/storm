@@ -1015,6 +1015,11 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
         template<>
+        typename std::pair<storm::storage::SparseMatrix<Interval>, std::vector<Interval>> SparseMatrix<Interval>::getJacobiDecomposition() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
+        }
+        
+        template<>
         typename std::pair<storm::storage::SparseMatrix<RationalFunction>, std::vector<RationalFunction>> SparseMatrix<RationalFunction>::getJacobiDecomposition() const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
@@ -1144,6 +1149,13 @@ namespace storm {
             }
         }
         
+#ifdef STORM_HAVE_CARL
+        template<>
+        void SparseMatrix<Interval>::performSuccessiveOverRelaxationStep(Interval omega, std::vector<Interval>& x, std::vector<Interval> const& b) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
+        }
+#endif
+
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyVectorWithMatrix(std::vector<value_type> const& vector, std::vector<value_type>& result) const {
             const_iterator it = this->begin();
