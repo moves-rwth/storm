@@ -627,7 +627,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
 			else if (std::is_same<ValueType, storm::RationalFunction>::value) {
 				STORM_LOG_ASSERT(mtbdd_gettype(node) == sylvan_storm_rational_function_get_type(), "Expected a storm::RationalFunction value.");
-				uint64_t value = mtbdd_getvalue(leaf);
+				uint64_t value = mtbdd_getvalue(node);
 				storm_rational_function_ptr_struct* helperStructPtr = (storm_rational_function_ptr_struct*) value;
 
 				storm::RationalFunction* rationalFunction = (storm::RationalFunction*)(helperStructPtr->storm_rational_function);
