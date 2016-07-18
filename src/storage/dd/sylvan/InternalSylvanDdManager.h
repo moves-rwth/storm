@@ -9,6 +9,12 @@
 
 #include "src/adapters/CarlAdapter.h"
 
+#include "storm-config.h"
+// TODO: Remove this later on.
+#ifndef STORM_HAVE_CARL
+#define STORM_HAVE_CARL 1
+#endif
+
 namespace storm {
     namespace dd {
         template<DdType LibraryType, typename ValueType>
