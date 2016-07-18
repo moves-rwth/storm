@@ -86,7 +86,9 @@ namespace storm {
 			storm::RationalFunction rationalFunction = storm::utility::one<storm::RationalFunction>();
 			storm_rational_function_ptr_struct helperStruct;
 			helperStruct.storm_rational_function = static_cast<void*>(&rationalFunction);
-			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), helperStruct));
+			uint64_t value = (uint64_t)&helperStruct;
+
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), value));
 		}
 #endif
         
@@ -110,7 +112,9 @@ namespace storm {
 			storm::RationalFunction rationalFunction = storm::utility::zero<storm::RationalFunction>();
 			storm_rational_function_ptr_struct helperStruct;
 			helperStruct.storm_rational_function = static_cast<void*>(&rationalFunction);
-			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), helperStruct));
+			uint64_t value = (uint64_t)&helperStruct;
+
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), value));
 		}
 #endif
         
@@ -130,7 +134,9 @@ namespace storm {
 			storm::RationalFunction rationalFunction = value;
 			storm_rational_function_ptr_struct helperStruct;
 			helperStruct.storm_rational_function = static_cast<void*>(&rationalFunction);
-			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), helperStruct));
+			uint64_t terminalValue = (uint64_t)&helperStruct;
+
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), terminalValue));
 		}
 #endif
 
