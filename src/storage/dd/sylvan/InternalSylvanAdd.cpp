@@ -607,7 +607,7 @@ namespace storm {
 			helperStruct.storm_rational_function = (void*)(&value);
 			uint64_t terminalValue = (uint64_t)&helperStruct;
 
-			return sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), terminalValue);
+			return sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), terminalValue).GetMTBDD();
 		}
         
         template<typename ValueType>
