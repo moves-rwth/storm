@@ -354,12 +354,14 @@ include_directories(${CUDD_INCLUDE_DIR})
 
 #############################################################
 ##
-##      CLN
+##  CLN
 ##
 #############################################################
 
 find_package(CLN QUIET)
 
+
+set(STORM_USE_CLN_NUMBERS OFF)
 if(CLN_FOUND)
     set(STORM_HAVE_CLN ON)
 	set(STORM_USE_CLN_NUMBERS ON)
