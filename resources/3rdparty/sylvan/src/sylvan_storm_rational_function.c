@@ -221,6 +221,42 @@ TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, pa, MTBDD*,
 }
 
 /**
+ * The abstraction operators are called in either of two ways:
+ * - with k=0, then just calculate "a op b"
+ * - with k<>0, then just calculate "a := a op a", k times
+ */
+
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_plus, MTBDD, a, MTBDD, b, int, k)
+{
+    if (k==0) {
+        return mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_plus));
+    } else {
+        MTBDD res = a;
+        for (int i=0; i<k; i++) {
+            mtbdd_refs_push(res);
+            res = mtbdd_apply(res, res, TASK(sylvan_storm_rational_function_op_plus));
+            mtbdd_refs_pop(1);
+        }
+        return res;
+    }
+}
+
+TASK_IMPL_3(MTBDD, sylvan_storm_rational_function_abstract_op_times, MTBDD, a, MTBDD, b, int, k)
+{
+    if (k==0) {
+        return mtbdd_apply(a, b, TASK(sylvan_storm_rational_function_op_times));
+    } else {
+        MTBDD res = a;
+        for (int i=0; i<k; i++) {
+            mtbdd_refs_push(res);
+            res = mtbdd_apply(res, res, TASK(sylvan_storm_rational_function_op_times));
+            mtbdd_refs_pop(1);
+        }
+        return res;
+    }
+}
+
+/**
  * Operation "neg" for one storm::RationalFunction MTBDD
  */
 TASK_IMPL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, dd, size_t, p)
