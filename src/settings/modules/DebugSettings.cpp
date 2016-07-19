@@ -38,7 +38,7 @@ namespace storm {
             }
             
             std::string DebugSettings::getLogfilename() const {
-                return this->getOption(traceOptionName).getArgumentByName("filename").getValueAsString();
+                return this->getOption(logfileOptionName).getArgumentByName("filename").getValueAsString();
             }
             
             bool DebugSettings::isTestSet() const {
