@@ -202,6 +202,16 @@ add_subdirectory(resources/3rdparty)
 
 #############################################################
 ##
+##	l3pp
+##
+#############################################################
+
+# l3pp is set up as external project
+include_directories(${l3pp_INCLUDE})
+add_dependencies(resources l3pp)
+
+#############################################################
+##
 ##	gmm
 ##
 #############################################################
@@ -364,7 +374,7 @@ find_package(CLN QUIET)
 set(STORM_USE_CLN_NUMBERS OFF)
 if(CLN_FOUND)
     set(STORM_HAVE_CLN ON)
-	set(STORM_USE_CLN_NUMBERS ON)
+	set(STORM_USE_CLN_NUMBERS OFF)
     message(STATUS "StoRM - Linking with CLN ${CLN_VERSION_STRING}")
     include_directories("${CLN_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${CLN_LIBRARIES})

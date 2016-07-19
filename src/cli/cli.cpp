@@ -186,14 +186,13 @@ namespace storm {
             }
             
             if (storm::settings::getModule<storm::settings::modules::GeneralSettings>().isVerboseSet()) {
-                STORM_GLOBAL_LOGLEVEL_INFO();
+                storm::utility::setLogLevel(l3pp::LogLevel::INFO);
             }
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet()) {
-                STORM_GLOBAL_LOGLEVEL_DEBUG();
-                
+                storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
             }
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
-                STORM_GLOBAL_LOGLEVEL_TRACE();
+                 storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
             }
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
                 storm::utility::initializeFileLogging();
