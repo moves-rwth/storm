@@ -592,11 +592,13 @@ namespace storm {
 					if (val2 == 0) {
                         return (storm::utility::abs(val1) <= precision);
 					}
-                    if (storm::utility::abs((val1 - val2)/val2) > precision) {
+                    T relDiff = (val1 - val2)/val2;
+                    if (storm::utility::abs(relDiff) > precision) {
                         return false;
                     }
                 } else {
-                    if (storm::utility::abs(val1 - val2) > precision) return false;
+                    T diff = val1 - val2;
+                    if (storm::utility::abs(diff) > precision) return false;
                 }
                 return true;
             }
