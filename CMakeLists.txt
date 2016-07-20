@@ -375,7 +375,6 @@ find_package(CLN QUIET)
 
 if(CLN_FOUND)
     set(STORM_HAVE_CLN ON)
-    add_definitions(-DUSE_CLN_NUMBERS)
     message(STATUS "StoRM - Linking with CLN ${CLN_VERSION_STRING}")
     include_directories("${CLN_INCLUDE_DIR}")
     list(APPEND STORM_LINK_LIBRARIES ${CLN_LIBRARIES})
