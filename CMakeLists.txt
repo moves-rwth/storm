@@ -744,7 +744,7 @@ endif(LINK_LIBCXXABI)
 ##
 #############################################################
 
-find_package(Doxygen REQUIRED)
+find_package(Doxygen)
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
     set(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
