@@ -15,6 +15,9 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 namespace storm {
     namespace dd {
         
@@ -352,14 +355,27 @@ namespace storm {
 
         template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<double> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (double const&)> const& filter);
         template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<uint_fast64_t> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (uint_fast64_t const&)> const& filter);
+#ifdef STORM_HAVE_CARL
+		template Bdd<DdType::Sylvan> Bdd<DdType::Sylvan>::fromVector(DdManager<DdType::Sylvan> const& ddManager, std::vector<storm::RationalFunction> const& values, Odd const& odd, std::set<storm::expressions::Variable> const& metaVariables, std::function<bool (storm::RationalFunction const&)> const& filter);
+#endif
         
         template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::toAdd() const;
         template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::toAdd() const;
+#ifdef STORM_HAVE_CARL
+		template Add<DdType::Sylvan, storm::RationalFunction> Bdd<DdType::Sylvan>::toAdd() const;
+#endif
         
         template std::vector<double> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<double> const& values) const;
         template std::vector<uint_fast64_t> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<uint_fast64_t> const& values) const;
+#ifdef STORM_HAVE_CARL
+		template std::vector<storm::RationalFunction> Bdd<DdType::Sylvan>::filterExplicitVector(Odd const& odd, std::vector<storm::RationalFunction> const& values) const;
+#endif
+		
         
         template Add<DdType::Sylvan, double> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, double> const& thenAdd, Add<DdType::Sylvan, double> const& elseAdd) const;
         template Add<DdType::Sylvan, uint_fast64_t> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, uint_fast64_t> const& thenAdd, Add<DdType::Sylvan, uint_fast64_t> const& elseAdd) const;
+#ifdef STORM_HAVE_CARL
+		template Add<DdType::Sylvan, storm::RationalFunction> Bdd<DdType::Sylvan>::ite(Add<DdType::Sylvan, storm::RationalFunction> const& thenAdd, Add<DdType::Sylvan, storm::RationalFunction> const& elseAdd) const;
+#endif
     }
 }
