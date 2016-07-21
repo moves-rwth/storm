@@ -10,6 +10,8 @@
 #include "src/utility/constants.h"
 #include "src/exceptions/NotImplementedException.h"
 
+#include "storm-config.h"
+
 namespace storm {
     namespace dd {
         template<typename ValueType>

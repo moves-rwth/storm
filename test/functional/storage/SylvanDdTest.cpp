@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
+#include "src/adapters/CarlAdapter.h"
 #include "src/exceptions/InvalidArgumentException.h"
 #include "src/storage/dd/DdManager.h"
 #include "src/storage/dd/Add.h"
@@ -39,6 +40,34 @@ TEST(SylvanDd, Constants) {
     EXPECT_EQ(2, two.getMin());
     EXPECT_EQ(2, two.getMax());
 }
+
+#ifdef STORM_HAVE_CARL
+TEST(SylvanDd, RationalFunctionConstants) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> zero;
+    ASSERT_NO_THROW(zero = manager->template getAddZero<storm::RationalFunction>());
+    
+    EXPECT_EQ(0ul, zero.getNonZeroCount());
+    EXPECT_EQ(1ul, zero.getLeafCount());
+    EXPECT_EQ(1ul, zero.getNodeCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> one;
+    ASSERT_NO_THROW(one = manager->template getAddOne<storm::RationalFunction>());
+    
+    EXPECT_EQ(0ul, one.getNonZeroCount());
+    EXPECT_EQ(1ul, one.getLeafCount());
+    EXPECT_EQ(1ul, one.getNodeCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> two;
+	storm::RationalFunction constantTwo(2);
+	
+    ASSERT_NO_THROW(two = manager->template getConstant<storm::RationalFunction>(constantTwo));
+    
+    EXPECT_EQ(0ul, two.getNonZeroCount());
+    EXPECT_EQ(1ul, two.getLeafCount());
+    EXPECT_EQ(1ul, two.getNodeCount());
+}
+#endif
 
 TEST(SylvanDd, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
