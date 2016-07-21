@@ -6,7 +6,7 @@ void mtbdd_getsha(MTBDD mtbdd, char *target); // target must be at least 65 byte
  * If either operand is mtbdd_false (not defined),
  * then the result is mtbdd_false (i.e. not defined).
  */
-TASK_DECL_2(MTBDD, mtbdd_op_divide, MTBDD*, MTBDD*);
+TASK_DECL_2(MTBDD, mtbdd_op_divide, MTBDD*, MTBDD*)
 #define mtbdd_divide(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_divide))
 
 /**
@@ -15,7 +15,7 @@ TASK_DECL_2(MTBDD, mtbdd_op_divide, MTBDD*, MTBDD*);
  * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
  * then the result is the other operand.
  */
-TASK_DECL_2(MTBDD, mtbdd_op_equals, MTBDD*, MTBDD*);
+TASK_DECL_2(MTBDD, mtbdd_op_equals, MTBDD*, MTBDD*)
 #define mtbdd_equals(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_equals))
 
 /**
@@ -24,7 +24,7 @@ TASK_DECL_2(MTBDD, mtbdd_op_equals, MTBDD*, MTBDD*);
  * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
  * then the result is the other operand.
  */
-TASK_DECL_2(MTBDD, mtbdd_op_less, MTBDD*, MTBDD*);
+TASK_DECL_2(MTBDD, mtbdd_op_less, MTBDD*, MTBDD*)
 #define mtbdd_less_as_bdd(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_less))
 
 /**
@@ -33,7 +33,7 @@ TASK_DECL_2(MTBDD, mtbdd_op_less, MTBDD*, MTBDD*);
  * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
  * then the result is the other operand.
  */
-TASK_DECL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, MTBDD*);
+TASK_DECL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, MTBDD*)
 #define mtbdd_less_or_equal_as_bdd(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_less_or_equal))
 
 /**
@@ -42,7 +42,7 @@ TASK_DECL_2(MTBDD, mtbdd_op_less_or_equal, MTBDD*, MTBDD*);
  * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
  * then the result is the other operand.
  */
-TASK_DECL_2(MTBDD, mtbdd_op_pow, MTBDD*, MTBDD*);
+TASK_DECL_2(MTBDD, mtbdd_op_pow, MTBDD*, MTBDD*)
 #define mtbdd_pow(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_pow))
 
 /**
@@ -51,7 +51,7 @@ TASK_DECL_2(MTBDD, mtbdd_op_pow, MTBDD*, MTBDD*);
  * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
  * then the result is the other operand.
  */
-TASK_DECL_2(MTBDD, mtbdd_op_mod, MTBDD*, MTBDD*);
+TASK_DECL_2(MTBDD, mtbdd_op_mod, MTBDD*, MTBDD*)
 #define mtbdd_mod(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_mod))
 
 /**
@@ -60,7 +60,7 @@ TASK_DECL_2(MTBDD, mtbdd_op_mod, MTBDD*, MTBDD*);
  * For Integer/Double MTBDD, if either operand is mtbdd_false (not defined),
  * then the result is the other operand.
  */
-TASK_DECL_2(MTBDD, mtbdd_op_logxy, MTBDD*, MTBDD*);
+TASK_DECL_2(MTBDD, mtbdd_op_logxy, MTBDD*, MTBDD*)
 #define mtbdd_logxy(a, b) mtbdd_apply(a, b, TASK(mtbdd_op_logxy))
 
 /**
@@ -101,7 +101,7 @@ TASK_DECL_1(MTBDD, mtbdd_bool_to_int64, MTBDD)
 /**
  * Count the number of assignments (minterms) leading to a non-zero
  */
-TASK_DECL_2(double, mtbdd_non_zero_count, MTBDD, size_t);
+TASK_DECL_2(double, mtbdd_non_zero_count, MTBDD, size_t)
 #define mtbdd_non_zero_count(dd, nvars) CALL(mtbdd_non_zero_count, dd, nvars)
 
 // Checks whether the given MTBDD (does represents a zero leaf.

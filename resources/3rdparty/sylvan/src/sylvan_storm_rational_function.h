@@ -34,29 +34,29 @@ MTBDD mtbdd_storm_rational_function(storm_rational_function_t val);
 /**
  * Operation "plus" for two storm::RationalFunction MTBDDs
  */
-TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, MTBDD*);
-TASK_DECL_3(MTBDD, sylvan_storm_rational_function_abstract_op_plus, MTBDD, MTBDD, int);
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, MTBDD*)
+TASK_DECL_3(MTBDD, sylvan_storm_rational_function_abstract_op_plus, MTBDD, MTBDD, int)
 
 /**
  * Operation "minus" for two storm::RationalFunction MTBDDs
  */
-TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_minus, MTBDD*, MTBDD*);
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_minus, MTBDD*, MTBDD*)
 
 /**
  * Operation "times" for two storm::RationalFunction MTBDDs
  */
-TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, MTBDD*);
-TASK_DECL_3(MTBDD, sylvan_storm_rational_function_abstract_op_times, MTBDD, MTBDD, int);
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_times, MTBDD*, MTBDD*)
+TASK_DECL_3(MTBDD, sylvan_storm_rational_function_abstract_op_times, MTBDD, MTBDD, int)
 
 /**
  * Operation "divide" for two storm::RationalFunction MTBDDs
  */
-TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, MTBDD*);
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_divide, MTBDD*, MTBDD*)
 
 /**
  * Operation "negate" for one storm::RationalFunction MTBDD
  */
-TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, size_t);
+TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_neg, MTBDD, size_t)
 
 /**
  * Compute a + b

@@ -66,6 +66,7 @@ extern "C" {
 
 #define PAD(x,b) ( ( (b) - ((x)%(b)) ) & ((b)-1) ) /* b must be power of 2 */
 #define ROUND(x,b) ( (x) + PAD( (x), (b) ) )
+#define MINONE(x) ((x < 1) ? (1) : (x))
 
 /* The size is in bytes. Note that this is without the extra overhead from Lace.
    The value must be greater than or equal to the maximum size of your tasks.
@@ -183,7 +184,7 @@ struct __lace_common_fields_only { TASK_COMMON_FIELDS(_Task) };
 
 typedef struct _Task {
     TASK_COMMON_FIELDS(_Task);
-    char p1[PAD(LACE_COMMON_FIELD_SIZE, P_SZ)];
+    char p1[MINONE(PAD(LACE_COMMON_FIELD_SIZE, P_SZ))];
     char d[LACE_TASKSIZE];
     char p2[PAD(ROUND(LACE_COMMON_FIELD_SIZE, P_SZ) + LACE_TASKSIZE, LINE_SIZE)];
 } Task;
@@ -226,7 +227,7 @@ typedef struct _WorkerP {
     uint32_t seed;              // my random seed (for lace_steal_random)
 } WorkerP;
 
-#define LACE_TYPEDEF_CB(t, f, ...) typedef t (*f)(WorkerP *, Task *, ##__VA_ARGS__);
+#define LACE_TYPEDEF_CB(t, f, ...) typedef t (*f)(WorkerP *, Task *, ##__VA_ARGS__)
 LACE_TYPEDEF_CB(void, lace_startup_cb, void*);
 
 /**
@@ -648,7 +649,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head+1;                                                         \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -760,7 +762,7 @@ RTYPE NAME##_CALL(WorkerP *w, Task *__dq_head )                                 
 static inline __attribute__((always_inline))                                          \
 RTYPE NAME##_WORK(WorkerP *__lace_worker __attribute__((unused)), Task *__lace_dq_head __attribute__((unused)) )\
 
-#define TASK_0(RTYPE, NAME) TASK_DECL_0(RTYPE, NAME) TASK_IMPL_0(RTYPE, NAME)
+#define TASK_0(RTYPE, NAME) TASK_DECL_0(RTYPE, NAME); TASK_IMPL_0(RTYPE, NAME)
 
 #define VOID_TASK_DECL_0(NAME)                                                        \
                                                                                       \
@@ -798,7 +800,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head )                                 
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -951,7 +954,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -1101,7 +1105,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1)                  
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -1254,7 +1259,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -1404,7 +1410,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2)   
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -1557,7 +1564,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -1707,7 +1715,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -1860,7 +1869,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -2010,7 +2020,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -2163,7 +2174,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -2313,7 +2325,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -2466,7 +2479,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
@@ -2616,7 +2630,8 @@ void NAME##_SPAWN(WorkerP *w, Task *__dq_head , ATYPE_1 arg_1, ATYPE_2 arg_2, AT
     if (unlikely(w->allstolen)) {                                                     \
         if (wt->movesplit) wt->movesplit = 0;                                         \
         head = __dq_head - w->dq;                                                     \
-        ts = (TailSplit){{head,head+1}};                                              \
+        ts.ts.tail = head;                                                            \
+        ts.ts.split = head + 1;                                                       \
         wt->ts.v = ts.v;                                                              \
         compiler_barrier();                                                           \
         wt->allstolen = 0;                                                            \
