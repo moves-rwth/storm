@@ -8,19 +8,6 @@ set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
 #### Find autoreconf for cudd update step
 find_program(AUTORECONF autoreconf)
 
-
-#
-#ExternalProject_Add(
-#    carl
-#    GIT_REPOSITORY http://smtrat.github.io/carl
-#    GIT_TAG master
-#    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/carl
-#    CMAKE_ARGS -DCXX=${CMAKE_CXX_COMPILER}
-#    LOG_CONFIGURE ON
-#    LOG_BUILD ON
-#)
-
-
 #############################################################
 ##
 ##	l3pp
@@ -205,8 +192,27 @@ if(USE_CARL)
         include_directories("${carl_INCLUDE_DIR}")
         list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
     else()
+        message(STATUS "StoRM - Using shipped version of carl")
+        #
+        ExternalProject_Add(
+                carl
+                GIT_REPOSITORY https://github.com/smtrat/carl
+                GIT_TAG master
+                INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/carl
+                SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/carl
+                CMAKE_ARGS -DCXX=${CMAKE_CXX_COMPILER} -DEXPORT_TO_CMAKE=0 -DUSE_CLN_NUMBERS=1 -DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=1 -DCMAKE_INSTALL_PREFIX:PATH=${STORM_3RDPARTY_BINARY_DIR}/carl
+                BUILD_IN_SOURCE 0
+                BUILD_COMMAND make lib_carl
+                INSTALL_COMMAND make install
+                LOG_UPDATE ON
+                LOG_CONFIGURE ON
+                LOG_BUILD ON
+                LOG_INSTALL ON
+        )
 
-        #		message(FATAL_ERROR "StoRM - CARL was requested but not found")
+        include_directories(${STORM_3RDPARTY_BINARY_DIR}/carl/include)
+        list(APPEND STORM_LINK_LIBRARIES ${STORM_3RDPARTY_BINARY_DIR}/carl/lib/libcarl${DYNAMIC_EXT})
+        set(STORM_HAVE_CARL ON)
     endif()
 endif()
 
@@ -298,6 +304,7 @@ ExternalProject_Add(
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
         CMAKE_ARGS -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
         BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
+        BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
         INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/sylvan"
 )
