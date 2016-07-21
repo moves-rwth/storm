@@ -9,7 +9,7 @@
 #pragma clang diagnostic ignored "-Wc99-extensions"
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpendantic"
+#pragma GCC diagnostic ignored "-Wpedantic"
 
 #include "sylvan_obj.hpp"
 
