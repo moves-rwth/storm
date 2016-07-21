@@ -8,58 +8,7 @@ set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
 #### Find autoreconf for cudd update step
 find_program(AUTORECONF autoreconf)
 
-ExternalProject_Add(
-    sylvan
-    DOWNLOAD_COMMAND ""
-    PREFIX "sylvan"
-    SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
-    CMAKE_ARGS -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
-    BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
-    INSTALL_COMMAND ""
-    INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/sylvan"
-)
-ExternalProject_Get_Property(sylvan source_dir)
-ExternalProject_Get_Property(sylvan binary_dir)
-set(Sylvan_INCLUDE_DIR "${source_dir}/src")
-set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan.a")
 
-ExternalProject_Add(
-        googletest
-        #For downloads (may be useful later!)
-        #SVN_REPOSITORY http://googletest.googlecode.com/svn/trunk/
-        #TIMEOUT 10
-        DOWNLOAD_COMMAND ""
-        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.7.0"
-        # Force the same output paths for debug and release builds so that
-        # we know in which place the binaries end up when using the Xcode generator
-        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCXX=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0
-        # Disable install step
-        INSTALL_COMMAND ""
-        BINARY_DIR "${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0"
-        INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0"
-        # Wrap download, configure and build steps in a script to log output
-        LOG_CONFIGURE ON
-        LOG_BUILD ON)
-
-# Specify include dir
-ExternalProject_Get_Property(googletest source_dir)
-set(GTEST_INCLUDE_DIR ${source_dir}/include)
-# Specify MainTest's link libraries
-ExternalProject_Get_Property(googletest binary_dir)
-set(GTEST_LIBRARIES ${binary_dir}/libgtest.a ${binary_dir}/libgtest_main.a)
-
-ExternalProject_Add(
-    l3pp
-    GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
-    GIT_TAG master
-    SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/l3pp
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-    LOG_INSTALL ON
-)
-ExternalProject_Get_Property(l3pp source_dir)
-set(l3pp_INCLUDE "${source_dir}/")
 #
 #ExternalProject_Add(
 #    carl
@@ -78,8 +27,20 @@ set(l3pp_INCLUDE "${source_dir}/")
 ##
 #############################################################
 
-# l3pp is set up as external project
-message("${l3pp_INCLUDE}")
+
+
+ExternalProject_Add(
+        l3pp
+        GIT_REPOSITORY https://github.com/hbruintjes/l3pp.git
+        GIT_TAG master
+        SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/l3pp
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+        LOG_INSTALL ON
+)
+ExternalProject_Get_Property(l3pp source_dir)
+set(l3pp_INCLUDE "${source_dir}/")
 include_directories(${l3pp_INCLUDE})
 add_dependencies(resources l3pp)
 
@@ -330,6 +291,23 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_xerces.cmake)
 ##
 #############################################################
 
+ExternalProject_Add(
+        sylvan
+        DOWNLOAD_COMMAND ""
+        PREFIX "sylvan"
+        SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/sylvan
+        CMAKE_ARGS -DSYLVAN_BUILD_TEST=Off -DSYLVAN_BUILD_EXAMPLES=Off -DCMAKE_BUILD_TYPE=Release
+        BINARY_DIR "${PROJECT_BINARY_DIR}/sylvan"
+        INSTALL_COMMAND ""
+        INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/sylvan"
+)
+ExternalProject_Get_Property(sylvan source_dir)
+ExternalProject_Get_Property(sylvan binary_dir)
+set(Sylvan_INCLUDE_DIR "${source_dir}/src")
+set(Sylvan_LIBRARY "${binary_dir}/src/libsylvan.a")
+
+
+
 message(STATUS "StoRM - Using shipped version of sylvan")
 message(STATUS "StoRM - Linking with sylvan")
 include_directories("${Sylvan_INCLUDE_DIR}")
@@ -351,6 +329,30 @@ endif()
 ##	Google Test gtest
 ##
 #############################################################
+ExternalProject_Add(
+        googletest
+        #For downloads (may be useful later!)
+        #SVN_REPOSITORY http://googletest.googlecode.com/svn/trunk/
+        #TIMEOUT 10
+        DOWNLOAD_COMMAND ""
+        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.7.0"
+        # Force the same output paths for debug and release builds so that
+        # we know in which place the binaries end up when using the Xcode generator
+        CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCXX=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0 -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0
+        # Disable install step
+        INSTALL_COMMAND ""
+        BINARY_DIR "${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0"
+        INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0"
+        # Wrap download, configure and build steps in a script to log output
+        LOG_CONFIGURE ON
+        LOG_BUILD ON)
+
+# Specify include dir
+ExternalProject_Get_Property(googletest source_dir)
+set(GTEST_INCLUDE_DIR ${source_dir}/include)
+# Specify MainTest's link libraries
+ExternalProject_Get_Property(googletest binary_dir)
+set(GTEST_LIBRARIES ${binary_dir}/libgtest.a ${binary_dir}/libgtest_main.a)
 
 add_dependencies(test-resources googletest)
 list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})

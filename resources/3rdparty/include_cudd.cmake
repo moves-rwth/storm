@@ -9,7 +9,7 @@ ExternalProject_Add(
         SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0
         PREFIX ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0
         UPDATE_COMMAND ${AUTORECONF}
-        CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/configure  --enable-shared   --enable-obj --prefix=${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0 --libdir=${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
+        CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/cudd-3.0.0/configure  --enable-shared   --enable-obj --prefix=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0 --libdir=${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
         BUILD_COMMAND make "CFLAGS=-O2 -w"
         INSTALL_COMMAND make install
         BUILD_IN_SOURCE 0
@@ -19,9 +19,9 @@ ExternalProject_Add(
 )
 
 # Do not use system CUDD, StoRM has a modified version
-set(CUDD_INCLUDE_DIR ${CMAKE_BINARY_DIR}/resources/3rdparty/cudd-3.0.0/include)
-set(CUDD_SHARED_LIBRARY ${CMAKE_BINARY_DIR}/resources/3rdparty/cudd-3.0.0/lib/libcudd${DYNAMIC_EXT})
-set(CUDD_STATIC_LIBRARY ${CMAKE_BINARY_DIR}/resources/3rdparty/cudd-3.0.0/lib/libcudd${STATIC_EXT})
+set(CUDD_INCLUDE_DIR ${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/include)
+set(CUDD_SHARED_LIBRARY${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/lib/libcudd${DYNAMIC_EXT})
+set(CUDD_STATIC_LIBRARY $${STORM_3RDPARTY_BINARY_DIR}/cudd-3.0.0/cudd-3.0.0/lib/libcudd${STATIC_EXT})
 set(CUDD_VERSION_STRING 3.0.0)
 list(APPEND STORM_LINK_LIBRARIES ${CUDD_SHARED_LIBRARY})
 add_dependencies(resources cudd3)
