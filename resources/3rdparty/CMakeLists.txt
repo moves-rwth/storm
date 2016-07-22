@@ -186,9 +186,10 @@ endif()
 
 set(STORM_HAVE_CARL OFF)
 if(USE_CARL)
-    find_package(carl QUIET REQUIRED)
+    find_package(carl QUIET)
     if(carl_FOUND)
         set(STORM_HAVE_CARL ON)
+        message(STATUS "StoRM - Use system version of carl")
         message(STATUS "StoRM - Linking with carl ${carl_VERSION_STRING}")
         include_directories("${carl_INCLUDE_DIR}")
         list(APPEND STORM_LINK_LIBRARIES ${carl_LIBRARIES})
@@ -308,6 +309,8 @@ ExternalProject_Add(
         BUILD_IN_SOURCE 0
         INSTALL_COMMAND ""
         INSTALL_DIR "${STORM_3RDPARTY_BINARY_DIR}/sylvan"
+        LOG_CONFIGURE ON
+        LOG_BUILD ON
 )
 ExternalProject_Get_Property(sylvan source_dir)
 ExternalProject_Get_Property(sylvan binary_dir)
