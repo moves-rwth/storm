@@ -9,6 +9,7 @@ file(GLOB_RECURSE STORM_HEADERS_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.h)
 file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
+file(GLOB_RECURSE STORM_GSPN_FILE ${PROJECT_SOURCE_DIR}/src/storm-gspn.cpp)
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
 file(GLOB_RECURSE STORM_CLI_FILES ${PROJECT_SOURCE_DIR}/src/cli/*.h ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
@@ -101,11 +102,12 @@ endif(ADDITIONAL_LINK_DIRS)
 ##                                                                            #
 ###############################################################################
 add_library(storm ${STORM_LIB_SOURCES} ${STORM_LIB_HEADERS} ${STORM_GENERATED_SOURCES}) # Adding headers for xcode
-add_dependencies(storm xercesc)
 add_executable(storm-main ${STORM_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-main storm) # Adding headers for xcode
 set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
-
+add_executable(storm-gspn ${STORM_GSPN_FILE} ${STORM_SOURCES_CLI} ${STORM_MAIN_HEADERS})
+target_link_libraries(storm-gspn storm) # Adding headers for xcode
+set_target_properties(storm-gspn PROPERTIES OUTPUT_NAME "gspn")
 
 target_link_libraries(storm ${STORM_LINK_LIBRARIES})
 
