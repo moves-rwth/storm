@@ -126,7 +126,9 @@ if(CMAKE_COMPILER_IS_GNUCC)
     add_definitions(-DBOOST_RESULT_OF_USE_DECLTYPE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -pedantic -Wno-deprecated-declarations -Wno-unused-local-typedefs -Wno-unknown-pragmas")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wno-deprecated-declarations")
-
+	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+		message(FATAL_ERROR "GCC version must be at least 5.0!")
+	endif()
     # Turn on popcnt instruction if desired (yes by default)
     if (STORM_USE_POPCNT)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mpopcnt")
@@ -157,6 +159,19 @@ else(CLANG)
 	set (CLANG ON)
     # Set standard flags for clang
     set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -O3")
+
+	if(UNIX AND NOT APPLE)
+		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.2)
+			message(FATAL_ERROR "Clang version must be at least 3.2!")
+		endif()
+	endif()
+
+	if(UNIX AND APPLE)
+		if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
+			message(FATAL_ERROR "Clang version must be at least 7.3!")
+		endif()
+	endif()
+
     if(UNIX AND NOT APPLE AND NOT USE_LIBCXX)
 		set(CLANG_STDLIB libstdc++)
 		message(STATUS "StoRM - Linking against libstdc++")
@@ -185,6 +200,7 @@ else(CLANG)
 	# Set the no-strict-aliasing target for Clang
 	set_source_files_properties(${CONVERSIONHELPER_TARGET} PROPERTIES COMPILE_FLAGS " -fno-strict-aliasing ")
 endif()
+
 
 if(CCACHE_FOUND)
 	set(STORM_COMPILED_BY  "${STORM_COMPILED_BY} (ccache)")
