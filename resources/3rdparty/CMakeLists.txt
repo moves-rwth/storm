@@ -335,9 +335,6 @@ if(${OPERATING_SYSTEM} MATCHES "Linux")
     endif()
 endif()
 
-
-
-list(APPEND STORM_LINK_LIBRARIES curl)
 #############################################################
 ##
 ##	Google Test gtest

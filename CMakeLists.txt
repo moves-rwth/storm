@@ -226,6 +226,7 @@ message(STATUS "StoRM - Using Compiler Configuration: ${STORM_COMPILED_BY}")
 # in the the system does not have a library
 include(resources/3rdparty/CMakeLists.txt)
 
+
 #############################################################
 ##
 ##	Cotire
@@ -311,7 +312,7 @@ configure_file (
 	"${PROJECT_SOURCE_DIR}/src/utility/storm-version.cpp"
 )
 
-set(STORM_GENERATED_SOURCES "${PROJECT_SOURCE_DIR}/src/utility/storm-version.cpp")
+set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/utility/storm-version.cpp")
 
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
