@@ -7,7 +7,7 @@ if(USE_XERCES)
         ExternalProject_Add(
                 xercesc
                 SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/xercesc-3.1.2
-                CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/xercesc-3.1.2/configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2 --libdir=${CMAKE_CURRENT_BINARY_DIR}/xercesc-3.1.2/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=-O3 CXXFLAGS=-O3
+                CONFIGURE_COMMAND ${STORM_3RDPARTY_SOURCE_DIR}/xercesc-3.1.2/configure --prefix=${STORM_3RDPARTY_BINARY_DIR}/xercesc-3.1.2 --libdir=${STORM_3RDPARTY_BINARY_DIR}/xercesc-3.1.2/lib CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS=-O3 CXXFLAGS=-O3
                 PREFIX ${STORM_3RDPARTY_BINARY_DIR}/xercesc-3.1.2
                 BUILD_COMMAND make
                 BUILD_IN_SOURCE 0
