@@ -23,7 +23,7 @@ namespace storm {
                                         std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                         std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
                                         std::unordered_map<std::string, RewardModelType> const& rewardModels)
-            : DeterministicModel<Type>(storm::models::ModelType::Ctmc, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels) {
+            : DeterministicModel<Type, ValueType>(storm::models::ModelType::Ctmc, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels) {
                 exitRates = this->getTransitionMatrix().sumAbstract(this->getColumnVariables());
             }
             

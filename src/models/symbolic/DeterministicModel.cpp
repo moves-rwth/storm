@@ -24,7 +24,7 @@ namespace storm {
                                                                     std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs,
                                                                     std::map<std::string, storm::expressions::Expression> labelToExpressionMap,
                                                                     std::unordered_map<std::string, RewardModelType> const& rewardModels)
-            : Model<Type>(modelType, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels) {
+            : Model<Type, ValueType>(modelType, manager, reachableStates, initialStates, deadlockStates, transitionMatrix, rowVariables, rowExpressionAdapter, columnVariables, columnExpressionAdapter, rowColumnMetaVariablePairs, labelToExpressionMap, rewardModels) {
                 // Intentionally left empty.
             }
             

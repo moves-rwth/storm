@@ -72,7 +72,7 @@ namespace storm {
                 std::vector<ValueType> bMarkovian(markovianNonGoalStates.getNumberOfSetBits());
                 
                 // Compute the two fixed right-hand side vectors, one for Markovian states and one for the probabilistic ones.
-                std::vector<ValueType> bProbabilisticFixed = transitionMatrix.getConstrainedRowSumVector(probabilisticNonGoalStates, goalStates);
+                std::vector<ValueType> bProbabilisticFixed = transitionMatrix.getConstrainedRowGroupSumVector(probabilisticNonGoalStates, goalStates);
                 std::vector<ValueType> bMarkovianFixed;
                 bMarkovianFixed.reserve(markovianNonGoalStates.getNumberOfSetBits());
                 for (auto state : markovianNonGoalStates) {

@@ -215,6 +215,16 @@ add_subdirectory(resources/3rdparty)
 
 #############################################################
 ##
+##	l3pp
+##
+#############################################################
+
+# l3pp is set up as external project
+include_directories(${l3pp_INCLUDE})
+add_dependencies(resources l3pp)
+
+#############################################################
+##
 ##	gmm
 ##
 #############################################################
@@ -747,7 +757,7 @@ endif(LINK_LIBCXXABI)
 ##
 #############################################################
 
-find_package(Doxygen REQUIRED)
+find_package(Doxygen)
 # Add a target to generate API documentation with Doxygen
 if(DOXYGEN_FOUND)
     set(CMAKE_DOXYGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/doc")
