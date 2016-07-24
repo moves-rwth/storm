@@ -6,6 +6,9 @@
 #include "src/utility/constants.h"
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include "storm-config.h"
+#include "src/adapters/CarlAdapter.h"
+
 #include <cmath>
 
 namespace storm {
@@ -343,17 +346,32 @@ namespace storm {
         
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddZero() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddZero() const;
+#ifdef STORM_HAVE_CARL
+		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddZero() const;
+#endif
         
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getAddOne() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getAddOne() const;
-        
+#ifdef STORM_HAVE_CARL
+		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getAddOne() const;
+#endif
+
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getInfinity<double>() const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getInfinity<uint_fast64_t>() const;
+#ifdef STORM_HAVE_CARL
+		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getInfinity<uint_fast64_t>() const;
+#endif
         
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getConstant(double const& value) const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
-        
+#ifdef STORM_HAVE_CARL
+		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getConstant(uint_fast64_t const& value) const;
+#endif
+
         template Add<DdType::Sylvan, double> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
         template Add<DdType::Sylvan, uint_fast64_t> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
+#ifdef STORM_HAVE_CARL
+		template Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const;
+#endif
     }
 }
