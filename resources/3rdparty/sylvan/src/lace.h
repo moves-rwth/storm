@@ -66,7 +66,6 @@ extern "C" {
 
 #define PAD(x,b) ( ( (b) - ((x)%(b)) ) & ((b)-1) ) /* b must be power of 2 */
 #define ROUND(x,b) ( (x) + PAD( (x), (b) ) )
-#define MINONE(x) ((x < 1) ? (1) : (x))
 
 /* The size is in bytes. Note that this is without the extra overhead from Lace.
    The value must be greater than or equal to the maximum size of your tasks.
@@ -184,7 +183,7 @@ struct __lace_common_fields_only { TASK_COMMON_FIELDS(_Task) };
 
 typedef struct _Task {
     TASK_COMMON_FIELDS(_Task);
-    char p1[MINONE(PAD(LACE_COMMON_FIELD_SIZE, P_SZ))];
+    char p1[PAD(LACE_COMMON_FIELD_SIZE, P_SZ)];
     char d[LACE_TASKSIZE];
     char p2[PAD(ROUND(LACE_COMMON_FIELD_SIZE, P_SZ) + LACE_TASKSIZE, LINE_SIZE)];
 } Task;
