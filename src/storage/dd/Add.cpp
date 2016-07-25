@@ -770,7 +770,7 @@ namespace storm {
         template class Add<storm::dd::DdType::Sylvan, double>;
         template class Add<storm::dd::DdType::Sylvan, uint_fast64_t>;
 #ifdef STORM_HAVE_CARL
-		template class InternalAdd<DdType::Sylvan, storm::RationalFunction>;
+		template class Add<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 #endif
     }
 }
