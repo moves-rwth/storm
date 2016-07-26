@@ -41,34 +41,6 @@ TEST(SylvanDd, Constants) {
     EXPECT_EQ(2, two.getMax());
 }
 
-#ifdef STORM_HAVE_CARL
-TEST(SylvanDd, RationalFunctionConstants) {
-    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
-    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> zero;
-    ASSERT_NO_THROW(zero = manager->template getAddZero<storm::RationalFunction>());
-    
-    EXPECT_EQ(0ul, zero.getNonZeroCount());
-    EXPECT_EQ(1ul, zero.getLeafCount());
-    EXPECT_EQ(1ul, zero.getNodeCount());
-    
-    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> one;
-    ASSERT_NO_THROW(one = manager->template getAddOne<storm::RationalFunction>());
-    
-    EXPECT_EQ(0ul, one.getNonZeroCount());
-    EXPECT_EQ(1ul, one.getLeafCount());
-    EXPECT_EQ(1ul, one.getNodeCount());
-    
-    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> two;
-	storm::RationalFunction constantTwo(2);
-	
-    ASSERT_NO_THROW(two = manager->template getConstant<storm::RationalFunction>(constantTwo));
-    
-    EXPECT_EQ(0ul, two.getNonZeroCount());
-    EXPECT_EQ(1ul, two.getLeafCount());
-    EXPECT_EQ(1ul, two.getNodeCount());
-}
-#endif
-
 TEST(SylvanDd, AddGetMetaVariableTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
@@ -108,6 +80,70 @@ TEST(SylvanDd, EncodingTest) {
     EXPECT_EQ(6ul, add.getNodeCount());
     EXPECT_EQ(2ul, add.getLeafCount());
 }
+
+#ifdef STORM_HAVE_CARL
+TEST(SylvanDd, RationalFunctionConstants) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> zero;
+    ASSERT_NO_THROW(zero = manager->template getAddZero<storm::RationalFunction>());
+    
+    EXPECT_EQ(0ul, zero.getNonZeroCount());
+    EXPECT_EQ(1ul, zero.getLeafCount());
+    EXPECT_EQ(1ul, zero.getNodeCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> one;
+    ASSERT_NO_THROW(one = manager->template getAddOne<storm::RationalFunction>());
+    
+    EXPECT_EQ(0ul, one.getNonZeroCount());
+    EXPECT_EQ(1ul, one.getLeafCount());
+    EXPECT_EQ(1ul, one.getNodeCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> two;
+	storm::RationalFunction constantTwo(2);
+	
+    ASSERT_NO_THROW(two = manager->template getConstant<storm::RationalFunction>(constantTwo));
+    
+    EXPECT_EQ(0ul, two.getNonZeroCount());
+    EXPECT_EQ(1ul, two.getLeafCount());
+    EXPECT_EQ(1ul, two.getNodeCount());
+}
+
+TEST(SylvanDd, RationalFunctionEncodingTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Bdd<storm::dd::DdType::Sylvan> encoding;
+    ASSERT_THROW(encoding = manager->getEncoding(x.first, 0), storm::exceptions::InvalidArgumentException);
+    ASSERT_THROW(encoding = manager->getEncoding(x.first, 10), storm::exceptions::InvalidArgumentException);
+    ASSERT_NO_THROW(encoding = manager->getEncoding(x.first, 4));
+    EXPECT_EQ(1ul, encoding.getNonZeroCount());
+    
+    // As a BDD, this DD has one only leaf, because there does not exist a 0-leaf, and (consequently) one node less
+    // than the MTBDD.
+    EXPECT_EQ(5ul, encoding.getNodeCount());
+    EXPECT_EQ(1ul, encoding.getLeafCount());
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> add;
+    ASSERT_NO_THROW(add = encoding.template toAdd<storm::RationalFunction>());
+
+    // As an MTBDD, the 0-leaf is there, so the count is actually 2 and the node count is 6.
+    EXPECT_EQ(6ul, add.getNodeCount());
+    EXPECT_EQ(2ul, add.getLeafCount());
+}
+
+TEST(SylvanDd, RationalFunctionIdentityTest) {
+    std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
+    std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
+    
+    storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> identity;
+    ASSERT_NO_THROW(identity = manager->getIdentity<storm::RationalFunction>(x.first));
+
+    EXPECT_EQ(9ul, identity.getNonZeroCount());
+    EXPECT_EQ(10ul, identity.getLeafCount());
+    EXPECT_EQ(21ul, identity.getNodeCount());
+}
+
+#endif
 
 TEST(SylvanDd, RangeTest) {
     std::shared_ptr<storm::dd::DdManager<storm::dd::DdType::Sylvan>> manager(new storm::dd::DdManager<storm::dd::DdType::Sylvan>());
