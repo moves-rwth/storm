@@ -152,10 +152,12 @@ namespace storm {
         template class Distribution<double>;
         template std::ostream& operator<<(std::ostream& out, Distribution<double> const& distribution);
 
+#ifdef STORM_HAVE_CARL
         template class Distribution<storm::RationalNumber>;
         template std::ostream& operator<<(std::ostream& out, Distribution<storm::RationalNumber> const& distribution);
 
         template class Distribution<storm::RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, Distribution<storm::RationalFunction> const& distribution);
+#endif
     }
 }

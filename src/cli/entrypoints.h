@@ -224,6 +224,7 @@ namespace storm {
             }
         }
         
+#ifdef STORM_HAVE_CARL
         template<>
         void buildAndCheckSymbolicModel<storm::RationalNumber>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
             STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
@@ -235,6 +236,7 @@ namespace storm {
             STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
             buildAndCheckSymbolicModelWithSparseEngine<storm::RationalFunction>(program, formulas, onlyInitialStatesRelevant);
         }
+#endif
         
         template<typename ValueType>
         void buildAndCheckExplicitModel(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {

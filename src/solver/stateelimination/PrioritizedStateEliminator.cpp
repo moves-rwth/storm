@@ -29,9 +29,11 @@ namespace storm {
             }
             
             template class PrioritizedStateEliminator<double>;
+
+#ifdef STORM_HAVE_CARL
             template class PrioritizedStateEliminator<storm::RationalNumber>;
             template class PrioritizedStateEliminator<storm::RationalFunction>;
-            
+#endif
         } // namespace stateelimination
     } // namespace storage
 } // namespace storm

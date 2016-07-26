@@ -250,7 +250,10 @@ namespace storm {
         }
         
         template class ExplicitQuantitativeCheckResult<double>;
+
+#ifdef STORM_HAVE_CARL
         template class ExplicitQuantitativeCheckResult<storm::RationalNumber>;
         template class ExplicitQuantitativeCheckResult<storm::RationalFunction>;
+#endif
     }
 }

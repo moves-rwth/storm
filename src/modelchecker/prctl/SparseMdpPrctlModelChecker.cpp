@@ -147,6 +147,9 @@ namespace storm {
 		}
                 
         template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>>;
+
+#ifdef STORM_HAVE_CARL
         template class SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+#endif
     }
 }

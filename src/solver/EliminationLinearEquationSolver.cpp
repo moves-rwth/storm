@@ -173,16 +173,19 @@ namespace storm {
         }
         
         template class EliminationLinearEquationSolverSettings<double>;
+        template class EliminationLinearEquationSolver<double>;
+        template class EliminationLinearEquationSolverFactory<double>;
+
+#ifdef STORM_HAVE_CARL
         template class EliminationLinearEquationSolverSettings<storm::RationalNumber>;
         template class EliminationLinearEquationSolverSettings<storm::RationalFunction>;
         
-        template class EliminationLinearEquationSolver<double>;
         template class EliminationLinearEquationSolver<storm::RationalNumber>;
         template class EliminationLinearEquationSolver<storm::RationalFunction>;
         
-        template class EliminationLinearEquationSolverFactory<double>;
         template class EliminationLinearEquationSolverFactory<storm::RationalNumber>;
         template class EliminationLinearEquationSolverFactory<storm::RationalFunction>;
+#endif
     }
 }
 

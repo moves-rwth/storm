@@ -69,11 +69,13 @@ namespace storm {
             
             template class Dtmc<double>;
             template class Dtmc<float>;
+
+#ifdef STORM_HAVE_CARL
             template class Dtmc<storm::RationalNumber>;
 
             template class Dtmc<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class Dtmc<storm::RationalFunction>;
-
+#endif
         } // namespace sparse
     } // namespace models
 } // namespace storm

@@ -57,11 +57,13 @@ namespace storm {
             
             template class DeterministicModel<double>;
             template class DeterministicModel<float>;
+
+#ifdef STORM_HAVE_CARL
             template class DeterministicModel<storm::RationalNumber>;
             
             template class DeterministicModel<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class DeterministicModel<storm::RationalFunction>;
-            
+#endif
         } // namespace sparse
     } // namespace models
 } // namespace storm

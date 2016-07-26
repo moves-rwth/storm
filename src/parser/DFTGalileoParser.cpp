@@ -71,12 +71,16 @@ namespace storm {
                     toplevelId = stripQuotsFromName(line.substr(toplevelToken.size() + 1));
                 }
                 else if (boost::starts_with(line, parametricToken)) {
+#ifdef STORM_HAVE_CARL
                     STORM_LOG_THROW((std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException, "Parameters only allowed when using rational functions.");
                     std::string parameter = stripQuotsFromName(line.substr(parametricToken.size() + 1));
                     storm::expressions::Variable var = manager->declareRationalVariable(parameter);
                     identifierMapping.emplace(var.getName(), var);
                     parser.setIdentifierMapping(identifierMapping);
                     STORM_LOG_TRACE("Added parameter: " << var.getName());
+#else
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameters are not supported in this build.");
+#endif
                 } else {
                     std::vector<std::string> tokens;
                     boost::split(tokens, line, boost::is_any_of(" "));

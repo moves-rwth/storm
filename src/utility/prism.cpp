@@ -9,6 +9,8 @@
 
 #include "src/exceptions/InvalidArgumentException.h"
 
+#include <boost/algorithm/string.hpp>
+
 namespace storm {
     namespace utility {
         namespace prism {
