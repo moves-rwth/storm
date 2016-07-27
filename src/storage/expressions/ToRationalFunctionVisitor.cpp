@@ -7,6 +7,8 @@
 
 namespace storm {
     namespace expressions {
+
+#ifdef STORM_HAVE_CARL
         template<typename RationalFunctionType>
         ToRationalFunctionVisitor<RationalFunctionType>::ToRationalFunctionVisitor() : ExpressionVisitor(), cache(new carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>()) {
             // Intentionally left empty.
@@ -95,6 +97,6 @@ namespace storm {
         }
 
         template class ToRationalFunctionVisitor<storm::RationalFunction>;
-        
+#endif
     }
 }

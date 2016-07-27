@@ -12,6 +12,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidSettingsException.h"
 
+#define BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT
+
 namespace storm {
     namespace generator {
         
@@ -303,8 +305,10 @@ namespace storm {
         }
 
         template class NextStateGenerator<double>;
+
+#ifdef STORM_HAVE_CARL
         template class NextStateGenerator<storm::RationalNumber>;
         template class NextStateGenerator<storm::RationalFunction>;
-        
+#endif
     }
 }

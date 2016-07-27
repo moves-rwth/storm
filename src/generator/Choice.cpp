@@ -100,7 +100,10 @@ namespace storm {
         }
         
         template class Choice<double>;
+
+#ifdef STORM_HAVE_CARL
         template class Choice<storm::RationalNumber>;
         template class Choice<storm::RationalFunction>;
+#endif
     }
 }

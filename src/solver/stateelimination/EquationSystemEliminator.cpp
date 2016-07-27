@@ -10,8 +10,11 @@ namespace storm {
             }
             
             template class EquationSystemEliminator<double>;
+
+#ifdef STORM_HAVE_CARL
             template class EquationSystemEliminator<storm::RationalNumber>;
             template class EquationSystemEliminator<storm::RationalFunction>;
+#endif
         }
     }
 }

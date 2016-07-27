@@ -370,6 +370,7 @@ namespace storm {
             }
         }
         
+#ifdef STORM_HAVE_CARL
         template<>
         StandardMinMaxLinearEquationSolverFactory<storm::RationalNumber>::StandardMinMaxLinearEquationSolverFactory(EquationSolverType const& solverType, bool trackScheduler) : MinMaxLinearEquationSolverFactory<storm::RationalNumber>(trackScheduler) {
             switch (solverType) {
@@ -379,6 +380,7 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Cannot create the requested solver for this data type.");
             }
         }
+#endif
         
         template<typename ValueType>
         std::unique_ptr<MinMaxLinearEquationSolver<ValueType>> StandardMinMaxLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
@@ -441,11 +443,12 @@ namespace storm {
         template class NativeMinMaxLinearEquationSolverFactory<double>;
         template class EliminationMinMaxLinearEquationSolverFactory<double>;
         
+#ifdef STORM_HAVE_CARL
         template class StandardMinMaxLinearEquationSolverSettings<storm::RationalNumber>;
         template class StandardMinMaxLinearEquationSolver<storm::RationalNumber>;
         template class StandardMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
         template class EigenMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
         template class EliminationMinMaxLinearEquationSolverFactory<storm::RationalNumber>;
-        
+#endif
     }
 }

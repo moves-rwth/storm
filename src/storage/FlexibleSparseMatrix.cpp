@@ -269,10 +269,11 @@ namespace storm {
         // Explicitly instantiate the matrix.
         template class FlexibleSparseMatrix<double>;
         template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<double> const& matrix);
+
+#ifdef STORM_HAVE_CARL
         template class FlexibleSparseMatrix<storm::RationalNumber>;
         template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<storm::RationalNumber> const& matrix);
 
-#ifdef STORM_HAVE_CARL
         template class FlexibleSparseMatrix<storm::RationalFunction>;
         template std::ostream& operator<<(std::ostream& out, FlexibleSparseMatrix<storm::RationalFunction> const& matrix);
 #endif
