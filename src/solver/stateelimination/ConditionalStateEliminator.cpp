@@ -61,9 +61,11 @@ namespace storm {
             }
             
             template class ConditionalStateEliminator<double>;
+
+#ifdef STORM_HAVE_CARL
             template class ConditionalStateEliminator<storm::RationalNumber>;
             template class ConditionalStateEliminator<storm::RationalFunction>;
-            
+#endif
         } // namespace stateelimination
     } // namespace storage
 } // namespace storm

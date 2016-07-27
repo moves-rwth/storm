@@ -28,9 +28,11 @@ namespace storm {
             }
             
             template class StateEliminator<double>;
+
+#ifdef STORM_HAVE_CARL
             template class StateEliminator<storm::RationalNumber>;
             template class StateEliminator<storm::RationalFunction>;
-            
+#endif
         } // namespace stateelimination
     } // namespace storage
 } // namespace storm

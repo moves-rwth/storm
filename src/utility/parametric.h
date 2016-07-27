@@ -10,6 +10,7 @@
 
 #include "src/adapters/CarlAdapter.h"
 
+#include <map>
 
 namespace storm {
     namespace utility {

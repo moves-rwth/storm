@@ -305,8 +305,10 @@ namespace storm {
         }
 
         template class NextStateGenerator<double>;
+
+#ifdef STORM_HAVE_CARL
         template class NextStateGenerator<storm::RationalNumber>;
         template class NextStateGenerator<storm::RationalFunction>;
-        
+#endif
     }
 }

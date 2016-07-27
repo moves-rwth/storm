@@ -94,6 +94,7 @@ namespace storm {
             return restart;
         }
         
+#ifdef STORM_HAVE_CARL
         EigenLinearEquationSolverSettings<storm::RationalNumber>::EigenLinearEquationSolverSettings() {
             // Intentionally left empty.
         }
@@ -101,6 +102,7 @@ namespace storm {
         EigenLinearEquationSolverSettings<storm::RationalFunction>::EigenLinearEquationSolverSettings() {
             // Intentionally left empty.
         }
+#endif
 
         template<typename ValueType>
         EigenLinearEquationSolver<ValueType>::EigenLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A, EigenLinearEquationSolverSettings<ValueType> const& settings) : eigenA(storm::adapters::EigenAdapter::toEigenSparseMatrix<ValueType>(A)), settings(settings) {
@@ -255,8 +257,8 @@ namespace storm {
             return eigenA->cols();
         }
         
-        // Specialization form storm::RationalNumber
-        
+#ifdef STORM_HAVE_CARL
+        // Specialization for storm::RationalNumber
         template<>
         void EigenLinearEquationSolver<storm::RationalNumber>::solveEquations(std::vector<storm::RationalNumber>& x, std::vector<storm::RationalNumber> const& b) const {
             // Map the input vectors to Eigen's format.
@@ -268,8 +270,7 @@ namespace storm {
             solver._solve_impl(eigenB, eigenX);
         }
         
-        // Specialization form storm::RationalFunction
-        
+        // Specialization for storm::RationalFunction
         template<>
         void EigenLinearEquationSolver<storm::RationalFunction>::solveEquations(std::vector<storm::RationalFunction>& x, std::vector<storm::RationalFunction> const& b) const {
             // Map the input vectors to Eigen's format.
@@ -280,7 +281,8 @@ namespace storm {
             solver.compute(*eigenA);
             solver._solve_impl(eigenB, eigenX);
         }
-                
+#endif
+
         template<typename ValueType>
         std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> EigenLinearEquationSolverFactory<ValueType>::create(storm::storage::SparseMatrix<ValueType> const& matrix) const {
             return std::make_unique<storm::solver::EigenLinearEquationSolver<ValueType>>(matrix, settings);
@@ -307,16 +309,18 @@ namespace storm {
         }
         
         template class EigenLinearEquationSolverSettings<double>;
+        template class EigenLinearEquationSolver<double>;
+        template class EigenLinearEquationSolverFactory<double>;
+
+#ifdef STORM_HAVE_CARL
         template class EigenLinearEquationSolverSettings<storm::RationalNumber>;
         template class EigenLinearEquationSolverSettings<storm::RationalFunction>;
         
-        template class EigenLinearEquationSolver<double>;
         template class EigenLinearEquationSolver<storm::RationalNumber>;
         template class EigenLinearEquationSolver<storm::RationalFunction>;
         
-        template class EigenLinearEquationSolverFactory<double>;
         template class EigenLinearEquationSolverFactory<storm::RationalNumber>;
         template class EigenLinearEquationSolverFactory<storm::RationalFunction>;
-        
+#endif
     }
 }
