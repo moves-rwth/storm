@@ -10,6 +10,7 @@ file(GLOB_RECURSE STORM_SOURCES_WITHOUT_MAIN ${PROJECT_SOURCE_DIR}/src/*/*.cpp)
 file(GLOB_RECURSE STORM_SOURCES_CLI ${PROJECT_SOURCE_DIR}/src/cli/*.cpp)
 file(GLOB_RECURSE STORM_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm.cpp)
 file(GLOB_RECURSE STORM_DFT_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-dyftee.cpp)
+file(GLOB_RECURSE STORM_GSPN_MAIN_FILE ${PROJECT_SOURCE_DIR}/src/storm-gspn.cpp)
 file(GLOB_RECURSE STORM_ADAPTERS_FILES ${PROJECT_SOURCE_DIR}/src/adapters/*.h ${PROJECT_SOURCE_DIR}/src/adapters/*.cpp)
 file(GLOB_RECURSE STORM_BUILDER_FILES ${PROJECT_SOURCE_DIR}/src/builder/*.h ${PROJECT_SOURCE_DIR}/src/builder/*.cpp)
 file(GLOB_RECURSE STORM_GENERATOR_FILES ${PROJECT_SOURCE_DIR}/src/generator/*.h ${PROJECT_SOURCE_DIR}/src/generator/*.cpp)
@@ -59,6 +60,7 @@ set(STORM_LIB_HEADERS ${STORM_HEADERS})
 list(REMOVE_ITEM STORM_LIB_HEADERS ${STORM_HEADERS_CLI})
 set(STORM_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_MAIN_FILE})
 set(STORM_DFT_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_DFT_MAIN_FILE})
+set(STORM_GSPN_MAIN_SOURCES ${STORM_SOURCES_CLI} ${STORM_GSPN_MAIN_FILE})
 set(STORM_MAIN_HEADERS ${STORM_HEADERS_CLI})
 
 # Group the headers and sources
@@ -131,6 +133,12 @@ set_target_properties(storm-main PROPERTIES OUTPUT_NAME "storm")
 add_executable(storm-dft-main ${STORM_DFT_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
 target_link_libraries(storm-dft-main storm) # Adding headers for xcode
 set_target_properties(storm-dft-main PROPERTIES OUTPUT_NAME "storm-dft")
+
+
+add_executable(storm-gspn-main ${STORM_GSPN_MAIN_SOURCES} ${STORM_MAIN_HEADERS})
+target_link_libraries(storm-gspn-main storm) # Adding headers for xcode
+set_target_properties(storm-gspn-main PROPERTIES OUTPUT_NAME "storm-gspn")
+
 
 target_link_libraries(storm ${STORM_LINK_LIBRARIES})
 
