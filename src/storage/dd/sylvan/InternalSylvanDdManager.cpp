@@ -131,12 +131,7 @@ namespace storm {
 #ifdef STORM_HAVE_CARL
 		template<>
 		InternalAdd<DdType::Sylvan, storm::RationalFunction> InternalDdManager<DdType::Sylvan>::getConstant(storm::RationalFunction const& value) const {
-			storm::RationalFunction rationalFunction = value;
-			storm_rational_function_ptr_struct helperStruct;
-			helperStruct.storm_rational_function = (void*)(&rationalFunction);
-			uint64_t terminalValue = (uint64_t)&helperStruct;
-
-			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), terminalValue));
+			return InternalAdd<DdType::Sylvan, storm::RationalFunction>(this, sylvan::Mtbdd::stormRationalFunctionTerminal(value));
 		}
 #endif
 
