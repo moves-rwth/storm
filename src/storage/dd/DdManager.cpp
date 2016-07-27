@@ -106,6 +106,21 @@ namespace storm {
             return result;
         }
         
+#ifdef STORM_HAVE_CARL
+		template<DdType LibraryType>
+        template<>
+        Add<LibraryType, storm::RationalFunction> DdManager<LibraryType>::getIdentity(storm::expressions::Variable const& variable) const {
+            storm::dd::DdMetaVariable<LibraryType> const& metaVariable = this->getMetaVariable(variable);
+            
+            Add<LibraryType, storm::RationalFunction> result = this->getAddZero<storm::RationalFunction>();
+            for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
+				storm::RationalFunction constantFunction(value);
+                result += this->getEncoding(variable, value).template toAdd<ValueType>() * this->getConstant(constantFunction);
+            }
+            return result;
+        }
+#endif
+		
         template<DdType LibraryType>
         std::pair<storm::expressions::Variable, storm::expressions::Variable> DdManager<LibraryType>::addMetaVariable(std::string const& name, int_fast64_t low, int_fast64_t high) {
             // Check whether the variable name is legal.
