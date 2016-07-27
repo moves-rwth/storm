@@ -618,7 +618,7 @@ namespace storm {
 			storm_rational_function_ptr_struct helperStruct;
 			helperStruct.storm_rational_function = (void*)(&value);
 
-			return mtbdd_storm_rational_function(helperStruct);
+			return mtbdd_storm_rational_function(&helperStruct);
 		}
         
         template<typename ValueType>

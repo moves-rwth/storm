@@ -90,7 +90,7 @@ uint32_t sylvan_storm_rational_function_get_type() {
 MTBDD
 mtbdd_storm_rational_function(storm_rational_function_t val)
 {
-	uint64_t terminalValue = (uint64_t)&val;
+	uint64_t terminalValue = (uint64_t)val;
 	return mtbdd_makeleaf(sylvan_storm_rational_function_type, terminalValue);
 }
 

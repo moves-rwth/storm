@@ -609,9 +609,9 @@ Mtbdd::doubleTerminal(double value)
 Mtbdd
 Mtbdd::stormRationalFunctionTerminal(storm::RationalFunction const& value)
 {
-	storm_rational_function_t functionStruct;
+	storm_rational_function_ptr_struct functionStruct;
 	functionStruct.storm_rational_function = (void*)(&value);
-    return mtbdd_storm_rational_function(functionStruct);
+    return mtbdd_storm_rational_function(&functionStruct);
 }
 #endif
 
