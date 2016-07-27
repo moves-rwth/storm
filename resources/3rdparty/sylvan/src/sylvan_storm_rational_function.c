@@ -100,10 +100,10 @@ mtbdd_storm_rational_function(storm_rational_function_t val)
 TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, a, size_t, v)
 {
 	if (a == mtbdd_false) {
-		return mtbdd_storm_rational_function(*storm_rational_function_get_zero());
+		return mtbdd_storm_rational_function(storm_rational_function_get_zero());
 	}
 	if (a == mtbdd_true) {
-		return mtbdd_storm_rational_function(*storm_rational_function_get_one());
+		return mtbdd_storm_rational_function(storm_rational_function_get_one());
 	}
     
     // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
