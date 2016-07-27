@@ -52,14 +52,6 @@ include_directories(${GMMXX_INCLUDE_DIR})
 set(EIGEN_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.3-beta1")
 include_directories(${EIGEN_INCLUDE_DIR})
 
-#############################################################
-##
-##	gmp
-##
-#############################################################
-
-# GMP is optional (unless MathSAT is used, see below)
-find_package(GMP QUIET)
 
 #############################################################
 ##
@@ -254,6 +246,16 @@ else()
     set(STORM_HAVE_GINAC OFF)
     #TODO: Check if CARL actually requires the use of GiNaC
 endif()
+
+
+#############################################################
+##
+##	gmp
+##
+#############################################################
+
+# GMP is optional (unless MathSAT is used, see below)
+find_package(GMP QUIET)
 
 #############################################################
 ##
