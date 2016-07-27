@@ -12,6 +12,8 @@
 #include "src/utility/macros.h"
 #include "src/exceptions/InvalidSettingsException.h"
 
+#define BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT
+
 namespace storm {
     namespace generator {
         
