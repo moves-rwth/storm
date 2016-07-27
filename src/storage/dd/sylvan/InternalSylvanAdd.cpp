@@ -617,9 +617,8 @@ namespace storm {
 		MTBDD InternalAdd<DdType::Sylvan, ValueType>::getLeaf(storm::RationalFunction const& value) {
 			storm_rational_function_ptr_struct helperStruct;
 			helperStruct.storm_rational_function = (void*)(&value);
-			uint64_t terminalValue = (uint64_t)&helperStruct;
 
-			return sylvan::Mtbdd::terminal(sylvan_storm_rational_function_get_type(), terminalValue).GetMTBDD();
+			return mtbdd_storm_rational_function(helperStruct);
 		}
         
         template<typename ValueType>

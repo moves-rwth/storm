@@ -10,6 +10,14 @@ Bdd::toInt64Mtbdd() const {
     return mtbdd_bool_to_int64(bdd);
 }
 
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+Mtbdd
+Bdd::toStormRationalFunctionMtbdd() const {
+    LACE_ME;
+    return mtbdd_bool_to_storm_rational_function(bdd);
+}
+#endif
+
 Mtbdd
 Bdd::Ite(Mtbdd const& thenDd, Mtbdd const& elseDd) const {
     LACE_ME;

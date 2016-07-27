@@ -114,3 +114,19 @@ int storm_rational_function_is_zero(storm_rational_function_ptr a) {
 		return 0;
 	}
 }
+
+storm_rational_function_ptr storm_rational_function_get_zero() {
+	static storm::RationalFunction zeroFunction(0);
+	static storm_rational_function_ptr_struct functionStruct;
+	functionStruct.storm_rational_function = (void*)&zeroFunction;
+	
+	return &functionStruct;
+}
+
+storm_rational_function_ptr storm_rational_function_get_one() {
+	static storm::RationalFunction oneFunction(1);
+	static storm_rational_function_ptr_struct functionStruct;
+	functionStruct.storm_rational_function = (void*)&oneFunction;
+	
+	return &functionStruct;
+}

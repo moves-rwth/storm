@@ -26,6 +26,9 @@ storm_rational_function_ptr storm_rational_function_negate(storm_rational_functi
 uint64_t storm_rational_function_hash(storm_rational_function_ptr const a, uint64_t const seed);
 int storm_rational_function_is_zero(storm_rational_function_ptr a);
 
+storm_rational_function_ptr storm_rational_function_get_zero();
+storm_rational_function_ptr storm_rational_function_get_one();
+
 #ifdef __cplusplus
 }
 #endif

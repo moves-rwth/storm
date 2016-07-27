@@ -248,7 +248,7 @@ namespace storm {
 			} 
 #ifdef STORM_HAVE_CARL
 			else if (std::is_same<ValueType, storm::RationalFunction>::value) {
-				STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Conversion to ADD is currently unsupported for storm::RationalFunction.");
+				return InternalAdd<DdType::Sylvan, ValueType>(ddManager, this->sylvanBdd.toStormRationalFunctionMtbdd());
 			} 
 #endif
 			else {

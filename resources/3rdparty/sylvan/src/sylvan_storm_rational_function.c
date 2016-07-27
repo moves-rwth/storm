@@ -90,7 +90,31 @@ uint32_t sylvan_storm_rational_function_get_type() {
 MTBDD
 mtbdd_storm_rational_function(storm_rational_function_t val)
 {
-    return mtbdd_makeleaf(sylvan_storm_rational_function_type, (size_t)val);
+	uint64_t terminalValue = (uint64_t)&val;
+	return mtbdd_makeleaf(sylvan_storm_rational_function_type, terminalValue);
+}
+
+/**
+ * Converts a BDD to a MTBDD with storm::RationalFunction leaves
+ */
+TASK_IMPL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, a, size_t, v)
+{
+	if (a == mtbdd_false) {
+		return mtbdd_storm_rational_function(*storm_rational_function_get_zero());
+	}
+	if (a == mtbdd_true) {
+		return mtbdd_storm_rational_function(*storm_rational_function_get_one());
+	}
+    
+    // Ugly hack to get rid of the error "unused variable v" (because there is no version of uapply without a parameter).
+    (void)v;
+    
+    return mtbdd_invalid;
+}
+
+TASK_IMPL_1(MTBDD, mtbdd_bool_to_storm_rational_function, MTBDD, dd)
+{
+    return mtbdd_uapply(dd, TASK(mtbdd_op_bool_to_storm_rational_function), 0);
 }
 
 /**

@@ -32,6 +32,13 @@ uint32_t sylvan_storm_rational_function_get_type();
 MTBDD mtbdd_storm_rational_function(storm_rational_function_t val);
 
 /**
+ * Monad that converts Boolean to a storm::RationalFunction MTBDD, translate terminals true to 1 and to 0 otherwise;
+ */
+TASK_DECL_2(MTBDD, mtbdd_op_bool_to_storm_rational_function, MTBDD, size_t)
+TASK_DECL_1(MTBDD, mtbdd_bool_to_storm_rational_function, MTBDD)
+#define mtbdd_bool_to_storm_rational_function(dd) CALL(mtbdd_bool_to_storm_rational_function, dd)
+
+/**
  * Operation "plus" for two storm::RationalFunction MTBDDs
  */
 TASK_DECL_2(MTBDD, sylvan_storm_rational_function_op_plus, MTBDD*, MTBDD*)

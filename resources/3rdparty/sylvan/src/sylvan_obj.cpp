@@ -15,6 +15,7 @@
  */
 
 #include <sylvan_obj.hpp>
+#include <sylvan_storm_rational_function.h>
 
 using namespace sylvan;
 
@@ -603,6 +604,16 @@ Mtbdd::doubleTerminal(double value)
 {
     return mtbdd_double(value);
 }
+
+#if defined(SYLVAN_HAVE_CARL) || defined(STORM_HAVE_CARL)
+Mtbdd
+Mtbdd::stormRationalFunctionTerminal(storm::RationalFunction const& value)
+{
+	storm_rational_function_t functionStruct;
+	functionStruct.storm_rational_function = (void*)(&value);
+    return mtbdd_storm_rational_function(functionStruct);
+}
+#endif
 
 Mtbdd
 Mtbdd::fractionTerminal(int64_t nominator, uint64_t denominator)
