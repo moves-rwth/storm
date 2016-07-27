@@ -107,12 +107,11 @@ namespace storm {
         }
         
 #ifdef STORM_HAVE_CARL
-		template<DdType LibraryType>
-        template<>
-        Add<LibraryType, storm::RationalFunction> DdManager<LibraryType>::getIdentity(storm::expressions::Variable const& variable) const {
-            storm::dd::DdMetaVariable<LibraryType> const& metaVariable = this->getMetaVariable(variable);
+		template<>
+        Add<DdType::Sylvan, storm::RationalFunction> DdManager<DdType::Sylvan>::getIdentity(storm::expressions::Variable const& variable) const {
+            storm::dd::DdMetaVariable<DdType::Sylvan> const& metaVariable = this->getMetaVariable(variable);
             
-            Add<LibraryType, storm::RationalFunction> result = this->getAddZero<storm::RationalFunction>();
+            Add<DdType::Sylvan, storm::RationalFunction> result = this->getAddZero<storm::RationalFunction>();
             for (int_fast64_t value = metaVariable.getLow(); value <= metaVariable.getHigh(); ++value) {
 				storm::RationalFunction constantFunction(value);
                 result += this->getEncoding(variable, value).template toAdd<ValueType>() * this->getConstant(constantFunction);
