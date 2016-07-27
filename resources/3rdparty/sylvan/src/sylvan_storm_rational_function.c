@@ -51,6 +51,7 @@ sylvan_storm_rational_function_equals(const uint64_t left, const uint64_t right)
 static void
 sylvan_storm_rational_function_create(uint64_t *val)
 {
+	printf("sylvan_storm_rational_function_create(val = %zu)\n", *val);
     /* This function is called by the unique table when a leaf does not yet exist.
        We make a copy, which will be stored in the hash table. */
 	storm_rational_function_ptr* x = (storm_rational_function_ptr*)(size_t)val;
@@ -91,6 +92,7 @@ MTBDD
 mtbdd_storm_rational_function(storm_rational_function_t val)
 {
 	uint64_t terminalValue = (uint64_t)val;
+	printf("mtbdd_storm_rational_function(val = %zu)\n", terminalValue);
 	return mtbdd_makeleaf(sylvan_storm_rational_function_type, terminalValue);
 }
 
