@@ -328,7 +328,7 @@ namespace storm {
                         }
                     }
                 } else if(formula.isReachabilityTimeFormula() && data.preprocessedModel.isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                    objectiveRewards = RewardModelType(std::vector<ValueType>(data.preprocessedModel.getTransitionMatrix().getRowCount(), storm::utility::zero<ValueType>()));
+                    objectiveRewards = RewardModelType(std::vector<ValueType>(data.preprocessedModel.getNumberOfStates(), storm::utility::zero<ValueType>()));
                     storm::utility::vector::setVectorValues(objectiveRewards.getStateRewardVector(), data.getMarkovianStatesOfPreprocessedModel() & duplicatorResult.firstCopy, storm::utility::one<ValueType>());
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The formula " << formula << " neither considers reachability probabilities nor reachability rewards " << (data.preprocessedModel.isOfType(storm::models::ModelType::MarkovAutomaton) ?  "nor reachability time" : "") << ". This is not supported.");
