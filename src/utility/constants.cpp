@@ -118,6 +118,11 @@ namespace storm {
         
 #ifdef STORM_HAVE_CARL
         template<>
+        RationalNumber pow(RationalNumber const& value, uint_fast64_t exponent) {
+            return carl::pow(value, exponent);
+        }
+
+        template<>
         RationalFunction& simplify(RationalFunction& value);
 
         template<>
