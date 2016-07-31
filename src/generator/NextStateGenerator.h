@@ -4,10 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-
 #include <boost/variant.hpp>
-
-#define BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT
 
 #include "src/storage/expressions/Expression.h"
 #include "src/storage/BitVectorHashMap.h"
