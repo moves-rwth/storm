@@ -21,11 +21,13 @@ if(USE_XERCES)
         set(XERCES_ROOT ${STORM_3RDPARTY_BINARY_DIR}/xercesc-3.1.2)
         set(XERCESC_INCLUDE ${XERCES_ROOT}/include)
         set(XERCES_LIBRARY_PATH ${XERCES_ROOT}/lib)
+
         if(BUILD_STATIC)
             set(XERCESC_LIBRARIES ${XERCES_LIBRARY_PATH}/libxerces-c${STATIC_EXT})
         else()
             set(XERCESC_LIBRARIES ${XERCES_LIBRARY_PATH}/libxerces-c${DYNAMIC_EXT})
         endif()
+
         add_dependencies(resources xercesc)
     endif()
 
