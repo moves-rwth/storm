@@ -176,7 +176,8 @@ namespace storm {
                 std::set<storm::expressions::Variable> allNondeterminismVariables = usedPlayer2Variables;
                 allNondeterminismVariables.insert(ddInformation.commandDdVariable);
                 
-                return std::unique_ptr<MenuGame<DdType, ValueType>>(new MenuGame<DdType, ValueType>(ddInformation.manager, reachableStates, initialStates, transitionMatrix, bottomStates, ddInformation.sourceVariables, ddInformation.successorVariables, ddInformation.predicateDdVariables, {ddInformation.commandDdVariable}, usedPlayer2Variables, allNondeterminismVariables, ddInformation.updateDdVariable, ddInformation.expressionToBddMap));
+                // FIXME: no deadlock states guaranteed?
+                return std::unique_ptr<MenuGame<DdType, ValueType>>(new MenuGame<DdType, ValueType>(ddInformation.manager, reachableStates, initialStates, ddInformation.manager->getBddZero(), transitionMatrix, bottomStates, ddInformation.sourceVariables, ddInformation.successorVariables, ddInformation.predicateDdVariables, {ddInformation.commandDdVariable}, usedPlayer2Variables, allNondeterminismVariables, ddInformation.updateDdVariable, ddInformation.expressionToBddMap));
             }
             
             template <storm::dd::DdType DdType, typename ValueType>

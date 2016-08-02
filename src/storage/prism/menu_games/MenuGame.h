@@ -33,6 +33,7 @@ namespace storm {
                  * @param manager The manager responsible for the decision diagrams.
                  * @param reachableStates The reachable states of the model.
                  * @param initialStates The initial states of the model.
+                 * @param deadlockStates The deadlock states of the model.
                  * @param transitionMatrix The matrix representing the transitions in the model.
                  * @param bottomStates The bottom states of the model.
                  * @param rowVariables The set of row meta variables used in the DDs.
@@ -48,6 +49,7 @@ namespace storm {
                 MenuGame(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                          storm::dd::Bdd<Type> reachableStates,
                          storm::dd::Bdd<Type> initialStates,
+                         storm::dd::Bdd<Type> deadlockStates,
                          storm::dd::Add<Type, ValueType> transitionMatrix,
                          storm::dd::Bdd<Type> bottomStates,
                          std::set<storm::expressions::Variable> const& rowVariables,

@@ -1,5 +1,4 @@
-#ifndef STORM_SETTINGS_MODULES_RESOURCESETTINGS_H_
-#define STORM_SETTINGS_MODULES_RESOURCESETTINGS_H_
+#pragma once
 
 #include "storm-config.h"
 #include "src/settings/modules/ModuleSettings.h"
@@ -40,7 +39,7 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string timeoutOptionName;
                 static const std::string timeoutOptionShortName;
-            }
+            };
         }
     }
 }

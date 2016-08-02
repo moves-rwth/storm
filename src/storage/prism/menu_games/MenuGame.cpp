@@ -16,6 +16,7 @@ namespace storm {
             MenuGame<Type, ValueType>::MenuGame(std::shared_ptr<storm::dd::DdManager<Type>> manager,
                                                 storm::dd::Bdd<Type> reachableStates,
                                                 storm::dd::Bdd<Type> initialStates,
+                                                storm::dd::Bdd<Type> deadlockStates,
                                                 storm::dd::Add<Type, ValueType> transitionMatrix,
                                                 storm::dd::Bdd<Type> bottomStates,
                                                 std::set<storm::expressions::Variable> const& rowVariables,
@@ -25,7 +26,7 @@ namespace storm {
                                                 std::set<storm::expressions::Variable> const& player2Variables,
                                                 std::set<storm::expressions::Variable> const& allNondeterminismVariables,
                                                 storm::expressions::Variable const& updateVariable,
-                                                std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type>(manager, reachableStates, initialStates, transitionMatrix.sumAbstract({updateVariable}), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), updateVariable(updateVariable), expressionToBddMap(expressionToBddMap), bottomStates(bottomStates) {
+                                                std::map<storm::expressions::Expression, storm::dd::Bdd<Type>> const& expressionToBddMap) : storm::models::symbolic::StochasticTwoPlayerGame<Type>(manager, reachableStates, initialStates, deadlockStates, transitionMatrix.sumAbstract({updateVariable}), rowVariables, nullptr, columnVariables, nullptr, rowColumnMetaVariablePairs, player1Variables, player2Variables, allNondeterminismVariables), updateVariable(updateVariable), expressionToBddMap(expressionToBddMap), bottomStates(bottomStates) {
                 // Intentionally left empty.
             }
             
