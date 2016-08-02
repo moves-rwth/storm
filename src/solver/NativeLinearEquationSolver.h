@@ -60,6 +60,7 @@ namespace storm {
             virtual bool reallocateAuxMemory(LinearEquationSolverOperation operation) const override;
             virtual bool hasAuxMemory(LinearEquationSolverOperation operation) const override;
 
+            storm::storage::SparseMatrix<ValueType> const& getMatrix() const { return *A; }
         private:
             virtual uint64_t getMatrixRowCount() const override;
             virtual uint64_t getMatrixColumnCount() const override;

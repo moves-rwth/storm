@@ -47,7 +47,7 @@ namespace storm {
              * solver, but may be ignored.
              * @param b The vector to add after matrix-vector multiplication.
              */
-            virtual void solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
+            virtual bool solveEquations(OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const = 0;
             
             /*!
              * Behaves the same as the other variant of <code>solveEquations</code>, with the distinction that
@@ -145,8 +145,7 @@ namespace storm {
              * @return True iff auxiliary storage was previously allocated (and not yet deallocated).
              */
             virtual bool hasAuxMemory(MinMaxLinearEquationSolverOperation operation) const;
-            
-            storm::storage::SparseMatrix<ValueType> const& getMatrix() const { return A; }
+
 
         protected:
             /// The optimization direction to use for calls to functions that do not provide it explicitly. Can also be unset.
