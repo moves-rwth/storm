@@ -26,7 +26,7 @@ namespace storm {
         namespace helper {
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeReachabilityRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeReachabilityRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, storm::dd::Bdd<DdType> const& targetStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 return HybridDtmcPrctlHelper<DdType, ValueType>::computeReachabilityRewards(model, computeProbabilityMatrix(model, rateMatrix, exitRateVector), rewardModel.divideStateRewardVector(exitRateVector), targetStates, qualitative, linearEquationSolverFactory);
             }
@@ -37,12 +37,12 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeUntilProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeUntilProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 return HybridDtmcPrctlHelper<DdType, ValueType>::computeUntilProbabilities(model, computeProbabilityMatrix(model, rateMatrix, exitRateVector), phiStates, psiStates, qualitative, linearEquationSolverFactory);
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeBoundedUntilProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeBoundedUntilProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // If the time bounds are [0, inf], we rather call untimed reachability.
                 if (storm::utility::isZero(lowerBound) && upperBound == storm::utility::infinity<ValueType>()) {
@@ -87,7 +87,7 @@ namespace storm {
                             
                             // Finally compute the transient probabilities.
                             std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
-                            std::vector<ValueType> subresult = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, &explicitB, upperBound, uniformizationRate, values, linearEquationSolverFactory);
+                            std::vector<ValueType> subresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(explicitUniformizedMatrix, &explicitB, upperBound, uniformizationRate, values, linearEquationSolverFactory);
                             
                             return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(),
                                                                                                           (psiStates || !statesWithProbabilityGreater0) && model.getReachableStates(),
@@ -125,7 +125,7 @@ namespace storm {
                             storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                             
                             // Compute the transient probabilities.
-                            result = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, result, linearEquationSolverFactory);
+                            result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, result, linearEquationSolverFactory);
                             
                             return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), !relevantStates && model.getReachableStates(), model.getManager().template getAddZero<ValueType>(), relevantStates, odd, result));
                         } else {
@@ -151,7 +151,7 @@ namespace storm {
                                 
                                 // Compute the transient probabilities.
                                 std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
-                                std::vector<ValueType> subResult = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, &explicitB, upperBound - lowerBound, uniformizationRate, values, linearEquationSolverFactory);
+                                std::vector<ValueType> subResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(explicitUniformizedMatrix, &explicitB, upperBound - lowerBound, uniformizationRate, values, linearEquationSolverFactory);
                                 
                                 // Transform the explicit result to a hybrid check result, so we can easily convert it to
                                 // a symbolic qualitative format.
@@ -186,7 +186,7 @@ namespace storm {
                                 uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, relevantStates, uniformizationRate);
                                 explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                                 
-                                newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, linearEquationSolverFactory);
+                                newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, linearEquationSolverFactory);
                                 
                                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), !relevantStates && model.getReachableStates(), model.getManager().template getAddZero<ValueType>(), relevantStates, odd, newSubresult));
                             } else {
@@ -206,7 +206,7 @@ namespace storm {
                                 storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, statesWithProbabilityGreater0, uniformizationRate);
                                 storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
                                 
-                                newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, linearEquationSolverFactory);
+                                newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, linearEquationSolverFactory);
                                 
                                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), !statesWithProbabilityGreater0 && model.getReachableStates(), model.getManager().template getAddZero<ValueType>(), statesWithProbabilityGreater0, odd, newSubresult));
                             }
@@ -218,7 +218,7 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeInstantaneousRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeInstantaneousRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 
                 // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
@@ -237,14 +237,14 @@ namespace storm {
                     storm::dd::Add<DdType, ValueType> uniformizedMatrix = computeUniformizedMatrix(model, rateMatrix, exitRateVector, model.getReachableStates(), uniformizationRate);
                     
                     storm::storage::SparseMatrix<ValueType> explicitUniformizedMatrix = uniformizedMatrix.toMatrix(odd, odd);
-                    result = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeTransientProbabilities(explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, result, linearEquationSolverFactory);
+                    result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, result, linearEquationSolverFactory);
                 }
                 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, result));
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeCumulativeRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeCumulativeRewards(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -271,12 +271,12 @@ namespace storm {
                 std::vector<ValueType> explicitTotalRewardVector = totalRewardVector.toVector(odd);
                 
                 // Finally, compute the transient probabilities.
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::template computeTransientProbabilities<true>(explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, explicitTotalRewardVector, linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType, true>(explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, explicitTotalRewardVector, linearEquationSolverFactory);
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverageProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::utility::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper<DdType, ValueType>::computeLongRunAverageProbabilities(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, storm::solver::LinearEquationSolverFactory<ValueType> const& linearEquationSolverFactory) {
                 storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(model, rateMatrix, exitRateVector);
                 
                 // Create ODD for the translation.
@@ -285,7 +285,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> explicitProbabilityMatrix = probabilityMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
                 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper<ValueType>::computeLongRunAverageProbabilities(explicitProbabilityMatrix, psiStates.toVector(odd), &explicitExitRateVector, qualitative, linearEquationSolverFactory);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageProbabilities(explicitProbabilityMatrix, psiStates.toVector(odd), &explicitExitRateVector, qualitative, linearEquationSolverFactory);
 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }

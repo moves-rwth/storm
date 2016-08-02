@@ -5,13 +5,13 @@
 #include "src/parser/FormulaParser.h"
 #include "src/logic/Formulas.h"
 #include "src/permissivesched/PermissiveSchedulers.h"
-#include "src/builder/ExplicitPrismModelBuilder.h"
+#include "src/builder/ExplicitModelBuilder.h"
 
 #include "src/models/sparse/StandardRewardModel.h"
 #include "src/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
 
-#ifdef STORM_HAVE_MSAT
+#if defined(STORM_HAVE_MSAT) || defined(STORM_HAVE_Z3)
 
 TEST(SmtPermissiveSchedulerTest, DieSelection) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_CPP_TESTS_BASE_PATH "/functional/builder/die_c1.nm");
@@ -25,13 +25,9 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
     auto formula001b = formulaParser.parseSingleFormulaFromString("P<=0.05 [ F \"one\"]")->asProbabilityOperatorFormula();
     
     // Customize and perform model-building.
-    typename storm::builder::ExplicitPrismModelBuilder<double>::Options options;
+    storm::generator::NextStateGeneratorOptions options(formula02b);
     
-    options = typename storm::builder::ExplicitPrismModelBuilder<double>::Options(formula02b);
-    options.addConstantDefinitionsFromString(program, "");
-    options.buildCommandLabels = true;
-    
-    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitPrismModelBuilder<double>(program, options).translate()->as<storm::models::sparse::Mdp<double>>();
+    std::shared_ptr<storm::models::sparse::Mdp<double>> mdp = storm::builder::ExplicitModelBuilder<double>(program, options).build()->as<storm::models::sparse::Mdp<double>>();
     
 //    boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms = storm::ps::computePermissiveSchedulerViaSMT<>(*mdp, formula02);
 //    EXPECT_NE(perms, boost::none);
@@ -43,7 +39,7 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
     boost::optional<storm::ps::SubMDPPermissiveScheduler<>> perms4 = storm::ps::computePermissiveSchedulerViaSMT<>(*mdp, formula001b);
     EXPECT_EQ(perms4, boost::none);
     
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker0(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker0(*mdp);
     
     std::unique_ptr<storm::modelchecker::CheckResult> result0 = checker0.check(formula02b);
     storm::modelchecker::ExplicitQualitativeCheckResult& qualitativeResult0 = result0->asExplicitQualitativeCheckResult();
@@ -51,7 +47,7 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
     ASSERT_FALSE(qualitativeResult0[0]);
     
     auto submdp = perms3->apply();
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker1(submdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Native)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker1(submdp);
     
     std::unique_ptr<storm::modelchecker::CheckResult> result1 = checker1.check(formula02b);
     storm::modelchecker::ExplicitQualitativeCheckResult& qualitativeResult1 = result1->asExplicitQualitativeCheckResult();
@@ -62,4 +58,4 @@ TEST(SmtPermissiveSchedulerTest, DieSelection) {
     
 }
 
-#endif // STORM_HAVE_MSAT
+#endif // STORM_HAVE_MSAT || STORM_HAVE_Z3

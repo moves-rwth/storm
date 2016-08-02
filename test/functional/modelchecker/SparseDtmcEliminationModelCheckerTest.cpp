@@ -32,28 +32,28 @@ TEST(SparseDtmcEliminationModelCheckerTest, Die) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(1.0 / 6.0, quantitativeResult1[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.0 / 6.0, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"two\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(1.0 / 6.0, quantitativeResult2[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.0 / 6.0, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"three\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(1.0 / 6.0, quantitativeResult3[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.0 / 6.0, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"done\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(11.0 / 3.0, quantitativeResult4[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(11.0 / 3.0, quantitativeResult4[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
 TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
@@ -76,35 +76,35 @@ TEST(SparseDtmcEliminationModelCheckerTest, Crowds) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(0.3328800375801578281, quantitativeResult1[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.3328800375801578281, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeIGreater1\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(0.1522194965, quantitativeResult2[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.1522194965, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeOnlyTrueSender\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult3 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(0.32153724292835045, quantitativeResult3[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.32153724292835045, quantitativeResult3[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observe0Greater1\" || F \"observeIGreater1\"]");
 
     result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formula).setOnlyInitialStatesRelevant(true));
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult4 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(0.15330064292476167, quantitativeResult4[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.15330064292476167, quantitativeResult4[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("P=? [F \"observeOnlyTrueSender\" || F \"observe0Greater1\"]");
 
     result = checker.check(storm::modelchecker::CheckTask<storm::logic::Formula>(*formula).setOnlyInitialStatesRelevant(true));
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult5 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(0.96592521978041668, quantitativeResult5[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(0.96592521978041668, quantitativeResult5[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }
 
 TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
@@ -126,12 +126,12 @@ TEST(SparseDtmcEliminationModelCheckerTest, SynchronousLeader) {
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult1 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.0, quantitativeResult1[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("R=? [F \"elected\"]");
 
     result = checker.check(*formula);
     storm::modelchecker::ExplicitQuantitativeCheckResult<double>& quantitativeResult2 = result->asExplicitQuantitativeCheckResult<double>();
 
-    EXPECT_NEAR(1.0448979, quantitativeResult2[0], storm::settings::generalSettings().getPrecision());
+    EXPECT_NEAR(1.0448979, quantitativeResult2[0], storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
 }

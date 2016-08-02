@@ -46,6 +46,26 @@ namespace storm {
 				return rangeValidatorExcluding<int_fast64_t>(lowerBound, upperBound);
 			}
 
+            /*!
+             * Creates a validation function that checks whether an integer is greater than or equal to the given threshold.
+             *
+             * @param threshold The threshold.
+             * @return The resulting validation function.
+             */
+            static std::function<bool (int_fast64_t const&)> integerGreaterValidatorIncluding(int_fast64_t threshold) {
+                return greaterValidatorIncluding<int_fast64_t>(threshold);
+            }
+            
+            /*!
+             * Creates a validation function that checks whether an integer is greater than the given threshold.
+             *
+             * @param threshold The threshold.
+             * @return The resulting validation function.
+             */
+            static std::function<bool (int_fast64_t const&)> integerGreaterValidatorExcluding(int_fast64_t threshold) {
+                return greaterValidatorExcluding<int_fast64_t>(threshold);
+            }
+            
 			/*!
              * Creates a validation function that checks whether an unsigned integer is in the given range (including the bounds).
              *
@@ -67,6 +87,26 @@ namespace storm {
 			static std::function<bool (uint_fast64_t const&)> unsignedIntegerRangeValidatorExcluding(uint_fast64_t lowerBound, uint_fast64_t upperBound) {
 				return rangeValidatorExcluding<uint_fast64_t>(lowerBound, upperBound);
 			}
+            
+            /*!
+             * Creates a validation function that checks whether an unsigned integer is greater than or equal to the given threshold.
+             *
+             * @param threshold The threshold.
+             * @return The resulting validation function.
+             */
+            static std::function<bool (uint_fast64_t const&)> unsignedIntegerGreaterValidatorIncluding(uint_fast64_t threshold) {
+                return greaterValidatorIncluding<uint_fast64_t>(threshold);
+            }
+            
+            /*!
+             * Creates a validation function that checks whether an unsigned integer is greater than the given threshold.
+             *
+             * @param threshold The threshold.
+             * @return The resulting validation function.
+             */
+            static std::function<bool (uint_fast64_t const&)> unsignedIntegerGreaterValidatorExcluding(uint_fast64_t threshold) {
+                return greaterValidatorExcluding<uint_fast64_t>(threshold);
+            }
 
 			/*!
              * Creates a validation function that checks whether a double is in the given range (including the bounds).
@@ -89,6 +129,26 @@ namespace storm {
 			static std::function<bool (double const&)> doubleRangeValidatorExcluding(double lowerBound, double upperBound) {
 				return rangeValidatorExcluding<double>(lowerBound, upperBound);
 			}
+            
+            /*!
+             * Creates a validation function that checks whether a double is greater than or equal to the given threshold.
+             *
+             * @param threshold The threshold.
+             * @return The resulting validation function.
+             */
+            static std::function<bool (double const&)> doubleGreaterValidatorIncluding(double threshold) {
+                return greaterValidatorIncluding<double>(threshold);
+            }
+            
+            /*!
+             * Creates a validation function that checks whether a double is greater than the given threshold.
+             *
+             * @param threshold The threshold.
+             * @return The resulting validation function.
+             */
+            static std::function<bool (double const&)> doubleGreaterValidatorExcluding(double threshold) {
+                return greaterValidatorExcluding<double>(threshold);
+            }
 
             /*!
              * Creates a validation function that checks whether a given string corresponds to an existing and readable
@@ -141,7 +201,7 @@ namespace storm {
 			template<typename T>
 			static std::function<bool (T const&)> rangeValidatorIncluding(T lowerBound, T upperBound) {
 				return std::bind([](T lowerBound, T upperBound, T value) -> bool {
-                    STORM_LOG_THROW(lowerBound <= value && value <= upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
+                    STORM_LOG_THROW(lowerBound <= value && value <= upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out of range.");
                     return true;
                 }, lowerBound, upperBound, std::placeholders::_1);
 			}
@@ -156,10 +216,38 @@ namespace storm {
 			template<typename T>
 			static std::function<bool (T const&)> rangeValidatorExcluding(T lowerBound, T upperBound) {
 				return std::bind([](T lowerBound, T upperBound, T value) -> bool {
-                    STORM_LOG_THROW(lowerBound < value && value < upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out range.");
+                    STORM_LOG_THROW(lowerBound < value && value < upperBound, storm::exceptions::InvalidArgumentException, "Value " << value << " is out of range.");
                     return true;
 				}, lowerBound, upperBound, std::placeholders::_1);
 			}
+            
+            /*!
+             * Creates a validation function that checks whether its argument is greater than the given threshold.
+             *
+             * @param threshold The threshold.
+             * @return The resulting validation function.
+             */
+            template<typename T>
+            static std::function<bool (T const&)> greaterValidatorExcluding(T threshold) {
+                return std::bind([](T threshold, T value) -> bool {
+                    STORM_LOG_THROW(threshold < value, storm::exceptions::InvalidArgumentException, "Value " << value << " is out of range.");
+                    return true;
+                }, threshold, std::placeholders::_1);
+            }
+            
+            /*!
+             * Creates a validation function that checks whether its argument is greater than or equal to the given threshold.
+             *
+             * @param threshold The threshold.
+             * @return The resulting validation function.
+             */
+            template<typename T>
+            static std::function<bool (T const&)> greaterValidatorIncluding(T threshold) {
+                return std::bind([](T threshold, T value) -> bool {
+                    STORM_LOG_THROW(threshold <= value, storm::exceptions::InvalidArgumentException, "Value " << value << " is out of range.");
+                    return true;
+                }, threshold, std::placeholders::_1);
+            }
 		};
 	}
 }

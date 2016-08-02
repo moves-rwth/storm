@@ -493,3 +493,16 @@ TEST(BitVectorTest, Iterator) {
         ASSERT_TRUE(bit % 2 == 0);
     }
 }
+
+TEST(BitVectorTest, CompareAndSwap) {
+    storm::storage::BitVector vector(140);
+    vector.setFromInt(0, 64, 2377830234574424100);
+    vector.setFromInt(64, 64, 1152921504607379586);
+    vector.setFromInt(128, 12, 2080);
+    
+    bool result = vector.compareAndSwap(0, 68, 68);
+    ASSERT_FALSE(result);
+    
+    result = vector.compareAndSwap(68, 0, 68);
+    ASSERT_TRUE(result);
+}

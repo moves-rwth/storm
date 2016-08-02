@@ -933,7 +933,7 @@ namespace storm {
                 double maximalReachabilityProbability = 0;
                 if (checkThresholdFeasible) {
                     storm::modelchecker::helper::SparseMdpPrctlHelper<T> modelcheckerHelper;
-                    std::vector<T> result = std::move(modelcheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::utility::solver::MinMaxLinearEquationSolverFactory<T>()).values);
+                    std::vector<T> result = std::move(modelcheckerHelper.computeUntilProbabilities(false, labeledMdp.getTransitionMatrix(), labeledMdp.getBackwardTransitions(), phiStates, psiStates, false, false, storm::solver::GeneralMinMaxLinearEquationSolverFactory<T>()).values);
                     for (auto state : labeledMdp.getInitialStates()) {
                         maximalReachabilityProbability = std::max(maximalReachabilityProbability, result[state]);
                     }
@@ -1015,7 +1015,7 @@ namespace storm {
                 
                 // Delegate the actual computation work to the function of equal name.
                 auto startTime = std::chrono::high_resolution_clock::now();
-                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(probabilityOperator.getSubformula(), labeledMdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::counterexampleGeneratorSettings().isUseSchedulerCutsSet());
+                boost::container::flat_set<uint_fast64_t> usedLabelSet = getMinimalLabelSet(probabilityOperator.getSubformula(), labeledMdp, phiStates, psiStates, threshold, strictBound, true, storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>().isUseSchedulerCutsSet());
                 auto endTime = std::chrono::high_resolution_clock::now();
                 std::cout << std::endl << "Computed minimal label set of size " << usedLabelSet.size() << " in " << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() << "ms." << std::endl;
 

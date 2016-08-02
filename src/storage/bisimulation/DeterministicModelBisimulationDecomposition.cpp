@@ -651,8 +651,11 @@ namespace storm {
         
         template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<double>>;
         template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<double>>;
-        
+
 #ifdef STORM_HAVE_CARL
+        template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalNumber>>;
+        template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalNumber>>;
+
         template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Dtmc<storm::RationalFunction>>;
         template class DeterministicModelBisimulationDecomposition<storm::models::sparse::Ctmc<storm::RationalFunction>>;
 #endif

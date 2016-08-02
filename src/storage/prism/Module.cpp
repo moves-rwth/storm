@@ -43,6 +43,25 @@ namespace storm {
             return this->integerVariables;
         }
         
+        std::set<storm::expressions::Variable> Module::getAllExpressionVariables() const {
+            std::set<storm::expressions::Variable> result;
+            for (auto const& var : this->getBooleanVariables()) {
+                result.insert(var.getExpressionVariable());
+            }
+            for (auto const& var : this->getIntegerVariables()) {
+                result.insert(var.getExpressionVariable());
+            }
+            return result;
+        }
+        
+        std::vector<storm::expressions::Expression> Module::getAllRangeExpressions() const {
+            std::vector<storm::expressions::Expression> result;
+            for (auto const& integerVariable : this->integerVariables) {
+                result.push_back(integerVariable.getRangeExpression());
+            }
+            return result;
+        }
+        
         std::size_t Module::getNumberOfCommands() const {
             return this->commands.size();
         }

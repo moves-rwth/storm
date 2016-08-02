@@ -34,7 +34,7 @@ namespace storm {
         template<typename ValueType>
         class TerminateIfFilteredExtremumExceedsThreshold : public TerminateIfFilteredSumExceedsThreshold<ValueType>{
         public:
-            TerminateIfFilteredExtremumExceedsThreshold(storm::storage::BitVector const& filter, ValueType const& threshold, bool strict, bool useMinimum);
+            TerminateIfFilteredExtremumExceedsThreshold(storm::storage::BitVector const& filter, bool strict, ValueType const& threshold, bool useMinimum);
             bool terminateNow(std::vector<ValueType> const& currentValue) const;
             
         protected:

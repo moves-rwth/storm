@@ -26,22 +26,10 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
         template<>
-<<<<<<< HEAD
-        inline void verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::vector<std::shared_ptr<const storm::logic::Formula>> const& formulas, bool onlyInitialStatesRelevant) {
-            if (storm::settings::generalSettings().isParametricRegionSet()){
-     //           std::cout << "Num of states with nonconstant transitions; Num of nonconstant transitions" << std::endl;
-     //           std::cout << "NUM_PARS;" << model->getTransitionMatrix().getNonconstantRowGroupCount() << ";" << model->getTransitionMatrix().getNonconstantEntryCount() << std::endl;
-                auto regions=storm::modelchecker::region::ParameterRegion<storm::RationalFunction>::getRegionsFromSettings();
-                std::shared_ptr<storm::modelchecker::region::AbstractSparseRegionModelChecker<storm::RationalFunction, double>> modelchecker;
-                if(model->isOfType(storm::models::ModelType::Dtmc)){
-                    modelchecker = std::make_shared<storm::modelchecker::region::SparseDtmcRegionModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>());
-                } else if (model->isOfType(storm::models::ModelType::Mdp)){
-                    modelchecker = std::make_shared<storm::modelchecker::region::SparseMdpRegionModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>>(model->as<storm::models::sparse::Mdp<storm::RationalFunction>>());
-=======
         inline void verifySparseModel(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
 
             for (auto const& formula : formulas) {
-                STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");
+                STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc || model->getType() == storm::models::ModelType::Ctmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs and CTMCs.");
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formula, onlyInitialStatesRelevant));
                 if (result) {
@@ -49,40 +37,12 @@ namespace storm {
                     std::cout << "Result (initial states): ";
                     result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
                     std::cout << *result << std::endl;
->>>>>>> future
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Currently parametric region verification is only available for DTMCs and Mdps.");
+                    std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
                 }
-                for (auto const& formula : formulas) {
-                    std::cout << std::endl << "Model checking property: " << *formula << " for all parameters in the given region(s)." << std::endl;
-                    STORM_LOG_THROW(modelchecker->canHandle(*formula.get()), storm::exceptions::InvalidSettingsException, "The parametric region check engine does not support this property.");
-                    modelchecker->specifyFormula(formula);
-                    if(storm::settings::regionSettings().doRefinement()){
-                        modelchecker->refineAndCheckRegion(regions, storm::settings::regionSettings().getRefinementThreshold());
-                    } else {
-                        modelchecker->checkRegions(regions);
-                    }
-                    modelchecker->printStatisticsToStream(std::cout);
-                    std::cout << std::endl;
-                }
-            } else {
-                for (auto const& formula : formulas) {
-                    STORM_LOG_THROW(model->getType() == storm::models::ModelType::Dtmc, storm::exceptions::InvalidSettingsException, "Currently parametric verification is only available for DTMCs.");
-                    std::cout << std::endl << "Model checking property: " << *formula << " ...";
-                    std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySparseModel(model, formula, onlyInitialStatesRelevant));
-                    if (result) {
-                        std::cout << " done." << std::endl;
-                        std::cout << "Result (initial states): ";
-                        result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-                        std::cout << *result << std::endl;
-                    } else {
-                        std::cout << " skipped, because the modelling formalism is currently unsupported." << std::endl;
-                    }
 
-                    storm::settings::modules::ParametricSettings const& parametricSettings = storm::settings::parametricSettings();
-                    if (parametricSettings.exportResultToFile()) {
-                        exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*model->getInitialStates().begin()], storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector(*(model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>())), parametricSettings.exportResultPath());
-                    }
+                if (storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultToFile()) {
+                    exportParametricResultToFile(result->asExplicitQuantitativeCheckResult<storm::RationalFunction>()[*model->getInitialStates().begin()], storm::models::sparse::Dtmc<storm::RationalFunction>::ConstraintCollector(*(model->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>())), storm::settings::getModule<storm::settings::modules::ParametricSettings>().exportResultPath());
                 }
             }
         }
@@ -99,8 +59,10 @@ namespace storm {
             for (auto const& formula : formulas) {
                 STORM_LOG_THROW(program.getModelType() == storm::prism::Program::ModelType::DTMC || program.getModelType() == storm::prism::Program::ModelType::MDP, storm::exceptions::InvalidSettingsException, "Currently exploration-based verification is only available for DTMCs and MDPs.");
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
+                
+                storm::modelchecker::SparseExplorationModelChecker<ValueType> checker(program);
+
                 storm::modelchecker::CheckTask<storm::logic::Formula> task(*formula, onlyInitialStatesRelevant);
-                storm::modelchecker::SparseExplorationModelChecker<ValueType> checker(program, storm::utility::prism::parseConstantDefinitionString(program, storm::settings::generalSettings().getConstantDefinitionString()));
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
                 if (checker.canHandle(task)) {
                     result = checker.check(task);
@@ -142,7 +104,7 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType>
-        void verifySymbolicModelWithSymbolicEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+        void verifySymbolicModelWithDdEngine(std::shared_ptr<storm::models::symbolic::Model<DdType>> model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
             for (auto const& formula : formulas) {
                 std::cout << std::endl << "Model checking property: " << *formula << " ...";
                 std::unique_ptr<storm::modelchecker::CheckResult> result(storm::verifySymbolicModelWithDdEngine(model, formula, onlyInitialStatesRelevant));
@@ -183,64 +145,102 @@ namespace storm {
         } \
     }
     
-        template<typename ValueType, storm::dd::DdType LibraryType>
-        void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-
-            storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
-
-            if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::AbstractionRefinement) {
-                verifySymbolicModelWithAbstractionRefinementEngine<LibraryType>(program, formulas, onlyInitialStatesRelevant);
-            } else if (settings.getEngine() == storm::settings::modules::GeneralSettings::Engine::Exploration) {
-                verifySymbolicModelWithExplorationEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
+#define BRANCH_ON_SPARSE_MODELTYPE(result, model, value_type, function, ...) \
+    STORM_LOG_ASSERT(model->isSparseModel(), "Illegal model type."); \
+    if (model->isOfType(storm::models::ModelType::Dtmc)) { \
+        result = function<storm::models::sparse::Dtmc<value_type>>(model->template as<storm::models::sparse::Dtmc<value_type>>(), __VA_ARGS__); \
+    } else if (model->isOfType(storm::models::ModelType::Ctmc)) { \
+        result = function<storm::models::sparse::Ctmc<value_type>>(model->template as<storm::models::sparse::Ctmc<value_type>>(), __VA_ARGS__); \
+    } else if (model->isOfType(storm::models::ModelType::Mdp)) { \
+        result = function<storm::models::sparse::Mdp<value_type>>(model->template as<storm::models::sparse::Mdp<value_type>>(), __VA_ARGS__); \
+    } else if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) { \
+        result = function<storm::models::sparse::MarkovAutomaton<value_type>>(model->template as<storm::models::sparse::MarkovAutomaton<value_type>>(), __VA_ARGS__); \
+    } else { \
+        STORM_LOG_ASSERT(false, "Unknown model type."); \
+    }
+        
+        template<storm::dd::DdType LibraryType>
+        void buildAndCheckSymbolicModelWithSymbolicEngine(bool hybrid, storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+            // Start by building the model.
+            auto model = buildSymbolicModel<double, LibraryType>(program, formulas);
+            
+            // Print some information about the model.
+            model->printModelInformationToStream(std::cout);
+            
+            // Then select the correct engine.
+            if (hybrid) {
+                verifySymbolicModelWithHybridEngine(model, formulas, onlyInitialStatesRelevant);
             } else {
-                storm::storage::ModelFormulasPair modelFormulasPair = buildSymbolicModel<ValueType, LibraryType>(program, formulas);
-                STORM_LOG_THROW(modelFormulasPair.model != nullptr, storm::exceptions::InvalidStateException,
-                                "Model could not be constructed for an unknown reason.");
-
-                // Preprocess the model if needed.
-                BRANCH_ON_MODELTYPE(modelFormulasPair.model, modelFormulasPair.model, ValueType, LibraryType, preprocessModel, formulas);
-
-                // Print some information about the model.
-                modelFormulasPair.model->printModelInformationToStream(std::cout);
-
-                // Verify the model, if a formula was given.
-                if (!formulas.empty()) {
-                    if (modelFormulasPair.model->isSparseModel()) {
-                        if (storm::settings::generalSettings().isCounterexampleSet()) {
-                            // If we were requested to generate a counterexample, we now do so for each formula.
-                            for (auto const& formula : modelFormulasPair.formulas) {
-                                generateCounterexample<ValueType>(program, modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), formula);
-                            }
-                        } else {
-                            verifySparseModel<ValueType>(modelFormulasPair.model->as<storm::models::sparse::Model<ValueType>>(), modelFormulasPair.formulas, onlyInitialStatesRelevant);
-                        }
-                    } else if (modelFormulasPair.model->isSymbolicModel()) {
-                        if (storm::settings::generalSettings().getEngine() == storm::settings::modules::GeneralSettings::Engine::Hybrid) {
-                            verifySymbolicModelWithHybridEngine(modelFormulasPair.model->as<storm::models::symbolic::Model<LibraryType>>(),
-                                                                modelFormulasPair.formulas, onlyInitialStatesRelevant);
-                        } else {
-                            verifySymbolicModelWithSymbolicEngine(modelFormulasPair.model->as<storm::models::symbolic::Model<LibraryType>>(),
-                                                                  modelFormulasPair.formulas, onlyInitialStatesRelevant);
-                        }
-                    } else {
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Invalid input model type.");
-                    }
-                }
+                verifySymbolicModelWithDdEngine(model, formulas, onlyInitialStatesRelevant);
+            }
+        }
+        
+        template<typename ValueType>
+        void buildAndCheckSymbolicModelWithSparseEngine(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
+            // Start by building the model.
+            std::shared_ptr<storm::models::ModelBase> model = buildSparseModel<ValueType>(program, formulas);
+            
+            // Print some information about the model.
+            model->printModelInformationToStream(std::cout);
+            
+            // Preprocess the model.
+            BRANCH_ON_SPARSE_MODELTYPE(model, model, ValueType, preprocessModel, formulas);
+            
+            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->template as<storm::models::sparse::Model<ValueType>>();
+            
+            // Finally, treat the formulas.
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isCounterexampleSet()) {
+                generateCounterexamples<ValueType>(program, sparseModel, formulas);
+            } else {
+                verifySparseModel<ValueType>(sparseModel, formulas, onlyInitialStatesRelevant);
             }
         }
         
         template<typename ValueType>
         void buildAndCheckSymbolicModel(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            if (storm::settings::generalSettings().getDdLibraryType() == storm::dd::DdType::CUDD) {
-                buildAndCheckSymbolicModel<ValueType, storm::dd::DdType::CUDD>(program, formulas, onlyInitialStatesRelevant);
-            } else if (storm::settings::generalSettings().getDdLibraryType() == storm::dd::DdType::Sylvan) {
-                buildAndCheckSymbolicModel<ValueType, storm::dd::DdType::Sylvan>(program, formulas, onlyInitialStatesRelevant);
+            if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::AbstractionRefinement) {
+                auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
+                if (ddlib == storm::dd::DdType::CUDD) {
+                    verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::CUDD>(program, formulas, onlyInitialStatesRelevant);
+                } else {
+                    verifySymbolicModelWithAbstractionRefinementEngine<storm::dd::DdType::Sylvan>(program, formulas, onlyInitialStatesRelevant);
+                }
+            } else if (storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Exploration) {
+                verifySymbolicModelWithExplorationEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
+            } else {
+                auto engine = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine();
+                if (engine == storm::settings::modules::CoreSettings::Engine::Dd || engine == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+                    auto ddlib = storm::settings::getModule<storm::settings::modules::CoreSettings>().getDdLibraryType();
+                    if (ddlib == storm::dd::DdType::CUDD) {
+                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::CUDD>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
+                    } else {
+                        buildAndCheckSymbolicModelWithSymbolicEngine<storm::dd::DdType::Sylvan>(engine == storm::settings::modules::CoreSettings::Engine::Hybrid, program, formulas, onlyInitialStatesRelevant);
+                    }
+                } else {
+                    STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Illegal engine.");
+                    
+                    buildAndCheckSymbolicModelWithSparseEngine<ValueType>(program, formulas, onlyInitialStatesRelevant);
+                }
             }
         }
-
+        
+#ifdef STORM_HAVE_CARL
+        template<>
+        void buildAndCheckSymbolicModel<storm::RationalNumber>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
+            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
+            buildAndCheckSymbolicModelWithSparseEngine<storm::RationalNumber>(program, formulas, onlyInitialStatesRelevant);
+        }
+        
+        template<>
+        void buildAndCheckSymbolicModel<storm::RationalFunction>(storm::prism::Program const& program, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant) {
+            STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Cannot use this data type with an engine different than the sparse one.");
+            buildAndCheckSymbolicModelWithSparseEngine<storm::RationalFunction>(program, formulas, onlyInitialStatesRelevant);
+        }
+#endif
+        
         template<typename ValueType>
         void buildAndCheckExplicitModel(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool onlyInitialStatesRelevant = false) {
-            storm::settings::modules::GeneralSettings const& settings = storm::settings::generalSettings();
+            storm::settings::modules::IOSettings const& settings = storm::settings::getModule<storm::settings::modules::IOSettings>();
 
             STORM_LOG_THROW(settings.isExplicitSet(), storm::exceptions::InvalidStateException, "Unable to build explicit model without model files.");
             std::shared_ptr<storm::models::ModelBase> model = buildExplicitModel<ValueType>(settings.getTransitionFilename(), settings.getLabelingFilename(), settings.isStateRewardsSet() ? boost::optional<std::string>(settings.getStateRewardsFilename()) : boost::none, settings.isTransitionRewardsSet() ? boost::optional<std::string>(settings.getTransitionRewardsFilename()) : boost::none, settings.isChoiceLabelingSet() ? boost::optional<std::string>(settings.getChoiceLabelingFilename()) : boost::none);

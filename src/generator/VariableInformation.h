@@ -5,34 +5,38 @@
 #include <boost/container/flat_map.hpp>
 
 #include "src/storage/expressions/Variable.h"
-#include "src/storage/prism/Program.h"
 
 namespace storm {
+    namespace prism {
+        class Program;
+    }
+    
+    namespace jani {
+        class Model;
+    }
+    
     namespace generator {
         
-        // A structure storing information about the boolean variables of the program.
+        // A structure storing information about the boolean variables of the model.
         struct BooleanVariableInformation {
-            BooleanVariableInformation(storm::expressions::Variable const& variable, bool initialValue, uint_fast64_t bitOffset);
+            BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global = false);
             
             // The boolean variable.
             storm::expressions::Variable variable;
             
-            // Its initial value.
-            bool initialValue;
-            
             // Its bit offset in the compressed state.
             uint_fast64_t bitOffset;
+
+            // A flag indicating whether the variable is a global one.
+            bool global;
         };
         
-        // A structure storing information about the integer variables of the program.
+        // A structure storing information about the integer variables of the model.
         struct IntegerVariableInformation {
-            IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t initialValue, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth);
+            IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global = false);
             
             // The integer variable.
             storm::expressions::Variable variable;
-            
-            // Its initial value.
-            int_fast64_t initialValue;
             
             // The lower bound of its range.
             int_fast64_t lowerBound;
@@ -45,28 +49,50 @@ namespace storm {
             
             // Its bit width in the compressed state.
             uint_fast64_t bitWidth;
+            
+            // A flag indicating whether the variable is a global one.
+            bool global;
+        };
+        
+        // A structure storing information about the location variables of the model.
+        struct LocationVariableInformation {
+            LocationVariableInformation(uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth);
+
+            // The highest possible location value.
+            uint64_t highestValue;
+            
+            // Its bit offset in the compressed state.
+            uint_fast64_t bitOffset;
+            
+            // Its bit width in the compressed state.
+            uint_fast64_t bitWidth;
         };
         
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
-            VariableInformation() = default;
             VariableInformation(storm::prism::Program const& program);
+            VariableInformation(storm::jani::Model const& model);
+            
+            VariableInformation() = default;
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;
             
-            // Provide methods to access the bit offset and width of variables in the compressed state.
-            uint_fast64_t getBitOffset(storm::expressions::Variable const& variable) const;
-            uint_fast64_t getBitWidth(storm::expressions::Variable const& variable) const;
-            
-            // The total bit offset over all variables.
+            /// The total bit offset over all variables.
             uint_fast64_t totalBitOffset;
             
-            // The known boolean variables.
-            boost::container::flat_map<storm::expressions::Variable, uint_fast64_t> booleanVariableToIndexMap;
+            /// The location variables.
+            std::vector<LocationVariableInformation> locationVariables;
+            
+            /// The boolean variables.
             std::vector<BooleanVariableInformation> booleanVariables;
             
-            // The known integer variables.
-            boost::container::flat_map<storm::expressions::Variable, uint_fast64_t> integerVariableToIndexMap;
+            /// The integer variables.
             std::vector<IntegerVariableInformation> integerVariables;
+            
+        private:
+            /*!
+             * Sorts the variables to establish a known ordering.
+             */
+            void sortVariables();
         };
         
     }

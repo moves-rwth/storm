@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <algorithm>
 
 #include "src/utility/macros.h"
 
@@ -142,6 +143,11 @@ namespace storm {
         }
         
         template<class ValueType, class Hash1, class Hash2>
+        void BitVectorHashMap<ValueType, Hash1, Hash2>::setOrAdd(storm::storage::BitVector const& key, ValueType const& value) {
+            setOrAddAndGetBucket(key, value);
+        }
+        
+        template<class ValueType, class Hash1, class Hash2>
         std::pair<ValueType, std::size_t> BitVectorHashMap<ValueType, Hash1, Hash2>::findOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType const& value) {
             // If the load of the map is too high, we increase the size.
             if (numberOfElements >= loadFactor * *currentSizeIterator) {
@@ -163,12 +169,36 @@ namespace storm {
         }
         
         template<class ValueType, class Hash1, class Hash2>
+        std::size_t BitVectorHashMap<ValueType, Hash1, Hash2>::setOrAddAndGetBucket(storm::storage::BitVector const& key, ValueType const& value) {
+            // If the load of the map is too high, we increase the size.
+            if (numberOfElements >= loadFactor * *currentSizeIterator) {
+                this->increaseSize();
+            }
+            
+            std::tuple<bool, std::size_t, bool> flagBucketTuple = this->findBucketToInsert<true>(key);
+            STORM_LOG_ASSERT(!std::get<2>(flagBucketTuple), "Failed to find bucket for insertion.");
+            if (!std::get<0>(flagBucketTuple)) {
+                // Insert the new bits into the bucket.
+                buckets.set(std::get<1>(flagBucketTuple) * bucketSize, key);
+                occupied.set(std::get<1>(flagBucketTuple));
+                ++numberOfElements;
+            }
+            values[std::get<1>(flagBucketTuple)] = value;
+            return std::get<1>(flagBucketTuple);
+        }
+        
+        template<class ValueType, class Hash1, class Hash2>
         ValueType BitVectorHashMap<ValueType, Hash1, Hash2>::getValue(storm::storage::BitVector const& key) const {
             std::pair<bool, std::size_t> flagBucketPair = this->findBucket(key);
             STORM_LOG_ASSERT(flagBucketPair.first, "Unknown key.");
             return values[flagBucketPair.second];
         }
         
+        template<class ValueType, class Hash1, class Hash2>
+        bool BitVectorHashMap<ValueType, Hash1, Hash2>::contains(storm::storage::BitVector const& key) const {
+            return findBucket(key).first;
+        }
+
         template<class ValueType, class Hash1, class Hash2>
         typename BitVectorHashMap<ValueType, Hash1, Hash2>::const_iterator BitVectorHashMap<ValueType, Hash1, Hash2>::begin() const {
             return const_iterator(*this, occupied.begin());

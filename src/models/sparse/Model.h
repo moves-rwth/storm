@@ -357,7 +357,7 @@ namespace storm {
                  * @param out The stream the information is to be printed to.
                  */
                 void printRewardModelsInformationToStream(std::ostream& out) const;
-                
+                                
             private:
                 //  A matrix representing transition relation.
                 storm::storage::SparseMatrix<ValueType> transitionMatrix;
@@ -372,7 +372,9 @@ namespace storm {
                 boost::optional<std::vector<LabelSet>> choiceLabeling;
             };
             
-            std::set<storm::Variable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+#ifdef STORM_HAVE_CARL
+            std::set<storm::RationalFunctionVariable> getProbabilityParameters(Model<storm::RationalFunction> const& model);
+#endif
         } // namespace sparse
     } // namespace models
 } // namespace storm

@@ -1,0 +1,7 @@
+toplevel "A";
+"A" wsp "I" "B";
+"B" wsp "J" "K";
+"I" lambda=0.5 dorm=0.3;
+"J" lambda=0.5 dorm=0.3;
+"K" lambda=0.5 dorm=0.3;
+

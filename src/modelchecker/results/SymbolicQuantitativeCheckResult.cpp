@@ -27,7 +27,7 @@ namespace storm {
             } else if (comparisonType == storm::logic::ComparisonType::GreaterEqual) {
                 states = values.greaterOrEqual(bound);
             }
-            return std::unique_ptr<SymbolicQualitativeCheckResult<Type>>(new SymbolicQualitativeCheckResult<Type>(reachableStates, values.greaterOrEqual(bound)));;
+            return std::unique_ptr<SymbolicQualitativeCheckResult<Type>>(new SymbolicQualitativeCheckResult<Type>(reachableStates, states));
         }
         
         template<storm::dd::DdType Type, typename ValueType>

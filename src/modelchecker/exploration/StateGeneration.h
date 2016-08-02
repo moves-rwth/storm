@@ -21,7 +21,7 @@ namespace storm {
             template <typename StateType, typename ValueType>
             class StateGeneration {
             public:
-                StateGeneration(storm::prism::Program const& program, storm::generator::VariableInformation const& variableInformation, ExplorationInformation<StateType, ValueType>& explorationInformation, storm::expressions::Expression const& conditionStateExpression, storm::expressions::Expression const& targetStateExpression);
+                StateGeneration(storm::prism::Program const& program, ExplorationInformation<StateType, ValueType>& explorationInformation, storm::expressions::Expression const& conditionStateExpression, storm::expressions::Expression const& targetStateExpression);
                                 
                 void load(storm::generator::CompressedState const& state);
                 

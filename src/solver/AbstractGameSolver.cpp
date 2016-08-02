@@ -10,7 +10,7 @@ namespace storm {
         template <typename ValueType>
         AbstractGameSolver<ValueType>::AbstractGameSolver() {
             // Get the settings object to customize solving.
-            storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::nativeEquationSolverSettings();
+            storm::settings::modules::NativeEquationSolverSettings const& settings = storm::settings::getModule<storm::settings::modules::NativeEquationSolverSettings>();
 
             // Get appropriate settings.
             maximalNumberOfIterations = settings.getMaximalIterationCount();

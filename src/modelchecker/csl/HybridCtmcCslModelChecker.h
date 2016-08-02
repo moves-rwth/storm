@@ -5,7 +5,7 @@
 
 #include "src/models/symbolic/Ctmc.h"
 
-#include "src/utility/solver.h"
+#include "src/solver/LinearEquationSolver.h"
 
 namespace storm {
     namespace modelchecker {
@@ -14,7 +14,7 @@ namespace storm {
         class HybridCtmcCslModelChecker : public SymbolicPropositionalModelChecker<DdType, ValueType> {
         public:
             explicit HybridCtmcCslModelChecker(storm::models::symbolic::Ctmc<DdType, ValueType> const& model);
-            explicit HybridCtmcCslModelChecker(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
+            explicit HybridCtmcCslModelChecker(storm::models::symbolic::Ctmc<DdType, ValueType> const& model, std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>>&& linearEquationSolverFactory);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula> const& checkTask) const override;
@@ -31,7 +31,7 @@ namespace storm {
             
         private:
             // An object that is used for solving linear equations and performing matrix-vector multiplication.
-            std::unique_ptr<storm::utility::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
+            std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
         };
         
     } // namespace modelchecker

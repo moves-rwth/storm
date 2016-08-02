@@ -4,8 +4,10 @@
 #include <set>
 #include <vector>
 #include <memory>
-#include <src/storage/sparse/StateType.h>
 
+#include "src/adapters/CarlAdapter.h"
+
+#include "src/storage/sparse/StateType.h"
 #include "src/storage/dd/DdType.h"
 #include "src/solver/SolverSelectionOptions.h"
 
@@ -31,10 +33,6 @@ namespace storm {
         
         class LpSolver;
         class SmtSolver;
-        
-        template<typename ValueType> class NativeLinearEquationSolver;
-        enum class
-                NativeLinearEquationSolverSolutionMethod;
     }
 
     namespace storage {
@@ -73,56 +71,6 @@ namespace storm {
             class SymbolicGameSolverFactory {
             public:
                 virtual std::unique_ptr<storm::solver::SymbolicGameSolver<Type, ValueType>> create(storm::dd::Add<Type, ValueType> const& A, storm::dd::Bdd<Type> const& allRows, std::set<storm::expressions::Variable> const& rowMetaVariables, std::set<storm::expressions::Variable> const& columnMetaVariables, std::vector<std::pair<storm::expressions::Variable, storm::expressions::Variable>> const& rowColumnMetaVariablePairs, std::set<storm::expressions::Variable> const& player1Variables, std::set<storm::expressions::Variable> const& player2Variables) const;
-            };
-            
-            template<typename ValueType>
-            class LinearEquationSolverFactory {
-            public:
-                /*!
-                 * Creates a new linear equation solver instance with the given matrix.
-                 *
-                 * @param matrix The matrix that defines the equation system.
-                 * @return A pointer to the newly created solver.
-                 */
-                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const;
-            };
-            
-            template<typename ValueType>
-            class NativeLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
-            public:
-                NativeLinearEquationSolverFactory();
-                NativeLinearEquationSolverFactory(typename storm::solver::NativeLinearEquationSolverSolutionMethod method, ValueType omega);
-                
-                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-                
-            private:
-                typename storm::solver::NativeLinearEquationSolverSolutionMethod method;
-                ValueType omega;
-            };
-            
-            template<typename ValueType>
-            class GmmxxLinearEquationSolverFactory : public LinearEquationSolverFactory<ValueType> {
-            public:
-                virtual std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix) const override;
-            };
-            
-            template<typename ValueType>
-            class MinMaxLinearEquationSolverFactory {
-            public:
-                MinMaxLinearEquationSolverFactory(storm::solver::EquationSolverTypeSelection solverType = storm::solver::EquationSolverTypeSelection::FROMSETTINGS);
-                /*!
-                 * Creates a new min/max linear equation solver instance with the given matrix.
-                 */
-                virtual std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> create(storm::storage::SparseMatrix<ValueType> const& matrix, bool trackScheduler = false) const;
-                MinMaxLinearEquationSolverFactory<ValueType>& setSolverType(storm::solver::EquationSolverTypeSelection solverType);
-                MinMaxLinearEquationSolverFactory<ValueType>& setPreferredTechnique(storm::solver::MinMaxTechniqueSelection);
-                
-            protected:
-                /// The type of solver which should be created.
-                storm::solver::EquationSolverType solverType;
-                /// The preferred technique to be used by the solver.
-                /// Notice that we save the selection enum here, which allows different solvers to use different techniques.
-                storm::solver::MinMaxTechniqueSelection prefTech;
             };
 
             template<typename ValueType>

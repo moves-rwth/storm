@@ -20,39 +20,39 @@ TEST(DISABLED_TopologicalValueIterationMdpPrctlModelCheckerTest, AsynchronousLea
 	ASSERT_EQ(mdp->getNumberOfStates(), 2095783ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 7714385ull);
 
-    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Topological)));
+    storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>()));
 
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"elected\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
 
-	ASSERT_NEAR(1.0, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+	ASSERT_NEAR(1.0, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"elected\"]");
     
     result = checker.check(*formula);
-    ASSERT_NEAR(1.0, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(1.0, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F<=25 \"elected\"]");
     
     result = checker.check(*formula);
 
-	ASSERT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+	ASSERT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F<=25 \"elected\"]");
     
     result = checker.check(*formula);
-	ASSERT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+	ASSERT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"elected\"]");
     
     result = checker.check(*formula);
-	ASSERT_NEAR(6.172433512, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+	ASSERT_NEAR(6.172433512, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"elected\"]");
     
     result = checker.check(*formula);
-	ASSERT_NEAR(6.1724344, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+	ASSERT_NEAR(6.1724344, result->asExplicitQuantitativeCheckResult<double>()[0], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
 }
 
 TEST(DISABLED_TopologicalValueIterationMdpPrctlModelCheckerTest, Consensus) {
@@ -67,46 +67,46 @@ TEST(DISABLED_TopologicalValueIterationMdpPrctlModelCheckerTest, Consensus) {
 	ASSERT_EQ(mdp->getNumberOfStates(), 63616ull);
 	ASSERT_EQ(mdp->getNumberOfTransitions(), 213472ull);
     
-	storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::utility::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::utility::solver::MinMaxLinearEquationSolverFactory<double>(storm::solver::EquationSolverTypeSelection::Topological)));
+	storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>> checker(*mdp, std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<double>>(new storm::solver::GeneralMinMaxLinearEquationSolverFactory<double>()));
 
     std::shared_ptr<storm::logic::Formula const> formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"finished\"]");
     
     std::unique_ptr<storm::modelchecker::CheckResult> result = checker.check(*formula);
     
-	ASSERT_NEAR(1.0, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+	ASSERT_NEAR(1.0, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F \"finished\" & \"all_coins_equal_0\"]");
     
     result = checker.check(*formula);
-    ASSERT_NEAR(0.4374282832, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(0.4374282832, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"finished\" & \"all_coins_equal_1\"]");
     
     result = checker.check(*formula);
-	ASSERT_NEAR(0.5293286369, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+	ASSERT_NEAR(0.5293286369, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F \"finished\" & !\"agree\"]");
     
     result = checker.check(*formula);
-	ASSERT_NEAR(0.10414097, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+	ASSERT_NEAR(0.10414097, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Pmin=? [F<=50 \"finished\"]");
     
     result = checker.check(*formula);    
-	ASSERT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+	ASSERT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Pmax=? [F<=50 \"finished\"]");
     
     result = checker.check(*formula);
-    ASSERT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(0.0, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
 
     formula = formulaParser.parseSingleFormulaFromString("Rmin=? [F \"finished\"]");
     
     result = checker.check(*formula);
-    ASSERT_NEAR(1725.593313, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(1725.593313, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
     
     formula = formulaParser.parseSingleFormulaFromString("Rmax=? [F \"finished\"\"]");
     
     result = checker.check(*formula);
-    ASSERT_NEAR(2183.142422, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::topologicalValueIterationEquationSolverSettings().getPrecision());
+    ASSERT_NEAR(2183.142422, result->asExplicitQuantitativeCheckResult<double>()[31168], storm::settings::getModule<storm::settings::modules::TopologicalValueIterationEquationSolverSettings>().getPrecision());
 }

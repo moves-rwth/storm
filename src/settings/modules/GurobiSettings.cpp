@@ -5,7 +5,7 @@
 #include "src/settings/ArgumentBuilder.h"
 #include "src/settings/Argument.h"
 #include "src/settings/SettingsManager.h"
-#include "src/settings/modules/GeneralSettings.h"
+#include "src/settings/modules/CoreSettings.h"
 #include "src/solver/SolverSelectionOptions.h"
 namespace storm {
     namespace settings {
@@ -16,7 +16,7 @@ namespace storm {
             const std::string GurobiSettings::threadsOption = "threads";
             const std::string GurobiSettings::outputOption = "output";
             
-            GurobiSettings::GurobiSettings(storm::settings::SettingsManager& settingsManager) : ModuleSettings(settingsManager, moduleName) {
+            GurobiSettings::GurobiSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, threadsOption, true, "The number of threads that may be used by Gurobi.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The number of threads.").setDefaultValueUnsignedInteger(1).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, outputOption, true, "If set, the Gurobi output will be printed to the command line.").build());
@@ -46,7 +46,7 @@ namespace storm {
             
             bool GurobiSettings::check() const {
                 if (isOutputSet() || isIntegerToleranceSet() || isNumberOfThreadsSet()) {
-                    STORM_LOG_WARN_COND(storm::settings::generalSettings().getLpSolver() == storm::solver::LpSolverType::Gurobi, "Gurobi is not selected as the preferred LP solver, so setting options for Gurobi might have no effect.");
+                    STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver() == storm::solver::LpSolverType::Gurobi, "Gurobi is not selected as the preferred LP solver, so setting options for Gurobi might have no effect.");
                 }
                 
                 return true;

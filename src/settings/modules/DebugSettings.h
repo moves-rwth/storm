@@ -13,11 +13,9 @@ namespace storm {
             class DebugSettings : public ModuleSettings {
             public:
                 /*!
-                 * Creates a new set of debug settings that is managed by the given manager.
-                 *
-                 * @param settingsManager The responsible manager.
+                 * Creates a new set of debug settings.
                  */
-                DebugSettings(storm::settings::SettingsManager& settingsManager);
+                DebugSettings();
                 
                 /*!
                  * Retrieves whether the debug option was set.
@@ -47,6 +45,14 @@ namespace storm {
                  */
                 std::string getLogfilename() const;
                 
+                /*!
+                 * Retrieves whether the test option was set. This is a general option which can be
+                 * used for quick testing purposes to activate/decactivate a certain setting.
+                 *
+                 * @return True iff the test option was set.
+                 */
+                bool isTestSet() const;
+                
                 // The name of the module.
                 static const std::string moduleName;
                 
@@ -56,6 +62,7 @@ namespace storm {
                 static const std::string traceOptionName;
                 static const std::string logfileOptionName;
                 static const std::string logfileOptionShortName;
+                static const std::string testOptionName;
             };
             
         } // namespace modules
