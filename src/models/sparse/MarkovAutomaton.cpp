@@ -366,11 +366,12 @@ namespace storm {
             
             template class MarkovAutomaton<double>;
 //            template class MarkovAutomaton<float>;
+#ifdef STORM_HAVE_CARL
             template class MarkovAutomaton<storm::RationalNumber>;
             
             template class MarkovAutomaton<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
             template class MarkovAutomaton<storm::RationalFunction>;
-
+#endif
         } // namespace sparse
     } // namespace models
 } // namespace storm

@@ -140,8 +140,11 @@ namespace storm {
 
         // Explicitly instantiate the model checker.
         template class SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>>;
+
+#ifdef STORM_HAVE_CARL
         template class SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<storm::RationalNumber>>;
         template class SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>>;
-        
+#endif
+
     } // namespace modelchecker
 } // namespace storm

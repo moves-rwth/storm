@@ -40,8 +40,9 @@ namespace storm {
         template class TerminateIfFilteredSumExceedsThreshold<double>;
         template class TerminateIfFilteredExtremumExceedsThreshold<double>;
 
+#ifdef STORM_HAVE_CARL
         template class TerminateIfFilteredSumExceedsThreshold<storm::RationalNumber>;
         template class TerminateIfFilteredExtremumExceedsThreshold<storm::RationalNumber>;
-
+#endif
     }
 }

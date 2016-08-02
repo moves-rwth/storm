@@ -1213,10 +1213,12 @@ namespace storm {
             }
         }
         
+#ifdef STORM_HAVE_CARL
         template<>
         void SparseMatrix<Interval>::performSuccessiveOverRelaxationStep(Interval omega, std::vector<Interval>& x, std::vector<Interval> const& b) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This operation is not supported.");
         }
+#endif
         
         template<typename ValueType>
         void SparseMatrix<ValueType>::multiplyVectorWithMatrix(std::vector<value_type> const& vector, std::vector<value_type>& result) const {
